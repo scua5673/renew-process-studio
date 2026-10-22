@@ -45,17 +45,17 @@ function harness(opt={}){
     document:{getElementById:()=>null,querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){}},addEventListener(){},location:{origin:'https://synthetic.test'},
     localStorage:{getItem(k){if(hooks.localRead)hooks.localRead(k);return local.has(k)?local.get(k):null;},setItem(k,v){if(hooks.localWrite)hooks.localWrite(k,String(v));local.set(k,String(v));},removeItem:k=>local.delete(k),key:i=>[...local.keys()][i]||null,get length(){return local.size;}},
     storage:{async get(k){if(hooks.idbRead)await hooks.idbRead(k);return idb.has(k)?{value:idb.get(k)}:null;},async set(k,v){if(hooks.idbWrite)await hooks.idbWrite(k,v);idb.set(k,v);},
-      async replaceIfValue(k,old,value){if(hooks.idbWrite)await hooks.idbWrite(k,value);if(hooks.idbReplace)await hooks.idbReplace(k,old,value);if((idb.has(k)?idb.get(k):null)!==old)return false;if(value==null)idb.delete(k);else idb.set(k,value);return true;}},
-    PSStorage:{async sharedReady(k){if(hooks.sharedReady)await hooks.sharedReady(k);}},editMirrorCommit:Promise.resolve(),PSScoutStore:S,
+      async replaceIfValue(k,old,value,current){if(hooks.idbWrite)await hooks.idbWrite(k,value);if(hooks.idbReplace)await hooks.idbReplace(k,old,value);if(current)current();if((idb.has(k)?idb.get(k):null)!==old)return false;if(value==null)idb.delete(k);else idb.set(k,value);return true;}},
+    PSStorage:{async sharedReady(k){if(hooks.sharedReady)await hooks.sharedReady(k);}},editMirrorCommit:Promise.resolve(),PSScoutStore:S,PSMirrorSync:require('../studio/sync-mirror.js'),
     HOLD_LIST:'ps_hold_list_v1',OWNERKEY:OWNER,MKEY:META,MATCH_KEY:MATCH,SCHEDULE_KEY:SCHEDULE,KEYS:[KEY],PERSONAL:{},MERGE_KEYS:{[KEY]:1},MERGE_LIST:{},
     ITEMS_ACTIVE:false,COPIES_OFF:true,PLAYER_BLIND:[],MAXLEN,SKIPKEY:'skip',TOMBKEY:'tomb',IDP_PRIV_PREFIX:'cs_idp_v1_',
-    busy:false,busyDog:0,signOutEpoch:0,dataReady:true,localSwitchToken:'',kvWho:true,KV_PULL_CHUNK:20,
+    lastIssue:null,busy:false,busyDog:0,signOutEpoch:0,dataReady:true,localSwitchToken:'',kvWho:true,KV_PULL_CHUNK:20,
     getSess:()=>session,activeWs:()=>active,activeWsObj:()=>({kind:state.team?'team':'personal',role:state.teamRole}),isTeamWs:()=>state.team,
     workspaceSwitchGuardRead:()=>null,workspaceSwitchGuardRaw:()=>'',workspaceSwitchEpochRaw:()=>'',
     itemsWriteFlush:async()=>{},syncBasePrimeAll:async()=>{},syncBaseGet:k=>base.get(k)||null,syncBaseSet(k,v){if(v==null)base.delete(k);else base.set(k,v);},syncBaseReady:async()=>{},
     ensureToken:async()=>'synthetic',permsPrime:async()=>{},permsRaw:()=>state.role==='missing'?null:raw({defaultRole:state.role,members:{[session.uid]:{role:state.role,scopes:['board','scout']}}}),
     kvPreload:async()=>Object.fromEntries(idb),idbBacked:k=>k===KEY,
-    scheduleHeld:()=>false,scheduleWriteAllowed:()=>true,scheduleStructureRepair(){},
+    itemsWriteBusy:()=>false,itemsHoldList:()=>({ids:[]}),scheduleHeld:()=>false,scheduleWriteAllowed:()=>true,scheduleStructureRepair(){},
     syncMaxLen:()=>MAXLEN,psCount:v=>{try{return JSON.parse(v).players.length;}catch{return 0;}},isItemKey:()=>false,isIdpPrivateKey:()=>false,isIdpPubKey:()=>false,
     importApproved:()=>false,importApprovalGet:()=>null,importApprovalClear(){},pushHold:()=>!!opt.hold,holdClear(){},
     rescueStash(){},syncDiagnostic:(stage,e)=>errors.push({stage,message:String(e),code:e.psCode}),
@@ -229,7 +229,7 @@ test('a quota failure while creating the mandatory main mirror leaves initializa
   const value=raw(roster()),h=mountScout(harness({server:value}));
   h.hooks.localWrite=k=>{if(k===KEY)throw Error('synthetic quota');};
   const result=await h.run();assert.ok(result.error);
-  assert.equal(h.idb.get(KEY),value);assert.equal(h.local.has(KEY),false);assert.equal(h.c.rosterReady('team-a'),false);
+  assert.equal(h.idb.has(KEY),false);assert.equal(h.local.has(KEY),false);assert.equal(h.c.rosterReady('team-a'),false);
   h.c.scoutBoot();assert.equal(h.initCount,undefined);assert.equal(h.c.save(),false);assert.equal(h.draftWrites.length,0);
   assert.equal(h.server.get(KEY).v,value);assert.equal(pushed(h).length,0);
 });
@@ -321,4 +321,55 @@ test('duplicate legacy IDs remain visible while coordinated writes are rejected'
   await succeeds(h);h.c.scoutBoot();
   assert.equal(h.c.data.players.length,2);assert.equal(h.c.data.players[1].name,'Second retained record');
   assert.equal(h.c.save(),false);assert.equal(h.local.get(KEY),value);assert.equal(h.idb.get(KEY),value);
+});
+
+for(const silent of [false,true])test(`roster mirror ${silent?'readback':'quota'} failure rolls back IDB and retries without advancing confirmation`,async()=>{
+  const before=raw(roster()),next=roster();next.players[0].memo='remote update';const value=raw(next);
+  const h=harness({server:before,idb:before,mirror:before});await succeeds(h);
+  const confirmed=raw(h.c.meta());h.server.set(KEY,{workspace_id:'team-a',k:KEY,v:value,cupd:2});
+  if(silent){const set=h.c.localStorage.setItem;h.c.localStorage.setItem=(k,v)=>k===KEY?undefined:set(k,v);}
+  else h.hooks.localWrite=k=>{if(k===KEY)throw Object.assign(Error('synthetic quota'),{name:'QuotaExceededError'});};
+  for(let i=0;i<2;i++){
+    const result=await h.run();assert.equal(result.code,'sync_storage');
+    assert.equal(h.idb.get(KEY),before);assert.equal(h.local.get(KEY),before);assert.equal(raw(h.c.meta()),confirmed);
+    assert.equal(h.c.rosterReady('team-a'),false);assert.equal(pushed(h).length,0);
+  }
+  h.hooks.localWrite=null;h.c.localStorage.setItem=(k,v)=>h.local.set(k,String(v));await succeeds(h);
+  assert.equal(h.idb.get(KEY),value);assert.equal(h.local.get(KEY),value);assert.equal(h.c.lastIssue,null);assert.equal(h.c.rosterReady('team-a'),true);
+});
+
+test('old partial roster pull repairs only the confirmed base mirror and exact remote IDB',async()=>{
+  const before=raw(roster()),next=roster();next.players[0].memo='remote update';const value=raw(next);
+  const h=harness({server:value,idb:value,mirror:before,cupd:2});h.baseline(before);
+  await succeeds(h);assert.equal(h.local.get(KEY),value);assert.equal(h.idb.get(KEY),value);assert.equal(pushed(h).length,0);
+});
+
+test('ambiguous split roster preserves both copies and never claims completion or pushes',async()=>{
+  const before=raw(roster()),next=roster();next.players[0].memo='remote update';const value=raw(next);
+  const edit=roster();edit.players[0].memo='unsent local edit';const edited=raw(edit);
+  const h=harness({server:value,idb:value,mirror:edited,cupd:2});h.baseline(before);
+  const result=await h.run();assert.equal(result.code,'sync_storage');assert.equal(h.c.rosterReady('team-a'),false);
+  assert.equal(h.local.get(KEY),edited);assert.equal(h.idb.get(KEY),value);assert.equal(h.server.get(KEY).v,value);assert.equal(pushed(h).length,0);
+});
+
+test('a later network failure cannot hide the unresolved storage failure',async()=>{
+  const before=raw(roster()),h=harness({server:before,idb:before,mirror:before});await succeeds(h);
+  h.c.lastIssue={code:'sync_storage',at:1,uid:'coach-a',wid:'team-a'};
+  h.hooks.fetch=()=>{throw Error('synthetic network');};await h.run();assert.equal(h.c.lastIssue.code,'sync_storage');
+  h.switch();await h.run();assert.notEqual(h.c.lastIssue.code,'sync_storage');
+});
+
+test('legacy mirror repair rechecks a new screen edit before committing metadata',async()=>{
+  const before=raw(roster()),next=roster();next.players[0].memo='remote update';const value=raw(next);
+  const edit=roster();edit.players[0].memo='new local edit';const edited=raw(edit);
+  const h=harness({server:value,idb:value,mirror:before,cupd:2});h.baseline(before);
+  h.hooks.idbRead=k=>{if(k===KEY)h.local.set(KEY,edited);};
+  const result=await h.run();assert.equal(result.code,'sync_storage');assert.equal(h.c.meta().h[KEY],h.c.hash(before));
+  assert.equal(h.local.get(KEY),edited);assert.equal(h.idb.get(KEY),value);assert.equal(pushed(h).length,0);
+});
+test('failed roster read cannot turn an unknown previous value into a rollback deletion',async()=>{
+  const before=raw(roster()),next=roster();next.players[0].memo='remote update';const value=raw(next);
+  const h=harness({server:value,idb:before,mirror:before,cupd:2});h.baseline(before);
+  h.hooks.idbRead=k=>{if(k===KEY)throw Error('synthetic read failure');};
+  const result=await h.run();assert.equal(result.code,'sync_storage');assert.equal(h.idb.get(KEY),before);assert.equal(h.local.get(KEY),before);assert.equal(pushed(h).length,0);
 });
