@@ -8571,8 +8571,9 @@ function switchWorkspaceCore(wid, skipSave){
     switching=false;clearTimeout(overlayGuard);clearTimeout(overlaySlow);hideSwitchOverlay();
     var n=keys.length;
     if(typeof autosaveEnabled==='function'&&autosaveEnabled()){
-      setStatus('변경사항을 보관 중입니다. 저장 상태를 확인한 뒤 다시 전환해 주세요');
-      var pendingError=new Error('preswitch holds');pendingError.psPreswitch=true;throw pendingError;
+      var msg='전환 보류 — 남길 변경을 선택하고 저장이 끝나면 다시 전환해 주세요';
+      setStatus(msg);recSwitchFail(msg,'preswitch-held');
+      var pendingError=new Error('preswitch holds');pendingError.psPreswitch=true;pendingError.psReview=true;throw pendingError;
     }
     setStatus('전환 전에 확인할 변경 '+n+'건이 있습니다');
     workspaceHoldReviewPrepare(keys,from,wid,switchAttemptSeq).then(function(intent){
@@ -8647,10 +8648,7 @@ function switchWorkspaceCore(wid, skipSave){
     var e=new Error(code||'preswitch rejected');e.psPreswitch=true;throw e;
   }
   showSwitchOverlay(target?target.name:'');   /* 과도기 화면 가림 */
-  /* 2.338 — 옛 가드(20초)는 단계 예산 합(최악 46초+)보다 짧아 **정상 진행 중인 전환**을 풀어 버렸다:
-     오버레이가 걷힌 뒤 갑자기 리로드되거나, 코치가 다시 눌러 체인 두 개가 동시에 돌았다(감사 확정 — 2.244류 섞임의 재입구).
-     이제 20초엔 말만 바꾸고(오버레이 유지), 60초에야 세대를 올려 체인을 문턱에서 멈춘다.
-     와이프가 시작됐으면 붙잡지 않는다 — 남은 단계는 전부 상한이 있어 리로드/롤백으로 끝난다. */
+  /* 20초엔 안내만, 60초엔 지우기 전 체인을 취소한다. 지우기 시작 뒤에는 각 단계 상한과 롤백으로 끝낸다. */
   var overlaySlow=setTimeout(function(){
     if(switching&&myGen===switchGen){ setStatus('전환할 자료를 확인하고 있어요 — 잠시만 기다려 주세요');
       try{var _t=document.getElementById('psSwitchTxt'); if(_t)_t.textContent='전환이 오래 걸리고 있어요 — 잠시만요';}catch(_){} }
@@ -8726,8 +8724,9 @@ function switchWorkspaceCore(wid, skipSave){
     /* 2) 저장 실패(skip·타임아웃 포함)면 절대 지우지 않고 중단 — 데이터 유실 방지(단 skipSave면 통과) */
     var unsafeSkipped=Array.isArray(r&&r.skipped)?r.skipped.filter(function(k){return !PERSONAL[k];}):[];
     var held={};holdList().forEach(function(x){if(x&&x.k)held[x.k]=1;});
-    var reviewKeys=unsafeSkipped.filter(function(k){return held[k];});
-    if(!skipSave&&reviewKeys.length)return stopPreswitchReview(reviewKeys);
+    var reviewKeys=unsafeSkipped.concat(Array.isArray(r&&r.held)?r.held:[]).filter(function(k,i,a){return held[k]&&a.indexOf(k)===i;});
+    if(!skipSave&&reviewKeys.length&&(!r.error||r.code==='sync_conflict'))return stopPreswitchReview(reviewKeys);
+    if(!skipSave&&r&&r.error&&r.code==='sync_conflict'&&Object.keys(held).length)return stopPreswitchReview(Object.keys(held));
     /* ══ 2.445 · **서버에 못 닿은 것만으로 여기서 끝내지 않는다** ═══════════════════
        예전에는 preswitch 동기화가 네트워크 오류면 여기서 바로 '전환 취소 — 동기화 오류(sync_network)'
        로 끝났다. 그래서 ① 올릴 것이 하나도 없어도 못 넘어갔고, ② 아래의 '무엇이 막는지' 판정과
@@ -8747,7 +8746,7 @@ function switchWorkspaceCore(wid, skipSave){
         :unsafeSkipped.length?'전환 취소 — '+unsafeSkipped.map(keyLabel).join('·')+' 용량을 확인해 주세요'
         :'전환 취소 — 현재 데이터를 저장하지 못했습니다';
       try{var failDiag=new Error('preswitch result');failDiag.psCode=String((r&&r.code)||((r&&r.skip)?'skip':'preswitch_failed'));syncDiagnostic('workspace-preswitch-result',failDiag);}catch(_){}
-      return stopPreswitch(failMsg,'preswitch failed');
+      return stopPreswitch(failMsg,'preswitch failed '+String(r&&r.code||''));
     }
     /* 2.718 — 실제 제보(9/8 심재휘 감독 영상): «전환 취소 — 보관함 저장 확인이 끝나지 않았습니다 — 아직 시도 전».
        보관함 대기(@library)의 확인값은 cs_lib_rev(작전판이 저장마다 찍는 시각)라, 회차의 보관함 단계가 시작된 **뒤**에
@@ -8930,6 +8929,8 @@ function switchWorkspaceCore(wid, skipSave){
     }
     if(e&&e.psSwitchWipe&&from){recSwitchFail('전환 도중 문제가 생겨 이전 공간으로 돌아왔어요 — '+String(e&&e.message||e).slice(0,120),'wipe-rollback');try{setActiveWs(from);var _rs=getSess();if(_rs&&_rs.uid)setDataReady(true,_rs.uid,from);}catch(_){}try{location.reload();}catch(_){}}
     if(!(e&&e.psPreswitch)){setStatus('전환 실패 — 네트워크 확인');try{chip('전환하지 못했어요 — 네트워크를 확인해 주세요');}catch(_){}recSwitchFail(String(e&&e.message||e).slice(0,150),'switch-error');}   /* 2.255·2.338 */
+    /* 선택 화면은 전환 guard를 푼 뒤 소유자 표식을 잡아야 선택이 무효화되지 않는다. */
+    if(e&&e.psReview&&canResumeSwitch())try{dataReviewOpen();}catch(err){syncDiagnostic('workspace-held-review',err);}
     return {cancelled:1,reason:(e&&e.message)||'workspace switch failed'};
   });
 }
