@@ -2567,8 +2567,10 @@ function syncState(){
     var personalNames=Object.keys(PERSONAL).filter(function(k){return Array.isArray(personalIssue.keys)&&personalIssue.keys.indexOf(k)>=0;}).map(keyLabel);
     return {kind:'bad',reason:personalIssue.code,text:'개인 자료를 못 올렸어요'+(personalNames.length?' · '+personalNames.join('·'):'')+' · '+syncCodeText(personalIssue.code),n:n,review:rc,at:personalIssue.at};
   }
-  var fresh=lastIssue&&(Date.now()-lastIssue.at<10*60*1000);
-  if(fresh&&(n||lastIssue.code==='sync_auth'||lastIssue.code==='sync_permission'))return {kind:'bad',reason:lastIssue.code,text:'못 올렸어요 · '+syncReasonText(lastIssue.code),n:n,review:rc,at:lastIssue.at};
+  var ownIssue=lastIssue&&(!lastIssue.uid||(lastIssue.uid===s.uid&&lastIssue.wid===wid));
+  var storageIssue=ownIssue&&lastIssue.code==='sync_storage';
+  var fresh=ownIssue&&(Date.now()-lastIssue.at<10*60*1000);
+  if(storageIssue||(fresh&&(n||lastIssue.code==='sync_auth'||lastIssue.code==='sync_permission')))return {kind:'bad',reason:lastIssue.code,text:'못 올렸어요 · '+syncReasonText(lastIssue.code),n:n,review:rc,at:lastIssue.at};
   if(rc)return {kind:'ask',text:'저장할 내용 선택 · '+rc+'건',n:n,review:rc};
   if(busy)return {kind:'busy',text:'올리는 중'+(n?(' · '+n):''),n:n,review:rc};
   if(n)return {kind:'pending',text:'전송 대기 · '+n+'건',n:n,review:rc};
@@ -5516,14 +5518,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
       return subset(arrays[0],arrays[1])&&subset(arrays[1],arrays[2]);
     }catch(_){return false;}
   }
-  /* 2.996 — 노트·노트 용지·매치데스크는 화면이 IndexedDB 만 읽고 쓴다(note.html 은 IDB 에 값이 있으면
-     부팅 때 localStorage 사본을 지우고, 매치데스크 화면은 이제 없다). 그래서 이 키의 localStorage 사본은
-     1.504/v309 이전 판이나 storage.get 폴백(storage.js — IDB 로 옮기고 사본은 남긴다)의 잔여물이지 새 편집이 아니고,
-     누구도 갱신하지 않는다. 거울 우선 비교에 넣으면 IDB 와 한 번 갈라진 뒤로 서버본 받기가 회차마다 실패하고
-     meta 가 영영 안 나아간다(2.989 제보: kv-write-source-mismatch + personal-channel 20쌍 — 다른 개인 키 올리기까지 막힌다).
-     비교 기준은 개인 채널이 읽은 IDB 사본이다 — 그 사이의 새 IDB 편집은 아래 비교·IDB CAS 가 그대로 막는다.
-     잔여 사본은 덮지도 지우지도 않는다(storage.js 의 «두 사본이 다르면 어느 쪽도 덮지 않는다»).
-     ⚠ 화면이 거울을 먼저 읽는 키(등록한 팀·선수 cs_analysis_team_library_v1 등)는 넣지 않는다 — 거기선 다른 거울이 새 편집이다. */
+  /* IDB-only screens do not author old localStorage leftovers; synchronous mirror readers remain excluded. */
   var idbOnlyScreen=(k==='cs_notes_v1'||k==='cs_note_papers_v1'||k==='cs_analysis_workspaces_v1');
   function ownerCurrent(){try{return typeof ownerGuard!=='function'||!!ownerGuard();}catch(_){return false;}}
   function ownerStale(){if(writeGuard)writeGuard.stale=true;return false;}
@@ -5601,7 +5596,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
     }
     writes.push(
       window.storage.get(k)
-        .catch(function(){return null;})
+        .catch(function(e){if(k==='scout_tool_v1'||k==='cs_scout_targets_v1')throw syncIssue('sync_storage','roster_read','선수 자료의 기기 저장을 읽지 못했습니다');return null;})
         .then(function(r){
           if(!ownerCurrent()){ownerStale();return {stale:true};}
           var mirror=null,mirrorReadable=false;
@@ -5620,15 +5615,16 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
               mismatch.psCode='mirror-'+sourceShape(mirror)+'_idb-'+sourceShape(r&&r.value)+'_expected-'+sourceShape(expectedLoc)+'_next-'+sourceShape(v);
               if(k==='cs_vault_folders_v1')try{var ma=JSON.parse(mirror),va=JSON.parse(v);if(Array.isArray(ma)&&Array.isArray(va)){var ea=JSON.parse(expectedLoc);mismatch.psCode+='_extra'+ma.filter(function(x){return va.indexOf(x)<0;}).length;if(Array.isArray(ea))mismatch.psCode+='_removed'+ea.filter(function(x){return ma.indexOf(x)<0;}).length;}}catch(_){}
               syncDiagnostic('kv-write-source-mismatch',mismatch);
-              ownerStale();return {stale:true};}}
+              ownerStale();if(k==='scout_tool_v1')throw syncIssue('sync_storage','roster_write_stale','선수 자료의 새 편집을 다시 확인해야 합니다');return {stale:true};}}
           try{ rescueStash(k, r&&r.value, v); }catch(_){}
           if(!ownerCurrent()){ownerStale();return {stale:true};}
           /* expectedLoc이 있는 pull/병합은 get→set 두 transaction으로 나누지 않는다.
              선수 항목처럼 거울이 없는 키는 그 틈의 새 IDB 편집을 달리 발견할 길이 없다. */
+          var idbExpected=(k==='scout_tool_v1'||k==='cs_scout_targets_v1')&&writeGuard&&Object.prototype.hasOwnProperty.call(writeGuard,'expectedIdb')?writeGuard.expectedIdb:expectedLoc;
           var guardedWrite=expectedLoc===undefined
             ? window.storage.set(k,v)
             : (window.storage.replaceIfValue
-              ? window.storage.replaceIfValue(k,k==='cs_scout_targets_v1'&&writeGuard&&Object.prototype.hasOwnProperty.call(writeGuard,'expectedIdb')?writeGuard.expectedIdb:expectedLoc,v).then(function(changed){
+              ? window.storage.replaceIfValue(k,idbExpected,v).then(function(changed){
                   if(changed)return true;
                   ownerStale();throw syncIssue('sync_local_changed','kv_write_idb_changed','저장 중 더 새로운 기기 편집을 발견했습니다');
                 })
@@ -5649,20 +5645,13 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
               throw syncIssue('sync_local_changed','kv_write_mirror_changed','저장 중 더 새로운 기기 편집을 발견했습니다');
             });
           }
-          /* 1.618 — IDB 키인데 localStorage 거울을 함께 보는 화면이 있다. 작전판 squadLoad() 는
-             localStorage 를 먼저 읽고 값이 있으면 IDB 를 아예 안 본다. 여기서 거울을 안 고치면
-             팀에서 새 선수단을 받아도 화면엔 옛 명단이 그대로 남는다.
-             이미 거울이 있는 키만 갱신한다 — 없던 키까지 새로 만들면 노트·매치데스크 같은 큰 값이
-             localStorage 5MB 한도를 다시 넘는다(1.504 에서 IDB 로 옮긴 이유). */
-          /* 1.619 — 권한 문서만은 거울을 **없어도 만든다**. 푸시 권한 판정이 동기라
-             localStorage 를 먼저 보는데, 새 기기에는 거울이 없어 방금 받은 권한을 못 읽고
-             fail-closed 에 걸린다. 3KB 남짓이라 한도 부담도 없다. */
+          /* Screen readers require exact mirrors for roster/matches; permissions also need a synchronous copy. */
           if(k===MATCH_KEY){
             try{matchMirrorWriteExact(v);}
             catch(e){syncDiagnostic('match-mirror-write',e);throw e;}
           }else if(k==='scout_tool_v1'||k==='cs_scout_targets_v1'){
-            localStorage.setItem(k,v);
-            if(localStorage.getItem(k)!==v)throw syncIssue('sync_storage','scout_mirror_write','선수 자료의 화면 저장을 확인할 수 없습니다');
+            return PSMirrorSync.write({key:k,value:v,before:expectedLoc!==undefined?idbExpected:(r&&r.value!=null?r.value:null),mirrorBefore:afterMirror,
+              mirror:localStorage,storage:window.storage,current:ownerCurrent});
           }else try{ if(k==='cs_perms_v1'||(!mirrorLeftover&&localStorage.getItem(k)!==null)) localStorage.setItem(k,v); }catch(_){}
           if(k==='cs_perms_v1')permsCacheSet(v,rpcContext());
           if(k==='cs_board_live_v1')boardLivePulled(v);
@@ -6643,7 +6632,8 @@ function autosaveSyncRun(reason){
     remote:function(wid,keys){return ensureToken().then(function(at){if(!at)throw syncIssue('sync_auth','autosave_token','로그인 확인이 필요합니다');return kvPullValues(at,wid,keys);});},
     core:syncNowCore,
     fail:function(e){var info=/Owner|owner_changed/.test(String(e&&e.message))?{code:'sync_workspace_changed',stage:'autosave'}:classifySyncError(e);
-      lastIssue={code:info.code,stage:info.stage||'autosave',at:Date.now()};syncDiagnostic('autosave',e);return {error:'자동 저장을 완료하지 못했습니다',code:info.code};},
+      var failedUid=(getSess()||{}).uid,failedWid=activeWs();
+      if(!(lastIssue&&lastIssue.code==='sync_storage'&&lastIssue.uid===failedUid&&lastIssue.wid===failedWid))lastIssue={code:info.code,stage:info.stage||'autosave',at:Date.now(),uid:failedUid,wid:failedWid};syncDiagnostic('autosave',e);return {error:'자동 저장을 완료하지 못했습니다',code:info.code};},
     notify:function(){autosaveRefreshArchives().then(function(){try{window.dispatchEvent(new CustomEvent('ps-sync-state'));}catch(_){};}).catch(function(e){syncDiagnostic('autosave-archive-list',e);});}
   });
   return autosaveRunner.run(reason);
@@ -6750,7 +6740,7 @@ function syncNowCore(reason){
         }
         /* 선수단 화면은 localStorage를 동기로 읽는다. IDB에 서버 확인본이
            있어도 거울이 없으면 원문을 다시 받아 빈 초기 명단 생성을 막는다. */
-        if(k==='scout_tool_v1'&&localStorage.getItem(k)===null){needV.push(k);return;}
+        if(k==='scout_tool_v1'&&localStorage.getItem(k)!==(idbVals[k]===undefined?null:idbVals[k])){needV.push(k);return;}
         if(k===MATCH_KEY){
           /* 준비 표는 localStorage를 동기로 읽는다. 워크스페이스 확인표가 없거나
              IDB 정본과 거울이 갈라졌다면 cupd가 같아도 서버 원문을 받아 두 저장소를 다시 맞춘다.
@@ -7196,8 +7186,16 @@ function syncNowCore(reason){
           }
           return;
         }
-        if(k==='scout_tool_v1'&&row&&typeof row.v==='string'&&loc===row.v&&localStorage.getItem(k)===null){
-          if(roundKvWrite(k,row.v,writes,loc)){applied++;m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);}
+        /* Repair an old partial pull only when the mirror is the last confirmed
+           base and IDB is the exact current server raw. Preserve ambiguous edits. */
+        if(k==='scout_tool_v1'&&loc!=null&&localStorage.getItem(k)!==loc){
+          var rosterMirror=localStorage.getItem(k);
+          if(!row||typeof row.v!=='string'||loc!==row.v||
+             (rosterMirror!==null&&hash(rosterMirror)!==(m.h[k]||'')))
+            throw syncIssue('sync_storage','roster_copies_differ','선수 자료의 기기 사본을 확인해야 합니다');
+          if(roundKvWrite(k,row.v,writes,rosterMirror===null?loc:rosterMirror,{stale:false,expectedIdb:loc})){
+            applied++;m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);
+          }
           return;
         }
         /* 서버 확인본과 화면이 같아도 IDB 또는 거울 한쪽이 빠졌으면 복구한다.
@@ -8062,7 +8060,7 @@ function syncNowCore(reason){
        빨간 상태·오류 기록 없이 곧 다시 맞춘다(대기 항목·재시도는 그대로). */
     var ctx=syncRoundContext(reason,roundHid0,roundT0,roundP0),quiet=syncQuietFailure(e,info,ctx);
     syncErr=info.code!=='sync_offline'&&!quiet;
-    if(!quiet)lastIssue={code:info.code,stage:info.stage,at:Date.now()};   /* 2.625 */
+    if(!quiet&&!(lastIssue&&lastIssue.code==='sync_storage'&&lastIssue.uid===s.uid&&lastIssue.wid===wid))lastIssue={code:info.code,stage:info.stage,at:Date.now(),uid:s.uid,wid:wid};   /* 2.625 */
     try{syncObservationRoundDone(observationOwner,{error:info.code});}catch(_){}
     if(quiet)setStatus('다시 맞추는 중…'+(pi.count?(' · 이 기기에 '+pi.count+'건 안전하게 있어요'):''));
     else setStatus((info.code==='sync_offline'?'오프라인이에요':'못 올렸어요 · '+syncReasonText(info.code))

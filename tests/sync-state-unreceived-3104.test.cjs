@@ -40,3 +40,17 @@ test('올릴 것 · 오프라인은 받기 전이어도 지금처럼 먼저 말�
   assert.equal(state({last:0,pending:2}).kind,'pending');
   assert.equal(state({last:0,online:false}).kind,'bad');
 });
+
+test('storage failure with zero uploads remains incomplete after ten minutes until confirmed success',()=>{
+  for(const age of [1000,11*60*1000]){
+    const s=state({last:Date.now()-60000,issue:{code:'sync_storage',at:Date.now()-age,uid:'synthetic-coach',wid:'team-a'}});
+    assert.equal(s.kind,'bad');assert.equal(s.reason,'sync_storage');
+    const shown=view(s);assert.equal(shown.complete,false);assert.equal(shown.action,'retry');assert.equal(shown.text,'기기 저장을 확인해 주세요');
+  }
+  assert.equal(view(state({last:Date.now()})).complete,true);
+});
+test('storage failure from another account or team does not contaminate this space',()=>{
+  for(const owner of [{uid:'other',wid:'team-a'},{uid:'synthetic-coach',wid:'team-b'}]){
+    assert.equal(state({last:Date.now(),issue:{code:'sync_storage',at:Date.now(),...owner}}).kind,'ok');
+  }
+});
