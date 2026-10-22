@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.141';   // 3.141 도형 오른쪽 클릭 메뉴 · «맨 뒤» · 작전판에서 뜨는 것들 한 결로(board-shape-menu.js · board-popups.js, 제보 0a1f6e9d) — 3.140 가용인원 위에
+const CACHE = 'process-3.142';   // 3.142 경기 준비에서 보관함의 여러 페이지 작전판을 애니메이션까지 모두 가져오기(board-import-safe.js) — 3.141 위에
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-settings-skin.js', '/studio/board-token-depth.js', '/studio/board-pitch-photo.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-comm-look.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js', '/studio/board-vault-lazy.js', '/studio/board-guest.js', '/studio/board-save-ask.js', '/studio/board-vault-browse.js', '/studio/board-vault-import.js', '/studio/board-quick-export.js', '/studio/board-meet-8.js', '/studio/board-import-safe.js', '/studio/board-meet-look.js', '/studio/board-jersey.js', '/studio/board-edit-view.js', '/studio/board-meet-form.js', '/studio/board-shape-menu.js', '/studio/board-popups.js', '/studio/vault-folder-move.js',
