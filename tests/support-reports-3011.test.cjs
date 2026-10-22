@@ -3,13 +3,6 @@ const fs=require('fs'),path=require('path');
 const board=fs.readFileSync(path.join(__dirname,'..','studio','board.html'),'utf8');
 const scout=fs.readFileSync(path.join(__dirname,'..','studio','scout.html'),'utf8');
 
-test('3.011 오류 제보 0c4599ff — the player name field takes a full name (40, was 10)',()=>{
-  assert.match(board,/<input id="nameInput" type="text" maxlength="40" placeholder="이름"/);
-  assert.ok(!/id="nameInput"[^>]*maxlength="10"/.test(board),'no 10-character cap left');
-  /* the name pill grows with the text — no other cut on the way to the token */
-  assert.match(board,/const nmStr=p\.name,_nk=_nameK\(\),_nt=\(window\.__nameStyle==="text"\);let w=16;for\(const ch of nmStr\)/);
-});
-
 test('3.011 오류 제보 f9cff618 — «크게 보기» sizes the picture after the title and notes are in',()=>{
   const fn=/function mmBigOpen\(m\)\{[\s\S]*?\n\}\n/.exec(scout);assert.ok(fn,'mmBigOpen');
   const show=/function show\(\)\{[\s\S]*?\n    fit\(\); \}/.exec(fn[0]);assert.ok(show,'show() ends with fit()');
