@@ -31,6 +31,25 @@
   // 지금 보기: 평면 · 3D (3.096 — 중계는 뺐다. 옛 tv 값도 3D)
   function viewOf(tilt) { return !tilt ? 'flat' : '3d'; }
 
+  // 세로 평면의 위쪽 골대가 보기 버튼에 가리지 않도록 실제 높이를 예약한다.
+  // SVG 크기는 그대로 두고 applyView가 이 몫을 위쪽 잔디 여백으로 바꾼다.
+  function topInset(svg, orientation) {
+    if (!svg || orientation !== 'v') return 0;
+    var doc = svg.ownerDocument, body = doc.body, win = doc.defaultView;
+    if (!body.classList.contains('ps-dock-float') || body.classList.contains('bc-tilt3d') || body.classList.contains('editing')) return 0;
+    var stage = svg.parentElement, strip = doc.getElementById('boardPageStrip');
+    if (!stage || !strip || !strip.classList.contains('ps-tb')) return 0;
+    var r = stage.getBoundingClientRect(), cs = win.getComputedStyle(stage);
+    var top = r.top + (parseFloat(cs.paddingTop) || 0), bottom = top;
+    var controls = Array.prototype.slice.call(strip.querySelectorAll(':scope>.tb-g'));
+    var door = doc.getElementById('ehDoor'); if (door) controls.push(door);
+    controls.forEach(function (g) {
+      var b = g.getBoundingClientRect();
+      if (b.width && b.height && b.right > r.left && b.left < r.right) bottom = Math.max(bottom, b.bottom + 8);
+    });
+    return Math.max(0, Math.ceil(bottom - top));
+  }
+
   var N = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (i) { return ':not(#tb' + i + ')'; }).join('');
   var S = 'html.ps-page-board body.ps-dock-float #boardPageStrip.ps-tb' + N;
   function css() {
@@ -136,7 +155,15 @@
     body.__psTopBar = true;
     var st = doc.createElement('style'); st.id = 'ps-topbar-css'; st.textContent = css(); doc.head.appendChild(st);
     var menu = doc.createElement('div'); menu.id = 'ps-tb-menu'; menu.setAttribute('role', 'menu'); doc.body.appendChild(menu);
-    var lastCam = 'mid', obs = null, busy = false, saved = null;
+    var lastCam = 'mid', obs = null, busy = false, saved = null, lastInset = -1;
+    function refit() {
+      var svg = doc.getElementById('board');
+      if (!svg || typeof win.__getBoardOrient !== 'function') return;
+      var inset = topInset(svg, win.__getBoardOrient());
+      if (inset === lastInset) return;
+      lastInset = inset;
+      if (typeof win.applyView === 'function') win.applyView();
+    }
     function on() { return body.classList.contains('ps-dock-float'); }
     function strip() { return doc.getElementById('boardPageStrip'); }
     function curView() { var t = body.classList.contains('bc-tilt3d'), c = ''; try { c = (win.__tilt3d && win.__tilt3d.cam) || ''; } catch (_) {} if (c) lastCam = c; return viewOf(t); }
@@ -156,6 +183,7 @@
       s.querySelectorAll('.tb-seg button').forEach(function (b) { var k = b.getAttribute('data-v'), o = k ? k === v : b.getAttribute('data-shape') === sh; b.classList.toggle('on', o); b.setAttribute('aria-pressed', o ? 'true' : 'false'); });
       // 보드 설정의 «선수 모양»도 평면에서는 «사람» 보드를 유니폼으로 보이게
       try { var seg = doc.getElementById('shapeSeg'); if (seg && !body.classList.contains('bc-tilt3d')) seg.querySelectorAll('button[data-s]').forEach(function (b) { if (b.getAttribute('data-s') === 'shirt' && sh === 'shirt') b.classList.add('on'); }); } catch (_) {}
+      refit();
     }
     function mk(tag, cls, html) { var e = doc.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
     function build() {
@@ -243,11 +271,12 @@
     function center() {
       var s = strip(); if (!s || !s.classList.contains('ps-tb')) return;
       var L = s.querySelector(':scope>.tb-l'), C = s.querySelector(':scope>.tb-c'), R = s.querySelector(':scope>.tb-r'); if (!L || !C) return;
-      if (ro) [L, C, R].forEach(function (g) { if (g && !g.__tbRO) { g.__tbRO = 1; ro.observe(g); } });   // 탭이 늘거나 이름이 바뀌어도 다시 잰다
+      if (ro) [L, C, R, doc.getElementById('ehDoor')].forEach(function (g) { if (g && !g.__tbRO) { g.__tbRO = 1; ro.observe(g); } });   // 탭이나 빈 보드의 시작 단추가 바뀌어도 다시 잰다
       var sr = s.getBoundingClientRect(); if (!sr.width) return;
       var lr = L.getBoundingClientRect().left - sr.left + Math.max(L.offsetWidth, L.scrollWidth), rl = R ? R.getBoundingClientRect().left - sr.left : sr.width, cw = C.offsetWidth, mid = sr.width / 2;
       var ok = mid - cw / 2 >= lr + 10 && mid + cw / 2 <= rl - 10;
       if (s.classList.contains('tb-mid') !== ok) s.classList.toggle('tb-mid', ok);
+      refit();
     }
     win.__psTopBarCenter = center;
     var ro = null; try { if (win.ResizeObserver) ro = new win.ResizeObserver(function () { center(); }); } catch (_) {}
@@ -272,5 +301,5 @@
     var go = function () { window.__psTopBar = install(window); };
     if (window.document.readyState === 'loading') window.document.addEventListener('DOMContentLoaded', go); else go();
   }
-  return { sortStrip: sortStrip, viewOf: viewOf, shapeShown: shapeShown, css: css, install: install };
+  return { sortStrip: sortStrip, viewOf: viewOf, shapeShown: shapeShown, topInset: topInset, css: css, install: install };
 });
