@@ -9,7 +9,9 @@
    3.137 — 여러 페이지 작전판은 1페이지의 장면으로 가져온다(오류 제보 0917a39f 조사). 보관함 항목의 대표 장면(d.frames)은 3.137 전까지
    «저장할 때 보던 페이지»의 장면이었고 대표 판(d.snap)은 1페이지였다 — 가져오기가 1페이지 판에 다른 페이지 장면을 붙였고, 그대로 «저장»하면
    보관함 그 자료의 1페이지 장면이 덮였다(장면 [6,16,14,29] → [29,16,14,29]). 저장은 board.html 이 1페이지 장면으로 고쳤고,
-   이미 저장된 자료는 가져오는 동안만 목록(libGet)을 감싸 d.pages[0].anim 으로 바꿔 보인다(보관함은 그대로). */
+   이미 저장된 자료는 가져오는 동안만 목록(libGet)을 감싸 d.pages[0].anim 으로 바꿔 보인다(보관함은 그대로).
+   3.142 — 일반 편집에서 여러 페이지 작전판을 고르면 첫 페이지만 올리지 않고 저장된 pages 전체를 애니메이션과 함께 새 페이지들로 복사한다.
+   첨부 판(ps-capturing)과 한 페이지 작전판은 기존 동작을 유지한다. */
 (function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -29,6 +31,11 @@
     var o = {}; for (var k in d) if (Object.prototype.hasOwnProperty.call(d, k)) o[k] = d[k];
     o.frames = Array.isArray(fr) ? fr : [];
     return o;
+  }
+  function importPages(d) {
+    if (!d || d.type !== 'board' || !Array.isArray(d.pages) || d.pages.length < 2) return null;
+    var pages = d.pages.filter(function (p) { return p && typeof p === 'object' && p.snap && typeof p.snap === 'object'; });
+    return pages.length > 1 ? pages : null;
   }
   function isMac(nav) { try { return /Mac|iPhone|iPad|iPod/.test(String((nav && (nav.platform || nav.userAgent)) || '')); } catch (_) { return false; } }
   // 창 안내 · 단추 설명 — 새 동작에 맞춘 글. 맥이 아니면 ⌘Z 대신 Ctrl+Z
@@ -67,11 +74,13 @@
         });
       } catch (_) {}
     }
-    function guard(ov) {
+    function guard(ov, items) {
       if (!ov || capturing()) return;
       relabel(ov);
+      var itemIndex = 0;
       Array.prototype.forEach.call(ov.querySelectorAll('button'), function (b) {
         var on = b.onclick; if (typeof on !== 'function' || on.__psSafe || /^닫기$/.test(String(b.textContent || '').trim())) return;
+        var item = Array.isArray(items) ? items[itemIndex++] : null;
         var name = ((b.querySelector('b') || {}).textContent || '작전판').trim();
         // 원래 동작의 알림(«… · ⌘Z 되돌리기»)도 맥이 아니면 Ctrl+Z 로
         var run = function (self, args) {
@@ -81,6 +90,16 @@
         };
         var w = function (e) {
           var self = this, args = arguments;
+          var pages = importPages(item), append = win.__psPages && win.__psPages.book && win.__psPages.book.append;
+          if (pages && typeof append === 'function') {
+            var added = 0;
+            try { added = append(pages) || 0; } catch (_) { added = 0; }
+            if (added > 0) {
+              try { ov.remove(); } catch (_) {}
+              say('«' + name + '» ' + added + '페이지를 가져왔어요 · 보관함 원본은 그대로예요');
+            }
+            return undefined;
+          }
           if (!hasContent(st(), an())) return run(self, args);
           var before = count(), add = addBtn();
           if (add) { try { add.click(); } catch (_) {} }
@@ -105,15 +124,19 @@
       var w = function () {
         relabel(null);
         // openBoardImport 는 시작하자마자(첫 await 전에) libGet() 을 부른다 — 그 한 번만 감싼다
-        var lg = win.libGet, tf = win._animToFrames, swapped = false, p;
+        var lg = win.libGet, tf = win._animToFrames, swapped = false, p, items = [];
         if (typeof lg === 'function' && typeof tf === 'function') {
           win.libGet = function () {
-            return Promise.resolve(lg.apply(this, arguments)).then(function (lib) { return Array.isArray(lib) ? lib.map(function (d) { return pageOneItem(d, tf); }) : lib; });
+            return Promise.resolve(lg.apply(this, arguments)).then(function (lib) {
+              var mapped = Array.isArray(lib) ? lib.map(function (d) { return pageOneItem(d, tf); }) : lib;
+              items = Array.isArray(mapped) ? mapped.filter(function (d) { return d && d.type === 'board' && d.snap; }).sort(function (a, b) { return (b.savedAt || 0) - (a.savedAt || 0); }) : [];
+              return mapped;
+            });
           };
           swapped = true;
         }
         try { p = f.apply(this, arguments); } finally { if (swapped) win.libGet = lg; }
-        return Promise.resolve(p).then(function (r) { try { guard(doc.getElementById('bdImportOverlay')); } catch (_) {} return r; });
+        return Promise.resolve(p).then(function (r) { try { guard(doc.getElementById('bdImportOverlay'), items); } catch (_) {} return r; });
       };
       w.__psSafe = true; win.openBoardImport = w;
       return true;
@@ -121,5 +144,5 @@
     if (doc && doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', wrap); else wrap();
   }
   if (typeof window !== 'undefined' && window.document) install(window);
-  return { hasContent: hasContent, isMac: isMac, texts: texts, pageOneItem: pageOneItem, install: install };
+  return { hasContent: hasContent, isMac: isMac, texts: texts, pageOneItem: pageOneItem, importPages: importPages, install: install };
 });
