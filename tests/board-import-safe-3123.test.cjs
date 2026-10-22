@@ -65,6 +65,18 @@ test('3.137 — 여러 페이지 작전판은 1페이지 장면으로 가져온�
   const tr={type:'train',pages:[pg(3)],frames:[]};assert.equal(S.pageOneItem(tr,toFrames),tr,'작전판만');
 });
 
+test('3.142 — 여러 페이지 작전판은 저장된 페이지와 애니메이션 전체를 가져온다', ()=>{
+  const pg=n=>({snap:{players:[{id:n}]},anim:{frames:Array.from({length:n},(_,i)=>({snap:{i}}))}});
+  const pages=[pg(6),pg(16),pg(14)];
+  const d={type:'board',snap:pages[0].snap,pages};
+  assert.deepEqual(S.importPages(d),pages,'페이지와 애니메이션을 손실 없이 페이지 관리자에 넘긴다');
+  assert.equal(S.importPages(d)[0],pages[0],'페이지 객체는 변형하지 않는다');
+  assert.deepEqual(S.importPages(d).map(p=>p.anim.frames.length),[6,16,14]);
+  assert.equal(S.importPages({type:'board',snap:{},pages:[pg(6)]}),null,'한 페이지는 기존 가져오기 동작');
+  assert.equal(S.importPages({type:'train',snap:{},pages}),null,'작전판만');
+  assert.equal(S.importPages({type:'board',snap:{},pages:[pg(6),null]}),null,'유효한 페이지가 둘 이상일 때만');
+});
+
 test('3.137 — 보관함 저장의 대표 장면 = 1페이지(board.html)', ()=>{
   const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','studio','board.html'),'utf8');
   assert.ok(html.includes('if(pages&&pages[0]){ try{ frames=_animToFrames(pages[0].anim); }catch(_){ frames=null; } }'),'여러 페이지면 1페이지 장면(패턴북만이 아니다)');

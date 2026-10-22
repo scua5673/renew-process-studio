@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 3.137 — 오류 제보 0917a39f 조사에서 나온 고장: 여러 페이지 작전판을 보관함에 저장하면 항목의 대표 판(snap)은 1페이지인데 대표 장면(frames)은
 // «저장할 때 보던 페이지»의 장면이었다. «보드 가져오기»가 1페이지 판에 다른 페이지 장면을 붙였고, 그 페이지에서 «저장»하면(보관함 연결 되쓰기)
-// 보관함 그 자료의 1페이지 장면이 덮였다 — 장면 [6,16,14,29] 가 [29,16,14,29] 로. 이제 저장은 1페이지 장면을 대표로, 가져오기는 1페이지 장면을 쓴다
-// (이미 저장된 자료도). 합성 팀 fixture 에서만 돈다.
+// 보관함 그 자료의 1페이지 장면이 덮였다 — 장면 [6,16,14,29] 가 [29,16,14,29] 로. 3.142부터 일반 편집의 가져오기는
+// 네 페이지와 각 페이지 애니메이션을 모두 복사하며 보관함 원본과 연결하지 않는다. 합성 팀 fixture 에서만 돈다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'ipad':'desktop');
 const fx=await startFixture(),browsers={};
 try{
@@ -32,22 +32,21 @@ try{
   assert.deepEqual(it.pageFrames,[6,16,14,29],'페이지마다 장면 '+JSON.stringify(it));
   assert.equal(it.frames,6,'대표 장면은 1페이지 것(대표 판과 같은 페이지) — 예전엔 보던 4페이지의 29 '+JSON.stringify(it));
 
-  // 이미 저장된 옛 자료(대표 장면이 4페이지 것)도 가져오면 1페이지 장면 — 가져온 페이지에서 «저장»해도 보관함 1페이지 장면은 그대로
+  // 이미 저장된 옛 자료(대표 장면이 4페이지 것)도 pages 원본을 기준으로 네 페이지를 모두 가져온다
   await f.evaluate(async id=>{const l=(await boardStore.get('cs_drill_lib_v1'))||[];const d=l.find(x=>x.libId===id);d.frames=JSON.parse(JSON.stringify(d.pages[3].anim.frames));await libWrite(l);try{libTouch();}catch(_){}},it.id);
   assert.equal((await lib())[0].frames,29,'옛 저장본 모양');
   await f.evaluate(()=>document.getElementById('bpImportBoard').click());
   await f.waitForFunction(()=>{const o=document.getElementById('bdImportOverlay');return o&&[...o.querySelectorAll('button')].some(b=>/가상 여러 페이지/.test(b.textContent)&&b.onclick&&b.onclick.__psSafe);},null,{timeout:12000});
   assert.match(await f.evaluate(()=>document.getElementById('bdImportOverlay').textContent),/장면 6/,'목록도 1페이지 장면 수');
   await f.evaluate(()=>[...document.querySelectorAll('#bdImportOverlay button')].find(b=>/가상 여러 페이지/.test(b.textContent)).click());
-  await f.waitForFunction(()=>window.__psPages.pageInfo().count===5&&!!document.getElementById('bpLinkChip'),null,{timeout:8000});
-  assert.equal(await f.evaluate(()=>anim.frames.length),6,'가져온 페이지 = 1페이지 판 + 1페이지 장면');
+  await f.waitForFunction(()=>window.__psPages.pageInfo().count===8&&window.__psPages.pageInfo().idx===4,null,{timeout:8000});
+  assert.equal(await f.evaluate(()=>document.getElementById('bpLinkChip')),null,'전체 페이지 복사는 보관함 원본과 연결하지 않는다');
+  assert.deepEqual(await f.evaluate(()=>window.__psPages.pg().slice(4).map(p=>p.anim&&p.anim.frames?p.anim.frames.length:0)),[6,16,14,29],'네 페이지 애니메이션 전체');
+  assert.equal(await f.evaluate(()=>anim.frames.length),6,'첫 번째로 가져온 페이지를 연다');
   assert.equal(await f.evaluate(()=>libGet.name),'libGet','목록 읽기는 원래 함수로 돌아왔다');
   await f.evaluate(()=>{pushUndo();state.players[0].x+=10;renderTokens();});
-  await f.click('#boardManualSave');
-  await f.waitForFunction(async()=>{const d=((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.name==='가상 여러 페이지');return d&&d.pages[0].snap.players[0].x!==d.pages[1].snap.players[0].x&&d.savedAt>Date.now()-6000;},null,{polling:150,timeout:8000}).catch(()=>{});
-  await page.waitForTimeout(800);
   it=(await lib())[0];
-  assert.deepEqual(it.pageFrames,[6,16,14,29],'연결 되쓰기 뒤에도 1페이지 장면 6개 — 예전엔 [29,16,14,29] '+JSON.stringify(it));
+  assert.deepEqual(it.pageFrames,[6,16,14,29],'가져온 사본을 편집해도 보관함 원본은 그대로 '+JSON.stringify(it));
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
   console.log('board-vault-pages-3137 ok',engine,size);
