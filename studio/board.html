@@ -4898,6 +4898,7 @@ function applyView(){
   // 운동장 카드는 그대로 두고, 스테이지 비율에 맞춰 viewBox를 좌우(또는 상하)로 대칭 확장 → 레터박스 여백을 작업영역으로
   let fx=bx,fy=by,fw=bw,fh=bh;
   var _ahExp=0;
+  var _tbH=0;try{_tbH=window.PSTopBar?PSTopBar.topInset(svg,o):0;}catch(_){}
   const st=svg&&svg.parentElement;
   if(st){
     const cs=getComputedStyle(st);
@@ -4906,7 +4907,7 @@ function applyView(){
     const ahFull=st.clientHeight-(parseFloat(cs.paddingTop)||0)-(parseFloat(cs.paddingBottom)||0);
     const br=bw/bh;
     /* 애니 바 공간을 항상 예약(_abH) — 바를 열고 닫아도 운동장 크기·위치가 변하지 않음 */
-    const ah=ahFull-_abH;
+    const ah=ahFull-_abH-_tbH;
     _ahExp=ah;
     if(aw>0&&ah>0){
       const sr=aw/ah;
@@ -4920,6 +4921,7 @@ function applyView(){
   /* 하단 도크 예약분도 잔디 작업영역으로 쓰되 위·아래에 절반씩 나눈다.
      아래쪽으로만 늘리면 축구 라인·선수·그림 전체가 카드 위로 치우쳐 보인다. */
   var _vbExt=false;
+  var _topExt=_ahExp>0?_tbH*fh/_ahExp:0;
   if(_abH>0&&_ahExp>0&&!document.body.classList.contains("editing")){
     var _dockExt=_abH*(fh/_ahExp),_sbExt=_sbExtra*(fh/_ahExp);
     fy-=(_dockExt-_sbExt)/2;   /* 2.903 — 저장 띠 몫은 아래에만 */
@@ -4931,6 +4933,7 @@ function applyView(){
     if(pvWorldRight()){_cr.setAttribute("x",W-_hh2);_cr.setAttribute("width",_hh2+_EXT);}   /* 2.975 */
     else{_cr.setAttribute("x",-_EXT);_cr.setAttribute("width",_EXT+_hh2);}
     _cr.setAttribute("y",-_EXT);_cr.setAttribute("height",H+_EXT*2);}}catch(_){}world.removeAttribute("clip-path");}catch(e){}})();   /* 클립은 라인·그리드 레이어에만 — 잔디 표면은 여백까지 자연스럽게 이어진다 */
+  fy-=_topExt;fh+=_topExt;
   FILL_X=fx;FILL_Y=fy;FILL_W=fw;FILL_H=fh;
   window.__pvBox=[bx,by,bw,bh];   /* 3.009 — 보여 줄 운동장 범위(여백 확장 전). 입체 보기의 틀 맞춤이 이것을 잰다 */
   const _vb=Math.round(fx)+" "+Math.round(fy)+" "+Math.round(fw)+" "+Math.round(fh);
