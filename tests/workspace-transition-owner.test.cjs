@@ -165,3 +165,24 @@ test('slow confirmation that returns a storage error still keeps the source inta
   assert.equal(result.cancelled,1);assert.equal(h.contentSnapshot(),before);assert.deepEqual(h.calls.deleted,[]);assert.equal(h.calls.frames,0);
   assert.equal(h.c.cacheOwner().uid,'account-A');assert.equal(h.c.cacheOwner().wid,'personal-A');
 });
+
+// 3.146 — a held change must lead to its existing choice UI, not a retry dead end.
+for(const result of [{skipped:['roster']},{held:['roster']},{error:1,code:'sync_conflict'}])test('held preswitch opens a current-owner review after releasing the transition guard: '+JSON.stringify(result),async()=>{
+  const h=harness();let reviews=0;
+  h.c.autosaveEnabled=()=>true;
+  h.c.holdList=()=>[{kind:'conflict',k:'roster',h:'local-hash'}];
+  h.c.dataReviewOpen=()=>{assert.equal(h.c.workspaceSwitchGuardOwned(h.c.workspaceSwitchEpochRaw()),false,'review captures the final owner markers');reviews++;};
+  h.hooks.sync=()=>Promise.resolve(result);
+  await h.run();
+  assert.equal(h.local.get('active'),'team-A');assert.equal(h.local.get('roster'),'A roster');
+  assert.deepEqual(h.calls.deleted,[]);assert.equal(h.calls.frames,0);assert.equal(h.calls.reloads,0);
+  assert.equal(reviews,1,'open existing exact-choice review, never silently bypass the pending save');
+  h.c.holdList=()=>[];h.hooks.sync=()=>Promise.resolve({});
+  await h.run();assert.equal(h.local.get('active'),'team-B','a later confirmed save permits the ordinary switch');
+});
+test('storage failure with an old hold still blocks without a choice workaround',async()=>{
+  const h=harness();let reviews=0;h.c.autosaveEnabled=()=>true;
+  h.c.holdList=()=>[{kind:'conflict',k:'roster',h:'h'}];h.c.dataReviewOpen=()=>reviews++;
+  h.hooks.sync=()=>Promise.resolve({error:1,code:'sync_storage',skipped:['roster']});
+  await h.run();assert.equal(reviews,0);assert.deepEqual(h.calls.deleted,[]);assert.equal(h.local.get('active'),'team-A');
+});

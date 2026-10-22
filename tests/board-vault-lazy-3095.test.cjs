@@ -108,3 +108,28 @@ test('board.html asks before every render read and before the creator backfill; 
   assert.ok(sw.includes("'/studio/board-vault-lazy.js'"),'sw.js CORE');
   assert.match(fs.readFileSync(path.join(root,'tests/browser/run-critical.mjs'),'utf8'),/'phone-boot-vault'/,'CI 브라우저 묶음에 — 폰은 숨은 작전판이 보관함을 읽지 않는지, 데스크톱은 그리기가 묶이는지 센다');
 });
+
+// 3.146: 첫 화면 라우팅 전의 보이는 보드와 태블릿 부팅도 닫힌 보관함을 읽지 않는다.
+test('visible board defers its closed vault until the actual list opens',()=>{
+  const {win}=fakeWin({hidden:false});
+  const session={hidden_:true,getClientRects(){return this.hidden_?[]:[{}];}};
+  const original=win.document.getElementById;
+  win.document.getElementById=id=>id==='sessionView'?session:original(id);
+  win.maybeBackfillCreators=()=>win.calls.push('creators');
+  const api=Lazy.mount(win);
+  assert.equal(win.__psVaultDefer(),true);
+  win.observers[0].cb([]);
+  assert.deepEqual(win.calls,[],'보드가 보여도 목록은 아직 필요 없다');
+  session.hidden_=false;
+  win.observers[0].cb([]);
+  assert.deepEqual(win.calls,['files','dock','tray','creators']);
+  assert.equal(api.pending(),false);
+  assert.equal(win.__psVaultDefer(),false);
+});
+test('opening the library overlay also permits reads while the session view is closed',()=>{
+  const {win}=fakeWin({hidden:false,drillOn:true});
+  const original=win.document.getElementById;
+  win.document.getElementById=id=>id==='sessionView'?{getClientRects:()=>[]}:original(id);
+  Lazy.mount(win);
+  assert.equal(win.__psVaultDefer(),false);
+});
