@@ -7191,8 +7191,9 @@ function syncNowCore(reason){
         if(k==='scout_tool_v1'&&loc!=null&&localStorage.getItem(k)!==loc){
           var rosterMirror=localStorage.getItem(k);
           if(!row||typeof row.v!=='string'||loc!==row.v||
-             (rosterMirror!==null&&hash(rosterMirror)!==(m.h[k]||'')))
-            throw syncIssue('sync_storage','roster_copies_differ','선수 자료의 기기 사본을 확인해야 합니다');
+             (rosterMirror!==null&&hash(rosterMirror)!==(m.h[k]||''))){
+            writes.push(Promise.reject(syncIssue('sync_storage','roster_copies_differ','선수 자료의 기기 사본을 확인해야 합니다')));return;
+          }
           if(roundKvWrite(k,row.v,writes,rosterMirror===null?loc:rosterMirror,{stale:false,expectedIdb:loc})){
             applied++;m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);
           }
