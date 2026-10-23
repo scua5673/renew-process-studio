@@ -78,6 +78,9 @@ try{
   assert.equal(await f.locator('#shortcutTyping').inputValue(),'N');
   await f.evaluate(()=>document.getElementById('shortcutTyping').remove());
 
+  // The preceding edits schedule a draft capture, which regenerates thumbnail
+  // IDs. Finish that existing capture before testing that blocked keys do none.
+  await f.waitForFunction(()=>!_boardDraftT);
   const original=await f.evaluate(()=>JSON.stringify(__psPages.pg()));
   for(const cls of ['meet-mode','editing','comm-viewing','ps-capturing']){
     await f.evaluate(c=>document.body.classList.add(c),cls);
@@ -104,6 +107,9 @@ try{
 
   assert.notEqual(await f.evaluate(()=>__boardSaveExplicit()),false);
   await page.reload();f=await board();
+  // The shell can request another private-board restore after the initial
+  // readiness signal. Assert the restored data once that asynchronous read lands.
+  await f.waitForFunction(()=>__psPages.pageInfo()?.count===2,null,{timeout:10000});
   assert.equal(await f.evaluate(()=>__psToolKeys().pageAdd),'shift+n','다시 열어도 키 저장');
   assert.equal(await f.evaluate(()=>__psToolKeys().move),'g');
   assert.deepEqual(await info(),{idx:0,count:2});assert.deepEqual(await speeds(),[1.5,1.5,1.5,1.5,1.5],'장면 속도 저장');

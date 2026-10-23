@@ -46,7 +46,7 @@ function harness() {
     matchBackToList(){calls.closed++;},psAct(){calls.acts++;}
   });
   context.window=context;
-  vm.runInContext(stateCode+'\n'+sharedCode+'\n'+saveCode+'\nwindow.PSStorage={sharedReady:sharedReady,sharedVerified:sharedVerified};\n'+storeCode+'\nwindow.testStore=scoutStore;\n'+matchCode+'\n'+flushCode+'\n'+exitCode,context);
+  vm.runInContext(stateCode+'\n'+sharedCode+'\n'+saveCode+'\nwindow.PSStorage={sharedReady:sharedReady,sharedVerified:sharedVerified,sharedCommitted:typeof sharedCommitted==="function"?sharedCommitted:null};\n'+storeCode+'\nwindow.testStore=scoutStore;\n'+matchCode+'\n'+flushCode+'\n'+exitCode,context);
   return {c:context,local,durable,commits,calls,label,events};
 }
 
@@ -186,4 +186,51 @@ test('old-owner explicit save completion does not close or notify the new team',
   const p=c.matchSaveAndExit();await drain();local.set('ps_active_ws','team-b');
   commits[0].resolve(true);await p;
   assert.equal(calls.closed,0);assert.equal(calls.toasts,0);
+});
+
+for(const oldMirror of [null,'{"weeks":{"old":[]}}'])test(`schedule mirror quota waits for exact durable confirmation (old mirror: ${!!oldMirror})`,async()=>{
+  const {c,local,commits,durable}=harness(),key='process_coach_v1',doc={weeks:{current:[]}},raw=JSON.stringify(doc);
+  if(oldMirror!==null)local.set(key,oldMirror);
+  const set=c.localStorage.setItem;
+  c.localStorage.setItem=(k,v)=>{if(k===key)throw Object.assign(new Error('quota'),{name:'QuotaExceededError'});set(k,v);};
+  assert.equal(c.testStore.set(key,doc),true,'accepted pending IDB confirmation');
+  assert.equal(c.PSSaveState.get('team'),'saving');
+  let done=false;const ready=c.psFlushPendingReady().then(()=>done=true);
+  await drain();assert.equal(done,false);assert.equal(commits.length,1);
+  commits[0].resolve(true);await ready;
+  assert.equal(durable.get(key),raw);assert.equal(local.get(key)??null,oldMirror,'stale mirror is not overwritten or deleted');
+  assert.equal(c.PSSaveState.get('team'),'saved');assert.equal(c.psHasPending(),false);
+});
+
+test('schedule mirror quota plus IDB failure remains blocked; exact read recovery never replays bytes',async()=>{
+  const {c,local,commits,durable}=harness(),key='process_coach_v1',doc={weeks:{new:[]}},raw=JSON.stringify(doc);
+  c.localStorage.setItem=(k,v)=>{if(k===key)throw Object.assign(new Error('quota'),{name:'QuotaExceededError'});local.set(k,String(v));};
+  c.testStore.set(key,doc);const initial=assert.rejects(c.testStore.ready());
+  await drain();commits[0].reject(new Error('disk unavailable'));await initial;
+  assert.equal(c.PSSaveState.get('team'),'failed');assert.equal(c.psHasPending(),true);
+  await assert.rejects(c.psFlushPendingReady());assert.equal(commits.length,1,'failed confirmation does not retry an old write');
+  durable.set(key,'{"weeks":{"other":[]}}');await assert.rejects(c.psFlushPendingReady());
+  assert.equal(commits.length,1);assert.equal(durable.get(key),'{"weeks":{"other":[]}}');
+  durable.set(key,raw);await c.psFlushPendingReady();
+  assert.equal(c.PSSaveState.get('team'),'saved');assert.equal(commits.length,1,'exact read confirms without another write');
+});
+
+for(const change of ['owner','mirror','idb'])test(`schedule quota confirmation cannot acknowledge a changed ${change}`,async()=>{
+  const {c,local,commits,durable}=harness(),key='process_coach_v1',doc={weeks:{new:[]}};
+  c.localStorage.setItem=(k,v)=>{if(k===key)throw Object.assign(new Error('quota'),{name:'QuotaExceededError'});local.set(k,String(v));};
+  c.testStore.set(key,doc);const initial=assert.rejects(c.testStore.ready());
+  await drain();
+  if(change==='owner')local.set('ps_active_ws','team-b');
+  if(change==='mirror')local.set(key,'{"weeks":{"newer":[]}}');
+  if(change==='idb'){const get=c.idbGet;c.idbGet=k=>get(k).then(v=>k===key?'different committed schedule':v);}
+  commits[0].resolve(true);await initial;
+  if(change==='mirror')assert.equal(local.get(key),'{"weeks":{"newer":[]}}');
+});
+
+test('a non-schedule mirror failure stays blocking even when its IDB write succeeds',async()=>{
+  const {c,local,commits}=harness(),key='cs_team_matches_v1';
+  c.localStorage.setItem=(k,v)=>{if(k===key)throw Object.assign(new Error('quota'),{name:'QuotaExceededError'});local.set(k,String(v));};
+  assert.equal(c.testStore.set(key,{matches:[]}),false);
+  const initial=assert.rejects(c.testStore.ready());await drain();commits[0].resolve(true);await initial;
+  await assert.rejects(c.psFlushPendingReady());assert.equal(c.PSSaveState.get('team'),'failed');
 });

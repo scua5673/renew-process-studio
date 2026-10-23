@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {startFixture,openApp,SHOTS,WT,A} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,SHOTS,WT,WP,A} from '../fixtures/team-app.mjs';
 // 3.131 — 아이패드 «팀 경기 자료를 불러오는 중입니다»에서 멈춤(10/21, 풋볼A 운영자 아이패드).
 // 그 기기는 일정 화면 사본(localStorage 거울 process_coach_v1)을 쓰면 늘 QuotaExceededError — 10/15 부터 58번 schedule_mirror_quota.
 // 동기화는 «일정을 받은 회차에는 경기를 미룬다»(1.659)인데, 일정 회차가 거울 때문에 매번 실패 · 메타를 되돌려
@@ -91,6 +91,27 @@ try{
   const schedWrites=fx.writes.filter(w=>w.k==='process_coach_v1'&&w.v!=null);
   for(const w of schedWrites){assert.match(String(w.v),/가상 훈련 목/,'올린 일정에 서버 내용이 있다');}
   assert.equal(sched0.length>0,true);
+  // A verified schedule must release this frame's write barrier even when its
+  // optional localStorage mirror is full. Actual IDB failures remain blocking.
+  await sf.evaluate(()=>psFlushPendingReady());
+  assert.equal(await sf.evaluate(()=>psHasPending()),false);
+  for(const wid of [WP,WT]){
+    // A newly loaded shell can still be finishing bootstrap under the same
+    // origin transition lock. Wait for that existing operation, without bypassing it.
+    let lockBusy=true;
+    for(let n=0;n<100;n++){
+      lockBusy=await page.evaluate(async()=>{const q=await navigator.locks.query();return q.held.some(x=>x.name==='process-studio-workspace-transition-v1');});
+      if(!lockBusy)break;
+      await page.waitForTimeout(100);
+    }
+    assert.equal(lockBusy,false,'bootstrap transition lock must finish before the next user switch');
+    await page.evaluate(id=>{window.__qaQuotaSwitching=true;PSSync.switchWorkspace(id).then(r=>window.__qaQuotaSwitch=r);},wid);
+    await page.waitForFunction(id=>!window.__qaQuotaSwitching&&window.PSSync&&PSSync.activeWs()===id&&PSSync.dataUnlocked(),wid,{timeout:45000}).catch(async error=>{
+      console.error(JSON.stringify({engine,wid,state:await page.evaluate(()=>({active:PSSync.activeWs(),state:PSSync.state(),pending:PSSync.pending(),result:window.__qaQuotaSwitch,last:localStorage.getItem('ps_last_switch_err')})),logs:logs.slice(-8)}));throw error;
+    });
+  }
+  assert.match(schedRow().v,/가상 새 일정 v2/,'team round trip preserves the latest original schedule');
+  assert.match(fx.db.get(WT+'|cs_team_matches_v1').v,/mt_qa_server/,'team round trip preserves the original match');
   const bad=logs.filter(l=>l.type==='pageerror');
   assert.equal(bad.length,0,JSON.stringify(bad).slice(0,600));
   console.log('match-wait-schedule-quota OK',engine,size,JSON.stringify({view1,st1:{state:st1.state.kind,pending:st1.pending},st2:{state:st2.state.kind},schedWrites:schedWrites.length}));
