@@ -1240,6 +1240,10 @@
     var uid=''; try{ var ss=JSON.parse(localStorage.getItem('ps_sync_session')||'null'); uid=(ss&&ss.uid)||''; }catch(_){}
     return !!uid && k!=='cs_idp_v1_'+uid;
   }
+  // Most large schedules contain SVG previews, not photos to migrate. Avoid
+  // constructing those entire documents in every iframe at boot. JSON Unicode
+  // escapes can hide the prefix, so keep the full parser for that case.
+  function mayHaveImage(raw){return typeof raw==='string'&&(raw.indexOf('data:image')>=0||raw.indexOf('\\u')>=0);}
   function stripIdp(k){
     if(!isForeignIdpKey(k)) return Promise.resolve(false);
     var before=null,uid='',wid='',seal='';
@@ -1248,6 +1252,7 @@
       wid=String(localStorage.getItem('ps_active_ws')||'');seal=String(localStorage.getItem('ps_cache_owner_v1')||'');
       var owner=JSON.parse(seal||'null');if(!owner||owner.uid!==uid||owner.wid!==wid)return Promise.resolve(false);
     }catch(_){return Promise.resolve(false);}
+    if(!mayHaveImage(before))return Promise.resolve(false);
     var doc=null;try{doc=JSON.parse(before);}catch(_){return Promise.resolve(false);}
     if(!doc||doc.v!==1||typeof doc!=='object'||Array.isArray(doc))return Promise.resolve(false);
     var pf=doc.profile;if(!pf||!isData(pf.photo))return Promise.resolve(false);
@@ -1278,7 +1283,7 @@
     return ready().then(function(){
       if(imageMigrationOwner()!==owner)return {moved:0,failed:0};
       var jobs=[],sources={};
-      function root(k){try{var raw=localStorage.getItem(k);sources[k]=raw;return raw?JSON.parse(raw):null;}catch(_){return null;}}
+      function root(k){try{var raw=localStorage.getItem(k);sources[k]=raw;return mayHaveImage(raw)?JSON.parse(raw):null;}catch(_){return null;}}
       function current(k){try{return imageMigrationOwner()===owner&&localStorage.getItem(k)===sources[k];}catch(_){return false;}}
       var sc=root('scout_tool_v1');
       if(sc&&Array.isArray(sc.players)){

@@ -334,9 +334,7 @@ function wsSwitchNotice(){
 try{ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(wsSwitchNotice,900); });
      else setTimeout(wsSwitchNotice,900); }catch(_){}
 var MAXLEN=1500000, SCHEDULE_MAXLEN=3500000;
-/* 키 하나 최대 크기(문자). 일반 자료의 1.5M 방어선은 유지한다.
-   일정은 8주치 훈련·드릴을 한 문서에 담아 정상 사용만으로 약 1.5M자를 넘을 수 있으므로
-   1.651부터 일정 한 키만 3.5M까지 허용한다. PostgREST에는 큰 행 하나만 별도 chunk로 전송된다. */
+/* 전송 문서 한도(문자). 그림 분리 후보는 sync-size가 검사하며 실제 전송본에도 이 한도를 적용한다. */
 function syncMaxLen(k){return k==='process_coach_v1'?SCHEDULE_MAXLEN:MAXLEN;}
 /* 동기화 대상 = 사용자 콘텐츠. 기기별 선호(토큰 크기·힌트·라이브 작업본)는 제외.
    보관함(cs_drill_lib_v1)은 여기 없음 — ps_library 테이블에 항목 단위로 동기화(아래 syncLibrary) */
@@ -3435,7 +3433,7 @@ function kvPushRows(at,rows,onOk,label,preflight){
   function ready(stage){if(typeof preflight!=='function'||preflight())return true;throw syncIssue('sync_workspace_changed',stage||label||'kv_push','동기화 중 작업 공간이 바뀌었습니다');}
   ready((label||'kv_push')+'_prepare');
   /* 2.622 — 일정 행의 그림을 ps_blob 으로 먼저 보내고 행에는 참조만 남긴다(실패·미설치면 통째 전송으로 물러선다) */
-  return blobPrepRows(at,rows).then(function(){ready((label||'kv_push')+'_prepared');return kvPushRowsInner(at,rows,onOk,label,preflight); });
+  return blobPrepRows(at,rows).then(function(){if(typeof PSKvSize!=='undefined')PSKvSize.check(rows,BLOB_KEYS,syncMaxLen);ready((label||'kv_push')+'_prepared');return kvPushRowsInner(at,rows,onOk,label,preflight); });
 }
 function kvPushRowsInner(at,rows,onOk,label,preflight){
   label=label||'kv_push';
@@ -7015,7 +7013,7 @@ function syncNowCore(reason){
             if(!importApprovalPut(k,send,scheduleImportRec.s||{})){scheduleDeferred=true;syncDiagnostic('schedule-import-token',new Error('일정 가져오기 승인 갱신 실패'));return null;}
             scheduleImportMoved=true;
           }
-          if(send!==expectedLoc){
+          if(send!==expectedLoc||scheduleMirrorLeft===null&&localStorage.getItem(k)===null){
             if(!roundKvWrite(k,send,writes,expectedLoc,scheduleGuard)){
               if(scheduleImportMoved)importApprovalPut(k,raw,scheduleImportRec.s||{});
               scheduleDeferred=true;return null;
@@ -7171,7 +7169,7 @@ function syncNowCore(reason){
           blockMatchReady('match-full-missing',new Error('경기 서버 원문을 확인하지 못했습니다'));
           return;
         }
-        if(loc!=null&&loc.length>syncMaxLen(k)){
+        if(loc!=null&&!(typeof PSKvSize!=='undefined'?PSKvSize.fits(loc,syncMaxLen(k),BLOB_KEYS[k]&&!blobOff):loc.length<=syncMaxLen(k))){
           skippedBig++; skippedKeys.push(k);
           if(k===MATCH_KEY)blockMatchReady();
           if(k===SCHEDULE_KEY)scheduleDependencyBlocked=true;
@@ -7829,7 +7827,7 @@ function syncNowCore(reason){
       function schedulePushCurrent(){
         if(schedulePushExpected==null)return true;
         var cur=null;try{cur=localStorage.getItem(SCHEDULE_KEY);}catch(_){}
-        if(cur===null&&scheduleMirrorLeft!==null)cur=schedulePushExpected;   /* 3.131 거울 없음 */
+        if(cur===null&&(scheduleMirrorLeft!==null||scheduleMirrorFull&&scheduleMirrorQuota()&&scheduleMirrorStale&&scheduleMirrorStale.v===schedulePushExpected))cur=schedulePushExpected;
         return !scheduleGuard.stale&&!scheduleHeld()&&cur===schedulePushExpected;
       }
       function commitScheduleReady(){
@@ -7890,8 +7888,7 @@ function syncNowCore(reason){
           var e=new Error('경기 서버 확인 원문·IDB·거울 확인이 끝나지 않았습니다');e.psCode='match_not_ready';throw e;
         });
       }
-      /* 로컬 IDB 쓰기와 CAS 검사를 서버 push보다 먼저 끝낸다. 사용자가 회차 중
-         다시 저장했다면 일정 행만 이 회차에서 빼고 다음 회차에 최신본을 읽는다. */
+      /* IDB/CAS 확인 뒤에만 전송한다. 새 입력이면 다음 회차로 미룬다. */
       return Promise.all(writes).then(function(){
         if(!scoutPushCurrent())deferScout('scout-local-changed');
         if(matchWriteGuards.some(function(g){return !!(g&&g.stale);}))
