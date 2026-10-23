@@ -8658,7 +8658,7 @@ function switchWorkspaceCore(wid, skipSave){
     staleStop();
     if(workspaceSwitchGuardRead())throw externalMarkerError();
     if(retry)return stopPreswitch('전환 취소 — 기기에 전환 정보를 저장하지 못했습니다. 저장 공간을 확보한 뒤 다시 시도해 주세요','preswitch storage');
-    return Promise.resolve().then(function(){staleStop();if(workspaceSwitchGuardRead())throw externalMarkerError();return window.PSStorage&&PSStorage.optimize();}).catch(function(){}).then(workspaceSwitchWriteBarrier).then(function(gate){return beginSwitchGuard(true,gate);});
+    return Promise.resolve().then(function(){staleStop();if(workspaceSwitchGuardRead())throw externalMarkerError();return window.PSStorage&&PSStorage.optimize();}).catch(function(){}).then(function(){staleStop();if(workspaceSwitchGuardRead())throw externalMarkerError();return workspaceSwitchWriteBarrier();}).then(function(gate){return beginSwitchGuard(true,gate);});
   }
   showSwitchOverlay(target?target.name:'');   /* 과도기 화면 가림 */
   /* 20초엔 안내만, 60초엔 지우기 전 체인을 취소한다. 지우기 시작 뒤에는 각 단계 상한과 롤백으로 끝낸다. */
@@ -8755,12 +8755,9 @@ function switchWorkspaceCore(wid, skipSave){
       try{var failDiag=new Error('preswitch result');failDiag.psCode=String((r&&r.code)||((r&&r.skip)?'skip':'preswitch_failed'));syncDiagnostic('workspace-preswitch-result',failDiag);}catch(_){}
       return stopPreswitch(failMsg,'preswitch failed '+String(r&&r.code||''));
     }
-    /* 2.718 — 실제 제보(9/8 심재휘 감독 영상): «전환 취소 — 보관함 저장 확인이 끝나지 않았습니다 — 아직 시도 전».
-       보관함 대기(@library)의 확인값은 cs_lib_rev(작전판이 저장마다 찍는 시각)라, 회차의 보관함 단계가 시작된 **뒤**에
-       작전판이 한 번 더 찍으면(복구 항목 반영 8333·작성자 채우기 8432·공유 표시 등) 확인이 어긋나 대기가 남는다.
-       올릴 게 없어도, 서버에 닿았어도 «아직 시도 전»이다. 보관함(IDB)은 전환 전 백업(stash, localStorage 만)에 담기지 않아
-       «그래도 전환» 출구를 열 수 없다 → 그 경우엔 한 회차를 더 돌려 다시 센다(한 번만). 그래도 남으면 예전처럼 멈춘다. */
-    var _libRetried=false;
+    /* 2.718 / 3.149: a late library revision or match mirror event can queue
+       fresh work after the round's ack. Confirm it once more before stopping. */
+    var _freshRetried=false;
     function pendingGate(){
     return (skipSave?Promise.resolve([]):withTimeout(workspaceBlockingPendingKeys(from),8000)).then(function(blockingKeys){
       staleStop();
@@ -8800,12 +8797,17 @@ function switchWorkspaceCore(wid, skipSave){
           if(mine.length&&mine.every(outboxUnreachableOnly)){
             var c0=mine[0]; return stopPreswitchUnreachable(pendingLabels,String(c0.lastError||c0.roundError||''));
           }
-          /* 2.718 — 보관함만, 시도조차 안 된 채 남았으면 한 회차 더(위 주석) */
-          var libOnlyFresh=mine.length&&mine.every(function(it){ return it.key==='@library'&&!(+it.attempts)&&!it.roundError; });
-          if(libOnlyFresh&&!_libRetried&&!skipSave){
-            _libRetried=true; setStatus('보관함을 한 번 더 확인하는 중…');
-            try{var lrd=new Error('library recheck');lrd.psCode='@library';syncDiagnostic('workspace-preswitch-library-retry',lrd);}catch(_){}
-            return withTimeout(forceSync('preswitch-library'),15000).then(function(){ return pendingGate(); });
+          /* Only untouched library/match entries may request one extra confirmation. */
+          var onlyFresh=mine.length&&mine.every(function(it){ return (it.key==='@library'||it.key===MATCH_KEY)&&!(+it.attempts)&&!it.roundError&&!it.lastError; });
+          if(onlyFresh&&!_freshRetried&&!skipSave){
+            _freshRetried=true; setStatus(pendingLabels.join('·')+' 저장을 한 번 더 확인하는 중…');
+            try{var lrd=new Error('library recheck');lrd.psCode=blockingKeys.join(',');syncDiagnostic('workspace-preswitch-library-retry',lrd);}catch(_){}
+            return withTimeout(forceSync('preswitch-pending'),15000).then(function(next){
+              staleStop();
+              if(!next||next.__timeout||next.error||next.skip||next.offline||next.noauth||next.nows||next.itemPending||next.scheduleDeferred||(next.held&&next.held.length)||(next.skipped||[]).some(function(k){return !PERSONAL[k];}))
+                return stopPreswitch('전환 취소 — 추가 저장 확인을 마치지 못했습니다','preswitch retry failed '+String(next&&next.code||''));
+              return pendingGate();
+            });
           }
           return stopPreswitch('전환 취소 — '+pendingLabels.join('·')+' 저장 확인이 끝나지 않았습니다'+(extra?' — '+extra:''),'preswitch pending');
         });
