@@ -96,6 +96,15 @@ try{
   await sf.evaluate(()=>psFlushPendingReady());
   assert.equal(await sf.evaluate(()=>psHasPending()),false);
   for(const wid of [WP,WT]){
+    // A newly loaded shell can still be finishing bootstrap under the same
+    // origin transition lock. Wait for that existing operation, without bypassing it.
+    let lockBusy=true;
+    for(let n=0;n<100;n++){
+      lockBusy=await page.evaluate(async()=>{const q=await navigator.locks.query();return q.held.some(x=>x.name==='process-studio-workspace-transition-v1');});
+      if(!lockBusy)break;
+      await page.waitForTimeout(100);
+    }
+    assert.equal(lockBusy,false,'bootstrap transition lock must finish before the next user switch');
     await page.evaluate(id=>{window.__qaQuotaSwitching=true;PSSync.switchWorkspace(id).then(r=>window.__qaQuotaSwitch=r);},wid);
     await page.waitForFunction(id=>!window.__qaQuotaSwitching&&window.PSSync&&PSSync.activeWs()===id&&PSSync.dataUnlocked(),wid,{timeout:45000}).catch(async error=>{
       console.error(JSON.stringify({engine,wid,state:await page.evaluate(()=>({active:PSSync.activeWs(),state:PSSync.state(),pending:PSSync.pending(),result:window.__qaQuotaSwitch,last:localStorage.getItem('ps_last_switch_err')})),logs:logs.slice(-8)}));throw error;
