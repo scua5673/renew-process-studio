@@ -127,7 +127,7 @@ for(const origin of ['profile','team row','player list'])test(origin+' roster de
 });
 test('candidate list deletion still saves the changed candidate document and requests no roster deletion',async()=>{
   const h=fixture([p('a')]),candidate={...p('private'),type:'target'},calls=[],write=h.c.PSItems.writeReady;
-  h.c.data.players.push(candidate);h.c.canSeeTargets=()=>true;h.local.set(h.c.TKEY,raw({v:1,players:[candidate]}));h.c.PSItems.writeReady=(players,options)=>{calls.push(copy(options));return write(players,options);};
+  h.c.data.players.push(candidate);h.c.canSeeTargets=()=>true;h.c.scClient={state:{doc:{players:[candidate]}}};h.local.set(h.c.TKEY,raw({v:1,players:[candidate]}));h.c.PSItems.writeReady=(players,options)=>{calls.push(copy(options));return write(players,options);};
   deletionButton(h,'player list','private')();await h.c.itemsWriteFlush();
   assert.equal(h.saves.filter(x=>x.k===h.c.TKEY).length,1);assert.deepEqual(JSON.parse(h.local.get(h.c.TKEY)).players,[]);assert.deepEqual(calls,[],'candidate-only edits do not enqueue unchanged roster rows');assert.equal(JSON.parse(h.idb.get('sq:a'))._del,undefined);
 });

@@ -115,7 +115,7 @@ function mountScout(h){
   const writes=[],timers=[];let generated=0;
   h.local.set('ps_sync_session','{"uid":"coach-a"}');
   Object.assign(h.c,{
-    KEY,TKEY:'cs_scout_targets_v1',data:{attrs:[],positions:[],players:[],meta:{}},scoutBootPending:true,scMainMigrationPending:false,
+    KEY,TKEY:'cs_scout_targets_v1',data:{attrs:[],positions:[],players:[],meta:{}},scoutBootPending:true,scMainMigrationPending:false,scClient:null,
     itemsWriteBusy:()=>false,itemsHoldList:()=>({ids:[]}),psSync:()=>h.c,PDKEY:'cs_player_del_v1',
     teamSaves:{track(k,p){Promise.resolve(p).catch(()=>{});}},PSItems:{active:()=>false},PSRosterOutbox:require('../studio/roster-outbox.js'),
     scoutStore:{get(k){const value=h.local.get(k);return value==null?null:JSON.parse(value);},set(k,value){const valueRaw=raw(value);writes.push({k,value:valueRaw});h.local.set(k,valueRaw);h.idb.set(k,valueRaw);return true;}},
@@ -184,7 +184,10 @@ test('initial evaluation normalization never writes candidates before their sepa
   assert.equal(h.local.has(h.c.TKEY),false);
   assert.equal(candidateAttempts,0,'normalization never attempts a candidate save');
   assert.deepEqual(JSON.parse(h.local.get(KEY)).players,legacy.players);
-  // Explicit candidate saves still take the guarded candidate write path.
+  assert.equal(h.c.save(),true,'an ordinary roster save also leaves unread candidates alone');
+  assert.equal(candidateAttempts,0);
+  // An actual candidate change still takes the guarded candidate write path.
+  h.c.data.players.push({id:'candidate',type:'target',name:'Synthetic candidate'});
   assert.throws(()=>h.c.save(),/unprepared candidate document/);
 });
 
