@@ -250,3 +250,16 @@ for(const result of [{held:['match']},{skipped:['match']},{scheduleDeferred:1},{
  const h=harness(),p=freshPending(h);h.hooks.sync=async()=>{if(p.round()===1)return {};p.setPending(false);return result;};
  const r=await h.run();assert.match(r.reason,/preswitch retry failed/);assert.deepEqual(h.calls.deleted,[]);assert.equal(h.calls.reloads,0);
 });
+
+for(const phase of ['last-barrier','key-list','board-flush'])test('new unconfirmed write at '+phase+' keeps the source workspace intact',async()=>{
+ const h=harness();let late=false,barriers=0;
+ function edit(){late=true;h.local.set('roster','new unsent roster');h.idb.set('roster','new unsent roster');}
+ h.c.workspaceBlockingPendingKeys=async()=>late?['roster']:[];
+ h.hooks.barrier=async()=>{if(++barriers===2&&phase==='last-barrier')edit();return {ready:1};};
+ h.c.idbSwitchKeys=async()=>{if(phase==='key-list')edit();return ['roster'];};
+ h.c.window.__psFlushBoardLive=async()=>{if(phase==='board-flush')edit();return null;};
+ const r=await h.run();
+ assert.equal(r?.cancelled,1,'a local flush is not a server acknowledgement');
+ assert.equal(h.local.get('active'),'team-A');assert.equal(h.local.get('roster'),'new unsent roster');
+ assert.equal(h.idb.get('roster'),'new unsent roster');assert.deepEqual(h.calls.deleted,[]);assert.equal(h.calls.frames,0);
+});
