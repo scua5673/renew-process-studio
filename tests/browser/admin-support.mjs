@@ -58,6 +58,7 @@ try{
         if(!reports.has(args.p_id)){reports.set(args.p_id,{id:args.p_id,title:args.p_title,body:args.p_body,diagnostics:args.p_diagnostics,created_at:'2026-09-15T03:00:00Z',updated_at:'2026-09-15T03:00:00Z',status:'open'});replies.set(args.p_id,[]);}
         return send({id:args.p_id});
       }
+      if(name==='ps_support_get_with_image')return send({code:'PGRST202',message:'fixture has the original support API'},404);
       if(name==='ps_support_get'){
         const value={report:{...reports.get(args.p_report_id),is_own:!admin},replies:(replies.get(args.p_report_id)||[]).map(r=>({...r,is_own:admin?r.author_role==='admin':r.author_role!=='admin'}))};
         const gate=admin&&delayed;if(gate){delayed=null;gate.started.resolve();await gate.release.promise;}

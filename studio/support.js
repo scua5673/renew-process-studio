@@ -43,6 +43,7 @@
           if(response.status===401||response.status===403)throw issue('support_auth');
           if(response.status===404)throw issue('support_missing');
           if(response.status===409)throw issue('support_conflict');
+          if(response.status===429&&name==='ps_support_create_image'&&e.code==='PT429')throw issue('support_image_limit');
           if(response.status===400||response.status===422)throw issue('support_invalid');
           throw issue('support_failed');
         });
@@ -55,8 +56,9 @@
     return {
       invalidate:invalidate,
       list:function(before){return request('ps_support_list',{p_limit:20,p_before:before||null});},
-      get:function(id){if(!UUID.test(id||''))return Promise.reject(issue('support_invalid'));return request('ps_support_get',{p_report_id:id});},
-      create:function(attempt){return request('ps_support_create',attempt);},
+      get:function(id){if(!UUID.test(id||''))return Promise.reject(issue('support_invalid'));var body={p_report_id:id};return request(w.PSSupportImage?'ps_support_get_with_image':'ps_support_get',body).catch(function(e){if(w.PSSupportImage&&e.code==='support_unavailable')return request('ps_support_get',body);throw e;});},
+      image:function(id){if(!UUID.test(id||''))return Promise.reject(issue('support_invalid'));return request('ps_support_image_get',{p_report_id:id});},
+      create:function(attempt,image){return request(image?'ps_support_create_image':'ps_support_create',image?Object.assign({},attempt,{p_image:image.data}):attempt).catch(function(e){if(image&&e.code==='support_unavailable')throw issue('support_image_unavailable');throw e;});},
       reply:function(attempt){return request('ps_support_reply',attempt);}
     };
   }
@@ -74,6 +76,8 @@
     support_missing:'이 제보를 열 수 없습니다. 목록을 다시 확인해 주세요.',
     support_conflict:'등록 결과가 기존 내용과 다릅니다. 목록에서 접수 여부를 먼저 확인해 주세요.',
     support_invalid:'접수할 내용을 확인하지 못했습니다. 내용을 확인하고 다시 시도해 주세요.',
+    support_image_unavailable:'이미지 첨부를 아직 사용할 수 없습니다. 글과 이미지는 유지됩니다. 이미지를 삭제하면 글만 접수할 수 있습니다.',
+    support_image_limit:'이미지 첨부 제보는 하루 20건까지 보낼 수 있습니다. 작성한 내용은 유지됩니다. 잠시 뒤 다시 시도해 주세요.',
     support_network:'접수 결과를 확인하지 못했습니다. 다시 시도하면 같은 요청으로 확인합니다.',
     support_owner_changed:'계정 또는 팀이 바뀌었습니다. 오류 제보를 다시 열어 주세요.'
   }[e&&e.code]||'요청을 완료하지 못했습니다. 작성한 내용은 유지됩니다. 다시 시도해 주세요.';}
@@ -84,18 +88,55 @@
     dialog.id='psSupportDialog';dialog.setAttribute('aria-labelledby','psSupportTitle');d.body.appendChild(dialog);
     var active=false,screen='compose',rows=[],cursor=null,isAdmin=false,detail=null,busy=false,loading=false,notice='',error='',turn=0;
     var draft={title:'',body:'',attempt:null},snapshot=null,replyDraft='',replyAttempt=null,replyId='',replyMemory={},replyDurable=true,context=readContext(w),bodyAlreadyLocked=false,returnFocus=null,draftDurable=true;
+    var images=w.PSSupportImage,imageStore=images?images.createStore(w):null,image=null,imageUid='',imageBusy=false,imageLoading=false,imageDurable=true,imageTurn=0;
+    function restoreImage(){
+      var ticket=++imageTurn,uid=context.uid,id=draft.imageId,fence=context.fence;imageBusy=false;imageLoading=false;
+      if(image&&imageUid===uid&&image.id===id)return;
+      image=null;imageUid=uid;imageDurable=true;if(!id)return;
+      if(!imageStore){imageDurable=false;return;}imageLoading=true;
+      imageStore.get(uid).then(function(saved){if(ticket!==imageTurn||context.fence!==fence)return;if(!images.valid(saved)||saved.id!==id||saved.hash!==draft.imageHash)throw issue('image_missing');image=saved;}).catch(function(){if(ticket===imageTurn&&context.fence===fence){imageDurable=false;error=images.message(issue('image_missing'));}}).finally(function(){if(ticket===imageTurn&&context.fence===fence){imageLoading=false;render();}});
+    }
+    function imageHtml(){
+      if(!images)return '';
+      var locked=busy||imageBusy||imageLoading||!context.ready,has=!!draft.imageId;
+      return '<section class="support-image-compose" aria-label="이미지 첨부"><div><strong>이미지 첨부 <small>선택 · 1장</small></strong><button type="button" data-support="image-pick"'+(locked||(draft.attempt&&image)?' disabled':'')+'>'+(imageBusy?'이미지 준비 중…':imageLoading?'이미지 확인 중…':has?'이미지 다시 선택':'이미지 선택')+'</button><input type="file" name="supportImage" accept="image/png,image/jpeg,image/webp" hidden></div>'
+        +(image&&images.valid(image)?'<div class="support-image-preview"><img alt="첨부할 이미지 미리보기" src="data:image/jpeg;base64,'+image.data+'"><button type="button" data-support="image-remove"'+(locked||draft.attempt?' disabled':'')+' aria-label="첨부 이미지 삭제">삭제</button></div>':'')
+        +'<p>PNG·JPG·WebP, 10MB 이하. 이미지는 작게 줄여 제보자와 운영자에게만 전달합니다.</p>'+(!imageDurable&&has?'<p role="alert">'+esc(images.message(issue(image?'image_storage':'image_missing')))+'</p>':'')+'</section>';
+    }
+    function chooseImage(file){
+      if(resetContext()||busy||imageBusy||imageLoading||!context.ready||!file||!images)return;
+      if(draft.attempt&&image)return;
+      var ticket=++imageTurn,uid=context.uid,fence=context.fence;imageBusy=true;error='';render();
+      images.prepare(file,w).then(function(prepared){
+        if(ticket!==imageTurn||context.fence!==fence)return;
+        if(draft.attempt&&prepared.hash!==draft.imageHash)throw issue('image_missing');
+        prepared.id=draft.attempt?draft.imageId:uuid();image=prepared;imageUid=uid;draft.imageId=prepared.id;draft.imageHash=prepared.hash;imageDurable=false;persistDraft();
+        return imageStore.put(uid,prepared).then(function(){if(ticket===imageTurn&&context.fence===fence)imageDurable=true;},function(){if(ticket===imageTurn&&context.fence===fence)error=images.message(issue('image_storage'));});
+      }).catch(function(e){if(ticket===imageTurn&&context.fence===fence)error=images.message(e);}).finally(function(){if(ticket===imageTurn&&context.fence===fence){imageBusy=false;render();}});
+    }
+    function removeImage(){
+      if(busy||imageBusy||imageLoading||draft.attempt)return;
+      var id=draft.imageId;draft.imageId='';draft.imageHash='';image=null;imageDurable=true;imageTurn++;persistDraft();
+      if(imageStore&&id&&draftDurable)imageStore.remove(context.uid,id).catch(function(){});error='';render();
+    }
+    function clearSubmittedDraft(){
+      var id=draft.imageId,uid=context.uid;draft={title:'',body:'',attempt:null};persistDraft();image=null;imageDurable=true;imageTurn++;
+      if(imageStore&&id&&draftDurable)imageStore.remove(uid,id).catch(function(){});
+    }
     function draftKey(){return context.ready&&context.uid?'ps_support_draft_v1:'+context.uid:null;}
     function restoreDraft(preserveMemory){
       if(preserveMemory&&(!draftKey()||!draftDurable))return;
       draft={title:'',body:'',attempt:null};
-      try{var key=draftKey(),raw=key&&w.localStorage.getItem(key),v=raw&&JSON.parse(raw);if(!v)return;
+      try{var key=draftKey(),raw=key&&w.localStorage.getItem(key),v=raw&&JSON.parse(raw);if(!v){restoreImage();return;}
+        if(UUID.test(v.imageId||'')&&/^[a-f0-9]{64}$/.test(v.imageHash||'')){draft.imageId=v.imageId;draft.imageHash=v.imageHash;}
         if(typeof v.title==='string'&&v.title.length<=120&&typeof v.body==='string'&&v.body.length<=8000){draft.title=v.title;draft.body=v.body;}
         if(v.attempt&&UUID.test(v.attempt.p_id||'')&&v.attempt.p_title===draft.title&&v.attempt.p_body===draft.body)draft.attempt=v.attempt;
       }catch(_){draftDurable=false;}
+      restoreImage();
     }
     function persistDraft(){
       try{var key=draftKey();if(!key){draftDurable=false;return;}
-        if(!draft.title&&!draft.body&&!draft.attempt){w.localStorage.removeItem(key);draftDurable=w.localStorage.getItem(key)===null;return;}
+        if(!draft.title&&!draft.body&&!draft.attempt&&!draft.imageId){w.localStorage.removeItem(key);draftDurable=w.localStorage.getItem(key)===null;return;}
         var raw=JSON.stringify(draft);w.localStorage.setItem(key,raw);draftDurable=w.localStorage.getItem(key)===raw;
       }catch(_){draftDurable=false;}
     }
@@ -127,11 +168,11 @@
       if(screen==='compose'){
         h+='<form id="supportCompose"><label>제목<input name="title" maxlength="120" required value="'+esc(draft.title)+'" placeholder="어떤 문제가 생겼나요?"'+(busy||draft.attempt?' disabled':'')+'></label>'
           +'<label>오류 내용<textarea name="body" maxlength="8000" rows="6" required placeholder="어떤 화면에서 무엇을 눌렀는지, 예상한 결과와 실제 결과를 적어 주세요."'+(busy||draft.attempt?' disabled':'')+'>'+esc(draft.body)+'</textarea></label>'
-          +logsHtml(draft.attempt?draft.attempt.p_diagnostics:snapshot)
+          +imageHtml()+logsHtml(draft.attempt?draft.attempt.p_diagnostics:snapshot)
           +'<div class="support-log-actions"><span>오류 코드와 발생 위치를 포함합니다. 로그인 정보와 선수 자료는 포함하지 않습니다.</span><button type="button" data-support="capture"'+(busy||draft.attempt?' disabled':'')+'>현재 로그로 갱신</button></div>'
           +(!context.ready?'<p class="support-hint">로그인과 계정 확인이 끝나면 제보를 등록할 수 있습니다. 문제가 계속되면 먼저 전체 복사해 주세요.</p>':'')
           +(draft.attempt?'<p class="support-hint">접수 결과 확인 전에는 내용을 유지합니다. 다시 등록해도 같은 제보로 처리됩니다.</p>':'')
-          +statusHtml()+'<div class="support-actions"><button type="button" data-support="copy">제보·사용 환경·로그 전체 복사</button><button class="support-primary" type="submit"'+(busy||!context.ready?' disabled':'')+'>'+(busy?'접수 확인 중…':draft.attempt?'접수 다시 확인':'제보 등록')+'</button></div></form>';
+          +statusHtml()+'<div class="support-actions"><button type="button" data-support="copy">제보·사용 환경·로그 전체 복사</button><button class="support-primary" type="submit"'+(busy||imageBusy||imageLoading||!context.ready?' disabled':'')+'>'+(busy?'접수 확인 중…':draft.attempt?'접수 다시 확인':'제보 등록')+'</button></div></form>';
       }else if(screen==='list'){
         h+='<div class="support-list-head"><h3>'+(isAdmin?'접수된 제보':'내 제보와 답변')+'</h3><button type="button" data-support="refresh"'+(loading?' disabled':'')+'>새로고침</button></div>'+statusHtml();
         if(!context.ready)h+='<p class="support-empty">로그인하면 제보한 내용과 답변을 확인할 수 있습니다.</p>';
@@ -142,11 +183,12 @@
       }else{
         h+='<button type="button" class="support-back" data-support="list">‹ 목록으로</button>'+statusHtml();
         if(loading)h+='<p class="support-empty" role="status">제보와 답변을 불러오는 중…</p>';
-        else if(detail){var r=detail.report;h+='<article class="support-report"><h3>'+esc(r.title)+'</h3><small>'+esc(nowLabel(r.created_at))+'</small><p>'+esc(r.body)+'</p>'+logsHtml(r.diagnostics)+'<button type="button" data-support="copy">제보·답변·사용 환경·로그 전체 복사</button></article>'
+        else if(detail){var r=detail.report;h+='<article class="support-report"><h3>'+esc(r.title)+'</h3><small>'+esc(nowLabel(r.created_at))+'</small><p>'+esc(r.body)+'</p>'+(detail.image?'<div class="support-image-view" data-support-image-view></div>':'')+logsHtml(r.diagnostics)+'<button type="button" data-support="copy">제보·답변·사용 환경·로그 전체 복사</button></article>'
           +'<section class="support-replies" aria-label="답변"><h3>답변 '+detail.replies.length+'개</h3>'+detail.replies.map(function(a){return '<article><div><b>'+esc(a.author_role==='admin'?'운영자':a.is_own?'나':'제보자')+'</b><time>'+esc(nowLabel(a.created_at))+'</time></div><p>'+esc(a.body)+'</p></article>';}).join('')+(!detail.replies.length?'<p class="support-hint">아직 답변이 없습니다.</p>':'')+'</section>'
           +'<form id="supportReply"><label>답변 남기기<textarea name="reply" maxlength="4000" rows="3" required placeholder="답변이나 추가로 확인한 내용을 적어 주세요."'+(busy||replyAttempt?' disabled':'')+'>'+esc(replyDraft)+'</textarea></label><div class="support-actions"><button class="support-primary" type="submit"'+(busy||!context.ready?' disabled':'')+'>'+(busy?'저장 확인 중…':replyAttempt?'답변 저장 다시 확인':'답변 등록')+'</button></div></form>';}
       }
       dialog.innerHTML=h+'</div>';
+      if(images&&detail&&screen==='detail'&&detail.image){var imageReport=detail.report.id;images.viewer(w,dialog.querySelector('[data-support-image-view]'),function(){return client.image(imageReport);});}
     }
     function resetContext(){
       var n=readContext(w);if(n.fence===context.fence)return false;
@@ -154,7 +196,7 @@
       restoreDraft();snapshot=draft.attempt?draft.attempt.p_diagnostics:capture();render();return true;
     }
     function ownerEvent(e){
-      if(e&&e.type==='ps-auth-state'&&e.detail&&e.detail.unlocked===false){client.invalidate();turn++;context={uid:'',token:'',ready:false,fence:'locked'};draft={title:'',body:'',attempt:null};rows=[];detail=null;replyDraft='';replyAttempt=null;replyId='';replyMemory={};isAdmin=false;snapshot=null;busy=false;loading=false;screen='compose';error='';notice='';render();return;}
+      if(e&&e.type==='ps-auth-state'&&e.detail&&e.detail.unlocked===false){client.invalidate();turn++;context={uid:'',token:'',ready:false,fence:'locked'};imageTurn++;image=null;imageUid='';imageBusy=false;imageLoading=false;imageDurable=true;draft={title:'',body:'',attempt:null};rows=[];detail=null;replyDraft='';replyAttempt=null;replyId='';replyMemory={};isAdmin=false;snapshot=null;busy=false;loading=false;screen='compose';error='';notice='';render();return;}
       resetContext();
     }
     function list(more){
@@ -167,13 +209,14 @@
     }
     function openReport(id){
       if(resetContext())return;screen='detail';detail=null;restoreReply(id);notice='';error='';loading=true;var ticket=++turn;render();
-      client.get(id).then(function(result){if(ticket!==turn||!active)return;if(!result||!result.report||result.report.id!==id||!Array.isArray(result.replies))throw issue('support_failed');detail=result;}).catch(function(e){if(ticket===turn&&active)error=message(e);}).finally(function(){if(ticket===turn&&active){loading=false;render();}});
+      client.get(id).then(function(result){if(ticket!==turn||!active)return;if(!result||!result.report||result.report.id!==id||!Array.isArray(result.replies))throw issue('support_failed');detail=result;
+        if(draft.attempt&&draft.attempt.p_id===id&&draft.imageId&&result.image&&result.image.hash===draft.imageHash&&result.report.title===draft.title.trim()&&result.report.body===draft.body.trim())clearSubmittedDraft();}).catch(function(e){if(ticket===turn&&active)error=message(e);}).finally(function(){if(ticket===turn&&active){loading=false;render();}});
     }
     function submitReport(){
-      if(resetContext())return;if(busy||!context.ready)return;if(!draft.title.trim()||!draft.body.trim()){error='제목과 오류 내용을 입력해 주세요.';render();return;}
+      if(resetContext())return;if(busy||imageBusy||imageLoading||!context.ready)return;if(draft.imageId&&(!images||!images.valid(image)||image.id!==draft.imageId)){error=images?images.message(issue('image_missing')):'이미지를 다시 확인해 주세요.';render();if(draft.attempt)openReport(draft.attempt.p_id);return;}if(!draft.title.trim()||!draft.body.trim()){error='제목과 오류 내용을 입력해 주세요.';render();return;}
       try{if(!draft.attempt)draft.attempt={p_id:uuid(),p_title:draft.title,p_body:draft.body,p_diagnostics:snapshot||{}};}catch(e){error=message(e);render();return;}
       persistDraft();busy=true;error='';notice='';var ticket=++turn,attempt=draft.attempt;render();
-      client.create(attempt).then(function(result){if(ticket!==turn||!active)return;if(!result||result.id!==attempt.p_id)throw issue('support_failed');draft={title:'',body:'',attempt:null};persistDraft();busy=false;openReport(result.id);}).catch(function(e){if(ticket!==turn||!active)return;busy=false;if(['support_unavailable','support_auth','support_invalid'].indexOf(e.code)>=0){draft.attempt=null;persistDraft();}error=message(e);render();});
+      client.create(attempt,draft.imageId?image:null).then(function(result){if(ticket!==turn||!active)return;if(!result||result.id!==attempt.p_id||(draft.imageId&&(!result.image||result.image.hash!==draft.imageHash)))throw issue('support_failed');clearSubmittedDraft();busy=false;openReport(result.id);}).catch(function(e){if(ticket!==turn||!active)return;busy=false;if(['support_unavailable','support_auth','support_invalid','support_image_limit','support_image_unavailable'].indexOf(e.code)>=0){draft.attempt=null;persistDraft();}error=message(e);render();});
     }
     function submitReply(){
       if(resetContext())return;if(busy||!context.ready||!detail||!replyDraft.trim())return;
@@ -202,7 +245,7 @@
     function close(){
       resetContext();
       /* Keep an in-flight request visible; otherwise retain drafts without forcing a post. */
-      if(busy){notice='접수 결과를 확인하고 있습니다. 잠시만 기다려 주세요.';var s=dialog.querySelector('.support-status');if(s)s.textContent=notice;return;}
+      if(busy||imageBusy||imageLoading){notice='접수 결과를 확인하고 있습니다. 잠시만 기다려 주세요.';var s=dialog.querySelector('.support-status');if(s)s.textContent=notice;return;}
       persistReply();persistDraft();active=false;turn++;client.invalidate();dialog.close();dialog.innerHTML='';if(!bodyAlreadyLocked)d.body.classList.remove('ps-modal-open');if(returnFocus&&returnFocus.isConnected)returnFocus.focus();
     }
     dialog.addEventListener('cancel',function(e){e.preventDefault();close();});
@@ -211,6 +254,7 @@
       if(e.target.name==='title'||e.target.name==='body'){draft[e.target.name]=e.target.value;persistDraft();}
       if(e.target.name==='reply'){replyDraft=e.target.value;persistReply();}
     });
+    dialog.addEventListener('change',function(e){if(e.target.name==='supportImage'){var file=e.target.files&&e.target.files[0];chooseImage(file);}});
     dialog.addEventListener('submit',function(e){e.preventDefault();if(e.target.id==='supportCompose')submitReport();else if(e.target.id==='supportReply')submitReply();});
     dialog.addEventListener('click',function(e){
       if(resetContext())return;
@@ -219,7 +263,9 @@
       var a=b.dataset.support;
       if(a==='close'){close();return;}
       if(a==='copy'){copy();return;}
-      if(busy)return;
+      if(a==='image-pick'){var pick=dialog.querySelector('input[name=supportImage]');if(pick)pick.click();return;}
+      if(a==='image-remove'){removeImage();return;}
+      if(busy||imageBusy||imageLoading)return;
       if(a==='compose'||a==='list')persistReply();
       if(a==='compose'){turn++;screen='compose';error='';notice='';render();}
       if(a==='list'||a==='refresh')list(false);
@@ -229,7 +275,7 @@
     ['ps-auth-state','ps-sync-state','storage'].forEach(function(name){w.addEventListener(name,ownerEvent);});
     w.addEventListener('beforeunload',function(e){if(pendingUnsafe()){e.preventDefault();e.returnValue='';}});
     ['psSupportOpen','psSupportSettingsOpen'].forEach(function(id){var button=d.getElementById(id);if(button)button.addEventListener('click',open);});
-    function pendingUnsafe(){return busy||!!((draft.title||draft.body)&&!draftDurable)||!!((replyDraft||replyAttempt)&&!replyDurable)||Object.keys(replyMemory).some(function(id){var r=replyMemory[id];return r.durable===false&&!!(r.body||r.attempt);});}
+    function pendingUnsafe(){return busy||imageBusy||imageLoading||!!(draft.imageId&&!imageDurable)||!!((draft.title||draft.body||draft.imageId)&&!draftDurable)||!!((replyDraft||replyAttempt)&&!replyDurable)||Object.keys(replyMemory).some(function(id){var r=replyMemory[id];return r.durable===false&&!!(r.body||r.attempt);});}
     var controller={open:open,close:close,pendingUnsafe:pendingUnsafe,flushReady:function(){persistDraft();persistReply();return pendingUnsafe()?Promise.reject(issue('support_draft_unsaved')):Promise.resolve(true);}};w.__psSupportController=controller;return controller;
   }
   return {mount:mount,createClient:createClient,readContext:readContext,copyText:copyText,message:message};
