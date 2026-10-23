@@ -138,5 +138,5 @@ test('admin.html shows the needs count on the nav and home card', () => {
   assert.match(a, /onCounts:setSupportCounts/);
   assert.match(a, /function reloadAll\(\)\{\n  if\(curTab==='support'\)\{loadAdminSupport\(\);return;\}\n  if\(curTab==='comm'\)\{loadComm\(\);return;\}\n  refreshSupportBadge\(\);refreshCommBadge\(\);/);
   assert.match(a, /adminRpc\('ps_support_list',\{p_limit:1\}\)/);
-  assert.match(a, /studio\/admin-support\.js\?v=20261014/);
+  assert.match(a, /studio\/admin-support\.js\?v=[0-9.]+/);
 });

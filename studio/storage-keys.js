@@ -246,6 +246,7 @@
     ['ps_selpanel_rc_v1','device','ls','pref','board.html'],
     ['ps_shared_view_seen_v1','device','ls','seen','shared-view-observation.js'],
     ['ps_side_folded_v1','device','ls','pref','app.html'],
+    ['ps_support_image_v1:','device','idb','draft','support-image.js',{prefix:1}], // Separate ps-support-images database; never part of a team snapshot.
     ['ps_support_reply_v1:','device','ls','draft','support.js',{prefix:1}],
     ['ps_sync_403_v1','device','ls','queue','sync.js'],
     ['ps_sync_base_','device','idb','queue','storage.js',{prefix:1}],
