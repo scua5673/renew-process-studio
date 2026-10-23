@@ -627,9 +627,9 @@
       return idbReplaceIfValue(k,beforeRaw,slim,current,true).then(function(changed){if(changed){stat.n+=st.n;stat.saved+=(before-after);}});
     }).catch(function(){});
   }
-  function slimThumbs(){
+  function slimThumbs(current){
     var stat={n:0,saved:0};
-    return Promise.all(THUMB_KEYS.map(function(k){ return slimKey(k,stat).catch(function(){}); }))
+    return THUMB_KEYS.reduce(function(p,k){return p.then(function(){if(current)current();return slimKey(k,stat).catch(function(){});});},Promise.resolve())
       .then(function(){ return stat; });
   }
   function afterMigrate(fn){ return migrated.then(fn,fn); }
@@ -919,21 +919,29 @@
     spaceLabel:function(k){ return spaceLabel(k); },   /* 3.040 — [이름, 줄이는 길] · 앱 설정 › 기기 › 저장 공간 줄이 «큰 항목» 이름을 쓴다 */
     /* 실제 콘텐츠는 삭제하지 않는다. IndexedDB에 동일한 문자열이 저장됐다고
        다시 읽어 확인한 기기 전용 중복 사본만 localStorage에서 제거한다. */
+    optimizationCoordinator:1,
     optimize:function(){
-      var self=this,before=self.localBytes(),moved=[],kept=[],imgMoved=0;
-      var owner=migrationOwner();
+      // Quota banners, the startup timer and manual cleanup share one job per
+      // owner across this shell's frames. Each job still verifies exact copies.
+      try{var host=window.top&&window.top.PSStorage;if(window.top!==window&&host&&host.optimizationCoordinator===1)return host.optimize();}catch(_){}
+      var self=this,owner=migrationOwner(),prev=self._optimization;
+      if(prev&&prev.owner===owner)return prev.promise;
+      var job={owner:owner};self._optimization=job;
+      var run=(prev?prev.promise.catch(function(){}):Promise.resolve()).then(function(){
+      var before=self.localBytes(),moved=[],kept=[],imgMoved=0;
       function current(){if(owner===null||migrationOwner()!==owner){var e=new Error('storage optimization owner changed');e.name='StorageOwnerChangedError';throw e;}}
       /* 1.535 — 정리 버튼이 **사진 이전까지** 수행한다.
          부팅 때도 migrate()가 돌지만, 그때 실패했거나(용량·IDB 지연) 그 뒤에 새 사진이
          본문에 박힌 경우 사용자는 손쓸 방법이 없었다. 가장 필요한 순간에 다시 시도한다. */
       var thumbStat={n:0,saved:0};
+      current();
       return (function(){
         try{ return window.PSImg&&PSImg.migrate?PSImg.migrate().then(function(r){ imgMoved=(r&&r.moved)||0; }).catch(function(){}):Promise.resolve(); }
         catch(_){ return Promise.resolve(); }
       })().then(function(){
         current();
         /* 2.519 — 사진 이전 다음에 썸네일 다이어트. 실패해도 원본은 그대로 둔다 */
-        return slimThumbs().then(function(t){ thumbStat=t||thumbStat; }).catch(function(){});
+        return slimThumbs(current).then(function(t){ thumbStat=t||thumbStat; }).catch(function(){});
       }).then(function(){
       return afterMigrate(function(){
         current();
@@ -1004,6 +1012,9 @@
                 thumbSlimmed:thumbStat.n,thumbSaved:thumbStat.saved,largest:self.largestLocal(3)};
       });
       });
+      });
+      job.promise=run.then(function(r){if(self._optimization===job)delete self._optimization;return r;},function(e){if(self._optimization===job)delete self._optimization;throw e;});
+      return job.promise;
     },
     /* ── 저장 위험 안내 (IDP·노트·팀 이미지노트 공용) ────────────────────────────
        비로그인 + 미설치면 브라우저가 저장소를 비울 수 있다(iOS 사파리: 홈 화면 미추가 시 7일 미사용).

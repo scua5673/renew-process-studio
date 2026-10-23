@@ -260,3 +260,31 @@ test('3.126 the storage-full report names key kinds and sizes only',async()=>{
  c.fullReport('process_coach_v1',null);await new Promise(r=>setImmediate(r));assert.equal(sent.length,1,'한 창에서 한 번');
 });
 
+
+// 3.149: quota banners and manual cleanup share a job, with owner isolation.
+test('same-owner overlapping optimizations share the exact promise and one scan',async()=>{
+ const h=harness(),g=gate();let scans=0;h.c.slimThumbs=()=>{scans++;return g.promise;};
+ const a=h.c.optimizer.optimize(),b=h.c.optimizer.optimize();assert.equal(a,b);await tick();assert.equal(scans,1);
+ g.resolve({n:0,saved:0});await Promise.all([a,b]);assert.equal(h.c.optimizer._optimization,undefined);
+});
+test('optimization rejection releases its slot for a later retry',async()=>{
+ const h=harness(),bytes=h.c.optimizer.localBytes;h.c.optimizer.localBytes=()=>{throw Error('blocked');};
+ await assert.rejects(h.c.optimizer.optimize(),/blocked/);assert.equal(h.c.optimizer._optimization,undefined);
+ h.c.optimizer.localBytes=bytes;await h.c.optimizer.optimize();
+});
+test('a new owner queues a separate cleanup and cannot receive the prior result',async()=>{
+ const h=harness(),g=gate();let scans=0;h.c.slimThumbs=()=>++scans===1?g.promise:Promise.resolve({n:0,saved:0});
+ const a=h.c.optimizer.optimize(),rejected=assert.rejects(a,stale);await tick();h.change('team');const b=h.c.optimizer.optimize();
+ assert.notEqual(a,b);await tick();assert.equal(scans,1);g.resolve({n:0,saved:0});await rejected;await b;
+ assert.equal(scans,2);assert.equal(h.c.optimizer._optimization,undefined);
+});
+test('thumbnail cleanup holds at most one whole document at a time',async()=>{
+ const h=harness();let active=0,peak=0,reads=0;h.c.slimKey=async()=>{reads++;active++;peak=Math.max(peak,active);await tick();active--;};
+ await h.c.slimThumbs();assert.equal(reads,h.c.THUMB_KEYS.length);assert.equal(peak,1);
+});
+
+test('serial thumbnail cleanup stops before reading a new owner next document',async()=>{
+ const h=harness(),owner=h.c.migrationOwner();let reads=0;h.c.slimKey=async()=>{reads++;h.change('team');};
+ await assert.rejects(h.c.slimThumbs(()=>{if(h.c.migrationOwner()!==owner)throw Error('owner changed');}),/owner changed/);
+ assert.equal(reads,1);
+});
