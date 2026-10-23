@@ -127,7 +127,7 @@
         var r=detail.report,entry=currentDraft,count=r.diagnostics&&Array.isArray(r.diagnostics.logs)?r.diagnostics.logs.length:0,who=detailReporter();
         h+='<article class="admSupportReport"><h2>'+esc(r.title)+'</h2><small>'+esc(date(r.created_at))+'</small>'
           +(who?'<p class="admSupportWho">보낸 사람 <b>'+esc(reporterLine(who,true))+'</b></p>':'')+'<p>'+esc(r.body)+'</p>'
-          +'<details class="admSupportLogs"><summary>제보 당시 사용 환경 · 오류 로그 '+count+'건</summary><pre>'+esc(diagnosticText(r.diagnostics))+'</pre></details>'
+          +(detail.image?'<div class="support-image-view" data-adm-support-image></div>':'')+'<details class="admSupportLogs"><summary>제보 당시 사용 환경 · 오류 로그 '+count+'건</summary><pre>'+esc(diagnosticText(r.diagnostics))+'</pre></details>'
           +'<button type="button" data-adm-support="copy">제보·대화·사용 환경·로그 전체 복사</button></article>'
           +statusHtml()
           +'<section class="admSupportConversation" aria-label="제보 대화"><h3>대화 '+detail.replies.length+'개</h3>'
@@ -140,6 +140,7 @@
       }else if(can&&selected&&detailError)h+='<button type="button" data-adm-support="retry-detail">제보 다시 열기</button>';
       else if(can)h+='<p class="admSupportEmpty">목록에서 제보를 선택하면 내용과 답변을 확인할 수 있습니다.</p>';
       h+='</section></div>';root.dataset.detail=can&&selected?'true':'false';root.innerHTML=h;renderedSelected=selected;
+      if(w.PSSupportImage&&can&&detail&&detail.image){var imageId=detail.report.id,imageStamp=stamp();w.PSSupportImage.viewer(w,root.querySelector('[data-adm-support-image]'),function(){return call(imageStamp,'ps_support_image_get',{p_report_id:imageId}).then(function(value){if(!safe(imageStamp))throw fault('support_owner_changed');return value;});});}
       root.querySelector('.admSupportInbox').scrollTop=inboxScroll;root.querySelector('.admSupportDetail').scrollTop=detailScroll;
     }
     function detailReporter(){ if(!detail||!detail.report||detail.report.is_own)return null; return reporterOf(detail.report.reporter)||(rowOf(selected)||{}).reporter||null; }
@@ -180,7 +181,7 @@
       if(!reconcile()||!adminConfirmed||busy||!UUID.test(id||'')||!rows.some(function(r){return r.id===id;}))return Promise.resolve();
       var s=stamp(),ticket=++detailTicket;selected=id;detail=null;currentDraft=draftFor(id);detailLoading=true;detailError='';notice='';fixedDraft=(rowOf(id)||{}).fixed_in||'';statusTicket++;render();
       try{if(w.matchMedia('(max-width:700px)').matches)root.scrollIntoView({block:'start'});}catch(_){}
-      return call(s,'ps_support_get',{p_report_id:id}).then(function(result){
+      return call(s,w.PSSupportImage?'ps_support_get_with_image':'ps_support_get',{p_report_id:id}).catch(function(e){if(w.PSSupportImage&&errorKind(e)==='unavailable')return call(s,'ps_support_get',{p_report_id:id});throw e;}).then(function(result){
         if(!safe(s)||ticket!==detailTicket)return;
         if(!result||!result.report||result.report.id!==id||typeof result.report.title!=='string'||typeof result.report.body!=='string'||!Array.isArray(result.replies))throw fault('support_failed');
         if(result.replies.some(function(q){return !q||!UUID.test(q.id||'')||q.report_id!==id||typeof q.body!=='string'||['admin','reporter'].indexOf(q.author_role)<0;}))throw fault('support_failed');
