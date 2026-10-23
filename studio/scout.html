@@ -7208,7 +7208,8 @@ function save(){
     try{ main._items={build:(window.parent&&window.parent.PS_BUILD)||window.PS_BUILD||'',
                       n:ours.filter(function(p){return p&&String(p.name||"").trim();}).length}; }catch(_){}
     if(!rosterPersist(main,options)){savedMain=false;return;}
-    if(!options.skipTargets&&canSeeTargets()&&!scoutStore.set(TKEY,{v:1,players:tg}))savedTargets=false;
+    /* 후보를 읽기 전 빈 목록은 편집이 아니다. 선수단 저장이 scout_unread 실패를 남겨 새 판 적용을 막지 않게 한다. */
+    if(!options.skipTargets&&canSeeTargets()&&(tg.length||(scClient&&scClient.state.doc))&&!scoutStore.set(TKEY,{v:1,players:tg}))savedTargets=false;
 
   })();
   if(!savedMain)return false;
