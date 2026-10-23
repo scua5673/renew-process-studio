@@ -8560,8 +8560,7 @@ function switchWorkspaceCore(wid, skipSave){
   function stopPreswitch(msg,code){
     restorePreMeta();
     recSwitchFail(msg,code);
-    /* ⚠ 2.255 의 toast(msg) 는 셸(app.html)에 toast 가 없어 ReferenceError 로 **늘 무음**이었다(2.338 감사 확정 —
-       "아무것도 안 뜨고 이동도 안 돼"의 정체). chip 은 이 파일 것이라 확실히 뜬다. 늦은 체인이면 새 체인의 UI 를 건드리지 않는다. */
+    /* Use this module's chip; the shell has no toast. Only the current attempt owns UI. */
     if(myGen===switchGen){ switching=false;hideSwitchOverlay();setStatus(msg);try{chip(msg);}catch(_){} }
     var e=new Error(code||'preswitch failed');e.psPreswitch=true;throw e;
   }
@@ -8647,6 +8646,20 @@ function switchWorkspaceCore(wid, skipSave){
     });
     var e=new Error(code||'preswitch rejected');e.psPreswitch=true;throw e;
   }
+  /* Guard storage failure is not another tab's transition. Retry cleanup once,
+     before taking the guard; every retry still verifies the original owner. */
+  function beginSwitchGuard(retry,gate){
+    staleStop();
+    if(!gate||gate.held)return stopPreswitch('전환 취소 — 일정 편집을 끝내고 저장 완료 후 다시 시도하세요','preswitch schedule held');
+    if(gate.__timeout||gate.error){var bs=workspaceBarrierStop(gate);return stopPreswitch(bs.msg,bs.code);}
+    if(workspaceSwitchGuardRead())throw externalMarkerError();
+    switchGuardToken=workspaceSwitchGuardStart(from,wid);
+    if(switchGuardToken){switchGuardStarted=true;switchEpoch=workspaceSwitchEpochRaw();return;}
+    staleStop();
+    if(workspaceSwitchGuardRead())throw externalMarkerError();
+    if(retry)return stopPreswitch('전환 취소 — 기기에 전환 정보를 저장하지 못했습니다. 저장 공간을 확보한 뒤 다시 시도해 주세요','preswitch storage');
+    return Promise.resolve().then(function(){staleStop();if(workspaceSwitchGuardRead())throw externalMarkerError();return window.PSStorage&&PSStorage.optimize();}).catch(function(){}).then(workspaceSwitchWriteBarrier).then(function(gate){return beginSwitchGuard(true,gate);});
+  }
   showSwitchOverlay(target?target.name:'');   /* 과도기 화면 가림 */
   /* 20초엔 안내만, 60초엔 지우기 전 체인을 취소한다. 지우기 시작 뒤에는 각 단계 상한과 롤백으로 끝낸다. */
   var overlaySlow=setTimeout(function(){
@@ -8663,15 +8676,9 @@ function switchWorkspaceCore(wid, skipSave){
   },60000);
   /* 0) 이 창에서 시작한 공유 저장을 먼저 완료한 뒤 IDB 스냅샷을 읽는다. */
   return workspaceSwitchWriteBarrier().then(function(gate){
+    return beginSwitchGuard(false,gate);
+  }).then(function(){
     staleStop();
-    if(!gate||gate.held)return stopPreswitch('전환 취소 — 일정 편집을 끝내고 저장 완료 후 다시 시도하세요','preswitch schedule held');
-    if(gate.__timeout||gate.error){var bs=workspaceBarrierStop(gate);return stopPreswitch(bs.msg,bs.code);}
-    /* origin lock을 잡은 채 기존 소유자의 저장을 먼저 마친다. guard/nonce를
-       먼저 바꾸면 정상 저장 큐까지 이전 세대 작업으로 취소된다. 이후 새로
-       끼어드는 작업에는 예외 없이 새 소유자 검사를 적용한다. */
-    switchGuardToken=workspaceSwitchGuardStart(from,wid);switchGuardStarted=true;
-    if(!switchGuardToken)throw externalMarkerError();
-    switchEpoch=workspaceSwitchEpochRaw();
     if(!sourceMarkersCurrent()||!workspaceSwitchGuardOwned(switchGuardToken)||!setCacheOwner(switchOwner.uid,from))throw externalMarkerError();
     sourceOwnerSeal=String(localStorage.getItem(OWNERKEY)||'');
     /* 2.338 — 상한이 없어 IDB 가 멈추면 체인이 영원히 매달렸다(감사 확정). 아직 지우기 전이라 중단이 안전하다. */
@@ -8919,9 +8926,7 @@ function switchWorkspaceCore(wid, skipSave){
     if(e&&e.psStale)return {cancelled:1,stale:1};   /* 2.338 — 밀려난 체인의 조용한 끝(UI 는 새 체인 소유) */
     if(myGen===switchGen){switching=false;hideSwitchOverlay();}
     if(e&&e.psExternalMarker){
-      /* 혼합 버전·다른 창이 marker를 바꾼 경우 이 창이 from을 다시 쓰면
-         승자의 workspace를 또 덮는다. 공유 marker는 손대지 말고 잠긴 새 부팅이
-         현재 uid/wid를 다시 확인·pull하게 한다. 이미 만든 from stash는 그대로 남는다. */
+      /* Keep the other tab's markers and our source stash; recheck ownership on boot. */
       externalSwitchFrozen=true;setDataReady(false);
       recSwitchFail('다른 창의 workspace 표시가 바뀌어 잠긴 상태로 다시 불러옵니다','external-marker-changed');
       try{markSelfReload();location.reload();}catch(_){}

@@ -23,7 +23,7 @@ function harness(){
     dataUnlocked:()=>!!session&&owner.uid===session.uid&&owner.wid===local.get('active'),
     setDataReady(on,uid,wid){if(on)c.setCacheOwner(uid,wid);return on;},dataLockError:()=>new Error('locked'),
     workspaceSwitchGuardStart(){guard='guard-'+(++serial);epoch=guard;return guard;},workspaceSwitchGuardOwned:t=>!!guard&&t===guard,
-    workspaceSwitchGuardClear(t){if(t===guard)guard='';},workspaceSwitchEpochRaw:()=>epoch,
+    workspaceSwitchGuardRead:()=>guard?{token:guard}:null,workspaceSwitchGuardClear(t){if(t===guard)guard='';},workspaceSwitchEpochRaw:()=>epoch,
     scheduleHeld:()=>hooks.held?hooks.held():false,scheduleEditActive:false,
     workspaceSwitchWriteBarrier:()=>hooks.barrier?hooks.barrier():Promise.resolve({ready:1}),
     stashSnapshot:()=>Promise.resolve(),idbSwitchKeys:()=>Promise.resolve([...idb.keys()]),
@@ -185,4 +185,37 @@ test('storage failure with an old hold still blocks without a choice workaround'
   h.c.holdList=()=>[{kind:'conflict',k:'roster',h:'h'}];h.c.dataReviewOpen=()=>reviews++;
   h.hooks.sync=()=>Promise.resolve({error:1,code:'sync_storage',skipped:['roster']});
   await h.run();assert.equal(reviews,0);assert.deepEqual(h.calls.deleted,[]);assert.equal(h.local.get('active'),'team-A');
+});
+
+// 3.149: a full device is not evidence of another tab changing its workspace.
+test('guard quota recovers after one verified cleanup before any destructive step',async()=>{
+ const h=harness(),start=h.c.workspaceSwitchGuardStart;let attempts=0,cleanups=0;
+ h.c.workspaceSwitchGuardStart=()=>++attempts===1?'':start();
+ h.c.PSStorage=h.c.window.PSStorage={optimize:async()=>{cleanups++;assert.deepEqual(h.calls.deleted,[]);assert.equal(h.local.get('roster'),'A roster');}};
+ await h.run();assert.equal(attempts,2);assert.equal(cleanups,1);assert.equal(h.local.get('active'),'team-B');
+});
+for(const reject of [false,true])test('persistent guard failure retains originals without reload, cleanup rejection '+reject,async()=>{
+ const h=harness(),before=h.snapshot();let attempts=0,cleanups=0;
+ h.c.workspaceSwitchGuardStart=()=>{attempts++;return '';};
+ h.c.PSStorage=h.c.window.PSStorage={optimize:async()=>{cleanups++;if(reject)throw Error('disk unavailable');}};
+ const r=await h.run();assert.equal(r.reason,'preswitch storage');assert.equal(h.snapshot(),before);assert.equal(h.calls.reloads,0);assert.deepEqual(h.calls.deleted,[]);
+ assert.equal(attempts,2);assert.equal(cleanups,1);assert.match(h.calls.statuses.at(-1),/저장 공간/);
+});
+for(const change of ['account','guard'])test('cleanup cannot retry a guard after another '+change+' takes over',async()=>{
+ const h=harness(),gate=deferred();let attempts=0;
+ h.c.workspaceSwitchGuardStart=()=>{attempts++;return '';};
+ h.c.PSStorage=h.c.window.PSStorage={optimize:()=>gate.promise};
+ const work=h.run();await tick();if(change==='account')h.change();else h.c.workspaceSwitchGuardRead=()=>({token:'external'});
+ const before=h.snapshot();gate.resolve();const r=await work;
+ assert.equal(r.externalMarker,1);assert.equal(attempts,1);assert.equal(h.snapshot(),before);assert.deepEqual(h.calls.deleted,[]);
+});
+
+test('cleanup retry drains writes that arrived during cleanup before taking its guard',async()=>{
+ const h=harness(),start=h.c.workspaceSwitchGuardStart,g=deferred();let attempts=0,barriers=0;
+ h.c.workspaceSwitchGuardStart=()=>++attempts===1?'':start();
+ h.c.PSStorage=h.c.window.PSStorage={optimize:async()=>{h.local.set('roster','new edit');}};
+ h.hooks.barrier=()=>++barriers===2?g.promise:Promise.resolve({ready:1});
+ const work=h.run();await tick();assert.equal(attempts,1);assert.deepEqual(h.calls.deleted,[]);
+ g.resolve({held:1});const r=await work;assert.equal(r.reason,'preswitch schedule held');
+ assert.equal(attempts,1);assert.equal(h.local.get('roster'),'new edit');assert.deepEqual(h.calls.deleted,[]);assert.equal(h.calls.reloads,0);
 });
