@@ -2229,7 +2229,7 @@ function outboxNormalizePersonal(q){
   });
   return Object.keys(by).map(function(k){return by[k];});
 }
-function outboxRead(){
+function outboxRead(strict){
   var local=[];
   try{local=pJSON(localStorage.getItem(OUTBOXKEY),[]);if(!Array.isArray(local))local=[];}catch(_){local=[];}
   if(!window.storage)return Promise.resolve(outboxNormalizePersonal(local));
@@ -2242,7 +2242,7 @@ function outboxRead(){
       if(!by[it.id]||(+it.updatedAt||+it.at||0)>(+by[it.id].updatedAt||+by[it.id].at||0))by[it.id]=it;
     });
     return outboxNormalizePersonal(Object.keys(by).map(function(k){return by[k];}));
-  }).catch(function(){return outboxNormalizePersonal(local);});
+  }).catch(function(e){if(strict)throw e;return outboxNormalizePersonal(local);});
 }
 function outboxUpdateSummary(q){
   var by={},cut=Date.now()-30*86400000;
@@ -2436,7 +2436,7 @@ function workspaceBlockingPendingKeys(wid){
         문이 열리는 일은 없다 — 그때는 맵이 비어 예전처럼 fail-closed 다. */
   var deniedMap={}; try{ deniedMap=JSON.parse(localStorage.getItem('ps_sync_denied_map_v1')||'{}')||{}; }catch(_){}
   var myIdp='cs_idp_v1_'+uid;
-  return outboxRead().then(function(q){
+  return outboxRead(true).then(function(q){
     var seen={},keys=[];
     (q||[]).forEach(function(it){
       if(!it||outboxScope(it.uid,it.wid)!==sc||PERSONAL[it.key]||seen[it.key])return;
@@ -2457,7 +2457,7 @@ function workspaceBlockingPending(wid){
    그러므로 현재 팀 scope와 개인 scope의 이 uid 대기를 하나라도 제외하지 않고 세다. */
 function logoutBlockingPendingKeys(uid,wid){
   uid=String(uid||'');wid=String(wid||'');var pwid=String(personalWid()||''),seen={};
-  return outboxRead().then(function(q){var keys=[];(q||[]).forEach(function(it){
+  return outboxRead(true).then(function(q){var keys=[];(q||[]).forEach(function(it){
     if(!it||String(it.uid||'')!==uid||seen[it.key])return;
     var iw=String(it.wid||'');if(iw!==wid&&(!pwid||iw!==pwid))return;
     seen[it.key]=1;keys.push(it.key);
@@ -5720,12 +5720,13 @@ function scheduleMirrorWrite(v,stillSafe,before){
     });
 }
 function libLoad(){
+  var rev=localStorage.getItem('cs_lib_rev');
   function snapshot(raw){
+    if(localStorage.getItem('cs_lib_rev')!==rev)throw syncIssue('sync_local_changed','library_snapshot_changed','보관함을 읽는 동안 새 편집이 생겼습니다');
     if(raw!=null&&typeof raw!=='string')throw syncIssue('sync_storage','library_snapshot_type','보관함 저장 형식을 확인할 수 없습니다');
     var list=[];
     if(raw!=null){try{list=JSON.parse(raw);}catch(_){throw syncIssue('sync_storage','library_snapshot_parse','보관함 저장 내용을 확인할 수 없습니다');}}
     if(!Array.isArray(list))throw syncIssue('sync_storage','library_snapshot_shape','보관함 목록 형식을 확인할 수 없습니다');
-    var rev=null;try{rev=localStorage.getItem('cs_lib_rev');}catch(_){}
     return {list:list,raw:raw,rev:rev};
   }
   if(window.storage) return window.storage.get(LIBKEY)
@@ -8687,17 +8688,8 @@ function switchWorkspaceCore(wid, skipSave){
   /* 1) 현재 공간 데이터를 서버로 강제 저장 — 메타를 비워 전부 dirty로 취급해 확실히 push.
         40초 하드 백스톱: 저장이 안 끝나면 지우지 않고 중단(전체 전환은 기존 60초 가드 유지).
         skipSave: 팀 나가기처럼 더 이상 현재 공간에 쓸 수 없을 때 저장을 건너뛰고 바로 전환 */
-  /* ══ 2.340/2.742 · 메타를 통째로 비우면 병합 키는 정반대로 작동한다 ═════════════
-     의도는 '전부 dirty 로 취급해 확실히 push' 였다. 그런데 일정(`SCHEDULE_KEY`)·경기(`cs_team_matches_v1`)는
-     pull 쪽에 **병합 가드**가 있다: `if(!trustedBase||hash(trustedBase)!==(m.h[k]||''))`.
-     메타를 비우면 `m.h[k]` 가 늘 `''` 이라 이 조건이 **항상 참** → 3-way 병합(mergeCoachWeeks)에 닿지 못하고
-     `kvWrite(k,row.v)` 로 **서버 옛 판이 로컬 편집을 덮는다**. 코치가 일정을 고치고 (5초 보호창이 지난)
-     6초 뒤 팀을 바꾸면 그 편집이 조용히 사라졌다 — 감사에서 반박 검증까지 통과한 실제 유실 경로.
-     ⚠ 그래서 일정·경기와 동적 IDP 키의 메타만 남기고 나머지를 비운다. 나머지 키의
-       '전부 push' 동작은 그대로다. IDP hash를 지우면 전환 직전 편집이 base 없는 최초 병합으로
-       내려가 삭제를 판정할 수 없으므로, 2.742부터 private/public IDP도 같은 보호를 받는다.
-     ⚠ 남긴 키는 평소 회차와 **똑같은 길**(dirty 판정 → 병합 → push)을 탄다 — 새 규칙이 아니라 원래 길이다.
-     ⚠ 실패 시 `restorePreMeta()` 가 원본(preMetaRaw)을 통째로 되돌린다 — 그건 그대로 둔다. */
+  /* 일정·경기·IDP의 확정 기준을 보존한다. 비우면 3-way 병합이 서버 옛 값으로 새 편집을 덮는다.
+     취소 시에는 이 전환이 쓴 임시 메타만 되돌리고, 이후 확정된 메타는 유지한다. */
   try{
     preMetaRaw=localStorage.getItem(MKEY);preMetaCaptured=true;
     var _keep={h:{},c:{},n:{},last:0};
@@ -8833,9 +8825,16 @@ function switchWorkspaceCore(wid, skipSave){
        뒤이은 비우기가 지우도록 잠깐 기다린 뒤 진행한다. */
     try{ window.dispatchEvent(new CustomEvent('ps-before-workspace-switch',{detail:{from:from,to:wid}})); }catch(_){}
     return withTimeout((window.__psFlushBoardLive?window.__psFlushBoardLive():Promise.resolve(null)),2500).then(function(){
-      staleStop();   /* 2.338 — 마지막 문턱. 이 아래(프레임 내리기~리로드)는 끝까지 간다 */
+      staleStop();
+      /* 마지막 flush에서 생긴 변경도 서버 확인 전에는 지우지 않는다. */
+      if(skipSave)return;
+      return withTimeout(workspaceBlockingPendingKeys(from),8000).then(function(keys){
+        staleStop();
+        if(!Array.isArray(keys)||keys.length)return stopPreswitch('전환 취소 — 새 변경의 저장 확인이 필요합니다. 자료는 이 기기에 남아 있으니 다시 시도해 주세요','preswitch late pending');
+      });
     });
   }).then(function(){
+    staleStop();
     wipeStarted=true; switchWiping=true; clearTimeout(overlayGuard);
     try{ [].forEach.call(document.querySelectorAll('.frames iframe'),function(f){ try{ f.src='about:blank'; }catch(_){} }); }catch(_){}
     return sleep(350);
