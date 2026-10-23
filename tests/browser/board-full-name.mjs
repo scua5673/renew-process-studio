@@ -19,7 +19,9 @@ try{
       }
       await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
       const f=await (await page.waitForSelector('#fBoard')).contentFrame();
-      await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&window.__psPages);
+      // Loaded becomes true after the local read, before a later server restore finishes.
+      // Seed the online-save scenario only after its owner and server preimage are verified.
+      await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&window.__psPages&&boardPrivateCurrent(_boardPrivateOwner)&&!!(_boardPrivateRecord?_boardPrivateRecord.base:_boardPrivateBase));
       return f;
     }
     let f=await board();
