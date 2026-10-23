@@ -763,6 +763,21 @@
       return true;
     });
   }
+  /* Confirm the already-attempted write without replaying it. In particular,
+     an optional schedule mirror can fail while the exact IDB write succeeds.
+     A newer owner, mirror, durable value or queued write is never acknowledged. */
+  function sharedCommitted(k,raw){
+    var owner=sharedReadContext(),mirror=localStorage.getItem(k),pending=sharedWrites[k];
+    function current(){if(owner===null||sharedReadContext()!==owner||localStorage.getItem(k)!==mirror){var e=new Error('shared confirmation owner or source changed');e.name='StorageOwnerChangedError';throw e;}}
+    return Promise.resolve(pending).catch(function(){}).then(function(){
+      return afterMigrate(function(){current();return idbGet(k);});
+    }).then(function(saved){
+      current();
+      if(saved!==raw)throw new Error('shared storage verification failed');
+      if(pending&&sharedWrites[k]===pending&&sharedLatest[k]===raw){delete sharedWrites[k];delete sharedLatest[k];delete sharedOwners[k];}
+      return true;
+    });
+  }
   /* 큰 보조 사본 전용 API. 화면 본문과 달리 localStorage 거울을 새로 만들지 않는다.
      legacy 사본이 있으면 IDB와 같은지 확인해 제거하고, 서로 다르면 어느 쪽도 덮지 않는다. */
   function auxGet(k,resolveConflict){
@@ -898,6 +913,7 @@
     estimate:function(){ try{ return navigator.storage.estimate(); }catch(_){ return Promise.resolve(null); } },
     sharedReady:sharedReady,
     sharedVerified:sharedVerified,
+    sharedCommitted:sharedCommitted,
     auxGet:auxGet,
     reportFull:function(k){ fullReport(k,null); },   /* 3.131 — 동기화의 일정 거울 쓰기가 용량으로 실패해도 같은 storage_full 한 줄(키 이름 · 크기 · 한도만) */
     auxSet:auxSet,

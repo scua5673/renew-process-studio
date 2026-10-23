@@ -6356,28 +6356,29 @@ const scoutStore={
   /* 동기 접수 여부를 돌려준다. 예전에는 실패를 삼키고 mem에만 넣은 뒤 호출부가 "저장됨"이라고
      말해서, 코치는 저장된 줄 알고 앱을 닫았다. mem 사본은 이 탭이 살아 있는 동안의
      임시 대비일 뿐 저장이 아니다. */
-  /* 1.618 — scoutStore 는 localStorage 껍데기다(IndexedDB 가 아니다 — 3.053 까지 이름이 board.html 의 store 와
-     같아서 헷갈렸다. 이제 boardStore(IndexedDB) · scoutStore(localStorage) · libStore(커뮤니티 보관함)로 가른다 — studio/storage-keys.js). 그런데 sync.js 는 IDBK 목록의 키를 **IndexedDB 에서 읽어 올린다.**
-     그래서 여기서 쓴 경기(cs_team_matches_v1)·후보(cs_scout_targets_v1)는 화면에만 남고
-     팀에는 옛 자료가 계속 올라갔다. 해당 키는 psSaveShared 로 두 곳에 같이 쓴다. */
+  /* Shared keys await IDB confirmation. Only the schedule may use a verified IDB copy when its optional mirror fails. */
   set(k,v){
     if(k==="cs_scout_targets_v1")return scSaveTargetDoc(v);
     try{
-      const raw=JSON.stringify(v),owner=scoutStore.owner(),shared=!!(SHARED_IDB[k]&&window.psSaveShared);let ready=true;
+      const raw=JSON.stringify(v),owner=scoutStore.owner(),shared=!!(SHARED_IDB[k]&&window.psSaveShared);let ready=true,mirror=raw,fallback=false;
+      function verify(){if(owner!==scoutStore.owner()||localStorage.getItem(k)!==mirror)throw new Error("저장 내용이 바뀌어 다시 확인해야 합니다");return true;}
       if(shared){
-        if(!window.psSaveShared(k,raw)) throw new Error("저장 실패");
+        if(!window.psSaveShared(k,raw)){
+          if(k!=="process_coach_v1"||!window.PSStorage||!PSStorage.sharedCommitted)throw new Error("저장 실패");
+          fallback=true;mirror=localStorage.getItem(k);
+        }
         if(!window.PSStorage||!window.PSStorage.sharedReady)throw new Error("저장 확인을 할 수 없습니다");
-        ready=window.PSStorage.sharedReady(k);
+        ready=fallback?PSStorage.sharedCommitted(k,raw).then(verify):PSStorage.sharedReady(k);
+        if(fallback&&window.PSSchedule&&PSSchedule.check)ready=ready.then(function(){verify();return PSSchedule.check();}).then(verify);
       }else{
         localStorage.setItem(k,raw);
         if(localStorage.getItem(k)!==raw)throw new Error("저장 확인 실패");
       }
       mem[k]=v;teamSaves.track(k,ready,function(){
         /* 2.744 — 재시도는 이 키의 같은 거울 원문만. 다른 창/팀의 새 내용은 덮지 않는다. */
-        function verify(){if(owner!==scoutStore.owner()||localStorage.getItem(k)!==raw)throw new Error("저장 내용이 바뀌어 다시 확인해야 합니다");return true;}
         verify();
         if(shared&&(!window.PSStorage||!PSStorage.sharedVerified))throw new Error("저장 확인을 할 수 없습니다");
-        return Promise.resolve(shared?PSStorage.sharedVerified(k,raw):true).then(verify);
+        return Promise.resolve(shared?(fallback?PSStorage.sharedCommitted(k,raw):PSStorage.sharedVerified(k,raw)):true).then(verify);
       });return true;}
     catch(e){
       mem[k]=v;
