@@ -43,7 +43,7 @@
           if(response.status===401||response.status===403)throw issue('support_auth');
           if(response.status===404)throw issue('support_missing');
           if(response.status===409)throw issue('support_conflict');
-          if(response.status===429)throw issue('support_image_limit');
+          if(response.status===429&&name==='ps_support_create_image'&&e.code==='PT429')throw issue('support_image_limit');
           if(response.status===400||response.status===422)throw issue('support_invalid');
           throw issue('support_failed');
         });
