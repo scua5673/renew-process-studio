@@ -36,3 +36,19 @@ test('unlocked local-only documents can still migrate; mismatched authenticated 
   const guest=harness();for(const k of ['ps_sync_session','ps_active_ws','ps_cache_owner_v1'])guest.local.delete(k);assert.equal((await guest.c.PSImg.migrate()).moved,3);
   const wrong=harness();wrong.local.set('ps_sync_session','{"uid":"other"}');assert.equal((await wrong.c.PSImg.migrate()).moved,0);assert.equal(wrong.writes.length,0);
 });
+test('boot image migration does not parse large documents with no inline photograph in each frame',async()=>{
+  const schedule=raw({anchorMonday:'2026-09-14',weeks:{0:[{trainings:[{thumb:'<svg>'+'x'.repeat(3600000)+'</svg>'}]}]}});
+  const idp=raw({v:1,profile:{},notes:'x'.repeat(1000000)});let parsed=0;
+  for(let frame=0;frame<4;frame++){
+    const h=harness();h.local.set('process_coach_v1',schedule);h.local.set('cs_idp_v1_other',idp);
+    h.c.JSON={...JSON,parse(s){if(s===schedule||s===idp)parsed++;return JSON.parse(s);},stringify:JSON.stringify};
+    await h.c.PSImg.migrate();
+    assert.equal(h.local.get('process_coach_v1'),schedule);assert.equal(h.local.get('cs_idp_v1_other'),idp);
+  }
+  assert.equal(parsed,0,'unrelated SVG schedules and text IDPs must not allocate full parsed copies for photograph migration');
+});
+test('escaped data-image prefixes still migrate and retain the image original',async()=>{
+  const h=harness();for(const key of Object.keys(h.docs))h.local.set(key,h.local.get(key).replaceAll('data:image','data\\u003aimage'));
+  assert.equal((await h.c.PSImg.migrate()).moved,3);
+  for(const value of h.disk.values())assert.equal(value,h.picture);
+});

@@ -105,3 +105,36 @@ test('거울 없는 기기에서 고친 일정(IDB 에만 있음)도 서버에 �
   assert.match(h.server.get(KEY).v,/"mine"/,'서버에 이 기기의 일정이 올라갔다');
   assert.equal(h.local.has(KEY),false);
 });
+
+
+test('reopening with an unsent IDB schedule and no mirror can upload after a verified quota failure',async()=>{
+  const OLD=doc('old'),MINE=doc('pending'),h=harness({server:OLD,idb:MINE,mirror:null});h.baseline(OLD);
+  h.hooks.localWrite=k=>{if(k===KEY)throw quota();};
+  assert.equal(h.c.scheduleMirrorLeft,null,'a fresh page has no previous quota marker');
+  const r=await h.run();assert.equal(r.error,undefined,JSON.stringify(r));
+  assert.equal(r.scheduleDeferred,false,JSON.stringify(r));
+  assert.match(h.server.get(KEY).v,/"pending"/);
+  assert.equal(h.local.has(KEY),false);assert.equal(h.idb.get(KEY),h.server.get(KEY).v);
+});
+for(const mode of ['IDB read failure','new IDB edit','new mirror edit','owner changed','non-quota mirror failure']){
+  test('reopening without a mirror still preserves safety: '+mode,async()=>{
+    const OLD=doc('old'),MINE=doc('pending'),NEW=doc('new'),h=harness({server:OLD,idb:MINE,mirror:null});h.baseline(OLD);
+    h.hooks.localWrite=k=>{if(k===KEY)throw mode==='non-quota mirror failure'?new Error('blocked'):quota();};
+    if(mode==='IDB read failure')h.hooks.idbRead=k=>{if(k===KEY)throw new Error('read failed');};
+    if(mode==='new IDB edit')h.hooks.idbRead=k=>{if(k===KEY)h.idb.set(KEY,NEW);};
+    if(mode==='new mirror edit')h.hooks.idbRead=k=>{if(k===KEY)h.local.set(KEY,NEW);};
+    if(mode==='owner changed')h.hooks.idbRead=k=>{if(k===KEY)h.switch();};
+    await h.run();assert.equal(h.server.get(KEY).v,OLD);assert.equal(pushes(h).length,0);
+    if(mode==='new IDB edit')assert.equal(h.idb.get(KEY),NEW);
+    if(mode==='new mirror edit')assert.equal(h.local.get(KEY),NEW);
+  });
+}
+
+test('reopening also retries an already encoded schedule whose previous upload failed',async()=>{
+  const OLD=doc('old'),MINE=doc('pending'),h=harness({server:OLD,mirror:null});h.baseline(OLD);
+  const candidate=h.c.scheduleCommitRaw(MINE,OLD);h.idb.set(KEY,candidate);
+  h.hooks.localWrite=k=>{if(k===KEY)throw quota();};
+  const r=await h.run();assert.equal(r.error,undefined,JSON.stringify(r));
+  assert.equal(r.scheduleDeferred,false,JSON.stringify(r));assert.equal(h.server.get(KEY).v,candidate);
+  assert.equal(h.idb.get(KEY),candidate);assert.equal(h.local.has(KEY),false);
+});
