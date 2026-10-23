@@ -19,7 +19,9 @@ try{
       }
       await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
       const f=await (await page.waitForSelector('#fBoard')).contentFrame();
-      await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&window.__psPages);
+      // Loaded becomes true after the local read, before a later server restore finishes.
+      // Seed the online-save scenario only after its owner and server preimage are verified.
+      await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&window.__psPages&&boardPrivateCurrent(_boardPrivateOwner)&&!!(_boardPrivateRecord?_boardPrivateRecord.base:_boardPrivateBase));
       return f;
     }
     let f=await board();
@@ -48,7 +50,16 @@ try{
     assert.equal(metrics.value,name);assert.ok(metrics.width>0&&metrics.left>=-1&&metrics.right<=metrics.viewport+1,JSON.stringify(metrics));
     await page.screenshot({path:path.join(SHOTS,'board-full-name-'+width+'-'+engine+'.png')});
     await f.locator('#nameInput').press('Tab');
-    assert.equal(await f.evaluate(()=>__boardSaveExplicit()),true);
+    const save = await f.evaluate(async () => {
+      const trace=[];
+      const status=()=>({loaded:_boardPrivateLoaded,current:boardPrivateCurrent(_boardPrivateOwner),saving:!!_boardManualSaving,vault:!!_vaultBoardContext,vaultEdit:!!window.__vaultEdit,thumb:!!window.__psThumbCapturing,capLock:!!window.__capLock,applying:_bliveApplying,playing:animPlaying,exporting:!!window.__animExport,view:window.__csView,pending:!!(_boardPrivateRecord&&_boardPrivateRecord.pending),base:!!(_boardPrivateRecord&&_boardPrivateRecord.base),flight:!!_boardPrivateFlight});
+      const before=status(),persist=boardPrivatePersist,send=boardPrivateSend;
+      boardPrivatePersist=function(){return persist.apply(this,arguments).catch(e=>{trace.push(['persist',e.message]);throw e;});};
+      boardPrivateSend=function(){return send.apply(this,arguments).catch(e=>{trace.push(['send',e.message]);throw e;});};
+      try {const ok=await __boardSaveExplicit();return {ok,before,after:status(),trace};}
+      finally {boardPrivatePersist=persist;boardPrivateSend=send;}
+    });
+    assert.equal(save.ok,true,JSON.stringify({width,engine,...save}));
     await page.reload();await ready(page);f=await board();actual=await names();
     assert.equal(actual.name,name);assert.ok(actual.scenes.every(n=>n===name),'reload preserves all scenes');
     assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[]);
