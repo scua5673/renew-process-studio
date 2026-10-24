@@ -3299,6 +3299,7 @@ window.__psCssCheck=function(el){try{var sh=el.sheet;if(!sh||!sh.cssRules||!sh.c
 <style>/* 2.897 — 마지막 안전망: 닫힌 도크 메뉴(내보내기·장비 색·보드 설정)는 디자인 파일이 없어도 흐름에 펼쳐지지 않는다 */
 .cmd-popover:not(.on){display:none!important}
 </style>
+<script src="textbook-pack.js" defer></script>
 </head>
 <body data-tool="move">
 <script>
@@ -4488,7 +4489,7 @@ const PITCH_SPECS={
    규격 키 grid20·grid30·grid45 = «판 가로가 몇 m 인가». 화면(viewBox)과 세계 좌표는 11인제와 똑같이 두고 **1m 가 몇 단위인가만** 바꾼다(mppNow).
    그래서 운동장 ↔ 그리드를 오가도 선수·그림은 제자리고 토큰·선 굵기·손잡이도 그대로다(풋살처럼 화면을 확대하면 그림 굵기가 3~4배가 된다).
    판 넓이를 바꿀 때만 내용을 판 가운데 기준으로 줄이고 늘린다(_gridScaleOf) — 10×10m 그리드가 10×10m 로 남게. ══ */
-["20","30","45"].forEach(function(m){ PITCH_SPECS["grid"+m]=Object.assign({},PITCH_SPECS.fifa,{name:"그리드",blank:true,m:+m}); });
+["20","30","40","45","70"].forEach(function(m){ PITCH_SPECS["grid"+m]=Object.assign({},PITCH_SPECS.fifa,{name:"그리드",blank:true,m:+m}); });
 function pitchSpec(){return PITCH_SPECS[state.pitchSpec]||PITCH_SPECS.fifa;}
 function isBlankSpec(){ try{ return !!pitchSpec().blank; }catch(_){ return false; } }
 function mppNow(){ try{ var sp=pitchSpec(); return (sp&&sp.blank&&sp.m>0)?(FL*MPP/sp.m):MPP; }catch(_){ return MPP; } }   /* 1m = 몇 단위 — 운동장 10, 그리드 판은 판 가로(m)로 나눈 값 */
