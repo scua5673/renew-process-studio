@@ -71,8 +71,8 @@ test('«맨 뒤» 단추 규칙은 «맨 앞»(#frontSelBtn)의 도크 · 더보
 test('배포 묶음 — sw.js CORE · board.html <script> 한 줄 · 크기 예산 · 중요 시험 목록',()=>{
   assert.ok(read('sw.js').includes("'/studio/board-shape-menu.js'"),'sw.js CORE');
   const b=read('studio/board.html');
-  assert.ok(b.includes('<script src="board-shape-menu.js"></script>'),'board.html script');
-  assert.ok(b.indexOf('<script src="board-shape-menu.js">')<b.indexOf('let sel=null;'),'본문보다 먼저 읽힌다(updateDelUI · drawingEl 을 DOMContentLoaded 에 감싼다)');
+  assert.match(b,/<script src="board-shape-menu\.js(?:\?v=[0-9.]+)?"><\/script>/,'board.html script');
+  assert.ok(b.search(/<script src="board-shape-menu\.js(?:\?v=[0-9.]+)?">/)<b.indexOf('let sel=null;'),'본문보다 먼저 읽힌다(updateDelUI · drawingEl 을 DOMContentLoaded 에 감싼다)');
   assert.ok(Buffer.byteLength(b)<=2560000,'board.html budget '+Buffer.byteLength(b));
   assert.ok(read('tests/browser/run-critical.mjs').includes("'shape-menu-3141'"),'run-critical');
   assert.ok(fs.existsSync(path.join(__dirname,'browser','shape-menu-3141.mjs')));

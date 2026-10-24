@@ -6,11 +6,17 @@
   if(root)root.PSBoardShortcuts=api;
 })(typeof window!=='undefined'?window:null,function(){
   'use strict';
-  var actions={pitchPhoto:'운동장 사진 고르기',pageAdd:'새 페이지 추가',pagePrev:'이전 페이지',pageNext:'다음 페이지'};
+  var actions={pitchPhoto:'운동장 사진 고르기',pageAdd:'새 페이지 추가',pagePrev:'이전 페이지',pageNext:'다음 페이지',resetLaterSelection:'이후 장면 리셋 — 선택한 토큰·도구'};
   function run(w,id){
     if(!Object.prototype.hasOwnProperty.call(actions,id))return false;
     var d=w.document,b=d.body,p=w.__psPages,view=w.__csView||'board';
     if(!b||w.__animExport||w.__psThumbCapturing||w.__vaultReadOnly||b.classList.contains('comm-viewing')||b.classList.contains('ps-capturing'))return true;
+    if(id==='resetLaterSelection'){
+      var active=d.activeElement;
+      if(active&&(active.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)))return true;
+      if((view==='board'||view==='session')&&w.__psShapeMenu)w.__psShapeMenu.resetSelection();
+      return true;
+    }
     if(id==='pitchPhoto'){
       if((view==='board'||view==='session')&&w.PSPitchPhoto)w.PSPitchPhoto.pick();
       return true;
@@ -31,5 +37,5 @@
       selectAnimFrame(id==='animFirst'?0:anim.frames.length-1,true);
     };
   });
-  return {actions:actions,animActions:animActions,defaults:{animFirst:'home',animLast:'end'},run:run};
+  return {actions:actions,animActions:animActions,defaults:{animFirst:'home',animLast:'end',resetLaterSelection:''},run:run};
 });
