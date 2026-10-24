@@ -121,7 +121,7 @@ test('meeting kit: other slides and their scenes get the new kit, «이 슬라�
 
 test('wired: after board-meet-8 (wraps on top of it), service worker, storage key, budget, version',()=>{
   const sw=read('sw.js'),keys=read('studio/storage-keys.js');
-  const a=B.indexOf('<script src="board-meet-8.js"></script>'),b=B.indexOf('<script src="board-meet-form.js"></script>');
+  const a=B.indexOf('<script src="board-meet-8.js"></script>'),b=B.search(/<script src="board-meet-form\.js(?:\?v=[0-9.]+)?"><\/script>/);
   assert.ok(a>0&&b>a,'board-meet-8 다음');
   assert.ok(sw.includes("'/studio/board-meet-form.js'"));assert.match(keys,/\['ps_meet_form_v1','device','ls','pref','board-meet-form\.js'\]/);
   assert.ok(Buffer.byteLength(B)<=2560000,'board.html budget '+Buffer.byteLength(B));

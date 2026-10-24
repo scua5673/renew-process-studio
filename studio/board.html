@@ -4229,10 +4229,10 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js"></script>
+<script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.167"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js"></script><script src="board-shape-menu.js"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script>
+<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -20598,6 +20598,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       kb("슬라이드쇼","kb-show",function(e){ksShowMenu(e.currentTarget,true);},true);
       kb("더보기","kb-more",function(e){var r=e.currentTarget.getBoundingClientRect(),it=[];
         if(bmm)it.push([(bmm.textContent||"").trim()||"경기 연결",function(){bmm.click();}]);
+        if(window.__meetImportLibrary&&__meetImportLibrary.can())it.push(["보관함에서 가져오기",__meetImportLibrary]);
         it.push(["PDF로 내보내기",function(){exportMeetingPDF();}],["PPT로 내보내기",function(){try{exportPPTX();}catch(_){}}],["MP4 영상으로 내보내기",function(){exportVideoSheet("meeting");}]);   /* 2.970 */
         /* 슬라이드 전환도 여기(폰에서 #ksTr 은 운동장 귀퉁이를 덮어 숨긴다) — 같은 값·같은 고르개 */
         [["slide","슬라이드"],["fade","페이드"],["none","없음"]].forEach(function(t){it.push(["전환: "+t[1]+(window.__ksTransition===t[0]?" ✓":""),function(){window.__ksTransition=t[0];try{var sel=document.getElementById("ksTrSel");if(sel)sel.value=t[0];}catch(_){}}]);});

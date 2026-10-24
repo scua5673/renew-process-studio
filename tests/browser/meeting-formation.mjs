@@ -27,6 +27,10 @@ try{
     await f.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());
     await f.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===9,null,{timeout:15000});
     await f.waitForFunction(()=>{const o=document.getElementById('psMeetForm');return o&&o.classList.contains('on')&&o.getBoundingClientRect().width>0;},null,{timeout:10000});
+    await f.click('#psMeetForm [data-start=filled]'); // 기존 포메이션 검사는 기본 자료 포함으로 시작
+    await f.click('#psMeetForm .mf-pvn button[aria-label="다음 장"]');
+    await f.click('#psMeetForm .mf-pvn button[aria-label="다음 장"]'); // 기존 미드블록(3/9) 검사의 시작 위치
+
   };
   const slides=()=>f.evaluate(()=>anim.slides.map(s=>({t:s.title,spec:s.snap.pitchSpec,th:/<svg/.test(s.thumb||''),
     p:s.snap.players.map(p=>({team:p.team,num:String(p.num),pos:p.pos||'',x:p.x,y:p.y,id:p.id})),ball:s.snap.ball})));

@@ -68,7 +68,10 @@ try{
   await f.waitForFunction(()=>{const el=document.querySelector('#drillFiles .vcard.selected');return !!el&&/레터 3호 · 가상 세션/.test(el.textContent);});
   assert.equal(await f.evaluate(()=>window.__csView),'session');
   // 서버(보관함 표)에도 올라간다
-  await page.waitForFunction(()=>window.PSSync&&!PSSync.pending().count,null,{timeout:30000}).catch(()=>{});
+  // The document outbox can be empty while the separate library upload is
+  // still in flight. Wait for its actual acknowledgement, without another write.
+  const ackBy=Date.now()+30000;
+  while(![...fx.lib.values()].some(r=>r.lib_id===c.libId)&&Date.now()<ackBy)await new Promise(r=>setTimeout(r,100));
   assert.ok([...fx.lib.values()].some(r=>r.lib_id===c.libId),'보관함 서버 표에 그 카드가 있다');
 
   // 3) 열어 보면 훈련 탭 셋, 탭마다 제 장면

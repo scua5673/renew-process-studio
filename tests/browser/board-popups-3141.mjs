@@ -65,7 +65,7 @@ try{
     await f.evaluate(()=>{selectItem('drawing',state.drawings[2]);updateDelUI();});await page.waitForTimeout(300);
     p=await panel();assert.equal(p.title,'"텍스트"');assert.equal(p.w,224);assert.match(p.bg,/gradient/);
     await f.evaluate(()=>window.__psShapeMenu.open(state.drawings[2],300,300));
-    assert.equal(await f.evaluate(()=>[...document.querySelectorAll('#psShapeMenu button[data-act]')].map(b=>b.dataset.act).join(',')),'edit,reset,front,back,dup,lock,del','글은 굵기 없이 내용 수정 · 이후 장면 리셋 · 순서 · 복제 · 고정 · 삭제');
+    assert.equal(await f.evaluate(()=>[...document.querySelectorAll('#psShapeMenu button[data-act]')].map(b=>b.dataset.act).join(',')),'edit,position-all,reset,front,back,dup,lock,del','글은 굵기 없이 내용 수정 · 모든 장면 위치 적용 · 이후 장면 리셋 · 순서 · 복제 · 고정 · 삭제');
     assert.equal(await f.evaluate(()=>!!document.getElementById('psSmW')),false);
     await f.evaluate(()=>window.__psShapeMenu.close());
     // 5) 묶음 — 토글은 한 줄에 셋
