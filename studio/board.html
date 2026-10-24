@@ -5211,9 +5211,9 @@ var curBallStyle="1970";try{var _bs=lookDefault("ballStyle");if(_bs&&BALL_SVG_IN
 /* 실사 공(balls.js·AVIF) 지원 게이트 — 디코드 확인 전·미지원(구형 iPad 등)은 SVG 공 사용, 확인되면 재렌더 */
 window.__ballImgOK=false;
 (function(){try{if(!window.BALL_IMG)return;var t=new Image();
-  t.onload=function(){window.__ballImgOK=true;try{if(typeof renderTokens==="function")renderTokens();}catch(_){}try{if(typeof renderPitchImg==="function")renderPitchImg();}catch(_){}
+  t.onload=function(){window.__ballImgOK=true;var lock=window.__capLock;window.__capLock=1;try{try{if(typeof renderTokens==="function")renderTokens();}catch(_){}try{if(typeof renderPitchImg==="function")renderPitchImg();}catch(_){}
     /* 부팅 복원된 '실사' 선택을 세그에도 반영 */
-    try{ if(state.pitchImg==='@real'){ var __sg=document.getElementById('pitchSeg'); if(__sg)[].forEach.call(__sg.querySelectorAll('button'),function(b){b.classList.toggle('on',b.dataset.p==='real');}); } }catch(_){}};
+    try{ if(state.pitchImg==='@real'){ var __sg=document.getElementById('pitchSeg'); if(__sg)[].forEach.call(__sg.querySelectorAll('button'),function(b){b.classList.toggle('on',b.dataset.p==='real');}); } }catch(_){}}finally{window.__capLock=lock;}};
   t.src=window.BALL_IMG["white"];}catch(_){}})();
 /* 2.268 — 공 구르기(사용자 "공이 이동할 때 굴러가는 것처럼"): 재생 중 이동 거리에 비례해 무늬를 회전.
    각도 += 거리/반지름(14 보드단위) — 미끄러짐 없는 구름. 방향은 이동의 주축(가로면 dx, 세로면 dy) 부호.
