@@ -13,10 +13,18 @@ try{
   release=fx.holdKvPull(WP);
   // Hold the actual private GET through shell/dock initialization, as on a slow cold start.
   const size=width<700?'phone':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:850};
-  const start=fx.calls.length,opening=openApp(fx,size,{browsers}),deadline=Date.now()+30000;
+  const start=fx.calls.length,opening=openApp(fx,size,{browsers,init:{fn:()=>{
+   if(window!==top)return;
+   // Enter the already-loaded board while its first server preimage is still pending.
+   const timer=setInterval(()=>{const w=document.getElementById('fBoard')?.contentWindow;
+    if(window.__psShowApp&&w?._boardPrivateLoaded&&!w.__boardRestoreDone&&w.document.readyState==='complete'){
+     clearInterval(timer);window.__psShowApp('board');window.__coldBoardEntry=true;
+    }
+   },25);
+  }}}),deadline=Date.now()+30000;
   while(!fx.calls.slice(start).some(c=>c.m==='GET'&&c.p==='/rest/v1/ps_kv'&&decodeURIComponent(c.q||'').includes(WP))){if(Date.now()>deadline)throw Error('No private board GET');await new Promise(r=>setTimeout(r,25));}
   const timer=setTimeout(()=>{release?.();release=null;},6500);
-  const {page,context}=await opening;f=await board(page);
+  const {page,context}=await opening;await page.waitForFunction(()=>window.__coldBoardEntry===true);f=await board(page);
   await f.waitForFunction(()=>window.__boardReady&&_boardPrivateLoaded&&boardPrivateCurrent(_boardPrivateOwner)&&!!(_boardPrivateRecord?_boardPrivateRecord.base:_boardPrivateBase)&&state.players.some(p=>p.id===701));
   clearTimeout(timer);release?.();release=null;
   const restored=await f.evaluate(()=>({name:state.players.find(p=>p.id===701).name,shape:tokShape,grid:state.gridType,baseHasPlayer:JSON.parse(_boardPrivateRecord.base.raw).snap.players.some(p=>p.id===701)}));

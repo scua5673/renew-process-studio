@@ -11,7 +11,14 @@ try{
     const size=engine==='webkit'?(width<768?'phone':'ipad'):'desktop';
     // Mobile WebKit keeps its original device width on resize: create each screen at its actual width.
     SIZES[size].ctx.viewport={width,height:850};SIZES[size].ctx.screen={width,height:850};
-    const {page,context,logs}=await openApp(fx,size,{browsers,tilt3d:false});
+    const {page,context,logs}=await openApp(fx,size,{browsers,tilt3d:false,init:{fn:()=>{
+      if(!location.pathname.endsWith('/board.html'))return;
+      let dirty=false;window.__restoreDirtyTrace=[];
+      Object.defineProperty(window,'_boardManualDirty',{configurable:true,get:()=>dirty,set:value=>{
+        if(value&&!dirty)window.__restoreDirtyTrace.push({at:Date.now(),ready:window.__boardReady,stack:new Error().stack});
+        dirty=value;
+      }});
+    }}});
     async function board(){
       if(await page.evaluate(()=>document.body.classList.contains('ps-team-open'))){
         await page.locator('#teamBottom [data-tb="more"]').click();
@@ -21,7 +28,11 @@ try{
       const f=await (await page.waitForSelector('#fBoard')).contentFrame();
       // Loaded becomes true after the local read, before a later server restore finishes.
       // Seed the online-save scenario only after its owner and server preimage are verified.
-      await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&window.__psPages&&boardPrivateCurrent(_boardPrivateOwner)&&!!(_boardPrivateRecord?_boardPrivateRecord.base:_boardPrivateBase));
+      try{await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&window.__psPages&&boardPrivateCurrent(_boardPrivateOwner)&&!!(_boardPrivateRecord?_boardPrivateRecord.base:_boardPrivateBase));}
+      catch(error){
+        const restore=await f.evaluate(()=>({ready:window.__boardReady,done:window.__boardRestoreDone,loaded:window._boardPrivateLoaded,current:boardPrivateCurrent(_boardPrivateOwner),base:!!_boardPrivateBase,recordBase:!!_boardPrivateRecord?.base,pending:!!_boardPrivateRecord?.pending,generation:_boardPrivateGeneration,edit:_boardPrivateEditSeq,dirty:_boardManualDirty,user:_boardUserTouched,liveDirty:_bliveDirty,view:window.__csView,capLock:window.__capLock,trace:window.__restoreDirtyTrace})).catch(e=>({diagnosticError:e.message}));
+        console.error(JSON.stringify({engine,width,restore,privateGET:fx.calls.filter(c=>c.m==='GET'&&c.p==='/rest/v1/ps_kv').slice(-10)}));throw error;
+      }
       return f;
     }
     let f=await board();
