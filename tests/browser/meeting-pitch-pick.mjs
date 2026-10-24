@@ -24,6 +24,8 @@ try{
     await f.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());
     await f.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===9,null,{timeout:15000});
     await f.waitForFunction(()=>{const o=document.getElementById('psMeetForm');return o&&o.classList.contains('on')&&o.getBoundingClientRect().width>0;},null,{timeout:10000});
+    await f.click('#psMeetForm [data-start=filled]'); // 기존 포메이션 검사는 기본 자료 포함으로 시작
+
   };
   const look=()=>f.evaluate(()=>({o:window.__psMeetFormLook(),on:[...document.querySelectorAll('#psMeetForm .mf-lc>.on')].map(b=>b.closest('[data-look]').getAttribute('data-look')+':'+b.getAttribute('data-v')),
     rows:[...document.querySelectorAll('#psMeetForm .mf-lc')].map(r=>r.getAttribute('data-look')+'='+[...r.children].map(b=>b.textContent).join('/')),

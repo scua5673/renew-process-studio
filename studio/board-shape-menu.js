@@ -78,6 +78,29 @@
     return result;
   }
 
+  // Position only: preserve each scene's text, style, identity and intentional absence.
+  function positionTexts(frames,index,items){
+    var out={frames:frames.slice(),changed:0,skipped:0};
+    items=items.filter(function(d){return isText(d)&&d.pts&&d.pts[0]&&Number.isFinite(d.pts[0].x)&&Number.isFinite(d.pts[0].y);});
+    frames.forEach(function(f,i){
+      if(i===index)return;
+      var ds=(f.snap&&f.snap.drawings||[]).slice(),changed=false;
+      items.forEach(function(d){
+        var candidates=[];
+        ds.forEach(function(q,j){if(isText(q)&&d._sceneId&&q._sceneId===d._sceneId)candidates.push(j);});
+        if(!candidates.length)ds.forEach(function(q,j){if(isText(q)&&String(q.text||'')===String(d.text||''))candidates.push(j);});
+        if(candidates.length!==1){if(candidates.length>1)out.skipped++;return;}
+        var at=candidates[0],q=ds[at],p=q.pts&&q.pts[0];
+        if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y)){out.skipped++;return;}
+        var dx=d.pts[0].x-p.x,dy=d.pts[0].y-p.y;if(!dx&&!dy)return;
+        ds[at]=Object.assign({},q,{pts:q.pts.map(function(v){return Object.assign({},v,{x:v.x+dx,y:v.y+dy});})});
+        changed=true;out.changed++;
+      });
+      if(changed){out.frames[i]=Object.assign({},f,{snap:Object.assign({},f.snap,{drawings:ds})});delete out.frames[i].thumb;}
+    });
+    return out;
+  }
+
   var BACK_ICON = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2" fill="currentColor" fill-opacity=".22"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>';
   var N = ':not(#_):not(#__):not(#___)';
   function css() {
@@ -101,7 +124,8 @@
       '#psShapeMenu .sm-btns button:active,#psShapeMenu .sm-btns button.on{background:var(--pop-accent,var(--ps-navy,#14213D));color:var(--pop-on-ink,#fff)}',
       '#psShapeMenu .sm-btns button.sm-del{color:var(--pop-danger,#d7263d);background:var(--pop-danger-bg,rgba(215,38,61,.08))}',
       '#psShapeMenu .sm-btns button.sm-del:hover{background:var(--pop-danger,#d7263d);color:#fff}',
-      '#psShapeMenu .sm-btns button.sm-wide{grid-column:1/-1}'
+      '#psShapeMenu .sm-btns button.sm-wide{grid-column:1/-1}',
+      'html body .sel-ctl' + N + '>#textPositionAllBtn{order:12!important;white-space:nowrap!important;font-size:11px!important;grid-column:1/-1!important}'
     ].join('\n');
   }
 
@@ -144,6 +168,35 @@
       if (!b || !b.offsetParent) return false;
       try { var r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0; } catch (_) { return false; }
     }
+    function editable(){return !(win.__vaultReadOnly||win.__animExport||doc.body.classList.contains('comm-viewing')||(S()&&S().boardLocked)||call('communityBoardReadOnly'));}
+    function selection(){var m=MULTI(),s=SEL();return m&&m.length?m.slice():(s&&s.ref?[s.ref]:[]);}
+    function resetSelection(items){
+      close();if(!editable())return 0;
+      items=items||selection();
+      var ds=items.filter(function(q){return draws().indexOf(q)>=0;}),tokens=items.filter(function(q){return /^(player|equip|ball)$/.test(call('typeOfItem',q));});
+      if(!ds.length&&!tokens.length){call('toast','먼저 토큰이나 도구를 선택해 주세요');return 0;}
+      if(animActive<0||animActive>=anim.frames.length-1){call('toast','뒤에 장면이 있을 때 씁니다');return 0;}
+      call('stopAnim');
+      if(tokens.length)call('__resetTokensLaterFrames',tokens);else call('pushUndo');
+      if(ds.length){
+        var current=call('captureSnap'),plan=resetDrawings(anim.frames,animActive,ds);
+        plan.frames[animActive]=Object.assign({},anim.frames[animActive],{snap:current});anim.frames=plan.frames;
+        call('renderAnimFrames');call('renderOnion');call('boardSaveLive');
+        call('toast',plan.changed+'개 반영'+(plan.skipped?' · 구분할 수 없는 '+plan.skipped+'개는 유지':''));
+      }
+      return ds.length+tokens.length;
+    }
+    function applyPositions(items){
+      close();if(!editable())return 0;
+      items=(items||selection()).filter(isText);
+      if(!items.length||anim.frames.length<2||animActive<0){call('toast','텍스트와 두 개 이상의 장면이 있을 때 씁니다');return 0;}
+      call('stopAnim');
+      var plan=positionTexts(anim.frames,animActive,items);
+      if(!plan.changed){call('toast',plan.skipped?'같은 글이 여럿 있어 구분할 수 없는 장면은 유지했어요':'다른 장면에서 위치를 바꿀 같은 텍스트가 없어요');return 0;}
+      call('pushUndo');plan.frames[animActive]=Object.assign({},anim.frames[animActive],{snap:call('captureSnap')});anim.frames=plan.frames;
+      call('renderAnimFrames');call('renderOnion');call('boardSaveLive');
+      call('toast',plan.changed+'곳에 텍스트 위치를 적용했어요'+(plan.skipped?' · 구분할 수 없는 '+plan.skipped+'곳은 유지':''));return plan.changed;
+    }
     function open(d, x, y) {
       close();
       var ts = targets(d, MULTI(), draws());
@@ -160,6 +213,7 @@
           + '<div class="sm-row"><span class="sm-lb">투명도</span><input type="range" id="psSmO" min="' + OP[0] + '" max="' + OP[1] + '" step="' + OP[2] + '" value="' + op + '"><span class="sm-val" id="psSmOv">' + Math.round(op * 100) + '%</span></div>' : '')
         + '<div class="sm-btns">'
         + (!shapes.length && ts.length === 1 && doc.getElementById('textEditBtn') ? '<button type="button" class="sm-wide" data-act="edit">내용 수정</button>' : '')
+        + (ts.every(isText)?'<button type="button" class="sm-wide" data-act="position-all">모든 장면에 위치 적용</button>':'')
         + '<button type="button" class="sm-wide" data-act="reset" title="현재 모습을 이후 장면에 반영">↺ 이후 장면 리셋</button>'
         + '<button type="button" data-act="front" title="맨 앞으로 (⌘])">맨 앞</button><button type="button" data-act="back" title="맨 뒤로 (⌘[)">맨 뒤</button>'
         + (doc.getElementById('dupSelBtn') ? '<button type="button" data-act="dup">복제</button>' : '')
@@ -195,14 +249,8 @@
         b.addEventListener('click', function (e) {
           e.stopPropagation();
           var act = b.dataset.act;
-          if(act==='reset'){
-            close();if(animActive<0||animActive>=anim.frames.length-1){call('toast','뒤에 장면이 있을 때 씁니다');return;}
-            call('stopAnim');call('pushUndo');
-            var current=call('captureSnap'),plan=resetDrawings(anim.frames,animActive,ts);
-            plan.frames[animActive]=Object.assign({},anim.frames[animActive],{snap:current});
-            anim.frames=plan.frames;call('renderAnimFrames');call('renderOnion');call('boardSaveLive');
-            call('toast',plan.changed+'개 반영'+(plan.skipped?' · 구분할 수 없는 '+plan.skipped+'개는 유지':''));return;
-          }
+          if(act==='reset'){resetSelection(ts);return;}
+          if(act==='position-all'){applyPositions(ts);return;}
           if (act === 'front' || act === 'back') { call('zOrderItems', ts.slice(), act === 'front'); call('updateDelUI'); close(); return; }
           if (act === 'more') { close(); var lb = doc.getElementById('lineStyleBtn'); if (lb) lb.click(); return; }
           if (act === 'dup' || act === 'lock' || act === 'edit') { close(); press(act === 'dup' ? 'dupSelBtn' : act === 'lock' ? 'lockSelBtn' : 'textEditBtn'); return; }   // 선택 패널의 단추를 대신 누른다 — 동작 · 되돌리기는 그대로
@@ -256,12 +304,41 @@
       b.onclick = function (e) { e.stopPropagation(); call('zOrderSel', false); call('updateDelUI'); };
       return b;
     }
-    function syncBack() { var fb = doc.getElementById('frontSelBtn'), b = mountBack(); if (fb && b && b.style.display !== fb.style.display) b.style.display = fb.style.display; }
+    function syncBack() {
+      var fb=doc.getElementById('frontSelBtn'),b=mountBack();if(fb&&b&&b.style.display!==fb.style.display)b.style.display=fb.style.display;
+      var edit=doc.getElementById('textEditBtn'),pos=doc.getElementById('textPositionAllBtn');
+      if(edit&&!pos){pos=doc.createElement('button');pos.type='button';pos.id='textPositionAllBtn';pos.className='dup-sel';pos.textContent='모든 장면에 위치 적용';pos.title='같은 텍스트의 위치만 맞춥니다. 장면별 내용과 서식은 유지돼요.';edit.insertAdjacentElement('afterend',pos);pos.onclick=function(e){e.stopPropagation();applyPositions();};}
+      if(pos){var selected=selection();pos.style.display=selected.length&&selected.every(isText)?'inline-flex':'none';}
+    }
     function go() {
       var capture=win.captureSnap;
       if(typeof capture==='function')win.captureSnap=function(){
         var seen={};draws().forEach(function(d){if(!d._sceneId||seen[d._sceneId])d._sceneId='d-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);seen[d._sceneId]=1;});
         return capture.apply(this,arguments);
+      };
+      // Lazy thumbnails temporarily load another snapshot. Keep the live selection
+      // and drawing references used by the open editor/menu when restoring it.
+      var thumb=win.__snapToThumb;
+      if(typeof thumb==='function')win.__snapToThumb=function(){
+        var single=SEL(),many=(MULTI()||[]).slice(),panel=typeof selPanelOpen!=='undefined'?selPanelOpen:false;
+        function mark(o,type){return {ref:o,type:type||call('typeOfItem',o),index:draws().indexOf(o)};}
+        var one=single&&mark(single.ref,single.type),marks=many.map(function(o){return mark(o);});
+        function resolve(m){
+          if(!m)return null;var st=S(),arr=m.type==='drawing'?draws():m.type==='player'?st.players:m.type==='equip'?st.equipment:null;
+          if(m.type==='ball')return st.ball;
+          if(!arr)return null;
+          var at=arr.findIndex(function(q){return m.type==='drawing'?!!m.ref._sceneId&&q._sceneId===m.ref._sceneId:q.id===m.ref.id;});
+          if(at<0&&m.type==='drawing'&&!m.ref._sceneId&&arr[m.index])at=m.index;
+          if(at<0)return null;if(m.type==='drawing')arr[at]=m.ref;return arr[at];
+        }
+        try{return thumb.apply(this,arguments);}finally{
+          if((one||marks.length)&&(SEL()!==single||marks.length&&(MULTI()||[]).length!==many.length)){
+            var ref=resolve(one),restored=marks.map(resolve).filter(Boolean);
+            sel=ref?{type:one.type,ref:ref}:null;multiSel=restored;
+            if(typeof selPanelOpen!=='undefined')selPanelOpen=panel;
+            call('_setSelRings');call('renderDrawings');call('updateDelUI');call('updateAlignBar');call('renderMultiGuides');call('positionSelCtl');
+          }
+        }
       };
       // 본문 함수는 본문 스크립트가 돈 뒤(DOMContentLoaded)에야 있다 — 그림 요소 ↔ 자료(drawingEl) · «맨 뒤» 보임(updateDelUI)
       var _el = win.drawingEl;
@@ -274,12 +351,12 @@
     }
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', go); else go();
 
-    var api = { open: open, close: close, isOpen: function () { return !!menu; }, el: function () { return menu; }, back: mountBack };
+    var api = { resetSelection:resetSelection,applyTextPositions:applyPositions,open: open, close: close, isOpen: function () { return !!menu; }, el: function () { return menu; }, back: mountBack };
     win.__psShapeMenu = api;
     return api;
   }
 
-  var api = { resetDrawings: resetDrawings, name: name, clampLw: clampLw, clampOp: clampOp, isRightClick: isRightClick, findDrawing: findDrawing, targets: targets, place: place, css: css, install: install };
+  var api = { positionTexts:positionTexts,resetDrawings: resetDrawings, name: name, clampLw: clampLw, clampOp: clampOp, isRightClick: isRightClick, findDrawing: findDrawing, targets: targets, place: place, css: css, install: install };
   if (typeof window !== 'undefined' && window.document) { try { install(window); } catch (_) {} }
   return api;
 });
