@@ -176,8 +176,17 @@ try{
  const exportGoals=await bf.evaluate(()=>{const doc=new DOMParser().parseFromString(boardThumbSVG(),'image/svg+xml');return [...doc.querySelectorAll('[data-goal-anchor="mouth"]')].map(g=>g.getAttribute('transform'));});
  assert.equal(exportGoals.length,4);assert.ok(exportGoals.every(t=>!t.includes('scale(1.470588')),'export must not enlarge physical goal dimensions');
  await page.screenshot({path:path.join(out,'checks','native-studio-editor.png')});
+ // Netlify publishes short links (/studio/app); follow that real deployment path too.
+ await bf.evaluate(()=>{window.__closingEditor=1;try{closeEditor(false);}finally{window.__closingEditor=0;}});
+ await context.route('**/studio/app',route=>route.fulfill({status:200,contentType:'text/html; charset=utf-8',body:fs.readFileSync(path.join(root,'studio/app.html'),'utf8')}));
+ await page.goto(fx.base+'/studio/app#textbook=ch10-t3');
+ bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
+ await bf.waitForSelector('#psTextbookDialog',{timeout:45000});
+ assert.equal(await bf.locator('#psTextbookDialog li').count(),1,'a published short app link opens its selected native import dialog');
+ assert.match(await bf.locator('#psTextbookDialog li').textContent(),/골키퍼/);
+ await bf.getByRole('button',{name:'취소',exact:true}).click();
  const errors=logs.filter(l=>l.type==='pageerror'&&/textbook|letterPack|PSTextbook/i.test(l.stack+' '+l.text));
  assert.deepEqual(errors,[]);
- fs.writeFileSync(path.join(out,'checks','result.json'),JSON.stringify({passed:true,imported,checks:['responsive 375/1100/1280','4 decision branches','4 comparison sets: success/failure/intervention','all scene steps and real-time playback','3 diagnostic answers','print and download field notes','upgrade without overwriting old edits','3 original-source drills','save 3 separate cards','open all 3 editors','deduplicate and preserve edits','copy single item','reload persistence','known-ID-only URL parsing'],logs},null,2));
+ fs.writeFileSync(path.join(out,'checks','result.json'),JSON.stringify({passed:true,imported,checks:['responsive 375/1100/1280','4 decision branches','4 comparison sets: success/failure/intervention','all scene steps and real-time playback','3 diagnostic answers','print and download field notes','upgrade without overwriting old edits','3 original-source drills','save 3 separate cards','open all 3 editors','deduplicate and preserve edits','copy single item','reload persistence','known-ID-only URL parsing','published short app URL import'],logs},null,2));
  console.log('대표 장 · 반응형·원문 인원·담기·편집·중복·수정본 보존·새로고침 검증 통과');
 } finally {for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close();}

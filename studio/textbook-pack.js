@@ -201,6 +201,6 @@
       finally { clearTimeout(timer); }
     });
   }
-  if (/\/app\.html$/.test(location.pathname)) initApp();
-  else if (/\/board\.html$/.test(location.pathname)) initBoard();
+  if (/\/app(?:\.html)?$/.test(location.pathname)) initApp();
+  else if (/\/board(?:\.html)?$/.test(location.pathname)) initBoard();
 })(typeof window === 'undefined' ? null : window);

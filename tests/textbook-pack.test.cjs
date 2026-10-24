@@ -13,11 +13,11 @@ test('textbook links select only registered chapters or a registered single dril
  assert.equal(api.packUrl('ch10',{href:'https://example.invalid/studio/board.html'}),'https://example.invalid/studio/textbook/packs/ch10.json');
  for(const x of ['__proto__','constructor','../other','https://outside.invalid'])assert.equal(api.packUrl(x,{href:'https://example.invalid/studio/board.html'}),null);
 });
-function shell({unlocked=false,player=false}={}){
+function shell({unlocked=false,player=false,pathname='/studio/app.html'}={}){
  const data=new Map(),posts=[],events={},timers=new Map();let note=null,id=0;
  const frame={postMessage:(d,o)=>posts.push({d,o})};
  const doc={body:{classList:{contains:k=>k==='ps-player-idp-only'&&player},appendChild:x=>{note=x;}},createElement:()=>({style:{},setAttribute(){},remove(){note=null;}}),getElementById:k=>k==='fBoard'?{contentWindow:frame}:note};
- const loc={hash:'#textbook=ch10-t2',origin:'https://app.invalid',pathname:'/studio/app.html',search:'',href:'https://app.invalid/studio/app.html#textbook=ch10-t2'};
+ const loc={hash:'#textbook=ch10-t2',origin:'https://app.invalid',pathname,search:'',href:'https://app.invalid'+pathname+'#textbook=ch10-t2'};
  const win={document:doc,PSSync:{dataUnlocked:()=>unlocked},__psShowApp(){},addEventListener:(t,f)=>events[t]=f};
  vm.runInNewContext(src,{window:win,document:doc,location:loc,history:{replaceState(){loc.hash='';}},sessionStorage:{getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)},setInterval:f=>{timers.set(++id,f);return id;},clearInterval:i=>timers.delete(i),URL});
  return {posts,data,events,frame,note:()=>note?.textContent,unlock(){unlocked=true;for(const fn of timers.values())fn();}};
@@ -29,6 +29,13 @@ test('a pending drill waits for sign-in; acknowledgements must come from its boa
   s.events.message({origin,source,data:{source:'board',type:'textbookPackAck'}});assert.ok(s.data.has('ps_textbook_pending_v1'));
  }
  s.events.message({origin:'https://app.invalid',source:s.frame,data:{source:'board',type:'textbookPackAck'}});assert.equal(s.data.size,0);
+});
+test('published short app URLs retain the sign-in handoff and resolve the same source pack',()=>{
+ for(const pathname of ['/studio/app','/studio/app.html']){
+  const s=shell({pathname});assert.match(s.note(),/로그인/);assert.ok(s.data.has('ps_textbook_pending_v1'));
+  s.unlock();assert.equal(s.posts[0].d.item,'ch10-t2');
+  assert.equal(api.packUrl('ch10',{href:'https://app.invalid'+pathname}),'https://app.invalid/studio/textbook/packs/ch10.json');
+ }
 });
 test('player accounts receive an explanation and cannot import',()=>{
  const s=shell({unlocked:true,player:true});assert.equal(s.posts.length,0);assert.match(s.note(),/코치 계정/);assert.equal(s.data.size,0);
