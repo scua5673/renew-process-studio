@@ -22,7 +22,7 @@ test('3.010 hidden rows beat figma-premium «.menurow display:flex!important» (
 
 test('3.010 3D options: camera, stadium detail, ad text — a device setting',()=>{
   assert.match(src,/var TILT_CAM=\{low:\{ax:36,sy:1\.3\},mid:\{ax:24,sy:1\.08\},high:\{ax:12,sy:1\}\};/,'낮게 = more oblique, 보통 = 3.009, 높게 = from above');
-  assert.match(src,/var TILT_PAD=\{full:\[\.15,\.11,\.05\],simple:\[[^\]]+\],grass:\[[^\]]+\]\};/,'«전체» keeps the 3.009 frame');
+  assert.match(src,/var TILT_PAD=\{full:\[\.07,\.05,\.025\],simple:\[[^\]]+\],grass:\[[^\]]+\]\};/,'«전체» enlarges the pitch while preserving the original stadium');
   assert.match(src,/scale\(var\(--tilt-k,1\),calc\(var\(--tilt-sy,1\.08\)\*var\(--tilt-k,1\)\)\) rotateX\(var\(--tilt-ax,24deg\)\)/,'one transform, defaults = 3.009');
   assert.match(src,/localStorage\.getItem\("ps_tilt3d_opts_v1"\)/);
   assert.match(src,/t3\.cam,deco,st\.getPropertyValue\("--tilt-k"\)/,'the fit key refits on a camera or stadium change (3.027: deco = tiltDecoNow(), a grid board is grass only)');

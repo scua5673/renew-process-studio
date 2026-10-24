@@ -10630,7 +10630,9 @@ async function _exportVideoRun(opts){
   /* 3.039 — 카메라가 맞출 상자: 훈련 구역이면 그 화면, 아니면 지금 페이지의 운동장(화면 __tiltFit 과 같다 — 둘레 여백에 경기장이 보인다) */
   function _t3Box(k){ const v=plan[k].vb||uvb; if(!_fit){ const pb=_exportPitchBox(); if(pb)return pb; } return v?[v[0],v[1],v[0]+v[2],v[1]+v[3]]:[0,0,W,H]; }
   function _t3Produce(k){ try{ plan[k].set(); }catch(_){}
-    const T=_t3x, box=_t3Box(k), pads=_fit?[.05,.05,.035]:((window.__tiltPadsNow&&window.__tiltPadsNow())||[.15,.11,.05]), ck=box.map(Math.round).join(",")+"|"+pads.join(",");
+    const T=_t3x, box=_t3Box(k);let pads=_fit?[.05,.05,.035]:((window.__tiltPadsNow&&window.__tiltPadsNow())||[.15,.11,.05]);
+    if(!opts.reel&&FR.some(f=>f.cap))pads=[pads[0],Math.max(.11,pads[1]),pads[2]];
+    const ck=box.map(Math.round).join(",")+"|"+pads.join(",");
     const cam=T.cams[ck]||(T.cams[ck]=_t3Camera(canvas.width,canvas.height,box,{ax:T.cam.ax,sy:T.cam.sy,pads:pads,top:T.top,bottom:T.bottom}));
     /* 그릴 범위 = 화면에 비치는 바닥 ∩ (경기장 그림 ∪ 맞춤 상자). 판 그림의 잔디면은 운동장 밖 1600 단위까지 이어져 그대로 담으면 너무 크다 */
     const host=_t3StadiumHost(), sv=host?host.__psVb.slice():null, vis=_t3Visible(cam)||box;
@@ -14817,7 +14819,7 @@ function init(){
   /* ══ 3.009 · 틀 맞춤은 **보여 줄 운동장 범위(__pvBox)** 를 잰다 ═══════════════════════════
      2.370 은 svg 상자 전체를 쟀다. 그 상자는 가로로 긴 틀에서 좌우 여백(letterbox)까지 품어서, 경기장 둘레(관중석)를
      둘 자리를 정확히 비울 수 없었다. 이제 운동장 범위와 같은 사각형을 잠깐 넣어 **원근이 걸린 화면 상자**를 실측하고,
-     위(먼 쪽 관중석) 15% · 아래 11% · 옆 5% 를 비운 띠 안에 운동장을 맞춘다(레퍼런스의 관중석 비율).
+     위 7% · 아래 5% · 옆 2.5% 를 비운 띠 안에 운동장을 맞춘다(기존 관중석을 유지하면서 운동장을 크게).
      원근은 배율에 정확히 비례하지 않으므로 되풀이해 맞추되, 맞으면 바로 멈춘다.
      ⚠ 한 번에 강제 레이아웃이 여러 번이라 싸지 않다(실측 ~120ms) — 같은 틀·같은 범위·이미 맞춘 배율이면 다시 재지 않는다(_fitKey). */
   /* ══ 3.010 · 3D 보기 설정(사용자 «보드 설정도 더 업데이트» — 3D 보기 설정 추가) ══════════════════════════
@@ -14827,7 +14829,7 @@ function init(){
      ⚠ 3D 켜기·끄기와 같이 **기기 설정**이다(보드가 아니라 «내가 보는 방식» — 2.929 표의 «보드 보기»와 같은 자리). */
   var TILT_CAM={low:{ax:36,sy:1.3},mid:{ax:24,sy:1.08},high:{ax:12,sy:1}};
   /* 3.096 — 중계 카메라(tv)를 뺐다(사용자 «중계화면은 빼자» — 재생하면 선이 어긋남). 저장된 tv 는 «보통»으로 읽힌다 */
-  var TILT_PAD={full:[.15,.11,.05],simple:[.09,.08,.035],grass:[.05,.05,.03]};
+  var TILT_PAD={full:[.07,.05,.025],simple:[.06,.04,.02],grass:[.05,.03,.015]};
   /* 3.035 — 그리드 판(라인 없는 빈 판)은 여백 없이 판을 꽉 채운다(사용자 «그리드 선택했을 때 보드에 여백이 없이 다 활용할 수 있게»). 잔디는 tiltStadium 이 판 밖으로
      한 판 넓이만큼 이어 그려(bleed) 기울인 판의 네 귀가 어두운 무대로 비치지 않는다 — 무대 끝까지 훈련장이다. */
   var TILT_PAD_BLANK=[.012,.012,.012];
@@ -14909,12 +14911,14 @@ function init(){
       var st=document.documentElement.style, raw=stage.getBoundingClientRect(), cs=getComputedStyle(stage), pt=parseFloat(cs.paddingTop)||0, pb=parseFloat(cs.paddingBottom)||0;
       var top=raw.top+pt, hh=raw.height-pt-pb, ww=raw.width; if(!hh||!ww)return;
       var t3=window.__tilt3d||{},deco=tiltDecoNow(),pads=tiltPadsNow();
-      var key=[Math.round(raw.left),Math.round(top),Math.round(ww),Math.round(hh),pv.map(Math.round).join(","),vb.x,vb.y,vb.width,vb.height,svg.getAttribute("preserveAspectRatio"),t3.cam,deco,st.getPropertyValue("--tilt-k"),st.getPropertyValue("--tilt-ty")].join("|");
+      /* 도구 막대와 그 위로 솟는 골대의 높이를 함께 비운다. */
+      var tb=document.querySelector('#boardPageStrip.ps-tb>.tb-c'),inset=tb?Math.max(0,tb.getBoundingClientRect().bottom-top)+Math.min(32,hh*.045):0;
+      var key=[Math.round(raw.left),Math.round(top),Math.round(ww),Math.round(hh),inset,pv.map(Math.round).join(","),vb.x,vb.y,vb.width,vb.height,svg.getAttribute("preserveAspectRatio"),t3.cam,deco,st.getPropertyValue("--tilt-k"),st.getPropertyValue("--tilt-ty")].join("|");
       if(key===_fitKey)return;
       var prevTr=svg.style.transition; svg.style.transition="none";
       var probe=el("rect",{x:pv[0],y:pv[1],width:pv[2],height:pv[3],fill:"none","pointer-events":"none"}); svg.appendChild(probe);
       try{
-        var padT=hh*pads[0], padB=hh*pads[1], padX=Math.max(12,ww*pads[2]), availH=hh-padT-padB, availW=ww-2*padX;
+        var padT=Math.max(hh*pads[0],!isBlankSpec()?inset:0), padB=hh*pads[1], padX=Math.max(12,ww*pads[2]), availH=hh-padT-padB, availW=ww-2*padX;
         var k=parseFloat(st.getPropertyValue("--tilt-k"))||0.8, ty=parseFloat(st.getPropertyValue("--tilt-ty"))||0;
         for(var i=0;i<5;i++){
           st.setProperty("--tilt-k",String(Math.round(k*1000)/1000)); st.setProperty("--tilt-ty",Math.round(ty)+"px"); void svg.offsetWidth;
