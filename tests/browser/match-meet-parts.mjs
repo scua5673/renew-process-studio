@@ -103,9 +103,16 @@ try{
   st=await cardSt();assert.deepEqual([st.head,st.shown],['경기 보드',['Vqa_prep']]);
 
   cur='match-new-opp';
-  await sf.evaluate(()=>{const m=matchGet();m.oppAttack='가상 공격 메모 1\n가상 공격 메모 2';m.oppConclusion='가상 결론';m.oppSetPlay='가상 세트피스 메모';});
   await sf.click('[data-match-step="opp"]');
   await sf.waitForFunction(()=>document.getElementById('matchMeetCard').closest('#matchOppPanel'));
+  // 실제 입력·저장 경로를 거친 메모로 검사한다. 메모리만 바꾸면 정상 새로고침에서 사라진다.
+  const notes={oppAttack:'가상 공격 메모 1\n가상 공격 메모 2',oppConclusion:'가상 결론',oppSetPlay:'가상 세트피스 메모'};
+  for(const [key,value] of Object.entries(notes))await sf.locator(`[data-match-field="${key}"]`).fill(value);
+  await sf.waitForFunction(()=>!matchSaveTimer&&!scoutStore.hasPending()&&!_mprT);
+  assert.deepEqual(await sf.evaluate(()=>{
+    __matchRefresh();const m=matchGet();
+    return {oppAttack:m.oppAttack,oppConclusion:m.oppConclusion,oppSetPlay:m.oppSetPlay};
+  }),notes,'저장한 상대 분석 메모는 정상 새로고침 뒤에도 유지된다');
   await sf.click('#matchMeetActs [data-mm-new]');
   bf=await board();
   await bf.waitForFunction(()=>document.querySelector('#psMeetForm.on'),null,{timeout:15000});
