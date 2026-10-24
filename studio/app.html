@@ -2657,7 +2657,7 @@ window.psFailAlert=function(lead,e,stage){
       /* 2.219 — 학습은 fLearning 으로 간다(옛: if(app==='learning')openIdpPersonalLayer('learn')) */
       if(app==='idp'&&!currentTeamKey){ var _cov=false; try{ _cov=(typeof _psVisBefore!=='undefined')&&(_psVisBefore!==fIdp); }catch(_){ _cov=false; } openIdpPersonalLayer('home',_cov); }   /* 2.777 — 프레임이 새로 보일 때만 가림 */
       /* 2.359 — design(보관함) 갈래는 위 fBoard.style.display 바로 앞으로 옮겼다(깜빡임). 여기 되돌리지 말 것 */
-      if(app==='board'){try{var _bw=fBoard.contentWindow,_bc=_bw.__capLock;try{if(!_bw.__boardRestoreDone)_bw.__capLock=1;if(_bw.boardShowDefault)_bw.boardShowDefault();else _bw.setView('board');}finally{_bw.__capLock=_bc;}}catch(_){}}else if(app==='note'){/* 모드 강제 없음 — 노트 안의 노트|메모 세그가 마지막 모드 유지 */try{fNote.contentWindow.fit&&fNote.contentWindow.fit();}catch(_){}}else if(app==='memo'){try{fNote.contentWindow.__noteSetMode&&fNote.contentWindow.__noteSetMode('memo');}catch(_){}}
+      if(app==='board'){try{var _bw=fBoard.contentWindow,_bc=_bw.__capLock;try{if(!_bw.__boardRestoreDone||_bw.__boardRestoring||(_bw._boardPrivateLoaded&&!_bw._boardPrivateBase))_bw.__capLock=1;if(_bw.boardShowDefault)_bw.boardShowDefault();else _bw.setView('board');}finally{_bw.__capLock=_bc;}}catch(_){}}else if(app==='note'){/* 모드 강제 없음 — 노트 안의 노트|메모 세그가 마지막 모드 유지 */try{fNote.contentWindow.fit&&fNote.contentWindow.fit();}catch(_){}}else if(app==='memo'){try{fNote.contentWindow.__noteSetMode&&fNote.contentWindow.__noteSetMode('memo');}catch(_){}}
     }
     window.__psShowApp=showApp;
     var openIdpTool=document.getElementById('openIdpTool'),openNoteTool=document.getElementById('openNoteTool');
@@ -8082,7 +8082,7 @@ window.__buildScoutForm=function(k){
     var view=doc.getElementById('viewBtn')||find(doc,function(e){ var t=T(e); if(t.indexOf('보기')<0||t.indexOf('사용법')>=0||t.indexOf('더보기')>=0||t.length>7) return false; var w=e.getBoundingClientRect().width; return w>20&&w<160; });
     if(!view) return false;
     // Bootstrap defaults must never race the saved personal board.
-    if(!doc.defaultView.__boardRestoreDone)return false;
+    if(!doc.defaultView.__boardRestoreDone||doc.defaultView.__boardRestoring||(doc.defaultView._boardPrivateLoaded&&!doc.defaultView._boardPrivateBase))return false;
     applied=true;
     /* 첫 부팅 기본값만 적용한다. 저장 보드·새 사용자 편집은 복원 결과가 우선이다. */
     var _tuned=false; try{ _tuned=!!doc.defaultView.localStorage.getItem('ps_board_defaults_v1')||!!doc.defaultView._boardPrivateRecord||!!doc.defaultView._boardUserTouched; }catch(_){}

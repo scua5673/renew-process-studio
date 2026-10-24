@@ -9015,7 +9015,7 @@ async function restoreLiveBoard(){
   var owner=boardPrivateOwner();if(!owner)return false;
   var generation=++_boardPrivateGeneration,edit=_boardPrivateEditSeq,api=boardPrivateAPI();
   if(_boardPrivateOwner&&!boardPrivateSameAccount(_boardPrivateOwner,owner))boardPrivateResetCanvas();
-  _boardPrivateOwner=owner;_boardPrivateLoaded=false;
+  _boardPrivateOwner=owner;_boardPrivateLoaded=false;window.__boardRestoring=generation;
   function current(){return generation===_boardPrivateGeneration&&boardPrivateCurrent(owner);}
   try{
     var local=await boardPrivateRead(owner);if(!current())return false;
@@ -9063,7 +9063,7 @@ async function restoreLiveBoard(){
     try{var ed=await boardStore.get(EDRAFT_KEY);if(current()&&ed&&ed.trainings&&ed.trainings.length)window.__editorDraft=ed;}catch(_){}
     try{if(current()&&typeof boardDraftOffer==='function')boardDraftOffer(owner,chosen).catch(function(){});}catch(_){}   /* 3.038 — 저장본보다 새 기기 초안이 있으면 «되살리기» 띠 */
     return current();
-  }catch(e){if(current())try{toast('내 보드를 불러오지 못했어요. 이 기기에 있는 작업은 그대로예요 — 인터넷 연결을 확인하고 보드를 다시 열어 주세요');   /* 3.039 — «개인 보드» · «원문»은 내부 말(피드백 CP-16) */}catch(_){}return false;}
+  }catch(e){if(current())try{toast('내 보드를 불러오지 못했어요. 이 기기에 있는 작업은 그대로예요 — 인터넷 연결을 확인하고 보드를 다시 열어 주세요');   /* 3.039 — «개인 보드» · «원문»은 내부 말(피드백 CP-16) */}catch(_){}return false;}finally{if(window.__boardRestoring===generation)window.__boardRestoring=0;}
 }
 /* 3.038 — 개인 보드 본문(또는 기기 초안)을 화면에 올린다. restoreLiveBoard 와 «되살리기»(__boardDraftRestore)가 같은 길을 쓴다. */
 function boardLiveApply(live){
