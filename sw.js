@@ -42,7 +42,7 @@ const OPTIONAL = [
   '/studio/gamemodel.html', '/studio/scout.html', '/studio/terms.html', '/studio/idp.html', '/studio/note.html', '/studio/scouting.html', '/studio/community.html', '/studio/analysis.html', '/studio/learning.html', '/studio/playbook.html',
   '/studio/balls.js', '/studio/pitches.js', '/studio/rpt-i18n.js',
   '/studio/vault-examples.js',   /* 3.001 — 빈 보관함 첫 화면의 예시. 없으면 첫 화면은 옛 모양 그대로 */
-  '/studio/community-fifa.js', '/studio/community-fifa.css', '/studio/community-tax.js', '/studio/community-tax.css',   /* 3.071 — 커뮤니티 «FIFA» 칸. 없으면 그 칸만 «불러오지 못했어요» */
+  '/studio/community-fifa.js', '/studio/community-fifa.css', '/studio/community-tax.js', '/studio/community-tax.css', '/studio/community-library.css',   /* Community library styles are available offline too. */
   /* 3.076 — PPT 모듈(pptxgen 0.46MB)은 미리 받지 않는다. 내보낼 때 받고, 못 받으면 board · gamemodel 이 jsdelivr 로 다시 받는다. */
   /* 2.552 — 통짜 폰트(2,009KB)를 **미리 받지 않는다.** 여기 목록에 있으면 첫 방문에
      화면과 상관없이 2MB 를 끌어온다 — 코치는 운동장에서 셀룰러로 앱을 연다.

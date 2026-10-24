@@ -52,7 +52,10 @@ test('both ways a post reaches the server go through the same cleaning',()=>{
 test('a chosen chip keeps a readable ground in the dark — its tint comes from a token that has a dark value',()=>{
   assert.equal(/var\(--act-soft/.test(comm),false,'--act-soft 는 정의가 없어 어두운 화면에서도 밝은 기본값이 쓰였다');
   const grammar=fs.readFileSync(path.join(__dirname,'..','studio','ui-grammar.css'),'utf8');
+  const library=fs.readFileSync(path.join(__dirname,'..','studio','community-library.css'),'utf8');
+  assert.match(comm,/<link rel="stylesheet" href="community-library\.css\?v=/,'분리한 커뮤니티 스타일이 실제 페이지에 연결된다');
   assert.match(grammar,/body\.fmdark\{[^}]*--accent-soft:#1B2640/,'어두운 화면의 --accent-soft');
-  for(const sel of ['.ps-fsheet .ps-fsheet-row button.on{background:var(--accent-soft,#E9EDF5)','.chip.on:not(#_):not(#__){background:var(--accent-soft,#E9EDF5)!important','.pr-cvtabs button[aria-pressed="true"]{border-color:var(--c-act,var(--ps-navy,#14213D));background:var(--accent-soft,#E9EDF5)'])
-    assert.ok(comm.includes(sel),sel);
+  for(const sel of ['.ps-fsheet .ps-fsheet-row button.on{background:var(--accent-soft,#E9EDF5)','.pr-cvtabs button[aria-pressed="true"]{border-color:var(--c-act,var(--ps-navy,#14213D));background:var(--accent-soft,#E9EDF5)'])
+    assert.ok((comm+library).includes(sel),sel);
+  assert.match(library,/\.tx-chip\.on\{\s*background:var\(--accent-soft\)!important;color:var\(--c-act\)!important/,'새 분류 칩도 같은 다크 토큰을 쓴다');
 });
