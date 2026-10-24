@@ -4,6 +4,13 @@ import path from 'node:path';
 import {startFixture,openApp,root} from '../fixtures/team-app.mjs';
 const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/textbook-midfield');
 fs.mkdirSync(path.join(out,'checks'),{recursive:true});fs.mkdirSync(path.join(out,'diagrams'),{recursive:true});
+async function importFrame(page){
+ await page.waitForURL(url=>/\/studio\/app(?:\.html)?$/.test(url.pathname),{waitUntil:'domcontentloaded'});
+ // The shell may replace its initial iframe while authentication is settling.
+ // Observe the current document's actual import dialog before keeping a frame handle.
+ await page.waitForFunction(()=>document.getElementById('fBoard')?.contentDocument?.getElementById('psTextbookDialog'),null,{timeout:45000});
+ return (await page.locator('#fBoard').elementHandle()).contentFrame();
+}
 async function assertGoalGeometry(frame){
  const native=await frame.evaluate(()=>document.documentElement.classList.contains('textbook-native')?{orientation:state.orientation,world:world.getAttribute('transform'),cv:commViewTok(),phone:phoneTokFactor(state.players[0]),flat:window.__flatK(state.players[0]),tilt:document.body.classList.contains('bc-tilt3d'),jerseys:[...document.querySelectorAll('.ps-jersey')].every(n=>getComputedStyle(n).display==='none'),filters:[...document.querySelectorAll('.token')].every(n=>getComputedStyle(n).filter==='none')}:null);
  if(native){assert.deepEqual(native,{orientation:'h',world:null,cv:1,phone:1,flat:1,tilt:false,jerseys:true,filters:true},'textbook stays a flat horizontal native diagram, without device enlargement or uniform decoration');}
@@ -84,8 +91,7 @@ try{
  assert.equal(fx.writes.length,0,'reading and playing the chapter cannot save into a workspace');
  await page.goto(fx.base+'/studio/textbook/ch10/index.html');
  await page.getByRole('link',{name:'훈련 3개 보관함에 담기 ↗',exact:true}).click();
- let bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
- await bf.waitForSelector('#psTextbookDialog',{timeout:45000});
+ let bf=await importFrame(page);
  assert.equal(await bf.locator('#psTextbookDialog li').count(),3);
  await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
  await page.screenshot({path:path.join(out,'checks','import-confirm.png')});
@@ -110,14 +116,12 @@ try{
  }
  await bf.evaluate(async()=>{await libTurn(async()=>{const lib=await libGet();lib.find(d=>d.textbook?.itemId==='ch10-t1').trainings[0].method+='\n수정본 보존 확인';await libWrite(lib);libTouch();});});
  await page.goto(fx.base+'/studio/app.html#textbook=ch10');
- bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
- await bf.waitForSelector('#psTextbookDialog',{timeout:45000});
+ bf=await importFrame(page);
  await bf.locator('#psTextbookDialog').getByRole('button',{name:'보관함에서 보기',exact:true}).click();
  assert.equal(await bf.evaluate(async()=>((await libGet())||[]).filter(d=>d.textbook).length),3);
  assert.equal(await bf.evaluate(async()=>((await libGet())||[]).find(d=>d.textbook?.itemId==='ch10-t1').trainings[0].method.endsWith('수정본 보존 확인')),true);
  await page.goto(fx.base+'/studio/app.html#textbook=ch10-t2');
- bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
- await bf.waitForSelector('#psTextbookDialog',{timeout:45000});
+ bf=await importFrame(page);
  assert.equal(await bf.locator('#psTextbookDialog li').count(),1);
  await bf.getByRole('button',{name:'새 사본으로 담기',exact:true}).click();
  await bf.waitForFunction(async()=>((await libGet())||[]).filter(d=>d.textbook).length===4);
@@ -128,8 +132,7 @@ try{
  // 이미 수정한 이전 판은 보강판으로 덮어쓰지 않는다.
  await bf.evaluate(async()=>{await libTurn(async()=>{const lib=await libGet(),d=lib.find(d=>d.textbook?.itemId==='ch10-t1');d.textbook.revision=1;d.coaching='이전 판의 가상 코치 수정';await libWrite(lib);libTouch();});});
  await page.goto(fx.base+'/studio/app.html#textbook=ch10-t1');
- bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
- await bf.waitForSelector('#psTextbookDialog',{timeout:45000});
+ bf=await importFrame(page);
  assert.match(await bf.locator('#psTextbookDialog').textContent(),/이전 판/);
  await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
  await page.screenshot({path:path.join(out,'checks','upgrade-confirm.png')});
@@ -142,7 +145,7 @@ try{
  assert.match(editions.find(d=>d.revision===1).method,/수정본 보존 확인$/);
  assert.match(editions.find(d=>d.revision===4).coaching,/현장 개입:/);
  await page.goto(fx.base+'/studio/app.html#textbook=ch10-t1');
- bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();await bf.waitForSelector('#psTextbookDialog',{timeout:45000});
+ bf=await importFrame(page);
  assert.equal(await bf.getByRole('button',{name:'보강판 새 사본으로 담기',exact:true}).count(),0,'newest edition is selected after upgrade');
  await bf.getByRole('button',{name:'보관함에서 보기',exact:true}).click();
  await page.goto(fx.base+'/studio/textbook/ch10/index.html#drill2');
@@ -161,8 +164,7 @@ try{
  await page.locator('#drill2 [data-act=play]').click();
  await nf.waitForFunction(()=>!animPlaying);
  await page.getByRole('link',{name:'이 장면 담고 스튜디오에서 편집 ↗',exact:true}).nth(1).click();
- bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
- await bf.waitForSelector('#psTextbookDialog',{timeout:45000});
+ bf=await importFrame(page);
  assert.match(await bf.locator('#psTextbookDialog li').textContent(),/코치 개입/);
  await bf.getByRole('button',{name:'보관함에 담기',exact:true}).click();
  await bf.waitForFunction(()=>document.body.classList.contains('editing'));
@@ -180,8 +182,7 @@ try{
  await bf.evaluate(()=>{window.__closingEditor=1;try{closeEditor(false);}finally{window.__closingEditor=0;}});
  await context.route('**/studio/app',route=>route.fulfill({status:200,contentType:'text/html; charset=utf-8',body:fs.readFileSync(path.join(root,'studio/app.html'),'utf8')}));
  await page.goto(fx.base+'/studio/app#textbook=ch10-t3');
- bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
- await bf.waitForSelector('#psTextbookDialog',{timeout:45000});
+ bf=await importFrame(page);
  assert.equal(await bf.locator('#psTextbookDialog li').count(),1,'a published short app link opens its selected native import dialog');
  assert.match(await bf.locator('#psTextbookDialog li').textContent(),/골키퍼/);
  await bf.getByRole('button',{name:'취소',exact:true}).click();
