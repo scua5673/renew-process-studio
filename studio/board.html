@@ -3330,6 +3330,9 @@ window.__psCssCheck=function(el){try{var sh=el.sheet;if(!sh||!sh.cssRules||!sh.c
 <style>/* 2.897 — 마지막 안전망: 닫힌 도크 메뉴(내보내기·장비 색·보드 설정)는 디자인 파일이 없어도 흐름에 펼쳐지지 않는다 */
 .cmd-popover:not(.on){display:none!important}
 </style>
+<script src="board-practice.js"></script>
+<script src="textbook-pack.js" defer></script>
+<script src="textbook-native.js" defer></script>
 </head>
 <body data-tool="move">
 <script>
@@ -4528,7 +4531,7 @@ const PITCH_SPECS={
    규격 키 grid20·grid30·grid45 = «판 가로가 몇 m 인가». 화면(viewBox)과 세계 좌표는 11인제와 똑같이 두고 **1m 가 몇 단위인가만** 바꾼다(mppNow).
    그래서 운동장 ↔ 그리드를 오가도 선수·그림은 제자리고 토큰·선 굵기·손잡이도 그대로다(풋살처럼 화면을 확대하면 그림 굵기가 3~4배가 된다).
    판 넓이를 바꿀 때만 내용을 판 가운데 기준으로 줄이고 늘린다(_gridScaleOf) — 10×10m 그리드가 10×10m 로 남게. ══ */
-["20","30","45"].forEach(function(m){ PITCH_SPECS["grid"+m]=Object.assign({},PITCH_SPECS.fifa,{name:"그리드",blank:true,m:+m}); });
+["20","30","40","45","70"].forEach(function(m){ PITCH_SPECS["grid"+m]=Object.assign({},PITCH_SPECS.fifa,{name:"그리드",blank:true,m:+m}); });
 function pitchSpec(){return PITCH_SPECS[state.pitchSpec]||PITCH_SPECS.fifa;}
 function isBlankSpec(){ try{ return !!pitchSpec().blank; }catch(_){ return false; } }
 function mppNow(){ try{ var sp=pitchSpec(); return (sp&&sp.blank&&sp.m>0)?(FL*MPP/sp.m):MPP; }catch(_){ return MPP; } }   /* 1m = 몇 단위 — 운동장 10, 그리드 판은 판 가로(m)로 나눈 값 */
@@ -4995,11 +4998,7 @@ function toUnit(evt){return clientToUnit(evt.clientX,evt.clientY);}
 
 var PHONE_PLAYER_TOK=0.754;   /* 2.801 — 폰 선수 토큰: 2.800 전 크기(345/366)로 되돌리고 크기 사다리 한 단계(÷1.25) 더 작게(사용자). 공·장비·그림은 그대로 */
 function phoneTokFactor(p){try{return (psBoardDevice()==="phone"&&p&&(p.team==="ball"||!equipKey(p.team))&&p.team!=="img")?PHONE_PLAYER_TOK:1;}catch(_){return 1;}}   /* 2.977 — 공도(선수보다 한 칸 큰 관계를 폰에서도) */
-/* 2.962 — 공의 기본 크기를 «크기 ＋» 두 칸(×1.18²) 키운다(사용자 «기본적으로 공 크기를 두칸 더 키워줘»). 본 공·장비 공 모두.
-   개별 크기(p.scale)는 이 기본 위의 배수라 저장된 값은 그대로 두고, 화면·썸네일·PDF·GIF/MP4 가 이 한 곳(tokenTransform)을 따른다. */
-/* 2.977 — 공은 선수 토큰보다 «크기 ＋» 한 칸 크게(사용자 «볼만 선수토큰보다 1단계 크게»). 2.962 의 ×1.18² 은 공 자체 그림 기준이라
-   공이 선수 원보다 오히려 작았다(지름 0.87배 — 실측). 이제 지름을 선수 원에 맞춰 잰다: 선수 원 r21(지름 42) · 공 그림 28 칸 안의 원 r113/240.
-   공 지름 = 42 × 1.18 → 배율 = 1.18 × 42 ÷ (28 × 226/240). 선수 크기(토큰 크기·개별 크기 빼고)를 따라가므로 보드를 키우고 줄여도 늘 한 칸 크다. */
+/* 공 기본 지름은 선수의 1.18배, 개별 scale은 저장값을 따른다. */
 function ballBaseScale(){return 1.18*42/(28*226/240);}   /* 함수 선언 — 스크립트가 이 줄에 닿기 전에 그려도 안전(const 는 그 전엔 못 읽는다) */
 /* 3.039 — 잡히는 원의 반지름(토큰 자기 좌표): 화면에서 지름 46px. 판 좌표 → 화면 배율은 renderTokens 한 번에 한 번만 잰다(_tokHitPx) */
 var _tokHitPx=0;
@@ -5030,7 +5029,7 @@ function _realTokS(p){ if(!(_realScaleOn()||typeof tokShape!=="undefined"&&tokSh
 function _normTokS(p){const _cv=commViewTok();const _ed=_cv?_cv:((document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1);const _eq=(p.team==="ball")?ballBaseScale():(equipKey(p.team)?1.8:(p.team==="img"?0.82:1));const _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p)*(window.__flatK?__flatK(p):1);}
 /* 이름표·링을 평소 크기로 두는 배수(실제 비율일 때만 1 보다 크다) */
 function _realBoost(p){ var r=_realTokS(p); if(!r)return 1; var n=_normTokS(p); return n>r?n/r:1; }
-function tokenTransform(p){const s=_realTokS(p)||_normTokS(p);
+function tokenTransform(p){const s=_realTokS(p)||_normTokS(p);var g=typeof PSPracticeBoard!=="undefined"&&PSPracticeBoard.goalTransform(p);if(g)return g;
   /* 세로 피치의 부모 world 회전과 반대 방향으로 토큰을 보정해 숫자·유니폼을 항상 정방향 유지.
      spFlip=true(골대 위)는 부모가 +90°이므로 -90°, 골대 아래는 부모가 -90°이므로 +90°. */
   const _upright=(state.orientation==="v")?(state.spFlip?-90:90):0;
@@ -5311,7 +5310,7 @@ function openTokenPhotoCrop(img,targets){
 }
 
 function makeToken(p,kind){
-  const g=el("g",{class:"token","data-id":p.id});
+  const g=el("g",{class:"token","data-id":p.id});if(PSPracticeBoard.goalTransform(p))g.setAttribute("data-goal-anchor","mouth");
   let removable=false;
   const eq=equipKey(p.team);
   if(p.team==="img"&&p.src){const _bx=36;g.innerHTML='<rect x="'+(-_bx/2)+'" y="'+(-_bx/2)+'" width="'+_bx+'" height="'+_bx+'" fill="transparent"/><image href="'+esc(p.src)+'" x="'+(-_bx/2)+'" y="'+(-_bx/2)+'" width="'+_bx+'" height="'+_bx+'" preserveAspectRatio="xMidYMid meet" style="pointer-events:none"/>';removable=true;}
@@ -6795,7 +6794,7 @@ function gridSplitPath(split,x,y,w,h){
 function _gridScaleOf(o,r,cx,cy){
   if(!o||!(r>0)||r===1)return;
   var f=function(pt){ if(pt&&typeof pt.x==="number")pt.x=_gridF(cx+(pt.x-cx)*r); if(pt&&typeof pt.y==="number")pt.y=_gridF(cy+(pt.y-cy)*r); };
-  (o.players||[]).forEach(f); (o.equipment||[]).forEach(f); if(o.ball)f(o.ball);
+  (o.players||[]).forEach(f); (o.equipment||[]).forEach(function(e){f(e);if(e&&e.anchor==="mouth"&&+e.mouthWidth>0){e.mouthWidth=_gridF(e.mouthWidth*r);if(+e.mouthDepth>0)e.mouthDepth=_gridF(e.mouthDepth*r);}}); if(o.ball)f(o.ball);
   (o.drawings||[]).forEach(function(d){ if(d&&Array.isArray(d.pts))d.pts.forEach(f); });
   if(o.spMarks&&Array.isArray(o.spMarks.pts))o.spMarks.pts.forEach(f);
 }
@@ -7816,7 +7815,7 @@ function _boardThumbSVGRaw(){
   const c=svg.cloneNode(true);PSBoardText.exportClone(c);
   if(window.PSBoardDepth)PSBoardDepth.flattenAll(c);
   c.querySelectorAll(".ps-selring,.tok-hit,.tok-lock,.draw-handle").forEach(function(n){n.remove();});
-  if(document.body.classList.contains("editing"))c.querySelectorAll(".token").forEach(function(n){n.setAttribute("transform",(n.getAttribute("transform")||"")+" scale("+(1/0.68)+")");});
+  if(document.body.classList.contains("editing"))c.querySelectorAll('.token:not([data-goal-anchor="mouth"])').forEach(function(n){n.setAttribute("transform",(n.getAttribute("transform")||"")+" scale("+(1/0.68)+")");});
   /* 2.559 — "#ps-pitchimg" 도 뺀다: 올린 운동장 **사진**이 원본 크기 data URI 째로 루트 svg 밑에 있어(renderPitchImg)
      클론마다 통째로 실렸다. 감사 실측: 사진 있는 판의 썸네일이 장면·카드·PDF 페이지(×3)마다 사진 한 장씩 —
      «실질적 OOM 방아쇠». 2.519 가 잔디 텍스처에 한 것과 같은 처리다. 원본 작전판은 그대로다. */
