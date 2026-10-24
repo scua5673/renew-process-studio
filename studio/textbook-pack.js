@@ -2,10 +2,14 @@
 (function (root) {
   'use strict';
   var CATALOG = {ch10: {file: 'ch10.json', title: '중원 전진', items: ['ch10-t1', 'ch10-t2', 'ch10-t3']}};
+  function validMode(mode) { return !mode || mode === 'fail' || mode === 'coach'; }
   function knownChapter(id) { return typeof id === 'string' && Object.prototype.hasOwnProperty.call(CATALOG, id); }
   function parse(hash) {
-    var m = /^#textbook=(ch10)(?:-(t[123]))?$/.exec(String(hash || ''));
-    return m ? {chapter: m[1], item: m[2] ? m[1] + '-' + m[2] : ''} : null;
+    var m = /^#textbook=(ch10)(?:-(t[123])(?:-(fail|coach))?)?$/.exec(String(hash || ''));
+    if (!m) return null;
+    var p = {chapter: m[1], item: m[2] ? m[1] + '-' + m[2] : ''};
+    if (m[3]) p.mode = m[3];
+    return p;
   }
   function packUrl(chapter, loc) {
     if (!knownChapter(chapter)) return null;
@@ -22,7 +26,7 @@
     function pending() {
       try {
         var p = memory; if (!p) { try { p = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (_) {} }
-        if (!p || !knownChapter(p.chapter) || (p.item && CATALOG[p.chapter].items.indexOf(p.item) < 0) ||
+        if (!p || !validMode(p.mode) || !knownChapter(p.chapter) || (p.item && CATALOG[p.chapter].items.indexOf(p.item) < 0) ||
             typeof p.at !== 'number' || Date.now() - p.at < 0 || Date.now() - p.at > 1800000) return null;
         return p;
       } catch (_) { return null; }
@@ -49,7 +53,9 @@
       if (root.__psShowApp) root.__psShowApp('design');
       var f = doc.getElementById('fBoard');
       if (f && f.contentWindow) {
-        f.contentWindow.postMessage({source: 'app', type: 'textbookPack', chapter: p.chapter, item: p.item}, location.origin);
+        var message = {source: 'app', type: 'textbookPack', chapter: p.chapter, item: p.item};
+        if (p.mode) message.mode = p.mode;
+        f.contentWindow.postMessage(message, location.origin);
         if (++attempts > 60) { clear(); notice('자료 연결을 확인하지 못했어요. 교과서에서 다시 눌러 주세요.'); }
       }
     }
@@ -79,7 +85,18 @@
           meta.version !== 1 || !Array.isArray(pack.drills) || pack.drills.length !== 3) throw new Error('shape');
       var ids = CATALOG[request.chapter].items;
       if (!pack.drills.every(function (d, i) { return d && d.textbookItem === ids[i] && d.type === 'train'; })) throw new Error('items');
-      return pack.drills.filter(function (d) { return !request.item || d.textbookItem === request.item; });
+      return pack.drills.filter(function (d) { return !request.item || d.textbookItem === request.item; }).map(function (d) {
+        var row = JSON.parse(JSON.stringify(d));
+        if (request.mode) {
+          var frames = row.variants && row.variants[request.mode];
+          if (!Array.isArray(frames) || frames.length < 2 || frames.length > 40) throw new Error('variant');
+          row.frames = frames; row.snap = frames[0].snap;
+          row.name += request.mode === 'fail' ? ' · 실패 분석' : ' · 코치 개입';
+          row.textbookVariant = request.mode;
+        }
+        delete row.variants;
+        return row;
+      });
     }
     function make(raw, chapter) {
       var card = letterPackCard({type: 'process-studio-drillpack', drills: [{name: raw.name, trainings: [raw]}]}, {
@@ -88,7 +105,12 @@
       });
       if (!card) throw new Error('snap');
       delete card.letter;
-      card.textbook = {chapter: chapter, itemId: raw.textbookItem, version: 1, revision: raw.textbookRevision === 2 ? 2 : 1, source: {book: String(raw.source.book).slice(0,100), pdfPage: Number(raw.source.pdfPage)}};
+      // 공통 유지 시간도 같은 원본 프레임에서 복원한다.
+      if (raw.frames && raw.frames[0] && raw.frames[0].__hold) {
+        var hold = Math.max(.2, Math.min(20, +raw.frames[0].__hold || .6));
+        [card.frames, card.trainings[0].frames].forEach(function (frames) { if (frames && frames[0]) frames[0].__hold = hold; });
+      }
+      card.textbook = {chapter: chapter, itemId: raw.textbookItem, version: 1, revision: raw.textbookRevision === 3 ? 3 : (raw.textbookRevision === 2 ? 2 : 1), variant: raw.textbookVariant || 'success', source: {book: String(raw.source.book).slice(0,100), pdfPage: Number(raw.source.pdfPage)}};
       var ps = card.snap.players, gk = ps.filter(function (p) { return p.pos === 'GK' || String(p.num) === '1'; }).length;
       card.roster = {gk: gk, field: ps.length - gk, rehab: 0, out: 0};
       card.gmPhases = card.trainings[0].gmPhases = Array.isArray(raw.gmPhases) ? raw.gmPhases.slice(0,12).map(function(x) { return String(x).slice(0,80); }) : [];
@@ -102,8 +124,8 @@
       stampCreator(card); normalizeDrill(card); normalizeDrill(card.trainings[0]);
       return card;
     }
-    function existing(lib, id) {
-      return (lib || []).filter(function (d) { return d && d.textbook && d.textbook.itemId === id && canEditItem(d); }).sort(function (a,b) { return ((b.textbook.revision || 1) - (a.textbook.revision || 1)) || ((b.savedAt || 0) - (a.savedAt || 0)); })[0];
+    function existing(lib, id, mode) {
+      return (lib || []).filter(function (d) { return d && d.textbook && d.textbook.itemId === id && (d.textbook.variant || 'success') === (mode || 'success') && canEditItem(d); }).sort(function (a,b) { return ((b.textbook.revision || 1) - (a.textbook.revision || 1)) || ((b.savedAt || 0) - (a.savedAt || 0)); })[0];
     }
     function sheet(rows, request, library, workspace) {
       var dialog = doc.createElement('dialog'); dialog.id = 'psTextbookDialog';
@@ -113,7 +135,7 @@
       var note = doc.createElement('p'); note.textContent = '현재 선택한 공간의 보관함에 훈련별 카드로 담습니다. 설명·선수 배치·재생 장면을 함께 가져오며, 담은 뒤 수정할 수 있어요.'; dialog.appendChild(note);
       var list = doc.createElement('ul');
       rows.forEach(function (row) {
-        var li = doc.createElement('li'), had = existing(library, row.textbookItem); li.textContent = row.name + (had ? ((had.textbook.revision || 1) < (row.textbookRevision || 1) ? ' · 이전 판을 담은 훈련' : ' · 이미 담은 훈련') : ''); list.appendChild(li);
+        var li = doc.createElement('li'), had = existing(library, row.textbookItem, request.mode); li.textContent = row.name + (had ? ((had.textbook.revision || 1) < (row.textbookRevision || 1) ? ' · 이전 판을 담은 훈련' : ' · 이미 담은 훈련') : ''); list.appendChild(li);
       }); dialog.appendChild(list);
       var status = doc.createElement('p'); status.setAttribute('role', 'status'); dialog.appendChild(status);
       var actions = doc.createElement('div'); actions.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;justify-content:flex-end'; dialog.appendChild(actions);
@@ -132,7 +154,7 @@
             sameWorkspace(workspace); var lib = await libGet(); sameWorkspace(workspace);
             var cards = [], first = '';
             rows.forEach(function (row) {
-              var had = existing(lib, row.textbookItem);
+              var had = existing(lib, row.textbookItem, request.mode);
               if (had && (copy !== true && (copy !== 'upgrade' || (had.textbook.revision || 1) >= (row.textbookRevision || 1)))) { if (!first) first = had.libId; return; }
               var card = make(row, request.chapter); cards.push(card); if (!first) first = card.libId;
             });
@@ -142,7 +164,9 @@
           sameWorkspace(workspace);
           var saved = await libGet(); sameWorkspace(workspace);
           if (!result.ids.every(function (id) { return saved.some(function (c) { return c.libId === id; }); })) throw new Error('readback');
-          close(); letterPackShow(result.first);
+          close();
+          if (rows.length === 1) await openLibDrawEditor(result.first, false);
+          else letterPackShow(result.first);
           toast(result.ids.length ? ('교과서 훈련 ' + result.ids.length + '개를 보관함에 담았어요') : '이미 담은 훈련을 열었어요');
         } catch (error) {
           saving = false; actions.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
@@ -150,19 +174,19 @@
         }
       }
       button('취소', close);
-      var outdated = rows.some(function (row) { var had = existing(library, row.textbookItem); return had && (had.textbook.revision || 1) < (row.textbookRevision || 1); });
+      var outdated = rows.some(function (row) { var had = existing(library, row.textbookItem, request.mode); return had && (had.textbook.revision || 1) < (row.textbookRevision || 1); });
       if (outdated) {
         note.textContent += ' 이전 판의 수정본은 그대로 유지합니다. 보강판을 새 사본으로 담으면 설명과 현장 개입이 보강된 카드가 추가됩니다.';
         button('보강판 새 사본으로 담기', function () { save('upgrade'); }, true);
-      } else if (rows.some(function (row) { return existing(library, row.textbookItem); })) button('새 사본으로 담기', function () { save(true); });
-      button(rows.every(function (row) { return existing(library, row.textbookItem); }) ? '보관함에서 보기' : '보관함에 담기', function () { save(false); }, !outdated);
+      } else if (rows.some(function (row) { return existing(library, row.textbookItem, request.mode); })) button('새 사본으로 담기', function () { save(true); });
+      button(rows.every(function (row) { return existing(library, row.textbookItem, request.mode); }) ? '보관함에서 보기' : '보관함에 담기', function () { save(false); }, !outdated);
       dialog.addEventListener('cancel', function (e) { if (saving) e.preventDefault(); else { e.preventDefault(); close(); } });
       doc.body.appendChild(dialog); dialog.showModal();
     }
     root.addEventListener('message', async function (e) {
       var request = e.data || {};
       if (e.origin !== location.origin || e.source !== root.parent || request.source !== 'app' || request.type !== 'textbookPack' ||
-          !knownChapter(request.chapter) || (request.item && CATALOG[request.chapter].items.indexOf(request.item) < 0)) return;
+          !validMode(request.mode) || (request.mode && !request.item) || !knownChapter(request.chapter) || (request.item && CATALOG[request.chapter].items.indexOf(request.item) < 0)) return;
       root.parent.postMessage({source: 'board', type: 'textbookPackAck'}, location.origin);
       if (busy) return;
       if (!psVaultRequireLogin()) return;

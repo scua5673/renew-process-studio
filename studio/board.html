@@ -3300,6 +3300,13 @@ window.__psCssCheck=function(el){try{var sh=el.sheet;if(!sh||!sh.cssRules||!sh.c
 .cmd-popover:not(.on){display:none!important}
 </style>
 <script src="textbook-pack.js" defer></script>
+<script src="textbook-native.js" defer></script>
+<style>
+html.textbook-native,html.textbook-native body{margin:0!important;padding:0!important;width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;background:#fff!important;visibility:visible!important}
+html.textbook-native body>:not(#textbookNativeHost){display:none!important}
+html.textbook-native #textbookNativeHost{position:fixed!important;inset:0!important;margin:0!important;padding:0!important;display:block!important;overflow:hidden!important;background:#fff}
+html.textbook-native #textbookNativeHost #board{display:block!important;width:100%!important;height:100%!important;position:static!important;margin:0!important;padding:0!important;transform:none!important;visibility:visible!important;pointer-events:none!important}
+</style>
 </head>
 <body data-tool="move">
 <script>

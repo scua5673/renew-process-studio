@@ -49,7 +49,7 @@ test('all source drills retain their headcounts, dimensions, constraints and pro
  assert.deepEqual(p.drills.map(d=>d.source.pdfPage),[15,28,29]);
  assert.deepEqual(p.drills.map(d=>d.snap.pitchSpec),['grid30','grid40','grid70']);
  for(const [i,d] of p.drills.entries()){
-  assert.equal(d.textbookRevision,2);assert.match(d.coaching,/현장 개입:/);assert.match(d.coaching,/다음/);assert.match(d.method,/원문/);assert.match(d.func,/원문/);assert.match(d.func,/진행:/);assert.match(d.func,/운영 보완:/);assert.ok(d.method.length<4000,'the importer does not truncate the instructions');
+  assert.equal(d.textbookRevision,3);assert.match(d.coaching,/현장 개입:/);assert.match(d.coaching,/다음/);assert.match(d.method,/원문/);assert.match(d.func,/원문/);assert.match(d.func,/진행:/);assert.match(d.func,/운영 보완:/);assert.ok(d.method.length<4000,'the importer does not truncate the instructions');
   assert.equal(d.frames.every(f=>f.snap.players.length===[5,10,14][i]),true);
   assert.equal(d.snap.tokenScale,1.5);
  }
@@ -66,4 +66,20 @@ test('offside examples distinguish the finishing boundary from the last opponent
  for(const base of ['drill1','drill2','drill3'])for(const suffix of ['','_fail','_coach']){
   assert.ok(scenes[base+suffix].frames.every(f=>f.players.length==={drill1:5,drill2:10,drill3:14}[base]));
  }
+});
+
+
+test('native chapter scenes and imports share identical editable snapshots',()=>{
+ const native=JSON.parse(fs.readFileSync(path.join(__dirname,'../studio/textbook/packs/ch10-scenes.json')));
+ const pack=JSON.parse(fs.readFileSync(path.join(__dirname,'../studio/textbook/packs/ch10.json')));
+ assert.equal(Object.keys(native).length,16);
+ for(const [i,drill] of pack.drills.entries()){
+  const key='drill'+(i+1);
+  assert.deepEqual(native[key].frames,drill.frames);
+  for(const mode of ['fail','coach']){
+   assert.deepEqual(native[key+'_'+mode].frames,drill.variants[mode]);
+   assert.deepEqual(api.parse('#textbook=ch10-t'+(i+1)+'-'+mode),{chapter:'ch10',item:'ch10-t'+(i+1),mode});
+  }
+ }
+ for(const bad of ['#textbook=ch10-coach','#textbook=ch10-t2-other','#textbook=ch10-t4-coach'])assert.equal(api.parse(bad),null);
 });

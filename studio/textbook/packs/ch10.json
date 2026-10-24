@@ -5,7 +5,7 @@
   "textbook": {
     "chapter": "ch10",
     "version": 1,
-    "revision": 2,
+    "revision": 3,
     "title": "중원 전진"
   },
   "drills": [
@@ -13,7 +13,7 @@
       "type": "train",
       "name": "지원 각도를 만드는 3v2 론도",
       "textbookItem": "ch10-t1",
-      "textbookRevision": 2,
+      "textbookRevision": 3,
       "minutes": 8,
       "sets": 1,
       "rpe": 5,
@@ -49,13 +49,18 @@
         "gridType": "off",
         "tokenScale": 1.5,
         "teamColors": {
-          "blue": "#6795ff",
-          "red": "#ee8e80",
-          "yellow": "#e9ce7b"
+          "blue": "#234f83",
+          "red": "#b54c46",
+          "yellow": "#b38c35"
         },
         "gkColors": {
-          "blue": "#6795ff",
-          "red": "#ee8e80"
+          "blue": "#234f83",
+          "red": "#b54c46"
+        },
+        "teamTxtC": {
+          "blue": "#ffffff",
+          "red": "#ffffff",
+          "yellow": "#ffffff"
         },
         "chip3d": false,
         "tokV": 2,
@@ -130,7 +135,7 @@
           },
           {
             "type": "pass",
-            "color": "#ffd24a",
+            "color": "#14213d",
             "lw": 1,
             "op": 1,
             "pts": [
@@ -164,13 +169,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -245,7 +255,7 @@
               },
               {
                 "type": "pass",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -263,8 +273,9 @@
             "equipment": []
           },
           "dur": 1.2,
-          "hold": 0.7,
-          "cap": "성공 예 1 · 6의 첫 패스 전에 8이 수비의 가림 밖에서 다른 각도를 준비했다."
+          "hold": 2.1,
+          "cap": "성공 예 1 · 6의 첫 패스 전에 8이 수비의 가림 밖에서 다른 각도를 준비했다.",
+          "__hold": 2.1
         },
         {
           "snap": {
@@ -282,13 +293,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -363,7 +379,7 @@
               },
               {
                 "type": "pass",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -381,7 +397,7 @@
             "equipment": []
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "성공 예 2 · 10이 받을 때 수비가 접근한다. 8에게 내주는 길이 남아 있다."
         },
         {
@@ -400,13 +416,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -481,7 +502,7 @@
               },
               {
                 "type": "pass",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -499,7 +520,7 @@
             "equipment": []
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "성공 예 3 · 8이 받은 뒤 6은 다시 연결할 각도를 만든다. 새 압박을 보고 다음 길을 고른다."
         },
         {
@@ -518,13 +539,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -601,7 +627,7 @@
             "equipment": []
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "성공 예 4 · 다음 지원까지 이어졌다. 다음 소유에서도 같은 자리로 고정하지 않고 수비를 다시 본다."
         }
       ],
@@ -610,13 +636,839 @@
       "source": {
         "book": "PRINCIPLES OF THE POSITIONAL PLAY",
         "pdfPage": 15
+      },
+      "variants": {
+        "fail": [
+          {
+            "snap": {
+              "pitchSpec": "grid30",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 362.5,
+                  "y": 387.5
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 712.5,
+                  "y": 212.5
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 212.5
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 555.0,
+                  "y": 212.5
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 502.5,
+                  "y": 457.5
+                }
+              ],
+              "ball": {
+                "x": 397.5,
+                "y": 422.5
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 107.5
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 632.5
+                    }
+                  ]
+                },
+                {
+                  "type": "pass",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 362.5,
+                      "y": 387.5
+                    },
+                    {
+                      "x": 397.5,
+                      "y": 212.5
+                    }
+                  ]
+                },
+                {
+                  "type": "dashline",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 397.5,
+                      "y": 212.5
+                    },
+                    {
+                      "x": 712.5,
+                      "y": 212.5
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 542.75,
+                      "y": 224.75
+                    },
+                    {
+                      "x": 567.25,
+                      "y": 200.25
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 542.75,
+                      "y": 200.25
+                    },
+                    {
+                      "x": 567.25,
+                      "y": 224.75
+                    }
+                  ]
+                }
+              ],
+              "equipment": []
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "실패 1 · 6은 10에게 줄 수 있지만, 10에서 8로 가는 길은 빨강 8이 지킨다.",
+            "__hold": 2.1
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid30",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 362.5,
+                  "y": 387.5
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 712.5,
+                  "y": 212.5
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 212.5
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 555.0,
+                  "y": 212.5
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 502.5,
+                  "y": 457.5
+                }
+              ],
+              "ball": {
+                "x": 432.5,
+                "y": 247.5
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 107.5
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 632.5
+                    }
+                  ]
+                },
+                {
+                  "type": "pass",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 397.5,
+                      "y": 212.5
+                    },
+                    {
+                      "x": 555.0,
+                      "y": 212.5
+                    }
+                  ]
+                },
+                {
+                  "type": "dashline",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 555.0,
+                      "y": 212.5
+                    },
+                    {
+                      "x": 712.5,
+                      "y": 212.5
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 621.5,
+                      "y": 224.75
+                    },
+                    {
+                      "x": 646.0,
+                      "y": 200.25
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 621.5,
+                      "y": 200.25
+                    },
+                    {
+                      "x": 646.0,
+                      "y": 224.75
+                    }
+                  ]
+                }
+              ],
+              "equipment": []
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "실패 2 · 8이 가림 뒤에 멈춘 채 10이 같은 길로 패스한다."
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid30",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 362.5,
+                  "y": 387.5
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 712.5,
+                  "y": 212.5
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 212.5
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 572.5,
+                  "y": 212.5
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 502.5,
+                  "y": 457.5
+                }
+              ],
+              "ball": {
+                "x": 607.5,
+                "y": 247.5
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 107.5
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 632.5
+                    }
+                  ]
+                }
+              ],
+              "equipment": []
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "실패 3 · 수비 8이 탈취했다. 10의 전달과 함께 8의 사전 지원도 확인한다."
+          }
+        ],
+        "coach": [
+          {
+            "snap": {
+              "pitchSpec": "grid30",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 362.5,
+                  "y": 387.5
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 712.5,
+                  "y": 212.5
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 212.5
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 555.0,
+                  "y": 212.5
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 502.5,
+                  "y": 457.5
+                }
+              ],
+              "ball": {
+                "x": 397.5,
+                "y": 422.5
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 107.5
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 632.5
+                    }
+                  ]
+                }
+              ],
+              "equipment": []
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "멈출 시점 · 6이 공을 놓기 전. “8과 10을 수비 한 명이 함께 관리하고 있니?”",
+            "__hold": 2.1
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid30",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 362.5,
+                  "y": 387.5
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 712.5,
+                  "y": 492.5
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 212.5
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 555.0,
+                  "y": 212.5
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 502.5,
+                  "y": 422.5
+                }
+              ],
+              "ball": {
+                "x": 397.5,
+                "y": 422.5
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 107.5
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 632.5
+                    }
+                  ]
+                },
+                {
+                  "type": "run",
+                  "color": "#64748b",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 712.5,
+                      "y": 212.5
+                    },
+                    {
+                      "x": 712.5,
+                      "y": 492.5
+                    }
+                  ]
+                },
+                {
+                  "type": "pass",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 397.5,
+                      "y": 212.5
+                    },
+                    {
+                      "x": 712.5,
+                      "y": 492.5
+                    }
+                  ]
+                }
+              ],
+              "equipment": []
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "선수의 선택 · 8이 다른 각도를 고른다. 10이 내줄 길이 보이는지 함께 확인한다."
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid30",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 362.5,
+                  "y": 387.5
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 712.5,
+                  "y": 492.5
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 212.5
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 485.0,
+                  "y": 142.5
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 502.5,
+                  "y": 422.5
+                }
+              ],
+              "ball": {
+                "x": 432.5,
+                "y": 247.5
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 107.5
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 632.5
+                    }
+                  ]
+                },
+                {
+                  "type": "pass",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 397.5,
+                      "y": 212.5
+                    },
+                    {
+                      "x": 712.5,
+                      "y": 492.5
+                    }
+                  ]
+                }
+              ],
+              "equipment": []
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "재개와 확인 · 공을 6에게 돌려 첫 패스부터 재개한 뒤의 장면이다. 수비의 압박에도 새 연결이 남는지 본다."
+          }
+        ]
       }
     },
     {
       "type": "train",
       "name": "연계로 마무리 구역에 들어가는 4v4+2",
       "textbookItem": "ch10-t2",
-      "textbookRevision": 2,
+      "textbookRevision": 3,
       "minutes": 15,
       "sets": 1,
       "rpe": 5,
@@ -652,13 +1504,18 @@
         "gridType": "off",
         "tokenScale": 1.5,
         "teamColors": {
-          "blue": "#6795ff",
-          "red": "#ee8e80",
-          "yellow": "#e9ce7b"
+          "blue": "#234f83",
+          "red": "#b54c46",
+          "yellow": "#b38c35"
         },
         "gkColors": {
-          "blue": "#6795ff",
-          "red": "#ee8e80"
+          "blue": "#234f83",
+          "red": "#b54c46"
+        },
+        "teamTxtC": {
+          "blue": "#ffffff",
+          "red": "#ffffff",
+          "yellow": "#ffffff"
         },
         "chip3d": false,
         "tokV": 2,
@@ -812,7 +1669,7 @@
           },
           {
             "type": "pass",
-            "color": "#ffd24a",
+            "color": "#14213d",
             "lw": 1,
             "op": 1,
             "pts": [
@@ -879,13 +1736,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -1039,7 +1901,7 @@
               },
               {
                 "type": "pass",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -1090,8 +1952,9 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
-          "cap": "파랑 4명, 빨강 4명, 중립 2명. 마무리 구역은 양 끝 5m로 보완했다."
+          "hold": 2.1,
+          "cap": "파랑 4명, 빨강 4명, 중립 2명. 마무리 구역은 양 끝 5m로 보완했다.",
+          "__hold": 2.1
         },
         {
           "snap": {
@@ -1109,13 +1972,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -1269,7 +2137,7 @@
               },
               {
                 "type": "pass",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -1320,7 +2188,7 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "앞의 중립 N1에게 전진 패스. N1은 한 터치로 아래의 8에게 내준다."
         },
         {
@@ -1339,13 +2207,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -1499,7 +2372,7 @@
               },
               {
                 "type": "pass",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -1515,7 +2388,7 @@
               },
               {
                 "type": "run",
-                "color": "#ffffff",
+                "color": "#64748b",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -1566,7 +2439,7 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "8이 받는 동안 9는 아직 중앙에 있다. 8의 전방 패스와 함께 침투한다."
         },
         {
@@ -1585,13 +2458,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -1745,7 +2623,7 @@
               },
               {
                 "type": "shot",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -1796,7 +2674,7 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "연계 뒤 마무리 구역으로 들어온 9가 첫 터치로 슛한다."
         },
         {
@@ -1815,13 +2693,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -2010,7 +2893,7 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "한 가지 성공 예시. 다음 공격은 원문 규칙으로 다시 연계를 만든다."
         }
       ],
@@ -2019,13 +2902,1479 @@
       "source": {
         "book": "ROBERTO DE ZERBI THE MASTER OF TIMING",
         "pdfPage": 28
+      },
+      "variants": {
+        "fail": [
+          {
+            "snap": {
+              "pitchSpec": "grid40",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 371.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 488.12
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 502.5,
+                  "y": 278.12
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 356.88
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 199.38
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 712.5,
+                  "y": 540.62
+                },
+                {
+                  "id": 23,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 660.0,
+                  "y": 356.88
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 476.25,
+                  "y": 225.62
+                },
+                {
+                  "id": 31,
+                  "team": "yellow",
+                  "num": "N1",
+                  "pos": "",
+                  "color": null,
+                  "x": 817.5,
+                  "y": 435.62
+                },
+                {
+                  "id": 32,
+                  "team": "yellow",
+                  "num": "N2",
+                  "pos": "",
+                  "color": null,
+                  "x": 292.5,
+                  "y": 356.88
+                }
+              ],
+              "ball": {
+                "x": 432.5,
+                "y": 523.12
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 161.25,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 948.75,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 292.5,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 817.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "pass",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 397.5,
+                      "y": 488.12
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 435.62
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 501,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 461.88
+                },
+                {
+                  "id": 502,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 278.12
+                },
+                {
+                  "id": 503,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 461.88
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "실패 1 · 6의 전진 패스가 나가도 8이 움직이지 않는다. 빨강 8은 내주는 길을 지킨다.",
+            "__hold": 2.1
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid40",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 371.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 488.12
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 502.5,
+                  "y": 278.12
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 356.88
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 199.38
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 540.62
+                },
+                {
+                  "id": 23,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 660.0,
+                  "y": 356.88
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 476.25,
+                  "y": 225.62
+                },
+                {
+                  "id": 31,
+                  "team": "yellow",
+                  "num": "N1",
+                  "pos": "",
+                  "color": null,
+                  "x": 817.5,
+                  "y": 435.62
+                },
+                {
+                  "id": 32,
+                  "team": "yellow",
+                  "num": "N2",
+                  "pos": "",
+                  "color": null,
+                  "x": 292.5,
+                  "y": 356.88
+                }
+              ],
+              "ball": {
+                "x": 852.5,
+                "y": 470.62
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 161.25,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 948.75,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 292.5,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 817.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "pass",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 817.5,
+                      "y": 435.62
+                    },
+                    {
+                      "x": 660.0,
+                      "y": 356.88
+                    }
+                  ]
+                },
+                {
+                  "type": "dashline",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 660.0,
+                      "y": 356.88
+                    },
+                    {
+                      "x": 502.5,
+                      "y": 278.12
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 572.06,
+                      "y": 326.69
+                    },
+                    {
+                      "x": 590.44,
+                      "y": 308.31
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 572.06,
+                      "y": 308.31
+                    },
+                    {
+                      "x": 590.44,
+                      "y": 326.69
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 501,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 461.88
+                },
+                {
+                  "id": 502,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 278.12
+                },
+                {
+                  "id": 503,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 461.88
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "실패 2 · N1이 한 터치로 내주려 하지만 8로 가는 길에 빨강 8이 있다."
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid40",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 371.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 488.12
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 502.5,
+                  "y": 278.12
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 356.88
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 199.38
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 540.62
+                },
+                {
+                  "id": 23,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 660.0,
+                  "y": 356.88
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 476.25,
+                  "y": 225.62
+                },
+                {
+                  "id": 31,
+                  "team": "yellow",
+                  "num": "N1",
+                  "pos": "",
+                  "color": null,
+                  "x": 817.5,
+                  "y": 435.62
+                },
+                {
+                  "id": 32,
+                  "team": "yellow",
+                  "num": "N2",
+                  "pos": "",
+                  "color": null,
+                  "x": 292.5,
+                  "y": 356.88
+                }
+              ],
+              "ball": {
+                "x": 695.0,
+                "y": 391.88
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 161.25,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 948.75,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 292.5,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 817.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "dribble",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 660.0,
+                      "y": 356.88
+                    },
+                    {
+                      "x": 555.0,
+                      "y": 356.88
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 501,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 461.88
+                },
+                {
+                  "id": 502,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 278.12
+                },
+                {
+                  "id": 503,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 461.88
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "실패 3 · 빨강이 탈취했다. 중립의 한 터치 실행 전에 지원의 시점과 길을 대조한다."
+          }
+        ],
+        "coach": [
+          {
+            "snap": {
+              "pitchSpec": "grid40",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 371.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 488.12
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 502.5,
+                  "y": 278.12
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 356.88
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 199.38
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 712.5,
+                  "y": 540.62
+                },
+                {
+                  "id": 23,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 660.0,
+                  "y": 356.88
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 476.25,
+                  "y": 225.62
+                },
+                {
+                  "id": 31,
+                  "team": "yellow",
+                  "num": "N1",
+                  "pos": "",
+                  "color": null,
+                  "x": 817.5,
+                  "y": 435.62
+                },
+                {
+                  "id": 32,
+                  "team": "yellow",
+                  "num": "N2",
+                  "pos": "",
+                  "color": null,
+                  "x": 292.5,
+                  "y": 356.88
+                }
+              ],
+              "ball": {
+                "x": 432.5,
+                "y": 523.12
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 161.25,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 948.75,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 292.5,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 817.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 566.88
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 501,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 461.88
+                },
+                {
+                  "id": 502,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 278.12
+                },
+                {
+                  "id": 503,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 461.88
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "멈출 시점 · N1이 받은 뒤가 아니라 6의 패스 직전. “N1의 첫 터치 때 8은 어디에 보여야 할까?”",
+            "__hold": 2.1
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid40",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 371.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 488.12
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 712.5,
+                  "y": 278.12
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 356.88
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 199.38
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 540.62
+                },
+                {
+                  "id": 23,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 633.75,
+                  "y": 356.88
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 476.25,
+                  "y": 225.62
+                },
+                {
+                  "id": 31,
+                  "team": "yellow",
+                  "num": "N1",
+                  "pos": "",
+                  "color": null,
+                  "x": 817.5,
+                  "y": 435.62
+                },
+                {
+                  "id": 32,
+                  "team": "yellow",
+                  "num": "N2",
+                  "pos": "",
+                  "color": null,
+                  "x": 292.5,
+                  "y": 356.88
+                }
+              ],
+              "ball": {
+                "x": 432.5,
+                "y": 523.12
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 161.25,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 948.75,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 292.5,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 817.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "run",
+                  "color": "#64748b",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 502.5,
+                      "y": 278.12
+                    },
+                    {
+                      "x": 712.5,
+                      "y": 278.12
+                    }
+                  ]
+                },
+                {
+                  "type": "pass",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 397.5,
+                      "y": 488.12
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 435.62
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 501,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 461.88
+                },
+                {
+                  "id": 502,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 278.12
+                },
+                {
+                  "id": 503,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 461.88
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "선수의 선택 · 8이 6의 패스 전에 다른 각도를 준비한다. 중립 한 터치는 유지한다."
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid40",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 371.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 397.5,
+                  "y": 488.12
+                },
+                {
+                  "id": 8,
+                  "team": "blue",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 712.5,
+                  "y": 278.12
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 356.88
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 199.38
+                },
+                {
+                  "id": 22,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 540.62
+                },
+                {
+                  "id": 23,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 633.75,
+                  "y": 356.88
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 476.25,
+                  "y": 225.62
+                },
+                {
+                  "id": 31,
+                  "team": "yellow",
+                  "num": "N1",
+                  "pos": "",
+                  "color": null,
+                  "x": 817.5,
+                  "y": 435.62
+                },
+                {
+                  "id": 32,
+                  "team": "yellow",
+                  "num": "N2",
+                  "pos": "",
+                  "color": null,
+                  "x": 292.5,
+                  "y": 356.88
+                }
+              ],
+              "ball": {
+                "x": 852.5,
+                "y": 470.62
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 161.25,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 948.75,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 292.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 292.5,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 817.5,
+                      "y": 173.12
+                    },
+                    {
+                      "x": 817.5,
+                      "y": 566.88
+                    }
+                  ]
+                },
+                {
+                  "type": "pass",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 817.5,
+                      "y": 435.62
+                    },
+                    {
+                      "x": 712.5,
+                      "y": 278.12
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 278.12
+                },
+                {
+                  "id": 501,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 161.25,
+                  "y": 461.88
+                },
+                {
+                  "id": 502,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 278.12
+                },
+                {
+                  "id": 503,
+                  "team": "minigoalV",
+                  "color": null,
+                  "src": null,
+                  "x": 948.75,
+                  "y": 461.88
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "재개와 확인 · 첫 패스부터 수비가 정상 압박한다. N1이 받을 때 준비한 길이 실제로 열리는지 본다."
+          }
+        ]
       }
     },
     {
       "type": "train",
       "name": "골키퍼가 있는 6v6 경기형 훈련",
       "textbookItem": "ch10-t3",
-      "textbookRevision": 2,
+      "textbookRevision": 3,
       "minutes": 20.5,
       "sets": 1,
       "rpe": 5,
@@ -2061,13 +4410,18 @@
         "gridType": "off",
         "tokenScale": 1.5,
         "teamColors": {
-          "blue": "#6795ff",
-          "red": "#ee8e80",
-          "yellow": "#e9ce7b"
+          "blue": "#234f83",
+          "red": "#b54c46",
+          "yellow": "#b38c35"
         },
         "gkColors": {
-          "blue": "#6795ff",
-          "red": "#ee8e80"
+          "blue": "#234f83",
+          "red": "#b54c46"
+        },
+        "teamTxtC": {
+          "blue": "#ffffff",
+          "red": "#ffffff",
+          "yellow": "#ffffff"
         },
         "chip3d": false,
         "tokV": 2,
@@ -2257,7 +4611,7 @@
           },
           {
             "type": "pass",
-            "color": "#ffd24a",
+            "color": "#14213d",
             "lw": 1,
             "op": 1,
             "pts": [
@@ -2308,13 +4662,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -2504,7 +4863,7 @@
               },
               {
                 "type": "pass",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -2539,8 +4898,9 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
-          "cap": "필드 6v6과 골키퍼 각 1명. 원문대로 연계 후 마무리 구역에 들어간다."
+          "hold": 2.1,
+          "cap": "필드 6v6과 골키퍼 각 1명. 원문대로 연계 후 마무리 구역에 들어간다.",
+          "__hold": 2.1
         },
         {
           "snap": {
@@ -2558,13 +4918,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -2754,7 +5119,7 @@
               },
               {
                 "type": "pass",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -2789,7 +5154,7 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "골키퍼의 후방 연결에서 중앙의 다음 각도를 준비한다."
         },
         {
@@ -2808,13 +5173,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -3004,7 +5374,7 @@
               },
               {
                 "type": "pass",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -3039,7 +5409,7 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "7이 앞의 10에게 패스한다. 10의 압박과 내줄 각도를 함께 본다."
         },
         {
@@ -3058,13 +5428,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -3254,7 +5629,7 @@
               },
               {
                 "type": "pass",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -3289,7 +5664,7 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "10이 한 번에 아래의 6에게 내준다. 9는 마무리 구역 밖에서 출발을 준비한다."
         },
         {
@@ -3308,13 +5683,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -3504,7 +5884,7 @@
               },
               {
                 "type": "pass",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -3520,7 +5900,7 @@
               },
               {
                 "type": "run",
-                "color": "#ffffff",
+                "color": "#64748b",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -3555,7 +5935,7 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "6의 전방 패스가 출발할 때 9는 x=29m로 상대의 두 번째 최종 선수와 같은 높이다."
         },
         {
@@ -3574,13 +5954,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -3770,7 +6155,7 @@
               },
               {
                 "type": "shot",
-                "color": "#ffd24a",
+                "color": "#14213d",
                 "lw": 1,
                 "op": 1,
                 "pts": [
@@ -3805,7 +6190,7 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "9가 마무리 구역에서 첫 터치로 슛한다. 골키퍼와 수비는 실제로 막는다."
         },
         {
@@ -3824,13 +6209,18 @@
             "gridType": "off",
             "tokenScale": 1.5,
             "teamColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80",
-              "yellow": "#e9ce7b"
+              "blue": "#234f83",
+              "red": "#b54c46",
+              "yellow": "#b38c35"
             },
             "gkColors": {
-              "blue": "#6795ff",
-              "red": "#ee8e80"
+              "blue": "#234f83",
+              "red": "#b54c46"
+            },
+            "teamTxtC": {
+              "blue": "#ffffff",
+              "red": "#ffffff",
+              "yellow": "#ffffff"
             },
             "chip3d": false,
             "tokV": 2,
@@ -4039,7 +6429,7 @@
             ]
           },
           "dur": 1.2,
-          "hold": 0.7,
+          "hold": 2.1,
           "cap": "가능한 마무리 예시이며 실제 성공을 보장하지 않는다. 전진 뒤 지원도 이어 간다."
         }
       ],
@@ -4048,6 +6438,1879 @@
       "source": {
         "book": "ROBERTO DE ZERBI THE MASTER OF TIMING",
         "pdfPage": 29
+      },
+      "variants": {
+        "fail": [
+          {
+            "snap": {
+              "pitchSpec": "grid70",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 1,
+                  "team": "blue",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 285.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 5,
+                  "team": "blue",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 520.0
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 600.0,
+                  "y": 340.0
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 660.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 7,
+                  "team": "blue",
+                  "num": "7",
+                  "pos": "",
+                  "color": null,
+                  "x": 525.0,
+                  "y": 565.0
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 690.0,
+                  "y": 415.0
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 825.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 645.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 25,
+                  "team": "red",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 630.0,
+                  "y": 550.0
+                },
+                {
+                  "id": 26,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 190.0
+                },
+                {
+                  "id": 28,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 29,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 31,
+                  "team": "red",
+                  "num": "11",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 610.0
+                }
+              ],
+              "ball": {
+                "x": 635.0,
+                "y": 375.0
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 255.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 855.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 405.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 405.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 705.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 705.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "dashline",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 645.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 645.0,
+                      "y": 670.0
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 255.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 501,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 855.0,
+                  "y": 370.0
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "실패 1 · 10의 백패스 동안 수비가 올라왔다. 9는 30m 구역 경계 밖이지만 상대 기준 26m보다 앞에 있다.",
+            "__hold": 2.1
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid70",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 1,
+                  "team": "blue",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 285.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 5,
+                  "team": "blue",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 520.0
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 600.0,
+                  "y": 340.0
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 660.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 7,
+                  "team": "blue",
+                  "num": "7",
+                  "pos": "",
+                  "color": null,
+                  "x": 525.0,
+                  "y": 565.0
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 690.0,
+                  "y": 415.0
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 825.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 645.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 25,
+                  "team": "red",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 630.0,
+                  "y": 550.0
+                },
+                {
+                  "id": 26,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 190.0
+                },
+                {
+                  "id": 28,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 29,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 31,
+                  "team": "red",
+                  "num": "11",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 610.0
+                }
+              ],
+              "ball": {
+                "x": 635.0,
+                "y": 375.0
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 255.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 855.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 405.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 405.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 705.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 705.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "dashline",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 645.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 645.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "pass",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 600.0,
+                      "y": 340.0
+                    },
+                    {
+                      "x": 765.0,
+                      "y": 370.0
+                    }
+                  ]
+                },
+                {
+                  "type": "run",
+                  "color": "#64748b",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 690.0,
+                      "y": 415.0
+                    },
+                    {
+                      "x": 765.0,
+                      "y": 370.0
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 255.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 501,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 855.0,
+                  "y": 370.0
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "실패 2 · 6이 공을 놓는 순간이다. 9는 상대 진영에서 공과 두 번째 최종 상대 선수보다 골라인에 가깝다."
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid70",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 1,
+                  "team": "blue",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 285.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 5,
+                  "team": "blue",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 520.0
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 600.0,
+                  "y": 340.0
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 660.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 7,
+                  "team": "blue",
+                  "num": "7",
+                  "pos": "",
+                  "color": null,
+                  "x": 525.0,
+                  "y": 565.0
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 825.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 645.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 25,
+                  "team": "red",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 630.0,
+                  "y": 550.0
+                },
+                {
+                  "id": 26,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 190.0
+                },
+                {
+                  "id": 28,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 29,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 31,
+                  "team": "red",
+                  "num": "11",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 610.0
+                }
+              ],
+              "ball": {
+                "x": 800.0,
+                "y": 405.0
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 255.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 855.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 405.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 405.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 705.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 705.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "dashline",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 645.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 645.0,
+                      "y": 670.0
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 255.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 501,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 855.0,
+                  "y": 370.0
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "실패 3 · 9가 공을 받아 관여했으므로 오프사이드로 중단한다. 구역 진입 시점만 지킨 것으로는 충분하지 않다."
+          }
+        ],
+        "coach": [
+          {
+            "snap": {
+              "pitchSpec": "grid70",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 1,
+                  "team": "blue",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 285.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 5,
+                  "team": "blue",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 520.0
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 600.0,
+                  "y": 340.0
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 660.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 7,
+                  "team": "blue",
+                  "num": "7",
+                  "pos": "",
+                  "color": null,
+                  "x": 525.0,
+                  "y": 565.0
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 690.0,
+                  "y": 415.0
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 825.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 645.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 25,
+                  "team": "red",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 630.0,
+                  "y": 550.0
+                },
+                {
+                  "id": 26,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 190.0
+                },
+                {
+                  "id": 28,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 29,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 31,
+                  "team": "red",
+                  "num": "11",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 610.0
+                }
+              ],
+              "ball": {
+                "x": 635.0,
+                "y": 375.0
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 255.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 855.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 405.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 405.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 705.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 705.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "dashline",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 645.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 645.0,
+                      "y": 670.0
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 255.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 501,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 855.0,
+                  "y": 370.0
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "멈출 시점 · 백패스가 6에게 가는 순간. “구역 경계 말고, 지금 상대의 기준 높이는 어디야?”",
+            "__hold": 2.1
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid70",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 1,
+                  "team": "blue",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 285.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 5,
+                  "team": "blue",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 520.0
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 600.0,
+                  "y": 340.0
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 660.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 7,
+                  "team": "blue",
+                  "num": "7",
+                  "pos": "",
+                  "color": null,
+                  "x": 525.0,
+                  "y": 565.0
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 630.0,
+                  "y": 415.0
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 825.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 645.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 25,
+                  "team": "red",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 630.0,
+                  "y": 550.0
+                },
+                {
+                  "id": 26,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 190.0
+                },
+                {
+                  "id": 28,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 29,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 31,
+                  "team": "red",
+                  "num": "11",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 610.0
+                }
+              ],
+              "ball": {
+                "x": 635.0,
+                "y": 375.0
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 255.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 855.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 405.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 405.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 705.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 705.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "dashline",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 645.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 645.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "run",
+                  "color": "#64748b",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 690.0,
+                      "y": 415.0
+                    },
+                    {
+                      "x": 630.0,
+                      "y": 415.0
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 255.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 501,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 855.0,
+                  "y": 370.0
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "선수의 선택 · 9가 기준 높이 뒤로 조정한다. 6도 전방 패스 준비를 확인한다. 실제 재시작은 10의 백패스부터 한다."
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid70",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 1,
+                  "team": "blue",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 285.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 5,
+                  "team": "blue",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 520.0
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 600.0,
+                  "y": 340.0
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 660.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 7,
+                  "team": "blue",
+                  "num": "7",
+                  "pos": "",
+                  "color": null,
+                  "x": 525.0,
+                  "y": 565.0
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 630.0,
+                  "y": 415.0
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 825.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 645.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 25,
+                  "team": "red",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 630.0,
+                  "y": 550.0
+                },
+                {
+                  "id": 26,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 190.0
+                },
+                {
+                  "id": 28,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 29,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 31,
+                  "team": "red",
+                  "num": "11",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 610.0
+                }
+              ],
+              "ball": {
+                "x": 635.0,
+                "y": 375.0
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 255.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 855.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 405.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 405.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 705.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 705.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "dashline",
+                  "color": "#a94c46",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 645.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 645.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "pass",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 600.0,
+                      "y": 340.0
+                    },
+                    {
+                      "x": 765.0,
+                      "y": 370.0
+                    }
+                  ]
+                },
+                {
+                  "type": "run",
+                  "color": "#64748b",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 630.0,
+                      "y": 415.0
+                    },
+                    {
+                      "x": 765.0,
+                      "y": 370.0
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 255.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 501,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 855.0,
+                  "y": 370.0
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "재개 뒤 패스 순간 · 9는 25m로 상대 기준 26m보다 뒤에 있다. 수비가 다시 움직이면 그 위치도 다시 확인한다."
+          },
+          {
+            "snap": {
+              "pitchSpec": "grid70",
+              "orientation": "h",
+              "area": "full",
+              "pitchView": "full",
+              "pvSide": "own",
+              "fieldMode": "standard",
+              "spFlip": false,
+              "pitchN": 1,
+              "pitchTheme": "train",
+              "label": "num",
+              "lines": true,
+              "gridType": "off",
+              "tokenScale": 1.5,
+              "teamColors": {
+                "blue": "#234f83",
+                "red": "#b54c46",
+                "yellow": "#b38c35"
+              },
+              "gkColors": {
+                "blue": "#234f83",
+                "red": "#b54c46"
+              },
+              "teamTxtC": {
+                "blue": "#ffffff",
+                "red": "#ffffff",
+                "yellow": "#ffffff"
+              },
+              "chip3d": false,
+              "tokV": 2,
+              "tokShape": "circle",
+              "players": [
+                {
+                  "id": 1,
+                  "team": "blue",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 285.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 4,
+                  "team": "blue",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 5,
+                  "team": "blue",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 435.0,
+                  "y": 520.0
+                },
+                {
+                  "id": 6,
+                  "team": "blue",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 600.0,
+                  "y": 340.0
+                },
+                {
+                  "id": 10,
+                  "team": "blue",
+                  "num": "10",
+                  "pos": "",
+                  "color": null,
+                  "x": 660.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 7,
+                  "team": "blue",
+                  "num": "7",
+                  "pos": "",
+                  "color": null,
+                  "x": 525.0,
+                  "y": 565.0
+                },
+                {
+                  "id": 9,
+                  "team": "blue",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 765.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 21,
+                  "team": "red",
+                  "num": "1",
+                  "pos": "GK",
+                  "color": null,
+                  "x": 825.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 24,
+                  "team": "red",
+                  "num": "4",
+                  "pos": "",
+                  "color": null,
+                  "x": 645.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 25,
+                  "team": "red",
+                  "num": "5",
+                  "pos": "",
+                  "color": null,
+                  "x": 630.0,
+                  "y": 550.0
+                },
+                {
+                  "id": 26,
+                  "team": "red",
+                  "num": "6",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 190.0
+                },
+                {
+                  "id": 28,
+                  "team": "red",
+                  "num": "8",
+                  "pos": "",
+                  "color": null,
+                  "x": 570.0,
+                  "y": 475.0
+                },
+                {
+                  "id": 29,
+                  "team": "red",
+                  "num": "9",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 220.0
+                },
+                {
+                  "id": 31,
+                  "team": "red",
+                  "num": "11",
+                  "pos": "",
+                  "color": null,
+                  "x": 495.0,
+                  "y": 610.0
+                }
+              ],
+              "ball": {
+                "x": 800.0,
+                "y": 405.0
+              },
+              "drawings": [
+                {
+                  "type": "rectline",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 255.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 855.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 405.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 405.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "line",
+                  "color": "#8b98a9",
+                  "lw": 1,
+                  "op": 1,
+                  "dash": 1,
+                  "pts": [
+                    {
+                      "x": 705.0,
+                      "y": 70.0
+                    },
+                    {
+                      "x": 705.0,
+                      "y": 670.0
+                    }
+                  ]
+                },
+                {
+                  "type": "shot",
+                  "color": "#14213d",
+                  "lw": 1,
+                  "op": 1,
+                  "pts": [
+                    {
+                      "x": 765.0,
+                      "y": 370.0
+                    },
+                    {
+                      "x": 855.0,
+                      "y": 310.0
+                    }
+                  ]
+                }
+              ],
+              "equipment": [
+                {
+                  "id": 500,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 255.0,
+                  "y": 370.0
+                },
+                {
+                  "id": 501,
+                  "team": "goalV",
+                  "color": null,
+                  "src": null,
+                  "x": 855.0,
+                  "y": 370.0
+                }
+              ]
+            },
+            "dur": 1.2,
+            "hold": 2.1,
+            "cap": "다음 확인 · 온사이드 출발과 패스가 맞아 도착했다. 이어 첫 터치 슛 가능성을 별도로 확인한다."
+          }
+        ]
       }
     }
   ]
