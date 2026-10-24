@@ -60,7 +60,11 @@ try{
       finally {boardPrivatePersist=persist;boardPrivateSend=send;}
     });
     assert.equal(save.ok,true,JSON.stringify({width,engine,...save}));
-    await page.reload();await ready(page);f=await board();actual=await names();
+    await page.reload();await ready(page);f=await board();
+    // A verified local preimage may be ready while a later restore still paints the board.
+    // Wait for the saved fixture content, then keep the exact reload assertions below.
+    await f.waitForFunction(()=>state.players.some(p=>p.id===701)&&state.players.some(p=>p.id===702)&&anim.frames.length>=2);
+    actual=await names();
     assert.equal(actual.name,name);assert.ok(actual.scenes.every(n=>n===name),'reload preserves all scenes');
     assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[]);
     console.log(JSON.stringify({engine,passed:true,characters:[...name].length,reload:true,export:true,width,layoutWidth}));
