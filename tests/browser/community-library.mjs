@@ -1,0 +1,55 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {startFixture,openApp,root} from '../fixtures/team-app.mjs';
+
+// The real bundled catalogs in the real shell, using synthetic auth and a local API.
+const out=process.env.PS_COMMUNITY_OUTPUT||path.join(root,'test-results/community-library');
+fs.mkdirSync(out,{recursive:true});
+const index=JSON.parse(fs.readFileSync(path.join(root,'studio/packs/index.json'),'utf8'));
+const fx=await startFixture(),browsers={},report=[];
+try{
+  for(const mode of [{size:'desktop',width:1280,height:900,dark:true},{size:'ipad',width:768,height:1024,dark:false},{size:'phone',width:375,height:812,dark:false},{size:'phone',width:393,height:852,dark:true}]){
+    const {page,context,logs}=await openApp(fx,mode.size,{dark:mode.dark,browsers});
+    await page.setViewportSize({width:mode.width,height:mode.height});
+    await page.locator('#appSeg button[data-app="community"]').click();
+    const c=await (await page.waitForSelector('#fComm',{state:'attached'})).contentFrame();
+    await c.waitForSelector('.pr-card');
+    assert.equal(await c.locator('.pr-card').count(),index.sessions.length,'every bundled session is shown');
+    await c.waitForFunction(()=>{const i=document.querySelector('.pr-hero img');return i&&i.complete&&i.naturalWidth>0;});
+    const geometry=await c.evaluate(()=>{
+      const box=s=>{const r=document.querySelector(s).getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
+      const q=document.getElementById('commSearch'),st=getComputedStyle(q);
+      return {vw:innerWidth,doc:document.documentElement.scrollWidth,grid:box('#grid'),card:box('.pr-card'),tabs:box('#prSeg'),title:box('#clTitle'),font:st.fontSize,columns:getComputedStyle(document.getElementById('grid')).gridTemplateColumns.split(' ').length};
+    });
+    assert.equal(geometry.doc,geometry.vw,'no horizontal document overflow');
+    assert.ok(geometry.tabs.left>=0&&geometry.tabs.right<=geometry.vw+1,'source tabs fit');
+    assert.ok(geometry.card.width>=280,'native training diagram remains readable');
+    assert.equal(geometry.columns,mode.size==='desktop'?3:mode.size==='phone'?1:2,'responsive card count');
+    if(mode.size==='phone')assert.equal(geometry.font,'16px','phone input does not trigger Safari zoom');
+    await page.screenshot({path:path.join(out,`${mode.size}-${mode.width}-${mode.dark?'dark':'light'}.png`)});
+    await c.locator('#commSearch').fill('__없는_훈련_검증__');
+    await c.waitForSelector('#grid .empty');
+    assert.equal(await c.locator('.pr-card').count(),0,'search actually filters the catalog');
+    await c.locator('#commSearch').fill('');
+    await c.waitForSelector('.pr-card');
+    assert.equal(await c.locator('.pr-card').count(),index.sessions.length,'clearing search restores catalog');
+    const topic=c.locator('#txBar .tx-tile').first();
+    await topic.click();
+    assert.ok(await c.locator('.pr-card').count()<index.sessions.length,'topic filtering changes visible sessions');
+    await topic.click();
+    assert.equal(await c.locator('.pr-card').count(),index.sessions.length,'toggling the topic restores all sessions');
+    await c.locator('#prTabCoach').click();
+    await c.locator('#upBtn').click();
+    await c.waitForSelector('#upMenu:not([hidden])');
+    const menu=await c.locator('#upMenu').evaluate(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,vw:innerWidth,vh:innerHeight};});
+    assert.ok(menu.left>=0&&menu.right<=menu.vw&&menu.top>=0&&menu.bottom<=menu.vh,'sharing menu stays inside the viewport: '+JSON.stringify({mode,menu}));
+    await c.locator('#upBtn').click();
+    const errors=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
+    assert.deepEqual(errors,[],'no page errors');
+    report.push({...mode,...geometry,menu});
+    await context.close();
+  }
+  fs.writeFileSync(path.join(out,'responsive-report.json'),JSON.stringify(report,null,2));
+  console.log(JSON.stringify({passed:true,widths:report.map(r=>r.width),nativeSessions:index.sessions.length,report}));
+}finally{for(const b of Object.values(browsers))await b.close();await fx.close();}
