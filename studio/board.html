@@ -9350,7 +9350,7 @@ function _curvePt(p0x,p0y,p1x,p1y,off,u){
 /* ══ 2.719 · 그림(선·구역·글)은 장면 사이에서 서서히 나타나고 사라진다(코치 피드백 "도형이 만들어질 때 그라데이션 식으로 서서히 … 뚝뚝 끊기는 느낌").
    같은 그림(내용 동일 — 토큰에 묶인 끝점은 좌표 대신 토큰 id 로 비교)은 그대로. 다음 장면에만 있는 그림은 u 0.25→1 에서 0→1 로 켜지고,
    이 장면에만 있는 그림은 u 0→0.5 에서 1→0 으로 꺼진다. _fade 는 열거되지 않는 임시 속성이라 저장·스냅·복제(dc)에 남지 않는다. ══ */
-function _drawKey(d){ try{ var c=Object.assign({},d); delete c._tmp; if(c.tk&&c.pts){ c.pts=c.pts.map(function(p,i){ return (c.tk[i]!=null)?{tk:c.tk[i]}:p; }); } return JSON.stringify(c); }catch(_){ return "?"+Math.random(); } }
+function _drawKey(d){ try{ var c=Object.assign({},d); delete c._tmp; delete c._sceneId; if(c.tk&&c.pts){ c.pts=c.pts.map(function(p,i){ return (c.tk[i]!=null)?{tk:c.tk[i]}:p; }); } return JSON.stringify(c); }catch(_){ return "?"+Math.random(); } }
 function _setFade(d,f){ try{ Object.defineProperty(d,"_fade",{value:f,enumerable:false,configurable:true,writable:true}); }catch(_){} return d; }
 function _interpDrawings(A,B,u){
   var out=dc(A||[]); if(!(u>0)||A===B)return out;
