@@ -16,6 +16,7 @@ try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').ma
   animActive=-1;selectAnimFrame(1);selectItem('drawing',state.drawings[0]);__selPanelOpen(true);updateDelUI();
  });
  await f.locator('#textPositionAllBtn').click();
+ if(width===375||width===1280)await page.screenshot({path:path.join(SHOTS,`feedback-${engine}-${width}-text.png`)});
  let pos=await f.evaluate(()=>anim.frames.map(fr=>fr.snap.drawings.map(d=>({id:d._sceneId,text:d.text,x:d.pts[0].x,color:d.color}))));
  assert.deepEqual(pos[0],[{id:'main',text:'전반',x:420,color:'#123456'}]);assert.deepEqual(pos[2],[]);assert.equal(pos[3][0].x,420);assert.equal(pos[3][0].color,'#ffa500');assert.deepEqual(pos[4].map(d=>d.x),[100,200]);
  await f.evaluate(()=>undoLast());assert.equal(await f.evaluate(()=>anim.frames[0].snap.drawings[0].pts[0].x),100);await f.evaluate(()=>redoLast());
@@ -47,7 +48,7 @@ try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').ma
   const b={libId:'Vfeedback-board',type:'board',name:'합성 가져올 작전판',createdBy:psMyUid(),pages:[{name:'훈련 원본',snap:structuredClone(sn),anim:{frames:[{snap:structuredClone(sn),dur:1},{snap:{...structuredClone(sn),players:[{...sn.players[0],x:700}]},dur:2}]}}]},m={libId:'Vfeedback-meeting',type:'meeting',name:'합성 가져올 미팅',createdBy:psMyUid(),slides:[{title:'원본 제목',points:['원본 메모'],snap:structuredClone(sn),pdfOrientation:'landscape'}]};
   await boardStore.set('cs_drill_lib_v1',[b,m]);return JSON.stringify([b,m]);
  });
- async function openImport(){if(await f.locator('#ksImportLibrary').isVisible())await f.locator('#ksImportLibrary').click();else{await f.locator('#ksBot .kb-more').tap();await f.locator('#ksPop').getByRole('button',{name:'보관함에서 가져오기',exact:true}).tap();}}
+ async function openImport(){if(await f.locator('#ksImportLibrary').isVisible())await f.locator('#ksImportLibrary').click();else{await f.locator('#ksBot .kb-more').tap();await f.locator('#ksPop').getByRole('button',{name:'보관함에서 가져오기',exact:true}).tap();}await f.locator('#psMeetImport').waitFor({state:'visible'});}
  async function importItem(name){step='library-copy '+name;await openImport();await f.getByRole('button',{name,exact:true}).click();await f.locator('#psMeetImport .mi-go').click();await f.waitForFunction(()=>!document.getElementById('psMeetImport'));}
  await importItem('합성 가져올 작전판 · 작전판');assert.equal(await f.evaluate(()=>anim.slides.length),3);assert.deepEqual(await f.evaluate(()=>anim.slides[2].frames.map(fr=>fr.snap.players[0].x)),[500,700]);assert.equal(await f.locator('#animBar').isVisible(),false,'page preview leaves meeting tools available');
  await importItem('합성 가져올 미팅 · 미팅');assert.equal(await f.evaluate(()=>anim.slides.length),4);assert.deepEqual(await f.evaluate(()=>anim.slides[3].points),['원본 메모']);
