@@ -3,10 +3,10 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const source=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8'),perms=fs.readFileSync(path.join(__dirname,'../studio/perms.js'),'utf8');
 const raw=JSON.stringify,clone=x=>JSON.parse(raw(x));
 function section(a,b){const start=source.indexOf(a),end=source.indexOf(b,start+a.length);assert.ok(start>=0&&end>start,a);return source.slice(start,end);}
-const code=section('function accountActionWatch(','function psModal(')+'\n'+section('function permsEditChanges(','function uiLeave(');
+const code=section('function accountActionWatch(','function psModal(')+'\n'+section("var permsLinkFilter=",'function uiLeave(');
 class Element{
  constructor(tag){this.tagName=tag;this.children=[];this.style={};this.attributes={};this.classList={contains:()=>false};this.textContent='';this.innerHTML='';this.value='';}
- appendChild(node){node.parent=this;this.children.push(node);return node;}
+ appendChild(node){if(node.parent)node.parent.children=node.parent.children.filter(n=>n!==node);node.parent=this;this.children.push(node);return node;}
  append(...nodes){nodes.forEach(n=>this.appendChild(n));}
  setAttribute(k,v){this.attributes[k]=v;}
  addEventListener(){}
@@ -19,12 +19,12 @@ function fixture(initial){
  const values=new Map([['cs_perms_v1',raw(initial)],['ps_sync_session',raw({uid:'owner'})],['ps_active_ws','team'],['ps_ws_list',raw([{id:'team',kind:'team',role:'owner'}])],['scout_tool_v1',raw({players:[{id:'legacy-player',name:'Same name'},{id:'kept-player',name:'Same name'}]})],['cs_idp_v1_a','PRIVATE A'],['cs_idp_v1_b','PRIVATE B']]),writes=[],syncs=[];
  const body=new Element('body'),timers=new Map(),modals=[];let current=true,resolveMembers=null,timerId=0;
  const rows=[{user_id:'owner',role:'owner',name:'Owner'},...['a','b','staff','exec'].map(user_id=>({user_id,role:'member',name:user_id}))];
- const c={Promise,JSON,Set,Object,Date,permsOnlyUnlinked:false,setInterval:f=>{timers.set(++timerId,f);return timerId;},clearInterval:id=>timers.delete(id),addEventListener(){},removeEventListener(){},document:{body,createElement:t=>new Element(t),createTextNode:t=>Object.assign(new Element('#text'),{textContent:t}),getElementById:id=>all(body).find(n=>n.id===id)||null},
+ const c={Promise,JSON,Set,Object,Date,setInterval:f=>{timers.set(++timerId,f);return timerId;},clearInterval:id=>timers.delete(id),addEventListener(){},removeEventListener(){},document:{body,createElement:t=>new Element(t),createTextNode:t=>Object.assign(new Element('#text'),{textContent:t}),getElementById:id=>all(body).find(n=>n.id===id)||null},
  localStorage:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k)},
  psSaveShared(k,v){writes.push({k,v});values.set(k,v);return true;},psModal:o=>{modals.push(o);return{close(){}};},memberLabel:r=>r.name,esc:String,
  holdConflictContext:()=>({wid:'team',uid:'owner'}),holdConflictCurrent:()=>current,workspaceSwitchGuardRead:()=>null,activeWsObj:()=>({id:current?'team':'other',role:'owner'}),
  membersOf:()=>new Promise(r=>resolveMembers=r),setStatus(){},forceSync:r=>syncs.push(r)};c.window=c;
- vm.createContext(c);vm.runInContext(perms,c);vm.runInContext(code,c);
+ vm.createContext(c);vm.runInContext(perms,c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../studio/permissions-filter.js'),'utf8'),c);vm.runInContext(code,c);
  function member(uid){return all(body).find(n=>n.innerHTML===uid&&n.children.some(x=>x.tagName==='select'))?.parent;}
  return {c,body,values,writes,syncs,rows,modals,check(){[...timers.values()].forEach(f=>f());},get:()=>JSON.parse(values.get('cs_perms_v1')),external:p=>values.set('cs_perms_v1',raw(p)),switch(){current=false;},
  async open(){c.uiPerms({id:'team'});resolveMembers(rows);await Promise.resolve();},
@@ -35,6 +35,9 @@ function fixture(initial){
  save(){all(body).find(n=>n.tagName==='button'&&n.textContent==='저장').onclick();},
  error:()=>all(body).find(n=>n.attributes.role==='alert')?.textContent||''};
 }
+function isVisible(node){return !!node&&!node.hidden&&(!node.parent||isVisible(node.parent));}
+function filter(h,label){all(h.body).find(n=>n.tagName==='button'&&n.textContent.startsWith(label+' ')).onclick();}
+function visibleMembers(h){return h.rows.filter(r=>r.role!=='owner'&&isVisible(all(h.body).find(n=>n.innerHTML===r.name&&n.children.some(x=>x.tagName==='select')))).map(r=>r.user_id).sort();}
 function base(){return {v:7,defaultRole:'player',staffEdit:'view',rosterEdit:'executive',schedEdit:'staff',custom:{untouched:[3,2,1]},members:{
  a:{role:'player',playerId:'legacy-player',custom:{preserve:'A'}},b:{role:'player',scopes:[],playerId:'legacy-player',extra:'B'},
  staff:{role:'staff',custom:{inherited:true}},exec:{role:'executive',scopes:['future-scope'],playerId:'kept-player',extra:99},
@@ -99,4 +102,27 @@ test('clearing a link frees that player in every other card at once',async()=>{
  assert.match(staff,/<option value="kept-player" disabled>✓ Same name — exec<\/option>/);
  h.link('staff','legacy-player');
  assert.match(linkSelect(h,'a').innerHTML,/<option value="legacy-player" disabled>✓ Same name — staff<\/option>/,'a choice made lower down is seen by cards above it');
+});
+test('unlinked-player filter excludes unlinked staff and executives without changing permissions',async()=>{
+ const initial=base();delete initial.members.b.playerId;delete initial.members.exec.playerId;const h=fixture(initial),before=h.values.get('cs_perms_v1');await h.open();
+ filter(h,'연결 안 된 팀원');assert.deepEqual(visibleMembers(h),['b','exec','staff']);
+ filter(h,'연결 안 된 선수');assert.deepEqual(visibleMembers(h),['b']);
+ assert.equal(all(h.body).find(n=>n.attributes.role==='status').textContent,'현재 1명 표시');
+ filter(h,'전체');assert.deepEqual(visibleMembers(h),['a','b','exec','staff']);h.save();assert.equal(h.values.get('cs_perms_v1'),before);assert.deepEqual(h.writes,[]);
+});
+test('changing filters keeps drafts, inherited fields and the original dialog until explicit save',async()=>{
+ const initial=base(),h=fixture(initial);await h.open();const overlay=h.c.document.getElementById('psPermsOv');h.link('a','');h.scope('b','team',true);h.toggle();
+ filter(h,'연결 안 된 선수');assert.deepEqual(visibleMembers(h),['a']);filter(h,'연결 안 된 팀원');filter(h,'전체');
+ assert.equal(h.c.document.getElementById('psPermsOv'),overlay);assert.deepEqual(h.writes,[]);h.save();
+ const expected=clone(initial);delete expected.members.a.playerId;expected.members.b.scopes=['team'];expected.staffEdit='edit';assert.deepEqual(h.get(),expected);assert.equal(h.writes.length,1);
+});
+test('draft link and role changes update filter counts, empty state and role groups',async()=>{
+ const initial=base();delete initial.members.b.playerId;const h=fixture(initial),roster=JSON.parse(h.values.get('scout_tool_v1'));roster.players.push({id:'free-player',name:'Free player'});h.values.set('scout_tool_v1',JSON.stringify(roster));await h.open();filter(h,'연결 안 된 선수');assert.deepEqual(visibleMembers(h),['b']);
+ h.link('b','free-player');assert.deepEqual(visibleMembers(h),[]);assert.equal(all(h.body).find(n=>n.attributes.role==='status').textContent,'연결 안 된 선수가 없습니다.');
+ filter(h,'전체');h.role('staff','player');filter(h,'연결 안 된 선수');assert.deepEqual(visibleMembers(h),['staff']);
+ const top=all(h.body).find(n=>n.innerHTML==='staff'&&n.children.some(x=>x.tagName==='select'));assert.equal(top.parent.parent.parent.children[0].children[0].textContent,'선수');
+});
+test('filtering cannot release a player already linked to a hidden member',async()=>{
+ const initial=base();delete initial.members.b.playerId;const h=fixture(initial);await h.open();filter(h,'연결 안 된 선수');
+ assert.match(linkSelect(h,'b').innerHTML,/<option value="legacy-player" disabled>/);assert.match(linkSelect(h,'b').innerHTML,/<option value="kept-player" disabled>/);assert.deepEqual(h.writes,[]);
 });
