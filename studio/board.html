@@ -11574,8 +11574,8 @@ function dfRow(d){
 async function renderLibDock(){
   if(!psVaultRenderReady())return;
   try{renderDrillFiles();}catch(_){}
-  const strip=$("dockStrip");if(!strip)return;
-  const lib=await psVaultReadForRender();if(!lib)return;
+  const strip=$("dockStrip");if(!strip||!strip.getClientRects().length)return;
+  const lib=await psVaultReadForRender();if(!lib||!strip.getClientRects().length)return;
   const arr=lib.filter(d=>{
     if(dockFilter.q && !((d.name||"").toLowerCase().includes(dockFilter.q.toLowerCase())))return false;
     if(dockFilter.src==="mine"&&isTpl(d))return false;
