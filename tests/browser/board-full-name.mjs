@@ -41,8 +41,8 @@ try{
     const exported=await f.evaluate(()=>{const o=boardImageXML(),d=new DOMParser().parseFromString(o.xml,'image/svg+xml');return {names:[...d.querySelectorAll('text')].map(t=>t.textContent),error:!!d.querySelector('parsererror')};});
     assert.equal(exported.error,false);assert.ok(exported.names.includes(name),'export keeps the full label');
     await f.evaluate(()=>{sel={type:'player',ref:state.players.find(p=>p.id===701)};window.__selPanelOpen(true);});
-    await f.locator('#nameInput').waitFor({state:'visible'});
-    const metrics=await f.locator('#nameInput').evaluate(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,viewport:innerWidth,value:e.value};});
+    const measured=await f.waitForFunction(()=>{const e=document.getElementById('nameInput'),r=e&&e.getBoundingClientRect();return r&&r.width>0?{left:r.left,right:r.right,width:r.width,viewport:innerWidth,value:e.value}:false;});
+    const metrics=await measured.jsonValue();
     const layoutWidth=await page.evaluate(()=>innerWidth);
     assert.equal(page.viewportSize().width,width,'the physical viewport matches the requested screen');
     // iPad intentionally uses the existing desktop layout viewport (at least 1100px).

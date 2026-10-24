@@ -100,6 +100,20 @@
     }
   };
   document.addEventListener('DOMContentLoaded', function () {
+    var style=document.createElement('style');style.textContent='body.bc-tilt3d svg#board{overflow:visible!important}';document.head.appendChild(style);
+    var textDrag=false,coords=clientToUnit;
+    function freeText(x,y){
+      if(!document.body.classList.contains('bc-tilt3d')||!(state.tool==='text'||textDrag))return null;
+      var p=bcUnproject(x,y);return p&&isFinite(p.x)&&isFinite(p.y)&&Math.abs(p.x)<W*3&&Math.abs(p.y)<H*3?p:null;
+    }
+    clientToUnit=function(x,y){return freeText(x,y)||coords.apply(this,arguments);};
+    document.addEventListener('pointerdown',function(e){var g=e.target;while(g&&!g.__psD)g=g.parentNode;textDrag=!!(g&&g.__psD.type==='text'&&(!multiSel||multiSel.length<2));},true);
+    ['pointerup','pointercancel'].forEach(function(t){document.addEventListener(t,function(){textDrag=false;});});
+    document.getElementById('boardStage').addEventListener('pointerdown',function(e){
+      if((e.target!==this&&e.target!==svg)||state.tool!=='text'||state.boardLocked||e.button!==0)return;
+      if(typeof _inkPalm==='function'&&_inkPalm(e))return;
+      var p=freeText(e.clientX,e.clientY);if(!p)return;e.preventDefault();e.stopPropagation();addText(p);
+    });
     document.addEventListener('pointerdown', function (e) {
       if (!lastTap) return;
       var g = e.target; while (g && !g.__psD) g = g.parentNode;

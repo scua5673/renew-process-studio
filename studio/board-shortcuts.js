@@ -23,5 +23,13 @@
     }else if(p.pageNav)p.pageNav(id==='pagePrev'?-1:1);
     return true;
   }
-  return {actions:actions,run:run};
+  var animActions={animFirst:'맨 처음 장면',animLast:'맨 마지막 장면'};
+  if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',function(){
+    var previous=runAnimAct;runAnimAct=function(id){
+      if(id!=='animFirst'&&id!=='animLast')return previous.apply(this,arguments);
+      if(!anim.frames.length)return; if(animPlaying)stopAnim();
+      selectAnimFrame(id==='animFirst'?0:anim.frames.length-1,true);
+    };
+  });
+  return {actions:actions,animActions:animActions,defaults:{animFirst:'home',animLast:'end'},run:run};
 });

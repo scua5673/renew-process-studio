@@ -9125,7 +9125,7 @@ function __exportVB(){
   let vb=(typeof BASEVB!=="undefined"&&BASEVB)?BASEVB.slice():svg.getAttribute("viewBox").split(" ").map(Number);
   try{
     let x0=vb[0],y0=vb[1],x1=vb[0]+vb[2],y1=vb[1]+vb[3],grew=false;const PAD=14;
-    ["tokenLayer","drawLayer","visionLayer","ps-multipitch"].forEach(id=>{   // 멀티피치(2·3개 배치)도 포함 — 화면 채움 배치가 기본 박스 밖까지 나가도 내보내기·썸네일에서 안 잘리게
+    ["tokenLayer","drawLayer","textFrontLayer","visionLayer","ps-multipitch"].forEach(id=>{   // 멀티피치(2·3개 배치)도 포함 — 화면 채움 배치가 기본 박스 밖까지 나가도 내보내기·썸네일에서 안 잘리게
       const g=svg.querySelector("#"+id);if(!g||!g.childNodes.length)return;
       const b=__exportLayerBBox(g);if(!b||(!b.width&&!b.height))return;
       if(b.x-PAD<x0){x0=b.x-PAD;grew=true;}if(b.y-PAD<y0){y0=b.y-PAD;grew=true;}
@@ -15713,6 +15713,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     /* 2.686 — 애니메이션 바의 모든 단추 + 선택 토큰의 잔상·시선까지 단축키로(사용자 "애니메이션에 있는 도구들 전부") */
     const ANIM_ACTS={dockFold:"도구 도크 접기·펼치기",animBar:"애니메이션 바 열기·닫기",animPlay:"애니 재생·정지",animLoop:"반복 재생",animAdd:"장면 추가",animUpdate:"장면 갱신",animDup:"장면 복제",animDel:"장면 삭제",animPrev:"이전 장면",animNext:"다음 장면",animOnion:"이전 장면 겹쳐 보기",animBlink:"선택 토큰 깜박임",animHl:"선택 토큰 계속 강조",animExport:"영상 내보내기",animGif:"GIF 내보내기",tokTrail:"잔상(선택 토큰)",tokLook:"시선(선택 토큰)"};
     const ANIM_BTN={animBar:"animToggle",animPlay:"animPlay",animLoop:"animLoopBtn",animAdd:"animAdd",animUpdate:"animUpdate",animOnion:"animOnionBtn",animBlink:"animBlinkBtn",animHl:"animHlBtn",animExport:"animExport",animGif:"animGif",tokTrail:"trailBtn",tokLook:"lookBtn"};
+    Object.assign(ANIM_ACTS,PSBoardShortcuts.animActions);
     const ANIM_IDS=Object.keys(ANIM_ACTS);
     const TOOL_NAMES={move:"이동·선택",run:"선수 이동",pass:"패스",dribble:"드리블",line:"직선",dashline:"점선",link:"연결선",poly:"다각형",free:"자유선",rect:"구역",ellipse:"원형 구역",rectline:"사각형(실선)",rectdash:"사각형(점선)",text:"텍스트 라벨",eraser:"지우개"};
     /* 2.975 — «보드» 탭(사용자 "작전판에 보드 설정과 펜색상도 전부 단축키로" · "저장하기 단축키도"). 보드 설정 버튼을 그대로 눌러 준다 — 동작이 두 벌이 되지 않게. */
@@ -15725,7 +15726,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     const TOOL_KEY="cs_tool_shortcuts_v1";
     let toolKeyOpen=false;
     function toolKeyDefaults(){return {move:"1",run:"2",pass:"3",dribble:"4",line:"5",dashline:"6",link:"",poly:"",free:"7",rect:"8",ellipse:"",rectline:"9",rectdash:"",text:"",eraser:"0",animBar:"",animPlay:"p",animLoop:"",animAdd:"n",animUpdate:"u",animDup:"",animDel:"",animPrev:",",animNext:".",animOnion:"",animBlink:"",animHl:"k",animExport:"",animGif:"",tokTrail:"j",tokLook:"o",save:"mod+s"};}
-    function loadToolKeys(){var d=toolKeyDefaults(),v=null;try{v=JSON.parse(localStorage.getItem(TOOL_KEY)||"null");}catch(_){}if(v&&typeof v==="object")KEY_IDS.forEach(function(t){if(typeof v[t]==="string")d[t]=v[t];});KEY_IDS.forEach(function(t){d[t]=comboFix(d[t]);});return d;}
+    function loadToolKeys(){var d=Object.assign(toolKeyDefaults(),PSBoardShortcuts.defaults),v=null;try{v=JSON.parse(localStorage.getItem(TOOL_KEY)||"null");}catch(_){}if(v&&typeof v==="object")KEY_IDS.forEach(function(t){if(typeof v[t]==="string")d[t]=v[t];});KEY_IDS.forEach(function(t){d[t]=comboFix(d[t]);});return d;}
     window.__psToolKeys=loadToolKeys;   /* 2.908 — 셸의 키 전달과 역할 링(H)이 같은 표(기본값 포함)를 읽게 */
     function saveToolKeys(v){try{localStorage.setItem(TOOL_KEY,JSON.stringify(v));}catch(_){}}
     /* 2.975 — 수정키 조합·톡 누르기. 한글 입력에서도 e.code 자판 위치로 읽고 옛 한 글자 키를 보존한다. */
