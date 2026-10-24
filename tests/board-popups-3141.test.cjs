@@ -55,7 +55,7 @@ test('가짜 창 — toast 를 감싸 띠가 보이면 알림을 그 위로, 띠
 test('배포 묶음 — sw.js CORE · board.html <script> 한 줄 · 크기 예산 · 중요 시험 목록',()=>{
   assert.ok(read('sw.js').includes("'/studio/board-popups.js'"),'sw.js CORE');
   const b=read('studio/board.html');
-  assert.ok(b.includes('<script src="board-popups.js"></script>'),'board.html script');
+  assert.ok(/<script src="board-popups\.js(?:\?[^"<>]*)?"><\/script>/.test(b),'board.html script');
   assert.ok(Buffer.byteLength(b)<=2560000,'board.html budget '+Buffer.byteLength(b));
   assert.ok(read('tests/browser/run-critical.mjs').includes("'board-popups-3141'"),'run-critical');
   assert.ok(fs.existsSync(path.join(__dirname,'browser','board-popups-3141.mjs')));
