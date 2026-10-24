@@ -165,7 +165,8 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
     assert.deepEqual([t3.deco.full.crowd,t3.deco.simple.crowd,t3.deco.grass.crowd],[true,false,false],'stands only in «전체»');
     assert.deepEqual([t3.deco.full.boards,t3.deco.simple.boards,t3.deco.grass.boards],[true,true,false],'boards in «전체»·«간단»');
     assert.deepEqual([t3.deco.simple.bench,t3.deco.grass.bench],[true,false]);
-    assert.ok(t3.deco.grass.k>t3.deco.full.k,'less stadium → bigger pitch '+JSON.stringify(t3.deco));
+    // Compact phone framing reaches the same 12px edge limit in every stadium mode.
+    assert.ok(t3.deco.simple.k>=t3.deco.full.k&&t3.deco.grass.k>=t3.deco.simple.k,'less stadium never shrinks the pitch '+JSON.stringify(t3.deco));
     assert.equal(t3.adEsc,true,'ad text is escaped');assert.equal(t3.adDecodes,true,'the stadium picture still decodes');assert.equal(t3.adBack,true,'empty → PROCESS STUDIO');
     assert.deepEqual(t3.stored,{cam:'mid',deco:'full',ad:'',mood:'night',brand:false},'device setting');   /* 3.029 — 분위기 · 팀 브랜딩도 같은 기기 설정에 */
     assert.equal(t3.saved,true);assert.deepEqual(t3.names,['경기 분석'],'names are trimmed');assert.equal(t3.applied,'l','applying restores the saved look');
