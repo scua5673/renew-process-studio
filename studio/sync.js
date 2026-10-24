@@ -9645,7 +9645,7 @@ function uiMembers(wa){
   }).catch(function(){ mm.close(); });
 }
 /* ── 권한 관리(관리자 전용) — 멤버별 역할·구역 편집 → cs_perms_v1 저장 ── */
-var permsOnlyUnlinked=false;   /* 1.534 — '연결 안 된 사람만 보기' 토글 상태 */
+var permsLinkFilter='all';   /* 목록 필터는 저장할 권한 문서와 분리한다. */
 function permsEditChanges(before,after,staffBefore,staffAfter,sections){
   var changes=[],ids=sections.map(function(s){return s.id;});
   if(staffBefore!==staffAfter)changes.push({field:'staffEdit',value:staffAfter?'edit':'view'});
@@ -9688,7 +9688,7 @@ function permsEditApply(opened,latest,changes){
 }
 function uiPerms(wa){
   var P=window.PSPerms;
-  if(!P){ psModal({title:'권한 관리',body:'권한 모듈을 불러오지 못했어요. 새로고침 후 다시 시도하세요.',hideCancel:true,ok:'확인'}); return; }
+  if(!P||!window.PSPermissionFilter){ psModal({title:'권한 관리',body:'권한 모듈을 불러오지 못했어요. 새로고침 후 다시 시도하세요.',hideCancel:true,ok:'확인'}); return; }
   var editOwner=holdConflictContext();
   function current(){var w=activeWsObj();return !!editOwner&&!!wa&&String(wa.id)===editOwner.wid&&holdConflictCurrent(editOwner)&&!workspaceSwitchGuardRead()&&!!w&&w.id===wa.id&&w.role==='owner';}
   if(!current())return;
@@ -9749,26 +9749,7 @@ function uiPerms(wa){
       var none=document.createElement('div'); none.style.cssText='font-size:13px;color:'+(dark?'#9AA4B3':'#8a8f98')+';padding:8px 2px 4px';
       none.textContent='아직 합류한 팀원이 없어요. 초대 코드로 팀원을 먼저 초대하세요.'; card.appendChild(none);
     }
-    var state={},initialState={};   /* uid -> {role, scopes:{id:bool}} */
-    /* 1.534 — 새로 들어온 팀원을 코치가 명단과 이어 주는 자리다.
-       연결이 안 된 사람이 목록에 섞여 있으면 못 찾으므로 ①숫자로 알리고 ②맨 위로 올리고 ③거를 수 있게 한다. */
-    (function(){
-      var notLinked=editable.filter(function(r){ return !((cur.members[r.user_id]||{}).playerId); });
-      var sum=document.createElement('div');
-      sum.style.cssText='display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 12px;margin-bottom:10px;border-radius:11px;'
-        +'background:'+(notLinked.length?(dark?'rgba(201,119,43,.16)':'#FDF6E3'):(dark?'#222c39':'#E9EDF5'))+';'
-        +'color:'+(notLinked.length?(dark?'#E5B96A':'#8A6A1F'):(dark?'#9fbbff':'#2757d9'))+';font-size:13px;font-weight:700;';
-      sum.innerHTML='<span style="flex:1">합류 '+editable.length+'명 · 선수 연결됨 '+(editable.length-notLinked.length)+' · '
-        +(notLinked.length?('<b>연결 안 됨 '+notLinked.length+'</b>'):'모두 연결됨 ✓')+'</span>';
-      if(notLinked.length){
-        var tg=document.createElement('button'); tg.type='button';
-        tg.textContent=permsOnlyUnlinked?'전체 보기':'연결 안 된 사람만';
-        tg.style.cssText='flex:0 0 auto;height:28px;padding:0 11px;border:1px solid currentColor;background:transparent;color:inherit;border-radius:8px;font:inherit;font-size:11px;font-weight:800;cursor:pointer;';
-        tg.onclick=function(){ permsOnlyUnlinked=!permsOnlyUnlinked; uiPerms(wa); };
-        sum.appendChild(tg);
-      }
-      card.appendChild(sum);
-    })();
+    var state={},initialState={};
     /* 1.558 — 역할별로 묶는다: 임원 → 코칭스태프 → 선수(사용자 지시).
        같은 역할 안에서는 예전처럼 '선수 연결 안 된 사람'을 위로 둔다(코치가 할 일이 먼저 보이게). */
     var pRole=function(r){ return (cur.members[r.user_id]&&cur.members[r.user_id].role)||cur.defaultRole||'player'; };
@@ -9780,7 +9761,8 @@ function uiPerms(wa){
       var la=((cur.members[a.user_id]||{}).playerId)?1:0, lb=((cur.members[b.user_id]||{}).playerId)?1:0;
       return la-lb;
     });
-    if(permsOnlyUnlinked) editable=editable.filter(function(r){ return !((cur.members[r.user_id]||{}).playerId); });
+    /* 3.158 — 모든 편집 카드는 유지하고 표시만 거른다. 필터를 바꿔도
+       역할·선수 연결·범위·스태프 편집의 미저장 변경을 다시 불러오지 않는다. */
     /* 2.943 — 선수 연결 고르개: 이미 연결된 선수는 «✓ 이미 연결됨 — 누구 계정»으로 묶고 고를 수 없게(사용자 «연결된 사람은 체크 표시»).
        예전엔 «다른 계정에 연결됨»을 위에 그린 카드만 보고 계산했다(state 를 한 장씩 채우며) — 아래 카드가 가진 선수,
        «연결 안 된 사람만»으로 빠진 사람, 관리자의 연결은 보지 못해 **같은 선수에 두 계정이 붙을 수 있었다.**
@@ -9799,20 +9781,10 @@ function uiPerms(wa){
       Object.keys(state).forEach(function(u2){ add(u2,state[u2].playerId); });
       return m; }
     var linkRedraws=[];
-    var pLastGrp=null;
+    var filterUI=window.PSPermissionFilter.create({document:document,dark:dark,state:state,roles:PORDER,mode:permsLinkFilter,onMode:function(mode){permsLinkFilter=mode;}});
+    card.appendChild(filterUI.element);
+    function applyMemberFilter(){filterUI.update();}
     editable.forEach(function(r){
-      var _pk=pRole(r);
-      if(_pk!==pLastGrp){
-        pLastGrp=_pk;
-        var _pl=(PORDER.filter(function(x){return x[0]===_pk;})[0]||[null,_pk])[1];
-        var _pn=editable.filter(function(q){ return pRole(q)===_pk; }).length;
-        var ph=document.createElement('div');
-        /* 이 함수엔 dim 변수가 없다 — 다른 줄과 같은 회색을 직접 쓴다 */
-        ph.style.cssText='display:flex;align-items:center;gap:7px;margin:14px 2px 8px;font-size:11px;font-weight:800;color:'+(dark?'#9AA4B3':'#8a8f98');
-        ph.innerHTML='<span style="color:'+(dark?'#E7EBF1':'#16181c')+'">'+esc(_pl)+'</span><span style="opacity:.75">'+_pn+'명</span>'
-          +'<span style="flex:1;height:1px;background:'+(dark?'#2C3744':'#E3E5E9')+'"></span>';
-        card.appendChild(ph);
-      }
       var uid=r.user_id;
       var role=(cur.members[uid]&&cur.members[uid].role)||cur.defaultRole||'player';
       var scopes={}; var eff=P.memberScopes(uid);
@@ -9861,7 +9833,7 @@ function uiPerms(wa){
                    :'color:'+(dark?'#F0A8A4':'#A3302B')+';background:'+(dark?'rgba(224,116,112,.14)':'#FDECEB'));
           };
           linkRedraws.push(drawLink);drawLink();
-          lsel.onchange=function(){ state[uid].playerId=lsel.value; linkRedraws.forEach(function(fn){ try{ fn(); }catch(_){} }); };
+          lsel.onchange=function(){ state[uid].playerId=lsel.value; linkRedraws.forEach(function(fn){ try{ fn(); }catch(_){} });applyMemberFilter(); };
           lrow.appendChild(lsel);lrow.appendChild(badge);
         }
         d.appendChild(lrow);
@@ -9888,13 +9860,15 @@ function uiPerms(wa){
         var v=(sel.value==='admin'||sel.value==='executive'||sel.value==='staff');
         secs.forEach(function(s){ var on=v&&!(sel.value==='staff'&&s.id==='scout'); boxes[s.id].checked=on; state[uid].scopes[s.id]=on; });
         lockUI();
+        applyMemberFilter();
       };
       /* 초기 표시는 저장된 범위 그대로 (관리자만 전체 강제) — 열었다 저장해도 권한이 바뀌지 않게 */
       if(role==='admin'||role==='executive') secs.forEach(function(s){ boxes[s.id].checked=true; state[uid].scopes[s.id]=true; });
       lockUI();
       initialState[uid]=JSON.parse(JSON.stringify(state[uid]));
-      card.appendChild(d);
+      filterUI.add(uid,d);
     });
+    applyMemberFilter();
     var saveError=document.createElement('div');saveError.setAttribute('role','alert');saveError.style.cssText='font-size:12px;color:#c24a46;line-height:1.5;margin-top:8px';card.appendChild(saveError);
     var btns=document.createElement('div'); btns.style.cssText='display:flex;gap:8px;justify-content:flex-end;margin-top:8px;position:sticky;bottom:0;padding-top:10px;background:'+(dark?'#1A212B':'#fff')+';';
     var cancel=document.createElement('button'); cancel.textContent='취소';
