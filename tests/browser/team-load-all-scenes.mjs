@@ -73,7 +73,7 @@ try{
   await f.waitForFunction(()=>document.getElementById('dfNew'));await f.evaluate(()=>document.getElementById('dfNew').click());
   await f.waitForSelector('.vcc-item');await f.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());
   await f.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length>=2,null,{timeout:15000});
-  await f.waitForSelector('#psMeetForm.on');await f.evaluate(()=>document.querySelector('#psMeetForm .mf-skip').click());await page.waitForTimeout(500);
+  await f.waitForSelector('#psMeetForm.on');await f.click('#psMeetForm [data-start=filled]');await f.click('#psMeetForm .mf-go');await page.waitForTimeout(500);
   await f.evaluate(()=>{ if(window.__meetingPageActive)window.__meetingPageEdit(); });await f.waitForFunction(()=>!window.__meetingPageActive);await page.waitForTimeout(500);
   // 비교는 미팅 안에서 — 보드를 떠날 때 지금 페이지를 담는 것(capture)은 정상 동작이다
   const workPages=await f.evaluate(()=>JSON.stringify(window.__psPages.pg().map(p=>[p.snap.players,((p.anim&&p.anim.frames)||[]).map(x=>x.snap.players)])));
