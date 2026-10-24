@@ -43,6 +43,76 @@ test('카메라 맞춤 — 기울인 운동장이 여백 안에 들어오고 가
   assert.ok(Math.min(...ys)>=173&&Math.max(...ys)<=1280-154,'릴스 띠 안 '+ys.map(Math.round));
 });
 
+// Run the real video producer and caption painter; stub only image decoding and drawing.
+function videoProducer({width=1280,height=720,caps=['','설명'],reel=false,fit=false,ax=24,sy=1.08}={}){
+  const captionTops=[],cameraCalls=[];
+  const dest=reel?{topH:Math.round(height*.135),botH:Math.round(height*.12)}:null;
+  class DecodedImage{
+    set src(value){this.url=value;queueMicrotask(()=>this.onload());}
+    decode(){return Promise.resolve();}
+  }
+  const fixture={Math,canvas:{width,height},opts:{reel},FR:caps.map(cap=>({cap})),NB:caps.length,
+    _fit:fit,uvb:[PITCH[0],PITCH[1],PITCH[2]-PITCH[0],PITCH[3]-PITCH[1]],W:1080,H:840,dest,
+    plan:caps.map(()=>({set(){},vb:null})),Image:DecodedImage,
+    _exportPitchBox:()=>PITCH.slice(),_t3StadiumHost:()=>null,
+    boardImageXML:()=>({w:1080,h:840,xml:'<svg width="1080" height="840"></svg>'}),
+    ctx:{save(){},restore(){},measureText:t=>({width:t.length*10}),beginPath(){},
+      moveTo:(x,y)=>captionTops.push(y),arcTo(){},closePath(){},fill(){},fillText(){}}};
+  vm.createContext(fixture);
+  vm.runInContext(src.slice(a,b),fixture);
+  const padsSource=/var TILT_PAD=\{[^\n]+\};/.exec(src);
+  assert.ok(padsSource,'production stadium margins');
+  vm.runInContext(padsSource[0],fixture);
+  const fullPads=fixture.TILT_PAD.full;
+  Object.freeze(fullPads);
+  fixture.window={__tiltPadsNow:()=>fullPads};
+  fixture._t3x={cam:{ax,sy},cams:{},st:{src:'',img:null},stN:0,
+    top:dest?dest.topH:0,bottom:dest?height-dest.botH:height};
+  const camera=fixture._t3Camera;
+  fixture._t3Camera=(Wo,Ho,box,options)=>{
+    cameraCalls.push({pads:Array.from(options.pads),top:options.top,bottom:options.bottom});
+    return camera(Wo,Ho,box,options);
+  };
+  const producerStart=src.indexOf('  function _t3Box(k)'),producerEnd=src.indexOf('  function _t3Paint(fr,meta)');
+  const captionStart=src.indexOf('  function capBar(txt,idx)'),captionEnd=src.indexOf('  function titleBar(meta)');
+  assert.ok(producerStart>0&&producerEnd>producerStart&&captionStart>0&&captionEnd>captionStart);
+  vm.runInContext(src.slice(producerStart,producerEnd)+src.slice(captionStart,captionEnd),fixture);
+  return {fixture,fullPads,cameraCalls,captionTops,produce:k=>fixture._t3Produce(k),
+    caption:(text,index)=>fixture.capBar(text,index)};
+}
+
+test('자막이 있는 3D 영상은 첫 장면부터 하단 선수를 가리지 않는 같은 카메라를 쓴다',async()=>{
+  for(const [width,height] of [[1280,720],[1920,1080]])for(const [ax,sy] of [[36,1.3],[24,1.08],[12,1]]){
+    const video=videoProducer({width,height,ax,sy}),before=Array.from(video.fullPads);
+    const first=await video.produce(0),captioned=await video.produce(1);
+    assert.equal(first.cam,captioned.cam,'later captions must not make the camera jump');
+    assert.equal(video.cameraCalls.length,1,'the fitted camera is reused');
+    video.caption('설명',1);
+    const touchline=T._t3Project(first.cam,(PITCH[0]+PITCH[2])/2,PITCH[3],0);
+    assert.ok(touchline[1]<=video.captionTops[0],`${width}×${height} / ${ax}°: lower player ${touchline[1]} enters caption ${video.captionTops[0]}`);
+    assert.deepEqual(Array.from(video.fullPads),before,'export must not alter the screen/stadium margins');
+  }
+});
+
+test('자막 없는 3D 영상은 확대된 운동장을 유지하고 릴스는 전용 제목·자막 띠를 쓴다',async()=>{
+  const plain=videoProducer({caps:['','']}),plainFrame=await plain.produce(0);
+  assert.deepEqual(plain.cameraCalls[0].pads,Array.from(plain.fullPads),'no caption: use the screen framing');
+  const captioned=videoProducer(),captionedFrame=await captioned.produce(0);
+  const bottom=frame=>T._t3Project(frame.cam,(PITCH[0]+PITCH[2])/2,PITCH[3],0)[1];
+  assert.ok(bottom(plainFrame)>bottom(captionedFrame)+30,'caption-free video keeps the larger field');
+  const reel=videoProducer({width:720,height:1280,reel:true}),reelFrame=await reel.produce(0);
+  assert.deepEqual(reel.cameraCalls[0].pads,Array.from(reel.fullPads),'reel must not add the landscape caption margin');
+  const call=reel.cameraCalls[0],ys=corners(reelFrame.cam).map(p=>p[1]);
+  assert.equal(call.top,reel.fixture.dest.topH);
+  assert.equal(call.bottom,1280-reel.fixture.dest.botH);
+  assert.ok(Math.min(...ys)>=call.top&&Math.max(...ys)<=call.bottom,'pitch remains between the dedicated bands');
+  reel.caption('설명',1);
+  assert.ok(reel.captionTops[0]>=call.bottom,'reel caption stays in its lower band');
+  const fit=videoProducer({fit:true}),fitFrame=await fit.produce(0);
+  fit.caption('설명',1);
+  assert.ok(bottom(fitFrame)<=fit.captionTops[0],'training-area framing also reserves space for captions');
+});
+
 test('원근 — 먼 쪽(위)이 좁고, 낮은 카메라(36°)일수록 더 좁다 · 높이가 있는 점은 위로 선다',()=>{
   const ratio=c=>{ const p=corners(c); return (p[1][0]-p[0][0])/(p[2][0]-p[3][0]); };
   const mid=ratio(cam()), low=ratio(cam({ax:36,sy:1.3})), high=ratio(cam({ax:12,sy:1}));

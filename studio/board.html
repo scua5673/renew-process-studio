@@ -10630,7 +10630,9 @@ async function _exportVideoRun(opts){
   /* 3.039 — 카메라가 맞출 상자: 훈련 구역이면 그 화면, 아니면 지금 페이지의 운동장(화면 __tiltFit 과 같다 — 둘레 여백에 경기장이 보인다) */
   function _t3Box(k){ const v=plan[k].vb||uvb; if(!_fit){ const pb=_exportPitchBox(); if(pb)return pb; } return v?[v[0],v[1],v[0]+v[2],v[1]+v[3]]:[0,0,W,H]; }
   function _t3Produce(k){ try{ plan[k].set(); }catch(_){}
-    const T=_t3x, box=_t3Box(k), pads=_fit?[.05,.05,.035]:((window.__tiltPadsNow&&window.__tiltPadsNow())||[.15,.11,.05]), ck=box.map(Math.round).join(",")+"|"+pads.join(",");
+    const T=_t3x, box=_t3Box(k);let pads=_fit?[.05,.05,.035]:((window.__tiltPadsNow&&window.__tiltPadsNow())||[.15,.11,.05]);
+    if(!opts.reel&&FR.some(f=>f.cap))pads=[pads[0],Math.max(.11,pads[1]),pads[2]];
+    const ck=box.map(Math.round).join(",")+"|"+pads.join(",");
     const cam=T.cams[ck]||(T.cams[ck]=_t3Camera(canvas.width,canvas.height,box,{ax:T.cam.ax,sy:T.cam.sy,pads:pads,top:T.top,bottom:T.bottom}));
     /* 그릴 범위 = 화면에 비치는 바닥 ∩ (경기장 그림 ∪ 맞춤 상자). 판 그림의 잔디면은 운동장 밖 1600 단위까지 이어져 그대로 담으면 너무 크다 */
     const host=_t3StadiumHost(), sv=host?host.__psVb.slice():null, vis=_t3Visible(cam)||box;
