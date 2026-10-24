@@ -25,6 +25,8 @@ try{
   await bf.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());
   await bf.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===9,null,{timeout:15000});
   await bf.waitForFunction(()=>{const o=document.getElementById('psMeetForm');return o&&o.classList.contains('on')&&o.getBoundingClientRect().width>0;},null,{timeout:10000});
+  await bf.click('#psMeetForm [data-start=filled]'); // 상대 분석의 기본 배치 경로도 계속 검증
+
   let st=await bf.evaluate(()=>({title:document.querySelector('#psMeetForm .mf-hd b').textContent,kinds:[...document.querySelectorAll('#psMeetForm .mf-kind button')].map(b=>b.textContent+(b.classList.contains('on')?'*':'')),tags:(window.__vaultPending||{}).tags}));
   assert.deepEqual(st,{title:'미팅 자료 만들기',kinds:['경기 준비*','상대 분석'],tags:['경기 준비']},'처음은 경기 준비 — 저장 창에 #경기 준비');
   await bf.click('#psMeetForm .mf-kind [data-kind="opp"]');

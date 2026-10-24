@@ -66,6 +66,15 @@
     });
     return out;
   }
+  function blankSnap(snap) {
+    var sn=JSON.parse(JSON.stringify(snap||{}));sn.players=[];sn.equipment=[];sn.drawings=[];sn.ball=null;return sn;
+  }
+  function startSlides(list,mode,chosen) {
+    if(mode==='empty')return list.length?[{title:'',snap:blankSnap(list[0].snap)}]:[];
+    return list.filter(function(s,i){return !Array.isArray(chosen)||chosen.indexOf(i)>=0;}).map(function(s){
+      return {title:s.title,snap:mode==='categories'?blankSnap(s.snap):s.snap,note:s.note};
+    });
+  }
   var THEME = {   // 미리보기 색 — board.html :root · html[data-pitch] 의 --pitchbg · --grass-a · --pline · --grid
     navy: ['#15172b', '#20243f', '#eef0f6', '#6f8ff0'], real: ['#1b8044', '#2aa55a', 'rgba(255,255,255,.95)', 'rgba(255,255,255,.92)'],
     calm: ['#173a23', '#1f4d31', 'rgba(230,238,232,.82)', 'rgba(230,238,232,.5)'], white: ['#ffffff', '#edf0f5', '#c9ced6', '#9aa3af'], train: ['#ffffff', '#ffffff', '#8b95a3', '#aeb7c2']
@@ -262,6 +271,10 @@
   var CSS = [
     '#psMeetForm{position:fixed;inset:0;z-index:10070;display:none;align-items:center;justify-content:center;background:rgba(10,14,24,.42);padding:8px;box-sizing:border-box}',
     '#psMeetForm.on{display:flex}',
+    '#psMeetForm [hidden]{display:none!important}',
+    'body.ps-meet-form-open #cs-ftoast{visibility:hidden!important}',
+    'body.meeting-page-mode #animBar{display:none!important}',
+    '@media(max-width:600px){#ksTop .ksbar .ksimport{display:none!important}}',
     '#psMeetForm .mf-box{width:430px;max-width:100%;max-height:100%;overflow:auto;padding:16px 16px 14px;border-radius:18px;background:#fff;color:#14161A;box-shadow:0 18px 44px rgba(15,23,42,.3);box-sizing:border-box;font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:12.5px}',
     'body.fmdark #psMeetForm .mf-box,body.ps-skin-glass #psMeetForm .mf-box{background:#1f2430;color:#E8ECF4}',
     '#psMeetForm .mf-hd{display:flex;align-items:center;justify-content:space-between}',
@@ -277,6 +290,24 @@
     '#psMeetForm .mf-kind button{flex:1;height:34px;border:0;border-radius:8px;background:transparent;color:inherit;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}',
     '#psMeetForm .mf-kind button.on{background:#14213D;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18)}',
     'body.fmdark #psMeetForm .mf-kind button.on{background:#5b8cff}',
+    '#psMeetForm .mf-start{display:flex;gap:4px;padding:3px;border-radius:11px;background:rgba(127,127,127,.1);margin:8px 0}',
+    '#psMeetForm .mf-start button{flex:1;min-height:44px;border:0;border-radius:8px;background:transparent;color:inherit;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}',
+    '#psMeetForm .mf-start button.on{background:#14213D;color:#fff}',
+    '#psMeetForm .mf-categories{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;margin:8px 0}',
+    '#psMeetForm .mf-categories label{display:flex;align-items:center;gap:6px;min-height:44px;font-size:12px;cursor:pointer}',
+    '#psMeetForm .mf-categories input{width:17px;height:17px;accent-color:#3768cd;flex-shrink:0}',
+    '#psMeetForm .mf-go:disabled{opacity:.45;cursor:default}',
+    '#psMeetImport{position:fixed;inset:0;z-index:10100;background:rgba(10,14,24,.5);display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}',
+    '#psMeetImport .mi-box{width:480px;max-width:100%;max-height:100%;overflow:auto;box-sizing:border-box;padding:18px;border-radius:16px;background:var(--panel,#fff);color:var(--txt,#14161A);font:13px Pretendard,sans-serif}',
+    '#psMeetImport [hidden]{display:none!important}',
+    '#psMeetImport button,#psMeetImport input{font:inherit;box-sizing:border-box;border:1px solid var(--line,#dfe3e8);border-radius:9px;padding:10px;background:var(--panel2,#f4f6fa);color:inherit;min-height:44px}',
+    '#psMeetImport .mi-head,#psMeetImport .mi-foot{display:flex;gap:8px;align-items:center;justify-content:space-between}',
+    '#psMeetImport p{line-height:1.5;opacity:.75}',
+    '#psMeetImport .mi-list{display:grid;gap:6px;margin:12px 0;max-height:50vh;overflow:auto}',
+    '#psMeetImport .mi-list>button{text-align:left}',
+    '#psMeetImport .mi-list label{display:flex;align-items:center;gap:8px;min-height:44px}',
+    '#psMeetImport .mi-list input{min-height:18px;width:18px;height:18px;flex-shrink:0}',
+    '#psMeetImport .mi-go{background:#14213D;color:white;flex:1}#psMeetImport button:disabled{opacity:.45}',
     '#psMeetForm .mf-h{display:flex;align-items:center;gap:6px;margin:10px 0 6px;font-weight:800;font-size:12.5px}',
     '#psMeetForm .mf-h i{width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}',
     '#psMeetForm .mf-chips{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}',
@@ -315,7 +346,17 @@
   function install(win) {
     if (!win || !win.document || win.__psMeetForm) return null;
     win.__psMeetForm = true;
-    var doc = win.document, cur = null, open = null;
+    var doc = win.document, cur = null, open = null, importerClose = null;
+    // These dialogs own keyboard input, including configured board shortcuts.
+    function modalKeys(e){
+      if(!open&&!importerClose)return;
+      if(e.type==='keydown'){
+        if(importerClose&&e.key==='Escape'){e.preventDefault();importerClose();}
+        else if(open)onKey(e);
+      }
+      e.stopImmediatePropagation();
+    }
+    win.addEventListener('keydown',modalKeys,true);win.addEventListener('keyup',modalKeys,true);
     /* global FORM, MPP, CX, CY, anim, undoStack, redoStack, state */
     function forms() { try { return typeof FORM !== 'undefined' ? FORM : null; } catch (_) { return null; } }
     function geo() { try { return { mpp: MPP, cx: CX, cy: CY }; } catch (_) { return { mpp: 10, cx: 555, cy: 370 }; } }
@@ -352,12 +393,74 @@
       } catch (_) {}
     }
 
+    function mayImport(){return doc.body.classList.contains('meet-mode')&&!win.__vaultReadOnly&&!doc.body.classList.contains('comm-viewing')&&win.psVaultUnlocked&&win.psVaultUnlocked();}
+    function owner(){try{return String(win.psMyUid?win.psMyUid():'')+'|'+ls.getItem('ps_active_ws');}catch(_){return '';}}
+    function importLibrary(){
+      if(!mayImport()||doc.getElementById('psMeetImport'))return;
+      var a=A(),target=a.slides,scope=owner(),curId=win.__curVaultId||'',closed=false;
+      var ov=el('div');ov.id='psMeetImport';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','미팅에 보관함 자료 가져오기');
+      var box=el('div','mi-box'),hd=el('div','mi-head'),title=el('b','','보관함에서 가져오기'),x=el('button','','닫기');x.type='button';hd.append(title,x);box.appendChild(hd);
+      var help=el('p','','선택한 장을 미팅 끝에 복사해 추가합니다. 원본 자료는 그대로 유지돼요.');box.appendChild(help);
+      var search=el('input');search.type='search';search.placeholder='자료 이름 검색';search.setAttribute('aria-label','가져올 보관함 자료 검색');search.style.width='100%';box.appendChild(search);
+      var list=el('div','mi-list'),status=el('p','','자료를 불러오는 중이에요.');status.setAttribute('role','status');list.appendChild(status);box.appendChild(list);
+      var foot=el('div','mi-foot'),back=el('button','','자료 다시 고르기'),go=el('button','mi-go','선택한 장 추가');back.type=go.type='button';foot.append(back,go);foot.hidden=true;box.appendChild(foot);ov.appendChild(box);doc.body.appendChild(ov);
+      var source=[],available=[];
+      function valid(){return !closed&&mayImport()&&owner()===scope&&A()&&A().slides===target&&(win.__curVaultId||'')===curId;}
+      function closeImport(){closed=true;importerClose=null;ov.remove();doc.removeEventListener('keydown',key,true);source=[];available=[];try{[].find.call(doc.querySelectorAll('#ksImportLibrary,#ksBot .kb-more'),function(b){return b.getClientRects().length;})?.focus();}catch(_){}}
+      function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeImport();}}
+      importerClose=closeImport;doc.addEventListener('keydown',key,true);x.onclick=closeImport;
+      function pickItem(item){
+        if(!valid()){closeImport();toast('팀이나 미팅이 바뀌어 가져오기를 멈췄어요');return;}
+        source=item.type==='meeting'?item.slides:(win.__meetSlidesFromBoard?win.__meetSlidesFromBoard(item):[]);
+        source=(Array.isArray(source)?source:[]).filter(function(sl){return sl&&sl.snap&&typeof sl.snap==='object';});
+        if(!source.length){toast('가져올 운동장이 있는 장이 없어요');return;}
+        list.textContent='';search.hidden=true;foot.hidden=false;title.textContent=item.name||'제목 없는 자료';
+        source.forEach(function(sl,i){var lb=el('label'),cb=el('input');cb.type='checkbox';cb.value=i;cb.checked=true;lb.append(cb,doc.createTextNode((i+1)+'. '+(sl.title||'제목 없는 장')));list.appendChild(lb);});
+        function selected(){return [].filter.call(list.querySelectorAll('input'),function(c){return c.checked;}).map(function(c){return +c.value;});}
+        function count(){var n=selected().length;go.disabled=!n;go.textContent='선택한 '+n+'장 추가';}
+        list.onchange=count;count();
+        go.onclick=function(){
+          if(!valid()){closeImport();toast('팀이나 미팅이 바뀌어 가져오기를 멈췄어요');return;}
+          var chosen=selected();if(!chosen.length)return;
+          var copies;try{copies=chosen.map(function(i){return JSON.parse(JSON.stringify(source[i]));});}catch(_){toast('자료를 복사하지 못했어요. 다시 골라 주세요');return;}
+          try{if(win.__meetSyncCur)win.__meetSyncCur({thumb:true});}catch(_){toast('현재 장을 확인하지 못해 가져오기를 멈췄어요');return;}
+          if(!valid())return;
+          var at=target.length;copies.forEach(function(sl){target.push(sl);});
+          win.__meet.go(at,'first');if(win.__ksRender)win.__ksRender();closeImport();toast(copies.length+'장을 미팅에 복사했어요');
+        };
+      }
+      function render(){
+        if(!valid()){closeImport();return;}
+        list.textContent='';list.onchange=null;search.hidden=false;foot.hidden=true;title.textContent='보관함에서 가져오기';
+        var q=search.value.trim().toLocaleLowerCase(),found=available.filter(function(it){return !q||String(it.name||'').toLocaleLowerCase().indexOf(q)>=0;});
+        if(!found.length){list.appendChild(el('p','','가져올 미팅이나 작전판이 없어요.'));return;}
+        found.slice(0,100).forEach(function(it){var b=el('button','',(it.name||'제목 없는 자료')+' · '+(it.type==='meeting'?'미팅':'작전판'));b.type='button';b.onclick=function(){pickItem(it);};list.appendChild(b);});
+        if(found.length>100)list.appendChild(el('p','','100개를 표시했어요. 이름을 검색해 범위를 좁혀 주세요.'));
+      }
+      back.onclick=render;search.oninput=render;
+      Promise.resolve().then(function(){return win.libGet();}).then(function(items){
+        if(!valid()){closeImport();return;}
+        available=(items||[]).filter(function(it){return it&&it.libId!==curId&&(it.type==='board'||it.type==='meeting')&&(it.snap||it.pages||it.slides);});render();
+      },function(){if(!closed){list.textContent='';list.appendChild(el('p','','보관함 자료를 불러오지 못했어요. 창을 닫고 다시 시도해 주세요.'));}});
+      search.focus();
+    }
+    importLibrary.can=mayImport;win.__meetImportLibrary=importLibrary;
+    function wrapToolbar(){
+      var render=win.__ksRender;if(typeof render!=='function')return false;if(render.__psImport)return true;
+      var wrapped=function(){var r=render.apply(this,arguments);
+        doc.querySelectorAll('#ksTop .ksbar').forEach(function(bar,i){
+          var b=bar.querySelector('.ksimport');
+          if(!b){b=el('button','ksimport','보관함에서 가져오기');b.type='button';b.id=i?'ksImportLibraryMobile':'ksImportLibrary';b.onclick=importLibrary;bar.appendChild(b);}
+          if(mayImport())b.style.removeProperty('display');else b.style.setProperty('display','none','important');
+        });return r;};wrapped.__psImport=true;win.__ksRender=wrapped;return true;
+    }
+
     var st = doc.createElement('style'); st.id = 'ps-meet-form-css'; st.textContent = CSS;
     (doc.head || doc.documentElement).appendChild(st);
 
     // ── 창 ──
     function el(tag, cls, txt) { var e = doc.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
-    function close() { var o = doc.getElementById('psMeetForm'); if (o) o.classList.remove('on'); open = null; doc.removeEventListener('keydown', onKey, true); }
+    function close() { doc.body.classList.remove('ps-meet-form-open');var o = doc.getElementById('psMeetForm'); if (o) o.classList.remove('on'); open = null; doc.removeEventListener('keydown', onKey, true); }
     function onKey(e) {
       if (!open) return;
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
@@ -365,10 +468,13 @@
     }
     // go: true = 고른 대로 · 'def' = 기본 그대로(포메이션 · 운동장 기본, 방향은 지금 미팅 방향 — 기억은 바꾸지 않는다) · false = 닫기
     function finish(go) {
-      var o = open; if (!o) return; close();
+      var o = open; if (!o) return;
+      if(go&&o.path==='vault'&&o.start!=='empty'&&Array.isArray(o.chosen)&&!o.chosen.length){toast('카테고리를 하나 이상 골라 주세요');return;}
+      close();
       var c = go === 'def' ? { us: o.lookOnly ? undefined : DEF[o.fmt].us, op: o.lookOnly ? undefined : DEF[o.fmt].op, look: normLook({}, o.oh), kind: o.kind }
         : go ? { us: o.us, op: o.op, look: { pitch: o.look.pitch, custom: o.look.custom, grid: o.look.grid, oh: o.look.oh }, kind: o.kind } : null;
-      if (c && go !== 'def') writeMem(ls, o.fmt, c);
+      if(o.path==='vault'){if(!c)c={us:DEF[o.fmt].us,op:DEF[o.fmt].op,look:normLook({},o.oh),kind:o.kind};c.start=go?o.start:'categories';c.chosen=go&&o.chosen?o.chosen.slice():null;}
+      if (c && go && go !== 'def') writeMem(ls, o.fmt, c);
       try { o.done(c, o.fmt); } catch (_) {}
     }
     // o = {path:'vault'|'match', fmt, canFmt, oh('h'|'v' — 지금 미팅 방향), lookOnly(포메이션 없이 운동장만 — 기본 9장을 넣지 않는 경기 미팅), done(choice|null, fmt)}
@@ -385,18 +491,25 @@
       var ov = doc.getElementById('psMeetForm');
       if (!ov) { ov = el('div'); ov.id = 'psMeetForm'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); doc.body.appendChild(ov); }
       o.kind = o.kind === 'opp' ? 'opp' : 'prep';
+      if(o.path==='vault'){o.start='categories';o.chosen=null;}
       var ttl = o.lookOnly ? '운동장 고르기' : (o.canKind ? '미팅 자료 만들기' : (o.kind === 'opp' ? '상대 분석 자료 만들기' : '운동장 · 포메이션 고르기')); ov.setAttribute('aria-label', ttl);
       ov.textContent = '';
       var box = el('div', 'mf-box'); ov.appendChild(box);
       var hd = el('div', 'mf-hd'); hd.appendChild(el('b', '', ttl));
-      var x = el('button', 'mf-x', '×'); x.type = 'button'; x.setAttribute('aria-label', o.path === 'match' ? '만들지 않고 닫기' : '기본 그대로 두고 닫기'); hd.appendChild(x); box.appendChild(hd);
+      var x = el('button', 'mf-x', '×'); x.type = 'button'; x.setAttribute('aria-label', o.path === 'match' ? '만들지 않고 닫기' : '카테고리만 두고 닫기'); hd.appendChild(x); box.appendChild(hd);
       var sub = el('div', 'mf-sub'); box.appendChild(sub);
-      function subText() { return o.lookOnly ? '고른 운동장을 모든 장에 넣어요.' : (o.kind === 'opp' ? '상대 분석 6장 — 상대 BEST와 상대 분석의 국면(공격 시 · 수비 시 · 두 전환 · 세트피스) 차례로 채워요. 팀 운영 › 경기 › 상대 분석에 붙여요.' : '운동장과 우리 팀 · 상대 팀 포메이션으로 9장을 채워요. 장마다(블록 · 빌드업 · 코너킥) 자리를 맞춰 놓아요.'); }
+      function subText() { if(o.path==='vault')return o.start==='categories'?'카테고리 이름과 빈 운동장으로 시작해요. 필요한 장만 고르고, 보관함 자료는 나중에 복사해 더할 수 있어요.':o.start==='empty'?'빈 운동장 한 장에서 시작해요. 제목과 내용을 직접 넣거나 보관함 자료를 더하세요.':(o.kind==='opp'?'상대 분석 6장 — ':'경기 준비 9장 — ')+'기본 배치가 들어 있는 자료에서 필요한 장만 골라 시작해요.'; return o.lookOnly ? '고른 운동장을 모든 장에 넣어요.' : (o.kind === 'opp' ? '상대 분석 6장 — 상대 BEST와 상대 분석의 국면(공격 시 · 수비 시 · 두 전환 · 세트피스) 차례로 채워요. 팀 운영 › 경기 › 상대 분석에 붙여요.' : '운동장과 우리 팀 · 상대 팀 포메이션으로 9장을 채워요. 장마다(블록 · 빌드업 · 코너킥) 자리를 맞춰 놓아요.'); }
       var kseg = null;
       if (o.canKind) {   // 3.133 — 자료 종류(팀 운영 › 경기의 어느 칸에 붙일 자료인가)
         kseg = el('div', 'mf-kind'); kseg.setAttribute('role', 'group'); kseg.setAttribute('aria-label', '자료 종류');
         KINDS.forEach(function (k) { var b = el('button', '', k[1]); b.type = 'button'; b.setAttribute('data-kind', k[0]); kseg.appendChild(b); });
         box.appendChild(kseg);
+      }
+      var startSeg=null,categories=null;
+      if(o.path==='vault'){
+        startSeg=el('div','mf-start');startSeg.setAttribute('role','group');startSeg.setAttribute('aria-label','시작 구성');
+        [['categories','카테고리만'],['filled','기본 자료 포함'],['empty','빈 한 장']].forEach(function(k){var b=el('button','',k[1]);b.type='button';b.dataset.start=k[0];startSeg.appendChild(b);});
+        box.appendChild(startSeg);categories=el('div','mf-categories');categories.setAttribute('role','group');categories.setAttribute('aria-label','시작할 카테고리');box.appendChild(categories);
       }
       var seg = null;
       if (o.canFmt) {
@@ -427,15 +540,17 @@
       });
       box.appendChild(lookBox);
       var col = kit(), rows = {};
+      var formParts=[];
       if (!o.lookOnly) [['us', '우리 팀', hex(col.blue, '#1e5bc6')], ['op', '상대 팀', hex(col.red, '#d71920')]].forEach(function (r) {
         var h = el('div', 'mf-h'); var i = el('i'); i.style.background = r[2]; h.appendChild(i); h.appendChild(doc.createTextNode(r[1])); box.appendChild(h);
-        var ch = el('div', 'mf-chips'); ch.setAttribute('data-team', r[0]); box.appendChild(ch); rows[r[0]] = ch;
+        var ch = el('div', 'mf-chips'); ch.setAttribute('data-team', r[0]); box.appendChild(ch); rows[r[0]] = ch;formParts.push(h,ch);
       });
       var pv = el('div', 'mf-pv'), pic = el('div', 'mf-pic'), nav = el('div', 'mf-pvn');
       var prev = el('button', '', '‹'), next = el('button', '', '›'), cap = el('span');
       prev.type = next.type = 'button'; prev.setAttribute('aria-label', '앞 장'); next.setAttribute('aria-label', '다음 장');
       nav.appendChild(prev); nav.appendChild(cap); nav.appendChild(next); pv.appendChild(pic); pv.appendChild(nav); if (!o.lookOnly) box.appendChild(pv);
       var ft = el('div', 'mf-ft'), skip = el('button', 'mf-skip', '기본 그대로'), go = el('button', 'mf-go', o.path === 'match' ? '이대로 만들기' : '이대로 채우기');
+      if(o.path==='vault')skip.textContent='카테고리만 두기';
       if (o.lookOnly) skip.textContent = '네이비 · 15존 그대로';
       skip.type = go.type = 'button'; ft.appendChild(skip); ft.appendChild(go); box.appendChild(ft);
       function paint() {
@@ -453,27 +568,41 @@
           }
           [].forEach.call(ch.children, function (b) { var on = b.getAttribute('data-k') === want; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
         });
-        var list = built(o.fmt, null, 'h', o, o.kind), n = list.length; if (!n) { pv.hidden = true; return; }
+        var list = built(o.fmt, null, 'h', o, o.kind);
+        if(startSeg){
+          [].forEach.call(startSeg.children,function(b){var on=b.dataset.start===o.start;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));});
+          formParts.forEach(function(e){e.hidden=o.start!=='filled';});
+          categories.hidden=o.start==='empty';
+          var key=o.kind+'|'+o.fmt;
+          if(categories.dataset.key!==key){
+            categories.textContent='';categories.dataset.key=key;
+            list.forEach(function(sl,i){var lb=el('label'),cb=el('input');cb.type='checkbox';cb.value=i;cb.checked=!Array.isArray(o.chosen)||o.chosen.indexOf(i)>=0;lb.append(cb,doc.createTextNode(sl.title));categories.appendChild(lb);});
+          }
+          list=startSlides(list,o.start,o.chosen);go.disabled=!list.length;go.textContent='선택한 '+list.length+'장으로 만들기';
+        }
+        var n=list.length;pv.hidden=!n;if(!n)return;
         o.pv = (o.pv + n) % n; var s = list[o.pv], sn = s.snap;
         pv.classList.toggle('v', o.look.oh === 'v'); pic.innerHTML = previewSVG(sn, geo(), col, o.look);
         cap.textContent = s.title + '  ' + (o.pv + 1) + ' / ' + n;
       }
+      if(categories)categories.addEventListener('change',function(){o.chosen=[].filter.call(categories.querySelectorAll('input'),function(c){return c.checked;}).map(function(c){return +c.value;});paint();});
       ov.onclick = function (e) {
         var t = e.target, b = t.closest ? t.closest('button') : null;
         if (t === ov) return;   // 바깥 누름은 아무것도 하지 않는다(실수로 닫히지 않게)
         if (!b) return;
+        if(b.hasAttribute('data-start')){o.start=b.dataset.start;o.pv=0;paint();return;}
         if (b === x) { finish(false); return; }
         if (b === skip) { finish(open.path === 'match' ? 'def' : false); return; }   // 3.132 — 경기 길의 «기본 그대로»는 기본으로 만든다(예전엔 닫기와 같아 만들지 않았다). 보관함 길은 채운 기본 9장 그대로
         if (b === go) { finish(true); return; }
         if (b === prev) { o.pv--; paint(); return; }
         if (b === next) { o.pv++; paint(); return; }
-        if (b.hasAttribute('data-fmt')) { var f = b.getAttribute('data-fmt'); if (f !== o.fmt) { o.fmt = f; pick(f); paint(); } return; }
-        if (b.hasAttribute('data-kind')) { var kd = b.getAttribute('data-kind'); if (kd !== o.kind) { o.kind = kd; o.pv = kd === 'opp' ? 0 : 2; paint(); } return; }
+        if (b.hasAttribute('data-fmt')) { var f = b.getAttribute('data-fmt'); if (f !== o.fmt) { o.fmt = f;o.chosen=null; pick(f); paint(); } return; }
+        if (b.hasAttribute('data-kind')) { var kd = b.getAttribute('data-kind'); if (kd !== o.kind) { o.kind = kd;o.chosen=null; o.pv = kd === 'opp' ? 0 : 2; paint(); } return; }
         var ch = b.parentNode, tk = ch && ch.getAttribute('data-team'), lkk = ch && ch.getAttribute('data-look');
         if (lkk) { o.look[lkk] = b.getAttribute('data-v'); paint(); return; }
         if (tk) { o[tk] = b.getAttribute('data-k'); paint(); }
       };
-      paint(); ov.classList.add('on');
+      paint(); ov.classList.add('on');doc.body.classList.add('ps-meet-form-open');
       // 막 뜬 알림(보관함의 옛 «빈 미팅 노트 — 슬라이드를 추가하세요» 등)은 창을 가리므로 걷는다
       try { var tt = doc.getElementById('cs-ftoast'); if (tt && tt.style.opacity !== '0') { clearTimeout(tt._ft); tt.style.opacity = '0'; tt.style.pointerEvents = 'none'; tt.setAttribute('aria-hidden', 'true'); } } catch (_) {}
       doc.addEventListener('keydown', onKey, true);
@@ -488,6 +617,24 @@
       var live = items.filter(function (it) { return a.slides.indexOf(it) >= 0; });
       if (live.length !== items.length) return 0;   // 그새 슬라이드를 고쳤다 — 건드리지 않는다
       var was = fmtOf(items[0] && items[0].snap), d = DEF[fmt], src, lk = normLook(c.look, ohOf(items[0]));
+      if(c.start){
+        if(a.slides.length!==items.length||items.some(function(it,i){return a.slides[i]!==it;})){toast('미팅 구성이 바뀌어 시작 설정을 적용하지 않았어요');return 0;}
+        var chosen=startSlides(built(fmt,JSON.parse(JSON.stringify(base||{})),lk.oh,c,c.kind),c.start,c.chosen);
+        if(!chosen.length)return 0;
+        var po=lk.oh==='h'?'landscape':'portrait',put=lookSnap(lk);
+        var replacements=chosen.map(function(sl){
+          var sn=JSON.parse(JSON.stringify(sl.snap));Object.assign(sn,put,{orientation:lk.oh,spFlip:false});
+          // Keep the original filled-template load/capture normalization (ball identity, token defaults).
+          if(c.start==='filled'){win.loadSnap(sn);sn=win.captureSnap();sn.orientation=lk.oh;sn.spFlip=false;}
+          return {pdfOrientation:po,title:sl.title||'',points:[],snap:sn,thumb:(function(){try{return win.__snapToThumb?win.__snapToThumb(sn):'';}catch(_){return '';}})()};
+        });
+        win.__meetLoad(replacements);win.__meetingPdfOrientation=po;
+        if(ls)try{ls.setItem('ps_meet_orient_v2',po);}catch(_){}
+        win.loadSnap(replacements[0].snap);win.__meet.go(0,'first');
+        try{if(typeof undoStack!=='undefined')undoStack.length=0;if(typeof redoStack!=='undefined')redoStack.length=0;}catch(_){}
+        if(win.__ksRender)win.__ksRender();return replacements.length;
+      }
+
       var formOn = !(c.us === d.us && c.op === d.op), lookOn = items.some(function (it) { return !sameLook(it.snap, lk); }), ohOn = ohOf(items[0]) !== lk.oh, kindOn = c.kind === 'opp';
       if (fmt === was && !formOn && !lookOn && !ohOn && !kindOn) return 0;
       if (ohOn) {   // 미팅 방향(가로형 · 세로형) — meetCap 이 첫 장의 방향으로 판을 담는다. 다음 새 미팅도 이 방향(2.932)
@@ -521,6 +668,7 @@
     function lookText(lk) { return (lk.pitch === 'custom' ? '직접 색' : name(PITCHES, lk.pitch)) + ' · ' + name(GRIDS, lk.grid) + ' · ' + (lk.oh === 'h' ? '가로' : '세로'); }
     function said(c, fmt, n) {
       var d = DEF[fmt]; if (!n) return;
+      if(c.start&&c.start!=='filled'){toast(n+'장으로 시작했어요 — '+(c.start==='categories'?'카테고리와 빈 운동장':c.start==='empty'?'빈 한 장':'기본 자료 포함'));return;}
       toast(n + '장을 채웠어요 — ' + (c.kind === 'opp' ? '상대 분석 · ' : '') + (c.us === d.us && c.op === d.op ? (fmt === '8' ? '8 대 8 기본 포메이션' : '기본 포메이션') : '우리 ' + label(c.us) + ' · 상대 ' + label(c.op)) + ' · ' + lookText(normLook(c.look)));
     }
     // 새 미팅의 토큰 — 지금 판보다 «＋» 한 칸 크게(사용자 «미팅 자료 토큰은 지금보다 1단계 크게»). tokV:2 = 2.977 뒤의 크기(옛 기본으로 줄여 읽지 않는다)
@@ -596,7 +744,7 @@
     }
 
     var tries = 0;
-    function hook() { var ok = wrapSeed() & wrapTpl() & wrapMatch(); if (!ok && ++tries < 40) win.setTimeout(hook, 250); }
+    function hook() { var ok = wrapSeed() & wrapTpl() & wrapMatch() & wrapToolbar(); if (!ok && ++tries < 40) win.setTimeout(hook, 250); }
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', hook); else hook();
     win.__psMeetFormOpen = function () { return open ? { path: open.path, fmt: open.fmt, us: open.us, op: open.op } : null; };   // 시험 · 진단용
     win.__psMeetFormLook = function () { return open && open.look ? { pitch: open.look.pitch, custom: open.look.pitch === 'custom' ? open.look.custom : null, grid: open.look.grid, oh: open.look.oh, lookOnly: !!open.lookOnly } : null; };   // 3.132
@@ -606,5 +754,5 @@
   return { KEY: KEY, LIST: LIST, DEF: DEF, PITCH: PITCH, label: label, fmtOf: fmtOf, kindOf: kindOf, norm: norm, baseIdx: baseIdx, remapTeam: remapTeam, remapSnap: remapSnap,
     readMem: readMem, writeMem: writeMem, previewSVG: previewSVG, install: install,
     PITCHES: PITCHES, GRIDS: GRIDS, LOOK_DEF: LOOK_DEF, normLook: normLook, lookSnap: lookSnap, sameLook: sameLook, bumpTok: bumpTok,
-    KINDS: KINDS, KIND_TAG: KIND_TAG, OPP_TPL: OPP_TPL, oppSlides: oppSlides };
+    blankSnap:blankSnap,startSlides:startSlides,KINDS: KINDS, KIND_TAG: KIND_TAG, OPP_TPL: OPP_TPL, oppSlides: oppSlides };
 });
