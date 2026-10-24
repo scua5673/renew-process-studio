@@ -33,7 +33,7 @@ test('3.035 a grid board in 3D fills the stage: no fit margin, grass bleeding on
   assert.match(board,/const dE=bleed\?dT\+bleed:\(deco==="full"\?dRo:\(deco==="simple"\?dT\+S\*\.03:dT\)\);/,'the picture box grows with the bleed');
   assert.match(board,/ring\(0,bleed\?dE:dT,'url\(#psStGrass\)'\)\+ring\(0,bleed\?dE:dT,'url\(#psStMow\)'\)\+ring\(0,dT,'#0b2410',\.18\)/,'grass and mowing stripes reach the bleed edge');
   assert.match(board,/tcol,bleed\?1:0\]\.join\('\|'\)/,'the signature redraws when the bleed changes');
-  assert.match(board,/var TILT_PAD=\{full:\[\.15,\.11,\.05\],simple:\[\.09,\.08,\.035\],grass:\[\.05,\.05,\.03\]\};/,'other stadiums unchanged');
+  assert.match(board,/var TILT_PAD=\{full:\[\.07,\.05,\.025\],simple:\[\.09,\.08,\.035\],grass:\[\.05,\.05,\.03\]\};/,'blank-grid framing stays independent of the enlarged full-stadium view');
 });
 
 /* 사용자 «부상 부위 사람 모형으로 해서 선택할 수 있게». 가용인원 › 부상 기록 창(2.943)의 부위 칩 위에 앞 · 뒤 사람 모형 */
