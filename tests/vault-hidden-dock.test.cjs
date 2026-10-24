@@ -3,7 +3,7 @@ const html=fs.readFileSync('studio/board.html','utf8'),i=html.indexOf('async fun
 function env({defer=false}={}){
  let boxes=0,reads=0,refresh=0,resolve;
  const strip={getClientRects:()=>Array(boxes).fill({}),innerHTML:'unchanged',appendChild:()=>{}};
- const ctx={document:{createElement:()=>({})},psVaultRenderReady:()=>true,renderDrillFiles:()=>refresh++,$:id=>id==='dockStrip'?strip:null,
+ const ctx={document:{createElement:()=>({})},dockFilter:{},psVaultRenderReady:()=>true,renderDrillFiles:()=>refresh++,$:id=>id==='dockStrip'?strip:null,
   psVaultReadForRender:()=>{reads++;return defer?new Promise(r=>resolve=r):Promise.resolve(null);}};
  vm.createContext(ctx);vm.runInContext(html.slice(i,j),ctx);
  return {ctx,strip,setBoxes:n=>boxes=n,resolve:x=>resolve(x),counts:()=>({reads,refresh})};
