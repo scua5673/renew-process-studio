@@ -49,7 +49,7 @@ test('all source drills retain their headcounts, dimensions, constraints and pro
  assert.deepEqual(p.drills.map(d=>d.source.pdfPage),[15,28,29]);
  assert.deepEqual(p.drills.map(d=>d.snap.pitchSpec),['grid30','grid40','grid70']);
  for(const [i,d] of p.drills.entries()){
-  assert.equal(d.textbookRevision,3);assert.match(d.coaching,/현장 개입:/);assert.match(d.coaching,/다음/);assert.match(d.method,/원문/);assert.match(d.func,/원문/);assert.match(d.func,/진행:/);assert.match(d.func,/운영 보완:/);assert.ok(d.method.length<4000,'the importer does not truncate the instructions');
+  assert.equal(d.textbookRevision,4);assert.match(d.coaching,/현장 개입:/);assert.match(d.coaching,/다음/);assert.match(d.method,/원문/);assert.match(d.func,/원문/);assert.match(d.func,/진행:/);assert.match(d.func,/운영 보완:/);assert.ok(d.method.length<4000,'the importer does not truncate the instructions');
   assert.equal(d.frames.every(f=>f.snap.players.length===[5,10,14][i]),true);
   assert.equal(d.snap.tokenScale,1.5);
  }

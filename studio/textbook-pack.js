@@ -110,7 +110,7 @@
         var hold = Math.max(.2, Math.min(20, +raw.frames[0].__hold || .6));
         [card.frames, card.trainings[0].frames].forEach(function (frames) { if (frames && frames[0]) frames[0].__hold = hold; });
       }
-      card.textbook = {chapter: chapter, itemId: raw.textbookItem, version: 1, revision: raw.textbookRevision === 3 ? 3 : (raw.textbookRevision === 2 ? 2 : 1), variant: raw.textbookVariant || 'success', source: {book: String(raw.source.book).slice(0,100), pdfPage: Number(raw.source.pdfPage)}};
+      card.textbook = {chapter: chapter, itemId: raw.textbookItem, version: 1, revision: [2,3,4].indexOf(raw.textbookRevision) >= 0 ? raw.textbookRevision : 1, variant: raw.textbookVariant || 'success', source: {book: String(raw.source.book).slice(0,100), pdfPage: Number(raw.source.pdfPage)}};
       var ps = card.snap.players, gk = ps.filter(function (p) { return p.pos === 'GK' || String(p.num) === '1'; }).length;
       card.roster = {gk: gk, field: ps.length - gk, rehab: 0, out: 0};
       card.gmPhases = card.trainings[0].gmPhases = Array.isArray(raw.gmPhases) ? raw.gmPhases.slice(0,12).map(function(x) { return String(x).slice(0,80); }) : [];

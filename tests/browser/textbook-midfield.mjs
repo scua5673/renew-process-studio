@@ -4,6 +4,15 @@ import path from 'node:path';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
 const out='/Users/scua/Documents/ChatGPT/프로세스 스튜디오/outputs/2026-10-24-football-library/10-중원-전진';
 fs.mkdirSync(path.join(out,'checks'),{recursive:true});
+async function assertGoalGeometry(frame){
+ const report=await frame.evaluate(()=>state.equipment.filter(g=>g.anchor==='mouth').map(g=>{
+  const node=document.querySelector('#tokenLayer [data-id="'+g.id+'"]'),m=world.getCTM().inverse().multiply(node.getCTM());
+  const d=g.team==='minigoalV'?8:13,span=g.team==='minigoalV'?26:44;
+  const at=(x,y)=>new DOMPoint(x,y).matrixTransform(m),mouth=at(-d,0),back=at(d,0),a=at(-d,-span/2),b=at(-d,span/2);
+  return {dx:mouth.x-g.x,dy:mouth.y-g.y,width:Math.hypot(a.x-b.x,a.y-b.y),expected:g.mouthWidth,outside:g.rot===180?back.x<mouth.x:back.x>mouth.x};
+ }));
+ for(const g of report){assert.ok(Math.abs(g.dx)<.01&&Math.abs(g.dy)<.01,'the rendered goal mouth is on the authored goal line');assert.ok(Math.abs(g.width-g.expected)<.01,'the rendered posts preserve goal width');assert.ok(g.outside,'the rendered net is outside');}
+}
 const fx=await startFixture(),browsers={};
 try{
  const {page,context,logs}=await openApp(fx,'desktop',{browsers});
@@ -29,6 +38,7 @@ try{
    await page.locator('#'+key).scrollIntoViewIfNeeded();
    const fig=page.locator('#'+key);
    await page.waitForFunction(key=>document.getElementById(key).dataset.nativeReady==='true',key);
+   await assertGoalGeometry(await (await fig.locator('iframe').elementHandle()).contentFrame());
    await fig.screenshot({path:path.join(out,'checks',name+'-'+key+'.png')});
    if(key!=='choice')for(const mode of ['_fail','_coach','']){
     await fig.locator('[data-choice="'+key+mode+'"]').click();
@@ -82,7 +92,7 @@ try{
  assert.deepEqual(imported.map(d=>d.players),[5,10,14]);
  assert.deepEqual(imported.map(d=>d.frames),[4,5,7]);
  assert.ok(imported.every(d=>d.method.includes('원문')));
- assert.ok(await bf.evaluate(async()=>((await libGet())||[]).filter(d=>d.textbook).every(d=>d.textbook.revision===3&&d.coaching.includes('현장 개입:'))),'coaching and revision survive the import');
+ assert.ok(await bf.evaluate(async()=>((await libGet())||[]).filter(d=>d.textbook).every(d=>d.textbook.revision===4&&d.coaching.includes('현장 개입:'))),'coaching and revision survive the import');
  await page.screenshot({path:path.join(out,'checks','vault-saved.png')});
  for(const [i,d] of imported.entries()){
   await bf.evaluate(id=>openLibDrawEditor(id,false),d.libId);
@@ -90,7 +100,7 @@ try{
   const data=await bf.evaluate(()=>({players:state.players.length,spec:state.pitchSpec,frames:anim.frames.length,method:document.body.textContent.includes('원문')}));
   assert.equal(data.players,[5,10,14][i]);
   assert.deepEqual(await bf.evaluate(()=>[document.querySelector('#epGk').value,document.querySelector('#epField').value]),[['0','5'],['0','10'],['2','12']][i]);
-  assert.ok(await bf.evaluate(()=>state.tokenScale>=1.4),'player numbers remain legible in the native editor'); assert.equal(data.frames,[4,5,7][i]);assert.equal(data.spec,['grid30','grid40','grid70'][i]);
+  assert.ok(await bf.evaluate(()=>state.tokenScale>=1.4),'player numbers remain legible in the native editor'); assert.equal(data.frames,[4,5,7][i]);await assertGoalGeometry(bf);assert.equal(data.spec,['grid30','grid40','grid70'][i]);
   await page.screenshot({path:path.join(out,'checks','editor-'+(i+1)+'.png')});
   await bf.evaluate(()=>{window.__closingEditor=1;try{closeEditor(false);}finally{window.__closingEditor=0;}});
   await bf.waitForFunction(()=>!document.getElementById('editorModal').classList.contains('on'));
@@ -127,7 +137,7 @@ try{
  const editions=await bf.evaluate(async()=>((await libGet())||[]).filter(d=>d.textbook?.itemId==='ch10-t1').map(d=>({revision:d.textbook.revision,coaching:d.coaching,method:d.trainings[0].method})));
  assert.equal(editions.find(d=>d.revision===1).coaching,'이전 판의 가상 코치 수정');
  assert.match(editions.find(d=>d.revision===1).method,/수정본 보존 확인$/);
- assert.match(editions.find(d=>d.revision===3).coaching,/현장 개입:/);
+ assert.match(editions.find(d=>d.revision===4).coaching,/현장 개입:/);
  await page.goto(fx.base+'/studio/app.html#textbook=ch10-t1');
  bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();await bf.waitForSelector('#psTextbookDialog',{timeout:45000});
  assert.equal(await bf.getByRole('button',{name:'보강판 새 사본으로 담기',exact:true}).count(),0,'newest edition is selected after upgrade');
@@ -159,6 +169,9 @@ try{
  assert.equal(actual.length,expected.length);
  assert.deepEqual(actual.map(f=>f.snap.players.map(p=>[p.id,p.x,p.y])),expected.map(f=>f.snap.players.map(p=>[p.id,p.x,p.y])),'the selected coaching scene is the editable import');
  assert.equal(await bf.evaluate(()=>animHold),2.1);
+ await assertGoalGeometry(bf);
+ const exportGoals=await bf.evaluate(()=>{const doc=new DOMParser().parseFromString(boardThumbSVG(),'image/svg+xml');return [...doc.querySelectorAll('[data-goal-anchor="mouth"]')].map(g=>g.getAttribute('transform'));});
+ assert.equal(exportGoals.length,4);assert.ok(exportGoals.every(t=>!t.includes('scale(1.470588')),'export must not enlarge physical goal dimensions');
  await page.screenshot({path:path.join(out,'checks','native-studio-editor.png')});
  const errors=logs.filter(l=>l.type==='pageerror'&&/textbook|letterPack|PSTextbook/i.test(l.stack+' '+l.text));
  assert.deepEqual(errors,[]);

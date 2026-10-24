@@ -5,7 +5,7 @@
   "textbook": {
     "chapter": "ch10",
     "version": 1,
-    "revision": 3,
+    "revision": 4,
     "title": "중원 전진"
   },
   "drills": [
@@ -13,7 +13,7 @@
       "type": "train",
       "name": "지원 각도를 만드는 3v2 론도",
       "textbookItem": "ch10-t1",
-      "textbookRevision": 3,
+      "textbookRevision": 4,
       "minutes": 8,
       "sets": 1,
       "rpe": 5,
@@ -114,7 +114,8 @@
         ],
         "ball": {
           "x": 397.5,
-          "y": 422.5
+          "y": 422.5,
+          "scale": 0.38
         },
         "drawings": [
           {
@@ -140,12 +141,12 @@
             "op": 1,
             "pts": [
               {
-                "x": 362.5,
-                "y": 387.5
+                "x": 369.7562970001128,
+                "y": 351.21851499943597
               },
               {
-                "x": 397.5,
-                "y": 212.5
+                "x": 390.2437029998872,
+                "y": 248.78148500056403
               }
             ]
           }
@@ -234,7 +235,8 @@
             ],
             "ball": {
               "x": 397.5,
-              "y": 422.5
+              "y": 422.5,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -260,12 +262,12 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 362.5,
-                    "y": 387.5
+                    "x": 369.7562970001128,
+                    "y": 351.21851499943597
                   },
                   {
-                    "x": 397.5,
-                    "y": 212.5
+                    "x": 390.2437029998872,
+                    "y": 248.78148500056403
                   }
                 ]
               }
@@ -358,7 +360,8 @@
             ],
             "ball": {
               "x": 432.5,
-              "y": 247.5
+              "y": 247.5,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -384,12 +387,12 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 397.5,
-                    "y": 212.5
+                    "x": 425.15414479129544,
+                    "y": 237.08146203670702
                   },
                   {
-                    "x": 712.5,
-                    "y": 492.5
+                    "x": 684.8458552087046,
+                    "y": 467.918537963293
                   }
                 ]
               }
@@ -481,7 +484,8 @@
             ],
             "ball": {
               "x": 747.5,
-              "y": 527.5
+              "y": 527.5,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -507,12 +511,12 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 712.5,
-                    "y": 492.5
+                    "x": 675.7263018170761,
+                    "y": 496.58596646476934
                   },
                   {
-                    "x": 397.5,
-                    "y": 527.5
+                    "x": 434.2736981829239,
+                    "y": 523.4140335352307
                   }
                 ]
               }
@@ -604,7 +608,8 @@
             ],
             "ball": {
               "x": 432.5,
-              "y": 562.5
+              "y": 562.5,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -720,7 +725,8 @@
               ],
               "ball": {
                 "x": 397.5,
-                "y": 422.5
+                "y": 422.5,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -746,12 +752,12 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 362.5,
-                      "y": 387.5
+                      "x": 369.7562970001128,
+                      "y": 351.21851499943597
                     },
                     {
-                      "x": 397.5,
-                      "y": 212.5
+                      "x": 390.2437029998872,
+                      "y": 248.78148500056403
                     }
                   ]
                 },
@@ -892,7 +898,8 @@
               ],
               "ball": {
                 "x": 432.5,
-                "y": 247.5
+                "y": 247.5,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -918,11 +925,11 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 397.5,
+                      "x": 434.5,
                       "y": 212.5
                     },
                     {
-                      "x": 555.0,
+                      "x": 518.0,
                       "y": 212.5
                     }
                   ]
@@ -1063,7 +1070,8 @@
               ],
               "ball": {
                 "x": 607.5,
-                "y": 247.5
+                "y": 247.5,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -1172,7 +1180,8 @@
               ],
               "ball": {
                 "x": 397.5,
-                "y": 422.5
+                "y": 422.5,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -1280,7 +1289,8 @@
               ],
               "ball": {
                 "x": 397.5,
-                "y": 422.5
+                "y": 422.5,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -1311,7 +1321,7 @@
                     },
                     {
                       "x": 712.5,
-                      "y": 492.5
+                      "y": 455.5
                     }
                   ]
                 },
@@ -1322,12 +1332,12 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 397.5,
-                      "y": 212.5
+                      "x": 425.15414479129544,
+                      "y": 237.08146203670702
                     },
                     {
-                      "x": 712.5,
-                      "y": 492.5
+                      "x": 684.8458552087046,
+                      "y": 467.918537963293
                     }
                   ]
                 }
@@ -1419,7 +1429,8 @@
               ],
               "ball": {
                 "x": 432.5,
-                "y": 247.5
+                "y": 247.5,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -1445,12 +1456,12 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 397.5,
-                      "y": 212.5
+                      "x": 425.15414479129544,
+                      "y": 237.08146203670702
                     },
                     {
-                      "x": 712.5,
-                      "y": 492.5
+                      "x": 684.8458552087046,
+                      "y": 467.918537963293
                     }
                   ]
                 }
@@ -1468,7 +1479,7 @@
       "type": "train",
       "name": "연계로 마무리 구역에 들어가는 4v4+2",
       "textbookItem": "ch10-t2",
-      "textbookRevision": 3,
+      "textbookRevision": 4,
       "minutes": 15,
       "sets": 1,
       "rpe": 5,
@@ -1614,7 +1625,8 @@
         ],
         "ball": {
           "x": 432.5,
-          "y": 523.12
+          "y": 523.12,
+          "scale": 0.38
         },
         "drawings": [
           {
@@ -1674,12 +1686,12 @@
             "op": 1,
             "pts": [
               {
-                "x": 397.5,
-                "y": 488.12
+                "x": 434.2142814384057,
+                "y": 483.5307148201993
               },
               {
-                "x": 817.5,
-                "y": 435.62
+                "x": 780.7857185615943,
+                "y": 440.2092851798007
               }
             ]
           }
@@ -1688,6 +1700,11 @@
           {
             "id": 500,
             "team": "minigoalV",
+            "anchor": "mouth",
+            "mouthWidth": 52.5,
+            "mouthDepth": 26.25,
+            "rot": 180,
+            "scale": 1,
             "color": null,
             "src": null,
             "x": 161.25,
@@ -1696,6 +1713,11 @@
           {
             "id": 501,
             "team": "minigoalV",
+            "anchor": "mouth",
+            "mouthWidth": 52.5,
+            "mouthDepth": 26.25,
+            "rot": 180,
+            "scale": 1,
             "color": null,
             "src": null,
             "x": 161.25,
@@ -1704,6 +1726,11 @@
           {
             "id": 502,
             "team": "minigoalV",
+            "anchor": "mouth",
+            "mouthWidth": 52.5,
+            "mouthDepth": 26.25,
+            "rot": 0,
+            "scale": 1,
             "color": null,
             "src": null,
             "x": 948.75,
@@ -1712,6 +1739,11 @@
           {
             "id": 503,
             "team": "minigoalV",
+            "anchor": "mouth",
+            "mouthWidth": 52.5,
+            "mouthDepth": 26.25,
+            "rot": 0,
+            "scale": 1,
             "color": null,
             "src": null,
             "x": 948.75,
@@ -1846,7 +1878,8 @@
             ],
             "ball": {
               "x": 432.5,
-              "y": 523.12
+              "y": 523.12,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -1906,12 +1939,12 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 397.5,
-                    "y": 488.12
+                    "x": 434.2142814384057,
+                    "y": 483.5307148201993
                   },
                   {
-                    "x": 817.5,
-                    "y": 435.62
+                    "x": 780.7857185615943,
+                    "y": 440.2092851798007
                   }
                 ]
               }
@@ -1920,6 +1953,11 @@
               {
                 "id": 500,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 161.25,
@@ -1928,6 +1966,11 @@
               {
                 "id": 501,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 161.25,
@@ -1936,6 +1979,11 @@
               {
                 "id": 502,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 948.75,
@@ -1944,6 +1992,11 @@
               {
                 "id": 503,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 948.75,
@@ -2082,7 +2135,8 @@
             ],
             "ball": {
               "x": 852.5,
-              "y": 470.62
+              "y": 470.62,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -2142,12 +2196,12 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 817.5,
-                    "y": 435.62
+                    "x": 793.8131772124143,
+                    "y": 407.1958126548971
                   },
                   {
-                    "x": 686.25,
-                    "y": 278.12
+                    "x": 709.9368227875857,
+                    "y": 306.5441873451029
                   }
                 ]
               }
@@ -2156,6 +2210,11 @@
               {
                 "id": 500,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 161.25,
@@ -2164,6 +2223,11 @@
               {
                 "id": 501,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 161.25,
@@ -2172,6 +2236,11 @@
               {
                 "id": 502,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 948.75,
@@ -2180,6 +2249,11 @@
               {
                 "id": 503,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 948.75,
@@ -2317,7 +2391,8 @@
             ],
             "ball": {
               "x": 721.25,
-              "y": 313.12
+              "y": 313.12,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -2377,8 +2452,8 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 686.25,
-                    "y": 278.12
+                    "x": 722.9640662240365,
+                    "y": 282.71100656687236
                   },
                   {
                     "x": 896.25,
@@ -2393,8 +2468,8 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 765.0,
-                    "y": 356.88
+                    "x": 797.8125,
+                    "y": 343.755
                   },
                   {
                     "x": 896.25,
@@ -2407,6 +2482,11 @@
               {
                 "id": 500,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 161.25,
@@ -2415,6 +2495,11 @@
               {
                 "id": 501,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 161.25,
@@ -2423,6 +2508,11 @@
               {
                 "id": 502,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 948.75,
@@ -2431,6 +2521,11 @@
               {
                 "id": 503,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 948.75,
@@ -2568,7 +2663,8 @@
             ],
             "ball": {
               "x": 931.25,
-              "y": 339.38
+              "y": 339.38,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -2628,8 +2724,8 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 896.25,
-                    "y": 304.38
+                    "x": 909.375,
+                    "y": 297.815
                   },
                   {
                     "x": 948.75,
@@ -2642,6 +2738,11 @@
               {
                 "id": 500,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 161.25,
@@ -2650,6 +2751,11 @@
               {
                 "id": 501,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 161.25,
@@ -2658,6 +2764,11 @@
               {
                 "id": 502,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 948.75,
@@ -2666,6 +2777,11 @@
               {
                 "id": 503,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 948.75,
@@ -2802,8 +2918,9 @@
               }
             ],
             "ball": {
-              "x": 983.75,
-              "y": 313.12
+              "x": 948.75,
+              "y": 278.12,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -2861,6 +2978,11 @@
               {
                 "id": 500,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 161.25,
@@ -2869,6 +2991,11 @@
               {
                 "id": 501,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 161.25,
@@ -2877,6 +3004,11 @@
               {
                 "id": 502,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 948.75,
@@ -2885,6 +3017,11 @@
               {
                 "id": 503,
                 "team": "minigoalV",
+                "anchor": "mouth",
+                "mouthWidth": 52.5,
+                "mouthDepth": 26.25,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 948.75,
@@ -3031,7 +3168,8 @@
               ],
               "ball": {
                 "x": 432.5,
-                "y": 523.12
+                "y": 523.12,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -3091,12 +3229,12 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 397.5,
-                      "y": 488.12
+                      "x": 434.2142814384057,
+                      "y": 483.5307148201993
                     },
                     {
-                      "x": 817.5,
-                      "y": 435.62
+                      "x": 780.7857185615943,
+                      "y": 440.2092851798007
                     }
                   ]
                 }
@@ -3105,6 +3243,11 @@
                 {
                   "id": 500,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -3113,6 +3256,11 @@
                 {
                   "id": 501,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -3121,6 +3269,11 @@
                 {
                   "id": 502,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -3129,6 +3282,11 @@
                 {
                   "id": 503,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -3267,7 +3425,8 @@
               ],
               "ball": {
                 "x": 852.5,
-                "y": 470.62
+                "y": 470.62,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -3327,12 +3486,12 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 817.5,
-                      "y": 435.62
+                      "x": 784.4053534767369,
+                      "y": 419.07477798576673
                     },
                     {
-                      "x": 660.0,
-                      "y": 356.88
+                      "x": 693.0946465232631,
+                      "y": 373.42522201423327
                     }
                   ]
                 },
@@ -3389,6 +3548,11 @@
                 {
                   "id": 500,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -3397,6 +3561,11 @@
                 {
                   "id": 501,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -3405,6 +3574,11 @@
                 {
                   "id": 502,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -3413,6 +3587,11 @@
                 {
                   "id": 503,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -3550,7 +3729,8 @@
               ],
               "ball": {
                 "x": 695.0,
-                "y": 391.88
+                "y": 391.88,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -3610,7 +3790,7 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 660.0,
+                      "x": 633.75,
                       "y": 356.88
                     },
                     {
@@ -3624,6 +3804,11 @@
                 {
                   "id": 500,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -3632,6 +3817,11 @@
                 {
                   "id": 501,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -3640,6 +3830,11 @@
                 {
                   "id": 502,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -3648,6 +3843,11 @@
                 {
                   "id": 503,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -3787,7 +3987,8 @@
               ],
               "ball": {
                 "x": 432.5,
-                "y": 523.12
+                "y": 523.12,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -3845,6 +4046,11 @@
                 {
                   "id": 500,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -3853,6 +4059,11 @@
                 {
                   "id": 501,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -3861,6 +4072,11 @@
                 {
                   "id": 502,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -3869,6 +4085,11 @@
                 {
                   "id": 503,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -4007,7 +4228,8 @@
               ],
               "ball": {
                 "x": 432.5,
-                "y": 523.12
+                "y": 523.12,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -4071,7 +4293,7 @@
                       "y": 278.12
                     },
                     {
-                      "x": 712.5,
+                      "x": 675.5,
                       "y": 278.12
                     }
                   ]
@@ -4083,12 +4305,12 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 397.5,
-                      "y": 488.12
+                      "x": 434.2142814384057,
+                      "y": 483.5307148201993
                     },
                     {
-                      "x": 817.5,
-                      "y": 435.62
+                      "x": 780.7857185615943,
+                      "y": 440.2092851798007
                     }
                   ]
                 }
@@ -4097,6 +4319,11 @@
                 {
                   "id": 500,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -4105,6 +4332,11 @@
                 {
                   "id": 501,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -4113,6 +4345,11 @@
                 {
                   "id": 502,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -4121,6 +4358,11 @@
                 {
                   "id": 503,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -4258,7 +4500,8 @@
               ],
               "ball": {
                 "x": 852.5,
-                "y": 470.62
+                "y": 470.62,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -4318,12 +4561,12 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 817.5,
-                      "y": 435.62
+                      "x": 796.9760927396666,
+                      "y": 404.8341391094998
                     },
                     {
-                      "x": 712.5,
-                      "y": 278.12
+                      "x": 733.0239072603334,
+                      "y": 308.9058608905002
                     }
                   ]
                 }
@@ -4332,6 +4575,11 @@
                 {
                   "id": 500,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -4340,6 +4588,11 @@
                 {
                   "id": 501,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 161.25,
@@ -4348,6 +4601,11 @@
                 {
                   "id": 502,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -4356,6 +4614,11 @@
                 {
                   "id": 503,
                   "team": "minigoalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 52.5,
+                  "mouthDepth": 26.25,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 948.75,
@@ -4374,7 +4637,7 @@
       "type": "train",
       "name": "골키퍼가 있는 6v6 경기형 훈련",
       "textbookItem": "ch10-t3",
-      "textbookRevision": 3,
+      "textbookRevision": 4,
       "minutes": 20.5,
       "sets": 1,
       "rpe": 5,
@@ -4556,7 +4819,8 @@
         ],
         "ball": {
           "x": 320.0,
-          "y": 405.0
+          "y": 405.0,
+          "scale": 0.38
         },
         "drawings": [
           {
@@ -4616,12 +4880,12 @@
             "op": 1,
             "pts": [
               {
-                "x": 285.0,
-                "y": 370.0
+                "x": 311.16295090390224,
+                "y": 396.16295090390224
               },
               {
-                "x": 435.0,
-                "y": 520.0
+                "x": 408.83704909609776,
+                "y": 493.83704909609776
               }
             ]
           }
@@ -4630,6 +4894,11 @@
           {
             "id": 500,
             "team": "goalV",
+            "anchor": "mouth",
+            "mouthWidth": 109.8,
+            "mouthDepth": 30.0,
+            "rot": 180,
+            "scale": 1,
             "color": null,
             "src": null,
             "x": 255.0,
@@ -4638,6 +4907,11 @@
           {
             "id": 501,
             "team": "goalV",
+            "anchor": "mouth",
+            "mouthWidth": 109.8,
+            "mouthDepth": 30.0,
+            "rot": 0,
+            "scale": 1,
             "color": null,
             "src": null,
             "x": 855.0,
@@ -4808,7 +5082,8 @@
             ],
             "ball": {
               "x": 320.0,
-              "y": 405.0
+              "y": 405.0,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -4868,12 +5143,12 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 285.0,
-                    "y": 370.0
+                    "x": 311.16295090390224,
+                    "y": 396.16295090390224
                   },
                   {
-                    "x": 435.0,
-                    "y": 520.0
+                    "x": 408.83704909609776,
+                    "y": 493.83704909609776
                   }
                 ]
               }
@@ -4882,6 +5157,11 @@
               {
                 "id": 500,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 255.0,
@@ -4890,6 +5170,11 @@
               {
                 "id": 501,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 855.0,
@@ -5064,7 +5349,8 @@
             ],
             "ball": {
               "x": 470.0,
-              "y": 555.0
+              "y": 555.0,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -5124,12 +5410,12 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 435.0,
-                    "y": 520.0
+                    "x": 457.5,
+                    "y": 531.25
                   },
                   {
-                    "x": 525.0,
-                    "y": 565.0
+                    "x": 502.5,
+                    "y": 553.75
                   }
                 ]
               }
@@ -5138,6 +5424,11 @@
               {
                 "id": 500,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 255.0,
@@ -5146,6 +5437,11 @@
               {
                 "id": 501,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 855.0,
@@ -5319,7 +5615,8 @@
             ],
             "ball": {
               "x": 560.0,
-              "y": 600.0
+              "y": 600.0,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -5379,12 +5676,12 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 525.0,
-                    "y": 565.0
+                    "x": 555.7858608905002,
+                    "y": 544.4760927396666
                   },
                   {
-                    "x": 660.0,
-                    "y": 475.0
+                    "x": 629.2141391094998,
+                    "y": 495.5239072603335
                   }
                 ]
               }
@@ -5393,6 +5690,11 @@
               {
                 "id": 500,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 255.0,
@@ -5401,6 +5703,11 @@
               {
                 "id": 501,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 855.0,
@@ -5574,7 +5881,8 @@
             ],
             "ball": {
               "x": 695.0,
-              "y": 510.0
+              "y": 510.0,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -5634,12 +5942,12 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 660.0,
-                    "y": 475.0
+                    "x": 645.0,
+                    "y": 441.25
                   },
                   {
-                    "x": 600.0,
-                    "y": 340.0
+                    "x": 615.0,
+                    "y": 373.75
                   }
                 ]
               }
@@ -5648,6 +5956,11 @@
               {
                 "id": 500,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 255.0,
@@ -5656,6 +5969,11 @@
               {
                 "id": 501,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 855.0,
@@ -5829,7 +6147,8 @@
             ],
             "ball": {
               "x": 635.0,
-              "y": 375.0
+              "y": 375.0,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -5889,8 +6208,8 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 600.0,
-                    "y": 340.0
+                    "x": 636.4031866736966,
+                    "y": 346.61876121339935
                   },
                   {
                     "x": 765.0,
@@ -5905,8 +6224,8 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 690.0,
-                    "y": 415.0
+                    "x": 708.75,
+                    "y": 403.75
                   },
                   {
                     "x": 765.0,
@@ -5919,6 +6238,11 @@
               {
                 "id": 500,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 255.0,
@@ -5927,6 +6251,11 @@
               {
                 "id": 501,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 855.0,
@@ -6100,7 +6429,8 @@
             ],
             "ball": {
               "x": 800.0,
-              "y": 405.0
+              "y": 405.0,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -6160,12 +6490,12 @@
                 "op": 1,
                 "pts": [
                   {
-                    "x": 765.0,
-                    "y": 370.0
+                    "x": 787.5,
+                    "y": 377.5
                   },
                   {
                     "x": 855.0,
-                    "y": 310.0
+                    "y": 400.0
                   }
                 ]
               }
@@ -6174,6 +6504,11 @@
               {
                 "id": 500,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 255.0,
@@ -6182,6 +6517,11 @@
               {
                 "id": 501,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 855.0,
@@ -6354,8 +6694,9 @@
               }
             ],
             "ball": {
-              "x": 890.0,
-              "y": 345.0
+              "x": 855.0,
+              "y": 400.0,
+              "scale": 0.38
             },
             "drawings": [
               {
@@ -6413,6 +6754,11 @@
               {
                 "id": 500,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 180,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 255.0,
@@ -6421,6 +6767,11 @@
               {
                 "id": 501,
                 "team": "goalV",
+                "anchor": "mouth",
+                "mouthWidth": 109.8,
+                "mouthDepth": 30.0,
+                "rot": 0,
+                "scale": 1,
                 "color": null,
                 "src": null,
                 "x": 855.0,
@@ -6603,7 +6954,8 @@
               ],
               "ball": {
                 "x": 635.0,
-                "y": 375.0
+                "y": 375.0,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -6677,6 +7029,11 @@
                 {
                   "id": 500,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 255.0,
@@ -6685,6 +7042,11 @@
                 {
                   "id": 501,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 855.0,
@@ -6859,7 +7221,8 @@
               ],
               "ball": {
                 "x": 635.0,
-                "y": 375.0
+                "y": 375.0,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -6935,8 +7298,8 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 600.0,
-                      "y": 340.0
+                      "x": 636.4031866736966,
+                      "y": 346.61876121339935
                     },
                     {
                       "x": 765.0,
@@ -6951,8 +7314,8 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 690.0,
-                      "y": 415.0
+                      "x": 708.75,
+                      "y": 403.75
                     },
                     {
                       "x": 765.0,
@@ -6965,6 +7328,11 @@
                 {
                   "id": 500,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 255.0,
@@ -6973,6 +7341,11 @@
                 {
                   "id": 501,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 855.0,
@@ -7146,7 +7519,8 @@
               ],
               "ball": {
                 "x": 800.0,
-                "y": 405.0
+                "y": 405.0,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -7220,6 +7594,11 @@
                 {
                   "id": 500,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 255.0,
@@ -7228,6 +7607,11 @@
                 {
                   "id": 501,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 855.0,
@@ -7403,7 +7787,8 @@
               ],
               "ball": {
                 "x": 635.0,
-                "y": 375.0
+                "y": 375.0,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -7477,6 +7862,11 @@
                 {
                   "id": 500,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 255.0,
@@ -7485,6 +7875,11 @@
                 {
                   "id": 501,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 855.0,
@@ -7659,7 +8054,8 @@
               ],
               "ball": {
                 "x": 635.0,
-                "y": 375.0
+                "y": 375.0,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -7739,7 +8135,7 @@
                       "y": 415.0
                     },
                     {
-                      "x": 630.0,
+                      "x": 645.0,
                       "y": 415.0
                     }
                   ]
@@ -7749,6 +8145,11 @@
                 {
                   "id": 500,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 255.0,
@@ -7757,6 +8158,11 @@
                 {
                   "id": 501,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 855.0,
@@ -7930,7 +8336,8 @@
               ],
               "ball": {
                 "x": 635.0,
-                "y": 375.0
+                "y": 375.0,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -8006,8 +8413,8 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 600.0,
-                      "y": 340.0
+                      "x": 636.4031866736966,
+                      "y": 346.61876121339935
                     },
                     {
                       "x": 765.0,
@@ -8022,8 +8429,8 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 630.0,
-                      "y": 415.0
+                      "x": 663.75,
+                      "y": 403.75
                     },
                     {
                       "x": 765.0,
@@ -8036,6 +8443,11 @@
                 {
                   "id": 500,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 255.0,
@@ -8044,6 +8456,11 @@
                 {
                   "id": 501,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 855.0,
@@ -8217,7 +8634,8 @@
               ],
               "ball": {
                 "x": 800.0,
-                "y": 405.0
+                "y": 405.0,
+                "scale": 0.38
               },
               "drawings": [
                 {
@@ -8277,12 +8695,12 @@
                   "op": 1,
                   "pts": [
                     {
-                      "x": 765.0,
-                      "y": 370.0
+                      "x": 787.5,
+                      "y": 377.5
                     },
                     {
                       "x": 855.0,
-                      "y": 310.0
+                      "y": 400.0
                     }
                   ]
                 }
@@ -8291,6 +8709,11 @@
                 {
                   "id": 500,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 180,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 255.0,
@@ -8299,6 +8722,11 @@
                 {
                   "id": 501,
                   "team": "goalV",
+                  "anchor": "mouth",
+                  "mouthWidth": 109.8,
+                  "mouthDepth": 30.0,
+                  "rot": 0,
+                  "scale": 1,
                   "color": null,
                   "src": null,
                   "x": 855.0,
