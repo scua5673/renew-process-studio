@@ -75,13 +75,13 @@ test('changing the board width scales the places about the centre and nothing el
 
 test('one metre is ten units on a pitch and length ÷ width-in-metres on a grid board',()=>{
   const c=vm.createContext({state:{pitchSpec:'fifa'},FL:105,MPP:10,PITCH_SPECS:{fifa:{name:'11인제',len:105,wid:68},futsal:{name:'풋살',len:40,wid:20,futsal:true}}});
-  vm.runInContext(cut('["20","30","45"].forEach(function(m){ PITCH_SPECS["grid"+m]','function isPosLabel()')+';this.api={pitchSpec,isBlankSpec,mppNow,_mNum};',c);
+  vm.runInContext(cut('["20","30","40","45","70"].forEach(function(m){ PITCH_SPECS["grid"+m]','function isPosLabel()')+';this.api={pitchSpec,isBlankSpec,mppNow,_mNum};',c);
   const {isBlankSpec,mppNow,_mNum}=c.api;
-  assert.deepEqual(Object.keys(c.PITCH_SPECS).filter(k=>c.PITCH_SPECS[k].blank),['grid20','grid30','grid45']);
+  assert.deepEqual(Object.keys(c.PITCH_SPECS).filter(k=>c.PITCH_SPECS[k].blank),['grid20','grid30','grid40','grid45','grid70']);
   assert.equal(c.PITCH_SPECS.grid30.len,105,'a grid board uses the whole board, like the 11-a-side pitch');
   assert.equal(isBlankSpec(),false);assert.equal(mppNow(),10);assert.equal(_mNum(104),10,'whole metres on the pitch, as before');
   c.state.pitchSpec='futsal';assert.equal(mppNow(),10,'a smaller pitch keeps the scale — it zooms the view instead');
-  for(const [k,mpp] of [['grid20',52.5],['grid30',35],['grid45',1050/45]]){ c.state.pitchSpec=k; assert.equal(isBlankSpec(),true); assert.equal(mppNow(),mpp,k); }
+  for(const [k,mpp] of [['grid20',52.5],['grid30',35],['grid40',26.25],['grid45',1050/45],['grid70',15]]){ c.state.pitchSpec=k; assert.equal(isBlankSpec(),true); assert.equal(mppNow(),mpp,k); }
   c.state.pitchSpec='grid30';assert.equal(_mNum(350),10);assert.equal(_mNum(367.5),10.5,'half metres on a grid board');
   c.state.pitchSpec='grid99';assert.equal(isBlankSpec(),false,'an unknown key is the 11-a-side pitch');assert.equal(mppNow(),10);
 });
