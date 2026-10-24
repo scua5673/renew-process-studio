@@ -49,10 +49,21 @@ test('all source drills retain their headcounts, dimensions, constraints and pro
  assert.deepEqual(p.drills.map(d=>d.source.pdfPage),[15,28,29]);
  assert.deepEqual(p.drills.map(d=>d.snap.pitchSpec),['grid30','grid40','grid70']);
  for(const [i,d] of p.drills.entries()){
-  assert.match(d.method,/원문/);assert.match(d.func,/원문/);assert.match(d.func,/진행:/);assert.match(d.func,/운영 보완:/);assert.ok(d.method.length<4000,'the importer does not truncate the instructions');
+  assert.equal(d.textbookRevision,2);assert.match(d.coaching,/현장 개입:/);assert.match(d.coaching,/다음/);assert.match(d.method,/원문/);assert.match(d.func,/원문/);assert.match(d.func,/진행:/);assert.match(d.func,/운영 보완:/);assert.ok(d.method.length<4000,'the importer does not truncate the instructions');
   assert.equal(d.frames.every(f=>f.snap.players.length===[5,10,14][i]),true);
   assert.equal(d.snap.tokenScale,1.5);
  }
  assert.match(p.drills[1].method,/첫 터치/);assert.match(p.drills[1].method,/중립 한 터치/);
  assert.match(p.drills[2].method,/첫 터치/);assert.match(p.drills[2].method,/세 터치/);
+});
+
+test('offside examples distinguish the finishing boundary from the last opponents',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../studio/textbook/ch10/index.html'),'utf8');
+ const scenes=JSON.parse(html.match(/<script id="scenes" type="application\/json">(.*?)<\/script>/s)[1]);
+ const pos=f=>{const defenders=f.players.filter(p=>p.team==='red').map(p=>p.x).sort((a,b)=>b-a);return {line:defenders[1],runner:f.players.find(p=>p.id===9).x,ball:f.ball[0]};};
+ const bad=pos(scenes.drill3_fail.frames[1]);assert.equal(bad.line,26);assert.ok(bad.runner<30&&bad.runner>bad.line&&bad.runner>bad.ball,'outside finishing zone but beyond the opponents');
+ const good=pos(scenes.drill3_coach.frames[2]);assert.ok(good.runner<=good.line,'the adjusted run starts onside');
+ for(const base of ['drill1','drill2','drill3'])for(const suffix of ['','_fail','_coach']){
+  assert.ok(scenes[base+suffix].frames.every(f=>f.players.length==={drill1:5,drill2:10,drill3:14}[base]));
+ }
 });

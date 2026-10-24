@@ -88,7 +88,7 @@
       });
       if (!card) throw new Error('snap');
       delete card.letter;
-      card.textbook = {chapter: chapter, itemId: raw.textbookItem, version: 1, source: {book: String(raw.source.book).slice(0,100), pdfPage: Number(raw.source.pdfPage)}};
+      card.textbook = {chapter: chapter, itemId: raw.textbookItem, version: 1, revision: raw.textbookRevision === 2 ? 2 : 1, source: {book: String(raw.source.book).slice(0,100), pdfPage: Number(raw.source.pdfPage)}};
       var ps = card.snap.players, gk = ps.filter(function (p) { return p.pos === 'GK' || String(p.num) === '1'; }).length;
       card.roster = {gk: gk, field: ps.length - gk, rehab: 0, out: 0};
       card.gmPhases = card.trainings[0].gmPhases = Array.isArray(raw.gmPhases) ? raw.gmPhases.slice(0,12).map(function(x) { return String(x).slice(0,80); }) : [];
@@ -103,7 +103,7 @@
       return card;
     }
     function existing(lib, id) {
-      return (lib || []).find(function (d) { return d && d.textbook && d.textbook.itemId === id && canEditItem(d); });
+      return (lib || []).filter(function (d) { return d && d.textbook && d.textbook.itemId === id && canEditItem(d); }).sort(function (a,b) { return ((b.textbook.revision || 1) - (a.textbook.revision || 1)) || ((b.savedAt || 0) - (a.savedAt || 0)); })[0];
     }
     function sheet(rows, request, library, workspace) {
       var dialog = doc.createElement('dialog'); dialog.id = 'psTextbookDialog';
@@ -113,7 +113,7 @@
       var note = doc.createElement('p'); note.textContent = '현재 선택한 공간의 보관함에 훈련별 카드로 담습니다. 설명·선수 배치·재생 장면을 함께 가져오며, 담은 뒤 수정할 수 있어요.'; dialog.appendChild(note);
       var list = doc.createElement('ul');
       rows.forEach(function (row) {
-        var li = doc.createElement('li'); li.textContent = row.name + (existing(library, row.textbookItem) ? ' · 이미 담은 훈련' : ''); list.appendChild(li);
+        var li = doc.createElement('li'), had = existing(library, row.textbookItem); li.textContent = row.name + (had ? ((had.textbook.revision || 1) < (row.textbookRevision || 1) ? ' · 이전 판을 담은 훈련' : ' · 이미 담은 훈련') : ''); list.appendChild(li);
       }); dialog.appendChild(list);
       var status = doc.createElement('p'); status.setAttribute('role', 'status'); dialog.appendChild(status);
       var actions = doc.createElement('div'); actions.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;justify-content:flex-end'; dialog.appendChild(actions);
@@ -133,14 +133,14 @@
             var cards = [], first = '';
             rows.forEach(function (row) {
               var had = existing(lib, row.textbookItem);
-              if (had && !copy) { if (!first) first = had.libId; return; }
+              if (had && (copy !== true && (copy !== 'upgrade' || (had.textbook.revision || 1) >= (row.textbookRevision || 1)))) { if (!first) first = had.libId; return; }
               var card = make(row, request.chapter); cards.push(card); if (!first) first = card.libId;
             });
             if (cards.length) { sameWorkspace(workspace); await libWrite(cards.concat(lib)); libTouch(); }
             return {ids: cards.map(function (c) { return c.libId; }), first: first};
           });
           sameWorkspace(workspace);
-          var saved = await libGet();
+          var saved = await libGet(); sameWorkspace(workspace);
           if (!result.ids.every(function (id) { return saved.some(function (c) { return c.libId === id; }); })) throw new Error('readback');
           close(); letterPackShow(result.first);
           toast(result.ids.length ? ('교과서 훈련 ' + result.ids.length + '개를 보관함에 담았어요') : '이미 담은 훈련을 열었어요');
@@ -150,8 +150,12 @@
         }
       }
       button('취소', close);
-      if (rows.some(function (row) { return existing(library, row.textbookItem); })) button('새 사본으로 담기', function () { save(true); });
-      button(rows.every(function (row) { return existing(library, row.textbookItem); }) ? '보관함에서 보기' : '보관함에 담기', function () { save(false); }, true);
+      var outdated = rows.some(function (row) { var had = existing(library, row.textbookItem); return had && (had.textbook.revision || 1) < (row.textbookRevision || 1); });
+      if (outdated) {
+        note.textContent += ' 이전 판의 수정본은 그대로 유지합니다. 보강판을 새 사본으로 담으면 설명과 현장 개입이 보강된 카드가 추가됩니다.';
+        button('보강판 새 사본으로 담기', function () { save('upgrade'); }, true);
+      } else if (rows.some(function (row) { return existing(library, row.textbookItem); })) button('새 사본으로 담기', function () { save(true); });
+      button(rows.every(function (row) { return existing(library, row.textbookItem); }) ? '보관함에서 보기' : '보관함에 담기', function () { save(false); }, !outdated);
       dialog.addEventListener('cancel', function (e) { if (saving) e.preventDefault(); else { e.preventDefault(); close(); } });
       doc.body.appendChild(dialog); dialog.showModal();
     }
