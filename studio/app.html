@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.154"></script>
+<script src="autosave-status.js?v=3.155"></script>
 <script src="update-progress.js"></script>
 
 <title>PROCESS STUDIO</title>
@@ -522,7 +522,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.154';</script>
+<script>window.PS_BUILD='3.155';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -8081,17 +8081,11 @@ window.__buildScoutForm=function(k){
     try{ attachGrassKeeper(doc); }catch(e){}
     var view=doc.getElementById('viewBtn')||find(doc,function(e){ var t=T(e); if(t.indexOf('보기')<0||t.indexOf('사용법')>=0||t.indexOf('더보기')>=0||t.length>7) return false; var w=e.getBoundingClientRect().width; return w>20&&w<160; });
     if(!view) return false;
+    // Bootstrap defaults must never race the saved personal board.
+    if(!doc.defaultView.__boardRestoreDone)return false;
     applied=true;
-    /* ══ 2.085 · 부팅 깜빡임의 진짜 원인 ═══════════════════════════════════════════════
-       아래 steps 는 보드의 **보기 메뉴를 실제로 열고, 그 안의 버튼을 눌러** 기본값을 깔아 왔다.
-       그래서 부팅마다 ① 보기 메뉴가 ~950ms 동안 화면에 보였고 ② 선수 모양·표시·영역·그리드가
-       바뀌었다가, 뒤이어 끝난 저장본 복원이 그것을 되돌리며 **운동장이 두 번 바뀌어 깜빡였다.**
-       (사용자 신고: "view메뉴가 순간적으로 보이고 운동장이 바뀌면서 깜빡거려 · 강제로 열려서 설정을 바꾸는 것 같아")
-       고침 두 가지:
-         ⓐ **처음 한 번만** 깐다. `ps_board_defaults_v1` 이 있으면 메뉴를 아예 열지 않는다 —
-            두 번째 부팅부터는 저장본이 유일한 주인이 되어 싸울 일이 없다.
-         ⓑ 첫 부팅에도 메뉴를 **보이지 않게** 연다(opacity 0 · 레이아웃은 유지해야 버튼 폭 판별이 산다). */
-    var _tuned=false; try{ _tuned=!!doc.defaultView.localStorage.getItem('ps_board_defaults_v1'); }catch(_){}
+    /* 첫 부팅 기본값만 적용한다. 저장 보드·새 사용자 편집은 복원 결과가 우선이다. */
+    var _tuned=false; try{ _tuned=!!doc.defaultView.localStorage.getItem('ps_board_defaults_v1')||!!doc.defaultView._boardPrivateRecord||!!doc.defaultView._boardUserTouched; }catch(_){}
     function _tuneCloak(on){ try{
       if(!doc.getElementById('ps-boot-tune-css')){ var st=doc.createElement('style'); st.id='ps-boot-tune-css';
         st.textContent='html.ps-boot-tuning #viewMenu,html.ps-boot-tuning #moreMenu{opacity:0!important;pointer-events:none!important;}';
@@ -8131,7 +8125,8 @@ window.__buildScoutForm=function(k){
           /* buildGroups 내부는 오래된 브라우저에서도 앱이 멈추지 않도록 예외를 삼킨다.
              따라서 함수 호출 성공이 아니라 실제 도크 생성 여부로 부팅 성공을 판단한다. */
           _afterTune(); return; }
-        try{ steps[si](); }catch(e){}
+        var w=doc.defaultView,cap=w.__capLock;
+        try{w.__capLock=1;steps[si]();}catch(e){}finally{w.__capLock=cap;}
         si++;
         setTimeout(nextStep, 140);
       })();
@@ -8219,13 +8214,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="sync-size.js"></script>
 <script src="sync-observability.js"></script>
 <script src="idp-pub-wipe.js"></script>
-<script src="autosave-journal.js?v=3.154"></script>
-<script src="autosave-merge.js?v=3.154"></script>
-<script src="autosave-runtime.js?v=3.154"></script>
-<script src="autosave-recovery.js?v=3.154"></script>
-<script src="sync.js?v=3.154"></script>
+<script src="autosave-journal.js?v=3.155"></script>
+<script src="autosave-merge.js?v=3.155"></script>
+<script src="autosave-runtime.js?v=3.155"></script>
+<script src="autosave-recovery.js?v=3.155"></script>
+<script src="sync.js?v=3.155"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.154">
+<link rel="stylesheet" href="support.css?v=3.155">
 <link rel="stylesheet" href="support-image.css?v=20261023">
 <script src="support-image.js?v=20261023"></script>
 <script src="support.js?v=20261023"></script>

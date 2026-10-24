@@ -210,3 +210,17 @@ for(const change of ['uid','workspace','owner-seal','raw','none','write-failure'
  const ok=await running;
  assert.equal(ok,change==='none');assert.equal(map.get(PRIVATE),change==='none'?withPhoto(REF):change==='raw'?withPhoto(PHOTO,'SYNTHETIC new text, same photograph'):original);
 });
+
+for(const stale of [false,true])test('foreign IDP read cache uses its screen source despite '+(stale?'a divergent':'an equal')+' legacy IDB copy',async()=>{
+ const source=doc({today:{text:'SYNTHETIC latest player diary'}}),cache=doc({today:{text:'SYNTHETIC old screen cache'}}),legacy=stale?doc({today:{text:'SYNTHETIC legacy IDB copy'}}):cache;
+ const h=fixture(PRIVATE,{uid:'coach-a',server:source,mirror:cache,idb:legacy});h.c.idbBacked=k=>k===PRIVATE;h.baseline(source);
+ await run(h);assert.equal(h.local.get(PRIVATE),source,'coach reads the current player log');
+ assert.equal(h.idb.get(PRIVATE),legacy,'the legacy copy is retained');assert.equal(h.server.get(PRIVATE).v,source);assert.equal(push(h).length,0,'read cache never uploads another player document');
+ await run(h);assert.equal(h.errors.length,0,'a later round does not repeat the cache verification failure');
+});
+
+test('IDP screen-source writes retain exact local CAS and owner guards even with legacy IDB',()=>{
+ const before=doc({today:{text:'SYNTHETIC base'}}),edited=doc({today:{text:'SYNTHETIC unsaved edit'}}),remote=doc({today:{text:'SYNTHETIC server'}}),h=fixture(PRIVATE,{uid:'coach-a',server:remote,mirror:edited,idb:before});h.c.idbBacked=k=>k===PRIVATE;
+ const guard={stale:false},writes=[];assert.equal(h.c.kvWrite(PRIVATE,remote,writes,before,guard,()=>true),false);assert.equal(guard.stale,true);assert.equal(h.local.get(PRIVATE),edited);assert.equal(writes.length,0);
+ assert.equal(h.c.kvWrite(PRIVATE,remote,writes,edited,{stale:false},()=>false),false);assert.equal(h.local.get(PRIVATE),edited);assert.equal(h.idb.get(PRIVATE),before);
+});

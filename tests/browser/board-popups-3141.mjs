@@ -47,7 +47,7 @@ try{
     assert.equal(await f.evaluate(()=>!!document.getElementById('psShapeMenu')),true);
     assert.equal(await f.evaluate(()=>document.body.classList.contains('ps-shape-menu-on')),true);
     p=await panel();assert.equal(p.disp,'none','메뉴가 열린 동안 옆 패널은 숨긴다');
-    assert.equal(await f.evaluate(()=>[...document.querySelectorAll('#psShapeMenu button[data-act]')].map(b=>b.dataset.act).join(',')),'front,back,dup,lock,more,del','메뉴 단추 차례');
+    assert.equal(await f.evaluate(()=>[...document.querySelectorAll('#psShapeMenu button[data-act]')].map(b=>b.dataset.act).join(',')),'reset,front,back,dup,lock,more,del','메뉴 단추 차례(이후 장면 리셋 포함)');
     if(SHOT)await page.screenshot({path:SHOT+'/popups-menu-only.png'});
     await page.keyboard.press('Escape');await page.waitForTimeout(250);
     p=await panel();assert.ok(p.disp!=='none'&&!(await f.evaluate(()=>document.body.classList.contains('ps-shape-menu-on'))),'닫히면 옆 패널이 돌아온다');
@@ -65,7 +65,7 @@ try{
     await f.evaluate(()=>{selectItem('drawing',state.drawings[2]);updateDelUI();});await page.waitForTimeout(300);
     p=await panel();assert.equal(p.title,'"텍스트"');assert.equal(p.w,224);assert.match(p.bg,/gradient/);
     await f.evaluate(()=>window.__psShapeMenu.open(state.drawings[2],300,300));
-    assert.equal(await f.evaluate(()=>[...document.querySelectorAll('#psShapeMenu button[data-act]')].map(b=>b.dataset.act).join(',')),'edit,front,back,dup,lock,del','글은 굵기 없이 내용 수정 · 순서 · 복제 · 고정 · 삭제');
+    assert.equal(await f.evaluate(()=>[...document.querySelectorAll('#psShapeMenu button[data-act]')].map(b=>b.dataset.act).join(',')),'edit,reset,front,back,dup,lock,del','글은 굵기 없이 내용 수정 · 이후 장면 리셋 · 순서 · 복제 · 고정 · 삭제');
     assert.equal(await f.evaluate(()=>!!document.getElementById('psSmW')),false);
     await f.evaluate(()=>window.__psShapeMenu.close());
     // 5) 묶음 — 토글은 한 줄에 셋

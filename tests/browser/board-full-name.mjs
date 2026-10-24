@@ -41,8 +41,8 @@ try{
     const exported=await f.evaluate(()=>{const o=boardImageXML(),d=new DOMParser().parseFromString(o.xml,'image/svg+xml');return {names:[...d.querySelectorAll('text')].map(t=>t.textContent),error:!!d.querySelector('parsererror')};});
     assert.equal(exported.error,false);assert.ok(exported.names.includes(name),'export keeps the full label');
     await f.evaluate(()=>{sel={type:'player',ref:state.players.find(p=>p.id===701)};window.__selPanelOpen(true);});
-    await f.locator('#nameInput').waitFor({state:'visible'});
-    const metrics=await f.locator('#nameInput').evaluate(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,viewport:innerWidth,value:e.value};});
+    const measured=await f.waitForFunction(()=>{const e=document.getElementById('nameInput'),r=e&&e.getBoundingClientRect();return r&&r.width>0?{left:r.left,right:r.right,width:r.width,viewport:innerWidth,value:e.value}:false;});
+    const metrics=await measured.jsonValue();
     const layoutWidth=await page.evaluate(()=>innerWidth);
     assert.equal(page.viewportSize().width,width,'the physical viewport matches the requested screen');
     // iPad intentionally uses the existing desktop layout viewport (at least 1100px).
@@ -60,7 +60,11 @@ try{
       finally {boardPrivatePersist=persist;boardPrivateSend=send;}
     });
     assert.equal(save.ok,true,JSON.stringify({width,engine,...save}));
-    await page.reload();await ready(page);f=await board();actual=await names();
+    await page.reload();await ready(page);f=await board();
+    // A verified local preimage may be ready while a later restore still paints the board.
+    // Wait for the saved fixture content, then keep the exact reload assertions below.
+    await f.waitForFunction(()=>state.players.some(p=>p.id===701)&&state.players.some(p=>p.id===702)&&anim.frames.length>=2);
+    actual=await names();
     assert.equal(actual.name,name);assert.ok(actual.scenes.every(n=>n===name),'reload preserves all scenes');
     assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[]);
     console.log(JSON.stringify({engine,passed:true,characters:[...name].length,reload:true,export:true,width,layoutWidth}));
