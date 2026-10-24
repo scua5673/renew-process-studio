@@ -1,7 +1,7 @@
 // 커뮤니티 «프로세스» 칸 세션의 장면을 앱이 보강한다(3.019 — 사용자 «속도를 늦춰 길게가 아니라 애니메이션을 더해 훈련 애니메이션 퀄리티를»).
 //   node scripts/proc-scenes.mjs 02        → studio/packs/02.json 의 훈련 장면 · studio/packs/index.json 의 그 줄(own:1 · 장면 수 · 지문)
 // 장면은 scripts/proc-scenes/NN.mjs 에 적는다 — 훈련마다 장면 목록(바뀐 자리만 · 공 · 몸 방향 · 강조 · 자막 · 이동 시간 · 곡선).
-// 판(운동장 · 장비 · 구역 선 · 선수 명단)은 팩의 훈련 판을 그대로 쓰고, 장면마다 선수·공 자리와 화살표만 바꾼다.
+// 공식 원고·골대·표시 품질은 proc-quality.mjs에서 먼저 정돈한다. 그 판 위에서 장면마다 선수·공 자리와 화살표를 바꾼다.
 // 화살표는 장면 i 에서 i+1 로 가는 움직임에서 짓는다(재생은 장면 i 에 머무는 동안 보이고, 움직이며 사라진다):
 //   공 — 같은 선수가 몰고 가면 드리블(물결), 다른 선수에게 가면 패스(실선 · 띄운 공이면 로빙), shot:1 이면 슈팅.
 //   선수 — 우리 팀만(runs: 팀 이름들 · 없으면 빨강이 아닌 팀), 다음 장면에서 강조하거나 크게 움직인 선수의 이동(노란 점선). 상대는 그리지 않는다.
@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath,pathToFileURL} from 'node:url';
+import {qualitySnap,qualitySpec,qualityText} from './proc-quality.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const packs=path.join(root,'studio','packs');
@@ -93,11 +94,14 @@ export async function build(nn,{write=true}={}){
   d.trainings.forEach((t,i)=>{
     const sp=spec.trainings[i];
     if(sp.name!==t.name)throw Error(nn+' 훈련 '+(i+1)+': 이름이 팩과 다릅니다 — '+sp.name);
-    t.frames=buildFrames(t.snap,sp,{scale:sp.scale||1,lw:sp.lw||1,dur:sp.dur||1.2,runs:sp.runs||null});
+    const id=nn+'-'+(i+1),base=qualitySnap(t.snap,id),sceneSpec=qualitySpec(sp,base,id);
+    t.frames=buildFrames(base,sceneSpec,{scale:sp.scale||1,lw:sp.lw||1,dur:sp.dur||1.2,runs:sp.runs||null});
     t.snap=clone(t.frames[0].snap);
     t.animIdx=0;
+    qualityText(t,id);
   });
   d.frames=clone(d.trainings[0].frames);   /* 카드 대표 = 첫 훈련(2.613) */
+  d.snap=clone(d.trainings[0].snap);
   const text=JSON.stringify(pack);
   const index=JSON.parse(fs.readFileSync(path.join(packs,'index.json'),'utf8'));
   const row=index.sessions.find(s=>s.n===+nn);

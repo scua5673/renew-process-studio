@@ -1212,6 +1212,7 @@
   body.comm-viewing #boardToolbar,
   body.comm-viewing #bench,
   body.comm-viewing #ps-dock,
+  body.comm-viewing #cmd-dock-fold,
   body.comm-viewing #trainingStrip,
   body.comm-viewing #sceneStrip .sc-add,
   body.comm-viewing .sel-ctl,
@@ -13521,6 +13522,12 @@ window.__commView=function(post, editMode){
         if(!tt)return; _any++;
         var l=document.createElement("div"); l.className="ep-ro-doc ep-ro-label"; l.textContent=lt||"메모"; l.title=lt||"메모";
         var t=document.createElement("div"); t.className="ep-ro-doc ep-ro-text"; t.textContent=tt;
+        /* 공식 훈련의 소제목만 강조한다. textContent를 그대로 보존하고 HTML은 해석하지 않는다. */
+        if(post.proc&&/^(목적|관찰 단서)\n/.test(tt)){
+          var _heads=["목적","준비","진행·득점","재시작·교대 · 운영 보완","난이도 조절","관찰 단서","핵심 지도","현장 개입 · 운영 보완","다시 확인"];
+          t.textContent="";
+          tt.split("\n").forEach(function(line,i){if(i)t.appendChild(document.createTextNode("\n"));if(_heads.indexOf(line)>=0){var h=document.createElement("strong");h.textContent=line;t.appendChild(h);}else t.appendChild(document.createTextNode(line));});
+        }
         f.appendChild(l); f.appendChild(t);
       });
       var ef=$("epFields"); if(ef)ef.style.display=_any?"":"none";
