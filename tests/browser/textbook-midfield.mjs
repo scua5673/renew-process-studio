@@ -5,6 +5,9 @@ import {startFixture,openApp,root} from '../fixtures/team-app.mjs';
 const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/textbook-midfield');
 fs.mkdirSync(path.join(out,'checks'),{recursive:true});fs.mkdirSync(path.join(out,'diagrams'),{recursive:true});
 async function assertGoalGeometry(frame){
+ const native=await frame.evaluate(()=>document.documentElement.classList.contains('textbook-native')?{orientation:state.orientation,world:world.getAttribute('transform'),cv:commViewTok(),phone:phoneTokFactor(state.players[0]),flat:window.__flatK(state.players[0]),tilt:document.body.classList.contains('bc-tilt3d'),jerseys:[...document.querySelectorAll('.ps-jersey')].every(n=>getComputedStyle(n).display==='none'),filters:[...document.querySelectorAll('.token')].every(n=>getComputedStyle(n).filter==='none')}:null);
+ if(native){assert.deepEqual(native,{orientation:'h',world:null,cv:1,phone:1,flat:1,tilt:false,jerseys:true,filters:true},'textbook stays a flat horizontal native diagram, without device enlargement or uniform decoration');}
+
  const report=await frame.evaluate(()=>state.equipment.filter(g=>g.anchor==='mouth').map(g=>{
   const node=document.querySelector('#tokenLayer [data-id="'+g.id+'"]'),m=world.getCTM().inverse().multiply(node.getCTM());
   const d=g.team==='minigoalV'?8:13,span=g.team==='minigoalV'?26:44;

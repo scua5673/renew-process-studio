@@ -4,7 +4,7 @@
  'use strict';
  const q=new URLSearchParams(location.search);
  if(q.get('textbook_view')!=='ch10'||q.get('community_view')!=='1'||window.parent===window)return;
- const nativeStyle=document.createElement('style');nativeStyle.textContent="html.textbook-native,html.textbook-native body{margin:0!important;padding:0!important;width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;background:#fff!important;visibility:visible!important}\nhtml.textbook-native body>:not(#textbookNativeHost){display:none!important}\nhtml.textbook-native #textbookNativeHost{position:fixed!important;inset:0!important;margin:0!important;padding:0!important;display:block!important;overflow:hidden!important;background:#fff}\nhtml.textbook-native #textbookNativeHost #board{display:block!important;width:100%!important;height:100%!important;position:static!important;margin:0!important;padding:0!important;transform:none!important;visibility:visible!important;pointer-events:none!important}";document.head.appendChild(nativeStyle);
+ const nativeStyle=document.createElement('style');nativeStyle.textContent="html.textbook-native,html.textbook-native body{margin:0!important;padding:0!important;width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;background:#fff!important;visibility:visible!important}\nhtml.textbook-native body>:not(#textbookNativeHost){display:none!important}\nhtml.textbook-native #textbookNativeHost{position:fixed!important;inset:0!important;margin:0!important;padding:0!important;display:block!important;overflow:hidden!important;background:#fff}\nhtml.textbook-native #textbookNativeHost #board{display:block!important;width:100%!important;height:100%!important;position:static!important;margin:0!important;padding:0!important;transform:none!important;visibility:visible!important;pointer-events:none!important}\nhtml.textbook-native .ps-jersey,html.textbook-native .ps-c3{display:none!important}\nhtml.textbook-native .token,html.textbook-native .tok-c{filter:none!important}";document.head.appendChild(nativeStyle);
  const allowed=/^(choice|carry|direct|secure|follow(?:_fail|_coach)?|drill[123](?:_fail|_coach)?)$/;
  const origin=location.origin;
  let catalog=null,active='',last='',mounted=false;
@@ -52,8 +52,11 @@
     // 원래 판의 SVG 자체를 문서용 창으로 옮긴다. 전술 기호와 애니메이션 함수는 그대로다.
     const host=document.createElement('main');host.id='textbookNativeHost';document.body.appendChild(host);
     host.appendChild(document.getElementById('board'));
+    // 교과서는 고정된 가로 도식이다. 커뮤니티의 폰 확대·자동 회전과 기기 보기 설정을 이 프레임 안에서만 정규화한다.
+    commViewTok=function(){return 1;};phoneTokFactor=function(){return 1;};window.__flatK=function(){return 1;};
+    if(window.__setTilt)window.__setTilt(false,{transient:true,quiet:true});
     const nativeView=applyView;
-    applyView=function(){nativeView();if(active&&catalog[active])svg.setAttribute('viewBox',catalog[active].viewport.join(' '));};
+    applyView=function(){autoOrient=false;window.__commWantOrient='h';state.orientation='h';state.spFlip=false;nativeView();if(active&&catalog[active])svg.setAttribute('viewBox',catalog[active].viewport.join(' '));};
     autoOrient=false;window.__vaultReadOnly=true;
     mounted=true;choose(allowed.test(q.get('scene')||'')?q.get('scene'):'choice');
     new ResizeObserver(()=>applyView()).observe(host);
