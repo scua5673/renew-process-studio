@@ -5546,7 +5546,8 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
   if(k==='cs_scout_targets_v1')scoutReadyInvalidate();
   /* 덮기 전에 지금 값을 읽어 남긴다. IDB 키(스카우팅 후보·보관함 등)가 오히려 중요하다 —
      2026-08-05 에 날아간 cs_scout_targets_v1 이 바로 이쪽이었다. */
-  if(idbBacked(k)){
+  // IDP uses the same localStorage source as currentValueForKey, even with legacy IDB.
+  if(idbBacked(k)&&!isIdpPrivateKey(k)&&!isIdpPubKey(k)){
     /* 1.644 — 일정 화면은 거울을 먼저 바꾸고 IDB를 뒤따라 저장한다.
        iOS가 그 사이 앱을 종료하면 거울은 새 값, IDB는 예전 값으로 남는다.
        이 불일치를 '방금 편집'으로 보고 영구 거부하던 1.642 CAS를 고친다.

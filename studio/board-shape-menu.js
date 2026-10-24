@@ -58,6 +58,26 @@
     return { left: left, top: top };
   }
 
+  function resetDrawings(frames,index,items){
+    var result={frames:frames.slice(),changed:0,skipped:0};
+    function copy(o){return JSON.parse(JSON.stringify(o));}
+    function signature(o){return JSON.stringify([o.type,!!o.grid,!!o.closed,(o.pts||[]).length,o.type==='text'?o.text:null,o.ids||null]);}
+    function same(a,b){var x=Object.assign({},a),y=Object.assign({},b);delete x._sceneId;delete y._sceneId;return JSON.stringify(x)===JSON.stringify(y);}
+    for(var i=index+1;i<frames.length;i++){
+      var ds=(frames[i].snap&&frames[i].snap.drawings||[]).slice(),changed=false;
+      items.forEach(function(d){
+        var at=ds.findIndex(function(q){return d._sceneId&&q._sceneId===d._sceneId;});
+        if(at<0){var possible=[];ds.forEach(function(q,j){if(!q._sceneId&&signature(q)===signature(d))possible.push(j);});
+          if(possible.length>1){var exact=possible.filter(function(j){return same(ds[j],d);});if(exact.length!==1){result.skipped++;return;}possible=exact;}
+          if(possible.length===1)at=possible[0];
+        }
+        if(at<0)ds.push(copy(d));else ds[at]=copy(d);changed=true;result.changed++;
+      });
+      if(changed){result.frames[i]=Object.assign({},frames[i],{snap:Object.assign({},frames[i].snap,{drawings:ds})});delete result.frames[i].thumb;}
+    }
+    return result;
+  }
+
   var BACK_ICON = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2" fill="currentColor" fill-opacity=".22"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>';
   var N = ':not(#_):not(#__):not(#___)';
   function css() {
@@ -140,6 +160,7 @@
           + '<div class="sm-row"><span class="sm-lb">투명도</span><input type="range" id="psSmO" min="' + OP[0] + '" max="' + OP[1] + '" step="' + OP[2] + '" value="' + op + '"><span class="sm-val" id="psSmOv">' + Math.round(op * 100) + '%</span></div>' : '')
         + '<div class="sm-btns">'
         + (!shapes.length && ts.length === 1 && doc.getElementById('textEditBtn') ? '<button type="button" class="sm-wide" data-act="edit">내용 수정</button>' : '')
+        + '<button type="button" class="sm-wide" data-act="reset" title="현재 모습을 이후 장면에 반영">↺ 이후 장면 리셋</button>'
         + '<button type="button" data-act="front" title="맨 앞으로 (⌘])">맨 앞</button><button type="button" data-act="back" title="맨 뒤로 (⌘[)">맨 뒤</button>'
         + (doc.getElementById('dupSelBtn') ? '<button type="button" data-act="dup">복제</button>' : '')
         + (doc.getElementById('lockSelBtn') ? '<button type="button" data-act="lock"' + (locked ? ' class="on"' : '') + ' title="위치 고정 — 끌어도 안 움직여요">' + (locked ? '고정 해제' : '고정') + '</button>' : '')
@@ -174,6 +195,14 @@
         b.addEventListener('click', function (e) {
           e.stopPropagation();
           var act = b.dataset.act;
+          if(act==='reset'){
+            close();if(animActive<0||animActive>=anim.frames.length-1){call('toast','뒤에 장면이 있을 때 씁니다');return;}
+            call('stopAnim');call('pushUndo');
+            var current=call('captureSnap'),plan=resetDrawings(anim.frames,animActive,ts);
+            plan.frames[animActive]=Object.assign({},anim.frames[animActive],{snap:current});
+            anim.frames=plan.frames;call('renderAnimFrames');call('renderOnion');call('boardSaveLive');
+            call('toast',plan.changed+'개 반영'+(plan.skipped?' · 구분할 수 없는 '+plan.skipped+'개는 유지':''));return;
+          }
           if (act === 'front' || act === 'back') { call('zOrderItems', ts.slice(), act === 'front'); call('updateDelUI'); close(); return; }
           if (act === 'more') { close(); var lb = doc.getElementById('lineStyleBtn'); if (lb) lb.click(); return; }
           if (act === 'dup' || act === 'lock' || act === 'edit') { close(); press(act === 'dup' ? 'dupSelBtn' : act === 'lock' ? 'lockSelBtn' : 'textEditBtn'); return; }   // 선택 패널의 단추를 대신 누른다 — 동작 · 되돌리기는 그대로
@@ -229,6 +258,11 @@
     }
     function syncBack() { var fb = doc.getElementById('frontSelBtn'), b = mountBack(); if (fb && b && b.style.display !== fb.style.display) b.style.display = fb.style.display; }
     function go() {
+      var capture=win.captureSnap;
+      if(typeof capture==='function')win.captureSnap=function(){
+        var seen={};draws().forEach(function(d){if(!d._sceneId||seen[d._sceneId])d._sceneId='d-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);seen[d._sceneId]=1;});
+        return capture.apply(this,arguments);
+      };
       // 본문 함수는 본문 스크립트가 돈 뒤(DOMContentLoaded)에야 있다 — 그림 요소 ↔ 자료(drawingEl) · «맨 뒤» 보임(updateDelUI)
       var _el = win.drawingEl;
       if (typeof _el === 'function') win.drawingEl = function (d) { var g = _el.apply(this, arguments); try { if (g) g.__psD = d; } catch (_) {} return g; };
@@ -245,7 +279,7 @@
     return api;
   }
 
-  var api = { name: name, clampLw: clampLw, clampOp: clampOp, isRightClick: isRightClick, findDrawing: findDrawing, targets: targets, place: place, css: css, install: install };
+  var api = { resetDrawings: resetDrawings, name: name, clampLw: clampLw, clampOp: clampOp, isRightClick: isRightClick, findDrawing: findDrawing, targets: targets, place: place, css: css, install: install };
   if (typeof window !== 'undefined' && window.document) { try { install(window); } catch (_) {} }
   return api;
 });

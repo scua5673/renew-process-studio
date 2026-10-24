@@ -11,7 +11,14 @@ try{
     const size=engine==='webkit'?(width<768?'phone':'ipad'):'desktop';
     // Mobile WebKit keeps its original device width on resize: create each screen at its actual width.
     SIZES[size].ctx.viewport={width,height:850};SIZES[size].ctx.screen={width,height:850};
-    const {page,context,logs}=await openApp(fx,size,{browsers,tilt3d:false});
+    const {page,context,logs}=await openApp(fx,size,{browsers,tilt3d:false,init:{fn:()=>{
+      if(!location.pathname.endsWith('/board.html'))return;
+      let dirty=false;window.__restoreDirtyTrace=[];
+      Object.defineProperty(window,'_boardManualDirty',{configurable:true,get:()=>dirty,set:value=>{
+        if(value&&!dirty)window.__restoreDirtyTrace.push({at:Date.now(),ready:window.__boardReady,stack:new Error().stack});
+        dirty=value;
+      }});
+    }}});
     async function board(){
       if(await page.evaluate(()=>document.body.classList.contains('ps-team-open'))){
         await page.locator('#teamBottom [data-tb="more"]').click();
@@ -21,7 +28,11 @@ try{
       const f=await (await page.waitForSelector('#fBoard')).contentFrame();
       // Loaded becomes true after the local read, before a later server restore finishes.
       // Seed the online-save scenario only after its owner and server preimage are verified.
-      await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&window.__psPages&&boardPrivateCurrent(_boardPrivateOwner)&&!!(_boardPrivateRecord?_boardPrivateRecord.base:_boardPrivateBase));
+      try{await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&window.__psPages&&boardPrivateCurrent(_boardPrivateOwner)&&!!(_boardPrivateRecord?_boardPrivateRecord.base:_boardPrivateBase));}
+      catch(error){
+        const restore=await f.evaluate(()=>({ready:window.__boardReady,done:window.__boardRestoreDone,loaded:window._boardPrivateLoaded,current:boardPrivateCurrent(_boardPrivateOwner),base:!!_boardPrivateBase,recordBase:!!_boardPrivateRecord?.base,pending:!!_boardPrivateRecord?.pending,generation:_boardPrivateGeneration,edit:_boardPrivateEditSeq,dirty:_boardManualDirty,user:_boardUserTouched,liveDirty:_bliveDirty,view:window.__csView,capLock:window.__capLock,trace:window.__restoreDirtyTrace})).catch(e=>({diagnosticError:e.message}));
+        console.error(JSON.stringify({engine,width,restore,privateGET:fx.calls.filter(c=>c.m==='GET'&&c.p==='/rest/v1/ps_kv').slice(-10)}));throw error;
+      }
       return f;
     }
     let f=await board();
@@ -41,8 +52,8 @@ try{
     const exported=await f.evaluate(()=>{const o=boardImageXML(),d=new DOMParser().parseFromString(o.xml,'image/svg+xml');return {names:[...d.querySelectorAll('text')].map(t=>t.textContent),error:!!d.querySelector('parsererror')};});
     assert.equal(exported.error,false);assert.ok(exported.names.includes(name),'export keeps the full label');
     await f.evaluate(()=>{sel={type:'player',ref:state.players.find(p=>p.id===701)};window.__selPanelOpen(true);});
-    await f.locator('#nameInput').waitFor({state:'visible'});
-    const metrics=await f.locator('#nameInput').evaluate(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,viewport:innerWidth,value:e.value};});
+    const measured=await f.waitForFunction(()=>{const e=document.getElementById('nameInput'),r=e&&e.getBoundingClientRect();return r&&r.width>0?{left:r.left,right:r.right,width:r.width,viewport:innerWidth,value:e.value}:false;});
+    const metrics=await measured.jsonValue();
     const layoutWidth=await page.evaluate(()=>innerWidth);
     assert.equal(page.viewportSize().width,width,'the physical viewport matches the requested screen');
     // iPad intentionally uses the existing desktop layout viewport (at least 1100px).
@@ -60,7 +71,11 @@ try{
       finally {boardPrivatePersist=persist;boardPrivateSend=send;}
     });
     assert.equal(save.ok,true,JSON.stringify({width,engine,...save}));
-    await page.reload();await ready(page);f=await board();actual=await names();
+    await page.reload();await ready(page);f=await board();
+    // A verified local preimage may be ready while a later restore still paints the board.
+    // Wait for the saved fixture content, then keep the exact reload assertions below.
+    await f.waitForFunction(()=>state.players.some(p=>p.id===701)&&state.players.some(p=>p.id===702)&&anim.frames.length>=2);
+    actual=await names();
     assert.equal(actual.name,name);assert.ok(actual.scenes.every(n=>n===name),'reload preserves all scenes');
     assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[]);
     console.log(JSON.stringify({engine,passed:true,characters:[...name].length,reload:true,export:true,width,layoutWidth}));
