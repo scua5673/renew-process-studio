@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.177 — 팀 운영 «설정»은 «팀 기준»(플레이북·선수 기준). 플레이북은 기존 cs_gamemodel_v1·cs_terms_v1를 그대로 읽고 IDB에만 남은 원본을 먼저 복원한다. playbook-data.js는 최신 문서 위에 필드만 고치며 ID·장면·확장 필드를 보존한다. 훈련 연결은 playbook-shell.js에서 보드 libTurn으로 직렬 저장한다. 선수 기준 표현은 player-criteria.js, 저장·평가 ID는 scout 원래 경로. 기존 settings·terms 링크는 숨은 별칭으로 유지한다.
+
 - 3.175 — 팀 전환 초안 확인(`board-draft.js`)은 재생 복원 **뒤** 새로 예약된 `_boardPreviewTimer`도 취소한다. flush 시작 때만 취소하면 `stopAnim`이 다시 예약한 썸네일이 receipt 뒤 원문을 바꿔 전환을 거부한다. `sameBody`의 전체 원문 비교나 guard 이후 읽기 전용 검증을 완화하지 않는다.
 
 Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규칙 · 함정을 여기에 쌓는다(한두 줄씩, 판 번호와 함께). 운영 절차의 원본은 `docs/OPERATIONS.md`.

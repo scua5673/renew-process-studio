@@ -5,9 +5,9 @@ const read=f=>fs.readFileSync(path.join(__dirname,'../studio',f),'utf8');
 const A=read('app.html'),SC=read('scout.html');
 
 test('scouting is a top-row team tab (B안): between 선수단 and IDP, not in the 선수단 sub row',()=>{
-  const seg=A.slice(A.indexOf('<span class="tn-seg">'),A.indexOf('</span>',A.indexOf('data-team-key="attrs" data-app="scout" data-team-view="attrs" data-tn-grp="setup"')));
+  const seg=A.slice(A.indexOf('<span class="tn-seg">'),A.indexOf('</span>',A.indexOf('data-team-key="playbook" data-app="playbook" data-tn-grp="setup"')));
   const keys=[...seg.matchAll(/<button data-team-key="([a-z]+)"/g)].map(m=>m[1]);
-  assert.deepEqual(keys,['today','match','training','players','scouting','idp','attrs']);
+  assert.deepEqual(keys,['today','match','training','players','scouting','idp','playbook']);
   const squad=A.slice(A.indexOf('data-sub-grp="squad"'),A.indexOf('data-sub-grp="setup"'));
   assert.ok(!/data-team-key="scouting"/.test(squad),'선수단 서브 줄엔 스카우팅이 없다');
   assert.ok(/var TEAM_GRP=\{squad:\{players:1,avail:1\},/.test(A));
