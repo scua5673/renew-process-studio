@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {trackNavigationAborts} from '../fixtures/navigation-abort.mjs';
+import {sourceBackend,fixtureBackend} from '../fixtures/backend-config.mjs';
 
 // Full application with isolated fake accounts and a per-workspace fixture server.
 // No provider login, production database, or user browser profile is contacted.
@@ -12,7 +13,7 @@ const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGH
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),engine=process.env.PS_BROWSER_ENGINE||'chromium';
 const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/account-team-switch',engine);
 const build=fs.readFileSync(path.join(root,'studio/app.html'),'utf8').match(/window\.PS_BUILD='([^']+)'/)[1];
-const publicKey=fs.readFileSync(path.join(root,'studio/app.html'),'utf8').match(/window\.PS_SYNC=\{url:"[^"]+",anonKey:"([^"]+)"/)[1];
+const publicKey=sourceBackend(root).anonKey;
 fs.mkdirSync(out,{recursive:true});
 let base;
 const A='11111111-1111-4111-8111-111111111111',B='22222222-2222-4222-8222-222222222222';
@@ -116,7 +117,8 @@ try{
       const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
       if(!file.startsWith(root+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});
       let content=fs.readFileSync(file);
-      if(url.pathname==='/studio/app.html'){
+      if(url.pathname==='/studio/backend-config.js'||url.pathname==='/studio/storage.js')content=fixtureBackend(content,base,publicKey);
+      if(url.pathname==='/studio/app.html'&&content.toString().includes('window.PS_SYNC={url:')){
         // Exercise real sync/auth against the isolated fixture, never a production API origin.
         const html=content.toString(),configured=html.replace(/(window\.PS_SYNC=\{url:")[^"]+("[,}])/,(_,a,b)=>a+base+b);
         assert.notEqual(configured,html,'fixture API configuration was applied');content=Buffer.from(configured);

@@ -18,11 +18,13 @@ test('모든 페이지에 보고 모드 정책 — 막는 정책(object-src · b
   assert.doesNotMatch(dir('connect-src'),/(^| )(https:|\*)( |$)/,'connect-src 는 주소를 하나씩');
 });
 
-test('connect-src 는 앱이 실제로 닿는 곳과 같다 — Supabase(HTTP · 실시간) · 레터 두 곳 · 날씨 · 내려받는 라이브러리',()=>{
-  const sb=/window\.PS_SYNC=\{url:"(https:\/\/[^"]+)"/.exec(app)[1], adm=/var CFG=\{url:"(https:\/\/[^"]+)"/.exec(R('admin.html'))[1];
+test('connect-src 는 앱이 실제로 닿는 곳과 같다 — Supabase(HTTP · 실시간) · 레터 두 곳 · 날씨 · 내려받는 라이브러리',async()=>{
+  const {resolveBackend,PRODUCTION_SITE}=await import('../scripts/backend-config.mjs');
+  const sb=resolveBackend({NETLIFY:'true',SITE_ID:PRODUCTION_SITE,CONTEXT:'production',BRANCH:'main',PS_BACKEND_ROLE:'production'}).url;
+  assert.match(app,/window\.PS_SYNC=PSBackendConfig\.current\(\)/);assert.match(R('admin.html'),/var CFG=PSBackendConfig\.current\(\)/);
   const c=dir('connect-src').split(' ');
   assert.ok(c.includes(sb)&&c.includes(sb.replace(/^https/,'wss')),'Supabase '+sb);
-  assert.ok(c.includes(adm),'관리자 화면도 같은 Supabase');
+  assert.match(R('admin.html'),/src="studio\/backend-config\.js"/,'관리자도 같은 중앙 설정 모듈');
   const letter=/var LETTER_PACK_ORIGINS=\[([^\]]+)\]/.exec(R('studio/board.html'))[1].match(/https:\/\/[^"]+/g);
   letter.forEach(o=>assert.ok(c.includes(o),o));
   assert.match(R('studio/scout.html'),/fetch\("https:\/\/api\.open-meteo\.com\//); assert.ok(c.includes('https://api.open-meteo.com'));

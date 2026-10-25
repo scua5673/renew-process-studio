@@ -58,7 +58,9 @@ test('the catalog query file is read-only (no write keyword outside string liter
   const raw=fs.readFileSync(path.join(__dirname,'../migrations/00000000_baseline.catalog.sql'),'utf8');
   // 문자열('…', '' 이스케이프)과 줄 주석(--)을 한 글자씩 걸러 코드만 남긴다 — 문자열 안의 -- 나 주석 안의 ' 에 속지 않게
   let code='';for(let i=0;i<raw.length;){
-    if(raw[i]==="'"){let j=i+1;for(;j<raw.length;j++){if(raw[j]==="'"){if(raw[j+1]==="'"){j++;continue;}break;}}code+="''";i=j+1;}
+    const dollar=/^\$[A-Za-z_][A-Za-z0-9_]*\$|^\$\$/.exec(raw.slice(i));
+    if(dollar){const end=raw.indexOf(dollar[0],i+dollar[0].length);assert.ok(end>=0,'closed SQL text literal');code+="''";i=end+dollar[0].length;}
+    else if(raw[i]==="'"){let j=i+1;for(;j<raw.length;j++){if(raw[j]==="'"){if(raw[j+1]==="'"){j++;continue;}break;}}code+="''";i=j+1;}
     else if(raw[i]==='-'&&raw[i+1]==='-'){while(i<raw.length&&raw[i]!=='\n')i++;}
     else code+=raw[i++];
   }
@@ -68,4 +70,17 @@ test('the catalog query file is read-only (no write keyword outside string liter
   const keys=[...raw.matchAll(/union all select (\d+), '-- /g)].map(m=>+m[1]);
   assert.equal(new Set(keys).size,keys.length,'every section has its own order key');
   assert.deepEqual(keys,[...keys].sort((x,y)=>x-y),'order keys follow the file order');
+});
+
+test('catalog preserves only the managed RLS reader and restores its owner before ACLs/comments',()=>{
+ const raw=fs.readFileSync(path.join(__dirname,'../migrations/00000000_baseline.catalog.sql'),'utf8');
+ assert.match(raw,/rolname='ps_blob_reader_v1'/);assert.match(raw,/CREATE ROLE ps_blob_reader_v1 NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION INHERIT NOBYPASSRLS/);
+ assert.match(raw,/GRANT authenticated TO ps_blob_reader_v1/);assert.match(raw,/GRANT USAGE ON SCHEMA public,auth TO ps_blob_reader_v1/);
+ assert.match(raw,/Unsafe source ps_blob_reader_v1/);assert.match(raw,/Unsafe destination ps_blob_reader_v1/);
+ assert.match(raw,/ALTER %s %s OWNER TO ps_blob_reader_v1/);assert.match(raw,/REVOKE CREATE ON SCHEMA/);assert.match(raw,/WITH INHERIT %s, SET TRUE GRANTED BY/);
+ assert.match(raw,/SET LOCAL ROLE ps_blob_reader_v1/);assert.match(raw,/prior_grant->>'admin_option'/);assert.match(raw,/prior_grant->>'inherit_option'/);assert.match(raw,/prior_grant->>'set_option'/);
+ assert.ok(raw.indexOf('-- 7. 함수')<raw.indexOf('-- 7a. 사진 RLS 함수 소유자'));
+ assert.ok(raw.indexOf('-- 7a. 사진 RLS 함수 소유자')<raw.indexOf('-- 14. 함수 실행 권한'));
+ assert.ok(raw.indexOf('-- 7a. 사진 RLS 함수 소유자')<raw.indexOf('-- 16. 주석'));
+ assert.doesNotMatch(raw,/rolpassword|pg_authid/i,'password catalogs must never be read');
 });

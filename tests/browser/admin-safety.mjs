@@ -7,12 +7,13 @@ import http from 'node:http';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
+import {fixtureBackend} from '../fixtures/backend-config.mjs';
 const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),engine=process.env.PS_BROWSER_ENGINE||'chromium';
 const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results',engine,'admin-safety');fs.mkdirSync(out,{recursive:true});
-const html=fs.readFileSync(path.join(root,'admin.html'),'utf8'),apiOrigin=html.match(/url:"(https:\/\/[^"]+)"/)[1];
+const apiOrigin='https://synthetic-admin-api.invalid';
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'};
-const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return;}let body;try{body=fs.readFileSync(f);}catch{res.writeHead(404).end();return;}res.writeHead(200,{'Content-Type':mime[path.extname(f)]||'application/octet-stream','Cache-Control':'no-store'});res.end(body);});
+const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return;}let body;try{body=fs.readFileSync(f);}catch{res.writeHead(404).end();return;}res.writeHead(200,{'Content-Type':mime[path.extname(f)]||'application/octet-stream','Cache-Control':'no-store'});res.end(f.endsWith('.js')?fixtureBackend(body,apiOrigin):body);});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
 
 const ADM='99999999-9999-4999-8999-999999999999',U='11111111-1111-4111-8111-111111111111',W1='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',W2='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -60,6 +61,7 @@ try{
  const rpcCalls=n=>calls.filter(c=>c.name===n).map(c=>c.args);
  const pwned=()=>page.evaluate(()=>window.pwned||0);
  await page.goto(base+'/admin.html',{waitUntil:'domcontentloaded'});
+ assert.deepEqual(await page.evaluate(()=>({environment:PSBackendConfig.environment,url:PS_SYNC.url})),{environment:'synthetic',url:apiOrigin},'actual admin backend is the intercepted synthetic fixture');
 
  /* 홈 «가장 활발한 팀» 행 — 이름은 글자로, 누르면 그 팀 상세 */
  const teamRow=page.locator('#hmTeams [data-admin-act="team"]').first();await teamRow.waitFor();

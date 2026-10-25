@@ -4,6 +4,7 @@ import http from 'node:http';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
+import {fixtureBackend} from '../fixtures/backend-config.mjs';
 
 // 2.964 — 관리자 › 사용자 상세 «만든 것» · «요즘 하는 일».
 // 실제 admin.html 을 합성 RPC 로 연다. 바깥 요청은 전부 가로챈다 — 운영 자료를 읽지 않는다.
@@ -13,13 +14,12 @@ const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/admin-user-ma
 const engine=process.env.PS_BROWSER_ENGINE||'chromium';
 const ADM='99999999-9999-4999-8999-999999999999',USER='11111111-1111-4111-8111-111111111111',OTHER='22222222-2222-4222-8222-222222222222';
 const WS='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',WS2='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-const adminSource=fs.readFileSync(path.join(root,'admin.html'),'utf8');
-const apiOrigin=(adminSource.match(/url:"(https:\/\/[^\"]+)"/)||[])[1];assert.ok(apiOrigin,'Configured origin is used for interception only');
+const apiOrigin='https://synthetic-admin-api.invalid';
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.png':'image/png'};
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://local');const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
   if(!file.startsWith(root+path.sep)){res.writeHead(403).end();return;}
-  try{res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(fs.readFileSync(file));}catch(_){res.writeHead(404).end();}
+  try{const bytes=fs.readFileSync(file);res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(file.endsWith('.js')?fixtureBackend(bytes,apiOrigin):bytes);}catch(_){res.writeHead(404).end();}
 });
 await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
 const base='http://127.0.0.1:'+server.address().port;
@@ -59,7 +59,9 @@ try{
     await context.routeWebSocket('**/*',socket=>{blocked.push(socket.url());socket.close();});
     await context.addInitScript(({ADM})=>{localStorage.setItem('ps_sync_session',JSON.stringify({uid:ADM,at:'fixture-admin-access',rt:'PRIVATE_ADMIN_REFRESH',email:'admin@example.test',exp:Date.now()+86400000}));},{ADM});
     const page=await context.newPage();page.setDefaultTimeout(20000);page.on('pageerror',e=>errors.push(e.message));
-    await page.goto(base+'/admin.html',{waitUntil:'domcontentloaded'});await page.locator('#app').waitFor({state:'visible'});
+    await page.goto(base+'/admin.html',{waitUntil:'domcontentloaded'});
+    assert.deepEqual(await page.evaluate(()=>({environment:PSBackendConfig.environment,url:PS_SYNC.url})),{environment:'synthetic',url:apiOrigin},'actual admin backend is the intercepted synthetic fixture');
+    await page.locator('#app').waitFor({state:'visible'});
     await page.waitForFunction(()=>typeof ALL_LIB!=='undefined'&&ALL_LIB.length===16&&adminOwnersReady===true);
     await page.evaluate(uid=>openAdminUser(uid),USER);
     const panel=page.locator('.aud-panel');await panel.waitFor();

@@ -15,7 +15,7 @@ const LOOP=cut('    order.forEach(function(id){\n      var it=locMap[id], rec=m.
 function decide({local,rec,server}){
   const pushes=[],ctx=vm.createContext({
     order:['L1'],locMap:{L1:local},m:{li:rec?{L1:rec}:{}},srv:server?{L1:server}:{},now:9000,wid:'W',teamOnly:true,priv:true,
-    delLocal:[],pullIds:[],mutated:false,
+    conflicts:[],delLocal:[],pullIds:[],mutated:false,
     libHash:it=>it.h,libTs:it=>+(it.editedAt||it.savedAt)||0,libUid:()=>'U',
     libFolderShared:f=>/^팀 공유(\/|$)/.test(String(f||'')),
     srvStamp:s=>Math.max(s.saved_at||0,s.deleted_at||0),
@@ -23,7 +23,7 @@ function decide({local,rec,server}){
     queueLibPush:row=>pushes.push(row)
   });
   vm.runInContext(LOOP,ctx);
-  return {pushes,pull:[...ctx.pullIds],del:[...ctx.delLocal],li:ctx.m.li.L1};
+  return {conflicts:[...ctx.conflicts],pushes,pull:[...ctx.pullIds],del:[...ctx.delLocal],li:ctx.m.li.L1};
 }
 
 test('옛 사본을 가진 기기는 다른 기기가 «팀 공유»로 옮긴 자료를 되돌리지 않고 받는다',()=>{
@@ -52,7 +52,7 @@ test('옛 사본이 서버를 덮은 뒤에는 새 사본을 가진 기기(맥)�
 
 test('양쪽을 다 고쳤으면 예전처럼 더 늦은 쪽이 이긴다',()=>{
   let r=decide({local:{libId:'L1',h:'mine',folder:'ssg',editedAt:300},rec:{h:'old',s:100},server:{lib_id:'L1',private:false,saved_at:500,owner_id:'U'}});
-  assert.deepEqual(r.pushes,[]);assert.deepEqual(r.pull,['L1'],'서버가 더 늦다 → 받는다');
+  assert.deepEqual(r.pushes,[]);assert.deepEqual(r.pull,['L1'],'서버가 더 늦다 → 받는다');assert.equal(r.conflicts.length,1,'losing local original is retained for archive');
   r=decide({local:{libId:'L1',h:'mine',folder:'ssg',editedAt:700},rec:{h:'old',s:100},server:{lib_id:'L1',private:false,saved_at:500,owner_id:'U'}});
   assert.equal(r.pushes.length,1);assert.equal(r.pushes[0].saved_at,700,'이 기기가 더 늦다 → 올린다');assert.equal(r.pushes[0].private,true);
 });

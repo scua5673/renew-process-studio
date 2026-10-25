@@ -4,8 +4,8 @@ const source=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
 function section(a,b){const start=source.indexOf(a),end=source.indexOf(b,start+a.length);assert.ok(start>=0&&end>start);return source.slice(start,end);}
 const H='0123456789abcdef01234567',G='fedcba9876543210fedcba98',segment=s=>JSON.stringify(s).slice(1,-1);
 function harness(cacheEntries=[],serverEntries=[]){
-  const cache=new Map(cacheEntries.map(([h,v])=>['ps_blob:'+h,v])),server=new Map(serverEntries),calls=[],reads=[],writes=[],rows=[];
-  const c={console,Promise,JSON,Uint8Array,TextEncoder,crypto:crypto.webcrypto,BASE:'https://synthetic.invalid',KV_PULL_CHUNK:40,
+  const cache=new Map(cacheEntries.map(([h,v])=>['ps_blob:owner-1:team-a:'+h,v])),server=new Map(serverEntries),calls=[],reads=[],writes=[],rows=[];
+  const c={rpcContext:()=>({uid:'owner-1'}),rpcCurrent:()=>true,console,Promise,JSON,Uint8Array,TextEncoder,crypto:crypto.webcrypto,BASE:'https://synthetic.invalid',KV_PULL_CHUNK:40,
     storage:{async get(k){reads.push(k);return cache.has(k)?{value:cache.get(k)}:null;},async set(k,v){writes.push(k);cache.set(k,v);return {value:v};}},
     hj:()=>({}),kvInFilter:keys=>'k=in.('+keys.join(',')+')',syncDiagnostic(){},syncHttpError:(stage,status)=>Error(stage+' '+status),
     async syncFetch(stage,url){calls.push({stage,url});if(stage==='kv_pull')return {ok:true,json:async()=>rows.map(x=>({...x}))};
@@ -18,20 +18,20 @@ test('SQL-reordered nonadjacent emblem reference restores the original cached im
   const raw='{ "meta" : { "emblemRef" : "'+H+'", "teamName":"Synthetic", "emblem" : "", "count":1.00 }, "players":[] }';
   assert.deepEqual(Array.from(h.c.schedRefs(raw)),[H]);const got=await h.c.schedHydrate('token','team-a',raw);
   assert.equal(got,raw.replace('"emblemRef" : "'+H+'",','').replace('"emblem" : ""','"emblem" : '+JSON.stringify(picture)));
-  assert.equal(JSON.parse(got).meta.emblem,picture);assert.deepEqual(h.reads,['ps_blob:'+H]);assert.equal(h.calls.length,0);
+  assert.equal(JSON.parse(got).meta.emblem,picture);assert.deepEqual(h.reads,['ps_blob:owner-1:team-a:'+H]);assert.equal(h.calls.length,0);
 });
 test('kvPullValues hydrates spaced SQL JSON from the workspace-scoped blob endpoint',async()=>{
   const picture='data:image/png;base64,synthetic',h=harness([],[[H,segment(picture)]]);
   h.rows.push({k:'scout_tool_v1',v:JSON.stringify({meta:{emblem:'',teamName:'Synthetic',emblemRef:H},players:[]},null,2),cupd:7});
   const result=await h.c.kvPullValues('token','team-a',['scout_tool_v1']);assert.equal(JSON.parse(result[0].v).meta.emblem,picture);assert.equal(result[0].cupd,7);
-  assert.equal(h.calls.filter(x=>x.stage==='blob_pull').length,1);assert.match(h.calls.find(x=>x.stage==='blob_pull').url,/workspace_id=eq.team-a/);assert.equal(h.cache.get('ps_blob:'+H),segment(picture));
+  assert.equal(h.calls.filter(x=>x.stage==='blob_pull').length,1);assert.match(h.calls.find(x=>x.stage==='blob_pull').url,/workspace_id=eq.team-a/);assert.equal(h.cache.get('ps_blob:owner-1:team-a:'+H),segment(picture));
 });
 for(const key of ['thumb','emblem'])test(key+' strip/hydrate retains exact original bytes, escaping and whitespace',async()=>{
   const h=harness(),picture='<svg title="quoted">\\path\n'+('한글 '.repeat(200))+'</svg>';
   const raw='{ "before": 1.00, "nested": [ { "'+key+'":  '+JSON.stringify(picture)+', "after" : true } ] }';
   const stripped=await h.c.schedStrip(raw);assert.equal(stripped.blobs.length,1);assert.notEqual(stripped.v,raw);assert.deepEqual(Array.from(h.c.schedRefs(stripped.v)),[stripped.blobs[0].h]);
   assert.equal(stripped.blobs[0].h,crypto.createHash('sha256').update(segment(picture)).digest('hex').slice(0,24));
-  for(const b of stripped.blobs)h.cache.set('ps_blob:'+b.h,b.v);assert.equal(await h.c.schedHydrate('token','team-a',stripped.v),raw);
+  for(const b of stripped.blobs)h.cache.set('ps_blob:owner-1:team-a:'+b.h,b.v);assert.equal(await h.c.schedHydrate('token','team-a',stripped.v),raw);
   const twice=await h.c.schedStrip(stripped.v);assert.equal(twice.v,stripped.v);assert.equal(twice.blobs.length,0);
 });
 test('mixed nested schedule and emblem refs match only their own object and field name',async()=>{

@@ -1,6 +1,6 @@
 # Static PWA; production publishing waits for the exact commit's browser CI.
 [build]
   publish = "dist"
-  command = "npm test && npm run test:sql && node scripts/verify-release.mjs && node scripts/package-site.mjs && node scripts/release-guard.mjs"
+  command = "node scripts/backend-config.mjs && npm test && npm run test:sql && node scripts/verify-release.mjs && node scripts/package-site.mjs && node scripts/release-guard.mjs"
 [build.environment]
   NODE_VERSION = "22"

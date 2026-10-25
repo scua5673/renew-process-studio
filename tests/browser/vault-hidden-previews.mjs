@@ -6,10 +6,17 @@ const art=Array.from({length:K},(_,i)=>`<path d="M${i%40*25} ${Math.floor(i/40)*
 for(let i=0;i<N;i++){const item={libId:'thumb-fixture-'+i,type:'board',name:'프로세스FC 합성 보드 '+i,folder:'',tags:[],savedAt:Date.now()-i,createdBy:A,snap:{players:[],drawings:[]},thumb:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600"><title>rich-fixture-${i}</title>${art}</svg>`};fx.lib.set(WT+'|'+item.libId,{workspace_id:WT,lib_id:item.libId,type:item.type,name:item.name,folder:'',tags:[],pin:false,item,saved_at:item.savedAt,deleted_at:null,owner_id:A,private:true});}
 const original=JSON.stringify([...fx.lib.values()].map(x=>x.item));
 async function hiddenReadLifecycle(f){return f.evaluate(async()=>{
- const fr=window.frameElement,box=document.getElementById('drillFiles'),originalGet=libGet,display=fr.style.display;
- let reads=0,hold=null,started=false,release=null;
+ const fr=window.frameElement,box=document.getElementById('drillFiles'),originalGet=libGet,originalTurn=libTurn,display=fr.style.display;
+ const itemIds=()=>Array.from(box.querySelectorAll('.vx-items .vcard'),el=>el.__libId).sort().join('|'),sourceIds=itemIds();
+ let reads=0,hold=null,started=false,release=null,capture=null,active=null,seeded=false;
+ const controlled={reads:0},authRefresh={reads:0};
+ // Bind each physical read to its enqueueing producer, before libGet awaits.
+ // Authentication refreshes after a read starts legitimately queue a new read.
+ libTurn=function(task){const scope=capture;return originalTurn(function(){const prior=active;active=scope;try{return task();}finally{active=prior;}});};
  const wait=async check=>{const until=Date.now()+8000;while(!check()){if(Date.now()>until)throw Error('vault lifecycle timeout');await new Promise(r=>setTimeout(r,20));}};
- libGet=async function(){reads++;const data=await originalGet.apply(this,arguments);if(hold){started=true;await hold;}return data;};
+ libGet=async function(){reads++;if(active)active.reads++;
+  if(active===controlled&&!seeded){seeded=true;queueMicrotask(()=>{capture=authRefresh;try{window.dispatchEvent(new CustomEvent('ps-auth-state',{detail:{unlocked:true}}));}finally{capture=null;}});}
+  const data=await originalGet.apply(this,arguments);if(hold){started=true;await hold;}return data;};
  function mark(name){box.__vxSig=null;box.querySelector('.vault-explorer').dataset.asyncProbe=name;}
  const kept=name=>!!box.querySelector('[data-async-probe="'+name+'"]');
  async function reopen(name){fr.style.display=display;await wait(()=>!kept(name));await _libTurnTail;}
@@ -27,10 +34,13 @@ async function hiddenReadLifecycle(f){return f.evaluate(async()=>{
   fr.style.display='none';hold=null;release();await pending;
   const late={hidden:fr.getClientRects().length===0,reads,kept:kept('inflight')};await reopen('inflight');late.reopenReads=reads;
   // The same queued path still renders when visible, with all three callers sharing one read.
-  entered=false;libTurn(()=>new Promise(r=>{release=r;entered=true;}));await wait(()=>entered);reads=0;
-  mark('visible');const visible=Promise.all([renderDrillFiles(),renderDrillFiles(),renderDrillFiles()]);release();await visible;
-  return {queued:q,inflight:late,visible:{reads,rendered:!kept('visible'),items:box.querySelectorAll('.vx-items .vcard').length}};
- }finally{libGet=originalGet;fr.style.display=display;}
+  // Enter the barrier through its promise, without a timer window in which an
+  // unrelated producer could claim the controlled queue before the three calls.
+  let barrierEntered;const enteredPromise=new Promise(r=>barrierEntered=r);
+  libTurn(()=>new Promise(r=>{release=r;barrierEntered();}));let barrierTimeout;try{await Promise.race([enteredPromise,new Promise((_,reject)=>{barrierTimeout=setTimeout(()=>reject(Error('vault visible barrier timeout')),8000);})]);}finally{clearTimeout(barrierTimeout);}reads=0;
+  mark('visible');capture=controlled;const visible=Promise.all([renderDrillFiles(),renderDrillFiles(),renderDrillFiles()]);capture=null;release();await visible;await _libTurnTail;
+  return {queued:q,inflight:late,allVisibleReads:reads,visible:{reads:controlled.reads,authReads:authRefresh.reads,rendered:!kept('visible'),items:box.querySelectorAll('.vx-items .vcard').length,sourceUnchanged:itemIds()===sourceIds}};
+ }finally{libGet=originalGet;libTurn=originalTurn;fr.style.display=display;}
 });}
 try{for(const width of [375,393,768,1280]){
  const size=width<700?'phone':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:850};
@@ -55,7 +65,7 @@ try{for(const width of [375,393,768,1280]){
  const {reopenReads:inflightReopen,...inflightHidden}=lifecycle.inflight;
  assert.deepEqual(inflightHidden,{hidden:true,reads:1,kept:true},'closing during a read discards its result');
  assert.ok(inflightReopen>inflightHidden.reads,'reopening reads afresh after discarding the hidden result');
- assert.deepEqual(lifecycle.visible,{reads:1,rendered:true,items:N},'visible queued renders still share one read and paint every item');
+ assert.deepEqual(lifecycle.visible,{reads:1,authReads:1,rendered:true,items:N,sourceUnchanged:true},'three controlled queued renders share exactly one physical read; a separate auth refresh reads afresh and every source item remains');
  if(process.env.PS_EVIDENCE_DIR)await page.screenshot({path:process.env.PS_EVIDENCE_DIR+'/vault-hidden-lifecycle-'+engine+'-'+width+'.png'});
  // Exercise the original legacy renderer too: hiding its panel must not remove its ability to render when visible.
  const visible=await f.evaluate(async()=>{const dock=document.getElementById('libDock');dock.classList.remove('collapsed');dock.style.setProperty('display','flex','important');await renderLibDock();return {boxes:document.getElementById('dockStrip').getClientRects().length,cards:document.querySelectorAll('#dockStrip .ld-card').length,paths:document.querySelectorAll('#dockStrip svg path').length};});

@@ -11,7 +11,7 @@ const sync=fs.readFileSync(path.join(__dirname,'..','studio','sync.js'),'utf8');
 function cut(src,from,to){ const a=src.indexOf(from); assert.ok(a>0,'start marker: '+from); const b=src.indexOf(to,a+from.length); assert.ok(b>a,'end marker: '+to); return src.slice(a,b); }
 const PURE=cut(sync,'/* ── 3.071 · 보관함 받기 묶음 순수 구간 시작','/* ── 3.071 · 보관함 받기 묶음 순수 구간 끝 ── */');
 function pure(){ const c=vm.createContext({}); vm.runInContext(PURE+';this.api={libPullCapFor};',c); return c.api; }
-const PULL=cut(sync,'    var deferred=0;','\n    return pushAll().then(pullAll)');
+const PULL=cut(sync,'    var deferred=0;','\n    function keepConflicts(){');
 
 /* pullAll 을 떼어 내 가짜 서버로 돌린다 — 요청마다 받은 본문 크기와 미룬 수를 본다 */
 function runPull(dev,items){

@@ -6,6 +6,7 @@
 (function(){
 "use strict";
 var CFG=null;
+if(window.PSBackendConfig&&window.PSBackendConfig.blocked())return;
 try{ if(window.PS_SYNC&&window.PS_SYNC.url&&window.PS_SYNC.anonKey) CFG=window.PS_SYNC; }catch(_){}
 try{ if(!CFG){ var _raw=localStorage.getItem('ps_sync_cfg'); if(_raw){ var _o=JSON.parse(_raw); if(_o&&_o.url&&_o.anonKey) CFG=_o; } } }catch(_){}
 /* cfg를 저장해 둔다 — 커뮤니티 등을 단독 URL로 열어도(셸 부모 없이) 서버 설정을 찾을 수 있게 (publishable key라 공개 무해) */
@@ -2639,7 +2640,7 @@ function libShareJSON(it){
       return v; }); }catch(_){ return '{}'; }
   return typeof s==='string'?s:'{}';
 }
-function libHash(it){return hash(libShareJSON(it));}
+function libHash(it){return hash(libShareJSON(it))+(typeof PSLibraryRecovery==='undefined'?'':PSLibraryRecovery.mediaHash(it));}
 /* ══ 3.005 · 옛 자료의 장면별 썸네일 정리 ══ 2.559 부터 저장은 장면 0 썸네일만 남긴다. 그 전 자료의 frames[1…].thumb 를 **이 기기 사본에서만** 뗀다
    (서버로 올리지 않고 시각도 그대로 — 고친 적 없으면 기준 지문 m.li[id].h 만 옮긴다). 받은 자료도 적용 전에 거친다. 공간마다 한 번은 보관함 단계를 건너뛰지 않는다(m.ld). ══ */
 /* ── 3.005 · 썸네일 정리 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
@@ -2689,7 +2690,7 @@ function libFolderShared(folder){
   }
   return false;
 }
-function libRow(it,t,wid,priv){ var clean=libShareCopy(it); return libStamp({workspace_id:wid,lib_id:it.libId,type:it.type||'train',name:it.name||'',folder:it.folder||'',tags:(it.tags||[]),pin:!!it.pin,item:clean,saved_at:t,deleted_at:null},priv); }
+function libRow(it,t,wid,priv){ var clean=priv?PSLibraryRecovery.privateCopy(it):libShareCopy(it); return libStamp({workspace_id:wid,lib_id:it.libId,type:it.type||'train',name:it.name||'',folder:it.folder||'',tags:(it.tags||[]),pin:!!it.pin,item:clean,saved_at:t,deleted_at:null},priv); }
 /* 보관함 본문은 IndexedDB(window.storage)에 있다 — iOS localStorage 5MB 캡을 피하기 위해.
    어댑터가 없으면(구버전/IDB 불가) 예전처럼 localStorage에서 읽는다. */
 /* board.html이 store(=IndexedDB)로 저장하는 동기화 대상 키들.
@@ -3049,8 +3050,8 @@ function blobHash(s){
   try{ if(window.crypto&&crypto.subtle&&window.TextEncoder){ return crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)).then(function(b){ var a=new Uint8Array(b),h=''; for(var i=0;i<12;i++)h+=('0'+a[i].toString(16)).slice(-2); return h; }); } }catch(_){}
   return Promise.resolve((function(){ var h1=5381,h2=52711,i=s.length; while(i){var c=s.charCodeAt(--i); h1=(h1*33)^c; h2=(h2*33)^c;} return ('00000000'+(h1>>>0).toString(16)).slice(-8)+('00000000'+(h2>>>0).toString(16)).slice(-8)+('00000000'+(s.length>>>0).toString(16)).slice(-8); })());
 }
-function blobCacheGet(h){ if(!window.storage)return Promise.resolve(null); return window.storage.get(BLOB_PREFIX+h).then(function(r){return r&&typeof r.value==='string'?r.value:null;}).catch(function(){return null;}); }
-function blobCacheSet(h,v){ if(!window.storage)return Promise.resolve(); return window.storage.set(BLOB_PREFIX+h,v).catch(function(){}); }
+function blobCacheGet(h,wid,owner){var c=owner||rpcContext();return Promise.resolve().then(function(){rpcCurrent(c);return window.storage&&window.storage.get(BLOB_PREFIX+c.uid+':'+wid+':'+h);}).then(function(r){rpcCurrent(c);return r&&typeof r.value==='string'?r.value:null;}).catch(function(){return null;});}
+function blobCacheSet(h,v,wid,owner){var c=owner||rpcContext();function current(){rpcCurrent(c);}return Promise.resolve().then(function(){current();return window.storage&&window.storage.set(BLOB_PREFIX+c.uid+':'+wid+':'+h,v,current);}).then(current).catch(function(){});}
 /* 문서에서 그림을 떼어 낸다 → {v:떼어 낸 문서, blobs:[{h,v}]}. 떼어 낼 게 없으면 원문 그대로. 두 번 적용해도 같다(멱등). */
 /* 2.903 — 분리 전 정리: 원본 그림(thumb·emblem, 512자 이상 = 이번에 떼어 낼 값) 옆에 옛 *Ref 가 남아 있으면 그 Ref 를 지운다.
    남기면 떼어 낸 뒤 한 객체에 Ref 가 둘이 되어(schedRefParts 가 거부) 모든 기기에서 빈 그림이 된다. 그런 객체가 있을 때만 다시 직렬화한다(평소 문서는 바이트 그대로). */
@@ -3135,35 +3136,35 @@ function blobEnsure(at,wid,blobs){
 }
 /* 올리기 직전: 일정 행의 그림을 떼어 ps_blob 에 올리고 행에는 참조만 남긴다. 그림은 이 기기 캐시에도 둔다. */
 function blobPrepRows(at,rows){
-  var todo=(rows||[]).filter(function(r){return r&&BLOB_KEYS[r.k]&&typeof r.v==='string'&&!blobOff;});
+  var owner=rpcContext(),todo=(rows||[]).filter(function(r){return r&&BLOB_KEYS[r.k]&&typeof r.v==='string'&&!blobOff;});
   return todo.reduce(function(p,r){ return p.then(function(){
     return schedStrip(r.v).then(function(res){
       if(!res.blobs.length)return;
-      return Promise.all(res.blobs.map(function(b){return blobCacheSet(b.h,b.v);})).then(function(){
-        return blobEnsure(at,r.workspace_id,res.blobs).then(function(ok){ if(ok)r.v=res.v; });
+      return Promise.all(res.blobs.map(function(b){return blobCacheSet(b.h,b.v,r.workspace_id,owner);})).then(function(){
+        rpcCurrent(owner);return blobEnsure(at,r.workspace_id,res.blobs).then(function(ok){rpcCurrent(owner);if(ok)r.v=res.v;});
       });
     });
   }); },Promise.resolve());
 }
 /* 받은 직후: thumbRef 를 그림으로 되돌린다. 못 받은 참조는 그대로 둔다(썸네일만 비고, 다음에 다시 받는다). */
 function schedHydrate(at,wid,raw){
-  var parts=schedRefParts(raw),seen={};parts.forEach(function(p){seen[p.h]=1;});var refs=Object.keys(seen); if(!refs.length)return Promise.resolve(raw);
+  var owner=rpcContext(),parts=schedRefParts(raw),seen={};parts.forEach(function(p){seen[p.h]=1;});var refs=Object.keys(seen); if(!refs.length)return Promise.resolve(raw);
   var map={};
-  return Promise.all(refs.map(function(h){ return blobCacheGet(h).then(function(v){ if(v!=null)map[h]=v; }); })).then(function(){
+  return Promise.all(refs.map(function(h){ return blobCacheGet(h,wid,owner).then(function(v){ if(v!=null)map[h]=v; }); })).then(function(){
     var miss=refs.filter(function(h){return map[h]==null;}); if(!miss.length||!at)return;
     var chunks=[]; for(var i=0;i<miss.length;i+=BLOB_IN)chunks.push(miss.slice(i,i+BLOB_IN));
     return chunks.reduce(function(p,ch){ return p.then(function(){
-      return syncFetch('blob_pull',BASE+'/rest/v1/ps_blob?workspace_id=eq.'+encodeURIComponent(wid)+'&'+blobInFilter(ch)+'&select=h,v',{headers:hj(at)})
+      rpcCurrent(owner);return syncFetch('blob_pull',BASE+'/rest/v1/ps_blob?workspace_id=eq.'+encodeURIComponent(wid)+'&'+blobInFilter(ch)+'&select=h,v',{headers:hj(at)})
         .then(function(r){ if(r.status===404){blobDisable('blob_pull',404);return [];} if(!r.ok)throw syncHttpError('blob_pull',r.status); return r.json(); })
-        .then(function(rows){ return Promise.all((rows||[]).map(function(x){ if(x&&typeof x.v==='string'){ map[x.h]=x.v; return blobCacheSet(x.h,x.v); } })); });
+        .then(function(rows){ return Promise.all((rows||[]).map(function(x){ if(x&&typeof x.v==='string'){rpcCurrent(owner);map[x.h]=x.v; return blobCacheSet(x.h,x.v,wid,owner); } })); });
     }); },Promise.resolve());
   }).then(function(){
-    return schedRestore(raw,parts,map);
+    rpcCurrent(owner);return schedRestore(raw,parts,map);
   });
 }
 /* 2.904 — 서버 이력(ps_kv_history) 원문은 전송 모양(그림이 "emblem":"","emblemRef":"<해시>" 로 빠진 문서)이다.
    되돌리기로 로컬에 쓰기 전에 그림을 되돌린다 — 안 그러면 로고가 빈 채로 보이고 옛 Ref 가 기기 문서에 들어온다.
-   서버에서 못 받으면(오프라인·권한·오류) 이 기기 캐시로만 되돌리고, 그래도 없으면 원문 그대로(예전과 같은 동작). 거부하지 않는다.
+   서버에서 못 받으면 계정·공간별 캐시로 되돌린다. 누락 참조가 남으면 현재 자료를 유지하고 복구를 거부한다.
    BLOB_KEYS 가 아닌 키·참조 없는 문서는 바이트 그대로 돌려준다. */
 function histHydrate(k,raw,wid){
   if(!BLOB_KEYS[k]||typeof raw!=='string')return Promise.resolve(raw);
@@ -3176,7 +3177,7 @@ function histHydrate(k,raw,wid){
     if(typeof out!=='string'||!out||out===raw)return raw;
     try{ JSON.parse(out); }catch(_){ return raw; }   /* 되돌린 문서가 JSON 이 아니면 원문 */
     return out;
-  },function(){ return raw; });
+  },function(){ return raw; }).then(function(out){if(schedRefParts(out).length)throw new Error('복구할 사진을 모두 받지 못해 현재 자료를 유지했어요');return out;});
 }
 /* ══ 2.727 · 보관함 사진 분리(사용자 «갑시다», 백엔드 점검 2026-09-09) ═══════════════════════════════════════
    data:image 든 행이 ps_library 의 절반이었다.
@@ -3199,16 +3200,16 @@ function libBlobStrip(raw){
 function libBlobRefs(raw){ var m={},x; LIB_BLOB_RE_REF.lastIndex=0; while((x=LIB_BLOB_RE_REF.exec(String(raw))))m[x[1]]=1; LIB_BLOB_RE_REF.lastIndex=0; return Object.keys(m); }
 /* 참조 → 그림 맵. 캐시에 없는 것만 서버에서 묶어 받아 캐시에 넣는다(schedHydrate 와 같은 순서) */
 function blobFetchMap(at,wid,refs){
-  var map={};
-  return Promise.all(refs.map(function(h){ return blobCacheGet(h).then(function(v){ if(v!=null)map[h]=v; }); })).then(function(){
+  var owner=rpcContext(),map={};
+  return Promise.all(refs.map(function(h){ return blobCacheGet(h,wid,owner).then(function(v){ if(v!=null)map[h]=v; }); })).then(function(){
     var miss=refs.filter(function(h){return map[h]==null;}); if(!miss.length||!at||blobOff)return;
     var chunks=[]; for(var i=0;i<miss.length;i+=BLOB_IN)chunks.push(miss.slice(i,i+BLOB_IN));
     return chunks.reduce(function(p,ch){ return p.then(function(){
-      return syncFetch('blob_pull',BASE+'/rest/v1/ps_blob?workspace_id=eq.'+encodeURIComponent(wid)+'&'+blobInFilter(ch)+'&select=h,v',{headers:hj(at)})
+      rpcCurrent(owner);return syncFetch('blob_pull',BASE+'/rest/v1/ps_blob?workspace_id=eq.'+encodeURIComponent(wid)+'&'+blobInFilter(ch)+'&select=h,v',{headers:hj(at)})
         .then(function(r){ if(r.status===404){blobDisable('blob_pull',404);return [];} if(!r.ok)throw syncHttpError('blob_pull',r.status); return r.json(); })
-        .then(function(rows){ return Promise.all((rows||[]).map(function(x){ if(x&&typeof x.v==='string'){ map[x.h]=x.v; return blobCacheSet(x.h,x.v); } })); });
+        .then(function(rows){ return Promise.all((rows||[]).map(function(x){ if(x&&typeof x.v==='string'){rpcCurrent(owner);map[x.h]=x.v; return blobCacheSet(x.h,x.v,wid,owner); } })); });
     }); },Promise.resolve());
-  }).then(function(){ return map; });
+  }).then(function(){rpcCurrent(owner);return map;});
 }
 function libBlobHydrate(at,wid,raw){
   var refs=libBlobRefs(raw); if(!refs.length)return Promise.resolve(raw);
@@ -3216,14 +3217,14 @@ function libBlobHydrate(at,wid,raw){
 }
 /* 올리기 직전: 행의 item 안 사진을 떼어 ps_blob 에 올리고 행에는 참조만. 실패·미설치면 원래대로 통째. 로컬 항목(it)은 건드리지 않는다(사본을 만든다). */
 function libBlobPrepRows(at,wid,rows){
-  var todo=(rows||[]).filter(function(r){return r&&r.item&&typeof r.item==='object'&&!blobOff;});
+  var owner=rpcContext(),todo=(rows||[]).filter(function(r){return r&&r.item&&typeof r.item==='object'&&!blobOff;});
   return todo.reduce(function(p,r){ return p.then(function(){
     var raw; try{ raw=JSON.stringify(r.item); }catch(_){ return; }
     if(raw.indexOf('"data:image/')<0)return;
     return libBlobStrip(raw).then(function(res){
       if(!res.blobs.length)return;
-      return Promise.all(res.blobs.map(function(b){return blobCacheSet(b.h,b.v);})).then(function(){
-        return blobEnsure(at,wid,res.blobs).then(function(ok){ if(ok){ try{ r.item=JSON.parse(res.v); }catch(_){} } });
+      return Promise.all(res.blobs.map(function(b){return blobCacheSet(b.h,b.v,wid,owner);})).then(function(){
+        rpcCurrent(owner);return blobEnsure(at,wid,res.blobs).then(function(ok){rpcCurrent(owner);if(ok){ try{ r.item=JSON.parse(res.v); }catch(_){} } });
       });
     });
   }); },Promise.resolve());
@@ -4583,7 +4584,7 @@ function histRestore(k,v){
       try{ syncBaseSet(k,v); }catch(_){}
       return ok!==false;
     });
-  });
+  }).catch(function(e){syncDiagnostic('hist-restore',e);return false;});
 }
 function dataReviewOpen(){
   if(!dataUnlocked()){renderDataLock(false);return;}
@@ -5902,7 +5903,7 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
     var locMap={}, order=[];
     lib.forEach(function(it){ if(it&&it.libId&&!locMap[it.libId]){ locMap[it.libId]=it; order.push(it.libId); } });
     var tombMap={}; tombs.forEach(function(t){ if(t&&t.id){ var a=+t.at||0; if(!tombMap[t.id]||a>tombMap[t.id])tombMap[t.id]=a; } });
-    var push=[], insertOnly={}, pushedOk=0, pullIds=[], delLocal=[], unTomb=[], applied=0, mutated=false;
+    var push=[], conflicts=[], insertOnly={}, pushedOk=0, pullIds=[], delLocal=[], unTomb=[], applied=0, mutated=false;
     /* 3.005 — 옛 자료의 장면별 썸네일 정리(위 «옛 자료의 장면별 썸네일 정리»). 판정보다 먼저 — 정리한 모습으로 지문을 잰다. */
     order.forEach(function(id){
       var it=locMap[id]; if(!libDietHas(it))return;
@@ -5970,7 +5971,7 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
       }
       /* v271부터 썸네일·미디어를 해시에서 제외한다. 편집 시각이 그대로면
          과거 해시 차이는 실제 수정이 아니라 계산 방식 변경이므로 기준만 갱신한다. */
-      if(teamOnly&&s&&rec&&rec.h!==h&&t<=rec.s)rec.h=h;
+      if(teamOnly&&s&&rec&&rec.h!==h&&t<=rec.s&&h.indexOf(':')<0)rec.h=h;
       var mineBackup=priv?!wantShare:false;      /* push 할 때의 private 값 */
       if(!s){
         if(teamOnly&&!priv)return;               /* 서버 마이그레이션 전이면 예전대로 기기에만 */
@@ -5984,6 +5985,7 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
          제보 ac40be30: 옛 판 아이패드가 맥에서 «팀 공유»로 옮긴 자료를 옛 폴더 · 비공개로 되돌렸다(옛 시각으로 올려 맥도 다시 받지 않았다) */
       if(flip&&!(sNew&&srvStamp(s)>(t||now))){ var ft=t||now; queueLibPush(libRow(it,ft,wid,mineBackup),false); m.li[id]={h:h,s:ft}; return; }
       if(dirty&&sNew){ /* 양쪽 변경 — 더 최신 시각이 승 */
+        conflicts.push(libRow(it,t,wid,true));   /* 서버가 이겨도 이 기기 원문은 먼저 비공개 보관 */
         var lt=t||now;
         if(srvStamp(s)>=lt){ if(s.deleted_at&&s.deleted_at>=(s.saved_at||0))delLocal.push(id); else pullIds.push(id); return; }
         queueLibPush(libRow(it,lt,wid,mineBackup),false); m.li[id]={h:h,s:lt}; return;
@@ -6110,7 +6112,12 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
           }); });
       }); },Promise.resolve());
     }
-    return pushAll().then(pullAll).then(function(){
+    function keepConflicts(){
+      if(!conflicts.length)return Promise.resolve();
+      requireLibrarySource('library_conflict_prepare');
+      return libBlobPrepRows(at,wid,conflicts).then(function(){return PSLibraryRecovery.archiveRows(rpc,wid,conflicts,function(){requireLibrarySource('library_conflict_archive');});});
+    }
+    return keepConflicts().then(pushAll).then(pullAll).then(function(){
       requireCurrent('library_commit');
       /* 1.532 — '_teamSharePending' 뒷정리는 사라졌다. 공유 표시는 폴더가 정하므로
          push 성공 여부와 무관하게 위 판정에서 이미 맞춰져 있다. */
@@ -10986,6 +10993,7 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
      updated_by(supabase-updated-by.sql). 읽는 통로만 일정 한 키(ps_sched_history)라
      supabase-history-log.sql 이 전 키 통로(ps_kv_history_list/get, 운영진 전용)를 연다.
      행의 의미: "changed_at 에 changed_by 가 k 를 고쳤고, v 는 그 직전 판". */
+  libraryRecovery:typeof PSLibraryRecovery==='undefined'?null:PSLibraryRecovery.client({capture:rpcContext,current:rpcCurrent,rpc:rpc,session:getSess,workspace:activeWs,unlocked:dataUnlocked,sync:syncNow}),
   history:function(key,limit){
     var wid=activeWs(),wsName=(activeWsObj()||{}).name||'';
     function assertHistoryWid(){

@@ -53,7 +53,7 @@ test('페이지 저장소 이름은 하나에 하나 — boardStore(IndexedDB) �
     assert.doesNotMatch(s,/(?<![\w.$-])store\.(get|set|ready|owner|hasPending|hasFailed)\(/,f+' 에 옛 이름 store. 이 남았다');
     assert.doesNotMatch(s,/\b(const|var|let) store\s*=/,f);
   }
-  assert.match(R('studio/app.html'),/<script src="storage-keys\.js"><\/script>\n<script src="storage\.js"><\/script>/,'셸이 표를 저장소보다 먼저 읽는다');
+  assert.match(R('studio/app.html'),/<script src="storage-keys\.js"><\/script>\n<script src="backend-config\.js"><\/script>\n<script src="storage\.js"><\/script>/,'셸이 표와 환경 경계를 저장소보다 먼저 읽는다');
   assert.match(R('sw.js'),/'\/studio\/storage-keys\.js'/,'오프라인 필수 파일');
   assert.match(storage,/PSStorageKeys/,'«지금 자리를 많이 쓰는 것»이 표의 구실을 보여 준다');
 });

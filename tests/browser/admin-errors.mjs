@@ -4,11 +4,12 @@ import http from 'node:http';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
+import {fixtureBackend} from '../fixtures/backend-config.mjs';
 const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),engine=process.env.PS_BROWSER_ENGINE||'chromium';
 const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results',engine,'admin-errors');fs.mkdirSync(out,{recursive:true});
-const html=fs.readFileSync(path.join(root,'admin.html'),'utf8'),apiOrigin=html.match(/url:"(https:\/\/[^\"]+)"/)[1];
-const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+new URL(req.url,'http://localhost').pathname);if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return;}try{res.writeHead(200,{'Content-Type':({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[path.extname(f)]||'application/octet-stream'});res.end(fs.readFileSync(f));}catch{res.writeHead(404).end();}});
+const apiOrigin='https://synthetic-admin-api.invalid';
+const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+new URL(req.url,'http://localhost').pathname);if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return;}try{const bytes=fs.readFileSync(f);res.writeHead(200,{'Content-Type':({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[path.extname(f)]||'application/octet-stream'});res.end(f.endsWith('.js')?fixtureBackend(bytes,apiOrigin):bytes);}catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
 const uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',created_at=new Date(Date.now()-60000).toISOString();
 const fixtures=[['sync_storage','storage','legacy and IndexedDB values differ'],['sync_storage','storage',"Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing."],['sync_local_changed','storage_source_changed','shared source or owner changed']];
@@ -30,7 +31,9 @@ try{
   }
   return send([]);
  });
- const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/admin.html');await page.locator('[data-admin-tab="errors"]').click();
+ const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/admin.html');
+ assert.deepEqual(await page.evaluate(()=>({environment:PSBackendConfig.environment,url:PS_SYNC.url})),{environment:'synthetic',url:apiOrigin},'actual admin backend is the intercepted synthetic fixture');
+ await page.locator('[data-admin-tab="errors"]').click();
  await page.waitForFunction(()=>document.querySelector('#errSummary')?.textContent.includes('1,251'));
  assert.equal(calls.length,8);assert.match(await page.locator('#errGroups').innerText(),/저장 기준 사본 충돌/);assert.match(await page.locator('#errGroups').innerText(),/기기 저장소 연결 종료/);assert.match(await page.locator('#errGroups').innerText(),/변경된 작업 재확인/);
  assert.equal(await page.locator('#errGroups thead th').count(),10);assert.equal(await page.locator('#errGroups tbody tr').count(),3);assert.equal(await page.locator('#errGroups tbody tr').first().locator('td').count(),10);

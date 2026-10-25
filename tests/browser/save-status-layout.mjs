@@ -6,13 +6,14 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {trackNavigationAborts} from '../fixtures/navigation-abort.mjs';
+import {sourceBackend} from '../fixtures/backend-config.mjs';
 
 // Real shell and status renderer with synthetic state fixtures. Every external
 // request is mocked or blocked. No production data is read or modified.
 const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
 const root=process.env.PS_TEST_REPO||path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const engine=process.env.PS_BROWSER_ENGINE||'chromium';
-const apiOrigin=new URL(fs.readFileSync(path.join(root,'studio/app.html'),'utf8').match(/window\.PS_SYNC=\{url:"([^"]+)"/)[1]).origin;   // route 로 이 테스트가 직접 응답하는 API 출처
+const apiOrigin=new URL(sourceBackend(root).url).origin;   // route 로 이 테스트가 직접 응답하는 API 출처
 const out=process.env.PS_TEST_OUTPUT||'/private/tmp/process-save-status-layout';
 const measureOnly=process.env.PS_LAYOUT_MEASURE_ONLY==='1',baseline=process.env.PS_LAYOUT_BASELINE;
 const frozen=new Map(['studio/app.html','studio/support.css'].map(p=>[path.join(root,p),baseline?execFileSync('git',['show',baseline+':'+p],{cwd:root}):fs.readFileSync(path.join(root,p))]));
