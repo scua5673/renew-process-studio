@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,SHOTS,WT} from '../fixtures/team-app.mjs';
 // 3.031 — 오류 제보 81e77b91 «경기 준비에서 새 미팅은 슬라이드쇼가 되는데, 보관함에서 가져온 자료는 슬라이드쇼가 없다».
 // 가져온 것은 작전판(페이지 10)이었고, 경기 보드는 작전판에 «▶ 슬라이드쇼»를 그리지 않았다.
 // 이제 작전판도: 페이지 = 장(제목 = 페이지 이름 · 장면 그대로)인 보기 전용 미팅으로 띄우고, «나가기»로 경기 준비의 같은 자리로 돌아온다.
@@ -40,7 +40,19 @@ try{
   await sf.waitForFunction(()=>document.querySelector('#matchMeetCard .mmv[data-mmv="Vqa_board"] .mmv-svg svg'),null,{timeout:15000});
   bf=await board();
   await bf.waitForFunction(async()=>{const d=((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.libId==='Vqa_board');return !!(d&&d.matchRef);},null,{timeout:15000});
-  const linked=await item('Vqa_board'),meet0=await meetings();
+  // Linking is a real library edit. Let its normal sync assign editedAt and
+  // acknowledge the link before measuring the separate read-only slideshow.
+  // A pending link previously changed only editedAt during playback and made
+  // the final exact-object assertion compare against an uncommitted baseline.
+  await page.evaluate(()=>{window.__fixtureLinkAck=null;PSSync.syncNow('fixture-match-link-baseline').then(result=>{window.__fixtureLinkAck={result};},error=>{window.__fixtureLinkAck={error:String(error)};});});
+  await page.waitForFunction(()=>window.__fixtureLinkAck!==null,null,{timeout:30000});
+  const linkAck=await page.evaluate(()=>window.__fixtureLinkAck);
+  assert.equal(linkAck.error,undefined,JSON.stringify(linkAck));
+  assert.ok(linkAck.result&&!linkAck.result.error&&!linkAck.result.skip&&!linkAck.result.locked&&!linkAck.result.noauth,'link sync must finish: '+JSON.stringify(linkAck));
+  const linked=await item('Vqa_board'),meet0=await meetings(),linkedDoc=JSON.parse(linked),acknowledged=fx.lib.get(WT+'|Vqa_board');
+  assert.ok(acknowledged?.item,'linked original must be acknowledged by the fixture server');
+  assert.deepEqual(acknowledged.item.matchRef,linkedDoc.matchRef,'server acknowledged the exact link');
+  assert.equal(acknowledged.saved_at,linkedDoc.editedAt||linkedDoc.savedAt,'baseline includes the acknowledged edit timestamp');
   // 1) 작전판에도 «▶ 슬라이드쇼»
   assert.equal(await sf.evaluate(()=>{const b=document.querySelector('#matchMeetCard .mmv-acts [data-mm-show]');return b&&b.textContent.trim();}),'▶ 슬라이드쇼','작전판도 슬라이드쇼 버튼');
   await sf.click('#matchMeetCard .mmv-nav.next');
