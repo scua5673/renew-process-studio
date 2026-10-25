@@ -54,7 +54,7 @@ function videoProducer({width=1280,height=720,caps=['','설명'],reel=false,fit=
   const fixture={Math,canvas:{width,height},opts:{reel},FR:caps.map(cap=>({cap})),NB:caps.length,
     _fit:fit,uvb:[PITCH[0],PITCH[1],PITCH[2]-PITCH[0],PITCH[3]-PITCH[1]],W:1080,H:840,dest,
     plan:caps.map(()=>({set(){},vb:null})),Image:DecodedImage,
-    _exportPitchBox:()=>PITCH.slice(),_t3StadiumHost:()=>null,
+    _exportPitchBox:()=>PITCH.slice(),_t3StadiumHost:()=>null,PSStadiumGround:require('../studio/board-stadium-ground.js'),
     boardImageXML:()=>({w:1080,h:840,xml:'<svg width="1080" height="840"></svg>'}),
     ctx:{save(){},restore(){},measureText:t=>({width:t.length*10}),beginPath(){},
       moveTo:(x,y)=>captionTops.push(y),arcTo(){},closePath(){},fill(){},fillText(){}}};

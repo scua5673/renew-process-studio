@@ -14,13 +14,13 @@ test('3.029 mood is a device option with night (today\'s look) as the default, a
   assert.match(board,/if\(n\.mood!==o\.mood\)\{ try\{ if\(document\.body\.classList\.contains\("bc-tilt3d"\)\)renderTokens\(\); \}catch\(_\)\{\} \}/,'chips are rebuilt so their shadows follow');
   /* stadium picture */
   assert.match(board,/md=TILT_MOOD\[t3\.mood\]\|\|TILT_MOOD\.night,brand=!!t3\.brand,tname=brand\?tiltTeamName\(\):"",tcol=brand\?String\(teamHex\("blue"\)\|\|""\):"",ad=String\(t3\.ad\|\|""\)\.trim\(\)\|\|tname\|\|"PROCESS STUDIO"/);
-  assert.match(board,/const sig=\[wt,L,R,T,B,goals\?sp\.goal:0,turf\?1:0,deco,ad,md\.key,brand\?1:0,tcol(?:,bleed\?1:0)?\]\.join\('\|'\);/,'mood and branding redraw the picture');
+  assert.match(board,/const sig=\[wt,L,R,T,B,goals\?sp\.goal:0,turf\?1:0,deco,ad,md\.key,brand\?1:0,tcol(?:,bleed\?1:0)?(?:,ground\?ground\.key:'')?\]\.join\('\|'\);/,'mood and branding redraw the picture');
   assert.match(board,/fill="'\+md\.ga\+'"\/><rect width="'\+f\(5\*m\)\+'" height="'\+f\(10\*m\)\+'" fill="'\+md\.gb\+'"\/>/,'grass tone');
   assert.match(board,/stop-opacity="'\+md\.vig\+'"\/><\/radialGradient>'/,'outer darkness');
   assert.match(board,/<radialGradient id="psStCone">/);assert.match(board,/<clipPath id="psStPitchClip"><path d="'\+rr\(0\)\+'"\/><\/clipPath>/,'light cones stay on the grass');
   assert.match(board,/if\(md\.cone>0\)\{ o\+='<g clip-path="url\(#psStPitchClip\)" fill="url\(#psStCone\)" fill-opacity="'\+md\.cone\+'">'; \[\[L,T\],\[R,T\],\[R,B\],\[L,B\]\]/);
   assert.match(board,/<g fill="url\(#psStLamp\)" fill-opacity="'\+md\.lamp\+'">'\+lamps\+'<\/g>'/,'roof lamps dim by day');
-  assert.match(board,/\(md\.warm\?'<path d="'\+rr\(dE\)\+'" fill="#ff9a3c" fill-opacity="'\+md\.warm\+'"\/>':''\)\+'<path d="'\+rr\(dE\)\+'" fill="url\(#psStVig\)"\/><\/g>'/,'dusk wash under the vignette');
+  assert.match(board,/\(md\.warm\?'<path d="'\+rr\(dE\)\+'" fill="#ff9a3c" fill-opacity="'\+md\.warm\+'"\/>':''\)\+\(ground\?'':'<path d="'\+rr\(dE\)\+'" fill="url\(#psStVig\)"\/>'\)/,'dusk wash remains; compact turf avoids the dark stadium rim');
   /* stage + screen layer */
   assert.match(board,/html body\.bc-tilt3d\[data-tilt-mood="day"\] #boardStage\{background:#3c4753!important\}/);
   assert.match(board,/html body\.bc-tilt3d\[data-tilt-mood="dusk"\] #boardStage\{background:#241c27!important\}/);
@@ -71,8 +71,8 @@ test('3.029 analysis graphics live on the board (snapshot), under the drawings, 
 
 test('3.029 team branding: the ad text defaults to the team name and the crowd wears the team colour',()=>{
   assert.match(board,/function tiltTeamName\(\)\{ try\{ var n=\(typeof squad!=="undefined"&&squad&&squad\.name&&squad\.name!=="우리 선수단"\)\?squad\.name:"";\n    if\(!n&&typeof matchClock!=="undefined"&&matchClock&&matchClock\.homeName&&matchClock\.homeName!=="우리"\)n=matchClock\.homeName;/);
-  assert.match(board,/var _crowdTiles=\{\};[^\n]*\n  function crowdTile\(teamCol\)\{ var key=String\(teamCol\|\|""\);\n    if\(_crowdTiles\[key\]!=null\)return _crowdTiles\[key\];/);
-  assert.match(board,/if\(\/\^#\[0-9a-f\]\{6\}\$\/i\.test\(key\)\)for\(let i=0;i<6;i\+\+\)shirts\.push\(key\);/,'about a third of the crowd');
+  assert.match(R('studio/board-stadium-ground.js'),/var _crowdTiles=\{\};[\s\S]*?function crowdTile\(teamCol\)\{ var key=String\(teamCol\|\|""\);\n  if\(_crowdTiles\[key\]!=null\)return _crowdTiles\[key\];/);
+  assert.match(R('studio/board-stadium-ground.js'),/if\(\/\^#\[0-9a-f\]\{6\}\$\/i\.test\(key\)\)for\(let i=0;i<6;i\+\+\)shirts\.push\(key\);/,'about a third of the crowd');
   assert.match(board,/const crowd=deco==="full"\?crowdTile\(brand\?tcol:""\):'',ct=S\*\.046;/);
 });
 

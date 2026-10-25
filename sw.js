@@ -4,7 +4,7 @@
 const CACHE = 'process-3.168';
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
-  '/studio/board-practice.js', '/studio/textbook-pack.js', '/studio/textbook-native.js',
+  '/studio/board-practice.js', '/studio/textbook-pack.js', '/studio/textbook-native.js', '/studio/board-stadium-ground.js',
   '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-settings-skin.js', '/studio/board-token-depth.js', '/studio/board-pitch-photo.js', '/studio/board-shortcuts.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-comm-look.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js', '/studio/board-vault-lazy.js', '/studio/board-guest.js', '/studio/board-save-ask.js', '/studio/board-vault-browse.js', '/studio/board-vault-import.js', '/studio/board-quick-export.js', '/studio/board-meet-8.js', '/studio/board-import-safe.js', '/studio/board-meet-look.js', '/studio/board-jersey.js', '/studio/board-edit-view.js', '/studio/board-meet-form.js', '/studio/board-shape-menu.js', '/studio/board-popups.js', '/studio/board-text-polish.js', '/studio/vault-folder-move.js',
   '/studio/process.html',
   '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/pdf-export.js', '/studio/schedule-poster.js', '/studio/review-training.css', '/studio/year-plan.js',
