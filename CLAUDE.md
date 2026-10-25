@@ -2,6 +2,8 @@
 
 - 3.177 — 팀 운영 «설정»은 «팀 기준»(플레이북·선수 기준). 플레이북은 기존 cs_gamemodel_v1·cs_terms_v1를 그대로 읽고 IDB에만 남은 원본을 먼저 복원한다. playbook-data.js는 최신 문서 위에 필드만 고치며 ID·장면·확장 필드를 보존한다. 훈련 연결은 playbook-shell.js에서 보드 libTurn으로 직렬 저장한다. 선수 기준 표현은 player-criteria.js, 저장·평가 ID는 scout 원래 경로. 기존 settings·terms 링크는 숨은 별칭으로 유지한다.
 
+- 3.176 — 보관함 숨김 미리보기 시험의 전역 `libGet` 횟수는 독립 `ps-auth-state` 갱신도 센다. 표시 세 요청이 읽기 한 번으로 합쳐져도 전역 2가 될 수 있으므로 enqueue 주체별 실제 읽기를 확인한다. 숨김 0·진행 중 1·원본 보존은 유지하고 실패 추적을 남긴다.
+
 - 3.175 — 팀 전환 초안 확인(`board-draft.js`)은 재생 복원 **뒤** 새로 예약된 `_boardPreviewTimer`도 취소한다. flush 시작 때만 취소하면 `stopAnim`이 다시 예약한 썸네일이 receipt 뒤 원문을 바꿔 전환을 거부한다. `sameBody`의 전체 원문 비교나 guard 이후 읽기 전용 검증을 완화하지 않는다.
 
 Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규칙 · 함정을 여기에 쌓는다(한두 줄씩, 판 번호와 함께). 운영 절차의 원본은 `docs/OPERATIONS.md`.
@@ -37,6 +39,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 
 ## 판 번호 (실행 파일을 바꾸면 늘)
 - `sw.js` CACHE `process-3.xxx` · `studio/app.html` 의 `PS_BUILD` 와 `?v=` 일곱 곳 · 사용자 화면이 바뀌면 `studio/release-notes.js` 맨 앞 항목. 안 올리면 `scripts/release-guard.mjs` 가 막는다.
+- 3.176 — staging에 공개된 판도 같은 번호로 런타임을 다시 내지 않는다(3.175 공개 뒤 PR #627 보완을 release-guard가 거부). 보완 수정은 새 CACHE·PS_BUILD·일곱 핀으로 판을 올린다.
 - 새 파일은 `git add` 해야 배포 묶음에 들어간다 — `scripts/package-site.mjs` 는 `git ls-files` 로 고른다(3.085 에 빠질 뻔).
 
 ## 작전판(studio/board.html)
