@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.176"></script>
+<script src="autosave-status.js?v=3.177"></script>
 <script src="update-progress.js"></script>
 
 <title>PROCESS STUDIO</title>
@@ -522,7 +522,8 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.176';</script>
+<script src="playbook-data.js"></script><script src="playbook-shell.js"></script>
+<script>window.PS_BUILD='3.177';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1623,7 +1624,7 @@ window.psFailAlert=function(lead,e,stage){
       <!-- 2.954 — 스카우팅을 위 줄 탭으로(사용자 B안 — 후보까지 5단 → 2단). 2.908 의 위 줄 순서가 바뀐다(탭 7개) -->
       <button data-team-key="scouting" data-app="scout" data-team-view="players">스카우팅</button>
       <button data-team-key="idp" data-app="idp" data-idp-squad="1">IDP</button>
-      <button data-team-key="attrs" data-app="scout" data-team-view="attrs" data-tn-grp="setup">설정</button>
+      <button data-team-key="playbook" data-app="playbook" data-tn-grp="setup">팀 기준</button>
     </span>
   </nav>
   <!-- 2.171 — 서브탭은 팀 운영 메뉴 줄에 안 보이게(사용자). 메뉴 줄엔 '기준'만, 게임모델·평가표는 그 아래 페이지 서브헤더 -->
@@ -1641,7 +1642,7 @@ window.psFailAlert=function(lead,e,stage){
     <div class="tms-h"><b>더보기</b><button type="button" data-tb="close" aria-label="닫기">×</button></div>
     <div class="ps-upd-row" data-upd-row hidden><span class="pur-t"><span data-upd-rowtext></span><small data-upd-msg hidden></small></span><button type="button" data-upd="row" data-upd-now>적용</button></div><!-- 2.947 -->
     <div class="tms-g"><i>팀</i><button type="button" data-tb="scouting">스카우팅</button></div><!-- 2.954 — 위 줄 탭이 됐지만 폰 하단은 여섯 칸 그대로라 여기 -->
-    <div class="tms-g"><i>설정</i><button type="button" data-tb="attrs">평가표</button><button type="button" data-tb="playbook">플레이북</button><button type="button" data-tb="settings">게임모델</button><button type="button" data-tb="terms">공용어</button></div><!-- 2.908 — 설정 묶음 -->
+    <div class="tms-g"><i>팀 기준</i><button type="button" data-tb="playbook">플레이북</button><button type="button" data-tb="attrs">선수 기준</button></div><!-- 2.908 — 설정 묶음 -->
     <div class="tms-g"><i>앱</i><button type="button" data-tb-app="board">보드</button><button type="button" data-tb-app="design">보관함</button><button type="button" data-tb-app="idp">내 IDP</button><button type="button" data-tb-app="learning">학습</button><button type="button" data-tb-app="community">커뮤니티</button><button type="button" data-tb-install data-install-door hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v6.5"/><path d="M9.3 11.4 12 14l2.7-2.6"/><path d="M10.5 18.3h3"/></svg><span data-install-label>홈 화면에 추가</span></button></div>
   </div>
   <!-- 2.938 — 앱 하단 메뉴 «더보기» 시트. 모양은 팀 더보기(#teamMoreSheet)와 같다 -->
@@ -1803,11 +1804,11 @@ window.psFailAlert=function(lead,e,stage){
       <button data-team-key="avail" data-app="scout" data-team-view="avail">가용인원</button>
     </span>
     <span class="tn-sub" data-sub-grp="setup">
-      <button data-team-key="attrs" data-app="scout" data-team-view="attrs">평가표</button>
       <button data-team-key="playbook" data-app="playbook">플레이북</button>
-      <button data-team-key="settings" data-app="gamemodel">게임모델</button>
-      <!-- 2.211 — 공용어: 기본 세트 불러오기 + 팀 용어 추가·수정은 terms.html 그대로 -->
-      <button data-team-key="terms" data-app="terms">공용어</button>
+      <button data-team-key="attrs" data-app="scout" data-team-view="attrs">선수 기준</button>
+      <!-- 기존 팀 링크를 유지하는 별칭. 표시되는 갈래는 위의 두 개뿐이다. -->
+      <button hidden data-team-key="settings" data-app="playbook" data-playbook-panel="structure">게임모델</button>
+      <button hidden data-team-key="terms" data-app="playbook" data-playbook-panel="terms">공용어</button>
     </span>
     <!-- 2.480 — 게임모델 안내줄 병합(사용자 "여기도 마찬가지"): iframe 안 .gm-toline 을 접고 셸 서브바 오른쪽으로.
          버튼은 gmToLearn 과 같은 통로(openLearnArea gmhow)를 셸 자신에게 쏜다 -->
@@ -2766,9 +2767,10 @@ window.psFailAlert=function(lead,e,stage){
     function psCoachTeamIdp(){ try{ var r=window.PSPerms&&PSPerms.role&&PSPerms.role(); return r==='staff'||r==='executive'; }catch(_){ return false; } }
     window.__psCoachTeamIdp=psCoachTeamIdp;
     function openTeamButton(b){
-      currentTeamKey=b.dataset.teamKey||'today';
+      currentTeamKey=b.dataset.playbookPanel?'playbook':(b.dataset.teamKey||'today');
       var _idpWasHidden=false; try{ _idpWasHidden=!(fIdp.offsetWidth>0&&fIdp.offsetHeight>0); }catch(_){ _idpWasHidden=true; }   /* 2.777 */
       showApp(b.dataset.app||'scout');
+      if(b.dataset.playbookPanel)PSPlaybookPanel(fPlaybook,b.dataset.playbookPanel,function(){return currentTeamKey==='playbook';});
       if(b.dataset.teamView)sendTeamView(fScout,b);
       if(b.dataset.processMode)sendTeamView(fProcess,b);
       /* 코치가 팀에서 여는 IDP 는 선수단 전체 보기 — 상단 IDP 탭(개인용)과 다른 화면이다 */
@@ -3169,8 +3171,12 @@ window.psFailAlert=function(lead,e,stage){
         },160);
         return;
       }
-      /* 2.576 — 플레이북에서 여는 문: 팀 탭(settings·training) · 보관함 · 보관함 드릴 편집기 */
+      /* 팀 기준 */
       if(d.source==='playbook'){
+        if(e.origin!==location.origin||e.source!==fPlaybook.contentWindow)return;
+        if(d.type==='openTermTools'){currentTeamKey='playbook';showApp('terms');PSPlaybookTermTools(fTerms,psFrameWhenReady);return;}
+        if(d.type==='openModelTools'){currentTeamKey='playbook';showApp('gamemodel');return;}
+        if(d.type==='linkDrill'){PSPlaybookLink(d,e.source,psBoardThen);return;}
         if(d.type==='openTeamKey'){ var _pb=teamKeyBtn(String(d.key||'')); if(_pb)openTeamButton(_pb); return; }
         if(d.type==='openApp'){ currentTeamKey=''; showApp(d.app||'design'); return; }
       }
@@ -3325,10 +3331,9 @@ window.psFailAlert=function(lead,e,stage){
         var _vk={home:'today',match:'match',team:'players',players:'scouting',avail:'avail',attrs:'attrs'}[d.view];
         if(_vk&&currentTeamKey&&_vk!==currentTeamKey&&document.body.dataset.psApp==='scout'){ currentTeamKey=_vk; showApp('scout'); }
       } else if(d.source==='scout' && d.type==='openGameModel'){
-        currentTeamKey='settings';          /* 1.572 — 게임모델은 설정 탭 안의 한 갈래다 */
-        showApp('gamemodel');
+        openTeamButton(teamKeyBtn('playbook'));
       } else if(d.source==='gamemodel' && d.type==='backToTeam'){
-        showApp('scout');
+        openTeamButton(teamKeyBtn('playbook'));
       } else if(d.source==='gamemodel' && d.type==='openTeamView'){
         if(d.view==='positions') currentTeamKey='settings';   /* 1.572 — 설정 탭 유지 */
         showApp('scout');
@@ -8215,14 +8220,14 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="sync-size.js"></script>
 <script src="sync-observability.js"></script>
 <script src="idp-pub-wipe.js"></script>
-<script src="autosave-journal.js?v=3.176"></script>
-<script src="autosave-merge.js?v=3.176"></script>
-<script src="autosave-runtime.js?v=3.176"></script>
-<script src="autosave-recovery.js?v=3.176"></script>
+<script src="autosave-journal.js?v=3.177"></script>
+<script src="autosave-merge.js?v=3.177"></script>
+<script src="autosave-runtime.js?v=3.177"></script>
+<script src="autosave-recovery.js?v=3.177"></script>
 <script src="permissions-filter.js"></script>
-<script src="sync.js?v=3.176"></script>
+<script src="sync.js?v=3.177"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.176">
+<link rel="stylesheet" href="support.css?v=3.177">
 <link rel="stylesheet" href="support-image.css?v=20261023">
 <script src="support-image.js?v=20261023"></script>
 <script src="support.js?v=20261023"></script>

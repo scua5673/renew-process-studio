@@ -8,23 +8,9 @@
 <link rel="stylesheet" href="/vendor/fonts.css?v=2.580"><link rel="stylesheet" href="/vendor/tokens.css?v=3.173">
 <script src="storage.js"></script>
 <script src="perms.js"></script>
+<script src="playbook-data.js"></script>
 <style>
-/* ══ 2.576 · 플레이북 — 팀 운영 줄에서 «훈련 분석» 자리에(사용자 "훈련 분석은 일단 지워주고 플레이북을 그 자리에 만들고 싶어") ══
-   무엇인가: 게임모델(국면 › 세부 국면 › 원칙 · 장면)을 **읽는 화면**. 여기에 «이번 주 이 국면에 몇 분 썼나»(일정)와
-   «이 국면에 붙은 드릴»(보관함)을 나란히 붙인다 — 설계도(게임모델)가 훈련량(일정)과 자료(보관함)로 검증되는 자리.
-   원본은 redesign-mock/process-timeline.html 의 «플레이북». 이 판은 **읽기 전용** — 쓰는 곳은 그대로(게임모델·일정·보관함)이고
-   여기서는 그리로 가는 문만 연다. 새 저장 키 없음.
-   데이터: cs_gamemodel_v1(팀) · process_coach_v1(PSSchedule.readFor(조)) · cs_drill_lib_v1(IDB, window.storage.get) · cs_terms_v1(공용어).
-   ══ 2.577 · 여기서 바로 고친다(사용자 "공용어 신호도 연결해주고 바로 편집이 가능하게 · 다른곳으로 이동안해도 여기서 바로 편집") ══
-   쓰는 것: 원칙(추가·고침·삭제) · 세부 국면 이름 · 팀 정체성 → cs_gamemodel_v1(게임모델 save() 와 같은 길: psSaveShared 있으면 그것, 없으면 localStorage).
-           신호어(새로 만들기 · 기존 용어 연결 · 떼기) → cs_terms_v1. 연결은 용어 쪽 `it.ph=[세부 국면 id…]` 한 칸 — 새 키 없음.
-   권한: PSPerms.canEdit('gamemodel') / ('terms'). 없으면 보기만.
-   ⚠ 게임모델·공용어 iframe 은 늘 떠 있어 낡은 사본으로 덮어쓸 수 있다 — 2.577 에서 둘 다 storage 이벤트로 다시 읽는다.
-   ══ 2.580 · 드릴도 여기서 바로(사용자 "여기서 바로 추가할 수 있게 해줘") ══
-   «보관함에서 붙이기»(있는 드릴에 이 세부 국면을 묶는다) · «떼기» · «＋ 새 드릴 그리기»(작전판 편집기를 국면 프리셀렉트로 열고, 저장·취소 뒤 플레이북으로 돌아온다).
-   쓰는 곳: cs_drill_lib_v1(IDB, 작전판 store.set 과 같은 모양 = JSON 문자열) 의 항목 gmPhases / gmPhaseNames(«국면 › 세부») — 새 키 없음.
-   저장 뒤 cs_lib_rev 를 찍어 작전판이 보관함 목록을 다시 읽게 한다(작전판 2.580 storage 훅).
-   권한: PSPerms.canEdit('board') + 부모 셸의 PSSync.dataUnlocked() (작전판 보관함 잠금과 같은 조건). */
+/* Team criteria: phase workbench over the existing shared game model, terms and library. */
 :root{--bg:#F1F2F4;--panel:#fff;--panel2:#F6F7F9;--line:#E3E6EA;--line2:#D3D7DD;--ink:#14161A;--ink2:#646A73;--ink3:#8A9099;
   --teamc:var(--team-c,#15305a);--teams:color-mix(in srgb,var(--team-c,#15305a) 10%,#fff);
   --c-ao:#1F8A4C;--c-do:#D4403A;--c-dt:#C77D00;--c-at:#C77D00;--c-set:#7C5CC4;--c-ic:#3A6DF0;
@@ -147,12 +133,15 @@ button:focus-visible{outline:2px solid var(--c-act,var(--ps-navy,#14213D));outli
 <body>
 <div class="wrap">
   <div class="hd"><h1>플레이북</h1><span class="idn" id="idn"></span>
-    <span class="acts"><button class="lnk" data-go="settings">게임모델 편집 →</button><button class="lnk" data-go="training">일정 →</button></span></div>
+    <span class="acts"><button class="tc-button" data-tools>장면·내보내기</button></span></div>
+  <details id="pbStructure" class="tc-structure"><summary>국면 구조 편집</summary><div id="pbStructureBody"></div></details>
+  <section id="pbTerms" class="tc-terms-manager" hidden><div class="tc-section-head"><h2>전체 용어 관리</h2><button class="tc-button" data-term-tools>가져오기·내보내기</button><button class="tc-button" data-terms-close>닫기</button></div><label class="tc-field">용어 찾기<input id="pbTermsSearch" type="search" placeholder="함께 쓰는 말 · 뜻"></label><div id="pbTermsList"></div></section>
   <div class="cols">
-    <div class="pn list"><div class="ph">국면 · 세부 국면<small id="wkLabel"></small></div><div class="bd" id="list"></div></div>
+    <div class="pn list"><div class="ph">우리 팀의 게임모델<small id="wkLabel"></small></div><div class="bd" id="list"></div></div>
     <div class="pn dt"><div class="bd" id="detail"></div></div>
   </div>
 </div>
+<dialog id="pbEdit" aria-labelledby="pbEditTitle"><form id="pbEditForm"><h2 id="pbEditTitle"></h2><div id="pbEditFields"></div><p id="pbEditError" role="alert"></p><div class="tc-actions"><button id="pbEditSave" type="submit" class="tc-button primary">저장</button><button id="pbEditCancel" type="button" class="tc-button">취소</button><button id="pbEditDelete" type="button" class="tc-button danger" hidden>원칙 삭제</button></div></form></dialog>
 <script>
 (function(){
   "use strict";
@@ -168,11 +157,6 @@ button:focus-visible{outline:2px solid var(--c-act,var(--ps-navy,#14213D));outli
   var model=null, week=null, lib=[], sel=null;   /* sel = phase id */
   var terms=null;   /* cs_terms_v1 {v,items:[{id,l,g,ko,en,d,ph?}]} */
   /* ── 권한 · 저장 ── */
-  function canGm(){ try{ return !window.PSPerms||PSPerms.canEdit('gamemodel'); }catch(_){ return true; } }
-  function canTm(){ try{ return !window.PSPerms||PSPerms.canEdit('terms'); }catch(_){ return true; } }
-  function writeKey(k,obj){ try{ var raw=JSON.stringify(obj); if(window.psSaveShared)window.psSaveShared(k,raw); else localStorage.setItem(k,raw); }catch(e){ try{ localStorage.setItem(k,JSON.stringify(obj)); }catch(_){} } }
-  function saveModel(){ if(!model)return; writeKey('cs_gamemodel_v1',model); }
-  function saveTerms(){ if(!terms)return; writeKey('cs_terms_v1',terms); }
   function readTerms(){ var o=readJSON('cs_terms_v1'); return (o&&Array.isArray(o.items))?o:{v:1,items:[]}; }
   function tuid(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
   function termsOf(id){ return (terms&&terms.items||[]).filter(function(it){ return it&&Array.isArray(it.ph)&&it.ph.indexOf(id)>=0; }); }
@@ -220,7 +204,7 @@ button:focus-visible{outline:2px solid var(--c-act,var(--ps-navy,#14213D));outli
   function readLib(cb){
     try{
       if(!window.storage||!window.storage.get){ cb([]); return; }
-      window.storage.get('cs_drill_lib_v1').then(function(r){
+      var readOwner=owner(); window.storage.get('cs_drill_lib_v1').then(function(r){ if(readOwner!==owner())return;
         var v=r&&r.value; if(typeof v==='string'){ try{ v=JSON.parse(v); }catch(_){ v=null; } }
         var arr=Array.isArray(v)?v:(v&&Array.isArray(v.items)?v.items:[]);
         libRaw=Array.isArray(v)?arr:null;   /* {items:[…]} 꼴은 되쓰지 않는다(모양을 모른다) */
@@ -230,31 +214,6 @@ button:focus-visible{outline:2px solid var(--c-act,var(--ps-navy,#14213D));outli
   }
   function drillsOf(id){ return lib.filter(function(x){ return x.ph.indexOf(id)>=0; }); }
   /* ── 2.580 · 보관함 드릴을 이 세부 국면에 묶고 푼다 ── */
-  function canLib(){
-    try{ if(window.PSPerms&&!PSPerms.canEdit('board'))return false; }catch(_){}
-    try{ var P=window.parent&&window.parent!==window&&window.parent.PSSync; if(P&&P.dataUnlocked)return P.dataUnlocked()===true; }catch(_){}
-    return true;   /* 셸 밖(단독 페이지)은 권한만 본다 */
-  }
-  function libWrite(){
-    if(!libRaw||!window.storage||!window.storage.set)return Promise.reject(new Error('no lib'));
-    var raw=JSON.stringify(libRaw);
-    return window.storage.set('cs_drill_lib_v1',raw).then(function(){ try{ localStorage.setItem('cs_lib_rev',String(Date.now())); }catch(_){} });
-  }
-  function libItem(libId){ for(var i=0;i<(libRaw||[]).length;i++){ var it=libRaw[i]; if(it&&(it.libId||it.id)===libId)return it; } return null; }
-  function afterLib(msg){ readLib(function(l){ lib=l; render(); }); if(msg)toast(msg); }
-  function attachLib(libId){
-    var hit=curPh(); if(!hit||!canLib())return; var it=libItem(libId); if(!it){ toast('보관함에서 못 찾았어요'); return; }
-    var d=it.drill||it; d.gmPhases=Array.isArray(d.gmPhases)?d.gmPhases:[]; d.gmPhaseNames=Array.isArray(d.gmPhaseNames)?d.gmPhaseNames:[];
-    if(d.gmPhases.indexOf(hit.p.id)<0){ d.gmPhases.push(hit.p.id); d.gmPhaseNames.push((hit.m.name||hit.m.key||'')+' › '+(hit.p.name||'')); }
-    libWrite().then(function(){ afterLib('붙였다 — 보관함 드릴에도 국면이 적힌다'); },function(){ toast('저장 실패'); });
-  }
-  function detachLib(libId){
-    var hit=curPh(); if(!hit||!canLib())return; var it=libItem(libId); if(!it)return;
-    var d=it.drill||it; var gp=Array.isArray(d.gmPhases)?d.gmPhases:[], gn=Array.isArray(d.gmPhaseNames)?d.gmPhaseNames:[];
-    var i=gp.indexOf(hit.p.id); if(i<0)return; gp.splice(i,1); if(gn.length>i)gn.splice(i,1);
-    if(gp.length){ d.gmPhases=gp; d.gmPhaseNames=gn; } else { delete d.gmPhases; delete d.gmPhaseNames; }   /* 작전판과 같은 규칙: 비면 키를 지운다 */
-    libWrite().then(function(){ afterLib('떼었다 — 보관함에는 남는다'); },function(){ toast('저장 실패'); });
-  }
   function openLibPick(){ var hit=curPh(); var box=$('lpick'); if(!box||!hit)return; if(box.style.display!=='none'){ box.style.display='none'; return; }
     var list=lib.filter(function(x){ return x.id&&x.ph.indexOf(hit.p.id)<0; });
     box.innerHTML='<input id="lpickQ" placeholder="검색 — 드릴 이름" style="width:100%;border:0;border-bottom:1px solid var(--line);padding:8px 10px;font:inherit;background:transparent;color:var(--ink);outline:none"><div id="lpickL"></div>';
@@ -264,129 +223,141 @@ button:focus-visible{outline:2px solid var(--c-act,var(--ps-navy,#14213D));outli
     draw(''); box.style.display=''; var q=$('lpickQ'); q.oninput=function(){ draw(q.value); }; q.focus(); }
   function newDrill(){ var hit=curPh(); if(!hit||!canLib())return; try{ parent.postMessage({source:'playbook',type:'openDrillEditor',edit:false,gmPhases:[hit.p.id]},'*'); }catch(_){} }
 
+  var editor=null,editOwner='',saving=false,structureOpen=false,termManager=false,libraryPending={};
+  function owner(){var s=readJSON('ps_sync_session')||{};return JSON.stringify([s.uid||'',localStorage.getItem('ps_active_ws')||'',localStorage.getItem('ps_cache_owner_v1')||'',localStorage.getItem('ps_ws_switch_epoch_v1')||'']);}
+  var currentOwner=owner(),hydratedOwner=null,hydrating=false,loadError='',pendingPanel='';
+  function unlocked(){try{var p=parent!==window?parent.PSSync:null;return !p||p.dataUnlocked()===true;}catch(_){return false;}}
+  function may(section){try{return hydratedOwner===owner()&&unlocked()&&!!window.PSPerms&&PSPerms.canEdit(section);}catch(_){return false;}}
+  function canGm(){return may('gamemodel');}
+  function canTm(){return may('terms');}
+  function canLib(){return may('board');}
+  function strictRead(key){var raw=localStorage.getItem(key);return raw?JSON.parse(raw):null;}
+  async function change(key,scope,op,who){
+    if(who!==owner()||!may(scope))throw new Error('팀 또는 편집 권한이 바뀌었습니다. 다시 열어 주세요.');
+    if(key==='cs_terms_v1'&&op.phase&&(op.type==='add'||op.type==='link'))PSPlaybookData.phase(strictRead('cs_gamemodel_v1')||{},op.phase);
+    var source=strictRead(key),next=key==='cs_terms_v1'?PSPlaybookData.term(source,op):PSPlaybookData.apply(source,op);
+    if(!window.psSaveSharedAsync)throw new Error('저장소를 준비하지 못했습니다. 다시 열어 주세요.');
+    var raw=JSON.stringify(next);
+    try{await window.psSaveSharedAsync(key,raw);}catch(e){if(who===owner()&&localStorage.getItem(key)===raw)e.pending={key:key,raw:raw,owner:who,scope:scope};throw e;}
+    if(who!==owner())throw new Error('팀이 변경되었습니다. 이전 팀의 저장 상태를 확인해 주세요.');
+    return next;
+  }
+  function uid(prefix){return prefix+Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+  async function hydrate(){
+    if(hydrating||!unlocked())return;hydrating=true;var who=owner();
+    try{
+      for(var key of ['cs_gamemodel_v1','cs_terms_v1']){
+        await PSStorage.sharedReady(key);if(who!==owner())throw new Error('팀이 변경되었습니다.');
+        if(localStorage.getItem(key)===null){
+          var row=await window.storage.get(key);if(who!==owner())throw new Error('팀이 변경되었습니다.');
+          if(row&&row.value!=null&&localStorage.getItem(key)===null){
+            var raw=typeof row.value==='string'?row.value:JSON.stringify(row.value),doc=JSON.parse(raw);
+            if(!doc||!Array.isArray(key==='cs_terms_v1'?doc.items:doc.moments))throw new Error('저장된 자료 형식을 확인할 수 없습니다.');
+            localStorage.setItem(key,raw);if(localStorage.getItem(key)!==raw)throw new Error('자료를 불러올 저장 공간이 부족합니다.');
+          }
+        }
+        var checked=strictRead(key);if(checked&&!Array.isArray(key==='cs_terms_v1'?checked.items:checked.moments))throw new Error('저장된 자료 형식을 확인할 수 없습니다.');
+      }
+      if(who===owner()){hydratedOwner=who;loadError='';}
+    }catch(e){if(who===owner())loadError=e.message||'자료를 불러오지 못했습니다.';}
+    finally{hydrating=false;render();if(hydratedOwner===owner()){refreshPlaybook();if(pendingPanel==='terms')openTerms();pendingPanel='';}}
+  }
   function render(){
-    model=readJSON('cs_gamemodel_v1'); week=readWeek(); terms=readTerms();
-    var ms=(model&&Array.isArray(model.moments))?model.moments:[];
-    var idn=$('idn'); var idt=(model&&String(model.identity||'').trim())||'';
-    idn.textContent=idt||(canGm()&&model?'팀 정체성 한 줄 — 눌러서 적는다':'팀 정체성 한 줄 — 게임모델에서 적는다'); idn.className='idn'+(idt?'':' empty')+(canGm()&&model?' ed':'');
-    if(canGm()&&model){ idn.setAttribute('contenteditable','plaintext-only'); idn.setAttribute('title','눌러서 고치기 · Enter 저장'); } else { idn.removeAttribute('contenteditable'); }
-    $('wkLabel').textContent=week.label?('이번 주 '+week.label+' · '+Math.round(week.total)+'분'):'';
-    var list=$('list');
-    if(!ms.length){ list.innerHTML='<div class="empty"><b>게임모델이 아직 없어요</b>플레이북 › 게임모델에서 국면을 세우면 여기에 플레이북이 생깁니다.<br><button class="lnk" data-go="settings" style="margin-top:10px">게임모델 열기 →</button></div>'; $('detail').innerHTML=''; return; }
-    var maxPh=1; Object.keys(week.ph).forEach(function(k){ if(week.ph[k]>maxPh)maxPh=week.ph[k]; });
-    var h='';
-    ms.forEach(function(m){
-      var col=colOf(m), phs=(m.phases||[]).filter(function(p){return p&&p.id;});
-      var mm=Math.round(week.mo[m.key||m.name]||0);
-      h+='<div class="mo"><div class="mo-h"><span class="sw" style="background:'+col+'"></span>'+esc(m.name||m.key)+'<span class="m">'+(mm?mm+'분':'<span style="color:var(--ink3)">0분</span>')+' · 이번 주</span></div>';
-      if(m.main&&String(m.main).trim())h+='<div class="mo-main">'+esc(String(m.main).trim())+'</div>';
-      if(!phs.length)h+='<div class="note" style="padding:6px 10px">세부 국면이 없어요 — 게임모델에서 ＋</div>';
-      phs.forEach(function(p){
-        var pm=Math.round(week.ph[p.id]||0), nP=(p.principles||[]).filter(function(x){return String(pTxt(x)||'').trim();}).length, nD=drillsOf(p.id).length;
-        if(!sel)sel=p.id;
-        h+='<button class="pr" data-ph="'+esc(p.id)+'" aria-pressed="'+(sel===p.id)+'"><span class="t">'+esc(p.name||'')+'<small>원칙 '+nP+' · 드릴 '+nD+(p.snap&&p.snap.thumb?' · 장면':'')+'</small></span><span class="bar"><u style="width:'+Math.round(pm/maxPh*100)+'%;background:'+col+'"></u></span><span class="v'+(pm?'':' z')+'">'+pm+'분</span></button>';
-      });
-      h+='</div>';
-    });
-    list.innerHTML=h;
-    renderDetail();
+    if(currentOwner!==owner()){currentOwner=owner();hydratedOwner=null;loadError='';sel=null;lib=[];libRaw=null;editor=null;structureOpen=false;termManager=false;$('pbTerms').hidden=true;$('pbEdit').close();}
+    if(hydratedOwner!==owner()||!unlocked()){$('pbStructure').hidden=true;$('list').innerHTML='<p class=note>'+esc(loadError||'팀 기준을 불러오는 중…')+'</p>'+(loadError?'<button class=tc-button data-retry>다시 불러오기</button>':'');$('detail').innerHTML='';if(!loadError&&!hydrating&&unlocked())hydrate();return;}
+    if(editor||saving)return;
+    model=readJSON('cs_gamemodel_v1');week=readWeek();terms=readTerms();
+    var ms=model&&Array.isArray(model.moments)?model.moments:[];
+    if(sel&&!ms.some(function(m){return (m.phases||[]).some(function(p){return p.id===sel;});}))sel=null;
+    if(!sel)for(var m of ms){if(m.phases&&m.phases.length){sel=m.phases[0].id;break;}}
+    $('idn').textContent=model&&model.identity||'우리 팀이 함께 쓰는 기준';
+    $('pbStructure').hidden=!canGm();$('pbStructure').open=structureOpen;
+    $('pbStructureBody').innerHTML=structureHTML(ms);
+    $('wkLabel').textContent='';
+    $('list').innerHTML=ms.length?ms.map(function(m){var ps=m.phases||[];return '<section class="mo"><h2 class="mo-h">'+esc(m.name||m.key)+'</h2>'+(m.main?'<p class="mo-main">'+esc(m.main)+'</p>':'')+ps.map(function(p){var n=(p.principles||[]).filter(function(x){return String(pTxt(x)).trim();}).length;return '<button class="pr" data-ph="'+esc(p.id)+'" aria-pressed="'+(sel===p.id)+'"><span class="t">'+esc(p.name)+'<small>원칙 '+n+' · 훈련 '+drillsOf(p.id).length+'</small></span></button>';}).join('')+(!ps.length?'<p class="note">세부 국면이 없습니다.</p>':'')+'</section>';}).join(''):'<div class="empty"><b>첫 국면부터 시작하세요</b>'+(canGm()?'<button class="tc-button primary" data-madd>＋ 국면 만들기</button>':'아직 등록된 국면이 없습니다.')+'</div>';
+    renderDetail();if(termManager)renderTerms($('pbTermsSearch').value);
   }
-  function findPh(id){ var ms=(model&&model.moments)||[]; for(var i=0;i<ms.length;i++){ var phs=ms[i].phases||[]; for(var j=0;j<phs.length;j++){ if(phs[j]&&phs[j].id===id)return {m:ms[i],p:phs[j]}; } } return null; }
+  function findPh(id){try{return PSPlaybookData.phase(model||{},id);}catch(_){return null;}}
+  function curPh(){return findPh(sel);}
+  function structureHTML(ms){return '<div class="tc-structure-actions"><button class="tc-button" data-madd>＋ 국면</button><button class="tc-button" data-identity>팀 정체성 수정</button></div>'+ms.map(function(m,mi){return '<section class="tc-structure-group"><div class="tc-structure-row"><strong>'+esc(m.name)+'</strong><button class="tc-button" data-mrename="'+esc(m.key)+'">이름 수정</button><button class="tc-button" aria-label="'+esc(m.name)+' 위로" data-mmove="'+esc(m.key)+'" data-dir="-1" '+(!mi?'disabled':'')+'>↑</button><button class="tc-button" aria-label="'+esc(m.name)+' 아래로" data-mmove="'+esc(m.key)+'" data-dir="1" '+(mi===ms.length-1?'disabled':'')+'>↓</button></div>'+(m.phases||[]).map(function(p,i){return '<div class="tc-structure-row tc-phase-row"><span>'+esc(p.name)+'</span><button class="tc-button" data-prename="'+esc(p.id)+'">수정</button><button class="tc-button" aria-label="'+esc(p.name)+' 위로" data-pmove="'+esc(p.id)+'" data-dir="-1" '+(!i?'disabled':'')+'>↑</button><button class="tc-button" aria-label="'+esc(p.name)+' 아래로" data-pmove="'+esc(p.id)+'" data-dir="1" '+(i===(m.phases||[]).length-1?'disabled':'')+'>↓</button></div>';}).join('')+'<button class="tc-button" data-phadd="'+esc(m.key)+'">＋ 세부 국면</button></section>';}).join('');}
   function renderDetail(){
-    var box=$('detail'); var hit=sel?findPh(sel):null;
-    if(!hit){ box.innerHTML='<div class="empty"><b>세부 국면을 고르세요</b>왼쪽에서 하나를 누르면 원칙·장면·드릴·이번 주 배정이 여기 옵니다.</div>'; return; }
-    var m=hit.m, p=hit.p, col=colOf(m);
-    var prs=(p.principles||[]).filter(function(x){return String(pTxt(x)||'').trim();});
-    var drs=drillsOf(p.id), uses=(week.uses[p.id]||[]).concat(week.uses['m:'+(m.key||m.name)]&&!week.ph[p.id]?[]:[]);
-    var pm=Math.round(week.ph[p.id]||0);
-    var eg=canGm(), et=canTm();
-    var h='<button class="back" data-back="1">‹ 국면 목록</button>';
-    h+='<div class="dt"><div class="eyebrow" style="color:'+col+'">'+esc(m.name||m.key)+'</div><h2 class="'+(eg?'ed':'')+'" '+(eg?'contenteditable="plaintext-only" data-phname="'+esc(p.id)+'" title="눌러서 이름 고치기 · Enter 저장"':'')+'>'+esc(p.name||'')+'</h2>';
-    /* 원칙 — 줄마다 눌러서 고친다. 인덱스는 **원본 배열** 기준(빈 줄은 안 그리되 자리는 지킨다) */
-    var pAll=(p.principles||[]);
-    h+='<div class="sec" style="margin-top:0"><div class="sec-h">원칙<small>'+prs.length+'</small>'+(eg?'<span class="ro-note">줄을 누르면 고쳐진다 · Enter 저장</span>':'')+'<button class="r" data-go="settings">게임모델 →</button></div>';
-    var rows=[]; pAll.forEach(function(x,idx){ if(!String(pTxt(x)||'').trim())return; var d=pDetail(x); rows.push('<li'+(eg?' class="ed" data-pi="'+idx+'"':'')+'><i>'+(rows.length+1)+'</i><span class="ptx">'+esc(pTxt(x))+(d?'<div class="d">'+esc(d)+'</div>':'')+'</span>'+(eg?'<button class="x" data-pdel="'+idx+'" title="이 원칙 삭제">삭제</button>':'')+'</li>'); });
-    h+=rows.length?'<ol class="prin">'+rows.join('')+'</ol>':'<div class="note">원칙이 아직 없어요 — 선수가 읽을 문장 하나로 시작한다.</div>';
-    if(eg)h+='<button class="add" data-padd="1">＋ 원칙</button>';
-    h+='</div>';
-    /* 신호어 — 공용어에서 이 세부 국면에 붙인 것 */
-    var tms=termsOf(p.id);
-    h+='<div class="sec"><div class="sec-h">신호어<small>'+tms.length+'</small>'+(et?'<span class="ro-note">외침 «영어» · 뜻</span>':'')+'<button class="r" data-go="terms">공용어 →</button></div>';
-    h+=tms.length?'<div class="sig">'+tms.map(function(it){ return '<span class="tm"><b>«'+esc(it.en||it.ko)+'»</b><i>'+esc(it.en?it.ko:(it.d||''))+'</i>'+(et?'<button class="x" data-tdel="'+esc(it.id)+'" title="이 국면에서 떼기">떼기</button>':'')+'</span>'; }).join('')+'</div>':'<div class="note">이 국면에 붙인 신호어가 없어요.'+(et?' 아래에서 새로 만들거나 공용어에서 골라 붙인다.':'')+'</div>';
-    if(et){ h+='<div class="sigform"><input id="sigEn" placeholder="외침 (예: GO)" maxlength="24"><input id="sigKo" placeholder="뜻 (예: 전방 압박 시작)" maxlength="60"><button class="ok" data-tadd="1">＋ 신호어</button></div>';
-      h+='<button class="add" data-tpick="1">기존 공용어에서 붙이기</button><div id="pick" class="pick" style="display:none"></div>'; }
-    h+='</div>';
-    if(p.snap&&p.snap.thumb){ h+='<div class="sec"><div class="sec-h">장면</div><div class="snap">'+PSSafe.svg(p.snap.thumb)+'</div></div>'; }
-    /* 2.580 · 드릴 — 여기서 붙이고 떼고 새로 그린다 */
-    var el=canLib();
-    h+='<div class="sec"><div class="sec-h">드릴<small>'+drs.length+'</small>'+(el?'<span class="ro-note">보관함 드릴을 이 국면에 묶는다</span>':'')+'<button class="r" data-go="design">보관함 →</button></div>';
-    h+=drs.length?'<div class="dr">'+drs.map(function(d){ return '<div class="dri"><button data-lib="'+esc(d.id)+'"><span class="n">'+esc(d.name)+'</span><span class="m">'+(d.minutes?esc(d.minutes)+'분'+(d.sets>1?'×'+d.sets:''):'')+'</span><span class="go">열기 →</span></button>'+(el?'<button class="x" data-ldel="'+esc(d.id)+'" title="이 국면에서 떼기 (보관함에는 남는다)">떼기</button>':'')+'</div>'; }).join('')+'</div>':'<div class="note">이 국면에 붙은 드릴이 없어요'+(el?' — 아래에서 새로 그리거나 보관함에서 골라 붙인다.':' — 훈련 편집기의 «경기 국면»에서 이 세부 국면을 고르면 여기 모입니다.')+'</div>';
-    if(el)h+='<div class="dr-acts"><button class="add" data-lnew="1">＋ 새 드릴 그리기</button><button class="add" data-lpick="1">보관함에서 붙이기</button></div><div id="lpick" class="pick lp" style="display:none"></div>';
-    h+='</div>';
-    h+='<div class="sec"><div class="sec-h">이번 주 배정<small>'+pm+'분</small><button class="r" data-go="training">일정 →</button></div>';
-    h+=uses.length?'<div class="uses">'+uses.map(function(u){ return '<div><span class="d">'+esc(u.d)+'</span><span class="n">'+esc(u.n)+'</span><span class="m">'+u.m+'분</span></div>'; }).join('')+'</div>':'<div class="note">이번 주 세션 중 이 세부 국면을 고른 것이 없어요. 일정에서 주제 › 세부 국면을 체크하면 분이 여기로 옵니다.</div>';
-    h+='</div></div>';
-    box.innerHTML=h;
+    var hit=curPh(),box=$('detail');
+    if(!hit){box.innerHTML='<div class="empty"><b>세부 국면을 선택하세요</b>국면 구조에서 우리 팀의 세부 국면을 추가할 수 있습니다.</div>';return;}
+    var m=hit.m,p=hit.p,eg=canGm(),et=canTm(),el=canLib(),tms=termsOf(p.id),drs=drillsOf(p.id),uses=week.uses[p.id]||[];
+    var rows=(p.principles||[]).map(function(x,i){if(!String(pTxt(x)).trim())return '';return '<li><i>'+String(i+1).padStart(2,'0')+'</i><div class="ptx"><strong>'+esc(pTxt(x))+'</strong>'+(pDetail(x)?'<p class="d">'+esc(pDetail(x))+'</p>':'')+'</div>'+(eg?'<button class="tc-button tc-edit" data-pedit="'+i+'" aria-label="원칙 '+(i+1)+' 수정">수정</button>':'')+'</li>';}).join('');
+    box.innerHTML='<button class="back" data-back>‹ 국면 목록</button><div class="eyebrow">'+esc(m.name||m.key)+'</div><h2>'+esc(p.name)+'</h2>'+(p.trigger?'<p class="note">'+esc(p.trigger)+'</p>':'')+
+      '<section class="sec"><div class="sec-h"><h3>우리의 원칙</h3>'+(eg?'<button class="r" data-padd>＋ 원칙</button>':'')+'</div>'+(rows?'<ol class="prin">'+rows+'</ol>':'<p class="note">우리 팀이 실행할 행동을 한 문장으로 적어보세요.</p>')+'</section>'+
+      '<section class="sec"><div class="sec-h"><h3>함께 쓰는 말</h3><button class="r" data-terms>전체 용어 관리</button></div><div class="sig">'+tms.map(function(t){return '<details class="tc-term"><summary><b>'+esc(t.en||t.ko)+'</b><span>'+esc(t.en?t.ko:t.d)+'</span></summary><p>'+esc(t.d||'추가 설명이 없습니다.')+'</p>'+(et?'<div class="tc-actions"><button class="tc-button" data-tedit="'+esc(t.id)+'">수정</button><button class="tc-button" data-tdel="'+esc(t.id)+'">이 국면에서 떼기</button></div>':'')+'</details>';}).join('')+'</div>'+(!tms.length?'<p class="note">연결된 신호어가 없습니다.</p>':'')+(et?'<div class="tc-actions"><button class="tc-button" data-tnew>＋ 신호어</button><button class="tc-button" data-tpick>기존 용어 연결</button></div><div id="pick" class="pick" style="display:none"></div>':'')+'</section>'+
+      '<section class="sec"><div class="sec-h"><h3>연결된 훈련 <small>'+drs.length+'</small></h3>'+(el?'<button class="r" data-lpick>연결</button>':'')+'</div><div class="dr">'+drs.map(function(d){return '<div class="dri"><button data-lib="'+esc(d.id)+'"><span class="n">'+esc(d.name)+'</span><span class="m">'+esc(d.minutes?d.minutes+'분':'')+'</span><span class="go">열기 →</span></button>'+(el?'<button class="x" data-ldel="'+esc(d.id)+'" aria-label="'+esc(d.name)+' 연결 해제">떼기</button>':'')+'</div>';}).join('')+'</div>'+(!drs.length?'<p class="note">아직 연결된 훈련이 없습니다.</p>':'')+(el?'<div class="dr-acts"><button class="tc-button" data-lnew>＋ 새 훈련 그리기</button></div><div id="lpick" class="pick lp" style="display:none"></div>':'')+'</section>'+
+      (p.snap&&p.snap.thumb?'<details class="tc-usage tc-scene"><summary>연결된 장면 보기</summary><div class="snap">'+(window.PSSafe?PSSafe.svg(p.snap.thumb):'')+'</div><button class="tc-button" data-tools>장면 관리</button></details>':'')+
+      '<details class="tc-usage"><summary>이번 주 사용 내역'+(uses.length?' · '+Math.round(week.ph[p.id]||0)+'분':'')+'</summary>'+(uses.length?'<div class="uses">'+uses.map(function(u){return '<div><span class="d">'+esc(u.d)+'</span><span class="n">'+esc(u.n)+'</span><span class="m">'+u.m+'분</span></div>';}).join('')+'</div>':'<p class="note">이 세부 국면에 연결된 일정이 없습니다. 미연결 훈련은 포함하지 않습니다.</p>')+'<button class="tc-button" data-go="training">일정 보기 →</button></details><div class="tc-bottom"><span>선수를 관찰할 공통 기준</span><button class="tc-button" data-go="attrs">선수 기준 →</button></div>';
   }
-  /* ── 셸로 보내는 문 ── */
-  function go(key){ try{ parent.postMessage({source:'playbook',type:'openTeamKey',key:key},'*'); }catch(_){} }
-  /* ── 편집 동작 ── */
-  function curPh(){ return sel?findPh(sel):null; }
-  function editPrinciple(li){
-    var hit=curPh(); if(!hit||!canGm())return; var idx=+li.getAttribute('data-pi'); var p=hit.p; var cur=pTxt(p.principles[idx]);
-    if(li.classList.contains('ed-on'))return;
-    li.classList.add('ed-on'); var span=li.querySelector('.ptx'); var ta=document.createElement('textarea'); ta.value=cur; span.innerHTML=''; span.appendChild(ta); ta.focus(); ta.setSelectionRange(cur.length,cur.length);
-    var done=false;
-    var commit=function(){ if(done)return; done=true; var v=String(ta.value||'').trim();
-      if(v===cur){ render(); return; }
-      var old=p.principles[idx];
-      if(!v){ p.principles.splice(idx,1); if(!p.principles.length)p.principles=['']; }
-      else if(old&&typeof old==='object')old.t=v; else p.principles[idx]=v;
-      saveModel(); render(); toast(v?'저장됨':'삭제됨'); };
-    ta.addEventListener('keydown',function(ev){ if(ev.isComposing||ev.keyCode===229)return; if(ev.key==='Enter'&&!ev.shiftKey){ ev.preventDefault(); commit(); } if(ev.key==='Escape'){ done=true; render(); } });
-    ta.addEventListener('blur',commit);
+  function go(key){try{parent.postMessage({source:'playbook',type:'openTeamKey',key:key},location.origin);}catch(_){}}
+  function send(type,extra){try{parent.postMessage(Object.assign({source:'playbook',type:type},extra||{}),location.origin);}catch(_){}}
+  function field(name,label,value,multi){return '<label class="tc-field">'+esc(label)+(multi?'<textarea name="'+name+'" rows="3" maxlength="2000">'+esc(value||'')+'</textarea>':'<input name="'+name+'" value="'+esc(value||'')+'" maxlength="180">')+'</label>';}
+  function openEditor(op,title,fields,scope){if(saving)return;if(!may(scope||'gamemodel'))return;editor={op:op,scope:scope||'gamemodel'};$('pbEditDelete').disabled=false;$('pbEditSave').disabled=false;editOwner=owner();$('pbEditTitle').textContent=title;$('pbEditFields').innerHTML=fields;$('pbEditError').textContent='';$('pbEditDelete').hidden=op.type!=='principle.edit';$('pbEdit').showModal();var input=$('pbEditFields').querySelector('input,textarea');if(input)input.focus();}
+  function closeEditor(){if(saving)return;editor=null;$('pbEdit').close();render();}
+  async function saveEditor(remove){
+    if(!editor||saving)return;var draft=editor,op=Object.assign({},editor.op),f=new FormData($('pbEditForm'));
+    for(var pair of f.entries())op[pair[0]]=String(pair[1]).trim();
+    if(remove){if(!confirm('이 원칙을 삭제할까요? 연결된 훈련과 용어는 유지됩니다.'))return;op.type='principle.delete';}
+    saving=true;$('pbEditFields').querySelectorAll('input,textarea').forEach(function(x){x.disabled=true;});$('pbEditSave').disabled=true;$('pbEditDelete').disabled=true;$('pbEditError').textContent='';
+    try{if(editor.pending){var pending=editor.pending;if(pending.owner!==owner()||!may(pending.scope)||localStorage.getItem(pending.key)!==pending.raw)throw new Error('팀 또는 내용이 바뀌었습니다. 닫고 최신 내용을 확인해 주세요.');await psSaveSharedAsync(pending.key,pending.raw);if(pending.owner!==owner())throw new Error('팀이 변경되었습니다.');}else await change(editor.scope==='terms'?'cs_terms_v1':'cs_gamemodel_v1',editor.scope,op,editOwner);saving=false;editor=null;$('pbEdit').close();render();toast('이 기기에 저장됨');}
+    catch(e){if(editor!==draft){toast('이전 팀의 저장 상태를 확인해 주세요.');return;}if(e.pending)editor.pending=e.pending;$('pbEditError').textContent=(editor.pending?'저장을 완료하지 못했습니다. 입력은 유지했습니다. 다시 저장해 주세요. ': '')+(e.message||'저장하지 못했습니다. 내용을 유지했으니 다시 시도해 주세요.');}
+    finally{saving=false;$('pbEditSave').disabled=false;$('pbEditDelete').disabled=!!(editor&&editor.pending);$('pbEditFields').querySelectorAll('input,textarea').forEach(function(x){x.disabled=!!(editor&&editor.pending);});}
   }
-  function addPrinciple(){ var hit=curPh(); if(!hit||!canGm())return; var p=hit.p; p.principles=Array.isArray(p.principles)?p.principles:[];
-    var i=p.principles.length; if(i===1&&!String(pTxt(p.principles[0])||'').trim())i=0; p.principles[i]=''; render();
-    /* 방금 만든 빈 줄은 목록에 안 그려지므로 임시 줄을 붙여 편집기를 연다 */
-    var ol=document.querySelector('#detail .prin'); if(!ol){ var sec=document.querySelector('#detail .sec'); ol=document.createElement('ol'); ol.className='prin'; sec.insertBefore(ol,sec.querySelector('.add')); var nt=sec.querySelector('.note'); if(nt)nt.remove(); }
-    var li=document.createElement('li'); li.className='ed'; li.setAttribute('data-pi',String(i)); li.innerHTML='<i>'+(ol.children.length+1)+'</i><span class="ptx"></span>'; ol.appendChild(li); editPrinciple(li); }
-  function delPrinciple(idx){ var hit=curPh(); if(!hit||!canGm())return; var p=hit.p; p.principles.splice(idx,1); if(!p.principles.length)p.principles=['']; saveModel(); render(); toast('원칙 삭제'); }
-  function renamePhase(el){ var hit=curPh(); if(!hit||!canGm())return; var v=String(el.textContent||'').trim(); if(!v){ render(); return; } if(v!==hit.p.name){ hit.p.name=v; saveModel(); toast('이름 저장'); } render(); }
-  function saveIdentity(el){ if(!model||!canGm())return; var v=String(el.textContent||'').trim(); if(v===String(model.identity||'').trim()){ render(); return; } model.identity=v; saveModel(); render(); toast('정체성 저장'); }
-  function addTerm(){ var hit=curPh(); if(!hit||!canTm())return; var en=String(($('sigEn')||{}).value||'').trim(), ko=String(($('sigKo')||{}).value||'').trim(); if(!en&&!ko){ toast('외침이나 뜻을 적어요'); return; }
-    terms.items=terms.items||[]; terms.items.push({id:tuid(),l:'signal',g:groupOf(hit.m),ko:ko||en,en:en,d:'',ph:[hit.p.id]}); saveTerms(); render(); toast('신호어 추가 — 공용어에도 들어갔다'); }
-  function unlinkTerm(id){ var hit=curPh(); if(!hit||!canTm())return; (terms.items||[]).forEach(function(it){ if(it&&it.id===id&&Array.isArray(it.ph)){ it.ph=it.ph.filter(function(x){return x!==hit.p.id;}); } }); saveTerms(); render(); toast('떼었다 — 공용어에는 남는다'); }
-  function linkTerm(id){ var hit=curPh(); if(!hit||!canTm())return; (terms.items||[]).forEach(function(it){ if(it&&it.id===id){ it.ph=Array.isArray(it.ph)?it.ph:[]; if(it.ph.indexOf(hit.p.id)<0)it.ph.push(hit.p.id); } }); saveTerms(); render(); toast('붙였다'); }
+  async function quick(op,scope){var who=owner();if(saving)return;saving=true;try{await change(scope==='terms'?'cs_terms_v1':'cs_gamemodel_v1',scope||'gamemodel',op,who);toast('이 기기에 저장됨');}catch(e){toast(e.message);}finally{saving=false;render();}}
+  function principleEditor(index){var h=curPh();if(!h)return;var old=index==null?null:(h.p.principles||[])[index];openEditor({type:old==null?'principle.add':'principle.edit',phase:h.p.id,index:index,before:old},old==null?'원칙 추가':'원칙 수정',field('title','우리 팀이 실행할 행동',pTxt(old))+field('detail','어떤 상황에서, 어떻게',pDetail(old),true));}
+  function termEditor(id){var t=id?(terms.items||[]).find(function(x){return x.id===id;}):null,h=curPh();openEditor(t?{type:'edit',id:id,before:{en:t.en,ko:t.ko,d:t.d}}:{type:'add',id:tuid(),phase:h?h.p.id:null,group:h?groupOf(h.m):'상황'},t?'용어 수정':'신호어 추가',field('word','함께 쓰는 말',t?(t.en||t.ko):'')+field('meaning','뜻',t?t.ko:'')+field('detail','언제 쓰는 말인가',t?t.d:'',true),'terms');}
+  function openTerms(){if(hydratedOwner!==owner()){toast('팀 기준을 불러오는 중입니다.');return;}terms=readTerms();termManager=true;$('pbTerms').hidden=false;$('pbTermsSearch').value='';renderTerms('');$('pbTermsSearch').focus();}
+  function renderTerms(q){q=String(q).toLowerCase();$('pbTermsList').innerHTML=(terms.items||[]).filter(function(t){return ((t.en||'')+' '+(t.ko||'')+' '+(t.d||'')).toLowerCase().includes(q);}).map(function(t){return '<div class="tc-term-row"><div><b>'+esc(t.en||t.ko)+'</b><span>'+esc(t.en?t.ko:t.d)+'</span><small>'+((t.ph||[]).length?'국면 '+t.ph.length+'개 연결':'연결된 국면 없음')+'</small></div>'+(canTm()?'<button class="tc-button" data-tedit="'+esc(t.id)+'">수정</button>':'')+'</div>';}).join('')||'<p class="note">표시할 용어가 없습니다.</p>';}
+  function requestLink(libId,remove){var hit=curPh();if(!hit||!canLib())return;var id=uid('link');libraryPending[id]={owner:owner(),at:Date.now()};send('linkDrill',{requestId:id,libId:libId,phase:hit.p.id,remove:remove});toast('연결 저장 중…');setTimeout(function(){if(libraryPending[id]){delete libraryPending[id];toast('저장 확인이 늦어지고 있습니다. 보관함에서 연결 상태를 확인해 주세요.');}},15000);}
+  function attachLib(id){requestLink(id,false);}
+  function detachLib(id){requestLink(id,true);}
+  function linkTerm(id){quick({type:'link',id:id,phase:sel},'terms');}
+  function unlinkTerm(id){quick({type:'unlink',id:id,phase:sel},'terms');}
+  $('pbEditForm').addEventListener('submit',function(e){e.preventDefault();saveEditor(false);});
+  $('pbEditCancel').onclick=closeEditor;$('pbEditDelete').onclick=function(){saveEditor(true);};
+  $('pbEdit').addEventListener('cancel',function(e){e.preventDefault();closeEditor();});
+  $('pbStructure').addEventListener('toggle',function(){structureOpen=this.open;});
+  $('pbTermsSearch').oninput=function(){renderTerms(this.value);};
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    if(b.hasAttribute('data-retry')){loadError='';hydrate();return;}
+    if(b.hasAttribute('data-pedit'))return principleEditor(+b.dataset.pedit);
+    if(b.hasAttribute('data-padd'))return principleEditor(null);
+    if(b.hasAttribute('data-madd'))return openEditor({type:'moment.add',id:uid('m')},'국면 만들기',field('name','국면 이름',''));
+    if(b.hasAttribute('data-identity'))return openEditor({type:'identity',before:model&&model.identity||''},'팀 정체성',field('value','우리 팀을 한 문장으로',model&&model.identity||'',true));
+    if(b.dataset.mrename){var m=(model.moments||[]).find(function(x){return x.key===b.dataset.mrename;});return openEditor({type:'moment.rename',moment:m.key,before:m.name},'국면 이름 수정',field('name','국면 이름',m.name));}
+    if(b.dataset.phadd)return openEditor({type:'phase.add',moment:b.dataset.phadd,id:uid('p')},'세부 국면 추가',field('name','세부 국면 이름',''));
+    if(b.dataset.prename){var h=findPh(b.dataset.prename);return openEditor({type:'phase.rename',phase:h.p.id,before:h.p.name},'세부 국면 이름 수정',field('name','세부 국면 이름',h.p.name));}
+    if(b.dataset.mmove)return quick({type:'moment.move',moment:b.dataset.mmove,dir:+b.dataset.dir});
+    if(b.dataset.pmove)return quick({type:'phase.move',phase:b.dataset.pmove,dir:+b.dataset.dir});
+    if(b.hasAttribute('data-terms'))return openTerms();
+    if(b.hasAttribute('data-terms-close')){$('pbTerms').hidden=true;termManager=false;return;}
+    if(b.hasAttribute('data-tnew'))return termEditor(null);
+    if(b.dataset.tedit)return termEditor(b.dataset.tedit);
+    if(b.dataset.tdel)return unlinkTerm(b.dataset.tdel);
+    if(b.dataset.tlink)return linkTerm(b.dataset.tlink);
+    if(b.hasAttribute('data-tpick'))return openPick();
+    if(b.dataset.ldel)return detachLib(b.dataset.ldel);
+    if(b.dataset.llink)return attachLib(b.dataset.llink);
+    if(b.hasAttribute('data-lpick'))return openLibPick();
+    if(b.hasAttribute('data-lnew'))return newDrill();
+    if(b.hasAttribute('data-tools'))return send('openModelTools');
+    if(b.hasAttribute('data-term-tools'))return send('openTermTools');
+    if(b.dataset.ph){sel=b.dataset.ph;document.body.classList.add('detail');render();return;}
+    if(b.hasAttribute('data-back')){document.body.classList.remove('detail');return;}
+    if(b.dataset.go)return go(b.dataset.go);
+    if(b.dataset.lib)return send('openDrillEditor',{edit:true,libId:b.dataset.lib,readonly:!canLib()});
+  });
   function openPick(){ var hit=curPh(); var box=$('pick'); if(!box||!hit)return; if(box.style.display!=='none'){ box.style.display='none'; return; }
     var have={}; termsOf(hit.p.id).forEach(function(it){ have[it.id]=1; });
     var list=(terms.items||[]).filter(function(it){ return it&&!have[it.id]; });
     box.innerHTML='<input id="pickQ" placeholder="검색 — 외침·뜻" style="width:100%;border:0;border-bottom:1px solid var(--line);padding:8px 10px;font:inherit;background:transparent;color:var(--ink);outline:none"><div id="pickL"></div>';
     var draw=function(q){ q=String(q||'').toLowerCase(); var rows=list.filter(function(it){ return !q||((it.ko||'')+' '+(it.en||'')+' '+(it.d||'')).toLowerCase().indexOf(q)>=0; }).slice(0,60);
-      $('pickL').innerHTML=rows.length?rows.map(function(it){ return '<button data-tlink="'+esc(it.id)+'"><b>«'+esc(it.en||it.ko)+'»</b><span>'+esc(it.en?it.ko:(it.d||''))+(it.l&&it.l!=='signal'?' · '+esc({action:'행동',concept:'구조'}[it.l]||it.l):'')+'</span></button>'; }).join(''):'<div class="none">'+(list.length?'맞는 용어가 없어요':'공용어가 비어 있어요 — «공용어 →» 에서 세트를 불러오거나 위에서 새로 만든다')+'</div>'; };
+      $('pickL').innerHTML=rows.length?rows.map(function(it){ return '<button data-tlink="'+esc(it.id)+'"><b>«'+esc(it.en||it.ko)+'»</b><span>'+esc(it.en?it.ko:(it.d||''))+(it.l&&it.l!=='signal'?' · '+esc({action:'행동',concept:'구조'}[it.l]||it.l):'')+'</span></button>'; }).join(''):'<div class="none">'+(list.length?'맞는 용어가 없어요':'공용어가 비어 있어요 — «전체 용어 관리» 에서 세트를 불러오거나 위에서 새로 만든다')+'</div>'; };
     draw(''); box.style.display=''; var q=$('pickQ'); q.oninput=function(){ draw(q.value); }; q.focus(); }
-  document.addEventListener('keydown',function(e){ var t=e.target; if(!t)return;
-    if(t.id==='sigEn'||t.id==='sigKo'){ if(e.key==='Enter'){ e.preventDefault(); addTerm(); } return; }
-    if(t.hasAttribute&&t.hasAttribute('data-phname')){ if(e.key==='Enter'){ e.preventDefault(); t.blur(); } if(e.key==='Escape'){ render(); } return; }
-    if(t.id==='idn'){ if(e.key==='Enter'){ e.preventDefault(); t.blur(); } if(e.key==='Escape'){ render(); } return; } });
-  document.addEventListener('focusout',function(e){ var t=e.target; if(!t)return; if(t.hasAttribute&&t.hasAttribute('data-phname'))renamePhase(t); else if(t.id==='idn')saveIdentity(t); });
-  document.addEventListener('click',function(e){
-    var li=e.target.closest('li.ed'); if(li&&!e.target.closest('.x')&&!e.target.closest('textarea')){ editPrinciple(li); return; }
-    var pd=e.target.closest('[data-pdel]'); if(pd){ delPrinciple(+pd.getAttribute('data-pdel')); return; }
-    if(e.target.closest('[data-padd]')){ addPrinciple(); return; }
-    if(e.target.closest('[data-tadd]')){ addTerm(); return; }
-    var td=e.target.closest('[data-tdel]'); if(td){ unlinkTerm(td.getAttribute('data-tdel')); return; }
-    var tl=e.target.closest('[data-tlink]'); if(tl){ linkTerm(tl.getAttribute('data-tlink')); return; }
-    if(e.target.closest('[data-tpick]')){ openPick(); return; }
-    var ld=e.target.closest('[data-ldel]'); if(ld){ detachLib(ld.getAttribute('data-ldel')); return; }
-    var ll=e.target.closest('[data-llink]'); if(ll){ attachLib(ll.getAttribute('data-llink')); return; }
-    if(e.target.closest('[data-lpick]')){ openLibPick(); return; }
-    if(e.target.closest('[data-lnew]')){ newDrill(); return; }
-    var b=e.target.closest('[data-ph]'); if(b){ sel=b.getAttribute('data-ph'); document.body.classList.add('detail'); render(); return; }
-    var bk=e.target.closest('[data-back]'); if(bk){ document.body.classList.remove('detail'); return; }
-    var g=e.target.closest('[data-go]'); if(g){ var k=g.getAttribute('data-go'); if(k==='design'){ try{ parent.postMessage({source:'playbook',type:'openApp',app:'design'},'*'); }catch(_){} } else go(k); return; }
-    var dl=e.target.closest('[data-lib]'); if(dl){ try{ parent.postMessage({source:'playbook',type:'openDrillEditor',edit:true,libId:dl.getAttribute('data-lib')},'*'); }catch(_){} return; }
-  });
   /* 게임모델·일정이 바뀌면(다른 프레임에서) 다시 그린다 */
   /* 2.933 — 일정(process_coach_v1)이 바뀔 때마다 **보관함 전체를 IDB 에서 다시 읽고** 다시 그렸다(팀에 따라 수십 MB).
      일정 시트에서 누를 때마다 숨어 있는 이 화면이 그 일을 했다. 이제 ① 보관함은 보관함 신호(cs_lib_rev)일 때만 다시 읽고
@@ -400,34 +371,22 @@ button:focus-visible{outline:2px solid var(--c-act,var(--ps-navy,#14213D));outli
     var flush=function(){ if(!pbStale){stop();return;} if(pbHidden())return; stop(); var k=pbStale; pbStale=''; if(k==='lib')refreshPlaybook(); else pbRenderSoft(); };
     pbPoll=setInterval(flush,1000); window.addEventListener('resize',flush);
   }
+  window.addEventListener('storage',function(e){if(e&&(e.key==='ps_active_ws'||e.key==='ps_sync_session'))render();});
   window.addEventListener('storage',function(e){ if(!e||!e.key||/cs_gamemodel_v1|cs_terms_v1|process_coach_v1|ps_sched_grp|cs_lib_rev/.test(e.key)){ if(document.activeElement&&(document.activeElement.tagName==='TEXTAREA'||document.activeElement.isContentEditable))return;
     var kind=(!e||!e.key||e.key==='cs_lib_rev')?'lib':'render';
     if(pbHidden()){ pbLater(kind); return; }
     if(kind==='lib')refreshPlaybook(); else pbRenderSoft(); } });
   function refreshPlaybook(){ var a=document.activeElement; if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable)){return;} readLib(function(l){ lib=l; var active=document.activeElement; if(active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.isContentEditable))return; render(); }); }
-  window.addEventListener('message',function(e){ var d=e&&e.data||{}; if(d.type==='refresh'||d.type==='setView'){ pbStale=''; refreshPlaybook(); }
+  window.addEventListener('message',function(e){ if(e.origin!==location.origin||e.source!==parent)return; var d=e&&e.data||{};
+    if(d.type==='playbookPanel'){if(d.panel==='terms'){if(hydratedOwner===owner())openTerms();else pendingPanel='terms';}else {structureOpen=true;$('pbStructure').open=true;$('pbStructure').scrollIntoView({block:'start'});}return;}
+    if(d.type==='playbookLinkResult'){var pending=libraryPending[d.requestId];if(!pending)return;delete libraryPending[d.requestId];if(pending.owner!==owner())return;if(d.ok){readLib(function(items){lib=items;render();toast('훈련 연결 저장됨');});}else toast(d.message||'연결을 저장하지 못했습니다.');return;}
+ if(d.type==='refresh'||d.type==='setView'){ pbStale=''; refreshPlaybook(); }
     /* 2.580 · 작전판 편집기에서 돌아옴(저장·취소) — IDB 쓰기가 끝난 뒤 읽도록 한 박자 늦춘다(cs_lib_rev storage 이벤트도 따로 온다) */
     if(d.type==='boardResult'||d.type==='boardCancel'){ setTimeout(refreshPlaybook,350); } });
   document.addEventListener('visibilitychange',function(){ if(!document.hidden){ refreshPlaybook(); } });
   render(); refreshPlaybook();
 })();
 </script>
-<style id="ps-2595-empty">/* 2.595 — 디자인 5단계 · 빈 상태는 문 하나(플레이북): 오른쪽 빈 판은 모델이 없을 때도 «세부 국면을 고르세요» 한 줄(아이콘 · 제목 · 설명). 머리줄의 «게임모델 편집 →» 은 바로 옆 서브탭 «게임모델» 과 같은 문이라 숨김(목록 안의 «게임모델 열기 →» 는 그대로). */
-.hd .acts [data-go="settings"]{display:none!important}
-@media (max-width:700px){ .hd .acts{width:auto!important;margin-left:auto!important} }
-#detail .empty,#list .empty{padding:28px 12px}
-#detail .empty::before,#list .empty::before{content:"";display:block;width:32px;height:32px;margin:0 auto 10px;border-radius:10px;background:var(--panel2,#F4F5F7);border:1px solid var(--line)}
-#detail .empty b,#list .empty b{font-size:var(--t-6,16px);font-weight:800;color:var(--ink,#14161A);margin-bottom:6px}
-</style>
-<script>
-/* 2.595 — 모델이 없을 때 오른쪽 판이 비는 것을 채운다(렌더 함수는 손대지 않고, 비워지면 문장을 넣는다) */
-(function(){
-  var box=document.getElementById('detail'); if(!box)return;
-  var H='<div class="empty ps-empty-nomodel"><b>세부 국면을 고르세요</b>게임모델에서 국면을 세우면 왼쪽 목록에 뜨고, 하나를 누르면 원칙·장면·드릴·이번 주 배정이 여기 옵니다.</div>';
-  function fill(){ if(!box.innerHTML.trim())box.innerHTML=H; }
-  new MutationObserver(function(){ clearTimeout(box.__t); box.__t=setTimeout(fill,0); }).observe(box,{childList:true});
-  fill();
-})();
-</script>
+<link rel="stylesheet" href="team-criteria.css">
 </body>
 </html>
