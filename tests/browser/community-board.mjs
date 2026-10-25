@@ -124,7 +124,7 @@ try{
   assert.deepEqual([L.nums,L.frames>1,L.play],['9',false,false],'장면이 없는 페이지는 판 하나');
 
   // 4) «내 보관함에 담기» — 어느 페이지를 보고 있든 페이지 전부를 작전판으로 담는다
-  await v.click('#commCopyBtn');
+  await c.click('#cdCopy');
   let saved=null;
   for(let i=0;i<60&&!saved;i++){
     saved=await c.evaluate(async()=>{ const r=await window.storage.get('cs_drill_lib_v1'); const lib=r?JSON.parse(r.value):[];
@@ -176,7 +176,7 @@ try{
   assert.deepEqual([L.nums,L.frames,L.play],['6',3,true],'둘째 슬라이드의 판과 장면');
   await page.waitForTimeout(500);await shot('4-viewer-meeting');
   // 3.087 — 사용자 «커뮤니티에 있는 것들 보관함으로 가져오면 페이지 전부 가져오게»: 미팅 자료도 어느 슬라이드를 보고 있든 슬라이드 전부를 담는다
-  await v.click('#commCopyBtn');
+  await c.click('#cdCopy');
   let mSaved=null;
   for(let i=0;i<60&&!mSaved;i++){
     mSaved=await c.evaluate(async id=>{ const r=await window.storage.get('cs_drill_lib_v1'); const lib=r?JSON.parse(r.value):[];

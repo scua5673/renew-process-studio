@@ -97,7 +97,7 @@ try{
   await c.waitForSelector('#cvMask.on');
   v=await view('코치 훈련 A');
   pk=await pick();
-  assert.deepEqual([pk.hidden,pk.head],[false,'가상 코치 글']);
+  assert.deepEqual([pk.hidden,pk.head],[false,'코치 훈련 A']);
   assert.deepEqual(pk.btn.map(b=>b.slice(0,4)),[['1','코치 훈련 A','10분','true'],['2','코치 훈련 B',undefined,'false']],'분이 없는 훈련은 분을 적지 않는다');
   assert.ok(pk.btn.every(b=>b[4]>=36&&b[5]),'훈련 칸이 화면 안 '+JSON.stringify(pk.btn));
   iv=await inside();
@@ -144,7 +144,7 @@ try{
   v=await view('가상 연습 1');
   iv=await inside();
   assert.deepEqual([iv.banner,iv.frames,iv.ro],['프로세스 훈련 세션 — 훈련 3개 · 보기 전용보관함에 담기',3,true]);
-  await v.click('#commCopyBtn');
+  await c.click('#cdCopy');
   const f0=await (await page.waitForSelector('#fBoard')).contentFrame();
   await f0.waitForSelector('#lpOk');
   assert.match(await f0.evaluate(()=>document.querySelector('#lpOv>div').textContent),/PROCESS LETTER · 6호 · 훈련 세션가상 세션 6훈련 3개 · 60분/,'확인 창까지 사본으로 온다');
@@ -183,7 +183,7 @@ try{
   assert.deepEqual(card.rows,[['1','가상 연습 1','15분'],['2','가상 연습 2','20분'],['3','가상 연습 3','25분']]);
   assert.equal(card.foot,'@프로세스 · 레터 3호장면 9');
   assert.deepEqual(card.imgs,['https://process-letter-sessions.netlify.app/packs/thumbs/03-1.svg?v=0a1b2c3d4e'],'그림은 한 장(첫 훈련) — 주소는 번호로 짓는다');
-  assert.ok(Math.abs(card.hero[0]/card.hero[1]-1.5)<.02&&card.hero[0]>=card.r-card.l-2,'그림은 카드 폭 그대로 · 판 비율 3:2 '+JSON.stringify(card.hero));
+  assert.ok(Math.abs(card.hero[0]/card.hero[1]-1.6)<.02&&card.hero[0]>=card.r-card.l-2,'그림은 카드 폭 그대로 · 판 비율 16:10 '+JSON.stringify(card.hero));
   assert.deepEqual(card.pick.map(b=>b.slice(0,2)),[['1','true'],['2','false'],['3','false']],'그림 아래 1·2·3');
   assert.ok(card.pick.every(b=>b[2]>=(phone?40:32)),'1·2·3 단추 크기 '+JSON.stringify(card.pick));
   assert.deepEqual([card.sc,card.on],['훈련 1 · 장면 3',['0']],'고른 훈련의 장면 수 · 목록에서도 표시');
@@ -260,7 +260,7 @@ try{
   await c.waitForSelector('#cvMask.on');
   v=await view('가상 연습 1');
   pk=await pick();
-  assert.deepEqual([pk.hidden,pk.head],[false,'가상 세션 3']);
+  assert.deepEqual([pk.hidden,pk.head],[false,'가상 연습 1']);
   assert.deepEqual(pk.btn.map(b=>b.slice(0,4)),[['1','가상 연습 1','15분','true'],['2','가상 연습 2','20분','false'],['3','가상 연습 3','25분','false']]);
   assert.ok(pk.btn.every(b=>b[4]>=36),'훈련 칸의 높이 '+JSON.stringify(pk.btn));
   if(phone)assert.ok(pk.btn.every(b=>b[5]),'폰에서는 훈련 셋이 한 줄에 다 보인다 '+JSON.stringify(pk.btn));
@@ -277,7 +277,7 @@ try{
   assert.equal(iv.hit,undefined,'팩 안의 그림은 그려지지 않는다');
 
   // 6) «보관함에 담기» → 레터와 같은 길: 보관함으로 가서 확인 창 → 카드 한 장(훈련 셋)
-  await v.click('#commCopyBtn');
+  await c.click('#cdCopy');
   const f=await (await page.waitForSelector('#fBoard')).contentFrame();
   await f.waitForSelector('#lpOk');
   await page.waitForFunction(()=>!sessionStorage.getItem('ps_pack_pending_v1'));

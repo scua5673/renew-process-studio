@@ -5,8 +5,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>커뮤니티 · 훈련 공유</title>
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.054">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.169">
 <script src="storage.js"></script>
+<script src="community-detail.js?v=3.169"></script>
 <script src="community-fifa.js"></script><!-- 3.071 — «FIFA» 칸의 목록 · 카드 --><script src="community-tax.js"></script><!-- 3.075 — 공통 분류 -->
 <style>
   b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
@@ -424,9 +425,10 @@
 <div class="mask" id="mask"><div class="modal" id="modal"></div></div>
 <div class="cv-mask" id="cvMask" aria-hidden="true">
   <div class="cv-shell" role="dialog" aria-modal="true" aria-label="커뮤니티 훈련 상세보기">
-    <div class="cv-head"><b>훈련 상세</b><span>읽기 전용 · 보관함에 담은 뒤 편집할 수 있어요</span><i></i><button class="cv-x" id="cvClose" aria-label="상세보기 닫기">×</button></div>
+    <div class="cv-head"><div class="cd-heading"><small class="cd-kicker">TRAINING LIBRARY</small><b id="cvTitle">훈련 상세</b></div><i></i><button class="cv-x" id="cvClose" aria-label="상세보기 닫기">×</button></div>
     <div class="pr-cvtabs" id="prCvTabs" role="group" aria-label="이 글의 훈련" hidden></div><!-- 2.999 — 프로세스 훈련 세션 · 3.002 — 훈련이 둘 이상인 코치 글: 훈련 고르기 -->
     <iframe class="cv-frame" id="cvFrame" title="커뮤니티 훈련 읽기 전용 보기"></iframe>
+    <div id="cdBody"></div>
   </div>
 </div>
 <div class="up-menu" id="upMenu" role="menu" aria-label="올리기" hidden>
@@ -1068,6 +1070,7 @@ function openPost(p){ cmStage('cmOpen');
 var cvMask=$('cvMask'),cvFrame=$('cvFrame'),cvPost=null,cvOpenSeq=0;
 function closeCommunityViewer(){
   cvOpenSeq++;
+  if(window.PSCommunityDetail)PSCommunityDetail.close(document);
   cvMask.classList.remove('on');cvMask.setAttribute('aria-hidden','true');document.body.style.overflow='';
   try{cvFrame.onload=null;cvFrame.src='about:blank';}catch(_){}cvPost=null;
   try{procCv=null;var _pt=$('prCvTabs');if(_pt){_pt.hidden=true;_pt.innerHTML='';}}catch(_){}   /* 2.999 */
@@ -1086,11 +1089,16 @@ function openCommunityViewer(post,fallback){
   /* 2.579 — 폰에서 안쪽 머리줄을 감추므로 바깥 머리에 글 제목을 올린다(«훈련 상세» 대신) */
   try{ var _hb=cvMask.querySelector('.cv-head b'); if(_hb){ if(!_hb.dataset.d)_hb.dataset.d=_hb.textContent; _hb.textContent=(post&&post.title)||_hb.dataset.d; } }catch(_){}
   cvMask.classList.add('on');cvMask.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
+  if(window.PSCommunityDetail)PSCommunityDetail.mount(document,requestPost,fallback,{
+    copy:function(btn){copyToLib(fallback||requestPost,btn);},
+    report:function(){window.__commAction('report',requestPost.id);toast('신고가 접수됐어요');},
+    remove:function(){if(confirm('이 게시물을 커뮤니티에서 삭제할까요?')){window.__commAction('delete',requestPost.id);closeCommunityViewer();}}
+  });
   cvFrame.onload=function(){
     if(seq!==cvOpenSeq||!requestPost)return;
     var tries=0,send=function(){try{
       if(seq!==cvOpenSeq)return;
-      if(cvFrame.contentWindow&&cvFrame.contentWindow.__boardReady&&typeof cvFrame.contentWindow.__commView==='function'){cvFrame.contentWindow.__commView(requestPost,false);return;}
+      if(cvFrame.contentWindow&&cvFrame.contentWindow.__boardReady&&typeof cvFrame.contentWindow.__commView==='function'){if(window.PSCommunityDetail)PSCommunityDetail.player(cvFrame.contentWindow);cvFrame.contentWindow.__commView(requestPost,false);return;}
     }catch(_){}
       if(++tries<30)setTimeout(send,80);else{closeCommunityViewer();openDetail(fallback);}
     };send();
@@ -2286,5 +2294,6 @@ html body.pr-elm:not(.pr-elm-own) .fab:not(#_):not(#__),html body.pr-elm:not(.pr
 </style>
 <link rel="stylesheet" href="community-fifa.css"><!-- 3.071 — «FIFA» 칸 --><link rel="stylesheet" href="community-tax.css">
 <link rel="stylesheet" href="community-library.css?v=3.162">
+<link rel="stylesheet" href="community-detail.css?v=3.169">
 </body>
 </html>
