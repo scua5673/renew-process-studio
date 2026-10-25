@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>커뮤니티 · 훈련 공유</title>
 <link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.173">
+<script src="backend-config.js"></script>
 <script src="storage.js"></script>
 <script src="community-detail.js?v=3.169"></script>
 <script src="community-fifa.js"></script><!-- 3.071 — «FIFA» 칸의 목록 · 카드 --><script src="community-tax.js"></script><!-- 3.075 — 공통 분류 -->
@@ -497,6 +498,7 @@ function plInRange(v,rk){var n=parseInt(v,10);if(!n)return false;
 
 /* ── 서버·세션 (board.html 패턴) ── */
 function cfg(){
+  try{if(window.PS_SYNC&&window.PS_SYNC.url&&window.PS_SYNC.anonKey)return window.PS_SYNC;}catch(_){}
   try{var p=window.parent;if(p&&p!==window&&p.PS_SYNC&&p.PS_SYNC.url&&p.PS_SYNC.anonKey)return p.PS_SYNC;}catch(_){}
   try{var o=JSON.parse(localStorage.getItem('ps_sync_cfg')||'null');if(o&&o.url&&o.anonKey)return o;}catch(_){}
   return null;

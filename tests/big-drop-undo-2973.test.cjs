@@ -25,7 +25,7 @@ const code=[
   fn('bigDrop'),fn('holdSetList'),fn('holdUnlist'),fn('holdClear'),fn('pushHold'),
   fn('hash'),fn('nSet'),fn('syncIssue'),fn('syncHttpError'),fn('normalizeCoachDocument'),
   fn('scheduleRevOf'),fn('scheduleTokenNew'),fn('scheduleTokenValid'),fn('scheduleCommitRaw'),
-  fn('kvMetaFetch'),fn('kvPullValues'),fn('blobPrepRows'),
+  fn('rpcContext'),fn('rpcCurrent'),fn('dataLockError'),fn('kvMetaFetch'),fn('kvPullValues'),fn('blobPrepRows'),
   section(sync,'function kvPushRows(','/* ── 1.568 안전장치'),
   section(sync,'function kvWrite(','function libLoad('),
   section(sync,'function syncNowCore(','/* 서버 변경을 로컬에 반영한 뒤'),

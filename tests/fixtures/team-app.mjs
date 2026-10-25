@@ -4,6 +4,7 @@ import path from 'node:path';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {trackNavigationAborts,pageErrorEntry} from './navigation-abort.mjs';
+import {fixtureBackend} from './backend-config.mjs';
 
 // Synthetic team app fixture for browser regressions (ported from the 2026-09-27 walkthrough). Synthetic team workspace, loopback
 // Supabase-shaped API, every external request and websocket blocked. Never touches production.
@@ -40,7 +41,7 @@ function schedule(){
 let fx_opts={};
 export async function startFixture(opts={}){
   fx_opts=opts;
-  const db=new Map(),lib=new Map(),blobs=new Map(),writes=[],calls=[];let step='init',kvGate=null;
+  const db=new Map(),lib=new Map(),blobs=new Map(),libraryHistory=new Map(),restoreRequests=new Map(),writes=[],calls=[];let step='init',kvGate=null;
   const ps=players();
   const seed=[
     ['scout_tool_v1',{attrs:[],positions:POS.map(n=>({id:'pos_'+n,name:n,targets:{}})),players:ps,meta:{evalMode:'fifa',grpBase:['A팀','B팀']},_items:{build}}],
@@ -102,6 +103,18 @@ export async function startFixture(opts={}){
         if(fx_opts.emptyLibraryInsert&&ignore)body=[];   // 저장은 됐지만 응답 본문이 빈 경우(응답 유실·프록시)
       }
       else if(req.method==='PATCH'){body=[];for(const r of lib.values())if(r.workspace_id===wid&&(!ids||ids==='eq.'+r.lib_id)){Object.assign(r,req.body,{updated_at:new Date().toISOString()});writes.push({step,t:Date.now(),m:'PATCH',wid,k:'ps_library:'+r.lib_id});body.push(r);}}
+    }else if(url.pathname.includes('/rpc/ps_library_')){
+      // Recovery UI fixture only. Actual grants, RLS and triggers are exercised by the in-memory SQL test.
+      const q=req.body||{},h=libraryHistory.get(String(q.p_id));
+      if(url.pathname.endsWith('ps_library_history_list_v1'))body=[...libraryHistory.values()].filter(r=>r.workspace_id===q.p_wid&&r.owner_id===uid&&r.snapshot?.item).map(({id,lib_id,kind,created_at,snapshot})=>({id,lib_id,kind,created_at,name:snapshot.name}));
+      else if(url.pathname.endsWith('ps_library_history_get_v1'))body=h&&h.workspace_id===q.p_wid&&h.owner_id===uid?[h]:[];
+      else if(url.pathname.endsWith('ps_library_restore_copy_v1')){
+        if(!h||h.workspace_id!==q.p_wid||h.owner_id!==uid)return {status:403,headers,body:'{}'};
+        const lib_id='R'+String(q.p_request_id).replace(/-/g,''),key=q.p_wid+'|'+lib_id,receipt=restoreRequests.get(q.p_request_id);
+        if(receipt){const target=lib.get(key);if(!target||target.owner_id!==uid||!target.private||target.deleted_at)return {status:409,headers,body:'{}'};}
+        else{const stamp=Date.now(),name=(h.snapshot.name||'자료')+' · 복구',item=structuredClone(h.snapshot.item);for(const k of ['_teamSharedAt','_teamSource','_teamOwner','_teamSharePending','matchRef'])delete item[k];Object.assign(item,{libId:lib_id,name,folder:'',pin:false,createdBy:uid,savedAt:stamp,editedAt:stamp});lib.set(key,{...structuredClone(h.snapshot),workspace_id:q.p_wid,lib_id,name,folder:'',pin:false,item,saved_at:stamp,deleted_at:null,owner_id:uid,private:true,updated_at:new Date().toISOString()});restoreRequests.set(q.p_request_id,lib_id);}
+        body={restored:true,lib_id,repeated:!!receipt};
+      }else if(url.pathname.endsWith('ps_library_archive_conflict_v1')){const snap=q.p_snapshot,source=lib.get(q.p_wid+'|'+q.p_lib_id);if(!source||source.owner_id!==uid||snap.owner_id!==uid)return {status:403,headers,body:'{}'};const id=String(libraryHistory.size+1);libraryHistory.set(id,{id,workspace_id:q.p_wid,lib_id:q.p_lib_id,owner_id:uid,snapshot:structuredClone(snap),kind:'conflict',created_at:new Date().toISOString()});body={id,preserved:true};}
     }else if(url.pathname.endsWith('/rpc/ps_get_or_create_role_invite')){body='FIXJOIN1';   /* 3.052 — 선수별 초대 링크 시험(coach-idp-entry) */
     }else if(url.pathname.endsWith('/rpc/ps_join')){body=req.body&&req.body.p_code==='FIXJOIN1'?WT:null;
     }else if(url.pathname.startsWith('/rest/v1/rpc/')){body=url.pathname.includes('report')?{}:[];}
@@ -112,7 +125,7 @@ export async function startFixture(opts={}){
   await new Promise(r=>server.listen(0,'127.0.0.1',r));base='http://127.0.0.1:'+server.address().port;
   /* holdKvPull(wid?,key?) — 지정한 키만 또는 이후 ps_kv GET(wid 를 주면 그 공간 것만)은 돌려준 함수를 부를 때까지 기다린다(쓰기는 그대로) */
   function holdKvPull(wid,key){let release;const promise=new Promise(r=>{release=r;});kvGate={promise,wid,key};return ()=>{kvGate=null;release();};}
-  return {db,lib,blobs,writes,calls,holdKvPull,get base(){return base;},setStep(s){step=s;},close:()=>new Promise(r=>server.close(r))};
+  return {db,lib,blobs,libraryHistory,restoreRequests,writes,calls,holdKvPull,get base(){return base;},setStep(s){step=s;},close:()=>new Promise(r=>server.close(r))};
 }
 
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.woff2':'font/woff2','.json':'application/json','.webmanifest':'application/manifest+json'};
@@ -151,6 +164,7 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
     const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
     if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||fs.statSync(file).isDirectory())return route.fulfill({status:404,body:''});
     let content=fs.readFileSync(file);
+    if(url.pathname==='/studio/backend-config.js'||url.pathname==='/studio/storage.js')content=fixtureBackend(content,base);
     if(url.pathname==='/studio/app.html')content=Buffer.from(content.toString().replace(/(window\.PS_SYNC=\{url:")[^"]+("[,}])/,(_,a,b)=>a+base+b));
     return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream',...(cspValue&&path.extname(file)==='.html'?{headers:{'content-security-policy-report-only':cspValue}}:{})});
   });

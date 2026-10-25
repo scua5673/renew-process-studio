@@ -5,6 +5,7 @@ import net from 'node:net';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {trackNavigationAborts} from '../fixtures/navigation-abort.mjs';
+import {sourceBackend} from '../fixtures/backend-config.mjs';
 
 // Full application with isolated fake accounts and a per-workspace fixture server.
 // No provider login, production database, or user browser profile is contacted.
@@ -12,8 +13,8 @@ const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGH
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),engine=process.env.PS_BROWSER_ENGINE||'chromium';
 const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/oauth-same-document',engine);
 const build=fs.readFileSync(path.join(root,'studio/app.html'),'utf8').match(/window\.PS_BUILD='([^']+)'/)[1];
-const publicKey=fs.readFileSync(path.join(root,'studio/app.html'),'utf8').match(/window\.PS_SYNC=\{url:"[^"]+",anonKey:"([^"]+)"/)[1];
-const configuredAuth=fs.readFileSync(path.join(root,'studio/app.html'),'utf8').match(/window\.PS_SYNC=\{url:"([^"]+)"/)[1],fixtureAuth='https://synthetic-auth.invalid';
+const publicKey=sourceBackend(root).anonKey;
+const configuredAuth=sourceBackend(root).url,fixtureAuth='https://synthetic-auth.invalid';
 fs.mkdirSync(out,{recursive:true});
 const base='https://account-team-fixture.invalid';
 const A='11111111-1111-4111-8111-111111111111',B='22222222-2222-4222-8222-222222222222';

@@ -9,9 +9,9 @@ const H='0123456789abcdef01234567',G='fedcba9876543210fedcba98',segment=s=>JSON.
 const LOGO='data:image/png;base64,'+'Q'.repeat(3000),THUMB='<svg viewBox="0 0 10 10">'+'<circle r="1"/>'.repeat(80)+'</svg>';
 
 function harness({cache=[],server=[],serverFails=false,token='token',onFetch}={}){
-  const blobs=new Map(cache.map(([h,v])=>['ps_blob:'+h,v])),srv=new Map(server),ls=new Map([['ps_cache_owner_v1','owner-1'],['ps_active_ws','team-a']]);
+  const blobs=new Map(cache.map(([h,v])=>['ps_blob:owner-1:team-a:'+h,v])),srv=new Map(server),ls=new Map([['ps_cache_owner_v1','owner-1'],['ps_active_ws','team-a']]);
   const calls=[],reads=[],written=[],diagnostics=[],base=[];let ws='team-a';
-  const c={console,Promise,JSON,Uint8Array,TextEncoder,crypto:crypto.webcrypto,BASE:'https://synthetic.invalid',OWNERKEY:'ps_cache_owner_v1',MATCH_KEY:'cs_team_matches_v1',
+  const c={rpcContext:()=>({uid:'owner-1'}),rpcCurrent:()=>true,console,Promise,JSON,Uint8Array,TextEncoder,crypto:crypto.webcrypto,BASE:'https://synthetic.invalid',OWNERKEY:'ps_cache_owner_v1',MATCH_KEY:'cs_team_matches_v1',
     storage:{async get(k){reads.push(k);return blobs.has(k)?{value:blobs.get(k)}:null;},async set(k,v){blobs.set(k,v);return {value:v};}},
     localStorage:{getItem:k=>ls.has(k)?ls.get(k):null,setItem:(k,v)=>{ls.set(k,String(v));},removeItem:k=>{ls.delete(k);}},
     hj:()=>({}),syncHttpError:(stage,status)=>Error(stage+' '+status),syncDiagnostic:(stage,e)=>{diagnostics.push(stage);},
@@ -47,7 +47,7 @@ for(const [name,run] of Object.entries(RESTORES)){
     assert.equal(doc.meta.color,'#123456');assert.deepEqual(doc.players,[{id:'p1',name:'가상 선수'}]);
     assert.equal(h.written.length,1);assert.equal(h.written[0].v,local);
     assert.equal(h.calls.length,1);assert.match(h.calls[0].url,/workspace_id=eq.team-a/);
-    assert.equal(h.blobs.get('ps_blob:'+H),segment(LOGO),'받은 그림은 캐시에 남는다');
+    assert.equal(h.blobs.get('ps_blob:owner-1:team-a:'+H),segment(LOGO),'받은 그림은 캐시에 남는다');
     if(name==='histRestore'){assert.equal(h.ls.get('ps_push_ok_scout_tool_v1'),h.c.hash(local),'승인 도장은 실제로 쓴 값 기준');assert.deepEqual(h.base,[{k:'scout_tool_v1',v:local}]);}
   });
   test(name+' restores a schedule thumbnail from this device cache without the network',async()=>{
@@ -56,19 +56,18 @@ for(const [name,run] of Object.entries(RESTORES)){
     const cell=JSON.parse(h.ls.get('process_coach_v1')).weeks['0']['1'][0];
     assert.equal(cell.thumb,THUMB);assert.equal(cell.thumbRef,undefined);assert.equal(cell.title,'훈련');assert.equal(h.calls.length,0);
   });
-  test(name+' writes the stripped body unchanged, without error, when the image cannot be found',async()=>{
+  test(name+' preserves the current body and refuses success when an original image cannot be found',async()=>{
     for(const opts of [{},{serverFails:true},{token:null},{token:new Error('auth down')}]){
       const h=harness(opts);
-      assert.equal(await run(h,'scout_tool_v1',scoutRaw),true,JSON.stringify(opts));
-      assert.equal(h.ls.get('scout_tool_v1'),scoutRaw,'원문 그대로 — 예전 동작');assert.equal(h.written.length,1);
+      h.ls.set('scout_tool_v1','current original');assert.equal(await run(h,'scout_tool_v1',scoutRaw),false,JSON.stringify(opts));
+      assert.equal(h.ls.get('scout_tool_v1'),'current original','missing media never replaces the current original');assert.equal(h.written.length,0);
     }
   });
-  test(name+' keeps cached images when the server fetch fails and leaves only the missing reference',async()=>{
+  test(name+' refuses a partial restore even when some original images are cached',async()=>{
     const raw=JSON.stringify({meta:{emblem:'',emblemRef:H},weeks:{'0':{'2':[{thumb:'',thumbRef:G}]}}});
     const h=harness({cache:[[G,segment(THUMB)]],serverFails:true});
-    assert.equal(await run(h,'process_coach_v1',raw),true);
-    const doc=JSON.parse(h.ls.get('process_coach_v1'));
-    assert.equal(doc.weeks['0']['2'][0].thumb,THUMB);assert.equal(doc.meta.emblem,'');assert.equal(doc.meta.emblemRef,H);
+    h.ls.set('process_coach_v1','current schedule');assert.equal(await run(h,'process_coach_v1',raw),false);
+    assert.equal(h.ls.get('process_coach_v1'),'current schedule');assert.equal(h.written.length,0);
     assert.ok(h.diagnostics.includes('hist-hydrate'));
   });
   test(name+' leaves keys outside BLOB_KEYS byte-identical and never looks up images',async()=>{

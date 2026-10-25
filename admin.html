@@ -6,6 +6,7 @@
    여기서 버린다 — 이 탭에서 앱으로 돌아가는 부팅(로그아웃 대체 경로)이 «앞 페이지가 죽음»으로 읽지 않게. */try{sessionStorage.removeItem('ps_boot_alive_v1');}catch(_){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<script src="studio/backend-config.js"></script>
 <title>PROCESS STUDIO · 관리자</title>
 <link rel="stylesheet" href="/vendor/fonts.css?v=2.552b">
 <style>
@@ -620,7 +621,7 @@
 <script src="studio/admin-content.js?v=2.890"></script>
 <script>
 /* ===== 설정 (publishable/anon 키만 — secret 키는 절대 두지 않음) ===== */
-var CFG={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publishable_-Es-apybpr1zPTLzLE2sUw_kV-5ap-k"};
+var CFG=PSBackendConfig.current();
 var BASE=CFG.url.replace(/\/+$/,''), SKEY='ps_sync_session';
 
 /* ===== 인증(앱 sync.js와 동일한 세션 재사용) ===== */

@@ -3,21 +3,29 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import crypto from 'node:crypto';
 import {fileURLToPath,pathToFileURL} from 'node:url';
+import {resolveBackend,configuredModule,backendHeaders} from './backend-config.mjs';
 const runtimeRoots=new Set(['studio','vendor','guide','start','social','assets']);
 export function isRuntimeFile(file){
  if(!file||file.split('/').some(p=>p.startsWith('.')||p==='..'))return false;
  if(file.includes('/'))return runtimeRoots.has(file.split('/')[0]);
  return ['_headers','_redirects'].includes(file)||/\.(?:html|js|css|json|webmanifest|svg|png|jpe?g|webp|avif|gif|ico|woff2?|ttf|otf|mp[34]|webm|wav|pdf|txt|wasm)$/i.test(file)&&!file.startsWith('package');
 }
-export function packageSite(root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..')){
+export function packageSite(root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),env=process.env){
+ const backend=resolveBackend(env),runtimeConfig=configuredModule(backend);
  const files=execFileSync(process.env.PS_GIT_BIN||'git',['ls-files','-z'],{cwd:root,encoding:'utf8'}).split('\0').filter(isRuntimeFile);
  const out=path.join(root,'dist');
  // dist is generated exclusively by this script; stale build files must not ship.
  fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true});
  // Only known runtime paths from the committed repository can reach the site.
  for(const file of files){const target=path.join(out,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(root,file),target);}
+ // Every existing frame already loads storage.js before it can contact an API.
+ // Prefix the same immutable configuration without enlarging its HTML entry.
+ for(const file of ['studio/backend-config.js','studio/storage.js'])if(!files.includes(file))throw Error('Missing backend configuration runtime: '+file);
+ fs.writeFileSync(path.join(out,'studio/backend-config.js'),runtimeConfig);
+ fs.writeFileSync(path.join(out,'studio/storage.js'),runtimeConfig+'\n'+fs.readFileSync(path.join(out,'studio/storage.js'),'utf8'));
+ fs.writeFileSync(path.join(out,'_headers'),backendHeaders(fs.readFileSync(path.join(out,'_headers'),'utf8'),backend));
  for(const required of ['studio/app.html','studio/board.html','studio/board-token-depth.js','sw.js','_headers','_redirects'])if(!files.includes(required))throw Error('Missing deploy file: '+required);
- const manifest=buildManifest(out,files);fs.writeFileSync(path.join(out,MANIFEST),JSON.stringify(manifest));
+ const manifest=buildManifest(out,files);manifest.backend={environment:backend.environment,project:backend.project};fs.writeFileSync(path.join(out,MANIFEST),JSON.stringify(manifest));
  console.log('Packaged '+files.length+' runtime files into dist ('+manifest.release+', manifest '+Object.keys(manifest.files).length+' files).');return files;
 }
 /* 3.051 — 판 목록(피드백 TD-4). 배포되는 파일마다 SHA-256. 서비스워커는 install 때 옛 판 캐시의 같은 주소를 해시로 견주어

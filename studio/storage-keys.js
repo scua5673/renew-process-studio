@@ -64,7 +64,7 @@
     /* ── 3.080 개인 문서 통로(PSSync.learn · gmPersonal — 내 개인 공간의 키 하나씩). 학습 기록은 기기 사본 cs_learn_v1_<uid> 와 합쳐 맞춘다 ── */
     ['cs_learn_sync_v1','pdoc','ls','data','sync.js'],
     /* ── 큰 그림 — ps_blob 로 따로 올린다 ── */
-    ['ps_blob:','blob','ls','data','sync.js',{prefix:1}],
+    ['ps_blob:','blob','idb','cache','sync.js',{prefix:1}], // uid:workspace:hash. Legacy unscoped copies remain preserved but are never read.
     /* ── 이 기기에만 — 서버로 가지 않는다 ── */
     ['ck_sf_open','device','ls','pref','scout.html'],
     ['cs__vaulttest_tmp','device','ls','probe','board.html'],

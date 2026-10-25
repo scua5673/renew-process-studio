@@ -80,7 +80,7 @@ test('a big board shaped like the phone report gives the same text',()=>{
   assert.equal(g.libShareJSON(it),old(it));
 });
 
-test('sync uses the new fingerprint and still builds upload rows from libShareCopy',()=>{
-  assert.match(sync,/\nfunction libHash\(it\)\{return hash\(libShareJSON\(it\)\);\}/);
-  assert.match(sync,/function libRow\(it,t,wid,priv\)\{ var clean=libShareCopy\(it\);/,'올리는 줄(공유본)은 그대로 libShareCopy');
+test('sync fingerprints media separately and preserves private upload originals',()=>{
+  assert.match(sync,/function libHash\(it\)\{return hash\(libShareJSON\(it\)\)\+.*PSLibraryRecovery\.mediaHash\(it\)/);
+  assert.match(sync,/function libRow\(it,t,wid,priv\)\{ var clean=priv\?PSLibraryRecovery\.privateCopy\(it\):libShareCopy\(it\);/);
 });
