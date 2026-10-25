@@ -2,6 +2,7 @@
 
 - 3.178 — 운동장 사진의 영상 export는 `PSPitchPhoto.ready`로 실제 로컬 읽기·렌더를 마친 뒤 SVG를 복제한다. `videoBox`는 실제 사진 배치 안쪽의 중앙 16:9 crop(원본 변경 없음). `board-tweaks`의 `_export169` 감싸개도 사진 경로를 원래 함수로 넘겨야 한다. 합성 4:3·느린 IDB·자체 테두리 보존을 실제 인코딩 영상으로 검사한다.
 - 3.178 — CI Linux WebKit은 `MediaRecorder`가 없고 기존 WebCodecs 안전 차단도 적용돼 실제 영상 미지원으로 끝날 수 있다. 미지원 안내·저장0·guard복원과 실제 사진 ready/SVG/canvas 검사를 명시적으로 분리한다. 녹화 가능한 환경의 실제 파일·프레임·픽셀 검사는 유지하며, 미지원 검사를 실제 영상 통과로 세지 않는다.
+- 3.178 — 합성 일정 서버(Node UTC)와 브라우저(Asia/Seoul)는 월요일 경계의 주차가 다를 수 있다. 정상 날짜 정규화 뒤 `weeks[0]`은 다른 훈련이다. 대용량 일정 검사는 훈련 slot의 유일성과 원래 절대날짜로 같은 자료를 찾고, 64/65개 이미지 원문·리뷰·미전송 복구 단정을 유지한다.
 
 - 3.177 — 팀 운영 «설정»은 «팀 기준»(플레이북·선수 기준). 플레이북은 기존 cs_gamemodel_v1·cs_terms_v1를 그대로 읽고 IDB에만 남은 원본을 먼저 복원한다. playbook-data.js는 최신 문서 위에 필드만 고치며 ID·장면·확장 필드를 보존한다. 훈련 연결은 playbook-shell.js에서 보드 libTurn으로 직렬 저장한다. 선수 기준 표현은 player-criteria.js, 저장·평가 ID는 scout 원래 경로. 기존 settings·terms 링크는 숨은 별칭으로 유지한다.
 
