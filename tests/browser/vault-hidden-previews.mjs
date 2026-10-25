@@ -15,7 +15,11 @@ async function hiddenReadLifecycle(f){return f.evaluate(async()=>{
  async function reopen(name){fr.style.display=display;await wait(()=>!kept(name));await _libTurnTail;}
  try{
   // A read queued while visible must be reconsidered when its turn actually starts.
-  let entered=false;libTurn(()=>new Promise(r=>{release=r;entered=true;}));await wait(()=>entered);
+  // A visible startup read can still be ahead of this probe in libTurn. Count
+  // only after the barrier is entered, rather than attributing setup work to
+  // the subsequent hidden render. Seed that case so it is exercised locally.
+  libTurn(()=>libGet());
+  let entered=false;libTurn(()=>new Promise(r=>{release=r;entered=true;}));await wait(()=>entered);reads=0;
   mark('queued');const queued=renderDrillFiles();fr.style.display='none';release();await queued;
   const q={hidden:fr.getClientRects().length===0,reads,kept:kept('queued')};await reopen('queued');q.reopenReads=reads;
   // A completed disk read must not replace the DOM after navigation has hidden its frame.
@@ -23,7 +27,7 @@ async function hiddenReadLifecycle(f){return f.evaluate(async()=>{
   fr.style.display='none';hold=null;release();await pending;
   const late={hidden:fr.getClientRects().length===0,reads,kept:kept('inflight')};await reopen('inflight');late.reopenReads=reads;
   // The same queued path still renders when visible, with all three callers sharing one read.
-  reads=0;entered=false;libTurn(()=>new Promise(r=>{release=r;entered=true;}));await wait(()=>entered);
+  entered=false;libTurn(()=>new Promise(r=>{release=r;entered=true;}));await wait(()=>entered);reads=0;
   mark('visible');const visible=Promise.all([renderDrillFiles(),renderDrillFiles(),renderDrillFiles()]);release();await visible;
   return {queued:q,inflight:late,visible:{reads,rendered:!kept('visible'),items:box.querySelectorAll('.vx-items .vcard').length}};
  }finally{libGet=originalGet;fr.style.display=display;}
