@@ -57,6 +57,6 @@ test('폰: 더보기 두 시트 맨 위에 같은 줄 · 더보기 버튼 점',(
   const row='<div class="ps-upd-row" data-upd-row hidden>';
   const app=A.indexOf('<div class="app-more" id="appMoreSheet"'),team=A.indexOf('<div class="team-more" id="teamMoreSheet"');
   assert.ok(A.indexOf(row,app)>app&&A.indexOf(row,app)<A.indexOf('data-am-row="board"',app),'앱 더보기: 보드 줄보다 위');
-  assert.ok(A.indexOf(row,team)>team&&A.indexOf(row,team)<A.indexOf('<i>설정</i>',team),'팀 더보기: 설정 줄보다 위');
+  assert.ok(A.indexOf(row,team)>team&&A.indexOf(row,team)<A.indexOf('<i>팀 기준</i>',team),'팀 더보기: 팀 기준 줄보다 위');
   assert.match(A,/body\.ps-upd-dot #psMoreBtn \.ps-updot,body\.ps-upd-dot #teamBottom \[data-tb="more"\] \.ps-updot\{display:block/);
 });

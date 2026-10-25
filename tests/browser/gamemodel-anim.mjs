@@ -12,7 +12,9 @@ const hidden=sel=>`(()=>{const e=document.querySelector('${sel}');if(!e)return t
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
   await wait(3000);
-  await page.evaluate(()=>document.querySelector('#teamSub [data-team-key="settings"]').click());await wait(3500);
+  await page.evaluate(()=>document.querySelector('#teamSub [data-team-key="settings"]').click());await wait(500);
+  const pb=await (await page.waitForSelector('#fPlaybook')).contentFrame();
+  await pb.locator('[data-tools]').first().click();await wait(3000);
   let gm=await gmFrame(page);await gm.waitForSelector('.attachbtn',{timeout:20000});
   await gm.evaluate(()=>[...document.querySelectorAll('.attachbtn')].find(b=>b.textContent.includes('작전판 첨부')).click());await wait(2500);
   let f=await boardFrame(page);
