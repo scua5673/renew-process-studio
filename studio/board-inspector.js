@@ -27,9 +27,9 @@
   function css() {
     var font = 'Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif';
     var out = [
-      C + '{position:fixed!important;right:14px!important;top:var(--ps-insp-top,76px)!important;bottom:auto!important;width:288px!important;min-width:0!important;max-width:calc(100vw - 28px)!important;max-height:min(62vh,calc(100vh - var(--dock-h,72px) - var(--ps-insp-top,76px) - 36px))!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;align-content:flex-start!important;justify-content:flex-start!important;gap:6px!important;padding:14px!important;margin:0!important;border-radius:20px!important;z-index:250!important;transform:none!important;scrollbar-width:thin;font-family:' + font + '!important;color:var(--in-ink)!important;background:var(--in-bg)!important;border:1px solid var(--in-border)!important;box-shadow:var(--in-shadow)!important;-webkit-backdrop-filter:blur(20px) saturate(1.5)!important;backdrop-filter:blur(20px) saturate(1.5)!important}',
+      C + '{position:fixed!important;right:14px!important;top:var(--ps-insp-top,76px)!important;bottom:auto!important;width:288px!important;min-width:0!important;max-width:calc(100vw - 28px)!important;max-height:var(--ps-insp-drag-height,min(62vh,calc(100vh - var(--dock-h,72px) - var(--ps-insp-top,76px) - 36px)))!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;align-content:flex-start!important;justify-content:flex-start!important;gap:6px!important;padding:14px!important;margin:0!important;border-radius:20px!important;z-index:250!important;transform:none!important;scrollbar-width:thin;font-family:' + font + '!important;color:var(--in-ink)!important;background:var(--in-bg)!important;border:1px solid var(--in-border)!important;box-shadow:var(--in-shadow)!important;-webkit-backdrop-filter:blur(20px) saturate(1.5)!important;backdrop-filter:blur(20px) saturate(1.5)!important}',
       // 3.083 — 넓은 데스크톱(마우스)은 62% 상한 없이 도크 위까지(아이패드는 62% 그대로 — 색 고르기 창 자리)
-      '@media (min-width:1200px) and (pointer:fine){' + C + '{max-height:calc(100vh - var(--dock-h,72px) - var(--ps-insp-top,76px) - 36px)!important}}',
+      '@media (min-width:1200px) and (pointer:fine){' + C + '{max-height:var(--ps-insp-drag-height,calc(100vh - var(--dock-h,72px) - var(--ps-insp-top,76px) - 36px))!important}}',
       C + '::before,' + C + '::after{display:none!important}',
       C + '>*{order:13!important;flex:0 0 auto!important;margin:0!important}',
       // 머리
@@ -135,7 +135,11 @@
         if (tb) { var tr = tb.getBoundingClientRect(); if (tr.height) top = Math.round(tr.bottom + 12); }
         // 보드는 토큰 옆 패널 자리를 인라인 !important 로 찍는다 — 같은 방식으로 덮어쓴다(이미 맞으면 쓰지 않는다)
         var cs = win.getComputedStyle(ctl), L0 = parseFloat(cs.left) || 0;
-        var dx = (win.innerWidth - 14 - r.width) - r.left;
+        var moved = win.__psPlayerPanelDrag && win.__psPlayerPanelDrag.position(ctl);
+        var sx = moved ? moved.scaleX || 1 : 1;
+        var sy = moved ? moved.scaleY || 1 : 1;
+        var dx = ((moved ? moved.left : win.innerWidth - 14 - r.width) - r.left) / sx;
+        if (moved) top = (parseFloat(cs.top) || 0) + (moved.top - r.top) / sy;
         if (Math.abs(dx) > 1.5 || ctl.style.getPropertyPriority('left') !== 'important') { ctl.style.setProperty('left', Math.round(L0 + dx) + 'px', 'important'); ctl.style.setProperty('right', 'auto', 'important'); }
         // 3.083 — 높이는 CSS 변수로(위쪽 막대 아래 — 보관함 편집에서는 편집 막대만큼 내려간다). 인라인 top 은 2.607 감시자가 바로 지워서
         //         둘이 끝없이 주고받았다(보관함 편집에서 패널이 막대를 덮고 페이지가 쉬지 않았다)
@@ -147,7 +151,7 @@
     }
     win.addEventListener('resize', function () { win.setTimeout(place, 50); });
     var userClosed = false, opening = false;
-    hd.querySelector('.ps-in-x').addEventListener('click', function (e) { e.stopPropagation(); userClosed = true; try { win.__selPanelOpen(false); } catch (_) {} win.setTimeout(paint, 0); });
+    hd.querySelector('.ps-in-x').addEventListener('click', function (e) { e.stopPropagation(); userClosed = true; try { win.__selPanelOpen(false); } catch (_) {} ctl.style.display = 'none'; win.setTimeout(paint, 0); });
     foot.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-foot]'); if (!b) return; e.stopPropagation();
       var p = selPlayer(); if (!p) return;

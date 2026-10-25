@@ -36,6 +36,8 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 새 파일은 `git add` 해야 배포 묶음에 들어간다 — `scripts/package-site.mjs` 는 `git ls-files` 로 고른다(3.085 에 빠질 뻔).
 
 ## 작전판(studio/board.html)
+- 3.175 — 페이지 이름·순서와 보드 편집은 `board-page-history.js`의 같은 50개 undo/redo 기록을 쓴다. 페이지 이동은 `PSBoardPageHistory.keep()`일 때만 기록을 유지한다. 패턴북·미팅·첨부·훈련 편집·새 문서의 기존 `clearHistory` 경계를 없애면 다른 페이지에 옛 판이 올라간다. 식별자는 WeakMap/임시 문맥에만 두고 저장본에 넣지 않는다.
+- 3.175 — 선수 정보창 이동은 `board-player-panel-drag.js` → inspector의 `position()` hook으로만 배치한다. 원래 `place()`와 별개로 left/top을 감시해 덮으면 서로 되돌리며 계속 그린다. 초기 위치는 유지하고, 이동 좌표는 메모리에만 둔다.
 - **크기 예산 2,560,000 바이트**(시험이 막는다). 3.137 기준 남은 몫 40 바이트(3.137 는 보관함 저장의 대표 장면 조건을 줄여 33 바이트를 만들고 board-save-ask.js <script> 한 줄 · 3.114 · 3.115 · 3.123 · 3.128 은 <script> 한 줄씩 · 3.132 은 경기 미팅 바탕에 `,window.__meetLook` · 3.133 은 경기 미팅 `tags:p.tags||[]` · 기본 장 `points:t.points||[]` · 3.105 · 3.112 · 3.113 · 3.115 에 옛 주석의 실측 숫자를 줄여 자리를 만들었다 — 시험이 잘라 쓰는 주석은 남긴다) — 새 기능은 `studio/board-*.js` UMD 모듈로 만들고 `<script>` 한 줄 + `sw.js` CORE 에 넣는다.
 - 본문의 `function` 선언은 window 속성이라 모듈에서 감쌀 수 있다(`renderTokens` · `applyView` · `boardImageXML` · `setView` · `lookApply` …). 내부 호출도 전역 이름으로 찾으므로 감싼 것을 지난다.
 - `let`/`const` 전역(`state` · `anim` · `animActive` · `tokShape` · `M` …)은 **window 속성이 아니다** — 모듈에서 `typeof state !== 'undefined' ? state : null` 처럼 이름으로 읽는다(3.086 에 `win.state` 로 읽어 실패).
