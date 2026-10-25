@@ -35,6 +35,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 
 ## 판 번호 (실행 파일을 바꾸면 늘)
 - `sw.js` CACHE `process-3.xxx` · `studio/app.html` 의 `PS_BUILD` 와 `?v=` 일곱 곳 · 사용자 화면이 바뀌면 `studio/release-notes.js` 맨 앞 항목. 안 올리면 `scripts/release-guard.mjs` 가 막는다.
+- 3.176 — staging에 공개된 판도 같은 번호로 런타임을 다시 내지 않는다(3.175 공개 뒤 PR #627 보완을 release-guard가 거부). 보완 수정은 새 CACHE·PS_BUILD·일곱 핀으로 판을 올린다.
 - 새 파일은 `git add` 해야 배포 묶음에 들어간다 — `scripts/package-site.mjs` 는 `git ls-files` 로 고른다(3.085 에 빠질 뻔).
 
 ## 작전판(studio/board.html)

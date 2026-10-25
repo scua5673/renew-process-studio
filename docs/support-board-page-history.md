@@ -1,5 +1,7 @@
 # Board history and player panel support follow-up
 
+Release follow-up 3.176: staging 3.175 was already public at `55ed1995` before PR #627 (staging `8f84a9b7`) changed the two runtime files for the toolbar and playback fixes below. The release guard correctly refused changed contents under the same `process-3.175` cache. This follow-up gives those verified fixes a new 3.176 cache/build and seven asset pins; it changes no board behavior. The shared `tokens.css` pin remains 3.173.
+
 CI follow-up (PR #627, run `40179487450`, WebKit `workspace-board-draft`): the exact `232f4729` playback case also failed locally. Playback restoration scheduled a new preview after the initial cancellation; its thumbnail ID changed after the durable draft capture, so the exact-source barrier safely cancelled team switching. `board-draft.js` now cancels that new preview immediately after restoring playback, before capture; source comparison, owner checks, CAS and guarded read-only verification are unchanged.
 Validation: the deterministic installer regression failed before the fix and passed afterwards. All eight draft cases passed once in each of Chromium and WebKit, including actual playback preview scheduling followed by cancellation, quota fallback, both-store failure, late receipt rejection, complete draft restoration and an unchanged explicit server board. The full unit suite passed 4,342/4,342 once. Original CI/local failures and repaired results are preserved under `/tmp/ps3175-evidence/workspace-draft-*`.
 
