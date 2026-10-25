@@ -15005,10 +15005,11 @@ function init(){
     const ox=(bw-vb.width*k)*al,oy=(bh-vb.height*k)*av;
     host.style.left=((bx0-vb.x)*k+ox)+'px';host.style.top=((by0-vb.y)*k+oy)+'px';host.style.width=((bx1-bx0)*k)+'px';host.style.height=((by1-by0)*k)+'px';
     host.__psVb=[bx0,by0,bx1-bx0,by1-by0];   /* 3.039 — 그림 상자(판 좌표) — 3D 영상이 경기장 그림을 같은 자리에 깐다 */
-    const sig=[wt,L,R,T,B,goals?sp.goal:0,turf?1:0,deco,ad,md.key,brand?1:0,tcol,bleed?1:0,ground?ground.key:''].join('|');
+    const sig=[wt,L,R,T,B,goals?sp.goal:0,turf?1:0,deco,ad,md.key,brand?1:0,tcol,bleed?1:0].join('|');
+    const gsig=ground?sig+'|'+ground.key:sig;
     host.__psGround=ground?{box:ground.box,mt:mt}:null;
-    if(host.__sig===sig)return;
-    host.__sig=sig;
+    if(host.__sig===gsig)return;
+    host.__sig=gsig;
     const rr=d=>{const x0=L-gx-d,x1=R+gx+d,y0=T-gy-d,y1=B+gy+d,r=r0+Math.min(d,dRo),a='A'+f(r)+' '+f(r)+' 0 0 1 ';   /* 3.035 — 모서리는 지붕 테까지만 둥글게(그리드 판의 잔디 bleed 는 네 귀가 둥글어 무대가 비쳤다) */
       return 'M'+f(x0+r)+' '+f(y0)+'H'+f(x1-r)+a+f(x1)+' '+f(y0+r)+'V'+f(y1-r)+a+f(x1-r)+' '+f(y1)+'H'+f(x0+r)+a+f(x0)+' '+f(y1-r)+'V'+f(y0+r)+a+f(x0+r)+' '+f(y0)+'Z';};
     const ring=(d0,d1,fill,op)=>'<path d="'+rr(d1)+rr(d0)+'" fill-rule="evenodd" fill="'+fill+'"'+(op!=null?' fill-opacity="'+op+'"':'')+'/>';

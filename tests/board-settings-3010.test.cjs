@@ -26,7 +26,7 @@ test('3.010 3D options: camera, stadium detail, ad text — a device setting',()
   assert.match(src,/scale\(var\(--tilt-k,1\),calc\(var\(--tilt-sy,1\.08\)\*var\(--tilt-k,1\)\)\) rotateX\(var\(--tilt-ax,24deg\)\)/,'one transform, defaults = 3.009');
   assert.match(src,/localStorage\.getItem\("ps_tilt3d_opts_v1"\)/);
   assert.match(src,/t3\.cam,deco,st\.getPropertyValue\("--tilt-k"\)/,'the fit key refits on a camera or stadium change (3.027: deco = tiltDecoNow(), a grid board is grass only)');
-  assert.match(src,/const sig=\[wt,L,R,T,B,goals\?sp\.goal:0,turf\?1:0,deco,ad,md\.key,brand\?1:0,tcol(?:,bleed\?1:0)?(?:,ground\?ground\.key:'')?\]\.join\('\|'\);/,'the stadium picture redraws only when it changes (3.029: mood and branding too)');
+  assert.match(src,/const sig=\[wt,L,R,T,B,goals\?sp\.goal:0,turf\?1:0,deco,ad,md\.key,brand\?1:0,tcol(?:,bleed\?1:0)?\]\.join\('\|'\);/,'the stadium picture redraws only when it changes (3.029: mood and branding too)');
   assert.match(src,/const adX=ad\.replace\(\/&\/g,'&amp;'\)\.replace\(\/<\/g,'&lt;'\)\.replace\(\/>\/g,'&gt;'\)\.replace\(\/"\/g,'&quot;'\);/,'ad text is escaped into the SVG');
   for(const id of ['tiltCamSeg','tiltDecoSeg','tiltAdInput'])assert.ok(src.includes('id="'+id+'"'),id);
   assert.match(src,/id="tiltAdInput"[^>]*maxlength="24"/);
