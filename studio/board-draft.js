@@ -114,7 +114,12 @@
         if(typeof _bliveApplying!=='undefined'&&_bliveApplying)blocked=true;
         return {owner:o,seq:seq,needed:needed,blocked:blocked,current:current};
       },
-      prepare:function(){w.restoreAnimBeforeCapture();},
+      prepare:function(){
+        w.restoreAnimBeforeCapture();
+        // Restoring playback can schedule a fresh preview after the flush's
+        // initial cancellation. Freeze that derived work before the receipt.
+        try{w.clearTimeout(w._boardPreviewTimer);w._boardPreviewTimer=null;}catch(_){}
+      },
       capture:function(){return w.boardLiveCapture(w.__csView||'board');},
       key:w.boardDraftKey,local:w.localStorage,storage:w.storage,now:Date.now,
       verifyIDB:function(k,raw){return w.PSStorage.sharedVerified(k,raw);}

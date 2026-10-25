@@ -89,6 +89,18 @@ test('the frame barrier cancels a queued derived preview before capturing its du
   boardLiveCapture:()=>({raw:h.raw}),boardDraftKey:()=>h.key,restoreAnimBeforeCapture(){},clearTimeout:t=>cleared.push(t),localStorage:h.d.local,storage:h.d.storage,PSStorage:{sharedReady:async()=>true,sharedVerified:h.d.verifyIDB}};
  install(w);await w.psFlushPendingReady();assert.ok(cleared.includes(11));assert.ok(cleared.includes(12));assert.equal(w._boardPreviewTimer,null);assert.equal(w.psHasPending(),false);
 });
+test('playback restoration cannot leave a newly scheduled preview changing an exact draft receipt',async()=>{
+ const local=new Map(),timers=new Map([[12,()=>{}]]),owner={uid:'synthetic-user',wid:'personal-a'},key='synthetic-draft';
+ let raw=JSON.stringify({snap:{players:[{id:'A',x:521}]},animFrames:[{snap:{players:[{id:'A',x:521}]},thumb:'original-thumb'}],_savedAt:1}),current=true,restores=0,writes=0,previews=0;
+ const w={_boardPrivateOwner:owner,_boardPrivateLoaded:true,_boardPrivateEditSeq:1,_boardDraftT:11,_boardPreviewTimer:12,
+  document:{body:{classList:{contains:()=>false}}},boardDraftWriteNow(){},boardManualChanged:()=>true,boardPrivateCurrent:()=>current,
+  boardLiveCapture:()=>({raw}),boardDraftKey:()=>key,clearTimeout:id=>timers.delete(id),
+  restoreAnimBeforeCapture(){restores++;w._boardPreviewTimer=13;timers.set(13,()=>{previews++;raw=raw.replace('original-thumb','regenerated-thumb');});},
+  localStorage:{getItem:k=>local.get(k)??null,setItem(k,v){writes++;local.set(k,v);}},
+  storage:{async get(){await Promise.resolve();for(const [id,fn] of timers){timers.delete(id);fn();}return null;}},PSStorage:{sharedReady:async()=>true}};
+ install(w);await w.psFlushPendingReady();assert.equal(restores,1);assert.equal(previews,0,'the preview queued during restoration is cancelled before asynchronous readback');assert.equal(w._boardPreviewTimer,null);assert.equal(w.psHasPending(),false);assert.equal(JSON.parse(local.get(key)).raw,raw,'the complete raw, including its original thumbnail, remains exact');
+ current=false;await w.psFlushPendingReady();assert.equal(restores,1,'guarded verification does not restore playback again');assert.equal(writes,1,'the guard only verifies the existing receipt');
+});
 
 function adoptedBoard(){
  const owner={uid:'synthetic-account-a',wid:'personal-a',active:'team-a',seal:'original-seal',switchEpoch:'0'};

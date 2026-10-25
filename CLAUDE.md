@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.175 — 팀 전환 초안 확인(`board-draft.js`)은 재생 복원 **뒤** 새로 예약된 `_boardPreviewTimer`도 취소한다. flush 시작 때만 취소하면 `stopAnim`이 다시 예약한 썸네일이 receipt 뒤 원문을 바꿔 전환을 거부한다. `sameBody`의 전체 원문 비교나 guard 이후 읽기 전용 검증을 완화하지 않는다.
+
 Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규칙 · 함정을 여기에 쌓는다(한두 줄씩, 판 번호와 함께). 운영 절차의 원본은 `docs/OPERATIONS.md`.
 
 ## 사용자와 일하는 법
