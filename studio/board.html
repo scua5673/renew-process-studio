@@ -15665,8 +15665,8 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   syncBoardLock();
   document.addEventListener("pointerup",()=>clearGuides(),true);document.addEventListener("pointercancel",()=>clearGuides(),true);
   $("clearPlayersBtn").onclick=()=>{psConfirm("운동장의 선수·장비·공을 모두 지울까요?\n그린 선은 남아요 · 되돌리기(↶)로 살릴 수 있어요",()=>{pushUndo();state.players=[];state.equipment=[];state.ball=null;sel=null;multiSel=[];renderTokens();updateDelUI();try{boardSaveLive();}catch(_){}},null,{ok:'모두 지우기',danger:true});};
-  $("undoBtn").onclick=undoLast;
-  if($("redoBtn"))$("redoBtn").onclick=redoLast;
+  $("undoBtn").onclick=()=>undoLast();
+  if($("redoBtn"))$("redoBtn").onclick=()=>redoLast();
   (function(){
     (function(){const dt=$("drawTog"),bt=$("benchTog");
       const _dp=$("drawPanel"),_dpHome=_dp&&_dp.parentNode,_dpNext=_dp&&_dp.nextSibling;

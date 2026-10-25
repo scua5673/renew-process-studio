@@ -1,5 +1,11 @@
 # Board history and player panel support follow-up
 
+CI follow-up (PR #627, run `40179487450`, WebKit `workspace-board-draft`): the exact `232f4729` playback case also failed locally. Playback restoration scheduled a new preview after the initial cancellation; its thumbnail ID changed after the durable draft capture, so the exact-source barrier safely cancelled team switching. `board-draft.js` now cancels that new preview immediately after restoring playback, before capture; source comparison, owner checks, CAS and guarded read-only verification are unchanged.
+Validation: the deterministic installer regression failed before the fix and passed afterwards. All eight draft cases passed once in each of Chromium and WebKit, including actual playback preview scheduling followed by cancellation, quota fallback, both-store failure, late receipt rejection, complete draft restoration and an unchanged explicit server board. The full unit suite passed 4,342/4,342 once. Original CI/local failures and repaired results are preserved under `/tmp/ps3175-evidence/workspace-draft-*`.
+
+Follow-up #627 for report `54b61c3e-86d0-47df-bf57-ae681fa33943`, baseline staging `55ed1995`: real toolbar undo and redo retained functions assigned before the history bridge and read page metadata as a board, leaving an empty player list. Both button callbacks now resolve the current history handler when clicked.
+Validation: the pre-fix Chromium failure and screenshots are preserved; the actual toolbar name/order chronology and cross-page undo/redo passed once in Chromium and WebKit, related units passed 53/53, and that full unit suite passed 4,341/4,341. The toolbar fix changes only two callbacks; board.html is 2,559,354 bytes under the unchanged 2,560,000-byte cap. Evidence: `/tmp/ps3175-evidence/toolbar`.
+
 Owner: this draft PR. Baseline: staging/main a10cbb9 (3.173).
 
 - Report `54b61c3e-86d0-47df-bf57-ae681fa33943`: page rename/reorder is outside undo and clears prior board undo history. Reproduce using synthetic pages, then preserve one chronological undo/redo history for board and page edits without leaking it into borrowed editors.
