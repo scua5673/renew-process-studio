@@ -1,6 +1,7 @@
 # Board history and player panel support follow-up
 
-Follow-up claim after #626: report `54b61c3e-86d0-47df-bf57-ae681fa33943`, baseline staging `55ed1995`. Toolbar undo/redo callbacks are assigned before the history bridge wraps the global functions. Verify their retained function references using real button clicks, then route the toolbar through the chronological history handler if reproduced. Production promotion is held until this path is verified.
+Follow-up #627 for report `54b61c3e-86d0-47df-bf57-ae681fa33943`, baseline staging `55ed1995`: real toolbar undo and redo retained functions assigned before the history bridge and read page metadata as a board, leaving an empty player list. Both button callbacks now resolve the current history handler when clicked.
+Validation: the pre-fix Chromium failure and screenshots are preserved; the actual toolbar name/order chronology and cross-page undo/redo passed once in Chromium and WebKit, related units passed 53/53, and the final full unit suite passed 4,341/4,341. Runtime changes are limited to two callbacks; board.html is 2,559,354 bytes under the unchanged 2,560,000-byte cap. Evidence: `/tmp/ps3175-evidence/toolbar`.
 
 Owner: this draft PR. Baseline: staging/main a10cbb9 (3.173).
 

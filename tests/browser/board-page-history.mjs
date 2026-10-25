@@ -37,7 +37,7 @@ try{
   async function edit(x){await f.evaluate(x=>{pushUndo();state.players[0].x=x;renderTokens();},x);}
   async function rename(index,name,inactive=false){
     if(inactive)await f.locator('#boardPageStrip .bp-tab').nth(index).dblclick({position:{x:12,y:12}});
-    else await f.locator('#boardPageStrip [title="페이지 이름 변경"]').click();
+    else await f.locator('#boardPageStrip [title="페이지 이름 변경"],#boardPageStrip [data-tip="페이지 이름 변경"]').click();
     const ok=f.locator('button[data-ps-ok]').last();await ok.waitFor({state:'visible'});
     const input=ok.locator('xpath=../..').locator('input');await input.fill(name);await ok.click();
     const remaining=await f.locator('button[data-ps-ok]').evaluateAll(bs=>bs.map(b=>b.parentElement.parentElement.textContent));
@@ -59,8 +59,23 @@ try{
     const copied=await now();assert.deepEqual(copied.names,['A','Review','B','C']);assert.equal(copied.idx,1);assert.equal(copied.x,340);assert.equal(copied.undo,0,'review duplication preserves its old history boundary');
     await key();assert.deepEqual(await now(),copied,'undo cannot replace the new review page with an earlier source-page snapshot');results.push({case:'review-duplication-boundary',ok:true});
   }
+  async function toolbarCase(){
+    const undo=()=>f.locator('#undoBtn').click(),redo=()=>f.locator('#redoBtn').click();
+    await seed();await edit(340);await rename(0,'Alpha');await reorder(0,2);
+    await undo();const first=await now();results.push({case:'toolbar-metadata-first-undo',state:first});
+    assert.deepEqual(first,{names:['Alpha',B_NAME,'C'],idx:0,id:'A',x:340,frames:0,undo:2,redo:1},'actual toolbar order undo preserves every token');
+    await undo();assert.deepEqual(await now(),{names:['A',B_NAME,'C'],idx:0,id:'A',x:340,frames:0,undo:1,redo:2},'actual toolbar name undo preserves the board');
+    await undo();assert.equal((await now()).x,200);await redo();assert.equal((await now()).x,340);await redo();assert.equal((await now()).names[0],'Alpha');await redo();
+    assert.deepEqual(await now(),{names:[B_NAME,'C','Alpha'],idx:2,id:'A',x:340,frames:0,undo:3,redo:0},'actual toolbar redo restores the complete chronology');
+    await seed();await edit(340);await f.locator('#boardPageStrip .bp-tab').nth(1).click();await edit(720);await f.locator('#boardPageStrip .bp-tab').nth(2).click();
+    await undo();assert.equal((await now()).id,'B');assert.equal((await now()).x,600);await undo();assert.equal((await now()).id,'A');assert.equal((await now()).x,200);
+    await redo();assert.equal((await now()).id,'A');assert.equal((await now()).x,340);await redo();assert.equal((await now()).id,'B');assert.equal((await now()).x,720);
+    assert.equal(await f.evaluate(()=>__psPages.pg()[0].snap.players[0].x),340,'toolbar undo/redo never copies page B onto page A');
+    results.push({case:'toolbar-cross-page-undo-redo',ok:true});await page.screenshot({path:path.join(SHOTS,`board-page-history-${engine}-${size}-toolbar.png`)});
+  }
 
   if(process.env.PS_PAGE_HISTORY_CASE==='duplicate')await duplicateCase();
+  else if(process.env.PS_PAGE_HISTORY_CASE==='toolbar')await toolbarCase();
   else{
 
   await seed();await edit(340);await rename(0,'Alpha');await reorder(0,2);await key();
@@ -129,6 +144,7 @@ try{
   results.push({case:'patternbook-navigation-boundary',ok:true});
   await f.evaluate(()=>{window.__vaultBook=false;window.__vaultEdit=false;window.__curVaultId=null;});
   await duplicateCase();
+  if(!baseline)await toolbarCase();
   await seed();await edit(340);await rename(1,'Beta',true);
   await page.screenshot({path:path.join(SHOTS,`board-page-history-${engine}-${size}-${baseline?'before':'after'}.png`)});
   if(!baseline&&engine==='webkit'){
