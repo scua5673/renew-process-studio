@@ -54,6 +54,9 @@
   --c-surface-2:#F1F3F5;/* 칸 · 트랙 */
   --r-card:12px;        /* 카드 모서리(ui-grammar --g-radius) */
   --r-control:10px;     /* 버튼 · 입력칸 */
+  --c-community-accent:#D2EE9B;
+  --c-community-on-accent:#1B2616;
+  --c-community-overlay:rgba(5,8,7,.8);
   /* 글자 이름 — ui-grammar 의 --fs-* 는 위 7단을 가리킨다: micro=--t-2 · caption=--t-3 · sub=--t-4 · body=--t-5 · title=--t-6 · h2 18px(7단 밖 하나 — 큰 제목) */
 }
 /* 다크 — 조명을 낮춘 같은 방(ui-grammar 2.637). 의미색은 채도를 낮추고 명도만 올린다(2.981) */

@@ -1,0 +1,98 @@
+/* Card library and drill detail, matching the approved community mockup. */
+html.ps-page-community body{--cl-accent:var(--c-community-accent);--cl-on-accent:var(--c-community-on-accent)}
+html.ps-page-community #wrap#wrap#wrap{max-width:1480px;display:grid;grid-template-columns:160px minmax(0,1fr);grid-template-areas:"sources heading" "sources library";column-gap:32px;row-gap:24px}
+#wrap#wrap#wrap .cl-heading{grid-area:heading;padding:0 0 28px;margin:0;border-bottom:1px solid var(--c-line);min-width:0}
+#wrap#wrap#wrap .cl-eyebrow{color:var(--c-muted);letter-spacing:.18em}
+#wrap#wrap#wrap .cl-heading h1{font-size:calc(var(--t-7) * 1.6);max-width:450px;line-height:1.35}
+#wrap#wrap#wrap .cl-heading h1 span{color:var(--cl-accent)}
+#wrap#wrap#wrap #upBtn{background:var(--cl-accent);color:var(--cl-on-accent)}
+#wrap#wrap#wrap .top{display:contents}
+#wrap#wrap#wrap .top #prSub{display:none}
+#wrap#wrap#wrap #prSeg{grid-area:sources;align-self:start;position:sticky;top:24px;display:flex;flex-direction:column;align-items:stretch;gap:6px;border-right:1px solid var(--c-line);padding:4px 16px 120px 0;min-width:0}
+#wrap#wrap#wrap #prSeg:before{content:"TRAINING LIBRARY";font-size:var(--t-2);letter-spacing:.12em;color:var(--c-faint);margin:0 8px 16px}
+#wrap#wrap#wrap #prSeg:after{content:"좋은 훈련의 다음은, 함께 나누는 경험.";border-top:1px solid var(--c-line);padding-top:20px;margin:24px 8px 0;white-space:normal;font-size:var(--t-3);color:var(--c-muted);line-height:1.8}
+#wrap#wrap#wrap #prSeg button{justify-content:flex-start;padding:0 12px;height:44px;min-height:44px;border-radius:var(--r-1);font-size:var(--t-4);white-space:nowrap}
+#wrap#wrap#wrap #prSeg button span{margin-left:auto;font-size:var(--t-2)}
+#wrap#wrap#wrap #prSeg button[aria-pressed="true"]{background:color-mix(in srgb,var(--cl-accent) 15%,var(--c-surface));color:var(--c-ink)}
+#wrap#wrap#wrap #prSeg button[aria-pressed="true"]:after{display:none}
+#wrap#wrap#wrap .comm-shell{grid-area:library;min-width:0}
+#wrap#wrap#wrap #commSearch{background:var(--c-surface);font-size:var(--t-4)}
+#wrap#wrap#wrap #grid .pr-hero,#wrap#wrap#wrap #grid .th{position:relative}
+#wrap#wrap#wrap #grid .pr-hero:after,#wrap#wrap#wrap #grid .th:after{content:"▶";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;place-items:center;width:36px;height:36px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--c-ink) 75%,transparent);color:var(--c-surface);font-size:var(--t-4);pointer-events:none}
+#wrap#wrap#wrap .pr-hero{aspect-ratio:16/10}
+#wrap#wrap#wrap .pr-tt,#wrap#wrap#wrap .fi-tt,#wrap#wrap#wrap .card .tt{font-size:var(--t-5);line-height:1.6}
+#wrap#wrap#wrap .pr-pick button[aria-pressed="true"]{background:var(--cl-accent);color:var(--cl-on-accent);border-color:var(--cl-accent)}
+#cvMask.cv-mask{padding:24px;background:var(--c-community-overlay);align-items:center}
+#cvMask .cv-shell{width:min(1000px,100%);height:auto;max-height:calc(100dvh - 48px);overflow:auto;overscroll-behavior:contain;border-radius:var(--r-card);background:var(--c-surface);color:var(--c-ink);box-shadow:var(--sh-3)}
+#cvMask .cv-head{height:auto;min-height:78px;flex:0 0 auto;padding:16px 24px;position:sticky;top:0;z-index:4;border:0;background:var(--c-surface);align-items:center}
+#cvMask .cd-heading{min-width:0}
+#cvMask .cd-kicker{display:block;font-size:var(--t-2);letter-spacing:.16em;color:var(--c-muted);margin-bottom:5px}
+#cvMask .cv-head b{display:block;font-size:var(--t-7);font-weight:600;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
+#cvMask .cv-head .cv-x{flex:none;width:36px;height:36px;min-height:36px;border:1px solid var(--c-line);border-radius:var(--r-1);background:var(--c-surface-2);color:var(--c-ink);font-size:var(--t-7)}
+#cvMask #prCvTabs{flex:0 0 auto;background:var(--c-surface-2);padding:8px 16px}
+#cvMask #prCvTabs button[aria-pressed="true"]{background:var(--cl-accent);border-color:var(--cl-accent);color:var(--cl-on-accent)}
+#cvMask .cv-frame{flex:none;display:block;width:100%;height:clamp(320px,50vw,530px);min-height:0;border:0;background:var(--c-bg)}
+#cvMask #cdBody{flex:none}
+#cvMask .cd-facts{display:flex;gap:20px 30px;flex-wrap:wrap;padding:16px 24px;background:var(--c-surface-2);border-bottom:1px solid var(--c-line)}
+#cvMask .cd-facts:empty{display:none}
+#cvMask .cd-facts>span{display:flex;align-items:baseline;gap:8px;font-size:var(--t-3)}
+#cvMask .cd-facts small{color:var(--c-muted);font-size:var(--t-3)}
+#cvMask .cd-facts b{font-weight:500;color:var(--c-ink)}
+#cvMask .cd-content{padding:20px 24px 28px}
+#cvMask .cd-author{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+#cvMask .cd-avatar{width:32px;height:32px;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--cl-accent) 20%,var(--c-surface));color:var(--c-ink);border-radius:var(--r-pill);font-size:var(--t-3)}
+#cvMask .cd-author>div{min-width:0}
+#cvMask .cd-author b{display:block;font-size:var(--t-4);font-weight:500;overflow-wrap:anywhere}
+#cvMask .cd-author small{display:block;color:var(--c-muted);font-size:var(--t-2)}
+#cvMask .cd-copy{margin-left:auto;flex:none;padding:10px 14px;border:0;border-radius:var(--r-1);background:var(--cl-accent);color:var(--cl-on-accent);font:inherit;font-size:var(--t-3);font-weight:600;cursor:pointer}
+#cvMask .cd-copy:disabled{opacity:.7;cursor:default}
+#cvMask .cd-session{font-size:var(--t-3);color:var(--c-muted);margin:0 0 16px}
+#cvMask .cd-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:16px}
+#cvMask .cd-tabs button{min-width:0;min-height:44px;padding:10px 6px;border:1px solid var(--c-line-2);border-radius:var(--r-1);background:var(--c-surface);color:var(--c-muted);font:inherit;font-size:var(--t-4);cursor:pointer}
+#cvMask .cd-tabs button[aria-selected="true"]{background:var(--cl-accent);color:var(--cl-on-accent);border-color:var(--cl-accent)}
+#cvMask .cd-panel{padding:24px;border:1px solid var(--c-line);border-radius:var(--r-2);background:var(--c-surface);min-height:160px}
+#cvMask .cd-panel[hidden]{display:none}
+#cvMask .cd-section+.cd-section{margin-top:24px}
+#cvMask .cd-panel h3{font-size:var(--t-5);font-weight:600;margin:0 0 10px;color:var(--c-ink)}
+#cvMask .cd-panel p{font-size:var(--t-5);line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;color:var(--c-muted)}
+#cvMask .cd-panel .cd-empty{font-size:var(--t-4)}
+#cvMask .cd-actions{display:flex;gap:16px;justify-content:flex-end;margin-top:16px}
+#cvMask .cd-actions button{border:0;background:transparent;font:inherit;font-size:var(--t-3);color:var(--c-muted);padding:6px;cursor:pointer}
+/* The native board remains the renderer. Only this modal's frame hides its old text column. */
+html.ps-page-board.cd-player body.comm-viewing #editorModal{background:var(--c-bg);border-radius:0}
+html.cd-player #toast{display:none}
+html.ps-page-board.cd-player body.comm-viewing #editorModal #editorPanel{display:none!important}
+html.ps-page-board.cd-player body.comm-viewing #editorModal #modalStage{display:flex!important;flex-direction:column!important;width:100%!important;height:100%!important;overflow:hidden!important;padding:0!important;background:var(--c-bg)}
+html.ps-page-board.cd-player body.comm-viewing #editorModal #editorBoardWrap{flex:1 1 auto!important;width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;padding:0!important;overflow:hidden!important}
+html.ps-page-board.cd-player body.comm-viewing #editorModal.ep-ro #editorBoardWrap #boardStage{width:100%!important;height:100%!important;aspect-ratio:auto!important;max-height:none!important;flex:1 1 auto!important}
+html.ps-page-board.cd-player body.comm-viewing #commPlayControls{bottom:12px}
+@media(max-width:1000px){
+  html.ps-page-community #wrap#wrap#wrap{display:block}
+  #wrap#wrap#wrap .cl-heading{margin-bottom:16px}
+  #wrap#wrap#wrap .top{display:flex;border-bottom:1px solid var(--c-line);margin-bottom:20px}
+  #wrap#wrap#wrap #prSeg{position:static;display:flex;flex-direction:row;flex-wrap:wrap;padding:0;border:0;gap:20px}
+  #wrap#wrap#wrap #prSeg:before,#wrap#wrap#wrap #prSeg:after{display:none}
+  #wrap#wrap#wrap #prSeg button{padding:0 10px;gap:8px}
+}
+@media(max-width:600px){
+  #wrap#wrap#wrap .cl-heading h1{font-size:calc(var(--t-7) * 1.3)}
+  #wrap#wrap#wrap #prSeg{gap:0;justify-content:space-between}
+  #wrap#wrap#wrap #prSeg button{font-size:var(--t-3);padding:0 7px;gap:5px}
+  #wrap#wrap#wrap .top #commSearch{font-size:var(--t-6)}
+  #cvMask.cv-mask{padding:8px}
+  #cvMask .cv-shell{height:auto;max-height:calc(100dvh - 16px);width:100%;border:1px solid var(--c-line);border-radius:var(--r-2)}
+  #cvMask .cv-head{min-height:70px;padding:12px 14px}
+  #cvMask .cv-head b{font-size:var(--t-6)}
+  #cvMask .cd-kicker{font-size:var(--t-1)}
+  #cvMask .cv-frame{height:420px;height:clamp(300px,110vw,480px)}
+  #cvMask .cd-facts{gap:8px 18px;padding:12px 14px}
+  #cvMask .cd-facts>span,#cvMask .cd-facts small{font-size:var(--t-2)}
+  #cvMask .cd-content{padding:16px 14px 22px}
+  #cvMask .cd-author{flex-wrap:wrap;gap:8px}
+  #cvMask .cd-copy{padding:10px;font-size:var(--t-2)}
+  #cvMask .cd-tabs{gap:5px}
+  #cvMask .cd-tabs button{font-size:var(--t-3)}
+  #cvMask .cd-panel{padding:16px}
+  #cvMask .cd-panel p{font-size:var(--t-4)}
+}
+@media(max-height:500px) and (orientation:landscape){#cvMask .cv-frame{height:350px}}

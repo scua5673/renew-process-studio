@@ -72,7 +72,7 @@ try{
   assert.ok(fits.doc<=fits.w,label+' native viewer fits '+JSON.stringify(fits));
   await page.screenshot({path:path.join(out,'official-viewer-'+label+'.png')});
  }
- await v.locator('#commCopyBtn').click();
+ await c.locator('#cdCopy').click();
  const b=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
  await b.waitForSelector('#lpOv',{timeout:30000});
  const dialogText=await b.locator('#lpOv').textContent();
@@ -101,7 +101,8 @@ try{
  assert.ok(await pv.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'fresh phone viewer fits');
  assert.ok((await pv.locator('.ep-ro-text').allTextContents()).some(t=>t.includes('질문 —')),'fresh phone keeps the complete coaching');
  await ph.page.screenshot({path:path.join(out,'official-viewer-phone-initial.png')});
- await pv.locator('.ep-ro-text').last().evaluate(el=>el.scrollIntoView({block:'end'}));
+ await pc.locator('#cd-tab-coaching').click();
+ await pc.locator('#cd-panel-coaching').evaluate(el=>el.scrollIntoView({block:'end'}));
  await ph.page.screenshot({path:path.join(out,'official-coaching-phone.png')});
  await ph.context.close();
  fs.writeFileSync(path.join(out,'native-report.json'),JSON.stringify(report,null,2));
