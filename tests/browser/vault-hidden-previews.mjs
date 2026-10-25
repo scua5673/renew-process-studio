@@ -5,6 +5,29 @@ for(const s of Object.values(SIZES))s.engine=engine;
 const art=Array.from({length:K},(_,i)=>`<path d="M${i%40*25} ${Math.floor(i/40)*90}h20v70h-20z" fill="#3e964b"/>`).join('');
 for(let i=0;i<N;i++){const item={libId:'thumb-fixture-'+i,type:'board',name:'프로세스FC 합성 보드 '+i,folder:'',tags:[],savedAt:Date.now()-i,createdBy:A,snap:{players:[],drawings:[]},thumb:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600"><title>rich-fixture-${i}</title>${art}</svg>`};fx.lib.set(WT+'|'+item.libId,{workspace_id:WT,lib_id:item.libId,type:item.type,name:item.name,folder:'',tags:[],pin:false,item,saved_at:item.savedAt,deleted_at:null,owner_id:A,private:true});}
 const original=JSON.stringify([...fx.lib.values()].map(x=>x.item));
+async function hiddenReadLifecycle(f){return f.evaluate(async()=>{
+ const fr=window.frameElement,box=document.getElementById('drillFiles'),originalGet=libGet,display=fr.style.display;
+ let reads=0,hold=null,started=false,release=null;
+ const wait=async check=>{const until=Date.now()+8000;while(!check()){if(Date.now()>until)throw Error('vault lifecycle timeout');await new Promise(r=>setTimeout(r,20));}};
+ libGet=async function(){reads++;const data=await originalGet.apply(this,arguments);if(hold){started=true;await hold;}return data;};
+ function mark(name){box.__vxSig=null;box.querySelector('.vault-explorer').dataset.asyncProbe=name;}
+ const kept=name=>!!box.querySelector('[data-async-probe="'+name+'"]');
+ async function reopen(name){fr.style.display=display;await wait(()=>!kept(name));await _libTurnTail;}
+ try{
+  // A read queued while visible must be reconsidered when its turn actually starts.
+  let entered=false;libTurn(()=>new Promise(r=>{release=r;entered=true;}));await wait(()=>entered);
+  mark('queued');const queued=renderDrillFiles();fr.style.display='none';release();await queued;
+  const q={hidden:fr.getClientRects().length===0,reads,kept:kept('queued')};await reopen('queued');q.reopenReads=reads;
+  // A completed disk read must not replace the DOM after navigation has hidden its frame.
+  reads=0;started=false;hold=new Promise(r=>release=r);mark('inflight');const pending=renderDrillFiles();await wait(()=>started);
+  fr.style.display='none';hold=null;release();await pending;
+  const late={hidden:fr.getClientRects().length===0,reads,kept:kept('inflight')};await reopen('inflight');late.reopenReads=reads;
+  // The same queued path still renders when visible, with all three callers sharing one read.
+  reads=0;entered=false;libTurn(()=>new Promise(r=>{release=r;entered=true;}));await wait(()=>entered);
+  mark('visible');const visible=Promise.all([renderDrillFiles(),renderDrillFiles(),renderDrillFiles()]);release();await visible;
+  return {queued:q,inflight:late,visible:{reads,rendered:!kept('visible'),items:box.querySelectorAll('.vx-items .vcard').length}};
+ }finally{libGet=originalGet;fr.style.display=display;}
+});}
 try{for(const width of [375,393,768,1280]){
  const size=width<700?'phone':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:850};
  const {page,context,logs}=await openApp(fx,size,{browsers});const f=await(await page.waitForSelector('#fBoard')).contentFrame();await f.waitForFunction(()=>window.__boardReady&&typeof renderDrillFiles==='function');
@@ -17,10 +40,15 @@ try{for(const width of [375,393,768,1280]){
  await f.getByText('프로세스FC 합성 보드 105',{exact:true}).first().click();
  await f.waitForFunction(()=>document.querySelector('.vx-preview-thumb title')?.textContent==='rich-fixture-105');
  assert.equal(await f.locator('.vx-preview-thumb svg path').count(),K,'selecting a distant item still renders its full preview');
+ const lifecycle=await hiddenReadLifecycle(f);
+ assert.deepEqual(lifecycle.queued,{hidden:true,reads:0,kept:true,reopenReads:1},'closing before the queued read starts defers all work until reopening');
+ assert.deepEqual(lifecycle.inflight,{hidden:true,reads:1,kept:true,reopenReads:2},'closing during a read discards its result and reopening reads afresh');
+ assert.deepEqual(lifecycle.visible,{reads:1,rendered:true,items:N},'visible queued renders still share one read and paint every item');
+ if(process.env.PS_EVIDENCE_DIR)await page.screenshot({path:process.env.PS_EVIDENCE_DIR+'/vault-hidden-lifecycle-'+engine+'-'+width+'.png'});
  // Exercise the original legacy renderer too: hiding its panel must not remove its ability to render when visible.
  const visible=await f.evaluate(async()=>{const dock=document.getElementById('libDock');dock.classList.remove('collapsed');dock.style.setProperty('display','flex','important');await renderLibDock();return {boxes:document.getElementById('dockStrip').getClientRects().length,cards:document.querySelectorAll('#dockStrip .ld-card').length,paths:document.querySelectorAll('#dockStrip svg path').length};});
  assert.ok(visible.boxes>0);assert.equal(visible.cards,N);assert.ok(visible.paths>=N*K);
  assert.equal(JSON.stringify([...fx.lib.values()].map(x=>x.item)),original,'browsing and rendering preserve all fixture server originals');
  assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[]);
- console.log(JSON.stringify({engine,width,items:N,hiddenSvgNodes:hidden.svgNodes,previewCalls:hidden.calls,distantPreview:true,visibleLegacy:true,sourcePreserved:true}));await context.close();
+ console.log(JSON.stringify({engine,width,items:N,hiddenSvgNodes:hidden.svgNodes,previewCalls:hidden.calls,distantPreview:true,lifecycle,visibleLegacy:true,sourcePreserved:true}));await context.close();
 }}finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close();}
