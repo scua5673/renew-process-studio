@@ -1,5 +1,7 @@
 # Board history and player panel support follow-up
 
+Follow-up claim after #626: report `54b61c3e-86d0-47df-bf57-ae681fa33943`, baseline staging `55ed1995`. Toolbar undo/redo callbacks are assigned before the history bridge wraps the global functions. Verify their retained function references using real button clicks, then route the toolbar through the chronological history handler if reproduced. Production promotion is held until this path is verified.
+
 Owner: this draft PR. Baseline: staging/main a10cbb9 (3.173).
 
 - Report `54b61c3e-86d0-47df-bf57-ae681fa33943`: page rename/reorder is outside undo and clears prior board undo history. Reproduce using synthetic pages, then preserve one chronological undo/redo history for board and page edits without leaking it into borrowed editors.
