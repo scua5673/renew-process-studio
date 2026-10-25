@@ -15,11 +15,11 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ── ① 같이 쓰는 그리기 읽기 ── */
 function ctx(){
-  const st={raw:JSON.stringify([{libId:'A',name:'가'}]),reads:0};
+  const st={raw:JSON.stringify([{libId:'A',name:'가'}]),reads:0,uid:'me',wid:'team',unlocked:true};
   const c={JSON,Promise,setTimeout,st,
     libGet:async()=>{st.reads++;const s=st.raw;await sleep(5);return JSON.parse(s);},
     libWrite:async l=>{const s=JSON.stringify(l);await sleep(10);st.raw=s;return true;},libTouch(){},
-    psMyUid:()=>'me',psActiveWs:()=>({id:'team'}),psVaultUnlocked:()=>true,psVaultShowLock(){}};
+    psMyUid:()=>st.uid,psActiveWs:()=>({id:st.wid}),psVaultUnlocked:()=>st.unlocked,psVaultShowLock(){}};
   c.libSet=l=>c.libWrite(l).then(()=>c.libTouch());
   vm.createContext(c);
   vm.runInContext(slice('var _libTurnTail=Promise.resolve();','function psVaultOpenLogin(){')+fnAt(board,'async function psVaultReadForRender(){')+';this.libTurn=libTurn;this.read=psVaultReadForRender;',c);
@@ -66,6 +66,65 @@ function fakeWin({hidden=true,search='',drillOn=false}={}){
     renderDrillFiles(){calls.push('files');},renderLibDock(){calls.push('dock');},renderLib(){calls.push('lib');},renderLibTray(){calls.push('tray');}};
   return {win,fe};
 }
+
+// 실제 지연 모듈과 보드 읽기를 연결해 화면 전환 전후의 Promise 순서를 제어한다.
+function lifecycle({target='frame'}={}){
+  const c=ctx(),{win,fe}=fakeWin({hidden:false});
+  const session={hidden_:false,getClientRects(){return this.hidden_?[]:[{}];}};
+  const get=win.document.getElementById;
+  win.document.getElementById=id=>id==='sessionView'?session:get(id);
+  const api=Lazy.mount(win),painted=[],pending=[];
+  c.__psVaultDefer=()=>win.__psVaultDefer();
+  for(const name of ['renderDrillFiles','renderLibDock','renderLibTray'])win[name]=()=>{
+    win.calls.push(name);
+    const p=c.read().then(lib=>{if(lib)painted.push(lib);});pending.push(p);return p;
+  };
+  const visibility=on=>{(target==='frame'?fe:session).hidden_=!on;};
+  return {c,win,api,painted,hide:()=>visibility(false),show:()=>visibility(true),
+    async reopen(){visibility(true);api.flush();await Promise.all(pending);}};
+}
+function holdRead(c){
+  let resolve,started;
+  const called=new Promise(r=>started=r),normal=c.libGet;
+  c.libGet=()=>{c.st.reads++;started();return new Promise(r=>resolve=r);};
+  return {called,finish:lib=>resolve(lib),restore:()=>c.libGet=normal};
+}
+for(const target of ['frame','session'])test('a queued render does not start a whole-vault read after '+target+' closes, then reopens once',async()=>{
+  const h=lifecycle({target});let release,entered;
+  const blocked=new Promise(r=>entered=r);
+  const prior=h.c.libTurn(()=>new Promise(r=>{release=r;entered();}));await blocked;
+  const reads=[h.c.read(),h.c.read(),h.c.read()];h.hide();release();await prior;
+  const values=await Promise.all(reads);
+  assert.equal(h.c.st.reads,0,'닫힌 뒤 차례가 온 읽기는 저장소를 열지 않는다');
+  values.forEach(value=>assert.equal(value,null));
+  assert.equal(h.api.pending(),true,'다음 실제 보관함 진입 때 다시 그린다');
+  assert.deepEqual(h.win.calls,[]);
+  await h.reopen();
+  assert.equal(h.c.st.reads,1,'다시 열 때 세 그리기는 최신 읽기 한 번을 공유한다');
+  assert.deepEqual(h.win.calls,['renderDrillFiles','renderLibDock','renderLibTray']);
+  assert.equal(h.painted.length,3);assert.equal(h.painted[0],h.painted[1]);assert.equal(h.painted[1],h.painted[2]);
+  assert.deepEqual(h.painted[0].map(d=>d.libId),['A']);
+  assert.equal(h.api.pending(),false);assert.equal(h.win.timers.size,0);
+  h.api.flush();assert.equal(h.win.calls.length,3,'이미 처리한 재진입을 두 번 그리지 않는다');
+});
+for(const target of ['frame','session'])test('an in-flight render cannot paint after '+target+' closes, and reopening reads fresh data',async()=>{
+  const h=lifecycle({target}),disk=holdRead(h.c);let paints=0;
+  const pending=h.c.read().then(lib=>{if(lib)paints++;return lib;});await disk.called;
+  h.hide();disk.finish([{libId:'stale'}]);
+  assert.equal(await pending,null,'이미 읽기 시작했어도 닫힌 화면에 결과를 넘기지 않는다');
+  assert.equal(paints,0);assert.equal(h.api.pending(),true);
+  disk.restore();h.c.st.raw=JSON.stringify([{libId:'fresh'}]);await h.reopen();
+  assert.equal(h.c.st.reads,2,'재진입은 폐기한 결과 대신 새 자료를 한 번 읽는다');
+  assert.equal(h.painted.length,3);assert.deepEqual(h.painted[0].map(d=>d.libId),['fresh']);
+  assert.equal(h.api.pending(),false);
+});
+for(const key of ['uid','wid'])test('a read from the previous '+key+' is discarded even when the vault is visible again',async()=>{
+  const h=lifecycle(),disk=holdRead(h.c);
+  const pending=h.c.read();await disk.called;
+  h.hide();h.c.st[key]='other';h.show();disk.finish([{libId:'old-private-item'}]);
+  assert.equal(await pending,null,'숨김 해제가 이전 주인의 자료를 허용하지 않는다');
+  assert.equal(h.c.st.reads,1);assert.deepEqual(h.painted,[]);
+});
 test('frameHidden: no boxes means hidden (display:none on the frame or above); anything odd counts as shown',()=>{
   assert.equal(Lazy.frameHidden({getClientRects:()=>[]}),true);
   assert.equal(Lazy.frameHidden({getClientRects:()=>[{}]}),false);
