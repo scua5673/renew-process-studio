@@ -85,7 +85,7 @@ try{
   await v.waitForFunction(()=>!!document.getElementById('commCopyBtn')&&!document.documentElement.classList.contains('comm-boot')&&(document.getElementById('epName')||{}).value==='가상 전술노트');
   const iv=await v.evaluate(()=>({banner:document.getElementById('epRoBanner').textContent,play:!!document.getElementById('commPlayControls'),frames:(anim.frames||[]).length,ro:editorReadOnly,del:!!document.getElementById('commDelBtn')}));
   assert.deepEqual(iv,{banner:'커뮤니티 훈련 — @엘미하님이 공유했어요 · 보기 전용내 보관함에 담기신고',play:true,frames:3,ro:true,del:false},'엘미하의 애니메이션을 그대로 재생');
-  await v.click('#commCopyBtn');
+  await c.click('#cdCopy');
   let saved=[];
   for(let i=0;i<60&&!saved.length;i++){
     saved=await c.evaluate(async()=>{ const r=await window.storage.get('cs_drill_lib_v1'); const lib=r?JSON.parse(r.value):[];
