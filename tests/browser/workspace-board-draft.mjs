@@ -14,7 +14,15 @@ const normalized=raw=>{const o=JSON.parse(raw);delete o._savedAt;return o;};
 // Applying an animation rebuilds thumbnails and materializes its inherited
 // title/hold defaults. The stored recovery raw above remains byte-complete.
 const restoredBody=raw=>JSON.parse(JSON.stringify(normalized(raw),(k,v)=>['thumb','__t','__tc','__hold'].includes(k)?undefined:v));
-async function frame(page){const f=await (await page.$('#fBoard')).contentFrame();await f.waitForFunction(()=>typeof _boardPrivateLoaded!=='undefined'&&_boardPrivateLoaded&&boardPrivateCurrent(_boardPrivateOwner)&&!window.__boardRestoring);return f;}
+async function frame(page,wid){
+ // The first unlocked boot can still reload while its splash is visible.
+ // Acquire the current iframe only after that boot and board restore finish.
+ await page.waitForFunction(({wid,A})=>{
+  const s=window.PSSync,w=document.getElementById('fBoard')?.contentWindow;
+  return s&&s.activeWs()===wid&&s.dataUnlocked()&&s.session()?.uid===A&&!document.body.classList.contains('ps-booting')&&w&&w.__boardReady===true&&w.__boardRestoreDone===true&&w._boardPrivateLoaded&&w.boardPrivateCurrent(w._boardPrivateOwner)&&!w.__boardRestoring;
+ },{wid,A},{timeout:45000});
+ return (await page.$('#fBoard')).contentFrame();
+}
 try{
  for(const [width,mode] of [[375,'immediate'],[393,'immediate'],[768,'immediate'],[1280,'immediate'],[1280,'quota-delay'],[1280,'both-fail'],[1280,'late-receipt'],[1280,'playback']]){
   if(process.env.PS_DRAFT_CASE&&process.env.PS_DRAFT_CASE!==width+'-'+mode)continue;
@@ -22,7 +30,7 @@ try{
   SIZES.draft={engine,ctx:{viewport:{width,height:860},deviceScaleFactor:1}};
   const {page,context,logs}=await openApp(fx,'draft',{browsers});
   try{
-   await page.evaluate(()=>document.querySelector('#appSeg button[data-app="board"]').click());let f=await frame(page);
+   await page.evaluate(()=>document.querySelector('#appSeg button[data-app="board"]').click());let f=await frame(page,WT);
    console.log(JSON.stringify({engine,width,mode,stage:'board-ready'}));
    await page.evaluate(()=>{
     window.addEventListener('ps-before-workspace-switch',function(){
@@ -79,7 +87,7 @@ try{
    const cancelled=await page.evaluate(()=>window.__qaDraftResult?.cancelled?window.__qaDraftResult:null);if(cancelled)throw new Error('Unexpected draft barrier cancellation: '+JSON.stringify(cancelled));
    console.log(JSON.stringify({engine,width,mode,stage:'reloaded'}));
    await page.waitForFunction(WP=>window.PSSync&&PSSync.activeWs()===WP&&PSSync.dataUnlocked(),WP,{timeout:45000});
-   f=await frame(page);await f.waitForFunction(()=>!!window.__boardDraftPending);
+   f=await frame(page,WP);await f.waitForFunction(()=>!!window.__boardDraftPending);
    const draft=await f.evaluate(()=>window.__boardDraftPending);
    const atGuard=await page.evaluate(()=>sessionStorage.getItem('qa-board-at-guard'));
    assert.deepEqual(normalized(draft.raw),normalized(atGuard),'reloaded full draft is the exact complete source before frame removal');

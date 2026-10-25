@@ -98,13 +98,21 @@
   }
   function install(w){
     if(w.__psBoardDraft||typeof w.boardDraftWriteNow!=='function')return;
+    var guestSource=null;
     var api=create({
       context:function(){
-        var o=w._boardPrivateOwner,needed=!!(o&&w.boardManualChanged()),b=w.document.body;
+        var o=w._boardPrivateOwner,seq=w._boardPrivateEditSeq,current=!!(o&&w._boardPrivateLoaded&&w.boardPrivateCurrent(o)),g=w.__psBoardGuest;
+        var ownerRaw=JSON.stringify(o);
+        if(current&&g&&g.draftSuppressed&&g.draftSuppressed())guestSource={owner:ownerRaw,seq:seq};
+        else if(current||!guestSource||guestSource.owner!==ownerRaw||guestSource.seq!==seq)guestSource=null;
+        // The unchanged adopted board remains in the guest slot. Preserve that
+        // existing suppression across the guard's temporary owner suspension;
+        // a later edit or different owner must use the ordinary durable draft.
+        var needed=!!(o&&w.boardManualChanged()&&!guestSource),b=w.document.body;
         var blocked=!!(w._vaultBoardContext||w._vaultBoardRestoring||w.__vaultEdit||w.__animExport||w.__capLock||w.__psThumbCapturing||b.classList.contains('editing')||b.classList.contains('comm-viewing'));
         if(typeof animPlaying!=='undefined'&&animPlaying)blocked=true;
         if(typeof _bliveApplying!=='undefined'&&_bliveApplying)blocked=true;
-        return {owner:o,seq:w._boardPrivateEditSeq,needed:needed,blocked:blocked,current:!!(o&&w._boardPrivateLoaded&&w.boardPrivateCurrent(o))};
+        return {owner:o,seq:seq,needed:needed,blocked:blocked,current:current};
       },
       prepare:function(){w.restoreAnimBeforeCapture();},
       capture:function(){return w.boardLiveCapture(w.__csView||'board');},

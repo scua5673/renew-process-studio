@@ -1,6 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
 const {create,install}=require('../studio/board-draft.js');
+const Guest=require('../studio/board-guest.js');
 const tick=()=>new Promise(r=>setImmediate(r));
 function deferred(){let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};}
 function harness(){
@@ -87,4 +88,40 @@ test('the frame barrier cancels a queued derived preview before capturing its du
   document:{body:{classList:{contains:()=>false}}},boardDraftWriteNow(){},boardManualChanged:()=>true,boardPrivateCurrent:()=>true,
   boardLiveCapture:()=>({raw:h.raw}),boardDraftKey:()=>h.key,restoreAnimBeforeCapture(){},clearTimeout:t=>cleared.push(t),localStorage:h.d.local,storage:h.d.storage,PSStorage:{sharedReady:async()=>true,sharedVerified:h.d.verifyIDB}};
  install(w);await w.psFlushPendingReady();assert.ok(cleared.includes(11));assert.ok(cleared.includes(12));assert.equal(w._boardPreviewTimer,null);assert.equal(w.psHasPending(),false);
+});
+
+function adoptedBoard(){
+ const owner={uid:'synthetic-account-a',wid:'personal-a',active:'team-a',seal:'original-seal',switchEpoch:'0'};
+ let liveOwner=owner;
+ const h=harness(),guestRaw=Guest.encode(h.raw,1);h.idb.set(Guest.KEY,guestRaw);
+ h.local.set('ps_sync_session',JSON.stringify({uid:owner.uid}));h.local.set('ps_cache_owner_v1',JSON.stringify(owner));h.local.set('ps_active_ws','team-a');
+ const w={location:{search:''},parent:{PSSync:{session:()=>({uid:owner.uid})}},document:{body:{classList:{contains:()=>false}}},
+  _boardPrivateOwner:null,_boardPrivateLoaded:false,_boardPrivateEditSeq:0,_boardPrivateGeneration:0,_boardPrivateRecord:null,_boardPrivateBase:null,_boardPrivateHead:null,_boardPrivateIdbHead:null,_boardManualDirty:false,_boardUserTouched:false,
+  localStorage:h.d.local,storage:h.d.storage,PSStorage:{sharedReady:async()=>true,sharedVerified:h.d.verifyIDB},clearTimeout(){},toast(){},
+  boardPrivateOwner:()=>liveOwner,boardPrivateCurrent:o=>!!o&&liveOwner===o,
+  boardManualChanged(){return this._boardManualDirty&&this._boardUserTouched;},boardManualStatus(){},boardDraftRead:async()=>null,
+  boardLiveApply(live){this.canvas=live.snap;},boardLiveCapture(){return {raw:JSON.stringify({snap:this.canvas,view:'board'})};},boardDraftKey:()=>h.key,boardDraftWriteNow(){throw Error('unsafe original draft writer was reached');},
+  boardSaveExplicit:async()=>true,boardSaveOne:async()=>true,
+  boardSaveLive(){this._boardPrivateEditSeq++;this._boardManualDirty=true;this._boardUserTouched=true;},
+  restoreLiveBoard(){this._boardPrivateOwner=liveOwner;this._boardPrivateLoaded=true;this._boardPrivateBase={raw:null,cupd:null};return Promise.resolve(true);},
+  boardPrivateAuthChanged(){this._boardPrivateLoaded=false;},restoreAnimBeforeCapture(){}
+ };
+ Guest.mount(w,{lex:()=>({applying:false,playing:false})});install(w);
+ return {h,w,guestRaw,lock(){liveOwner=null;w.boardPrivateAuthChanged();}};
+}
+test('the real guest adoption predicate keeps an unchanged adopted board in its slot through a source guard',async()=>{
+ const {w,h,guestRaw,lock}=adoptedBoard();await w.restoreLiveBoard();
+ assert.equal(w.__psBoardGuest.adopted(),true);assert.equal(w.__psBoardGuest.draftSuppressed(),true);
+ await w.boardDraftWriteNow();await w.psFlushPendingReady();
+ assert.equal(h.local.has(h.key),false);assert.equal(h.idb.has(h.key),false);assert.equal(h.idb.get(Guest.KEY),guestRaw);
+ lock();assert.equal(w.__psBoardGuest.adopted(),false,'the existing guest auth wrapper clears its transient adoption flag');
+ await w.psFlushPendingReady();assert.equal(w.psHasPending(),false);assert.equal(h.local.has(h.key),false);assert.equal(h.idb.get(Guest.KEY),guestRaw,'the original guest source remains durable');
+});
+test('a later real edit to an adopted guest board requires an exact durable draft before the source guard',async()=>{
+ const {w,h,guestRaw,lock}=adoptedBoard();await w.restoreLiveBoard();
+ assert.equal(w.__psBoardGuest.draftSuppressed(),true);w.canvas.players[0].x=777;w.boardSaveLive();
+ assert.equal(w.__psBoardGuest.adopted(),true,'adopted alone must not suppress later user changes');assert.equal(w.__psBoardGuest.draftSuppressed(),false);
+ assert.equal(w.psHasPending(),true);await w.psFlushPendingReady();
+ const draft=h.local.get(h.key);assert.equal(JSON.parse(JSON.parse(draft).raw).snap.players[0].x,777);assert.equal(h.idb.get(Guest.KEY),guestRaw);
+ lock();await w.psFlushPendingReady();assert.equal(h.local.get(h.key),draft,'the guarded barrier only verifies the later edit');
 });

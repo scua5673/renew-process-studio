@@ -216,9 +216,12 @@
     /* 연 그대로(손대지 않은) 보드는 그 계정의 기기 초안(3.038)으로 따로 적지 않는다 — 원문은 기기 칸에 있다.
        로그인 첫 부팅은 서버 자료를 받으면 앱을 한 번 새로 연다(sync.js onApplied 'boot'). 그때 초안을 적으면 다음 부팅이 «되살리기» 띠를 내고
        빈 계정 보드에 다시 열지 않는다. 손대면(boardSaveLive 가 편집 순번을 올린다) 예전처럼 초안이 지킨다. */
-    function draftWrite() {
+    function draftSuppressed() {
       var a = st.adopted;
-      if (a && win._boardPrivateEditSeq === a.seq && sameAccount(win._boardPrivateOwner, a)) return false;
+      return !!(a && win._boardPrivateEditSeq === a.seq && sameAccount(win._boardPrivateOwner, a));
+    }
+    function draftWrite() {
+      if (draftSuppressed()) return false;
       return orig.boardDraftWriteNow.apply(this, arguments);
     }
     function restoreLive() {
@@ -258,6 +261,7 @@
       active: active,
       loaded: function () { return st.loaded; },
       adopted: function () { return !!st.adopted; },
+      draftSuppressed: draftSuppressed,
       restore: restore,
       save: save
     };
