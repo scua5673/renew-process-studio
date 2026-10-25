@@ -15,11 +15,12 @@ const photoAspect=process.env.PS_PHOTO_ASPECT||'4:3';
 const internalPadding=Number(process.env.PS_PHOTO_INTERNAL_PADDING??0);
 const missing=process.env.PS_PHOTO_MISSING==='1';
 const forceRecorder=process.env.PS_PHOTO_FORCE_RECORDER==='1';
+const forceUnsupported=process.env.PS_PHOTO_FORCE_UNSUPPORTED==='1';
 assert.ok(['16:9','4:3'].includes(photoAspect));
 assert.ok(Number.isFinite(delayMs)&&delayMs>=0&&Number.isFinite(internalPadding)&&internalPadding>=0&&internalPadding<.2);
 fs.mkdirSync(output,{recursive:true});
 const fx=await startFixture(),browsers={};
-const result={test:missing?'anim-photo-missing':'anim-photo-pages',report:'b62c01fe-565c-42f2-9b41-10249ea53b9f',engine,size,build,delayMs,photoAspect,internalPadding,missing,forceRecorder,fps,height,externalConnections:'blocked by team-app fixture',privateAttachmentUsed:false,sourceHashes:Object.fromEntries(['studio/board.html','studio/board-pitch-photo.js','studio/board-tweaks.js'].map(f=>[f,createHash('sha256').update(fs.readFileSync(path.join(root,f))).digest('hex')])),passed:false,stages:[]};
+const result={test:missing?'anim-photo-missing':'anim-photo-pages',report:'b62c01fe-565c-42f2-9b41-10249ea53b9f',engine,size,build,delayMs,photoAspect,internalPadding,missing,forceRecorder,forceUnsupported,fps,height,externalConnections:'blocked by team-app fixture',privateAttachmentUsed:false,sourceHashes:Object.fromEntries(['studio/board.html','studio/board-pitch-photo.js','studio/board-tweaks.js'].map(f=>[f,createHash('sha256').update(fs.readFileSync(path.join(root,f))).digest('hex')])),passed:false,stages:[]};
 let page,bf,logs=[];
 const stage=s=>{result.stages.push({stage:s,at:new Date().toISOString()});fs.writeFileSync(path.join(output,'progress.json'),JSON.stringify(result,null,2)+'\n');console.log('anim-photo-pages '+s);};
 const authoredFrame=({thumb,...frame})=>frame;
@@ -30,6 +31,8 @@ const compareSources=()=>{
   result.derivedPreviewChanges=result.before.frames.flatMap((f,i)=>f.thumb===result.after.frames[i]?.thumb?[]:[`frames[${i}].thumb`]);
   result.derivedPreviewChanges.push(...result.before.pages.flatMap((p,i)=>p.thumb===result.after.pages[i]?.thumb?[]:[`pages[${i}].thumb`]));
 };
+const readState=()=>bf.evaluate(()=>({list:window.__psPages.exportList(),pages:JSON.parse(JSON.stringify(window.__psPages.pg())),current:captureSnap(),frames:JSON.parse(JSON.stringify(anim.frames)),active:animActive,page:window.__psPages.pageInfo()}));
+const runtimeSnapshot=()=>bf.evaluate(()=>{const e=window.__photoExport;return {vendor:navigator.vendor,platform:navigator.platform,capabilities:e?.capabilities,activeCapabilities:{mediaRecorder:typeof MediaRecorder,videoEncoder:typeof VideoEncoder,videoFrame:typeof VideoFrame},capabilityProbe:e?.capabilityProbe,codecConfig:e?.codecConfig,pick:e?.pick,write:e?.write,remove:e?.remove,anchor:e?.anchor,requested:e?.requested,blob:e?.blob?{size:e.blob.size,type:e.blob.type}:null,reads:e?.reads||[],toasts:e?.toasts||[],recorderStates:(e?.recorders||[]).map(r=>({state:r.state,mimeType:r.mimeType})),xml:e?.xml||[],raster:e?.raster||[],guard:{animExport:window.__animExport,animExport3d:window.__animExport3d,fit:window.__psExportFit,picking:typeof _animPicking==='undefined'?null:_animPicking,busy:typeof PEP==='undefined'?null:PEP.busy()},progress:document.getElementById('psExpProg')?.className||null};});
 // The identical saved bytes and pixel probes are used by the native and isolated cross decoder.
 async function decodeVideoPixels({base64,indexes,fps,colors,type}){
   const bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),v=document.createElement('video'),url=URL.createObjectURL(new Blob([bytes],{type}));
@@ -94,7 +97,7 @@ try{
   },{photoAspect,internalPadding,missing});
   await bf.waitForFunction(()=>document.querySelector('#ps-pitchimg')?.getAttribute('href')?.startsWith('data:image/'));
   await bf.evaluate(()=>{autoSaveAnimFrame();});
-  result.before=await bf.evaluate(()=>({list:window.__psPages.exportList(),pages:JSON.parse(JSON.stringify(window.__psPages.pg())),current:captureSnap(),frames:JSON.parse(JSON.stringify(anim.frames)),active:animActive,page:window.__psPages.pageInfo()}));
+  result.before=await readState();
   assert.equal(result.before.list.length,3);
   for(let i=0;i<3;i++){
     assert.equal(result.before.list[i].frames.length,2);
@@ -102,7 +105,7 @@ try{
     assert.deepEqual(result.before.list[i].frames.map(f=>f.snap.players),result.seed.pages[i].players,'authored player positions retained before export');
   }
   stage('three-local-photo-pages-ready');
-  await bf.evaluate(({delayMs,fps,height,missing,forceRecorder})=>{
+  await bf.evaluate(async({delayMs,fps,height,missing,forceRecorder,forceUnsupported})=>{
     const e=window.__photoExport={pick:0,write:0,remove:0,anchor:0,blob:null,xml:[],raster:[],reads:[],recorders:[],toasts:[],delayMs,fps,height,startedAt:performance.now(),last:null,canvas:null};
     const specs=window.__photoTestSpecs;
     const originalGet=storage.get;
@@ -126,7 +129,7 @@ try{
       return {...meta,width:w,height:h,edge,edgeCounts:counts,edgeColorCounts:palettes.map(p=>p.map(c=>edge.filter(v=>match(v,[c])).length)),gridCounts:palettes.map(p=>grid.filter(v=>match(v,p)).length),gridSize:grid.length};
     };
     window.showSaveFilePicker=async options=>{e.pick++;e.name=options.suggestedName;return {name:options.suggestedName,remove:async()=>{e.remove++;},createWritable:async()=>({write:async blob=>{e.write++;e.blob=blob;},close:async()=>{}})};};
-    if(missing){const toast=window.toast;window.toast=function(message){e.toasts.push(String(message));return toast.apply(this,arguments);};}
+    const toast=window.toast;window.toast=function(message){e.toasts.push(String(message));return toast.apply(this,arguments);};
     if(typeof MediaRecorder==='function'){const ActualRecorder=MediaRecorder;window.MediaRecorder=class extends ActualRecorder{constructor(){super(...arguments);e.recorders.push(this);}};}
     const pickConfig=window._wcPickConfig;window._wcPickConfig=async function(){const config=await pickConfig.apply(this,arguments);e.codecConfig=config?{...config}:null;return config;};
     const saveBlob=window._animSaveBlob;window._animSaveBlob=function(blob){e.blob=blob;return saveBlob.apply(this,arguments);};
@@ -156,9 +159,11 @@ try{
       }
       return out;
     };
-    e.capabilities={mediaRecorder:typeof MediaRecorder,videoEncoder:typeof VideoEncoder,videoFrame:typeof VideoFrame};
+    e.capabilities={mediaRecorder:typeof MediaRecorder,videoEncoder:typeof VideoEncoder,videoFrame:typeof VideoFrame,vendor:navigator.vendor,platform:navigator.platform};
     if(forceRecorder){window.VideoEncoder=undefined;e.forcedRecorder=typeof VideoEncoder==='undefined';}
-  },{delayMs,fps,height,missing,forceRecorder});
+    if(forceUnsupported){window.VideoEncoder=undefined;window.MediaRecorder=undefined;}
+    e.capabilityProbe={mediaRecorder:typeof MediaRecorder,videoEncoder:typeof VideoEncoder,videoFrame:typeof VideoFrame,vendor:navigator.vendor,platform:navigator.platform,codecConfig:await window._wcPickConfig(Math.round(height*16/9/2)*2,height,fps,5000000)};
+  },{delayMs,fps,height,missing,forceRecorder,forceUnsupported});
   await bf.evaluate(()=>{document.getElementById('cmd-export-btn')?.click();document.getElementById('animExport').click();});
   await bf.waitForSelector('#evSheet #evGo');
   await bf.evaluate(()=>{
@@ -172,10 +177,60 @@ try{
   });
   stage('real-export-start');
   await bf.locator('#evSheet #evGo').click();
-  if(missing){
-    await bf.waitForFunction(()=>window.__photoExport.requested&&window.__photoExport.remove>0&&!window.__animExport&&!PEP.busy(),null,{timeout:30000});
+  await bf.waitForFunction(()=>{const e=window.__photoExport;return (e.blob&&document.getElementById('psExpProg')?.className==='done')||(e.requested&&e.remove>0&&!window.__animExport&&!PEP.busy());},null,{timeout:missing?30000:120000});
+  result.runtime=await runtimeSnapshot();
+  const unsupported=result.runtime.capabilityProbe.mediaRecorder==='undefined'&&result.runtime.capabilityProbe.codecConfig===null;
+  if(unsupported){
+    result.mode='unsupported-native-video/frame-probe';
+    result.validationMode='unsupported-native-video';
+    assert.ok(result.runtime.toasts.includes('이 브라우저는 영상 저장을 지원하지 않아요'),'native unsupported-video message');
+    assert.equal(result.runtime.write,0);assert.equal(result.runtime.anchor,0);assert.equal(result.runtime.blob,null);assert.ok(result.runtime.remove>0);
+    assert.ok(!Object.values(result.runtime.guard).some(Boolean),'unsupported export releases all guards');
+    result.afterUnsupported=await readState();result.after=result.afterUnsupported;compareSources();assert.equal(result.sourcePreserved,true,'unsupported video leaves all authored source unchanged');
+    result.frameProbe=await bf.evaluate(async({missing,height})=>{
+      const e=window.__photoExport,out={mode:missing?'native-production-photo-ready-missing':'native-production-photo-frames',encodedVideo:false,frames:[],redo:0,started:performance.now()-e.startedAt};
+      const savedFrames=window.__psPages.exportList();
+      if(missing){
+        const ref=window.__photoTestSpecs[0].ref;
+        try{await _animExportGuard(async()=>{await PSPitchPhoto.ready(ref,()=>{out.redo++;renderPitchImg();});});out.rejected=false;}
+        catch(error){out.rejected=true;out.error=String(error);out.userMessage=error.psUserMessage;}
+      }else{
+        await _animExportGuard(async()=>{
+          for(const page of savedFrames)for(let i=0;i<page.frames.length;i++){
+            loadSnap(page.frames[i].snap);
+            await PSPitchPhoto.ready(state.pitchImg,()=>{out.redo++;renderPitchImg();});
+            const readyAt=performance.now()-e.startedAt,raw=boardImageXML(),view=_export169(raw.vb),o=boardImageXML(view),meta={...e.last,page:page.i,scene:i,readyAt};
+            const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(Error('native photo SVG decode'));image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(o.xml);});if(image.decode)await image.decode();
+            const c=document.createElement('canvas');c.width=Math.round(height*16/9/2)*2;c.height=height;const ctx=c.getContext('2d');ctx.fillStyle=o.gb;ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(image,0,0,c.width,c.height);
+            out.frames.push(e.sample(c,meta));
+            if(i===0)out['page'+page.i]=c.toDataURL('image/png');
+          }
+        });
+      }
+      out.finished=performance.now()-e.startedAt;out.reads=e.reads;return out;
+    },{missing,height});
+    for(let i=0;i<3;i++){const key='page'+i,url=result.frameProbe[key];if(url){fs.writeFileSync(path.join(output,`native-frame-probe-page-${i+1}.png`),Buffer.from(url.split(',')[1],'base64'));delete result.frameProbe[key];}}
+    result.after=await readState();compareSources();result.runtimeAfterFrameProbe=await runtimeSnapshot();
+    assert.equal(result.sourcePreserved,true,'native frame probe preserves every authored page/frame/snapshot');assert.ok(!Object.values(result.runtimeAfterFrameProbe.guard).some(Boolean));
+    if(missing){
+      assert.equal(result.frameProbe.rejected,true,'actual product ready rejects absent picture');assert.equal(result.frameProbe.redo,0,'missing picture never rerenders');assert.match(result.frameProbe.userMessage,/사진/);
+      assert.ok(result.frameProbe.reads.some(r=>r.key===result.seed.photos[0].key&&r.found===false&&Number.isFinite(r.finished)),'real missing IDB read completes');
+      result.missingReadyProbe=result.frameProbe;delete result.frameProbe;
+    }else{
+      assert.equal(result.frameProbe.frames.length,6,'three pages and two actual authored scenes each');assert.equal(result.frameProbe.redo,6);
+      for(const frame of result.frameProbe.frames){
+        assert.equal(frame.photo,frame.page);assert.equal(frame.photoPresent,true);assert.equal(frame.edgeCounts[frame.page],frame.edge.length,'all native SVG/canvas photo edges');
+        const [x,y,w,h]=frame.photoRect,[vx,vy,vw,vh]=frame.vb;assert.ok(x<=vx+.5&&y<=vy+.5&&x+w>=vx+vw-.5&&y+h>=vy+vh-.5,'product photo view is full-bleed');
+        const reads=result.frameProbe.reads.filter(r=>r.key===result.seed.photos[frame.page].key);if(frame.page<2)assert.ok(reads.some(r=>r.matchesStoredContentAddress&&r.finished<=frame.readyAt),'actual IDB payload ready before native SVG capture');
+      }
+    }
+    result.errors=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));assert.deepEqual(result.errors,[]);
+    result.passed=true;stage('unsupported-native-video-verified-with-native-frame-probe');
+  }else if(missing){
+    result.mode='native-video/missing-photo-rejected';
+    result.validationMode='missing-photo';
     result.export=await bf.evaluate(()=>{const e=window.__photoExport;return {pick:e.pick,write:e.write,remove:e.remove,anchor:e.anchor,blob:e.blob?{size:e.blob.size,type:e.blob.type}:null,reads:e.reads,toasts:e.toasts,recorderStates:e.recorders.map(r=>r.state),capabilities:e.capabilities,guard:{animExport:window.__animExport,animExport3d:window.__animExport3d,fit:window.__psExportFit,picking:_animPicking,busy:PEP.busy()}};});
-    result.after=await bf.evaluate(()=>({list:window.__psPages.exportList(),pages:JSON.parse(JSON.stringify(window.__psPages.pg())),current:captureSnap(),frames:JSON.parse(JSON.stringify(anim.frames)),active:animActive,page:window.__psPages.pageInfo()}));
+    result.after=await readState();
     compareSources();result.errors=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
     await page.screenshot({path:path.join(output,'missing-photo-stopped.png')});
     assert.equal(result.seed.photos[0].absentVerified,true,'valid photo ref has no real IDB item');
@@ -187,7 +242,9 @@ try{
     assert.ok(!Object.values(result.export.guard).some(Boolean),'export guards all released');assert.equal(result.sourcePreserved,true,'missing photo leaves every authored page/frame/snapshot untouched');assert.deepEqual(result.errors,[]);
     result.passed=true;stage('missing-photo-stopped-without-file');
   }else{
-  await bf.waitForFunction(()=>window.__photoExport.blob&&document.getElementById('psExpProg')?.className==='done',null,{timeout:120000});
+  result.mode='native-video';
+  result.validationMode='encoded-video';
+  assert.ok(result.runtime.blob&&result.runtime.progress==='done','capable environment must produce a completed actual video');
   stage('real-blob-saved');
   result.export=await bf.evaluate(async()=>{
     const e=window.__photoExport,b64=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=reject;r.readAsDataURL(e.blob);});
@@ -198,7 +255,7 @@ try{
   const encodedBase64=result.export.base64,encodedBytes=Buffer.from(encodedBase64,'base64');
   fs.writeFileSync(path.join(output,'actual-export.'+ext),encodedBytes);result.export.sha256=createHash('sha256').update(encodedBytes).digest('hex');delete result.export.base64;
   result.export.paintPages.forEach((url,i)=>{if(url)fs.writeFileSync(path.join(output,`canvas-page-${i+1}.png`),Buffer.from(url.split(',')[1],'base64'));});delete result.export.paintPages;
-  result.after=await bf.evaluate(()=>({list:window.__psPages.exportList(),pages:JSON.parse(JSON.stringify(window.__psPages.pg())),current:captureSnap(),frames:JSON.parse(JSON.stringify(anim.frames)),active:animActive,page:window.__psPages.pageInfo()}));
+  result.after=await readState();
   const perPage=p=>p.frames.reduce((n,f,i)=>n+Math.max(1,Math.round((i===p.frames.length-1?Math.max(1,f.hold||p.hold||.6):(f.hold||p.hold||.6))*fps))+(i<p.frames.length-1?Math.max(2,Math.round(Math.max(.3,f.dur||1)/(f.moveSpeed>0?f.moveSpeed:1)*fps))+1:0),0);
   const counts=result.before.list.map(perPage),total=counts.reduce((a,b)=>a+b,0);
   result.expected={counts,total};
@@ -243,6 +300,7 @@ try{
   }
 }catch(error){
   result.error={message:String(error),stack:error.stack};
+  if(bf)try{result.failureRuntime=await runtimeSnapshot();}catch(snapshotError){result.failureRuntimeError=String(snapshotError);}
   if(page)await page.screenshot({path:path.join(output,'failure.png')}).catch(()=>{});
   throw error;
 }finally{
