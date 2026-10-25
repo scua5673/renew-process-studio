@@ -14,7 +14,7 @@ var PREFIX='ps_pitch_photo:',REF='@photo:',RE=/^@photo:([0-9a-f]{16})(?:-(\d{1,5
 var T={
   ok:'운동장 사진을 깔았어요 · 이 기기에만 저장돼요',type:'PNG · JPEG · WebP 사진만 넣을 수 있어요',big:'10MB 이하 사진만 넣을 수 있어요',
   read:'사진을 읽지 못했어요 — 다른 사진으로 해 주세요',save:'사진을 이 기기에 저장하지 못했어요 — 저장 공간을 확인해 주세요',
-  off:'운동장 사진을 뺐어요',miss:'운동장 사진은 넣은 기기에만 있어요 — 여기서는 운동장으로 보여요',
+  off:'운동장 사진을 뺐어요',miss:'운동장 사진은 넣은 기기에만 있어요 — 여기서는 운동장으로 보여요',exportRead:'운동장 사진을 읽지 못했어요 — 잠시 후 다시 내보내 주세요',
   tilt:'3D 보기에서는 운동장 사진이 보이지 않아요 · 평면 보기에서 보여요',ro:'보기 전용이라 바꿀 수 없어요'
 };
 /* ── 셈(DOM 없이 — tests/board-pitch-photo.test.cjs) ── */
@@ -40,6 +40,17 @@ function frame(pr,m){m=+m||0;return [pr.L-m,pr.T-m,pr.PW+2*m,pr.PH+2*m];}
 /* 사진 자리 — 틀을 다 덮는 가장 작은 크기로, 제 비율 그대로 틀 가운데에(넘치는 쪽은 틀 밖으로). 크기를 모르면 틀 그대로(slice 로 잘라 채운다) */
 function place(f,w,h){if(!(w>0&&h>0))return f.slice();var ar=w/h,fw=f[2],fh=f[3],pw=fw,ph=fh;if(ar>fw/fh)pw=fh*ar;else ph=fw/ar;
   var r=function(v){return Math.round(v*100)/100;};return [r(f[0]+(fw-pw)/2),r(f[1]+(fh-ph)/2),r(pw),r(ph)];}
+/* 사진 영상은 사진 안에서 화면비를 맞춘다. 여백을 늘리거나 사진을 찌그러뜨리지 않고 가운데를 담는다. 원본/편집 화면은 그대로. */
+function videoBox(s,pr,m,w,h,ar){
+  if(!s||!isRef(s.pitchImg)||(W&&W.__animExport3d))return null;
+  var d=dimsOf(s.pitchImg),f=place(frame(pr,m),d&&d.w,d&&d.h);
+  if(!f.every(isFinite)||!(f[2]>0&&f[3]>0))return null;
+  var pts=[[f[0],f[1]],[f[0]+f[2],f[1]],[f[0],f[1]+f[3]],[f[0]+f[2],f[1]+f[3]]].map(function(p){return s.orientation==='v'?(s.spFlip?[h-p[1],p[0]]:[p[1],w-p[0]]):p;});
+  var xs=pts.map(function(p){return p[0];}),ys=pts.map(function(p){return p[1];});
+  var x=Math.min.apply(null,xs),y=Math.min.apply(null,ys),pw=Math.max.apply(null,xs)-x,ph=Math.max.apply(null,ys)-y,cx=x+pw/2,cy=y+ph/2;
+  ar=ar>0?ar:16/9;if(pw/ph>ar)pw=ph*ar;else ph=pw/ar;
+  return [cx-pw/2,cy-ph/2,pw,ph];
+}
 /* 설정 줄 아래 안내 — st: none | here | missing */
 function note(st,tilt){
   var s=st==='here'?'이 기기에만 저장돼요 · 다른 기기 · 팀 · 커뮤니티에는 운동장으로 보여요':st==='missing'?'다른 기기에서 넣은 사진이라 이 기기에는 없어요 — 운동장으로 보여요':'경기 화면 캡처를 깔고 그 위에 그려요 · 사진은 이 기기에만 저장돼요';
@@ -60,7 +71,7 @@ function load(id,redo){
   var st=store();if(!st){miss[id]=1;return Promise.resolve('');}
   pend[id]=Promise.resolve().then(function(){return st.get(PREFIX+id);}).then(function(r){
     var v=r&&typeof r.value==='string'&&r.value.indexOf('data:image/')===0?r.value:'';
-    delete pend[id];if(v)remember(id,v);else miss[id]=1;
+    delete pend[id];if(v){remember(id,v);delete miss[id];}else miss[id]=1;
     try{if(redo)redo();}catch(_){}
     if(!v&&!hinted['m'+id]&&!busyBoard()){hinted['m'+id]=1;say(T.miss);}
     return v;
@@ -73,6 +84,13 @@ function save(id,dataUrl){var st=store();if(!st)return Promise.reject(Error('sto
     if(!r||r.value!==dataUrl)throw Error('verify');remember(id,dataUrl);delete miss[id];return id;});}
 /* 지금 그릴 사진 주소 — 메모리에 없으면 불러오기를 걸고 '' (다 읽으면 redo 로 다시 그린다) */
 function href(u,redo){var id=idOf(u);if(!id)return '';if(mem[id])return mem[id];if(!miss[id])load(id,redo);return '';}
+/* 영상 프레임을 직렬화하기 전에 이 기기의 실제 사진을 기다린다. LRU에서 빠진 페이지도 다시 읽는다. */
+function ready(u,redo){var id=idOf(u);if(!id)return Promise.resolve();
+  return Promise.resolve(mem[id]||load(id)).then(function(src){
+    if(!src){var e=new Error('pitch-photo-unavailable');e.psUserMessage=miss[id]?T.miss:T.exportRead;throw e;}
+    if(redo)redo();
+  });
+}
 
 /* ── 그리기(board.html renderPitchImg 맨 앞에서 부른다) — 사진 참조면 여기서 다 그리고 true, 아니면 false(원래 길로) ── */
 function render(u,svg,world,pr,m,redo){
@@ -167,5 +185,5 @@ function mount(doc){
 if(W&&W.document&&W.document.getElementById)try{mount(W.document);}catch(_){}
 return {REF:REF,PREFIX:PREFIX,EDGE:EDGE,QUALITY:QUALITY,MAX_BYTES:MAX_BYTES,T:T,
   isRef:isRef,idOf:idOf,dimsOf:dimsOf,hash:hash,refOf:refOf,check:check,fit:fit,want:want,turn:turn,frame:frame,place:place,note:note,refsIn:refsIn,
-  render:render,href:href,pick:pick,take:take,use:use,clear:clear,mount:mount,sync:sync};
+  render:render,href:href,ready:ready,videoBox:videoBox,pick:pick,take:take,use:use,clear:clear,mount:mount,sync:sync};
 });

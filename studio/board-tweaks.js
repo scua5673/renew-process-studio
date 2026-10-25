@@ -130,7 +130,7 @@
     if (!body || win.__psTweaks) return; win.__psTweaks = true;
     var ls = function (k, v) { try { if (v === undefined) return win.localStorage.getItem(k); win.localStorage.setItem(k, v); } catch (_) {} return null; };
     function toast(m) { try { if (typeof win.toast === 'function') win.toast(m); } catch (_) {} }
-    /* global anim, animActive, libFilter, M */
+    /* global anim, animActive, libFilter, state, M */
     function A() { try { return typeof anim !== 'undefined' ? anim : null; } catch (_) { return null; } }
     function act() { try { return typeof animActive !== 'undefined' ? animActive : -1; } catch (_) { return -1; } }
     function LF() { try { return typeof libFilter !== 'undefined' ? libFilter : null; } catch (_) { return null; } }
@@ -216,7 +216,10 @@
     if (typeof win._export169 === 'function' && !win._export169.__psPitch) {
       var orig169 = win._export169;
       win._export169 = function (uvb) {
-        try { var pb = typeof win._exportPitchBox === 'function' ? win._exportPitchBox() : null; if (!pb) return orig169.apply(this, arguments);
+        try {
+          // 사진의 실제 경계를 쓰는 경로를 운동장 여백 규칙으로 덮지 않는다.
+          if (!win.__animExport3d && win.PSPitchPhoto && typeof win.PSPitchPhoto.videoBox === 'function' && typeof state !== 'undefined' && win.PSPitchPhoto.isRef(state.pitchImg)) return orig169.apply(this, arguments);
+          var pb = typeof win._exportPitchBox === 'function' ? win._exportPitchBox() : null; if (!pb) return orig169.apply(this, arguments);
           var full = typeof win.pitchViewKey === 'function' ? win.pitchViewKey() === 'full' : true;
           return frame169(pb, margin(), uvb, full);
         } catch (_) { return orig169.apply(this, arguments); }
