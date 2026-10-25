@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.178 — 운동장 사진의 영상 export는 `PSPitchPhoto.ready`로 실제 로컬 읽기·렌더를 마친 뒤 SVG를 복제한다. `videoBox`는 실제 사진 배치 안쪽의 중앙 16:9 crop(원본 변경 없음). `board-tweaks`의 `_export169` 감싸개도 사진 경로를 원래 함수로 넘겨야 한다. 합성 4:3·느린 IDB·자체 테두리 보존을 실제 인코딩 영상으로 검사한다.
+
 - 3.177 — 팀 운영 «설정»은 «팀 기준»(플레이북·선수 기준). 플레이북은 기존 cs_gamemodel_v1·cs_terms_v1를 그대로 읽고 IDB에만 남은 원본을 먼저 복원한다. playbook-data.js는 최신 문서 위에 필드만 고치며 ID·장면·확장 필드를 보존한다. 훈련 연결은 playbook-shell.js에서 보드 libTurn으로 직렬 저장한다. 선수 기준 표현은 player-criteria.js, 저장·평가 ID는 scout 원래 경로. 기존 settings·terms 링크는 숨은 별칭으로 유지한다.
 
 - 3.176 — 보관함 숨김 미리보기 시험의 전역 `libGet` 횟수는 독립 `ps-auth-state` 갱신도 센다. 표시 세 요청이 읽기 한 번으로 합쳐져도 전역 2가 될 수 있으므로 enqueue 주체별 실제 읽기를 확인한다. 숨김 0·진행 중 1·원본 보존은 유지하고 실패 추적을 남긴다.

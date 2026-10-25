@@ -10301,7 +10301,7 @@ async function exportVideo(opts){ opts=opts||{};
   try{ PEP.open((_3d?"3D ":"")+(opts.capN?"미팅 영상 만드는 중":(opts.pageMode?"모든 페이지 영상 만드는 중":"영상 만드는 중"))); }catch(_){}   /* 2.972 — 진행 카드 */
   window.__animExport3d=_3d?1:0;
   try{ return await _animExportGuard(function(){ return _exportVideoRun(opts); }); }
-  catch(e){ if(e&&e.psCancel){ try{PEP.close();}catch(_){} toast("내보내기를 멈췄어요"); return; } try{PEP.close();}catch(_){} try{console.warn("[exportVideo]",e);}catch(_){} toast("영상을 만들지 못했어요 — 다시 해 주세요"); }
+  catch(e){ if(e&&e.psCancel){ try{PEP.close();}catch(_){} toast("내보내기를 멈췄어요"); return; } try{PEP.close();}catch(_){} try{console.warn("[exportVideo]",e);}catch(_){} toast(e&&e.psUserMessage||"영상을 만들지 못했어요 — 다시 해 주세요"); }
   finally{ window.__animExport3d=0; if(opts.target&&!opts.__saved)await _animDropTarget(opts.target); try{ if(PEP.busy())PEP.close(); }catch(_){} }   /* 2.969 — 중간에 멈추면 고른 자리의 빈 파일을 치운다 · 2.972 — 끝나지 않은 진행 카드는 닫는다(앞에서 돌아간 경우) */
 }
 /* ══ 2.975 · 영상은 16:9 — 운동장을 가운데, 터치라인 밖 잔디 폭은 일정하게(사용자 "16:9 비율로 여백없이" · "터치라인이 있으면 잔디 여백을 일정하게 · 가운데 정렬") ══
@@ -10365,7 +10365,7 @@ function _exportPitchBox(){ try{ const p=PR();
   if(!cards.length&&pitchViewKey()!=='full'){const span=pitchViewSpan(pitchViewKey());if(pvWorldRight())p.L=Math.max(p.L,W-span);else p.R=Math.min(p.R,span);}
   const pts=[[p.L,p.T],[p.R,p.T],[p.L,p.B],[p.R,p.B]].map(([x,y])=>state.orientation==='v'?(state.spFlip?[H-y,x]:[y,W-x]):[x,y]);
   const xs=pts.map(q=>q[0]),ys=pts.map(q=>q[1]); return [Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]; }catch(_){ return null; } }
-function _export169(uvb){ try{ const pb=_exportPitchBox(); if(!pb)return uvb; const m=M, cx=(pb[0]+pb[2])/2, cy=(pb[1]+pb[3])/2, pw=pb[2]-pb[0], ph=pb[3]-pb[1];
+function _export169(uvb){ try{ const photo=window.PSPitchPhoto&&typeof PSPitchPhoto.videoBox==='function'&&PSPitchPhoto.videoBox(state,PR(),M,W,H,16/9);if(photo)return photo; const pb=_exportPitchBox(); if(!pb)return uvb; const m=M, cx=(pb[0]+pb[2])/2, cy=(pb[1]+pb[3])/2, pw=pb[2]-pb[0], ph=pb[3]-pb[1];
   let Hh=ph+2*m, Ww=Hh*16/9; if(Ww<pw+2*m){ Ww=pw+2*m; Hh=Ww*9/16; }
   if(uvb&&pitchViewKey()==='full'){ const needW=2*Math.max(cx-uvb[0],uvb[0]+uvb[2]-cx), needH=2*Math.max(cy-uvb[1],uvb[1]+uvb[3]-cy);
     if(needW>Ww+0.5){ Ww=needW; Hh=Ww*9/16; } if(needH>Hh+0.5){ Hh=needH; Ww=Hh*16/9; } }
@@ -10662,7 +10662,7 @@ async function _exportVideoRun(opts){
       _t3DrawGoals(ctx,fr.cam,fr.geo,T.lw); }
     _t3Mood(ctx,Wc,Hc,T.cam.mood);
     titleBar(meta); capBar(meta.cap,meta.idx); _wmDraw(ctx,Wc,Hc,!!(dest&&opts.reel)); _pushFrame(); }
-  function produce(k){ if(_t3x)return _t3Produce(k); try{ plan[k].set(); }catch(_){} const o=boardImageXML(plan[k].vb||uvb); const img=new Image();
+  async function produce(k){ if(_t3x)return _t3Produce(k); try{ plan[k].set(); }catch(_){} if(window.PSPitchPhoto)await PSPitchPhoto.ready(state.pitchImg,renderPitchImg);const o=boardImageXML(plan[k].vb||uvb); const img=new Image();
     const pr=new Promise(function(res){ img.onload=function(){ res(img); }; img.onerror=function(){ res(null); }; });
     img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(o.xml);
     return pr.then(function(im){ if(im&&im.decode){ return im.decode().then(function(){return im;},function(){return im;}); } return im; }); }
@@ -10700,8 +10700,8 @@ async function _exportVideoRun(opts){
   if(!blob){
     if(typeof MediaRecorder==="undefined"){ toast("이 브라우저는 영상 저장을 지원하지 않아요"); return; }
     _recStart();
-    let nextP=produce(0); await nextP; const t0=performance.now()+T;   /* 첫 장이 준비된 뒤에 시계를 건다(예전엔 첫 두 장이 몰렸다) */
     try{
+    let nextP=produce(0); await nextP; const t0=performance.now()+T;   /* 첫 장이 준비된 뒤에 시계를 건다(예전엔 첫 두 장이 몰렸다) */
     for(let k=0;k<_np;k++){
       if(PEP.cancelled())throw _pepCancelErr();
       const img=await nextP;
