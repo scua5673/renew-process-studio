@@ -27,7 +27,8 @@ await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0
 const base='http://127.0.0.1:'+server.address().port,results=[];
 let browser;
 try{
-  browser=await pw.chromium.launch({headless:true,executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
+  const engine=process.env.PS_BROWSER_ENGINE||'chromium';assert.ok(['chromium','webkit'].includes(engine));
+  browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})});
   for(const spec of [{width:393,height:852,mobile:true},{width:1280,height:900,mobile:false}])for(const serverName of ['가상 테스트 코치']){
     const label=spec.width+'-'+(serverName?'server-name':'no-name'),calls=[],blocked=[],errors=[];
     if(process.env.PS_TEST_LABEL&&process.env.PS_TEST_LABEL!==label)continue;
@@ -105,7 +106,7 @@ try{
         PSSync.merge.notes=()=>[{id:'fixture-note',by:'가상 코치',ymd:'2026-09-15',path:'w1.1.match',mine:'가상 기록'}];
       });
       const cases=[
-        ['confirmed',{kind:'ok',at:100,n:0,review:0},'저장됨'],
+        ['confirmed',{kind:'ok',at:100,n:0,review:0},'서버 저장 확인'],
         ['saving',{kind:'busy',n:1,review:0},'저장 중…'],
         ['offline',{kind:'bad',reason:'sync_offline',n:1,review:0},'오프라인 · 저장 대기'],
         ['preserved',{kind:'ask',n:0,review:27},'일부 변경 보관'],
@@ -141,7 +142,7 @@ try{
       assert.equal(await page.evaluate(()=>window.__fixtureRetries),1);assert.equal(await page.evaluate(()=>window.__fixtureChoices),0);
       assert.equal(await page.locator('#psWsModal').count(),0);
       await page.evaluate(()=>{window.__fixtureSaveState={kind:'ok',at:500,n:0,review:0};window.dispatchEvent(new Event('ps-sync-state'));});
-      assert.equal(await page.locator('#psPushState').innerText(),'저장됨');
+      assert.equal(await page.locator('#psPushState').innerText(),'서버 저장 확인');
       assert.equal(await page.locator('#gearPop [data-gp-go="data"]').getAttribute('data-dot'),'0','A confirmed status clears the dot despite the fixed button label');
       // Real recovery component: exact originals are read only on demand.
       const recoveryRow={id:'11111111-1111-4111-8111-111111111111',k:'sq:fixture-player',at:100,cupd:2,reason:'conflict',localHash:'l',remoteHash:'r',wid:'synthetic-team'};

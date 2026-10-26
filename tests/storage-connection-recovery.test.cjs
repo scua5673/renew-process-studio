@@ -1,10 +1,10 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const source=fs.readFileSync(require.resolve('../studio/storage.js'),'utf8');
-const code=source.slice(source.indexOf('  function open(){'),source.indexOf('  function idbKeys('));
+const code=source.slice(source.indexOf('  function open(){'),source.indexOf('  function idbKeys('))+'\n'+source.slice(source.indexOf('  function migrationOwner('),source.indexOf('  function migrationCurrent('));
 function fixture(){
  const requests=[],dbs=[];let writes=0,transactions=0;
- const c=vm.createContext({Promise,Error,DB:'test',VER:1,STORE:'kv',dbp:null,indexedDB:{open(){const r={};requests.push(r);return r;}},isQuotaErr:()=>false,diagnostic(){}});
+ const c=vm.createContext({Promise,Error,DB:'test',VER:1,STORE:'kv',dbp:null,indexedDB:{open(){const r={};requests.push(r);return r;}},localStorage:{getItem(){return null;}},isQuotaErr:()=>false,diagnostic(){}});
  vm.runInContext(code,c);
  function ready(options={}){const r=requests.at(-1),db={close(){db.closed=true;},transaction(){transactions++;if(options.closing)throw Object.assign(Error('database connection is closing'),{name:'InvalidStateError'});const t={error:null,abort(){queueMicrotask(()=>t.onabort());},objectStore(){return {put(){writes++;},get(){const request={result:'saved'};queueMicrotask(()=>options.abort?t.onabort():t.oncomplete());return request;}};}};return t;}};r.result=db;dbs.push(db);r.onsuccess();return db;}
  return {c,requests,dbs,ready,get writes(){return writes;},get transactions(){return transactions;}};

@@ -3297,14 +3297,16 @@ try{ setTimeout(rtConnect,6000); setTimeout(rtConnect,20000); }catch(_){}   /* �
 try{ document.addEventListener('visibilitychange',function(){ if(document.visibilityState!=='visible')return;
   if(rtWs&&rtWs.readyState===1&&Date.now()-rtSeen>=RT_WAKE_STALE_MS){ rtRetry=0; rtClose(); }
   setTimeout(rtConnect,300); }); }catch(_){}
-function kvPullValues(at,wid,keys){
+function kvPullValues(at,wid,keys,valueRound){
   if(!keys||!keys.length) return Promise.resolve([]);
   var chunks=[]; for(var i=0;i<keys.length;i+=KV_PULL_CHUNK) chunks.push(keys.slice(i,i+KV_PULL_CHUNK));
   var out=[];
   return chunks.reduce(function(p,ch){ return p.then(function(){
     return syncFetch('kv_pull',BASE+'/rest/v1/ps_kv?workspace_id=eq.'+wid+'&'+kvInFilter(ch)+'&select=k,v,cupd',{headers:hj(at)})
       .then(function(r){ if(!r.ok) throw syncHttpError('kv_pull',r.status); return r.json(); })
-      .then(function(rows){ return Promise.all((rows||[]).map(function(r0){
+      .then(function(rows){
+        try{syncValueObserve(valueRound,wid,rows,ch,'pull');}catch(_){}
+        return Promise.all((rows||[]).map(function(r0){
         /* 2.622 — 일정 행은 그림 참조를 되돌린 뒤에 엔진에 준다(엔진 안은 늘 그림이 든 모양) */
         if(r0&&BLOB_KEYS[r0.k]&&typeof r0.v==='string'&&/"(?:thumb|emblem)Ref"\s*:/.test(r0.v)){ return schedHydrate(at,wid,r0.v).then(function(v){ r0.v=v; out.push(r0); }); }
         out.push(r0);
@@ -3432,14 +3434,14 @@ function shareNote(k){
     return edit+' · '+see;
   }catch(_){ return ''; }
 }
-function kvPushRows(at,rows,onOk,label,preflight){
+function kvPushRows(at,rows,onOk,label,preflight,valueRound){
   if(!rows||!rows.length) return Promise.resolve();
   function ready(stage){if(typeof preflight!=='function'||preflight())return true;throw syncIssue('sync_workspace_changed',stage||label||'kv_push','동기화 중 작업 공간이 바뀌었습니다');}
   ready((label||'kv_push')+'_prepare');
   /* 2.622 — 일정 행의 그림을 ps_blob 으로 먼저 보내고 행에는 참조만 남긴다(실패·미설치면 통째 전송으로 물러선다) */
-  return blobPrepRows(at,rows).then(function(){if(typeof PSKvSize!=='undefined')PSKvSize.check(rows,BLOB_KEYS,syncMaxLen);ready((label||'kv_push')+'_prepared');return kvPushRowsInner(at,rows,onOk,label,preflight); });
+  return blobPrepRows(at,rows).then(function(){if(typeof PSKvSize!=='undefined')PSKvSize.check(rows,BLOB_KEYS,syncMaxLen);ready((label||'kv_push')+'_prepared');return kvPushRowsInner(at,rows,onOk,label,preflight,valueRound); });
 }
-function kvPushRowsInner(at,rows,onOk,label,preflight){
+function kvPushRowsInner(at,rows,onOk,label,preflight,valueRound){
   label=label||'kv_push';
   if(!rows||!rows.length) return Promise.resolve();
   function ready(stage){if(typeof preflight!=='function'||preflight())return true;throw syncIssue('sync_workspace_changed',stage||label,'동기화 중 작업 공간이 바뀌었습니다');}
@@ -3462,7 +3464,7 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
   function confirmed(ch,got){
     ready(label+'_confirm');
     if(!Array.isArray(got))throw syncIssue('sync_confirm_missing',label,'server confirmation missing');
-    var versions=new Map();
+    var versions=new Map(),observedResponses=[got];
     function exactMatch(req,found){
       var matches=found.filter(function(row){return String(row.workspace_id||'')===String(req.workspace_id||'')&&row.k===req.k;});
       if(matches.length!==1)return false;
@@ -3478,7 +3480,9 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
         var e=syncIssue('sync_server_rejected',label,'server rejected');e.psRejectedKeys=bad.map(function(x){return x.k;});throw e;
       }
       ch.forEach(function(req){if(exactBody(req.k))req.cupd=versions.get(req);try{holdClear(req.k);importApprovalClear(req.k);}catch(_){}try{if(typeof rejectClear==='function')rejectClear(req.k);}catch(_){}});
-      if(onOk)onOk(ch);return got;
+      if(onOk)onOk(ch);
+      try{syncValueAck(valueRound,ch,observedResponses);}catch(_){}
+      return got;
     }
     var doubt=ch.filter(function(req){if(exactBody(req.k))return !exactMatch(req,got);return !got.some(function(row){
       return String(row.workspace_id||'')===String(req.workspace_id||'')&&row.k===req.k&&Number(row.cupd)===Number(req.cupd);
@@ -3489,7 +3493,7 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
       var reqs=byWs[w0];
       return syncFetch(label+'_verify',BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(w0)+'&'+kvInFilter(reqs.map(function(x){return x.k;}))+'&select=workspace_id,k,v,cupd',{headers:hj(at)})
         .then(function(r){ if(!r.ok)throw syncHttpError(label+'_verify',r.status); return r.json(); })
-        .then(function(rows){ if(!Array.isArray(rows))throw syncIssue('sync_confirm_missing',label+'_verify','server confirmation missing');var sv={};rows.forEach(function(x){sv[x.k]=x.v;});return reqs.filter(function(req){return exactBody(req.k)?!exactMatch(req,rows):sv[req.k]!==req.v;}); });
+        .then(function(rows){ if(!Array.isArray(rows))throw syncIssue('sync_confirm_missing',label+'_verify','server confirmation missing');observedResponses.push(rows);var sv={};rows.forEach(function(x){sv[x.k]=x.v;});return reqs.filter(function(req){return exactBody(req.k)?!exactMatch(req,rows):sv[req.k]!==req.v;}); });
     })).then(function(parts){ return finish([].concat.apply([],parts)); });
   }
   /* 2.604 — 청크(최대 15행)가 403 이면 어느 키가 막혔는지 모른 채 회차 전체가 실패하고 다음 회차에 그대로 반복됐다.
@@ -3526,20 +3530,6 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
         });
       });
   }); },Promise.resolve());
-  var _legacyRun=function(){ return chunks.reduce(function(p,ch){ return p.then(function(){
-    return syncFetch(label,BASE+'/rest/v1/ps_kv?select=workspace_id,k,cupd',{method:'POST',
-        /* BEFORE trigger가 OLD를 돌려 거부해도 HTTP는 2xx다. 실제 저장된 행의 k·cupd 를
-           받아 요청과 대조해야 '클라우드 저장됨'으로 잘못 확정하지 않는다(2.599: v 는 안 받는다). */
-        headers:(function(){var h=hj(at);h['Prefer']=prefBuild('resolution=merge-duplicates,return=representation');return h;})(),
-        body:JSON.stringify(ch)})
-      .then(function(r){
-        if(!r.ok)throw syncHttpError(label,r.status);
-        return r.text().then(function(t){
-          var got=null;try{got=t?JSON.parse(t):null;}catch(_){}
-          return confirmed(ch,got);
-        });
-      });
-  }); },Promise.resolve()); };   /* 2.604 — 옛 경로(참고용, 안 부름) */
   /* An empty conditional response is not proof of a competing edit. A lost
      acknowledgement or an unchanged-body trigger can leave the exact draft
      already on the server. Read only this row before deciding, and never turn
@@ -6688,6 +6678,7 @@ function syncNowCore(reason){
     try{renderUI();}catch(_){}
     return Promise.resolve({offline:1,pending:po.count});
   }
+  var valueRound=null;try{valueRound=syncValueBegin();}catch(_){}
   busy=true; rosterSyncMark=null; setStatus('올리는 중…');
   var roundHid0=syncHiddenSeq,roundT0=Date.now(),roundP0=0;try{roundP0=performance.now();}catch(_){}   /* 2.916 — 숨김·잠자기 판정 */
   lastRoundStartAt=roundT0;   /* 2.918 — 주기 회차가 최근 회차(편집·실시간·보기)를 보고 건너뛴다 */
@@ -6821,7 +6812,7 @@ function syncNowCore(reason){
            cupd가 같아도 v를 생략하면 CAS rebase를 시작할 수 없어 영구 대기가 된다. */
         else if(importApproved(k,loc)) needV.push(k);
       });
-      return kvPullValues(at,wid,needV).then(function(full){
+      return kvPullValues(at,wid,needV,valueRound).then(function(full){
         var fv={}; (full||[]).forEach(function(r0){ fv[r0.k]=r0; });
         /* meta 조회 뒤 해당 행이 지워지면 full 조회에서 빠질 수 있다.
            그때 meta-only 행을 원문으로 오해하지 않도록 요청 여부를 다음 단계에 건네준다. */
@@ -7955,7 +7946,7 @@ function syncNowCore(reason){
                 else blockMatchReady('match-push-confirm-mismatch',new Error('경기 push 확인 원문이 다릅니다'));
               }
             });
-          },'kv_push',function(){return roundWorkspaceCurrent()&&scoutPushCurrent();}).then(function(res){
+          },'kv_push',function(){return roundWorkspaceCurrent()&&scoutPushCurrent();},valueRound).then(function(res){
             /* 403 개별 격리는 배치 전체를 reject하지 않는다. onOk가 오지 않은
                경기를 성공으로 간주하지 않고 meta/outbox를 예전 상태로 돌린다. */
             if(matchPushPlanned&&!matchResolved)blockMatchReady('match-push-unconfirmed',new Error('경기 push 확인 응답이 없습니다'));
@@ -8036,6 +8027,7 @@ function syncNowCore(reason){
         else if(matchNewerRetry)setTimeout(function(){syncNow('match-newer-retry');},350);   /* 2.917 */
         var result={pushed:Object.keys(confirmedPushKeys).length+((lr&&lr.pushed)||0),applied:applied,skipped:curKeys,personalError:personalError,
           held:heldKeys.slice(),deferred:dependencyDeferredKeys.slice(),pending:remain.count,scheduleDeferred:scheduleDeferred};
+        try{syncValueFinish(valueRound,result);}catch(_){}
         try{syncObservationRoundDone(observationOwner,result);}catch(_){}
         /* 선수 파일을 오프라인에서 가져왔어도 예전 sq:*는 block 때문에 이 회차에 올라가지 않는다.
            통짜 선수단 회차가 성공한 바로 여기에서만 exact 항목을 만들고, 두 번째 회차로 전송한다.
@@ -8085,6 +8077,7 @@ function syncNowCore(reason){
     var ctx=syncRoundContext(reason,roundHid0,roundT0,roundP0),quiet=syncQuietFailure(e,info,ctx);
     syncErr=info.code!=='sync_offline'&&!quiet;
     if(!quiet&&!(lastIssue&&lastIssue.code==='sync_storage'&&lastIssue.uid===s.uid&&lastIssue.wid===wid))lastIssue={code:info.code,stage:info.stage,at:Date.now(),uid:s.uid,wid:wid};   /* 2.625 */
+    try{syncValueFinish(valueRound,{error:info.code});}catch(_){}
     try{syncObservationRoundDone(observationOwner,{error:info.code});}catch(_){}
     if(quiet)setStatus('다시 맞추는 중…'+(pi.count?(' · 이 기기에 '+pi.count+'건 안전하게 있어요'):''));
     else setStatus((info.code==='sync_offline'?'오프라인이에요':'못 올렸어요 · '+syncReasonText(info.code))
@@ -10257,6 +10250,7 @@ function boot(){
   var edT=null,edSeq=0;
   window.addEventListener('storage',function(e){
     if(!e||!e.key) return;
+    try{syncValueEdited(e.key);}catch(_){}
     if(e.key===WS_SWITCH_GUARD){
       if(e.newValue)freezeForExternalSwitch(String(e.newValue));
       else reloadAfterExternalSwitch();
@@ -10716,6 +10710,19 @@ function historyMatchApplyExact(backupRaw,restoreWid,assertRestoreWid){
   });
 }
 
+var valueProof=null;
+function syncValueBegin(){
+  if(!valueProof&&window.PSSyncConfirmation)valueProof=PSSyncConfirmation.create({key:SCHEDULE_KEY,
+    context:function(){return syncObservationContext()&&autosaveCanRead(activeWs(),SCHEDULE_KEY)?autosaveContext():null;},
+    meta:meta,hash:hash,state:syncState,busy:function(){return busy;}});
+  return valueProof?valueProof.begin():null;
+}
+function syncValueObserve(){if(valueProof)valueProof.observe.apply(null,arguments);}
+function syncValueAck(){if(valueProof)valueProof.ack.apply(null,arguments);}
+function syncValueFinish(){if(valueProof)valueProof.finish.apply(null,arguments);}
+function syncValueEdited(k){if(valueProof)valueProof.edited(k);}
+function syncConfirmedValue(k,raw){return !!(valueProof&&valueProof.confirmedValue(k,raw));}
+
 /* Device observations are separate from sync guarantees. Only counts and fixed
    error codes leave this adapter; reports cannot alter outbox, metadata or data. */
 var syncObservationClient=null,syncObservationRound=null;
@@ -10964,6 +10971,7 @@ function gmPersonalGet(){ return pdGet(GMP_CFG); }
 function gmPersonalSave(raw,options){ return pdSave(GMP_CFG,raw,options); }
 
 window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dataUnlocked:dataUnlocked,keys:KEYS,state:syncState,   /* 2.625 상태 한 줄 */
+  confirmedValue:syncConfirmedValue,
   reportSharedView:reportSharedView,
   boardLive:{version:2,scope:'personal',owner:boardLiveContext,get:boardLiveGet,save:boardLiveSave},
   learn:{version:1,key:LEARN_KEY,owner:boardLiveContext,get:learnGet,save:learnSave},   /* 3.080 — 학습 기록(learning.html) */

@@ -9,7 +9,7 @@ function harness(){
  let owner={uid:'synthetic-account-a',wid:'personal-a',active:'team-a',seal:'source-a',switchEpoch:'0'},seq=1,current=true,quota=false,blocked=false;
  let raw=JSON.stringify({snap:{players:[{id:'synthetic',x:521}]},view:'board',boardPages:{pages:[{snap:{players:[{x:521}]}},{snap:{players:[{x:522}]}}]},animFrames:[{snap:{players:[{x:521}]}},{snap:{players:[{x:530}]}}]});
  const d={context:()=>({owner,seq,current,blocked,needed:true}),capture:()=>({raw}),key:o=>'ps_private_board_draft_v1:'+o.uid+':unsaved',now:()=>123,
-  local:{getItem:k=>local.get(k)??null,setItem(k,v){if(quota)throw Error('synthetic quota');writes.push('local');local.set(k,v);}},
+  local:{getItem:k=>local.get(k)??null,setItem(k,v){if(quota)throw Error('synthetic quota');writes.push('local');local.set(k,v);},removeItem(k){local.delete(k);}},
   storage:{async get(k){if(hooks.get)await hooks.get(k);return idb.has(k)?{value:idb.get(k)}:null;},async replaceIfValue(k,b,v,guard){if(hooks.cas)await hooks.cas(k);guard();if((idb.get(k)??null)!==b)return false;writes.push('idb');idb.set(k,v);return true;}},
   async verifyIDB(k,record){if(idb.get(k)!==record)throw Error('IDB record is not durable');}
  };
@@ -18,9 +18,9 @@ function harness(){
 }
 test('immediate unsaved full board is durable before the guard and the guarded barrier only verifies it',async()=>{
  const h=harness();assert.equal(h.api.pending(),true);await h.api.ready();assert.equal(h.api.pending(),false);
- assert.equal(JSON.parse(h.record()).raw,h.raw);assert.deepEqual(h.writes,['local']);
- h.lock();await h.api.ready();assert.deepEqual(h.writes,['local'],'guarded verification makes no writes');
- h.edit();await assert.rejects(h.api.ready(),/초안/);assert.deepEqual(h.writes,['local'],'new guarded changes cannot reuse the old receipt');
+ assert.equal(JSON.parse(h.record()).raw,h.raw);assert.deepEqual(h.writes,['idb']);
+ h.lock();await h.api.ready();assert.deepEqual(h.writes,['idb'],'guarded verification makes no writes');
+ h.edit();await assert.rejects(h.api.ready(),/초안/);assert.deepEqual(h.writes,['idb'],'new guarded changes cannot reuse the old receipt');
 });
 test('quota fallback waits for exact IDB CAS and its readback rather than a queued write',async()=>{
  const h=harness(),g=deferred();h.quota();h.hooks.cas=()=>g.promise;let settled=false;
@@ -43,7 +43,7 @@ for(const phase of ['read','cas','verify'])test('an owner change during '+phase+
 test('a newer local source while the IDB write waits is preserved',async()=>{
  const h=harness(),g=deferred();h.quota();h.hooks.cas=()=>g.promise;
  const work=h.api.ready();await tick();h.local.set(h.key,'another tab source');g.resolve();await assert.rejects(work,/초안/);
- assert.equal(h.local.get(h.key),'another tab source');assert.equal(h.idb.size,0);
+ assert.equal(h.local.get(h.key),'another tab source');assert.equal(h.idb.has(h.key),false);assert.ok([...h.idb.keys()].some(k=>k.includes(':kept:')),'this editor is retained as a recovery instead of overwriting the other source');
 });
 test('an IDB CAS conflict cannot replace another draft or claim durability',async()=>{
  const h=harness(),g=deferred();h.quota();h.hooks.cas=()=>g.promise;
@@ -55,18 +55,18 @@ test('a later IDB read must match the entire record before durability is reporte
  await assert.rejects(h.api.ready(),/초안/);assert.equal(h.api.pending(),true);assert.equal(h.idb.get(h.key),'unconfirmed different record');
 });
 test('a changed receipt under the guard fails closed without rewriting it',async()=>{
- const h=harness();await h.api.ready();h.lock();h.local.set(h.key,'other source');await assert.rejects(h.api.ready(),/초안/);assert.deepEqual(h.writes,['local']);
+ const h=harness();await h.api.ready();h.lock();h.local.set(h.key,'other source');await assert.rejects(h.api.ready(),/초안/);assert.deepEqual(h.writes,['idb']);
 });
 test('lifecycle draft writing still leaves the full local copy synchronously',async()=>{
- const h=harness(),g=deferred();h.hooks.get=()=>g.promise;const work=h.api.write();
+ const h=harness(),g=deferred();h.hooks.get=()=>g.promise;const work=h.api.write({lifecycle:true});
  assert.equal(JSON.parse(h.local.get(h.key)).raw,h.raw);assert.equal(h.api.pending(),true);g.resolve();await work;
 });
 for(const quota of [false,true])test('a future IDB draft prevents confirmation and is never overwritten, quota '+quota,async()=>{
  const h=harness();if(quota)h.quota();const other=JSON.stringify({v:1,uid:'synthetic-account-a',wid:'personal-a',raw:'{}',at:999999});h.idb.set(h.key,other);
- await assert.rejects(h.api.ready(),/초안/);assert.equal(h.api.pending(),true);assert.equal(h.idb.get(h.key),other);assert.ok(!h.writes.includes('idb'));
+ await assert.rejects(h.api.ready(),/초안/);assert.equal(h.api.pending(),true);assert.equal(h.idb.get(h.key),other);assert.ok([...h.idb.keys()].some(k=>k.includes(':kept:')),'the current full input remains a separate recovery');
 });
 test('a full snapshot mutation without a seq change cannot reuse a guarded receipt',async()=>{
- const h=harness();await h.api.ready();h.mutate();h.lock();await assert.rejects(h.api.ready(),/초안/);assert.deepEqual(h.writes,['local']);
+ const h=harness();await h.api.ready();h.mutate();h.lock();await assert.rejects(h.api.ready(),/초안/);assert.deepEqual(h.writes,['idb']);
 });
 test('temporary capture locks block a dirty transition rather than treating it as clean',async()=>{
  const h=harness();h.block();await assert.rejects(h.api.ready(),/초안/);assert.equal(h.api.pending(),true);assert.equal(h.record(),undefined);
@@ -74,9 +74,9 @@ test('temporary capture locks block a dirty transition rather than treating it a
 test('playback is restored to the editing snapshot before the transition captures it',async()=>{
  const h=harness();h.block();h.d.prepare=()=>h.prepare();await h.api.ready();assert.equal(JSON.parse(h.record()).raw,h.raw);
 });
-test('a malformed future IDB body is ignored exactly as the normal draft reader ignores it',async()=>{
+test('a malformed unknown IDB original is retained rather than overwritten',async()=>{
  const h=harness();h.idb.set(h.key,JSON.stringify({v:1,uid:'synthetic-account-a',wid:'personal-a',raw:'invalid JSON',at:999999}));
- await h.api.ready();assert.equal(JSON.parse(h.local.get(h.key)).raw,h.raw);
+ await assert.rejects(h.api.ready());assert.equal(JSON.parse(h.idb.get(h.key)).raw,'invalid JSON');assert.equal(h.api.pending(),true);
 });
 test('quota confirmation captures a bounded number of complete snapshots',async()=>{
  const h=harness();h.quota();let captures=0;const capture=h.d.capture;h.d.capture=()=>{captures++;return capture();};await h.api.ready();
@@ -98,7 +98,7 @@ test('playback restoration cannot leave a newly scheduled preview changing an ex
   restoreAnimBeforeCapture(){restores++;w._boardPreviewTimer=13;timers.set(13,()=>{previews++;raw=raw.replace('original-thumb','regenerated-thumb');});},
   localStorage:{getItem:k=>local.get(k)??null,setItem(k,v){writes++;local.set(k,v);}},
   storage:{async get(){await Promise.resolve();for(const [id,fn] of timers){timers.delete(id);fn();}return null;}},PSStorage:{sharedReady:async()=>true}};
- install(w);await w.psFlushPendingReady();assert.equal(restores,1);assert.equal(previews,0,'the preview queued during restoration is cancelled before asynchronous readback');assert.equal(w._boardPreviewTimer,null);assert.equal(w.psHasPending(),false);assert.equal(JSON.parse(local.get(key)).raw,raw,'the complete raw, including its original thumbnail, remains exact');
+ install(w);await w.boardDraftWriteNow({lifecycle:true});await w.psFlushPendingReady();assert.equal(restores,1);assert.equal(previews,0,'the preview queued during restoration is cancelled before asynchronous readback');assert.equal(w._boardPreviewTimer,null);assert.equal(w.psHasPending(),false);assert.equal(JSON.parse(local.get(key)).raw,raw,'the complete raw, including its original thumbnail, remains exact');
  current=false;await w.psFlushPendingReady();assert.equal(restores,1,'guarded verification does not restore playback again');assert.equal(writes,1,'the guard only verifies the existing receipt');
 });
 
@@ -134,6 +134,6 @@ test('a later real edit to an adopted guest board requires an exact durable draf
  assert.equal(w.__psBoardGuest.draftSuppressed(),true);w.canvas.players[0].x=777;w.boardSaveLive();
  assert.equal(w.__psBoardGuest.adopted(),true,'adopted alone must not suppress later user changes');assert.equal(w.__psBoardGuest.draftSuppressed(),false);
  assert.equal(w.psHasPending(),true);await w.psFlushPendingReady();
- const draft=h.local.get(h.key);assert.equal(JSON.parse(JSON.parse(draft).raw).snap.players[0].x,777);assert.equal(h.idb.get(Guest.KEY),guestRaw);
- lock();await w.psFlushPendingReady();assert.equal(h.local.get(h.key),draft,'the guarded barrier only verifies the later edit');
+ const draft=h.idb.get(h.key);assert.equal(JSON.parse(JSON.parse(draft).raw).snap.players[0].x,777);assert.equal(h.idb.get(Guest.KEY),guestRaw);
+ lock();await w.psFlushPendingReady();assert.equal(h.idb.get(h.key),draft,'the guarded barrier only verifies the later edit');
 });
