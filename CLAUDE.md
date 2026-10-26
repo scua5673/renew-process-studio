@@ -15,6 +15,7 @@
 
 - 3.176 — 보관함 숨김 미리보기 시험의 전역 `libGet` 횟수는 독립 `ps-auth-state` 갱신도 센다. 표시 세 요청이 읽기 한 번으로 합쳐져도 전역 2가 될 수 있으므로 enqueue 주체별 실제 읽기를 확인한다. 숨김 0·진행 중 1·원본 보존은 유지하고 실패 추적을 남긴다.
 
+- 3.184 — 일정의 늦은 조회는 `PSStorage.mirrorSchedule(raw,current)`로만 화면 사본을 만든다. readonly IDB transaction에서 원문 일치와 owner·편집 세대를 확인하고, 이 선택적 LS 쓰기의 quota만 저장 유실 경고에서 제외한다. 실제 저장 실패·다른 키 경고·팀 전환 장벽은 유지한다. API 부재·stale 조회는 직접 LS 쓰기나 렌더를 하지 않는다.
 - 3.175 — 팀 전환 초안 확인(`board-draft.js`)은 재생 복원 **뒤** 새로 예약된 `_boardPreviewTimer`도 취소한다. flush 시작 때만 취소하면 `stopAnim`이 다시 예약한 썸네일이 receipt 뒤 원문을 바꿔 전환을 거부한다. `sameBody`의 전체 원문 비교나 guard 이후 읽기 전용 검증을 완화하지 않는다.
 
 Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규칙 · 함정을 여기에 쌓는다(한두 줄씩, 판 번호와 함께). 운영 절차의 원본은 `docs/OPERATIONS.md`.
@@ -94,7 +95,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 3.115 — 빠른 내보내기(제보 0077af18 «화면 캡쳐했을때 걸리적»): 위쪽 막대 오른쪽 «내보내기» → PNG(`exportPNG` 그대로) · PDF(A4 한 장, `board-quick-export.js`). 단추는 `board-topbar.js` 의 `exportBtn(R)` 가 덩어리를 세울 때마다 받는다(보관함 연결 다음, «저장» 앞). 장면 막대 «내보내기 ▾»의 `#pdfBtn` 은 `#cmd-export-btn` 을 누를 때 붙인다. 위쪽 막대 오른쪽의 흐린 단추 규칙은 `:not(#…)` 둘이라 id 하나짜리 규칙(`#bpBoardSettings{color}`)은 진다 — 이기려면 id 셋.
 
 ## 폰 강제 종료 · 메모리
-- 서버 기록: `ps_events` 의 `boot_after_crash`(meta.stage · age · standalone · ua · crumb). age 5 · stage `loadw0` = 켜진 뒤 몇 초 만에 아이폰이 앱을 끔(메모리).
+- 서버 기록: `ps_events` 의 `boot_after_crash`(meta.stage · age · loaded · standalone · ua · crumb). `loadw0`는 이전 셸 load/예약 warm 흔적이며 자식 화면의 준비 완료를 뜻하지 않는다. age·표식만으로 OS 메모리 종료, 강제 닫기, 표식 잔류를 구분할 수 없다. 실제 기기 증거 없이 종료 원인이나 완치를 단정하지 않는다.
 - 3.095 — 설치 앱이 열 때마다 5초에 꺼졌다: 보관함(`cs_drill_lib_v1`)은 목록 한 덩어리라 한 번 읽을 때마다 통째(그 팀 21MB 글 · 해석 41MB)가 생긴다. 숨은 작전판이 그리기마다 따로 읽어 10초에 24번(크로미움 0.9GB). 그리기 읽기는 `psVaultRenderRead`(같은 때 줄 선 것은 하나 — `_libTurnTail` 이 그대로일 때만), 숨은 틀은 `board-vault-lazy.js`(보일 때 그림). 보관함을 통째로 읽는 코드를 더하면 부팅 중 몇 번 도는지 센다(`tests/browser/phone-boot-vault.mjs`).
 - 3.124 — 하루 한 번 저장 공간 정리(storage.js 끝 `ps_opt_auto_at`)는 **맨 위 창에서만** 돈다: 예전엔 iframe 마다 12초 뒤 함께 보관함 · 사진을 통째로 읽었고, 표시를 끝난 뒤에 적어 «다른 창이 먼저» 검사가 소용없었다(localStorage 가 가득 차면 표시를 못 적어 부팅마다 — 제보 ac40be30 아이패드 Air 3 이 열고 17~28초에 꺼짐). `slimKey` 는 `hasGrass` 로 잔디 무늬가 있을 때만 보관함을 글로 바꾼다. 기기 전용 키(DEVICE_LOCAL)의 localStorage 옛 사본은 IDB 정본(객체)과 `===` 로 같을 수 없어 영영 남았다 — `optimize` 가 같은 글이면 지우고, 다르면 `cs_ls_left_v1:<키>`(IDB)로 옮겨 확인한 뒤 지운다(sync.js `idbSensitiveKeys` 가 팀 · 계정 전환 때 지운다).
 - 3.126 — 저장 공간(제보 a4d77bba · 사용자 «저장공간이 부족하지 않게»): 2주 22명 229번 `schedule_mirror_quota`(대부분 아이폰 설치 앱의 선수 — 일정 문서는 94~237KB 뿐, 작은 저장소의 나머지를 무엇이 채웠는지 서버 기록이 없었다) · 맥 크롬은 일정 저장(`psSaveShared`) 실패. 안전 정리(`optimize`)가 `IDB_LEFT`(화면이 IndexedDB 만 읽는 동기화 키 — 노트 · 노트 용지 · 매치데스크 · 훈련 세션 · 경기 시계)의 옛 localStorage 사본도 DEVICE_LOCAL 과 같은 길로 비운다 — 동기화가 «사본이 있으면 같이 고친다»로 살려 두던 것. 화면이 localStorage 를 먼저 읽는 키는 넣지 않는다(시험이 센다). 새 판 첫 부팅에 작은 저장소가 1.5MB 넘으면 하루를 기다리지 않는다(`ps_opt_build_v1`). 가득 차면 배너 자동 정리 뒤 `ps_events` `storage_full`(meta: stage 실패 키 · ls/was KB · `k:<표 이름>` 큰 키 넷 · useMb/quotaMb, 키 이름과 크기만) — 6시간에 한 번, 대기열에 못 적으면 메모리(`evMem`)에서 한 번. **다음 일**: `select meta from ps_events where event_name='storage_full'` 로 남은 원인을 보고 그 키를 줄인다. 후보: 개인 보드 기록(`ps_private_board_draft_v1:<uid>`)은 raw + base.raw(+ attempt.raw)를 한 덩어리로 적어 보드 크기의 2~3배(+ `:unsaved` 초안 한 벌) — 600KB 넘는 개인 보드가 6팀.
