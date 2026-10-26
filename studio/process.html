@@ -1819,29 +1819,37 @@ function renderSchedGrp(){
   /* 2.606 — «이번 주 전부 …» 덮어쓰기 버튼 제거 — 조 세그는 보기 필터만(경기 화면과 같은 태도). schedGrpApplyWeek 는 남겨 둔다. */
   box.innerHTML=h;
   if(!box.__w){ box.__w=1; box.addEventListener('click',function(e){ var b=e.target.closest('button[data-g]'); if(b)schedSetGrp(b.dataset.g); }); }
+  renderSchedGrpNote();
+}
+function renderSchedGrpNote(){
+  var box=document.getElementById('schedGrp'); if(!box)return;
   /* 2.534 — 조를 고르면 **무엇이 남고 무엇이 빠졌는지** 한 줄로 말한다.
      조를 안 붙인 세션(팀 공통)이 대부분인 팀에서는 이 줄이 없으면 «갑자기 일정이 사라졌다» 가 된다. */
   try{
     var note=document.getElementById('schedGrpNote');
     if(!__schedGrp){ if(note)note.remove(); return; }
-    var mine=0, common=0;
+    var mine=0, common=0, other=0;
     try{
       var src=(typeof weeksMap!=='undefined'&&weeksMap)?weeksMap:null;
       var scan=function(arr){ (arr||[]).forEach(function(day,di){ if(!day)return;
         (day.trainings||[]).forEach(function(t){ if(!t)return;
           var L=schedGrpList(t,di,day);   /* 2.878 — 그 날짜의 하루 조(다른 주를 훑을 때 week[di] 를 읽지 않게) */
-          if(!L.length)common++; else if(L.indexOf(__schedGrp)>=0)mine++; }); }); };
+          if(!L.length)common++; else if(L.indexOf(__schedGrp)>=0)mine++; else other++; }); }); };
       if(src&&typeof src==='object')Object.keys(src).forEach(function(k){ scan(src[k]); });
       else scan(week);
     }catch(_){}
     if(!note){ note=document.createElement('div'); note.id='schedGrpNote'; note.className='sched-grpnote';
       box.parentNode.insertBefore(note,box.nextSibling); }
     var withC=schedGrpWithCommon();
-    note.innerHTML='<span><b>'+__schedGrp.replace(/</g,'&lt;')+'</b> 일정 '+mine+'개'
+    note.innerHTML='<span title="전체 기간의 훈련 세션"><b>'+__schedGrp.replace(/</g,'&lt;')+'</b> 일정 '+mine+'개'
+      +(other?(' · 다른 조 '+other+'개 숨김'):'')
       +(common?(' · 조를 안 정한 팀 공통 '+common+'개'+(withC?' 함께 보는 중':' 숨김')):'')+'</span>'
+      +((other||(common&&!withC))?'<button type="button" id="schedGrpAllBtn">전체 보기</button>':'')
       +(common?('<button type="button" id="schedGrpCommonBtn">'+(withC?'공통 감추기':'공통도 보기')+'</button>'):'')
       +(common?('<button type="button" id="schedGrpBulkBtn">공통 '+common+'개를 '+__schedGrp.replace(/</g,'&lt;')+schedRo(__schedGrp)+'</button>'):'')
       +((__schedBulkUndo&&__schedBulkUndo.list&&__schedBulkUndo.list.length)?('<button type="button" id="schedGrpUndoBtn">되돌리기 '+__schedBulkUndo.list.length+'개</button>'):'');
+    var ab=document.getElementById('schedGrpAllBtn');
+    if(ab)ab.onclick=function(){ schedSetGrp(''); };
     var cb=document.getElementById('schedGrpCommonBtn');
     if(cb)cb.onclick=function(){ try{ localStorage.setItem('ps_sched_grp_common',withC?'0':'1'); }catch(_){}
       renderSchedGrp(); try{ syncViews(false); }catch(_){ try{ renderWeek(); }catch(__){} } };
@@ -5926,6 +5934,9 @@ function syncViews(shouldSave){            // 모든 변경 후 단일 호출 �
      닫히는 순간(scrim 관찰자) 한 번 그린다. 다른 기기에서 온 변경(shouldSave===false)은 예전처럼 바로 그린다. */
   if(shouldSave!==false&&__sheetCovering()){ __viewsStale=true; return; }
   __viewsStale=false;
+  /* 3.179 — 조를 바꾸고 나면 이전 필터의 안내도 실제 원문으로 다시 센다.
+     세그를 다시 만들지 않아 포커스는 유지하며, 보기 안내는 자료를 저장하지 않는다. */
+  try{renderSchedGrpNote();}catch(_){}
   try{renderWeek();}catch(_){}
   try{const m=document.getElementById('monthViewWrap'); if(m&&m.style.display!=='none') renderMonth();}catch(_){}
   try{const d=document.getElementById('dayViewWrap'); if(d&&d.style.display!=='none') renderDay();}catch(_){}
