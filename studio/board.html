@@ -8441,72 +8441,11 @@ function boardPrivateDecode(raw,o){
   JSON.parse(r.raw);return r;
 }
 function boardPrivateMake(o,raw,base,pending,attempt){return {v:1,uid:o.uid,wid:o.wid,raw:raw,base:base&&{raw:base.raw,cupd:base.cupd},pending:!!pending,attempt:attempt?JSON.parse(JSON.stringify(attempt)):null,token:boardPrivateToken(),seq:Math.max(Date.now(),((_boardPrivateRecord&&_boardPrivateRecord.seq)||0)+1)};}
-function boardPrivateKeep(o,r){
-  // One recovery draft per editor/account, not a new full copy on every retry.
-  // Only this editor's verified preimage may be replaced; the main draft and
-  // older recovery keys are never adopted or overwritten here.
-  if(!_boardPrivateKept||!boardPrivateSameAccount(_boardPrivateKept,o))
-    _boardPrivateKept={uid:o.uid,wid:o.wid,key:boardPrivateKey(o)+':kept:'+boardPrivateToken(),local:null,idb:null,queue:Promise.resolve()};
-  var branch=_boardPrivateKept,raw=JSON.stringify(r),local=false;
-  function current(){if(!boardPrivateCurrent(o))throw new Error('보드 계정이 바뀌었습니다');}
-  current();
-  var before=localStorage.getItem(branch.key);
-  if(before!==null&&before!==branch.local) return Promise.reject(new Error('다른 복구 사본을 보존합니다'));
-  try{localStorage.setItem(branch.key,raw);local=localStorage.getItem(branch.key)===raw;if(local)branch.local=raw;}catch(_){}
-  var work=branch.queue.catch(function(){}).then(async function(){
-    current();
-    if(!window.storage||!window.storage.get||!window.storage.replaceIfValue)throw new Error('복구 사본 저장소를 확인하지 못했습니다');
-    var value=await window.storage.get(branch.key);current();var prior=value&&value.value;prior=prior==null?null:prior;
-    if(prior!==raw){
-      if(prior!==branch.idb)throw new Error('다른 복구 사본을 보존합니다');
-      if(!await window.storage.replaceIfValue(branch.key,prior,raw,current))throw new Error('복구 사본이 바뀌었습니다');
-    }
-    current();branch.idb=raw;
-    var check=await window.storage.get(branch.key);current();
-    if(!check||check.value!==raw)throw new Error('복구 사본 저장을 확인하지 못했습니다');
-    // Free the small-store copy only after reading the complete identical body.
-    if(localStorage.getItem(branch.key)===raw){localStorage.removeItem(branch.key);if(localStorage.getItem(branch.key)===null)branch.local=null;}
-    return true;
-  });
-  branch.queue=work;
-  return work.catch(function(e){current();if(local&&localStorage.getItem(branch.key)===raw)return true;throw e;}).then(function(){
-    current();if(_boardPrivateRecord===r)_boardPrivateDurableToken=r.token;return true;
-  });
-}
-function boardPrivatePersist(o,r){
-  if(!boardPrivateCurrent(o))return Promise.reject(new Error('보드 계정이 바뀌었습니다'));
-  var key=boardPrivateKey(o),raw=JSON.stringify(r),local=false,localError=null,head=localStorage.getItem(key);
-  if(head!==_boardPrivateHead){
-    // A second tab owns its newer draft. Keep both originals rather than using
-    // an acknowledgement from this tab to erase its work.
-    _boardPrivateRecord=r;
-    return boardPrivateKeep(o,r).then(function(){throw new Error('다른 창의 개인 보드가 바뀌었습니다. 현재 작업은 별도로 보관합니다');});
-  }
-  _boardPrivateRecord=r;
-  try{localStorage.setItem(key,raw);local=localStorage.getItem(key)===raw;if(local){_boardPrivateHead=raw;_boardPrivateDurableToken=r.token;}}catch(e){localError=e;}
-  function current(){if(!boardPrivateCurrent(o)||_boardPrivateRecord!==r||localStorage.getItem(key)!==_boardPrivateHead)throw new Error('새 개인 보드 변경을 보존합니다');}
-  var work=_boardPrivateLocal.catch(function(){}).then(function(){
-    current();
-    if(!window.storage||!window.storage.set){if(local)return true;throw localError||new Error('기기에 보드를 보관하지 못했습니다');}
-    return window.storage.get(key).then(function(before){
-      current();var prior=before&&before.value;prior=prior==null?null:prior;boardPrivateDecode(prior,o);
-      if(prior===raw){_boardPrivateIdbHead=raw;return true;}
-      // Only a head read by this editor (or its own successful CAS) is a basis.
-      // A later timestamp cannot authorize overwriting another tab's IDB draft.
-      if(prior!==_boardPrivateIdbHead)throw new Error('다른 창의 최신 개인 보드를 보존합니다');
-      if(!window.storage.replaceIfValue)throw new Error('개인 보드의 안전한 저장 기능을 새로 불러와 주세요');
-      return window.storage.replaceIfValue(key,prior,raw,current).then(function(ok){if(!ok)throw new Error('다른 창의 개인 보드가 바뀌었습니다');if(boardPrivateCurrent(o))_boardPrivateIdbHead=raw;return true;});
-    }).then(function(){current();return window.storage.get(key);}).then(function(saved){current();if(!saved||saved.value!==raw)throw new Error('개인 보드 저장을 확인하지 못했습니다');_boardPrivateDurableToken=r.token;return true;});
-  });
-  _boardPrivateLocal=work;
-  // localStorage is a complete synchronous recovery copy, never a thumbnail or
-  // a snapshot with animation/pages stripped to make it fit.
-  if(local){work.catch(function(){});return Promise.resolve(true);}
-  return work;
-}
+function boardPrivateKeep(o,r){return PSBoardDraft.keepHead(window,o,r);}
+function boardPrivatePersist(o,r){return PSBoardDraft.persistHead(window,o,r);}
 async function boardPrivateRead(o){
   var key=boardPrivateKey(o),localRaw=localStorage.getItem(key),local=boardPrivateDecode(localRaw,o),saved=null,idbRaw=null;
-  if(window.storage&&window.storage.get){var v=await window.storage.get(key);if(!boardPrivateCurrent(o))throw new Error('보드 계정이 바뀌었습니다');idbRaw=v&&v.value;idbRaw=idbRaw==null?null:idbRaw;saved=boardPrivateDecode(idbRaw,o);}
+  if(window.storage&&window.storage.get){try{var v=await window.storage.get(key);if(!boardPrivateCurrent(o))throw new Error('보드 계정이 바뀌었습니다');idbRaw=v&&v.value;idbRaw=idbRaw==null?null:idbRaw;saved=boardPrivateDecode(idbRaw,o);}catch(e){if(!local||!boardPrivateCurrent(o))throw e;}}
   if(!boardPrivateCurrent(o)||localStorage.getItem(key)!==localRaw)throw new Error('개인 보드가 읽는 동안 바뀌었습니다');
   _boardPrivateHead=localRaw;_boardPrivateIdbHead=idbRaw;
   var chosen=!saved||local&&local.seq>=saved.seq?local:saved;
@@ -8515,15 +8454,18 @@ async function boardPrivateRead(o){
 function boardPrivateSend(o){
   if(_boardPrivateFlight)return _boardPrivateFlight;
   var work=(async function(){
+    await PSBoardDraft.headReady(window,o);
     if(!boardPrivateCurrent(o)||!_boardPrivateLoaded)throw new Error('개인 보드를 먼저 확인해 주세요');
     var r=_boardPrivateRecord;if(!r||!r.pending)return true;
     if(!r.base)throw new Error('다른 기기의 보드를 확인하지 못해 현재 작업을 기기에 보관합니다');
-    if(!r.attempt){r=boardPrivateMake(o,r.raw,r.base,true,{raw:r.raw,base:r.base});await boardPrivatePersist(o,r);}
+    if(!r.attempt)r=boardPrivateMake(o,r.raw,r.base,true,{raw:r.raw,base:r.base});
+    await boardPrivatePersist(o,r);
     var attempt=r.attempt,a=boardPrivateAPI();
     if(!boardPrivateCurrent(o)||!a)throw new Error('보드 계정이 바뀌었습니다');
     var ack=await a.save(attempt.raw,{uid:o.uid,wid:o.wid,expected_raw:attempt.base.raw,expected_cupd:attempt.base.cupd});
     if(!boardPrivateCurrent(o))throw new Error('보드 계정이 바뀌었습니다');
     if(!boardPrivateReceipt(ack,o)||ack.raw!==attempt.raw)throw new Error('개인 보드 저장 응답을 확인하지 못했습니다');
+    window.__psBoardPrivateReceipt={owner:JSON.stringify(o),generation:_boardPrivateGeneration,raw:ack.raw,cupd:ack.cupd,source:'ack'};
     var latest=_boardPrivateRecord;
     if(!latest||JSON.stringify(latest.attempt)!==JSON.stringify(attempt))throw new Error('새 개인 보드 변경을 보존합니다');
     _boardPrivateBase={raw:ack.raw,cupd:ack.cupd};
@@ -8572,11 +8514,18 @@ function boardNewCanvas(keep){   /* 3.031 — keep===false: «빈 보드로» �
   return !!d&&keep!==false;
 }
 window.__boardNewCanvas=boardNewCanvas;
+function boardPrivateSourcePause(o,uid){
+  try{
+    var g=JSON.parse(localStorage.getItem('ps_ws_switch_guard_v1')||'null'),age=g&&Date.now()-g.at,a=JSON.parse(o&&o.seal||'null'),b=JSON.parse(localStorage.getItem('ps_cache_owner_v1')||'null');
+    return !!(o&&uid===o.uid&&!o.switchSeal&&g&&g.v===1&&typeof g.token==='string'&&g.token&&typeof g.epoch==='string'&&g.epoch&&typeof g.at==='number'&&age>=0&&age<=90000&&g.from===o.active&&typeof g.to==='string'&&g.to&&g.to!==g.from&&localStorage.getItem('ps_active_ws')===o.active&&a&&b&&a.uid===uid&&b.uid===uid&&a.wid===g.from&&b.wid===g.from&&localStorage.getItem('ps_ws_switch_epoch_v1')===g.epoch);
+  }catch(_){return false;}
+}
 function boardPrivateAuthChanged(){
   try{if(new URLSearchParams(location.search).get('community_view')==='1'||document.body.classList.contains('comm-viewing'))return;}catch(_){}
   var o=boardPrivateOwner();if(_boardPrivateOwner&&boardPrivateCurrent(_boardPrivateOwner))return;
-  ++_boardPrivateGeneration;clearTimeout(_bliveT);_bliveT=null;_boardPrivateLoaded=false;_boardPrivateFlight=null;
   var sessionUid='';try{var s=parent.PSSync.session&&parent.PSSync.session();sessionUid=String(s&&s.uid||'');}catch(_){}
+  if(o||!boardPrivateSourcePause(_boardPrivateOwner,sessionUid))++_boardPrivateGeneration;
+  clearTimeout(_bliveT);_bliveT=null;_boardPrivateLoaded=false;_boardPrivateFlight=null;
   // A temporary team-switch lock suspends writes but does not turn the same
   // account's private canvas into another team's draft.
   if(!o&&_boardPrivateOwner&&sessionUid===_boardPrivateOwner.uid)return;
@@ -8736,42 +8685,28 @@ function boardLiveCapture(v){
 }
 /* ══ 3.038 · 저장 안 한 작업의 기기 초안(피드백 UX-1 «저장 안 한 작전판이 새로고침 한 번에 사라지는데, 그동안 «저장됨»이 떠 있다») ══
    «보드 저장»(boardSaveExplicit)을 누르기 전의 화면을 이 기기에만 둔다 — 개인 보드 기록(ps_private_board_draft_v1:<uid> · 서버 CAS)은 건드리지 않는다.
-   · 쓰기: 손댄 뒤(boardManualChanged) 700ms 에 한 번, 탭 숨김·닫기(boardFlushLive)엔 바로. localStorage 가 차면 IndexedDB 에.
+   · 쓰기: 손댄 뒤 700ms에 IndexedDB 정본을 확인한다. 탭 숨김·닫기에서 최신 정본이 미완료일 때만 전체 localStorage 예비 사본을 즉시 남긴다.
    · 읽기: 보드를 다시 열 때(restoreLiveBoard → boardDraftOffer) 저장본과 다르고 더 새 초안이 있으면 위에 띠 «저장하지 않은 작업이 있어요 — 되살리기 / 버리기».
      창(psChoice)이 아니라 띠인 이유: 저장본을 보면서 고르게 하고, 부팅과 다른 조작을 막지 않는다.
    · 지우기: «보드 저장» 성공 · «버리기». 되살린 뒤엔 «보드 저장 ●»이 켜지고, 저장해야 지워진다. 키에 uid 가 있어 다른 계정의 초안은 보지 않는다.
    셸은 boardDirty(boardManualStatus)로 «보드 · 저장 전»을 띄운다 — 저장 안 한 변경 위에 «● 저장됨»이 떠 있지 않게. */
-var _boardDraftT=null,_boardDraftBar=null,_boardDraftOffered='';
+var _boardDraftT=null,_boardDraftBar=null,_boardDraftOffered='',_boardDraftEpoch=0;
 function boardDraftKey(o){return boardPrivateKey(o)+':unsaved';}
-function boardDraftWriteNow(){
-  try{
-    if(!_boardPrivateLoaded||!_boardPrivateOwner||!boardPrivateCurrent(_boardPrivateOwner)||!boardManualChanged())return false;
-    if(window.__psThumbCapturing||window.__capLock||_bliveApplying||_vaultBoardContext||_vaultBoardRestoring||window.__vaultEdit||window.__animExport)return false;
-    if(typeof animPlaying!=="undefined"&&animPlaying)return false;
-    if(document.body.classList.contains("editing"))return false;
-    var cap=boardLiveCapture(window.__csView||"board");if(!cap)return false;
-    var o=_boardPrivateOwner,key=boardDraftKey(o),rec=JSON.stringify({v:1,uid:o.uid,wid:o.wid,raw:cap.raw,at:Date.now()});
-    try{localStorage.setItem(key,rec);return true;}catch(_){}
-    /* 3.038 리뷰 — 작은 저장소가 차면 낡은 사본을 먼저 걷는다(남겨 두면 읽을 때 IndexedDB 의 새 초안을 가린다) */
-    try{localStorage.removeItem(key);}catch(_){}
-    try{localStorage.setItem(key,rec);return true;}catch(_){}
-    try{if(window.storage&&window.storage.set){window.storage.set(key,rec).catch(function(){});return true;}}catch(_){}
-  }catch(_){}
-  return false;
-}
+function boardDraftWriteNow(){return false;}   /* The guarded IDB-first writer is installed by board-draft.js. */
 function boardDraftSchedule(){ try{clearTimeout(_boardDraftT);}catch(_){} _boardDraftT=setTimeout(function(){_boardDraftT=null;boardDraftWriteNow();},700); }
 function boardDraftClear(o){
-  try{clearTimeout(_boardDraftT);}catch(_){} _boardDraftT=null;
-  boardDraftBarHide();
-  if(!o)return;var key=boardDraftKey(o);
-  try{localStorage.removeItem(key);}catch(_){}
-  try{if(window.storage&&window.storage.del)window.storage.del(key).catch(function(){});}catch(_){}
+  ++_boardDraftEpoch;
+  try{clearTimeout(_boardDraftT);}catch(_){} _boardDraftT=null;boardDraftBarHide();
+  if(o&&window.__psBoardDraft)return window.__psBoardDraft.clear(o).catch(function(){return false;});
+  return Promise.resolve(false);
 }
 async function boardDraftRead(o){
-  var key=boardDraftKey(o),a=null,b=null;
+  var key=boardDraftKey(o),a=null,b=null,local=null,idb=null,generation=_boardPrivateGeneration,seq=_boardPrivateEditSeq,record=_boardPrivateRecord,epoch=_boardDraftEpoch;
   function parse(raw){ if(raw==null)return null; try{var d=JSON.parse(raw);if(!d||d.v!==1||d.uid!==o.uid||d.wid!==o.wid||typeof d.raw!=="string"||!(d.at>0))return null;JSON.parse(d.raw);return d;}catch(_){return null;} }
-  try{a=parse(localStorage.getItem(key));}catch(_){}
-  try{if(window.storage&&window.storage.get){var v=await window.storage.get(key);b=parse(v&&v.value);}}catch(_){}
+  try{local=localStorage.getItem(key);a=parse(local);}catch(_){}
+  try{if(window.storage&&window.storage.get){var v=await window.storage.get(key);idb=v&&v.value;idb=idb==null?null:idb;b=parse(idb);}}catch(_){}
+  if(!boardPrivateCurrent(o)||generation!==_boardPrivateGeneration||epoch!==_boardDraftEpoch||seq!==_boardPrivateEditSeq&&record!==_boardPrivateRecord||localStorage.getItem(key)!==local)return null;
+  if(window.__psBoardDraft&&(seq===_boardPrivateEditSeq||!boardManualChanged()&&!_boardUserTouched))window.__psBoardDraft.observe(o,local,idb);
   return (a&&b)?(b.at>a.at?b:a):(a||b);   /* 3.038 리뷰 — 두 저장소 중 더 새 초안 */
 }
 function boardDraftAgo(at){ var m=Math.max(0,Math.round((Date.now()-at)/60000)); return m<1?"방금":(m<60?(m+"분 전"):(m<1440?(Math.round(m/60)+"시간 전"):(Math.round(m/1440)+"일 전"))); }
@@ -8972,7 +8907,7 @@ function boardSaveLive(){
   if(window.__capLock)return;
   try{if(document.body.classList.contains("editing")){_schedEditorDraft();return;}}catch(_){}
   var v=(window.__csView||"board");
-  if(v==="session")return;
+  if(PSBoardDraft.borrowedView(window,v))return;
   if(window.__animExport)return;   /* 2.752 — 내보내기 중간 좌표는 뷰 스냅에도 라이브에도 안 찍는다(끝나면 exportVideo/exportGif 가 한 번 부른다) */
   if((v==="board"||v==="match")&&!window.__vaultEdit&&!document.body.classList.contains("editing")){   /* 1.962 — 편집 중엔 뷰 스냅도 편집기 화면으로 덮지 않는다 */
     try{window.__viewSnaps=window.__viewSnaps||{};window.__viewSnaps[v]=captureSnap();}catch(_){}
@@ -9003,7 +8938,7 @@ function boardFlushLive(){
   try{clearTimeout(_bliveT);}catch(_){}
   _bliveT=null;
   try{if(document.body.classList.contains("editing")&&typeof saveEditorDraft==="function")saveEditorDraft();}catch(_){}
-  try{if(typeof boardDraftWriteNow==="function")boardDraftWriteNow();}catch(_){}   /* 3.038 — 탭 숨김·닫기: 저장 안 한 작업을 기기 초안으로(개인 보드 기록은 건드리지 않는다) */
+  try{if(typeof boardDraftWriteNow==="function")boardDraftWriteNow({lifecycle:true});}catch(_){}   /* 3.038 — 탭 숨김·닫기: 저장 안 한 작업을 기기 초안으로(개인 보드 기록은 건드리지 않는다) */
   // Lifecycle events may retry an explicitly saved record, never capture new edits.
   return boardPrivateRetry();
 }
@@ -9022,7 +8957,7 @@ async function restoreLiveBoard(){
     var local=await boardPrivateRead(owner);if(!current())return false;
     _boardPrivateRecord=local;_boardPrivateBase=local&&local.base;_boardPrivateLoaded=true;
     var remote=null,remoteError=null;
-    try{remote=await api.get();if(!boardPrivateReceipt(remote,owner))throw new Error('개인 보드 조회 응답을 확인하지 못했습니다');}catch(e){remoteError=e;}
+    try{remote=await api.get();if(!boardPrivateReceipt(remote,owner))throw new Error('개인 보드 조회 응답을 확인하지 못했습니다');window.__psBoardPrivateReceipt={owner:JSON.stringify(owner),generation:generation,raw:remote.raw,cupd:remote.cupd,source:'get'};}catch(e){remoteError=e;}
     if(!current())return false;
     if(edit!==_boardPrivateEditSeq||_boardManualDirty||_bliveDirty&&!local){
       // Preserve the draft captured during this GET. A previously unknown
@@ -9951,6 +9886,7 @@ var _afDirty=false;
    불러온 것)은 보일 때만 __snapToThumb 로 만든다 — 한 태스크 안에서 load→thumb→restore 라 화면엔 안 비친다. */
 var __afWinRaf=0,__afIdle=0;
 function __afWindow(force){
+  var guard=window.PSBoardDraft&&PSBoardDraft.thumbGuard?PSBoardDraft.thumbGuard(window,()=>anim.frames):function(){return true;};if(!guard())return;
   var box=document.getElementById("animFrames"); if(!box||!anim||!anim.frames)return;
   var kids=box.children, n=Math.min(kids.length,anim.frames.length); if(!n)return;
   /* 창은 **사각형으로** 잰다 — scrollLeft·칸 폭·gap 을 셈하지 않는다. 실측: 칸 폭이 도크 모드마다
@@ -9972,9 +9908,9 @@ function __afWindow(force){
     /* ⚠ timeout 없는 idle 은 바쁠 때 1초 넘게 미뤄져 끝으로 스크롤한 뒤 250ms 에도 빈 칸이었다(실측).
        120ms 안엔 반드시 돌고, 한 번에 셋씩 만든다(한 장 ≈ loadSnap 두 번, 수 ms). */
     var _ric=window.requestIdleCallback?function(cb){return requestIdleCallback(cb,{timeout:120});}:function(cb){return setTimeout(cb,60);};
-    __afIdle=_ric(function(){ __afIdle=0; try{ if(_afDragging||(typeof animPlaying!=="undefined"&&animPlaying)||(typeof psDragging==="function"&&psDragging())||window.__animExport)return;
+    var idle=_ric(function(){if(__afIdle===idle)__afIdle=0;if(!guard())return;try{ if(_afDragging||(typeof animPlaying!=="undefined"&&animPlaying)||(typeof psDragging==="function"&&psDragging())||window.__animExport)return;
       var made=0; for(var m=0;m<missing.length&&made<3;m++){ var fr=anim.frames[missing[m]]; if(!fr||fr.thumb)continue; var t=window.__snapToThumb(fr.snap||{}); if(t){ fr.thumb=t; made++; } }
-      if(made)__afWindow(); }catch(_){ } });
+      if(made)__afWindow(); }catch(_){ } });__afIdle=idle;
   }
 }
 /* ⚠ rAF 로 묶으면 탭이 가려진 사이 들어온 스크롤이 __afWinRaf 를 걸어 둔 채 남아 그 뒤 스크롤을 다 삼킨다(실측 한 번 재현).
@@ -14425,7 +14361,7 @@ window.__vaultEnterReset=function(){
 function setView(v){
   /* 다음 화면이 session이면 기존 400ms 저장은 더 이상 쓰지 못한다.
      캔버스를 바꾸기 전에 마지막 작업과 페이지를 기존 저장 경로로 확정한다. */
-  if(v==='session'&&(window.__csView||'board')==='board'&&!window.__vaultEdit&&!_vaultBoardContext)try{_liveBoardAnimOpen=!!($('animBar')&&$('animBar').classList.contains('on'));boardFlushLive();}catch(_){}
+  if(v==='session'&&(window.__csView||'board')==='board'&&!window.__vaultEdit&&!_vaultBoardContext)try{_liveBoardAnimOpen=!!($('animBar')&&$('animBar').classList.contains('on'));boardFlushLive('session');}catch(_){}
   try{wbCloseText();}catch(_){}
   try{const em=document.getElementById("editorModal");
     if(em&&em.classList.contains("on")&&v!=="session"&&!window.__closingEditor){
@@ -16004,9 +15940,8 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   if($("mirVBtn"))$("mirVBtn").onclick=()=>mirrorSelection("v");
   document.querySelectorAll("#alignBar .align-btn[data-al]").forEach(b=>b.onclick=()=>alignMulti(b.dataset.al));   /* data-al 있는 정렬 버튼만 — 크기·대칭·복제·삭제의 onclick을 덮지 않게 */
   (function(){const ni=$("nameInput");if(!ni)return;let dirty=false,composing=false,paintT=0,focusTs=[];
-    /* 2.975 — 이름이 «한 박자 늦게» 바뀌던 것(사용자): 치는 동안엔 데이터만 고치고 판은 칸을 벗어날 때 다시 그렸다.
-       이제 치는 대로 0.04초 뒤 판에도 그린다(입력칸은 건드리지 않아 한글 조합은 그대로).
-       판 빈 곳을 누르면 선택이 먼저 풀려 마지막 정리(앞뒤 공백·모든 장면 반영)가 빠지던 것도 — 칸에 들어올 때 고른 선수를 기억해 둔다. */
+    /* 입력은 즉시 반영하고 40ms 뒤 그린다. 입력칸은 건드리지 않아 한글 조합을 유지한다.
+       선택이 먼저 풀려도 blur의 공백 정리·장면 반영은 focus 때 기억한 선수에 적용한다. */
     function _targets(){var t=selectedPlayers(true);return t.length?t:focusTs.filter(function(p){return state.players.indexOf(p)>=0;});}
     function _paint(){clearTimeout(paintT);paintT=setTimeout(function(){try{renderTokens();}catch(_){}try{positionSelCtl();}catch(_){}},40);}
     function _apply(trim){const ts=_targets();if(!ts.length||(!dirty&&ts.length>1))return;const v=trim?ni.value.trim():ni.value;ts.forEach(function(p){p.name=v;});}
@@ -16014,7 +15949,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     ni.addEventListener("input",()=>{dirty=true;_apply(false);_paint();});            // 입력칸 값은 다시 쓰지 않는다 — 한글 조합 깨짐·마지막 글자 중복 방지
     ni.addEventListener("compositionstart",()=>{composing=true;});
     ni.addEventListener("compositionend",()=>{composing=false;dirty=true;_apply(false);_paint();});
-    ni.addEventListener("blur",()=>{const ts=_targets();if(ts.length===1||dirty)_apply(true);try{ts.forEach(function(p){syncNameToScenes(p);});}catch(_){}try{renderTokens();updateDelUI();}catch(_){}dirty=false;focusTs=[];});
+    ni.addEventListener("blur",()=>{clearTimeout(paintT);const ts=_targets();if(ts.length===1||dirty)_apply(true);try{ts.forEach(function(p){syncNameToScenes(p);});}catch(_){}try{renderTokens();updateDelUI();}catch(_){}dirty=false;focusTs=[];});
     ni.addEventListener("pointerdown",e=>e.stopPropagation());
     ni.addEventListener("keydown",e=>{if(e.key==="Enter"){if(composing||e.isComposing||e.keyCode===229)return;e.preventDefault();ni.blur();}});})();
   (function(){const ni=$("numInput");if(!ni)return;
@@ -16033,7 +15968,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     ni.addEventListener("compositionstart",()=>{composing=true;});
     ni.addEventListener("input",()=>{dirty=true;applyValue(false);});   /* 2.975 — 조합 중에도 판에(applyValue 는 조합 중 입력칸을 다시 쓰지 않는다) */
     ni.addEventListener("compositionend",()=>{composing=false;dirty=true;applyValue(true);});
-    ni.addEventListener("blur",()=>{composing=false;if(selectedPlayers(false).length===1||dirty)applyValue(true);undoRef=null;dirty=false;try{updateDelUI();}catch(_){}});
+    ni.addEventListener("blur",()=>{composing=false;if(dirty)applyValue(true);undoRef=null;dirty=false;try{updateDelUI();}catch(_){}});
     ni.addEventListener("pointerdown",e=>e.stopPropagation());
     ni.addEventListener("keydown",e=>{if(e.key==="Enter"){if(composing||e.isComposing||e.keyCode===229)return;e.preventDefault();ni.blur();}});})();
   $("sizeUp").onclick=()=>scaleSel(1.18);$("sizeDown").onclick=()=>scaleSel(1/1.18);
@@ -21215,7 +21150,7 @@ try{ var _nb=document.getElementById('dfNew');
   function _consumePending(){
     try{ var pb=window.__pendingBoardPages;
       if(!_inVault && pb && pb.pages && pb.pages.length>1){
-        pages=_clone(pb.pages); idx=(typeof pb.idx==="number"&&pb.idx>=0&&pb.idx<pages.length)?pb.idx:0; window.__pendingBoardPages=null; loadIdx(idx);clearHistory();
+        pages=_clone(pb.pages); idx=(typeof pb.idx==="number"&&pb.idx>=0&&pb.idx<pages.length)?pb.idx:0; window.__pendingBoardPages=null; PSBoardDraft.restorePage(window,loadIdx,idx);clearHistory();
       } }catch(_){}
     try{ render(); }catch(_){}
   }

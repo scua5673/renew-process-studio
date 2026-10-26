@@ -16,7 +16,7 @@ test('3.017 moving between pages of one work keeps the board settings; opening a
     '        idx=at; loadIdx(idx,true);clearHistory();render(); _bkTouch(); return arr.length; },' // 작전판에서 가져온 시퀀스
   ])assert.ok(board.includes(s),s);
   /* 작업물을 새로 열 때는 그 작업물의 설정 */
-  assert.ok(board.includes('window.__pendingBoardPages=null; loadIdx(idx);clearHistory();'),'reload keeps each work its own settings');
+  assert.ok(board.includes('window.__pendingBoardPages=null; PSBoardDraft.restorePage(window,loadIdx,idx);clearHistory();'),'reload applies that work through the stored-page guard without keepLook');
   assert.match(board,/if\(reloadFirst\)loadIdx\(idx\); \}/,'opening vault pages');
   assert.match(board,/if\(pages\)loadIdx\(idx\);\n/,'«↶ 이전 보드» restores that work as it was');
 });

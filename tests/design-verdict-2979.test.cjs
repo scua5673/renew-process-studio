@@ -78,8 +78,8 @@ test('personal IDP is no longer boxed into the 392px phone frame',()=>{
   assert.ok(block(idp,'ps-2979-desk').includes('html.ps-page-idp .dcols,html.ps-page-idp .dcol{display:contents}'),'좁은 화면은 예전 순서 그대로');
 });
 
-test('the archived-changes line goes quiet once it has been opened',()=>{
-  assert.ok(app.includes(`if(st&&st.action==='recovery'&&archSeen())st={kind:'ok',text:'저장됨',detail:st.detail||'',action:''};`));
+test('the archived-changes line goes quiet only while current saving is complete',()=>{
+  assert.ok(app.includes(`if(st&&st.complete&&st.action==='recovery'&&archSeen())st={kind:'ok',text:'서버 저장 확인',detail:st.detail||'',action:'',complete:true};`));
   assert.ok(app.includes('function archSeen(){var n=archCount();return n>0&&Number(archSeenMap()[archKey()])===n;}'),'같은 개수일 때만 조용하다 — 새 보관이 생기면 다시 뜬다');
 });
 

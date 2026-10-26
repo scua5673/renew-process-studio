@@ -33,7 +33,8 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.188"></script>
+<script src="autosave-status.js?v=3.191"></script>
+<script src="sync-confirmation.js"></script>
 <script src="update-progress.js"></script>
 
 <title>PROCESS STUDIO</title>
@@ -523,7 +524,7 @@
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
 <script src="playbook-data.js"></script><script src="playbook-shell.js"></script>
-<script>window.PS_BUILD='3.188';</script>
+<script>window.PS_BUILD='3.191';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1950,12 +1951,10 @@ window.psFailAlert=function(lead,e,stage){
     function currentView(){
       if(window.__psAutosaveView)return window.__psAutosaveView();
       var state=null;try{state=window.PSSync&&PSSync.state&&PSSync.state();}catch(_){}
-      return window.PSAutosaveStatus?PSAutosaveStatus.view(state):{kind:'off'};
+      return window.PSAutosaveStatus&&PSAutosaveStatus.combine?PSAutosaveStatus.combine(PSAutosaveStatus.view(state),null):{kind:'pending',text:'기기 저장 확인 중…'};
     }
-    /* ══ 2.979 · «일부 변경 별도 보관»은 한 번 생기면 영영 떠 있었다 ══
-       보관 기록은 지우는 길이 없어(journal 은 archive·list·read 뿐) 이 주황 줄이 그 기기에서 사라지지 않았다 — 할 일이 없는데 경고가 상주했다.
-       «보관 내용»을 한 번 열어 본 뒤에는 조용히 «저장됨»으로 둔다. 새 보관이 생기면(개수가 달라지면) 다시 뜬다.
-       ⚠ 이 띠의 표시만 바꾼다 — 설정 › 데이터의 상태 글·«보관 내용 보기»·보관 기록 자체는 그대로다. */
+    /* A seen archive is quiet only while current completion stays verified.
+       The original archive and settings recovery remain available. */
     function archKey(){try{var S=window.PSSync,s=S&&S.session&&S.session();return (s&&s.uid||'')+'|'+((S&&S.activeWs&&S.activeWs())||'');}catch(_){return '|';}}
     function archCount(){try{var x=window.PSSync&&PSSync.state&&PSSync.state();return Number(x&&x.archivedCount)||0;}catch(_){return 0;}}
     function archSeenMap(){try{var m=JSON.parse(localStorage.getItem('ps_autosave_arch_seen_v1')||'{}');return (m&&typeof m==='object')?m:{};}catch(_){return {};}}
@@ -1963,7 +1962,7 @@ window.psFailAlert=function(lead,e,stage){
     function archMark(){try{var n=archCount();if(!n)return;var m=archSeenMap();m[archKey()]=n;localStorage.setItem('ps_autosave_arch_seen_v1',JSON.stringify(m));}catch(_){}}
     function draw(){
       var st=currentView();
-      if(st&&st.action==='recovery'&&archSeen())st={kind:'ok',text:'저장됨',detail:st.detail||'',action:''};
+      if(st&&st.complete&&st.action==='recovery'&&archSeen())st={kind:'ok',text:'서버 저장 확인',detail:st.detail||'',action:'',complete:true};
       if(!st||st.kind==='off'){el.setAttribute('aria-hidden','true');btn.disabled=true;return;}
       el.setAttribute('aria-hidden','false');el.className=st.kind;el.title=st.detail||'';tx.textContent=st.text;ago.textContent='';
       var label=st.action==='login'?'로그인':st.action==='retry'?'다시 시도':st.action==='recovery'?'보관 내용':'';
@@ -2290,6 +2289,10 @@ window.psFailAlert=function(lead,e,stage){
       var lv=''; try{ lv=localStorage.getItem('cs_schedule_view')||''; }catch(_){}
       return /^(year|month|week|day)$/.test(lv)?lv:'month';
     }
+    /* A cancelled preload can leave a src on an empty document. Retry only that empty frame after the loading grace period. */
+    function psBlankFrameStalled(fr,at){
+      try{return !!(fr&&fr.getAttribute('src')&&fr.__psLoadAt&&at-fr.__psLoadAt>8000&&/^about:blank(?:#|$)/.test(fr.contentWindow.location.href));}catch(_){return false;}
+    }
     function ensureAppFrame(app){
       if(shellSwitchBlocked)return null;
       var item={
@@ -2308,13 +2311,13 @@ window.psFailAlert=function(lead,e,stage){
         community:[fComm,'community.html?v='+PS_BUILD]
         ,analysis:[fAnalysis,'analysis.html?v='+PS_BUILD]
         ,playbook:[fPlaybook,'playbook.html?v='+PS_BUILD]   /* 2.576 — 플레이북(읽기 전용) */
-        /* 학습은 별도 교재(learning.html)가 아니라 IDP의 현재 학습 화면을 함께 쓴다.
-           같은 iframe을 재사용해야 doc.learning의 완료·메모·용어 기록도 그대로 이어진다. */
         ,learning:[fLearning,'learning.html?v='+PS_BUILD]   /* 2.219 — 학습은 독립 앱(learning.html). IDP 안의 옛 학습 층은 그대로 두되 셸에서는 더 안 연다 */
       }[app];
       if(!item||!item[0])return null;
       var fr=item[0];
+      if(psBlankFrameStalled(fr,Date.now()))fr.removeAttribute('src');
       if(!fr.getAttribute('src')){
+        fr.__psLoadAt=Date.now();
         if(fr===fNote)try{_noteFrameReady=false;}catch(_){}
         if(app==='scout'||app==='process'||app==='gamemodel'||app==='terms'){
           fr.addEventListener('load',function(){
@@ -4135,17 +4138,17 @@ window.psFailAlert=function(lead,e,stage){
   function pushState(){try{return window.PSSync&&PSSync.state&&PSSync.state();}catch(_){return null;}}
   function pushScope(){try{var S=window.PSSync,s=S&&S.session&&S.session();return s&&s.uid&&(!S.dataUnlocked||S.dataUnlocked())?JSON.stringify([s.uid,S.activeWs?S.activeWs():'',localStorage.getItem('ps_ws_switch_epoch_v1')||'']):'';}catch(_){return '';}}
   function autosaveView(state){return window.PSAutosaveStatus?PSAutosaveStatus.view(state):{kind:'pending',text:'저장 상태를 불러오지 못했어요',detail:'페이지를 다시 열어 주세요.',action:'retry',attention:true,complete:false};}
+  var localSaveStatus=null;
+  try{if(window.PSAutosaveStatus&&PSAutosaveStatus.observeShell)localSaveStatus=PSAutosaveStatus.observeShell(window,function(){refreshPushState();});}catch(_){}
   function saveView(){
     var scope=pushScope(),state=pushState(),view=autosaveView(scope?state:null);
     if(pushInFlight&&pushInFlight.scope!==scope)pushInFlight=null;
     if(pushNotice&&pushNotice.scope!==scope)pushNotice=null;
     if(pushNotice&&view.complete&&Number(state.at)>pushNotice.at)pushNotice=null;
-    if(pushInFlight)return autosaveView({kind:'busy'});
-    if(view.kind==='bad')return view;
-    var out=pushNotice?pushNotice.view:view;
-    /* 3.038 — 작전판에 «보드 저장»을 누르지 않은 변경이 있으면 «저장됨» 대신 그것을 말한다(피드백 UX-1 — 안 한 저장 위에 «● 저장됨»이 떠 있었다).
-       오류·저장 중·보관(held)이 먼저다. 보드가 boardDirty 로 알려 주고(message 수신부), 보드 프레임이 새로 열리면(load) false 로 돌아간다. */
-    if(window.__psBoardDirty&&scope&&out.kind!=='bad'&&out.kind!=='busy'&&out.kind!=='held')return {kind:'pending',text:'보드 · 저장 전',detail:'작전판에 저장하지 않은 변경이 있어요. 보드 화면의 «보드 저장»을 누르면 저장돼요. 그전에도 이 기기에는 초안으로 남아 있어요.',action:'',attention:true,complete:false};
+    var out=pushInFlight?autosaveView({kind:'busy'}):(view.kind==='bad'?view:(pushNotice?pushNotice.view:view));
+    out=window.PSAutosaveStatus&&PSAutosaveStatus.combine?PSAutosaveStatus.combine(out,localSaveStatus&&localSaveStatus.read()):(out.kind==='bad'?out:autosaveView({kind:'unknown'}));
+    /* Legacy child notice; never substitutes a server acknowledgement. */
+    if(!localSaveStatus&&window.__psBoardDirty&&scope&&out.kind!=='bad'&&out.kind!=='busy'&&out.kind!=='held')return {kind:'pending',text:'보드 · 저장 전',detail:'작전판에 저장하지 않은 변경이 있어요. 보드 화면의 «보드 저장»을 누르면 저장돼요. 그전에도 이 기기에는 초안으로 남아 있어요.',action:'',attention:true,complete:false};
     return out;
   }
   window.__psAutosaveView=saveView;
@@ -4184,7 +4187,7 @@ window.psFailAlert=function(lead,e,stage){
         return r;
       });
     }
-    return attempt().then(function(r){
+    return Promise.resolve().then(function(){if(current()&&typeof window.psFlushAllPendingReady==='function')return window.psFlushAllPendingReady();}).then(attempt).then(function(r){
       if(!current())return;r=r||{};var state=pushState(),latest=autosaveView(state);
       if(r.noauth){notice(autosaveView({kind:'bad',reason:'sync_auth'}));return;}
       if(r.error||r.personalError){notice(latest.kind==='bad'?latest:autosaveView({kind:'bad'}));return;}
@@ -4200,7 +4203,7 @@ window.psFailAlert=function(lead,e,stage){
   }
   window.__psAutosaveRetry=retryAutosave;
   if(pbtn)pbtn.addEventListener('click',retryAutosave);
-  window.addEventListener('ps-sync-state',refreshPushState);
+  window.addEventListener('ps-sync-state',function(){if(localSaveStatus)localSaveStatus.refresh();refreshPushState();});
   window.addEventListener('ps-auth-state',function(e){if(e&&e.detail&&e.detail.unlocked===false){pushSequence++;pushInFlight=null;pushNotice=null;}refreshPushState();});
   window.addEventListener('online',refreshPushState);window.addEventListener('offline',refreshPushState);
 
@@ -5818,6 +5821,9 @@ window.__buildScoutForm=function(k){
   /* 2.349 — 하단 바 높이를 재서 `--ps-seg-h` 로. iframe 앱(IDP·학습)이 제 바를 이 위에 올린다 */
   (function(){
     var seg=document.getElementById('appSeg'),teamBottom=document.getElementById('teamBottom'); if(!seg)return;
+    var measureQueued=false;
+    function css(k,v){var s=document.documentElement.style;if(s.getPropertyValue(k)!==v)s.setProperty(k,v);}
+    function queueMeasure(){if(measureQueued)return;measureQueued=true;requestAnimationFrame(function(){measureQueued=false;measure();});}
     function measure(){
       try{
         /* The quiet footer sits above whichever navigation is actually visible. */
@@ -5825,15 +5831,15 @@ window.__buildScoutForm=function(k){
         [seg,teamBottom].forEach(function(nav){
           if(nav&&nav.offsetHeight>0&&getComputedStyle(nav).position==='fixed')footerNavHeight=Math.max(footerNavHeight,nav.getBoundingClientRect().height);
         });
-        document.documentElement.style.setProperty('--ps-footer-nav-h',footerNavHeight>0?footerNavHeight+'px':'env(safe-area-inset-bottom,0px)');
+        css('--ps-footer-nav-h',footerNavHeight>0?footerNavHeight+'px':'env(safe-area-inset-bottom,0px)');
         if(getComputedStyle(seg).position!=='fixed'){ document.documentElement.style.removeProperty('--ps-seg-h'); return; }
         var h=seg.offsetHeight;
-        if(h>0)document.documentElement.style.setProperty('--ps-seg-h',h+'px');
+        if(h>0)css('--ps-seg-h',h+'px');
       }catch(_){}
     }
     measure();
-    try{ if(window.ResizeObserver){var navSize=new ResizeObserver(measure);navSize.observe(seg);if(teamBottom)navSize.observe(teamBottom);} }catch(_){}
-    window.addEventListener('resize',measure,{passive:true});
+    try{ if(window.ResizeObserver){var navSize=new ResizeObserver(queueMeasure);navSize.observe(seg);if(teamBottom)navSize.observe(teamBottom);} }catch(_){}
+    window.addEventListener('resize',queueMeasure,{passive:true});
     window.addEventListener('orientationchange',function(){setTimeout(measure,120);});
     setTimeout(measure,300); setTimeout(measure,1200);   /* 폰트·부팅 뒤 한 번 더 */
   })();
@@ -5903,14 +5909,8 @@ window.__buildScoutForm=function(k){
     saved=m;
     try{syncDeskScale();}catch(_){}
   }
-  /* 2.466 — 데스크톱 판의 약속을 셸이 지킨다. 아이패드는 viewport 메타(width=1100)가
-     "창이 좁아도 데스크톱 판"을 보장하지만 데스크톱 브라우저는 메타를 무시한다(위 2.114 주석).
-     그래서 창을 좁히면 폐기된 옛 보드 레이아웃(플로트바·구 애니바)이 되살아났다 —
-     표시/숨김이 아직 폭 미디어쿼리(≥768)에 걸려 있고, 네 CSS 파일 50곳이라 기기 조건으로
-     다시 쓰는 건 특이도 전쟁이다. 지렛대를 바꾼다: 프레임의 논리 폭을 768 아래로
-     내려보내지 않는다 — 모자라면 iframe 을 768px 로 두고 통째로 배율 축소한다.
-     안의 미디어쿼리는 항상 데스크톱으로 판정된다. 폰·아이패드·모바일 판(force-phone)·
-     IDP 폰 프레임은 건드리지 않는다. */
+  /* 좁은 데스크톱 창에서도 보드 도구를 유지하도록 프레임의 논리 폭을 768px 이상으로 둔다.
+     폰·아이패드·모바일 판·IDP 폰은 제외한다. 학습은 축소 없이 자체 반응형 화면으로 읽는다. */
   var _fr=document.querySelector('.frames');
   function syncDeskScale(){
     try{
@@ -5923,7 +5923,7 @@ window.__buildScoutForm=function(k){
       var kids=_fr.children;
       for(var i=0;i<kids.length;i++){
         var f=kids[i]; if(!f||f.tagName!=='IFRAME')continue;
-        if(on&&W>0&&W<768){
+        if(on&&W>0&&W<768&&f.id!=='fLearning'){
           var sc=W/768;
           f.style.width='768px';
           f.style.height=Math.round(H/sc)+'px';
@@ -8220,14 +8220,14 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="sync-size.js"></script>
 <script src="sync-observability.js"></script>
 <script src="idp-pub-wipe.js"></script>
-<script src="autosave-journal.js?v=3.188"></script>
-<script src="autosave-merge.js?v=3.188"></script>
-<script src="autosave-runtime.js?v=3.188"></script>
-<script src="autosave-recovery.js?v=3.188"></script>
+<script src="autosave-journal.js?v=3.191"></script>
+<script src="autosave-merge.js?v=3.191"></script>
+<script src="autosave-runtime.js?v=3.191"></script>
+<script src="autosave-recovery.js?v=3.191"></script>
 <script src="permissions-filter.js"></script>
-<script src="sync.js?v=3.188"></script>
+<script src="sync.js?v=3.191"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.188">
+<link rel="stylesheet" href="support.css?v=3.191">
 <link rel="stylesheet" href="support-image.css?v=20261023">
 <script src="support-image.js?v=20261023"></script>
 <script src="support.js?v=20261023"></script>

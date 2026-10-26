@@ -17,34 +17,35 @@ function harness(options={}){
  let owner={uid:options.uid||'synthetic-user-a',wid:options.wid||'personal-a',active:'team-a',seal:'seal-a',epoch:0,switchSeal:'',switchEpoch:'1'};
  let server=options.serverRaw?{raw:options.serverRaw,cupd:3}:{raw:null,cupd:null};
  const ls=new Map(options.ls||[]),idb=new Map(options.idb||[]),messages=[],timers=[],removed=[];
- const c={console,JSON,Math,Date,Object,Array,Number,String,Promise,Error,URLSearchParams,encodeURIComponent,location:{origin:'https://unsaved-draft.invalid',search:''},
+ const c={PSBoardDraft:require('../studio/board-draft.js'),console,JSON,Math,Date,Object,Array,Number,String,Promise,Error,URLSearchParams,encodeURIComponent,location:{origin:'https://unsaved-draft.invalid',search:''},
   PRIVATE_BOARD_PREFIX:'ps_private_board_draft_v1:',EDRAFT_KEY:'cs_editor_draft_v1',_bliveSaveSeq:0,_bliveDirty:false,_bliveApplying:false,_bliveT:null,
   _vaultBoardContext:null,_vaultBoardRestoring:false,animPlaying:false,matchActive:false,anim:{slides:[],frames:[]},animActive:0,
   state:snap(0),undoStack:[],redoStack:[],autoOrient:true,
   document:{body:{classList:{contains:()=>false}},addEventListener(){}},
   setTimeout(fn,ms){timers.push({fn,ms});return timers.length;},clearTimeout(){},
   localStorage:{getItem(k){return ls.get(k)??null;},setItem(k,v){if(options.quota)throw Error('synthetic quota');ls.set(k,String(v));},removeItem(k){removed.push(k);ls.delete(k);}},
-  storage:{async get(k){return idb.has(k)?{value:idb.get(k)}:null;},async set(k,v,current){if(current)current();idb.set(k,v);return true;},async replaceIfValue(k,b,v,current){if(current)current();if((idb.get(k)??null)!==b)return false;idb.set(k,v);return true;},async del(k){removed.push('idb:'+k);idb.delete(k);}},
+  storage:{async get(k){return idb.has(k)?{value:idb.get(k)}:null;},async set(k,v,current){if(current)current();idb.set(k,v);return true;},async replaceIfValue(k,b,v,current){if(current)current();if((idb.get(k)??null)!==b)return false;idb.set(k,v);return true;},async del(k){removed.push('idb:'+k);idb.delete(k);},async delIfValue(k,raw,current){current();if(idb.get(k)!==raw)return false;removed.push('idb:'+k);idb.delete(k);return true;}},
   store:{async get(){return null;}},toast:m=>messages.push(m),captureSnap(){return copy(c.state);},loadSnap(s){c.state=copy(s);},
   dc:copy,renderTokens(){},renderDrawings(){},updateDelUI(){},restoreAnimBeforeCapture(){},renderAnimFrames(){},kitPropagateIfChanged(){},
   setView(v){c.__csView=v;},addEventListener(){},
  };
+ c.PSStorage={sharedVerified:async(k,raw)=>{assert.equal(idb.get(k),raw);},sharedReady:async()=>true,localRecovered:async(k,raw,current)=>{assert.equal(current(),true);assert.equal(ls.get(k),raw);}};
  c.window=c;c.__csView='board';c.__animFrames=()=>copy(c.anim.frames);c.__animReset=()=>{c.anim.frames=[];c.animActive=-1;};c.__animRestore=(frames,i)=>{c.anim.frames=copy(frames);c.animActive=i;};
  c.__psPages={liveVal:()=>c.pages||null,restoreContext(p){c.pages=copy(p);}};
  c.parent={postMessage:m=>messages.push(m),PSSync:{boardLive:{version:2,scope:'personal',owner:()=>copy(owner),async get(){return {ok:true,uid:owner.uid,wid:owner.wid,...server};},async save(raw){server={raw,cupd:(server.cupd||0)+1};return {ok:true,uid:owner.uid,wid:owner.wid,...server};}}}};
- vm.createContext(c);vm.runInContext(helpers+writer+flush+restore,c);
+ vm.createContext(c);vm.runInContext(helpers+writer+flush+restore,c);c.PSBoardDraft.install(c);
  const key=()=>c.PRIVATE_BOARD_PREFIX+encodeURIComponent(owner.uid);
  return {c,ls,idb,messages,timers,removed,key,draftKey:()=>key()+':unsaved',
   async boot(){assert.equal(await c.restoreLiveBoard(),true);await ticks();},
   edit(x){c.state=snap(x);c._boardUserTouched=true;c.boardSaveLive();},
-  fire(){timers.splice(0).forEach(t=>t.fn());},
+  async fire(){timers.splice(0).forEach(t=>t.fn());await c.__psBoardDraft.ready();await ticks();},
   draft(){const raw=ls.get(this.draftKey())??idb.get(this.draftKey())??null;return raw?JSON.parse(raw):null;},
   record(){return JSON.parse(ls.get(key())||idb.get(key())||'null');}};
 }
 
 test('an unsaved edit becomes a device draft; reopening offers it; restoring marks the board unsaved; saving clears it',async()=>{
  const h=harness();await h.boot();
- h.edit(5);assert.equal(h.draft(),null,'nothing before the debounce');h.fire();
+ h.edit(5);assert.equal(h.draft(),null,'nothing before the debounce');await h.fire();
  const d=h.draft();assert.ok(d&&d.v===1&&d.uid==='synthetic-user-a'&&JSON.parse(d.raw).snap.players[0].x===5,'the draft holds the unsaved board');
  assert.equal(h.record(),null,'the private board record is untouched (no automatic save)');
  const r=harness({ls:[...h.ls],idb:[...h.idb]});await r.boot();
@@ -56,7 +57,7 @@ test('an unsaved edit becomes a device draft; reopening offers it; restoring mar
  assert.ok(r.messages.some(m=>m&&m.type==='boardDirty'&&m.changed===true),'the shell is told about the unsaved board');
  assert.equal(r.c.__boardDraftPending,null);
  assert.equal(await r.c.boardSaveExplicit(),true);
- assert.equal(r.draft(),null,'saving clears the draft');assert.ok(r.removed.includes(r.draftKey()));assert.equal(r.record().pending,false);
+ assert.equal(r.draft(),null,'saving clears the draft');assert.ok(r.removed.includes(r.draftKey())||r.removed.includes('idb:'+r.draftKey()));assert.equal(r.record().pending,false);
  assert.ok(r.messages.some(m=>m&&m.type==='boardDirty'&&m.changed===false),'and the shell is told it is saved');
 });
 test('a draft older than the saved board, or identical to it, is dropped without an offer',async()=>{
@@ -69,7 +70,7 @@ test('a draft older than the saved board, or identical to it, is dropped without
  await newer.boot();assert.ok(newer.c.__boardDraftPending,'a newer, different draft is offered');assert.equal(newer.c.state.players[0].x,12,'but the saved board stays on screen until «되살리기»');
 });
 test('drafts belong to one account: another account never sees or removes them',async()=>{
- const a=harness();await a.boot();a.edit(7);a.fire();assert.ok(a.draft());
+ const a=harness();await a.boot();a.edit(7);await a.fire();assert.ok(a.draft());
  const b=harness({uid:'synthetic-user-b',wid:'personal-b',ls:[...a.ls],idb:[...a.idb]});await b.boot();
  assert.equal(b.c.__boardDraftPending,null);assert.equal(b.ls.get(a.draftKey()),a.ls.get(a.draftKey()),'A draft untouched');assert.deepEqual(b.removed,[]);
 });
@@ -79,8 +80,8 @@ test('hiding the tab or closing writes the draft at once, without touching the p
  assert.equal(JSON.parse(h.draft().raw).snap.players[0].x,7);assert.equal(h.record(),null);
 });
 test('a render that the coach did not touch leaves no draft, and a full localStorage falls back to IndexedDB',async()=>{
- const h=harness();await h.boot();h.c.state=snap(9);h.c.boardSaveLive();h.fire();assert.equal(h.draft(),null,'dirty without a user gesture is not a draft');
- const q=harness({quota:true});await q.boot();q.edit(11);q.fire();await ticks();
+ const h=harness();await h.boot();h.c.state=snap(9);h.c.boardSaveLive();await h.fire();assert.equal(h.draft(),null,'dirty without a user gesture is not a draft');
+ const q=harness({quota:true});await q.boot();q.edit(11);await q.fire();await ticks();
  assert.ok(q.idb.has(q.draftKey())&&!q.ls.has(q.draftKey()),'IndexedDB copy');
  const r=harness({ls:[...q.ls],idb:[...q.idb]});await r.boot();assert.ok(r.c.__boardDraftPending,'offered from IndexedDB');
 });
@@ -88,7 +89,36 @@ test('the save strip and the shell say what to do instead of «저장됨» over 
  assert.match(html,/chg\?"저장 안 한 변경 있음"/,'strip wording (CP-6)');assert.doesNotMatch(html,/"변경됨 · 저장 안 함"/);
  assert.match(html,/class="sb-vault" title="보관함에 항목으로 저장">보관함 저장<\/button>/,'phone strip names the action like the iPad button (CP-14)');
  assert.match(app,/d\.type==='boardDirty'\)\{ var _bd=!!d\.changed;/,'shell receives boardDirty');
- assert.match(app,/if\(window\.__psBoardDirty&&scope&&out\.kind!=='bad'&&out\.kind!=='busy'&&out\.kind!=='held'\)return \{kind:'pending',text:'보드 · 저장 전'/,'shell status overrides «저장됨»');
+ assert.match(app,/if\(!localSaveStatus&&window\.__psBoardDirty&&scope&&out\.kind!=='bad'&&out\.kind!=='busy'&&out\.kind!=='held'\)return \{kind:'pending',text:'보드 · 저장 전'/,'legacy shell fallback still marks the board unsaved');
+ assert.match(app,/PSAutosaveStatus\.combine\(out,localSaveStatus&&localSaveStatus\.read\(\)\)/,'the current observer combines exact child durability first');
+});
+
+for(const touched of [false,true])test('a delayed draft read with '+(touched?'real edits':'only derived rendering')+' does not reuse a stale write baseline',async()=>{
+ const raw=JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(40,1),at:Date.now()}),key='ps_private_board_draft_v1:synthetic-user-a:unsaved';
+ const h=harness({serverRaw:payload(12,1000),idb:[[key,raw]]});await h.boot();h.c.boardDraftBarHide();let observed=0;
+ const get=h.c.storage.get,observe=h.c.__psBoardDraft.observe;h.c.__psBoardDraft.observe=function(...args){observed++;return observe.apply(this,args);};
+ h.c.storage.get=async k=>{const v=await get(k);if(k===key){h.c._boardPrivateEditSeq++;h.c._boardManualDirty=true;h.c._boardUserTouched=touched;if(touched)h.c.state=snap(99);}return v;};
+ const shown=await h.c.boardDraftOffer(h.c._boardPrivateOwner,h.record());assert.equal(shown,!touched);assert.equal(observed,touched?0:1,'only an unchanged unedited source may establish a baseline for restoring the draft');assert.equal(h.idb.get(key),raw);
+ assert.equal(!!h.c.__boardDraftPending,!touched);assert.equal(h.c.state.players[0].x,touched?99:12,'readonly discovery cannot replace the current canvas');
+});
+for(const change of ['owner','generation','mirror'])test('a changed '+change+' still vetoes delayed recovery discovery',async()=>{
+ const raw=JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(40,1),at:Date.now()}),key='ps_private_board_draft_v1:synthetic-user-a:unsaved';
+ const h=harness({serverRaw:payload(12,1000),idb:[[key,raw]]});await h.boot();h.c.boardDraftBarHide();const get=h.c.storage.get;
+ h.c.storage.get=async k=>{const v=await get(k);if(k===key){if(change==='owner')h.c.parent.PSSync.boardLive.owner=()=>null;if(change==='generation')h.c._boardPrivateGeneration++;if(change==='mirror')h.ls.set(key,'synthetic concurrent original');}return v;};
+ assert.equal(await h.c.boardDraftOffer(h.c._boardPrivateOwner,h.record()),false);assert.equal(h.c.__boardDraftPending,null);assert.equal(h.idb.get(key),raw);
+});
+for(const action of ['save','discard'])test('a delayed recovery read cannot reoffer a draft after a newer '+action,async()=>{
+ const raw=JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(40,1),at:Date.now()}),key='ps_private_board_draft_v1:synthetic-user-a:unsaved';
+ const h=harness({serverRaw:payload(12,1000),idb:[[key,raw]]});await h.boot();h.c.boardDraftBarHide();const get=h.c.storage.get,chosen=h.record();
+ h.c.storage.get=async k=>{const v=await get(k);if(k===key){if(action==='save'){h.edit(99);assert.equal(await h.c.boardSaveExplicit(),true);}else{h.c._boardPrivateEditSeq++;await h.c.boardDraftClear(h.c._boardPrivateOwner);}}return v;};
+ assert.equal(await h.c.boardDraftOffer(h.c._boardPrivateOwner,chosen),false);assert.equal(h.c.__boardDraftPending,null);assert.equal(h.idb.has(key),false,'the explicitly retired record must stay retired');assert.equal(h.c.state.players[0].x,action==='save'?99:12);
+});
+test('a draft discovered during startup rendering can be restored and durably flushed with all pages and frames',async()=>{
+ const live=JSON.parse(payload(40,1));live.animFrames=[{snap:snap(40)},{snap:snap(41)}];live.boardPages={idx:1,pages:[{name:'original one',snap:snap(40)},{name:'original two',snap:snap(42)}]};
+ const baseline=payload(12,1000),key='ps_private_board_draft_v1:synthetic-user-a:unsaved',raw=JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:JSON.stringify(live),at:Date.now()}),h=harness({serverRaw:baseline,idb:[[key,raw]]});
+ const get=h.c.storage.get;let first=true;h.c.storage.get=async k=>{const v=await get(k);if(k===key&&first){first=false;h.c._boardPrivateEditSeq++;h.c._boardManualDirty=true;h.c._boardUserTouched=false;}return v;};
+ await h.boot();assert.ok(h.c.__boardDraftPending);assert.equal(h.c.__boardDraftRestore(),true);await h.c.psFlushPendingReady();assert.equal(h.c.psHasPending(),false);
+ const saved=JSON.parse(JSON.parse(h.idb.get(key)).raw);assert.deepEqual(saved.boardPages,live.boardPages);assert.deepEqual(saved.animFrames,live.animFrames);assert.equal(saved.snap.players[0].x,40);assert.equal((await h.c.parent.PSSync.boardLive.get()).raw,baseline,'a restored local draft never implicitly overwrites the manual server board');
 });
 
 /* ── 3.038 코드 리뷰에서 확인된 경로 ── */
@@ -111,7 +141,7 @@ test('starting to edit withdraws the offer; the newer edits become the draft and
  const h=harness({serverRaw:payload(12,now-5000),ls:newerDraft(40)});await h.boot();assert.ok(h.c.__boardDraftPending);
  h.edit(99);assert.equal(h.c.__boardDraftPending,null,'offer withdrawn on the first edit');
  assert.equal(h.c.__boardDraftRestore(),false);assert.equal(h.c.state.players[0].x,99);
- h.fire();assert.equal(JSON.parse(h.draft().raw).snap.players[0].x,99,'the stored draft is the newest work');
+ await h.fire();assert.equal(JSON.parse(h.draft().raw).snap.players[0].x,99,'the stored draft is the newest work');
 });
 test('an explicit save while the offer is showing withdraws it first',async()=>{
  const h=harness({serverRaw:payload(12,now-5000),ls:newerDraft(40)});await h.boot();assert.ok(h.c.__boardDraftPending);
@@ -120,8 +150,8 @@ test('an explicit save while the offer is showing withdraws it first',async()=>{
  assert.ok(h.messages.some(m=>typeof m==='string'&&/이전 작업은 버렸어요/.test(m)),'the save says the old draft was dropped');
 });
 test('when localStorage fills up the stale small-store copy is removed and the newer IndexedDB draft wins',async()=>{
- const opts={};const h=harness(opts);await h.boot();h.edit(5);h.fire();assert.ok(h.ls.has(h.draftKey()));
- opts.quota=true;h.edit(6);h.fire();await ticks();
+ const opts={};const h=harness(opts);await h.boot();h.edit(5);await h.fire();assert.ok(h.idb.has(h.draftKey())&&!h.ls.has(h.draftKey()));
+ opts.quota=true;h.edit(6);await h.fire();await ticks();
  assert.equal(h.ls.has(h.draftKey()),false,'stale localStorage copy removed');assert.equal(JSON.parse(JSON.parse(h.idb.get(h.draftKey())).raw).snap.players[0].x,6);
  const both=harness({ls:[[h.draftKey(),JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(1,now-9000),at:now-9000})]],idb:[[h.draftKey(),JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(2,now-1000),at:now-1000})]]});
  await both.boot();assert.equal(JSON.parse(both.c.__boardDraftPending.raw).snap.players[0].x,2,'the newer of the two stores is offered');

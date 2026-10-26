@@ -54,12 +54,23 @@ try{
   await sf.evaluate(()=>{window.__qaPend=true;});
   await page.keyboard.type('de');await page.waitForTimeout(400);
   s=await st();assert.equal(s.val,'abcde');assert.equal(await sf.evaluate(()=>matchGet().attack),'abc','회차 중엔 본문이 버린다(예전 그대로)');
+  assert.equal(await sf.locator('#matchSavedState').textContent(),'저장 대기 중…','the local status must not claim this input is saved');
+  assert.equal(await sf.evaluate(()=>psHasPending()),true,'the memory-only input must block leaving the screen');
+  const barrier=await sf.evaluate(async()=>{try{await psFlushPendingReady();return {ok:true};}catch(e){return {ok:false,code:e.psCode};}});
+  assert.deepEqual(barrier,{ok:false,code:'match_input_pending'},'pending input must not be reported as safely flushed');
   await sf.evaluate(()=>{window.__qaPend=false;matchState=null;renderMatch();});   // 회차가 끝나 다시 그린다(syncMatchFromCloud 의 길) — 쓰는 중인 칸은 그대로(지워졌어도 300ms 안에 돌려놓는다)
   await sf.waitForFunction(TA=>document.querySelector(TA).value==='abcde',TA,{timeout:3000}).catch(()=>{});
   s=await st();assert.equal(s.val,'abcde','쓰는 중인 칸은 지우지 않는다 '+JSON.stringify(s));
   if(!s.active)console.log('match-lock-3137: 다시 그린 뒤 커서가 칸에 없다(헤드리스 focus) '+JSON.stringify(s));
   await sf.waitForFunction(()=>matchGet().attack==='abcde',null,{timeout:8000});   // 회차가 끝났으니 모델에 들어가고 저장을 건다
   await sf.waitForFunction(()=>window.__psMatchLockApi.typed().length===0,null,{timeout:8000});
+  await sf.evaluate(()=>psFlushPendingReady());
+  const durable=await sf.evaluate(async()=>{
+    const row=await storage.peek('cs_team_matches_v1'),id=matchGet().id;
+    return {local:JSON.parse(localStorage.getItem('cs_team_matches_v1')).matches.find(m=>m.id===id).attack,
+      idb:JSON.parse(row.value).matches.find(m=>m.id===id).attack,pending:psHasPending()};
+  });
+  assert.deepEqual(durable,{local:'abcde',idb:'abcde',pending:false},'ready recovery must reach both actual local stores');
   await sf.evaluate(()=>document.activeElement.blur());await page.waitForTimeout(400);
   await sf.evaluate(()=>{matchState=null;renderMatch();});
   s=await st();assert.equal(s.val,'abcde','저장된 글로 다시 그린다 '+JSON.stringify(s));

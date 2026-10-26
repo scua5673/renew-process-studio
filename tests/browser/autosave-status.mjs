@@ -27,7 +27,8 @@ await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0
 const base='http://127.0.0.1:'+server.address().port,results=[];
 let browser;
 try{
-  browser=await pw.chromium.launch({headless:true,executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
+  const engine=process.env.PS_BROWSER_ENGINE||'chromium';assert.ok(['chromium','webkit'].includes(engine));
+  browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})});
   for(const spec of [{width:393,height:852,mobile:true},{width:1280,height:900,mobile:false}])for(const serverName of ['가상 테스트 코치']){
     const label=spec.width+'-'+(serverName?'server-name':'no-name'),calls=[],blocked=[],errors=[];
     if(process.env.PS_TEST_LABEL&&process.env.PS_TEST_LABEL!==label)continue;
@@ -94,6 +95,14 @@ try{
       await page.waitForTimeout(2800); // Allow the real entry splash animation to finish.
       const bootEvents=[];for(const frame of page.frames())bootEvents.push(...await frame.evaluate(()=>window.__quietEntryEvents||[]));
       assert.deepEqual(bootEvents,[],'Real initial boot shows no transient modal, account menu or legacy notice');
+      // This matrix deliberately supplies fictitious sync states. Its local
+      // snapshot baseline is also explicitly idle; real psHasPending barriers
+      // stay intact. The separate root-child suite covers real mixed sources.
+      let localSnapshotsMocked=0;
+      for(const frame of page.frames())localSnapshotsMocked+=await frame.evaluate(()=>{
+        const api=window.PSSaveState;if(!api?.snapshot||!api.owner)return 0;
+        window.__realPresentationLocalSnapshot=api.snapshot;api.snapshot=()=>({owner:api.owner(),scopes:{}});return 1;
+      });
       await page.evaluate(()=>{
         window.__realAutosaveRecovery=window.PSAutosaveRecovery;
         window.__fixtureSaveState={kind:'ok',at:100,n:0,review:0,archivedCount:0};window.__fixtureRetries=0;window.__fixtureChoices=0;window.__fixtureRecovery=0;
@@ -105,7 +114,7 @@ try{
         PSSync.merge.notes=()=>[{id:'fixture-note',by:'가상 코치',ymd:'2026-09-15',path:'w1.1.match',mine:'가상 기록'}];
       });
       const cases=[
-        ['confirmed',{kind:'ok',at:100,n:0,review:0},'저장됨'],
+        ['confirmed',{kind:'ok',at:100,n:0,review:0},'서버 저장 확인'],
         ['saving',{kind:'busy',n:1,review:0},'저장 중…'],
         ['offline',{kind:'bad',reason:'sync_offline',n:1,review:0},'오프라인 · 저장 대기'],
         ['preserved',{kind:'ask',n:0,review:27},'일부 변경 보관'],
@@ -141,7 +150,7 @@ try{
       assert.equal(await page.evaluate(()=>window.__fixtureRetries),1);assert.equal(await page.evaluate(()=>window.__fixtureChoices),0);
       assert.equal(await page.locator('#psWsModal').count(),0);
       await page.evaluate(()=>{window.__fixtureSaveState={kind:'ok',at:500,n:0,review:0};window.dispatchEvent(new Event('ps-sync-state'));});
-      assert.equal(await page.locator('#psPushState').innerText(),'저장됨');
+      assert.equal(await page.locator('#psPushState').innerText(),'서버 저장 확인');
       assert.equal(await page.locator('#gearPop [data-gp-go="data"]').getAttribute('data-dot'),'0','A confirmed status clears the dot despite the fixed button label');
       // Real recovery component: exact originals are read only on demand.
       const recoveryRow={id:'11111111-1111-4111-8111-111111111111',k:'sq:fixture-player',at:100,cupd:2,reason:'conflict',localHash:'l',remoteHash:'r',wid:'synthetic-team'};
@@ -191,10 +200,10 @@ try{
       assert.equal(await page.locator('#psAutosaveRecoveryDialog').count(),0,'The real ownership fence revokes the open recovery view');
       const runtimeErrors=errors.filter((e,i)=>!navAborts.isAbort(e,errorAt[i])).filter(e=>!/^ResizeObserver loop (completed with undelivered notifications\.|limit exceeded)$/.test(e));
       assert.deepEqual(runtimeErrors,[],'No runtime errors');
-      results.push({width:spec.width,compactStates:cases.length,noBootPopup:true,noAutomaticDialog:true,advancedRecovery:true,noDocumentChoices:true,exactOriginalExport:true,recoveryOwnerGuard:true,realRecoveryBridge:true,passed:true});
+      results.push({width:spec.width,compactStates:cases.length,localSnapshotsMocked,localPendingBarriersRetained:true,noBootPopup:true,noAutomaticDialog:true,advancedRecovery:true,noDocumentChoices:true,exactOriginalExport:true,recoveryOwnerGuard:true,realRecoveryBridge:true,passed:true});
       console.log(JSON.stringify(results.at(-1)));
     }catch(e){await page.screenshot({path:path.join(out,spec.width+'-failure.png')}).catch(()=>{});throw e;}
     finally{fs.writeFileSync(path.join(out,spec.width+'-network.json'),JSON.stringify({calls,blocked,errors},null,2));await context.close();}
   }
-  fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({passed:true,engine:'chromium',network:'All external requests mocked or blocked. Synthetic accounts and status fixtures only.',results},null,2));
+  fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({passed:true,engine,network:'All external requests mocked or blocked. Synthetic accounts and status fixtures only.',localModel:'After real quiet boot, local snapshots are explicitly idle for the mocked sync presentation matrix; real pending barriers remain intact. Real mixed-source behavior is verified separately.',results},null,2));
 }finally{await browser?.close();await new Promise(r=>server.close(r));}

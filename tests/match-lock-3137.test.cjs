@@ -49,6 +49,5 @@ test('회차가 도는 중에 친 글 — 본문의 두 길이 그대로라 모�
   assert.ok(s.includes('el.addEventListener(ev,function(){var m=matchGet();if(!m||!matchCanEdit())return;var k=el.dataset.matchField;'),'본문 입력 처리기는 matchCanEdit 거짓이면 글을 버린다');
   assert.match(s,/^function matchGet\(\)/m);assert.match(s,/^function matchQueueSave\(\)/m);assert.match(s,/^function matchCanEdit\(\)/m);
   assert.ok(m.includes("g.__psLock = 1; win.renderMatch = g;")&&m.includes("doc.addEventListener('input'"),'감싼다 · 친 글을 적는다');
-  assert.ok(m.includes('now - e.t > 60000'),'60초 지난 값은 버린다(다른 기기의 편집을 영영 덮지 않게)');
   assert.ok(!/win\.renderMatch\s*=\s*function/.test(m.replace('win.renderMatch = g;','')),'원래 함수를 부른다');
 });

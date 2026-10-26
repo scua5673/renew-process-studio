@@ -96,13 +96,36 @@ try{
   checkImages(check(await sf.evaluate(()=>PSSchedule.raw()),'raw-ready',64),64);
   assert.equal(status.skipped,null);
   await sf.waitForFunction(()=>!document.querySelector('.match-shell').classList.contains('readonly'));
+  // A round can suspend MATCH readiness after the last UI check. Such input
+  // must remain pending, rather than passing the exit barrier from memory.
+  const reviewTrace=[];proof.reviewTrace=reviewTrace;
+  async function flushReview(stage){
+    const result=await sf.evaluate(async()=>{
+      let barrier;
+      try{await psFlushPendingReady();barrier={ok:true};}
+      catch(e){if(e.psCode!=='match_input_pending')throw e;barrier={ok:false,code:e.psCode,pending:psHasPending(),typed:window.__psMatchLockApi.typed()};}
+      const row=await storage.peek('cs_team_matches_v1');
+      return {barrier,pending:psHasPending(),docPending:matchDocPending(),canEdit:matchCanEdit(),canEditOne:matchCanEditOne(matchCurrent),
+        typed:window.__psMatchLockApi.typed(),memory:matchGet()?.reviewGood,
+        local:JSON.parse(localStorage.getItem('cs_team_matches_v1')||'null')?.matches?.find(m=>m.id==='fixture-review')?.reviewGood,
+        idb:JSON.parse(row?.value||'null')?.matches?.find(m=>m.id==='fixture-review')?.reviewGood};
+    });
+    reviewTrace.push({stage,...result});
+    if(!result.barrier.ok)assert.equal(result.barrier.pending,true,'a deferred input cannot pass the exit barrier');
+    return result;
+  }
   await field.fill('가상 리뷰 입력 저장 확인');
-  await sf.evaluate(()=>psFlushPendingReady());
+  await flushReview('after-input');
   for(let i=0;i<6&&!fx.db.get(WT+'|'+MATCH).v.includes('가상 리뷰 입력 저장 확인');i++){
-    await page.evaluate(()=>PSSync.syncNow('fixture-review-save'));
+    const round=await page.evaluate(()=>PSSync.syncNow('fixture-review-save'));
+    reviewTrace.push({stage:'sync-'+i,round});
+    await flushReview('after-sync-'+i);
     await page.waitForTimeout(250);
   }
   assert.match(fx.db.get(WT+'|'+MATCH).v,/가상 리뷰 입력 저장 확인/);
+  const reviewSaved=await flushReview('server-ack');
+  assert.equal(reviewSaved.barrier.ok,true);
+  for(const copy of ['memory','local','idb'])assert.equal(reviewSaved[copy],'가상 리뷰 입력 저장 확인','exact review '+copy);
   const savedBlocks=check(fx.db.get(WT+'|'+KEY).v,'server-saved',64);
   assert.ok(fx.db.get(WT+'|'+KEY).v.length<3500000);
   checkImages(savedBlocks,64,true);

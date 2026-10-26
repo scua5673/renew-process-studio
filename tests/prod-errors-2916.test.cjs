@@ -11,11 +11,11 @@ function slice(src,a,b){const i=src.indexOf(a),j=src.indexOf(b,i+1);assert.ok(i>
 const tick=()=>new Promise(r=>setImmediate(r));
 
 /* ── ① storage.js ── */
-const STORE_CODE=slice(ST,'  function open(){','  function idbKeys(');
+const STORE_CODE=slice(ST,'  function open(){','  function idbKeys(')+'\n'+slice(ST,'  function migrationOwner(','  function migrationCurrent(');
 function storeFixture(){
   const requests=[];let reads=0;
   const c=vm.createContext({Promise,Error,DB:'test',VER:1,STORE:'kv',dbp:null,indexedDB:{open(){const r={};requests.push(r);return r;}},
-    isQuotaErr:e=>!!(e&&e.name==='QuotaExceededError'),diagnostic(){}});
+    localStorage:{getItem(){return null;}},isQuotaErr:e=>!!(e&&e.name==='QuotaExceededError'),diagnostic(){}});
   vm.runInContext(STORE_CODE,c);
   /* plan: 차례로 'ok' | {requestError:Error|null} | {abort:true} */
   function ready(plan){
