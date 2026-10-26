@@ -10,4 +10,6 @@ The synthetic UI reproduction exposed a separate defect: after changing a sessio
 
 Preserve owner isolation, exact-source confirmation, authored training content, and pending recovery data. No customer storage or production app-data writes. Customer snapshot contents are excluded from this repository and all synthetic fixtures. The regression checks actual group controls, unchanged authored programs across memory/mirror/IDB/fixture-server/reload, and zero schedule writes from view controls at phone, tablet, and desktop widths in Chromium and WebKit.
 
-Status: fixed locally; merge and production promotion require the existing exact-commit CI, staging, and publication checks. The initial failing evidence is retained privately. This change does not claim to recover unsent content or resolve physical iPad termination.
+The first published-code verification stopped on mobile reload because the test read the body class before asynchronous phone startup opened Today, then tried to click a hidden desktop hub. The test now waits for app readiness and resolves the visible navigation at click time. All authored-data, server-ACK, reload, view-only-write, and geometry assertions remain unchanged; the original failure is retained.
+
+Status: the runtime fix is on staging. Production promotion requires the corrected exact-commit CI and published-code verification. The initial failing evidence is retained privately. This change does not claim to recover unsent content or resolve physical iPad termination.
