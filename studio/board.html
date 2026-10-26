@@ -3331,6 +3331,7 @@ window.__psCssCheck=function(el){try{var sh=el.sheet;if(!sh||!sh.cssRules||!sh.c
 .cmd-popover:not(.on){display:none!important}
 </style>
 <script src="board-practice.js"></script>
+<script src="board-player-eye.js" defer></script>
 <script src="textbook-pack.js" defer></script>
 <script src="textbook-native.js" defer></script>
 </head>
@@ -5838,7 +5839,7 @@ function duplicateSelected(){if(typeof multiSel!=="undefined"&&multiSel.length){
   else if(sel.type==="ball"){const c={team:"ball",id:uid++,x:sel.ref.x+dx,y:sel.ref.y+dy};state.equipment.push(c);selectItem("equip",c);}
   else if(sel.type==="drawing"){const c=Object.assign({},sel.ref,{pts:(sel.ref.pts||[]).map(p=>({x:p.x+dx,y:p.y+dy}))});state.drawings.push(c);renderDrawings();selectItem("drawing",c);}
   renderTokens();try{_setSelRings();}catch(_){}positionSelCtl();}
-function updateDelUI(){try{window.__renderEpSurface&&window.__renderEpSurface();}catch(_){}   /* 2.989 — 고른 그리드가 바뀌면 패널의 모양·크기도 따라온다 */const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&sel.ref.type==="text");
+function updateDelUI(){try{if(window.PSPlayerEye)window.PSPlayerEye.selectionChanged();}catch(_){}try{window.__renderEpSurface&&window.__renderEpSurface();}catch(_){}   /* 2.989 — 고른 그리드가 바뀌면 패널의 모양·크기도 따라온다 */const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&sel.ref.type==="text");
   const _multiOn=!!(!sel&&typeof multiSel!=="undefined"&&multiSel.length>=2);
   const _players=_multiOn?selectedPlayers(true):(sel&&sel.type==="player"?[sel.ref]:[]);
   const _fieldPlayers=_players.filter(function(p){return !p.coach;});
