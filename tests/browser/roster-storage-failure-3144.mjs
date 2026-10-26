@@ -7,6 +7,19 @@ const engine=process.env.PS_BROWSER_ENGINE||'chromium',fx=await startFixture(),b
 const out=process.env.PS_TEST_OUTPUT||'test-results/roster-storage-failure-3144';
 fs.mkdirSync(out,{recursive:true});
 const hash=raw=>crypto.createHash('sha256').update(raw).digest('hex'),observations=[];
+// Await the predicate's resolved value; a Promise itself is already truthy to
+// waitForFunction, including when that Promise later resolves to false.
+async function pollValue(read,timeout){
+  const deadline=Date.now()+timeout;
+  while(Date.now()<deadline){
+    let timer,value;
+    try{value=await Promise.race([Promise.resolve().then(read),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Roster snapshot wait exceeded '+timeout+'ms')),Math.max(1,deadline-Date.now()));})]);}
+    finally{clearTimeout(timer);}
+    if(value)return value;
+    await new Promise(resolve=>setTimeout(resolve,Math.min(100,Math.max(0,deadline-Date.now()))));
+  }
+  throw new Error('Roster snapshot wait exceeded '+timeout+'ms');
+}
 // Match the established root-child fixture setup: first-open match-ID
 // maintenance is unrelated to this already-loaded roster pull failure.
 const scheduleRow=fx.db.get(WT+'|process_coach_v1'),scheduleSeed=JSON.parse(scheduleRow.v);
@@ -36,7 +49,7 @@ try{
   await team.evaluate(()=>psFlushPendingReady());
   await page.evaluate(()=>PSSync.syncNow('fixture-roster-scope-baseline'));
   await team.waitForFunction(()=>PSSaveState.get('team')==='saved'&&!psHasPending());
-  await page.waitForFunction(async()=>PSSync.state().kind==='ok'&&!PSSync.pending().count&&localStorage.getItem('scout_tool_v1')===(await storage.peek('scout_tool_v1'))?.value);
+  await pollValue(()=>page.evaluate(async()=>{const idb=(await storage.peek('scout_tool_v1'))?.value;return PSSync.state().kind==='ok'&&!PSSync.pending().count&&localStorage.getItem('scout_tool_v1')===idb;}),30000);
   const old=await page.evaluate(()=>localStorage.getItem('scout_tool_v1'));
   const row=fx.db.get(WT+'|scout_tool_v1'),doc=JSON.parse(row.v);
   assert.equal(row.v,old,'the actual baseline roster save is acknowledged before fault injection');
@@ -47,7 +60,7 @@ try{
     return {state:PSSync.state(),view:__psAutosaveView(),pending:PSSync.pending().count,ready:PSSync.rosterReady(PSSync.activeWs()),failedScopes,
       idb:(await storage.get('scout_tool_v1'))?.value,mirror:localStorage.getItem('scout_tool_v1')};});
   const scope=()=>team.evaluate(async()=>{const raw=localStorage.getItem('scout_tool_v1'),idb=(await storage.peek('scout_tool_v1'))?.value??null;return {state:PSSaveState.get('team'),pending:psHasPending(),exactLocal:raw!==null&&raw===idb,unsupportedReceipt:parent.PSSync.confirmedValue('scout_tool_v1',raw)};});
-  const record=async(label,s)=>{observations.push({label,state:s.state,pending:s.pending,ready:s.ready,view:s.view,failedScopes:s.failedScopes,idbHash:hash(s.idb),mirrorHash:hash(s.mirror),serverHash:hash(row.v),teamScope:await scope()});};
+  const record=async(label,s)=>{observations.push({label,state:s.state,pending:s.pending,ready:s.ready,view:s.view,failedScopes:s.failedScopes,idbHash:hash(s.idb),mirrorHash:hash(s.mirror),serverHash:hash(row.v),teamScope:s.teamScope||await scope()});};
   for(let i=0;i<2;i++){
     await page.evaluate(()=>PSSync.syncNow('qa-storage-failed'));
     await page.waitForFunction(()=>PSSync.state().reason==='sync_storage');
@@ -66,11 +79,20 @@ try{
   }
   await page.screenshot({path:path.join(out,engine+'-storage-error.png')});
   await page.evaluate(()=>{localStorage.setItem('qa_scout_quota','0');return PSSync.syncNow('qa-storage-restored');});
-  await page.waitForFunction(async()=>PSSync.state().kind==='ok'&&!PSSync.pending().count&&
-    /remote-v2/.test(localStorage.getItem('scout_tool_v1'))&&localStorage.getItem('scout_tool_v1')===(await storage.get('scout_tool_v1'))?.value);
-  await page.waitForFunction(()=>document.getElementById('psSyncStripTx').textContent==='기기에 저장됨');
-  const recovered=await snapshot();assert.equal(recovered.view.complete,false);assert.equal(recovered.ready,true);
-  assert.deepEqual(await scope(),{state:'saved',pending:false,exactLocal:true,unsupportedReceipt:false},'the current live team is locally durable; its multi-key scope has no supported exact server receipt');
+  // A new normal round may begin while an IDB read is awaited. Check readiness
+  // after both reads and keep that actual snapshot, rather than read it again.
+  const recovered=await pollValue(()=>page.evaluate(async()=>{
+    const team=document.getElementById('fScout')?.contentWindow;
+    if(!team?.storage?.peek)return false;
+    const idb=(await storage.peek('scout_tool_v1'))?.value,teamIDB=(await team.storage.peek('scout_tool_v1'))?.value,mirror=localStorage.getItem('scout_tool_v1');
+    const teamScope={state:team.PSSaveState?.get('team'),pending:team.psHasPending?.(),exactLocal:mirror!==null&&mirror===teamIDB,unsupportedReceipt:PSSync.confirmedValue('scout_tool_v1',mirror)};
+    const state=PSSync.state(),pending=PSSync.pending().count,ready=PSSync.rosterReady(PSSync.activeWs()),view=__psAutosaveView(),failedScopes=[];
+    for(const w of [window,...Array.from(document.querySelectorAll('iframe'),f=>f.contentWindow)])try{if(w.location.origin===location.origin)for(const [scope,value]of Object.entries(w.PSSaveState?.snapshot?.().scopes||{}))if(value==='failed')failedScopes.push({document:w.location.pathname,scope});}catch{}
+    if(state.kind!=='ok'||pending!==0||!ready||!(/remote-v2/.test(mirror))||idb!==mirror||teamScope.state!=='saved'||teamScope.pending!==false||!teamScope.exactLocal||teamScope.unsupportedReceipt!==false||view.text!=='기기에 저장됨'||view.complete!==false||document.getElementById('psSyncStripTx').textContent!==view.text)return false;
+    return JSON.parse(JSON.stringify({state,pending,ready,view,failedScopes,idb,mirror,teamScope}));
+  }),45000);
+  assert.equal(recovered.view.complete,false);assert.equal(recovered.ready,true);
+  assert.deepEqual(recovered.teamScope,{state:'saved',pending:false,exactLocal:true,unsupportedReceipt:false},'the current live team is locally durable; its multi-key scope has no supported exact server receipt');
   await record('recovered-local-only',recovered);
   assert.deepEqual(logs.filter(x=>x.type==='pageerror'),[]);
   const result={engine,passed:true,setup:{scheduleSeedSha256:setupProof.sha256,stableMatchIds:true},failedPullPreservesBothCopies:true,zeroUploadsStillIncomplete:true,repeatedFailureNotAcknowledged:true,retryRestoresExactCopies:true,liveUnsupportedTeamLocalOnly:true,rootServerCompletionClaim:false,observations};

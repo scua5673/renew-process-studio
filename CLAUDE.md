@@ -8,6 +8,7 @@
 - 3.190 — 저장본 페이지의 지연 `_consumePending→loadIdx`는 실제 입력이 아니다. 그 동기 적용만 기존 `__capLock`을 save/finally 복원하며, 저장 검증 중 파생 seq 증가로 head receipt·복원 제안이 끊기지 않게 한다. 실제 입력의 seq·owner·CAS 장벽은 유지한다.
 - 3.190 — 다른 view의 canvas를 개인 보드 원문으로 비교하거나 저장하지 않는다. 떠나기 직전 동결한 working source의 raw·owner·seq·generation·epoch와 실제 저장소의 같은 원문만 읽기 확인하며, job별 검사 attempt로 오래된 병렬 결과를 거부한다. 선수단 pull 회복도 실패했던 정확한 키·원문·소유자·실패 번호와 LS/IDB 사본이 모두 같을 때만 인정한다.
 - 3.190 — borrowed view의 개인 보드 저장 차단과 미팅의 현재 슬라이드 갱신을 구분한다. 실제 meeting/meet-mode의 기존 guarded preview 예약은 유지하고 private seq/dirty/draft는 변경하지 않는다. 브라우저 fixture는 표시용 engine 변수뿐 아니라 실제 열린 browserType도 확인한다.
+- 3.190 — 이름 입력의 blur가 즉시 trim·장면 동기화·render를 수행하면 남은 40ms paint timer를 먼저 취소한다. 같은 내용의 중복 render가 저장 확인 중 새 편집 seq를 만들지 않게 하며, 실제 새 입력·소유자·CAS 방어는 유지한다. IDB 조회처럼 Promise를 반환하는 시험 조건은 waitForFunction의 Promise truthiness에 의존하지 말고 제한 시간 내 실제 page.evaluate 결과를 await한다.
 
 - 3.186 — 선수단·후보의 기본 표시는 player-workspace.js/CSS에서 읽기 전용으로 투영한다. 원문 편집은 기존 프로필·배치·메모 경로를 사용한다. 후보 준비 확인 전에는 명단을 추정하지 않는다. 질문 iframe에는 배치 포지션을 전달하며, 매칭되는 질문이 없으면 첫 그룹을 자동 선택하지 않는다. 새 명단 검사는 player-workspace 브라우저 시험, 옛 배치 편집 검사는 «배치·명단 편집» 진입 후 진행한다.
 

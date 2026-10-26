@@ -15937,9 +15937,8 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   if($("mirVBtn"))$("mirVBtn").onclick=()=>mirrorSelection("v");
   document.querySelectorAll("#alignBar .align-btn[data-al]").forEach(b=>b.onclick=()=>alignMulti(b.dataset.al));   /* data-al 있는 정렬 버튼만 — 크기·대칭·복제·삭제의 onclick을 덮지 않게 */
   (function(){const ni=$("nameInput");if(!ni)return;let dirty=false,composing=false,paintT=0,focusTs=[];
-    /* 2.975 — 이름이 «한 박자 늦게» 바뀌던 것(사용자): 치는 동안엔 데이터만 고치고 판은 칸을 벗어날 때 다시 그렸다.
-       이제 치는 대로 0.04초 뒤 판에도 그린다(입력칸은 건드리지 않아 한글 조합은 그대로).
-       판 빈 곳을 누르면 선택이 먼저 풀려 마지막 정리(앞뒤 공백·모든 장면 반영)가 빠지던 것도 — 칸에 들어올 때 고른 선수를 기억해 둔다. */
+    /* 입력은 즉시 반영하고 40ms 뒤 그린다. 입력칸은 건드리지 않아 한글 조합을 유지한다.
+       선택이 먼저 풀려도 blur의 공백 정리·장면 반영은 focus 때 기억한 선수에 적용한다. */
     function _targets(){var t=selectedPlayers(true);return t.length?t:focusTs.filter(function(p){return state.players.indexOf(p)>=0;});}
     function _paint(){clearTimeout(paintT);paintT=setTimeout(function(){try{renderTokens();}catch(_){}try{positionSelCtl();}catch(_){}},40);}
     function _apply(trim){const ts=_targets();if(!ts.length||(!dirty&&ts.length>1))return;const v=trim?ni.value.trim():ni.value;ts.forEach(function(p){p.name=v;});}
@@ -15947,7 +15946,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     ni.addEventListener("input",()=>{dirty=true;_apply(false);_paint();});            // 입력칸 값은 다시 쓰지 않는다 — 한글 조합 깨짐·마지막 글자 중복 방지
     ni.addEventListener("compositionstart",()=>{composing=true;});
     ni.addEventListener("compositionend",()=>{composing=false;dirty=true;_apply(false);_paint();});
-    ni.addEventListener("blur",()=>{const ts=_targets();if(ts.length===1||dirty)_apply(true);try{ts.forEach(function(p){syncNameToScenes(p);});}catch(_){}try{renderTokens();updateDelUI();}catch(_){}dirty=false;focusTs=[];});
+    ni.addEventListener("blur",()=>{clearTimeout(paintT);const ts=_targets();if(ts.length===1||dirty)_apply(true);try{ts.forEach(function(p){syncNameToScenes(p);});}catch(_){}try{renderTokens();updateDelUI();}catch(_){}dirty=false;focusTs=[];});
     ni.addEventListener("pointerdown",e=>e.stopPropagation());
     ni.addEventListener("keydown",e=>{if(e.key==="Enter"){if(composing||e.isComposing||e.keyCode===229)return;e.preventDefault();ni.blur();}});})();
   (function(){const ni=$("numInput");if(!ni)return;
