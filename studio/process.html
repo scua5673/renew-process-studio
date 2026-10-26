@@ -3,6 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
 <script src="storage.js"></script>
+<link rel="stylesheet" href="team-audience.css"><script src="team-audience.js"></script><script src="schedule-audience.js"></script>
 <script src="review-training.js"></script>
 <script src="daily-effort.js"></script>
 <script src="session-focus.js"></script>
@@ -1535,9 +1536,9 @@ function wksGroupKind(day,g){return window.PSSchedule&&PSSchedule.groupKind?PSSc
 function schedViewDay(day){
   try{
     if(day&&typeof __schedGrp==='string'&&__schedGrp&&window.PSSchedule&&PSSchedule.groupDay)
-      return PSSchedule.groupDay(day,__schedGrp,{common:schedGrpWithCommon()});
+      return PSTeamAudience.yearDay(PSSchedule.groupDay(day,__schedGrp,{common:schedGrpWithCommon()}),__schedYears);
   }catch(_){}
-  return day;
+  return PSTeamAudience.yearDay(day,__schedYears);
 }
 /* 이 세션이 실제로 열리는가 — 세션의 조가 **모두** 그 날 OFF 이면 집계에서 뺀다(자료는 그대로 남는다). */
 function schedSesActive(tr,day){
@@ -1561,9 +1562,9 @@ function wksSetGroupKind(di,g,kind){
 function wksGroupDays(di){wksChooseSession(di);}
 function wksGroupSummary(di){
   var day=week[di],keys=Object.keys(day.groupKinds||{}).filter(function(g){return (!__schedGrp||g===__schedGrp)&&wksGroupKind(day,g)==='OFF';});
-  return keys.length?'<div class="wks-group-days">'+keys.map(function(g){return '<div style="padding:5px 8px">'+wkbdEsc(g)+' · OFF</div>';}).join('')+'</div>':'';
+  return keys.length?'<div class="wks-group-days">'+keys.map(function(g){return '<div style="padding:5px 8px">'+wkbdEsc(schedGroupLabel(g))+' · OFF</div>';}).join('')+'</div>':'';
 }
-function schedGrpOf(tr,di){ return schedGrpList(tr,di).join(' · '); }
+function schedGrpOf(tr,di){ return schedGrpList(tr,di).map(schedGroupLabel).concat(PSTeamAudience.years(tr&&tr.schoolYears).map(function(y){return y+'학년';})).join(' · '); }
 /* ══ 2.436 · 하루에 경기 여러 개 — A팀·B팀 ═══════════════════════════════════════
    사용자: "경기 추가도 계속 되게 해줘" · "A팀 B팀 이렇게 선택할 수 있게".
    ⚠⚠ **첫 경기(`day.match`)는 건드리지 않는다.** 그 값을 읽는 곳이 이 파일에만 92곳이고
@@ -1581,7 +1582,7 @@ function mxStripMid(d){ try{ (d&&Array.isArray(d.matchAdd)?d.matchAdd:[]).forEac
 /* 2.620 — 추가 경기를 읽기 전용 줄로(코치 "일정표에도 두 경기 다 나오게"). 주간 카드(wksCard)만 그렸고
    주간 보드(wkbd)·월간 칸·하루·허브·인쇄(주간보드 PDF·하루·월간)는 첫 경기만 보였다. day 를 바꾸지 않는다(mxList 는 빈 배열을 심는다). */
 function mxExtraList(day){ return (day&&Array.isArray(day.matchAdd))?day.matchAdd.filter(function(x){return x&&typeof x==='object';}):[]; }
-function mxExtraLabel(x){ var t=String((x&&x.time)||'').trim(), o=String((x&&x.opp)||'').trim()||'상대 미정', g=x&&x.grp; g=Array.isArray(g)?g.filter(Boolean).join(' · '):String(g||'').trim(); var k=(x&&(x.kind==='friendly'||x.kind==='cup'))?x.kind:'official'; return {t:t,o:o,g:g,k:k,friendly:k==='friendly'}; }
+function mxExtraLabel(x){ var t=String((x&&x.time)||'').trim(), o=String((x&&x.opp)||'').trim()||'상대 미정', g=x&&x.grp; g=Array.isArray(g)?g.filter(Boolean).map(schedGroupLabel).join(' · '):schedGroupLabel(String(g||'').trim()); var k=(x&&(x.kind==='friendly'||x.kind==='cup'))?x.kind:'official'; return {t:t,o:o,g:g,k:k,friendly:k==='friendly'}; }
 /* 3.080 — 경기 이름 하나로(코치 피드백 «주간은 경기, 월간은 리그, 목록은 정식»): 한 경기는 어디서나 리그·컵·친선 */
 function mKindLb(k){ return ({official:'리그',cup:'컵',friendly:'친선'})[k]||'리그'; }
 function mxExtraHtml(day,cls,di,mymd){
@@ -1641,7 +1642,7 @@ window.mxGrp=function(di,xi){
      여기에 ['A팀','B팀'] 을 따로 적으면 팀이 조 이름을 바꿔도 이 시트만 옛 이름을 말한다. */
   var cur=schedGrpList(m,di), opts=[]; try{ opts=schedGroups()||[]; }catch(_){}
   if(!opts.length)opts=['A팀','B팀'];
-  var btns=opts.map(function(g){ return '<button class="fp '+(cur.indexOf(g)>=0?'on':'')+'" onclick="mxGrpTog('+di+','+xi+',\''+g+'\')">'+wkbdEsc(g)+'</button>'; }).join('');
+  var btns=opts.map(function(g){ return '<button class="fp '+(cur.indexOf(g)>=0?'on':'')+'" onclick="mxGrpTog('+di+','+xi+',\''+g+'\')">'+wkbdEsc(schedGroupLabel(g))+'</button>'; }).join('');
   var sheet=document.getElementById('sheet');
   sheet.innerHTML='<button class="closex" onclick="closeSheet()">×</button><h3>이 경기는 어느 조</h3>'
     +'<div class="fmtpick">'+btns+(cur.length?'<button class="fp" onclick="mxGrpTog('+di+','+xi+',\'\')">지우기</button>':'')+'</div>';
@@ -1665,12 +1666,12 @@ window.sesGrp=function(di,slot){
   var cur=schedGrpList(tr,di), own=Array.isArray(tr.grp)?tr.grp.filter(Boolean):(tr.grp?[String(tr.grp)]:[]);
   var opts=[]; try{ opts=schedGroups()||[]; }catch(_){} if(!opts.length)opts=['A팀','B팀'];
   var q=function(x){ return String(x||'').replace(/['\\]/g,''); };
-  var btns=opts.map(function(g){ return '<button class="fp '+(cur.indexOf(g)>=0?'on':'')+'" onclick="sesGrpTog('+di+',\''+q(slot)+'\',\''+q(g)+'\')">'+wkbdEsc(g)+'</button>'; }).join('')
+  var btns=opts.map(function(g){ return '<button class="fp '+(cur.indexOf(g)>=0?'on':'')+'" onclick="sesGrpTog('+di+',\''+q(slot)+'\',\''+q(g)+'\')">'+wkbdEsc(schedGroupLabel(g))+'</button>'; }).join('')
     +'<button class="fp '+(own.length?'':'on')+'" onclick="sesGrpTog('+di+',\''+q(slot)+'\',\'\')">공통 (전체)</button>';
   var dg=''; try{ dg=schedDayGrp(di); }catch(_){}
   var sheet=document.getElementById('sheet');
   sheet.innerHTML='<button class="closex" onclick="closeSheet()">×</button><h3>이 훈련은 어느 조</h3><div class="fmtpick">'+btns+'</div>'
-    +(dg?('<div class="wf-offnote"><small>이 날은 하루 조가 '+wkbdEsc(dg)+' 로 정해져 있어요 — «공통» 을 고르면 그 조를 따릅니다. 이 훈련만 다르게 하려면 조를 직접 고르세요.</small></div>'):'');
+    +(dg?('<div class="wf-offnote"><small>이 날은 하루 조가 '+wkbdEsc(schedGroupLabel(dg))+' 로 정해져 있어요 — «공통» 을 고르면 그 조를 따릅니다. 이 훈련만 다르게 하려면 조를 직접 고르세요.</small></div>'):'');
   document.getElementById('scrim').classList.add('show');
 };
 window.sesGrpTog=function(di,slot,g){
@@ -1689,6 +1690,7 @@ window.sesGrpTog=function(di,slot,g){
    ⚠ 공통을 **잃는 게 아니다** — 조 줄 아래에서 «팀 공통 N개 함께 보기» 로 언제든 되돌린다(기본 끔). */
 function schedGrpWithCommon(){ try{ return localStorage.getItem('ps_sched_grp_common')==='1'; }catch(_){ return false; } }
 function schedGrpShow(tr,di,dayArg){
+  if(!PSTeamAudience.yearMatch(tr,__schedYears))return false;
   var day=dayArg||(week&&week[di]);var L=schedGrpList(tr,di,day);
   if(__schedGrp&&wksGroupKind(day,__schedGrp)==='OFF')return false;
   if(!__schedGrp)return !L.length||L.some(function(g){return wksGroupKind(day,g)!=='OFF';});
@@ -1814,11 +1816,12 @@ function schedGrpBulkUndo(){
 function renderSchedGrp(){
   var box=document.getElementById('schedGrp'); if(!box)return;
   var gs=schedGroups(); var h='<button type="button" data-g="" class="'+(__schedGrp?'':'on')+'">전체</button>';   /* 2.242 — '조' 라벨 제거(사용자) */
-  gs.forEach(function(g){ h+='<button type="button" data-g="'+g.replace(/"/g,'&quot;')+'" class="'+(__schedGrp===g?'on':'')+'">'+g.replace(/</g,'&lt;')+(__schedGrpWeeks[g]?'':'')+'</button>'; });
+  gs.forEach(function(g){ h+='<button type="button" data-g="'+g.replace(/"/g,'&quot;')+'" class="'+(__schedGrp===g?'on':'')+'">'+schedGroupLabel(g).replace(/&/g,'&amp;').replace(/</g,'&lt;')+(PSTeamAudience.legacy(g,schedAudienceDoc().meta)?' (기존 조)':'')+'</button>'; });
   /* 2.386 — 조를 고른 동안에만 '이번 주 전부 ○○로' 가 보인다 */
   /* 2.606 — «이번 주 전부 …» 덮어쓰기 버튼 제거 — 조 세그는 보기 필터만(경기 화면과 같은 태도). schedGrpApplyWeek 는 남겨 둔다. */
   box.innerHTML=h;
   if(!box.__w){ box.__w=1; box.addEventListener('click',function(e){ var b=e.target.closest('button[data-g]'); if(b)schedSetGrp(b.dataset.g); }); }
+  schedRenderYears();
   renderSchedGrpNote();
 }
 function renderSchedGrpNote(){
@@ -1832,7 +1835,7 @@ function renderSchedGrpNote(){
     try{
       var src=(typeof weeksMap!=='undefined'&&weeksMap)?weeksMap:null;
       var scan=function(arr){ (arr||[]).forEach(function(day,di){ if(!day)return;
-        (day.trainings||[]).forEach(function(t){ if(!t)return;
+        (day.trainings||[]).forEach(function(t){ if(!t||!PSTeamAudience.yearMatch(t,__schedYears))return;
           var L=schedGrpList(t,di,day);   /* 2.878 — 그 날짜의 하루 조(다른 주를 훑을 때 week[di] 를 읽지 않게) */
           if(!L.length)common++; else if(L.indexOf(__schedGrp)>=0)mine++; else other++; }); }); };
       if(src&&typeof src==='object')Object.keys(src).forEach(function(k){ scan(src[k]); });
@@ -1841,15 +1844,15 @@ function renderSchedGrpNote(){
     if(!note){ note=document.createElement('div'); note.id='schedGrpNote'; note.className='sched-grpnote';
       box.parentNode.insertBefore(note,box.nextSibling); }
     var withC=schedGrpWithCommon();
-    note.innerHTML='<span title="전체 기간의 훈련 세션"><b>'+__schedGrp.replace(/</g,'&lt;')+'</b> 일정 '+mine+'개'
+    note.innerHTML='<span title="전체 기간의 훈련 세션"><b>'+wkbdEsc(schedGroupLabel(__schedGrp))+'</b> 일정 '+mine+'개'
       +(other?(' · 다른 조 '+other+'개 숨김'):'')
       +(common?(' · 조를 안 정한 팀 공통 '+common+'개'+(withC?' 함께 보는 중':' 숨김')):'')+'</span>'
       +((other||(common&&!withC))?'<button type="button" id="schedGrpAllBtn">전체 보기</button>':'')
       +(common?('<button type="button" id="schedGrpCommonBtn">'+(withC?'공통 감추기':'공통도 보기')+'</button>'):'')
-      +(common?('<button type="button" id="schedGrpBulkBtn">공통 '+common+'개를 '+__schedGrp.replace(/</g,'&lt;')+schedRo(__schedGrp)+'</button>'):'')
+      +(common?('<button type="button" id="schedGrpBulkBtn">공통 '+common+'개를 '+wkbdEsc(schedGroupLabel(__schedGrp))+schedRo(__schedGrp)+'</button>'):'')
       +((__schedBulkUndo&&__schedBulkUndo.list&&__schedBulkUndo.list.length)?('<button type="button" id="schedGrpUndoBtn">되돌리기 '+__schedBulkUndo.list.length+'개</button>'):'');
     var ab=document.getElementById('schedGrpAllBtn');
-    if(ab)ab.onclick=function(){ schedSetGrp(''); };
+    if(ab)ab.onclick=function(){ __schedYears=[];schedSetGrp(''); };
     var cb=document.getElementById('schedGrpCommonBtn');
     if(cb)cb.onclick=function(){ try{ localStorage.setItem('ps_sched_grp_common',withC?'0':'1'); }catch(_){}
       renderSchedGrp(); try{ syncViews(false); }catch(_){ try{ renderWeek(); }catch(__){} } };
@@ -2385,17 +2388,18 @@ function sessionTeamOwner(){try{var session=JSON.parse(localStorage.getItem('ps_
 window.wksChooseSession=function(di){
   if(schedEditBlocked()){schedBlockNotice();return;}
   var day=week[di];if(!day)return;
-  var available=schedGroups(),g=__schedGrp||schedDayGrp(di)||schedDefGrp();
-  __sessionTeamPick={di:di,day:day,owner:sessionTeamOwner(),available:available,groups:available.indexOf(g)>=0?[g]:available.slice(0,1)};
+  var available=schedTeamOptions(),g=__schedGrp||schedDayGrp(di)||schedDefGrp();
+  if(g&&available.indexOf(g)<0)available.push(g);
+  __sessionTeamPick={di:di,day:day,owner:sessionTeamOwner(),schoolYears:__schedYears.slice(),available:available,groups:available.indexOf(g)>=0?[g]:available.slice(0,1)};
   wksSessionTeamRender();
 };
 function wksSessionTeamRender(){
   var pick=__sessionTeamPick,sheet=document.getElementById('sheet');if(!pick||!sheet)return;
   sheet.innerHTML='<div class="wf-bar"><h3>'+wkbdEsc(pick.day.d)+'요일 · 세션 추가</h3><button type="button" class="wf-x" onclick="closeSheet()" aria-label="닫기">×</button></div>'+
     '<div class="wf-sec"><div class="pksub sm">참여 팀</div><p>이 세션에 참여할 팀을 선택하세요. 여러 팀을 함께 선택할 수 있습니다.</p><div class="fmtpick">'+
-    pick.available.map(function(g,i){var on=pick.groups.indexOf(g)>=0;return '<button type="button" class="fp'+(on?' on':'')+'" aria-pressed="'+on+'" onclick="wksSessionTeamToggle('+i+')">'+wkbdEsc(g)+'</button>';}).join('')+
+    pick.available.map(function(g,i){var on=pick.groups.indexOf(g)>=0;return '<button type="button" class="fp'+(on?' on':'')+'" aria-pressed="'+on+'" onclick="wksSessionTeamToggle('+i+')">'+wkbdEsc(schedGroupLabel(g))+'</button>';}).join('')+
     '<button type="button" class="fp" onclick="wksSessionTeamToggle(-1)">전체 선택</button></div></div>'+
-    '<div class="wf-sec"><button type="button" class="btn" onclick="wksConfirmSession()"'+(pick.groups.length?'':' disabled')+'>세션 만들기</button></div>';
+    schedPickYears()+'<div class="wf-sec"><button type="button" class="btn" onclick="wksConfirmSession()"'+(pick.groups.length?'':' disabled')+'>세션 만들기</button></div>';
   document.getElementById('scrim').classList.add('show');
 }
 window.wksSessionTeamToggle=function(i){
@@ -2414,11 +2418,11 @@ window.wksConfirmSession=function(){
   p.groups.forEach(function(g){if(wksGroupKind(d,g)==='OFF'||d.off||(d.board&&d.board.sched==='OFF')){
     d.groupKinds=d.groupKinds||{};Object.defineProperty(d.groupKinds,g,{value:'훈련',enumerable:true,writable:true,configurable:true});
   }});
-  wksAddSession(p.di,p.groups);
+  wksAddSession(p.di,p.groups,p.schoolYears);
 };
 /* 2.310 — 훈련 추가 하나. 세션마다 고유 키를 주고, 시각은 팀이 자주 쓰는 것으로 시작한다.
    같은 날에 그 시각이 이미 있으면 두 시간 뒤로 밀어 **겹치지 않게** 한다. */
-window.wksAddSession=function(di,groups){
+window.wksAddSession=function(di,groups,schoolYears){
   if(schedEditBlocked()){schedBlockNotice();return;}
   var day=week[di]; if(!day)return;
   if(!day.trainings)day.trainings=[];
@@ -2434,6 +2438,7 @@ window.wksAddSession=function(di,groups){
   var key='S'+Date.now().toString(36)+Math.floor(Math.random()*90+10);
   var added=sesDefaults({slot:key,time:t,blocks:[]},di);
   if(Array.isArray(groups))added.grp=groups.slice();
+  var years=PSTeamAudience.years(schoolYears||__schedYears);if(years.length)added.schoolYears=years;
   day.trainings.push(added);
   if(!Array.isArray(groups)){
     if(day.off)day.off=false;
@@ -3758,7 +3763,7 @@ function wkbdPick(di,field,ti){ __pickTi=(ti==null?null:ti); __pickDi=di; __pick
         if(_gs.length){
 _grpRow='<div class="pksub">조</div><div class="fmtpick">'
             + _gs.map(function(g){
-                return '<button class="fp'+(_sel===g?' on':'')+'" onclick="wkbdSetDayGrp('+di+',\''+wkbdEsc(g).replace(/'/g,'&#39;')+'\')">'+wkbdEsc(g)+'</button>'; }).join('')
+                return '<button class="fp'+(_sel===g?' on':'')+'" onclick="wkbdSetDayGrp('+di+',\''+wkbdEsc(schedGroupLabel(g)).replace(/'/g,'&#39;')+'\')">'+wkbdEsc(schedGroupLabel(g))+'</button>'; }).join('')
             /* 2.385 — 팀 공통을 **마지막**에(세션 모달과 같은 순서). 조를 고르는 게 보통이고 팀 공통이 예외다 */
             + '<button class="fp'+(_sel?'':' on')+'" onclick="wkbdSetDayGrp('+di+',\'\')">팀 공통</button>'
             + '</div>';
@@ -4203,7 +4208,7 @@ function wksSlotsOf(di){
      ⚠ 슬롯 없는 묶음(bare)은 세션 객체가 없어 조를 판정할 수 없다 → 조를 고른 동안에는 감춘다.
         (조를 고른 채로 '시간대 없음' 이 남아 있으면 그게 어느 조 것인지 알 수 없어 오해를 만든다) */
   try{
-    if(__schedGrp||Object.keys(day.groupKinds||{}).length){
+    if(__schedGrp||__schedYears.length||Object.keys(day.groupKinds||{}).length){
       /* ⚠ 슬롯 없는 세션(bare 묶음)도 **조는 판정할 수 있다** — 세션 객체에 grp 가 있으니까.
          처음엔 bare 를 그냥 false 로 껐다가, 슬롯 없이 만든 A팀 세션이 사라졌다(실측 A팀 0개).
          슬롯이 없다는 것과 조를 모른다는 것은 다른 얘기다. */
@@ -4383,13 +4388,14 @@ function wksFillRender(keep,focus){
   (function(){
     var L=[]; try{ L=schedGrpList(tr,di); }catch(_){}
     var own=[]; try{ own=Array.isArray(tr&&tr.grp)?tr.grp:((tr&&tr.grp)?[tr.grp]:[]); }catch(_){}
-    var lbl=L.length?L.join(' · '):'팀 공통';
+    var lbl=L.length?L.map(schedGroupLabel).join(' · '):'팀 공통';
     h+='<div class="wf-sec" id="wfSec-grp"><div class="pksub sm">참여 팀 <span class="cnt">'+wkbdEsc(lbl)+'</span></div><div class="fmtpick">'
-      + (function(){ try{ return schedGroups().map(function(g){
-            return '<button class="fp'+(own.indexOf(g)>=0?' on':'')+'" onclick="wksFillGrp(\''+_fillEsc(g)+'\')">'+wkbdEsc(g)+'</button>'; }).join(''); }catch(_){ return ''; } })()
+      + (function(){ try{ return schedGroups().filter(function(g){return !PSTeamAudience.legacy(g,schedAudienceDoc().meta)||own.indexOf(g)>=0;}).map(function(g){
+            return '<button class="fp'+(own.indexOf(g)>=0?' on':'')+'" onclick="wksFillGrp(\''+_fillEsc(g)+'\')">'+wkbdEsc(schedGroupLabel(g))+'</button>'; }).join(''); }catch(_){ return ''; } })()
       /* 2.385 — 팀 공통을 **마지막**에(사용자). 조를 고르는 게 보통이고 팀 공통은 그 예외라 뒤가 맞다 */
       + '<button class="fp'+(own.length?'':' on')+'" onclick="wksFillGrp(\'\')">팀 공통</button>'
       + '</div></div>';
+    if(!__fillNoSes)h+=schedFillYears(tr);
   })();
 
   /* ══ 2.383 · 종류 — 경기(리그·컵·친선) / 훈련 / OFF ═══════════════════════════════
@@ -5064,7 +5070,7 @@ function renderWeekSessions(el){
       var _mxL=[]; try{ _mxL=mxList(day); }catch(_){}
       mxFirstVis=schedMatchVis(day.match,day);
       mxAnyVis=mxFirstVis||_mxL.some(function(m2){ return schedMatchVis(m2,day); });
-      if(!mxAnyVis){ var _nm={}; [day.match].concat(_mxL).forEach(function(m2){ schedGrpList(m2||{},null,day).forEach(function(g){ _nm[g]=1; }); }); mxOtherNames=Object.keys(_nm).join(' · '); }
+      if(!mxAnyVis){ var _nm={}; [day.match].concat(_mxL).forEach(function(m2){ schedGrpList(m2||{},null,day).forEach(function(g){ _nm[g]=1; }); }); mxOtherNames=Object.keys(_nm).map(schedGroupLabel).join(' · '); }
     }
     var md=day.md?('<span class="wkbd-md'+(day.match&&mxAnyVis?' m':'')+'">'+day.md+'</span>'):'';
     /* 2.953 — 주간에 «오늘»이 없었다(오늘 화면·월간엔 있다 — 코치 점검 10/7). 오늘 칸에 테두리와 «오늘» 표 */
@@ -5075,7 +5081,7 @@ function renderWeekSessions(el){
         +'<span>'+(dt.getMonth()+1)+'/'+dt.getDate()+'</span>'+(isTd?'<i class="wks-today">오늘</i>':'')+md+'</div>';
     /* 일정 한 줄 — 하루의 성격. 편집 경로는 옛 보드와 같다(wkbdPick 의 sched) */
     if(b.sched==='경기'&&!mxAnyVis){
-      h+='<div class="wks-kind"><span class="wks-othermatch">'+wkbdEsc(mxOtherNames||'다른 조')+' 경기 — '+wkbdEsc(__schedGrp)+' 일정은 일정 메뉴에서</span></div>';
+      h+='<div class="wks-kind"><span class="wks-othermatch">'+wkbdEsc(mxOtherNames||'다른 조')+' 경기 — '+wkbdEsc(schedGroupLabel(__schedGrp))+' 일정은 일정 메뉴에서</span></div>';
     }else if(b.sched==='경기'){
       var opp=(day.match&&day.match.opp)||b.opp||'';
       var _mTime=(day.match&&day.match.time)||'';
@@ -5093,7 +5099,7 @@ function renderWeekSessions(el){
               예전엔 하루의 조만 읽는 `<i>` 였고 아예 못 눌렀다. 하루에 경기가 여럿이 되면서(2.436)
               '이 경기는 어느 조' 를 경기마다 말할 수 있어야 한다. */
         +(!mxFirstVis?'':'<div class="wks-krow">'
-          +(function(){ var g=''; try{ g=schedGrpList(day.match,di).join(' · '); }catch(_){}
+          +(function(){ var g=''; try{ g=schedGrpList(day.match,di).map(schedGroupLabel).join(' · '); }catch(_){}
               return '<button type="button" class="wks-grp mx-grp" onclick="mxGrp('+di+',-1)" title="조 고르기">'+wkbdEsc(g||'조 ＋')+'</button>'; })()
           +(function(){ var t=''; try{ t=_mTime?todOfTime(_mTime):''; }catch(_){}
               return t?('<i class="wks-slot">'+wkbdEsc(t)+'</i>'):''; })()
@@ -5116,7 +5122,7 @@ function renderWeekSessions(el){
         +(function(){ var L=[]; try{ L=mxList(day); }catch(_){}
             return L.map(function(m2,xi){
               if(!schedMatchVis(m2,day))return '';   /* 2.878 — 다른 조 경기는 숨긴다(xi 는 원본 순번 그대로) */
-              var g2=''; try{ g2=schedGrpList(m2,di).join(' · '); }catch(_){}
+              var g2=''; try{ g2=schedGrpList(m2,di).map(schedGroupLabel).join(' · '); }catch(_){}
               var t2=(m2&&m2.time)||'';
               /* 첫 경기와 **같은 두 줄**(조·시간·× / 상대팀·준비) — 한 줄에 다섯을 넣으면
                  148px 열에서 상대팀이 16px로 눌린다. 줄 수는 폭과 무관하게 늘 둘(2.137 원칙) */
@@ -6035,7 +6041,7 @@ function renderDay(){
   const firstShown=!rawDay.match||schedMatchVis(rawDay.match,rawDay);
   const shownExtra=firstShown?-1:mxExtraList(rawDay).findIndex(m=>schedMatchVis(m,rawDay));
   const dt=dateOf(wk*7+dayIdx);
-  document.getElementById('dayLabel').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 (${day.d})${day.md?' · '+day.md:''}${(typeof __schedGrp==='string'&&__schedGrp)?' · '+__schedGrp:''}`;
+  document.getElementById('dayLabel').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 (${day.d})${day.md?' · '+day.md:''}${(typeof __schedGrp==='string'&&__schedGrp)?' · '+schedGroupLabel(__schedGrp):''}`;
   const wrap=document.getElementById('dayView'); let html='';
   if(day.match){
     html+=`<div class="matchcell" ${firstShown?`onclick="openMatch(${dayIdx})"`:(shownExtra>=0?`onclick="wkbdGoMatchX('${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}',${dayIdx},${shownExtra})"`:'')}><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7l3.5 2.5-1.3 4h-4.4l-1.3-4z"/></svg>경기 · ${day.match.time}</div><div class="o">${day.match.opp||'상대 미정'} ›</div>${(()=>{ const pl=(typeof wkbdMatchPlace!=='function')?'':wkbdMatchPlace(dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'),day.match.opp||''); return pl?`<div class="s">${wkbdEsc(pl)}</div>`:''; })()}</div>`;   /* 2.912 — 경기장 */
@@ -6045,7 +6051,7 @@ function renderDay(){
   if(day.off||bd.sched==='OFF'){
     /* 조별 OFF 는 공통 OFF 가 아니다 — 탭이 공통 OFF 해제(clearOff)로 가면 안 된다. 조별 설정 시트를 연다. */
     wrap.innerHTML=(grpKind==='OFF'
-      ?`<div class="restoff" onclick="wksChooseSession(${dayIdx})">${wkbdEsc(__schedGrp)} OFF · 세션 추가</div>`
+      ?`<div class="restoff" onclick="wksChooseSession(${dayIdx})">${wkbdEsc(schedGroupLabel(__schedGrp))} OFF · 세션 추가</div>`
       :`<div class="restoff" onclick="clearOff(${dayIdx})">OFF · 휴식일 · 탭하면 해제</div>`)+(window.PSReviewSchedule?PSReviewSchedule.dayHTML(rawDay,dayIdx):'');
     return;
   }
@@ -6332,7 +6338,7 @@ function daySessionCount(day,forGroup){
   var bd=day.board||{},viewGroup=arguments.length>1?String(forGroup||''):(typeof __schedGrp==='string'?__schedGrp:'');
   if(viewGroup&&(day.groupKinds||{})[viewGroup]==='OFF')return 0;
   var trs=day.trainings||[];
-  var n=trs.filter(function(t){var gs=Array.isArray(t&&t.grp)?t.grp:(t&&t.grp?[t.grp]:[]);if(!gs.length&&day.grp)gs=[String(day.grp)];return (!viewGroup||!gs.length||gs.indexOf(viewGroup)>=0)&&(!gs.length||gs.some(function(g){return (day.groupKinds||{})[g]!=='OFF';}));}).length;
+  var n=trs.filter(function(t){if(!PSTeamAudience.yearMatch(t,__schedYears))return false;var gs=Array.isArray(t&&t.grp)?t.grp:(t&&t.grp?[t.grp]:[]);if(!gs.length&&day.grp)gs=[String(day.grp)];return (!viewGroup||!gs.length||gs.indexOf(viewGroup)>=0)&&(!gs.length||gs.some(function(g){return (day.groupKinds||{})[g]!=='OFF';}));}).length;
   if(trs.length)return n;
   /* 옛 저장본 — 세션 목록은 없고 보드 칩에만 담긴 날은 하루를 1로 센다 */
   var ne=(bd.trains||[]).filter(function(x){ return String(x==null?'':x).trim()!==''; }).length;
@@ -6347,7 +6353,7 @@ function daySessionCount(day,forGroup){
    ⚠ 조 꼬리표·하루의 조·조별 OFF/훈련이 **하나도 없는 범위**에서는 조별 줄을 안 그린다(전부 공통이면 나눌 것이 없다). */
 function schedCommonSes(day,g){
   if(!day||wksGroupKind(day,g)==='OFF')return 0;
-  return (day.trainings||[]).filter(function(t){ return t&&!schedGrpList(t,null,day).length; }).length;
+  return (day.trainings||[]).filter(function(t){ return t&&PSTeamAudience.yearMatch(t,__schedYears)&&!schedGrpList(t,null,day).length; }).length;
 }
 function schedGroupBreakdown(days){
   var out=[]; try{
@@ -6367,7 +6373,7 @@ function schedGroupBreakdown(days){
       if(!used[g]&&!withPlayers[g])return;   /* 선수도 없고 이 범위에 쓰인 적도 없는 조는 줄을 만들지 않는다 */
       var c={g:g,ses:0,common:0,day:0,match:0,off:0};
       (days||[]).forEach(function(raw){ if(!raw)return;
-        var v=PSSchedule.groupDay(raw,g), b=v.board||{};
+        var v=PSTeamAudience.yearDay(PSSchedule.groupDay(raw,g),__schedYears), b=v.board||{};
         if(v.match||b.sched==='경기')c.match+=1+((v.matchAdd||[]).length);
         if(b.sched==='OFF')c.off++;
         var n=daySessionCount(v,g); c.ses+=n; if(n)c.day++;
@@ -6411,14 +6417,14 @@ function sumGroupHTML(c){
   var e=wkbdEsc, h='';
   if(c.grp){
     if(!c.common&&!c.commonHidden)return '';
-    h='<div class="sumgrp-row"><b>'+e(c.grp)+'</b><span>'
+    h='<div class="sumgrp-row"><b>'+e(schedGroupLabel(c.grp))+'</b><span>'
       +(c.common?('훈련 '+c.ses+' <small>(팀 공통 '+c.common+' 포함)</small>')
                 :('훈련 '+c.ses+' <small>(팀 공통 '+c.commonHidden+'개는 숨김 — «공통도 보기» 로 포함)</small>'))
       +'</span></div>';
   }else{
     if(!c.groups||!c.groups.length)return '';
     h=c.groups.map(function(x){
-      return '<div class="sumgrp-row"><b>'+e(x.g)+'</b>'
+      return '<div class="sumgrp-row"><b>'+e(schedGroupLabel(x.g))+'</b>'
         +'<span>훈련 '+x.ses+(x.common?' <small>(공통 '+x.common+' 포함)</small>':'')+'</span>'
         +'<span>경기 '+x.match+'</span><span>휴식 '+x.off+'</span></div>'; }).join('');
   }
@@ -6929,7 +6935,7 @@ function openMonthPop(r,col,cellEl){
     +'<div class="mp-date">'+dlabel+'</div>'
     +'<div class="mp-sum">'+_mpEsc(sumTxt)+'</div>'
     +'<div class="mp-seg"><button class="'+(initialKind==='tr'?'on':'')+'" data-k="tr">훈련</button><button class="'+(initialKind==='match'?'on':'')+'" data-k="match">경기</button><button class="'+(initialOff?'on':'')+'" data-k="off">OFF</button></div>'
-    +(mGrpAll.length>1?'<div class="mp-grps"'+(initialKind==='tr'?'':' style="display:none"')+'><span class="mp-grps-l">조</span>'+mGrpAll.map(function(g){var on=mGrps.indexOf(g)>=0;return '<button type="button" class="'+(on?'on':'')+'" data-grp="'+_mpEsc(g)+'" aria-pressed="'+on+'"'+(mRo?' disabled':'')+'>'+_mpEsc(g)+'</button>';}).join('')+'</div>':'')
+    +(mGrpAll.length>1?'<div class="mp-grps"'+(initialKind==='tr'?'':' style="display:none"')+'><span class="mp-grps-l">조</span>'+mGrpAll.map(function(g){var on=mGrps.indexOf(g)>=0;return '<button type="button" class="'+(on?'on':'')+'" data-grp="'+_mpEsc(g)+'" aria-pressed="'+on+'"'+(mRo?' disabled':'')+'>'+_mpEsc(schedGroupLabel(g))+'</button>';}).join('')+'</div>':'')
     +'<div class="mp-slots"'+(initialKind==='tr'?'':' style="display:none"')+'>'+TOD.map(function(sl){return '<button type="button" class="'+(mSlotOn[sl]?'on':'')+'" data-slot="'+sl+'" aria-pressed="'+(mSlotOn[sl]?'true':'false')+'"'+(mRo?' disabled':'')+'>'+sl+'</button>';}).join('')+'</div>'
     +'<input class="mp-opp" type="text" maxlength="30" placeholder="상대 팀 (예: ○○FC)" value="'+_mpEsc((day.match&&day.match.opp)||__b.opp||'')+'"'+(mRo?' readonly':'')+(initialKind==='match'?'':' style="display:none"')+'>'
     +'<div class="mp-kind"'+(initialKind==='match'?'':' style="display:none"')+'><button class="'+(initMatchKind==='official'?'on':'')+'" data-mk="official"><span class="kd"></span>리그</button><button class="'+(initMatchKind==='cup'?'on':'')+'" data-mk="cup"><span class="kd"></span>컵</button><button class="'+(initMatchKind==='friendly'?'on':'')+'" data-mk="friendly"><span class="kd"></span>친선</button></div>'
@@ -7715,7 +7721,7 @@ function pDayBody(day,ruled){
   return inner;
 }
 /* 2.878 — 조를 고른 채 뽑은 PDF 는 머리에 그 조를 적는다(종이만 보고도 누구 일정인지 알 수 있게). */
-function pGrpTag(){ try{ return (!__pBlank&&typeof __schedGrp==='string'&&__schedGrp)?(' · '+wkbdEsc(__schedGrp)+' 일정'):''; }catch(_){ return ''; } }
+function pGrpTag(){ try{ return (!__pBlank&&typeof __schedGrp==='string'&&__schedGrp)?(' · '+wkbdEsc(schedGroupLabel(__schedGrp))+' 일정'):''; }catch(_){ return ''; } }
 /* 2.911 — 목록 보기 주간 PDF(옛 scheduleDocHTML, 요일 행 목록형)는 없앴다(사용자 «바꿔줘»).
    목록 보기·보드 보기 모두 아래 분량 블록(weekBoardDocHTML) 한 모양으로 찍는다 — 같은 주를 두 모양으로 말하지 않는다.
    빈 양식(«주간 양식», 펜 기입용)도 같은 7칸 괘선이다(weekBoardBlankHTML). */
@@ -7778,7 +7784,7 @@ function weekBoardDocHTML(){
     const trs=(day.trainings||[]).filter(x=>x&&shown(x,di,day)).slice().sort((x,y)=>String(x.time||'99').padStart(5,'0').localeCompare(String(y.time||'99').padStart(5,'0')));
     const ses=trs.map(tr=>{ let items=blocksOf(tr); if(!items.length)items=itemsOf(day,tr.slot);
       let mins=0; try{ mins=trMinutes(tr,day)||0; }catch(_){} if(!mins)mins=items.reduce((a,x)=>a+x.m,0);
-      const L=getLoad(tr); const g=(!fg&&tr.grp)?(Array.isArray(tr.grp)?tr.grp.filter(Boolean).join('·'):String(tr.grp)):'';
+      const L=getLoad(tr); const g=(!fg?schedGrpList(tr,di).map(schedGroupLabel):[]).concat(PSTeamAudience.years(tr.schoolYears).map(y=>y+'학년')).join(' · ');
       let ld=0; try{ ld=sessionLoadMin(tr,day)||0; }catch(_){}
       return {time:String(tr.time||'').trim(),topic:topicOf(tr),L:L,mins:mins,load:ld,items:items,note:String(tr.note||'').trim(),
         who:[g,String(tr.place||'').trim(),tr.players?tr.players+'명':''].filter(Boolean)}; });
@@ -8340,7 +8346,7 @@ function focusRows(context){
   var roster=readObject('scout_tool_v1'),permissions=readObject('cs_perms_v1'),tombs=readObject('cs_player_del_v1');
   var docs=Object.create(null),pubs=Object.create(null),scope=api.scope(context.session,context.day);
   if(roster&&Array.isArray(roster.players)&&permissions&&permissions.members&&scope.kind!=='unknown'){
-    var eligible=roster.players.filter(function(p){return p&&p.type!=='target'&&(!tombs||!tombs[p.id])&&(scope.kind==='team'||scope.groups.indexOf(typeof p.grp==='string'?p.grp.trim():'')>=0);});
+    var eligible=roster.players.filter(function(p){return p&&p.type!=='target'&&(!tombs||!tombs[p.id])&&PSTeamAudience.playerMatch(p,context.session,context.day)&&(scope.kind==='team'||scope.groups.indexOf(typeof p.grp==='string'?p.grp.trim():'')>=0);});
     PSDailyEffort.cohort(roster.players,permissions.members,'',tombs).forEach(function(p){
       if(!p.uid||!eligible.some(function(row){return String(row.id).trim()===p.playerId;}))return;
       var doc=readObject('cs_idp_v1_'+p.uid),pub=readObject('cs_idp_pub_v1_'+p.uid);
@@ -8354,6 +8360,8 @@ function focusRows(context){
 }
 function sessFocusHTML(context){
   var result=focusRows(context);if(!result)return '';
+  if(result.scope.kind==='groups')result.scope.label=result.scope.groups.map(schedGroupLabel).join(' · ');
+  if(PSTeamAudience.years(context.session&&context.session.schoolYears).length)result.scope.label+=' · '+PSTeamAudience.yearText(context.session);
   var api=window.PSSessionFocus,labels=Object.create(null);
   result.rows.forEach(function(r){if(r.coach)r.coach.goals.forEach(function(g){
     try{var cat=window.PS_LM&&PS_LM.cat(g.cat);if(cat)labels[g.cat]=cat.id+' '+cat.name;}catch(_){}
@@ -8617,7 +8625,7 @@ function sessionDraftHasContent(tr,day,seed){
   seed=seed||{};
   const has=v=>typeof v==='string'?!!v.trim():typeof v==='number'?Number.isFinite(v)&&v!==0:
     v===true?true:Array.isArray(v)?v.some(has):!!v&&typeof v==='object'?Object.keys(v).some(k=>has(v[k])):false;
-  if(['players','aims','note','intro','review','aimsP','topics','gmMoment','gmPhases','gmTags','fitness','grp'].some(k=>has(tr[k])))return true;
+  if(['players','aims','note','intro','review','aimsP','topics','gmMoment','gmPhases','gmTags','fitness','grp','schoolYears'].some(k=>has(tr[k])))return true;
   if(['time','load'].some(k=>has(tr[k])&&JSON.stringify(tr[k])!==JSON.stringify(seed[k])))return true;
   if((tr.blocks||[]).some((b,i)=>{
     const before=(seed.blocks||[])[i]||{};

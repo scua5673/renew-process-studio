@@ -1759,6 +1759,12 @@
   }
 
   // Group day overrides never mutate or delete another group's sessions.
+  function groupLabel(key){
+    try{var d=JSON.parse(localStorage.getItem('scout_tool_v1')||'null'),m=d&&d.meta;
+      if(!m)m=JSON.parse(localStorage.getItem('cs_team_attrs_v1')||'null');
+      var labels=m&&m.grpLabels;if(labels&&Object.prototype.hasOwnProperty.call(labels,key)&&typeof labels[key]==='string')return labels[key];
+    }catch(_){}return String(key||'');
+  }
   function groupKind(day,grp){
     var kinds=day&&day.groupKinds;
     return grp&&kinds&&Object.prototype.hasOwnProperty.call(kinds,grp)&&['OFF','훈련'].indexOf(kinds[grp])>=0?kinds[grp]:'';
@@ -1852,7 +1858,7 @@
   window.PSSchedule={
     /* 2.475 — 죽은 export 정리(전수조사: 외부 사용은 anchor·hasMatch·mondayOf·newId·stampIds·cellOf·read·readFor 뿐).
        ymd·parseYmd·sourceId·normalize 본체는 내부 호출로 산다 — export 표면만 걷음 */
-    groupKind:groupKind, groupList:groupList, groupDay:groupDay,
+    groupLabel:groupLabel, groupKind:groupKind, groupList:groupList, groupDay:groupDay,
     mondayOf:mondayOf,
     hasMatch:hasMatch, newId:newId, stampIds:stampIds,
     anchor:anchor, cellOf:cellOf,
