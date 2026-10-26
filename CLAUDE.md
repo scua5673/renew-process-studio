@@ -15,6 +15,7 @@
 
 - 3.176 — 보관함 숨김 미리보기 시험의 전역 `libGet` 횟수는 독립 `ps-auth-state` 갱신도 센다. 표시 세 요청이 읽기 한 번으로 합쳐져도 전역 2가 될 수 있으므로 enqueue 주체별 실제 읽기를 확인한다. 숨김 0·진행 중 1·원본 보존은 유지하고 실패 추적을 남긴다.
 
+- 3.184 — 일정의 늦은 조회는 `PSStorage.mirrorSchedule(raw,current)`로만 화면 사본을 만든다. readonly IDB transaction에서 원문 일치와 owner·편집 세대를 확인하고, 이 선택적 LS 쓰기의 quota만 저장 유실 경고에서 제외한다. 실제 저장 실패·다른 키 경고·팀 전환 장벽은 유지한다. API 부재·stale 조회는 직접 LS 쓰기나 렌더를 하지 않는다.
 - 3.175 — 팀 전환 초안 확인(`board-draft.js`)은 재생 복원 **뒤** 새로 예약된 `_boardPreviewTimer`도 취소한다. flush 시작 때만 취소하면 `stopAnim`이 다시 예약한 썸네일이 receipt 뒤 원문을 바꿔 전환을 거부한다. `sameBody`의 전체 원문 비교나 guard 이후 읽기 전용 검증을 완화하지 않는다.
 
 Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규칙 · 함정을 여기에 쌓는다(한두 줄씩, 판 번호와 함께). 운영 절차의 원본은 `docs/OPERATIONS.md`.

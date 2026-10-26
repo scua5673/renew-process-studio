@@ -325,7 +325,7 @@
   }
 
   /* ── 용량 초과 경고 ── */
-  var warned=false,fullKey='',fullFailures=Object.create(null);
+  var warned=false,fullKey='',fullFailures=Object.create(null),optionalMirrorKey='';
   /* 3.126 — 가득 찬 기기에서 «무엇이» 칸을 차지하는지 서버가 알게 한다(2주 22명 · 229번 «일정 화면 사본 저장 공간 부족» — 무엇이 찼는지 몰랐다).
      자동 정리가 끝난 뒤 한 줄(ps_events storage_full): 실패한 키 · 작은 저장소 크기(정리 전 · 뒤) · 큰 키 넷(표 storage-keys.js 의 이름 — 사람별 id 는 뗀다) ·
      브라우저 저장 한도. 키 이름과 크기만 — 내용 · 계정 · 팀 이름은 보내지 않는다. 맨 위 창 하나에서 6시간에 한 번. */
@@ -470,7 +470,7 @@
         // The private-board writer verifies its full IndexedDB fallback and
         // reports failure if neither store succeeds. A failed small-store copy
         // alone must not announce that the board was lost before that result.
-        if(isQuotaErr(e)&&String(k).indexOf('ps_private_board_draft_v1:')!==0) warnFull(k); throw e;
+        if(isQuotaErr(e)&&String(k).indexOf('ps_private_board_draft_v1:')!==0&&!(typeof optionalMirrorKey==='string'&&optionalMirrorKey===k)) warnFull(k); throw e;
       }
     };
   }catch(_){}
@@ -799,6 +799,32 @@
       return true;
     });
   }
+  /* This is an optional READ mirror, never an authored save. Hold a readonly
+     IDB transaction while checking its exact body and writing the LS copy so
+     another IDB writer cannot advance between verification and mirroring.
+     Keep permission wrappers; a quota here does not mean the IDB original was
+     lost and must not emit the authored-save failure banner. */
+  function mirrorSchedule(raw,current){
+    var k='process_coach_v1',owner=sharedReadContext(),before=localStorage.getItem(k);
+    var result={ok:false,quota:false,stale:false},failure=null;
+    function guard(){
+      if(owner===null||sharedReadContext()!==owner||localStorage.getItem(k)!==before||typeof current!=='function'||current()!==true){
+        var e=new Error('schedule read mirror source changed');e.name='StorageOwnerChangedError';throw e;
+      }
+    }
+    if(typeof raw!=='string')return Promise.reject(new Error('schedule read mirror requires an exact body'));
+    return afterMigrate(function(){return tx('readonly',function(s){
+      guard();var req=s.get(k);
+      req.onsuccess=function(){try{
+        guard();if(req.result!==raw){result.stale=true;return;}
+        var previous=optionalMirrorKey;optionalMirrorKey=k;
+        try{localStorage.setItem(k,raw);result.ok=localStorage.getItem(k)===raw;}
+        catch(e){if(isQuotaErr(e))result.quota=true;else failure=e;}
+        finally{optionalMirrorKey=previous;}
+      }catch(e){failure=e;}};
+      return req;
+    });}).then(function(){if(failure)throw failure;return result;});
+  }
   /* 큰 보조 사본 전용 API. 화면 본문과 달리 localStorage 거울을 새로 만들지 않는다.
      legacy 사본이 있으면 IDB와 같은지 확인해 제거하고, 서로 다르면 어느 쪽도 덮지 않는다. */
   function auxGet(k,resolveConflict){
@@ -936,6 +962,7 @@
     sharedVerified:sharedVerified,
     sharedCommitted:sharedCommitted,
     sharedRecovered:sharedRecovered,
+    mirrorSchedule:mirrorSchedule,
     auxGet:auxGet,
     reportFull:function(k){ fullReport(k,null); },   /* 3.131 — 동기화의 일정 거울 쓰기가 용량으로 실패해도 같은 storage_full 한 줄(키 이름 · 크기 · 한도만) */
     auxSet:auxSet,
