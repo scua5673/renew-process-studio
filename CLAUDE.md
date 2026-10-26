@@ -5,6 +5,8 @@
 - 3.190 — 서버 확인 표시는 전역 동기화 시각이나 짧은 hash만으로 추정하지 않는다. 지원하는 키의 실제 원문 또는 검증된 CAS 수락 receipt만 인정하고, 보드 미저장 초안과 확인 범위 밖 문서는 기기 보관으로 표시한다.
 - 3.190 — 팀 전환의 같은 UID/source cache 재확인과 실제 소유자 변경을 구분한다. 유효한 source 잠금에서도 쓰기는 금지하고 기존 초안의 읽기 검증만 허용한다. 부팅 파생 seq 변화가 복원 발견을 버리게 하지 않되 owner·generation·새 저장·버리기 epoch·실제 사용자 편집의 방어는 유지한다.
 - 3.190 — 썸네일 idle/scroll도 boardPages 원문을 바꾼다. 초안 쓰기·최종 sharedReady까지 겹친 작업을 묶어 멈추고 epoch·실제 lexical anim.frames·자기 handle로 낡은 callback을 거부한다. 원문 비교를 완화하지 않고 완료 후 화면 생성을 재개한다.
+- 3.190 — 저장본 페이지의 지연 `_consumePending→loadIdx`는 실제 입력이 아니다. 그 동기 적용만 기존 `__capLock`을 save/finally 복원하며, 저장 검증 중 파생 seq 증가로 head receipt·복원 제안이 끊기지 않게 한다. 실제 입력의 seq·owner·CAS 장벽은 유지한다.
+- 3.190 — 다른 view의 canvas를 개인 보드 원문으로 비교하거나 저장하지 않는다. 떠나기 직전 동결한 working source의 raw·owner·seq·generation·epoch와 실제 저장소의 같은 원문만 읽기 확인하며, job별 검사 attempt로 오래된 병렬 결과를 거부한다. 선수단 pull 회복도 실패했던 정확한 키·원문·소유자·실패 번호와 LS/IDB 사본이 모두 같을 때만 인정한다.
 
 - 3.186 — 선수단·후보의 기본 표시는 player-workspace.js/CSS에서 읽기 전용으로 투영한다. 원문 편집은 기존 프로필·배치·메모 경로를 사용한다. 후보 준비 확인 전에는 명단을 추정하지 않는다. 질문 iframe에는 배치 포지션을 전달하며, 매칭되는 질문이 없으면 첫 그룹을 자동 선택하지 않는다. 새 명단 검사는 player-workspace 브라우저 시험, 옛 배치 편집 검사는 «배치·명단 편집» 진입 후 진행한다.
 

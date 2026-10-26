@@ -111,6 +111,41 @@ test('a durable unsaved board is a device draft and a failed draft remains a fai
   assert.equal(combine(view(server),m.read()).text,'기기에 저장됨 · 서버 확인 대기');m.dispose();
 });
 
+function suspendedBoard(){
+  const f=fixture(),child=f.child(f.root,'board'),m=f.monitor();
+  const draft={needed:true,unsaved:true,localDurable:true,pending:false,blocked:true,failed:false,unknown:false,sourceSuspended:true,serverConfirmed:false};
+  child.win.__psBoardDraft={snapshot:()=>draft};
+  return {f,child,m,draft};
+}
+test('an exact suspended working-board receipt is a device draft, never a borrowed meeting or server save',()=>{
+  const h=suspendedBoard(),r=combine(view(server),h.m.read());
+  assert.equal(r.text,'보드 초안 · 기기에 저장됨');assert.equal(r.complete,false);
+  assert.match(r.detail,/작전판/);assert.doesNotMatch(r.text,/미팅|서버 저장 확인/);
+  assert.equal(combine(view({kind:'bad',reason:'sync_auth'}),h.m.read()).action,'login');
+  h.m.dispose();
+});
+for(const [key,value] of [['sourceSuspended',false],['localDurable',false],['pending',true],['pending',undefined],['failed',true],['failed',undefined],['unknown',true],['unknown',undefined],['unsaved',false],['serverConfirmed',true],['serverConfirmed',undefined]]){
+  test('a suspended certificate cannot bypass the '+key+'='+value+' barrier',()=>{
+    const h=suspendedBoard();h.draft[key]=value;const r=combine(view(server),h.m.read());
+    assert.notEqual(r.text,'보드 초안 · 기기에 저장됨');assert.equal(r.complete,false);
+    if(key==='failed'&&value===true)assert.equal(r.kind,'bad');
+    if(key==='unknown'&&value===true)assert.equal(r.text,'기기 저장 확인 중…');
+    h.m.dispose();
+  });
+}
+test('a source receipt never hides original editor, shared-write, or failed-scope barriers',()=>{
+  const h=suspendedBoard();h.child.pending(true);
+  assert.equal(combine(view(server),h.m.read()).text,'기기에 저장 중…');
+  h.child.pending(false);h.child.scopes['board-draft']='saving';
+  assert.equal(combine(view(server),h.m.read()).text,'기기에 저장 중…');
+  h.child.scopes['board-draft']='saved';h.child.scopes['editor-draft']='failed';
+  assert.equal(combine(view(server),h.m.read()).text,'기기에 저장하지 못했어요');
+  h.child.scopes['editor-draft']='idle';h.child.scopes.storage='failed';
+  assert.equal(combine(view(server),h.m.read()).text,'기기에 저장하지 못했어요');
+  h.child.scopes.storage='idle';h.f.owner('coach-a/team-b/epoch-2');
+  assert.equal(combine(view(server),h.m.read()).text,'기기 저장 확인 중…');h.m.dispose();
+});
+
 test('the shell adapter reads a missing schedule mirror with readonly peek and rechecks exact durable raw',async()=>{
   const f=fixture(),child=f.child(),reads=[],calls=[];child.scopes.schedule='saved';
   child.win.localStorage={getItem:()=>null};

@@ -44,16 +44,30 @@ test('different known LS and IDB originals are preserved in exact recovery recor
 });
 
 function draftHarness(){
- const local=new Map(),idb=new Map(),writes=[],hooks={},states=[],owner={uid:'synthetic-draft',wid:'synthetic-personal'};let seq=1,generation=1,active=true,quota=false,idbFail=false,at=10;
- let raw=JSON.stringify({snap:{players:[{id:'synthetic',x:1}]},animFrames:[{thumb:'X'.repeat(90000)}],boardPages:{pages:[{name:'all original pages'}]}});
+ const local=new Map(),idb=new Map(),writes=[],hooks={},states=[],owner={uid:'synthetic-draft',wid:'synthetic-personal'};let seq=1,generation=1,active=true,quota=false,idbFail=false,at=10,borrowed=false,workingRaw=null;
+ let raw=JSON.stringify({view:'board',snap:{players:[{id:'synthetic',x:1}]},animFrames:[{thumb:'X'.repeat(90000)}],boardPages:{pages:[{name:'all original pages'}]}});
  const key='ps_private_board_draft_v1:synthetic-draft:unsaved';
- const d={context:()=>({owner,seq,generation,current:active,needed:true,blocked:false}),key:()=>key,capture:()=>({raw}),now:()=>++at,
+ const d={context:()=>({owner,seq,generation,current:active,needed:true,blocked:borrowed,borrowed}),key:()=>key,capture:()=>({raw}),now:()=>++at,
   local:{getItem:k=>local.get(k)??null,setItem(k,v){if(quota)throw Error('synthetic LS full');writes.push(['local',k,v]);local.set(k,v);},removeItem:k=>local.delete(k)},
   storage:{async get(k){if(hooks.get)await hooks.get(k);if(idbFail)throw Error('synthetic IDB blocked');return idb.has(k)?{value:idb.get(k)}:null;},async replaceIfValue(k,b,v,guard){if(hooks.cas)await hooks.cas(k);guard();if(idbFail)throw Error('synthetic IDB failed');if((idb.get(k)??null)!==b)return false;writes.push(['idb',k,v]);idb.set(k,v);return true;},async delIfValue(k,v,guard){if(hooks.del)await hooks.del(k);guard();if(idb.get(k)!==v)return false;idb.delete(k);return true;}},
   async verifyIDB(k,v){if(hooks.verify)await hooks.verify(k);assert.equal(idb.get(k),v);},recoverLocal:async(k,v,current)=>{assert.equal(current(),true);assert.equal(local.get(k),v);},state:(s)=>states.push(s)
  };const api=Draft.create(d);
- return {api,d,key,local,idb,writes,hooks,states,get raw(){return raw;},edit(){seq++;raw=raw.replace('"x":1','"x":2');},generation(){generation++;},lock(){active=false;},quota(){quota=true;},failIDB(){idbFail=true;},restoreIDB(){idbFail=false;},observe(l,i){api.observe(owner,l,i);},record(v,t=1){return JSON.stringify({v:1,uid:owner.uid,wid:owner.wid,raw:v,at:t});}};
+ return {api,d,key,local,idb,writes,hooks,states,get raw(){return raw;},edit(){seq++;raw=raw.replace('"x":1','"x":2');},borrow(){workingRaw=raw;borrowed=true;raw=raw.replace('"board"','"session"');},borrowedEdit(){raw=raw.replace('"x":1','"x":999');},returnToBoard(){borrowed=false;raw=workingRaw;},generation(){generation++;},lock(){active=false;},quota(){quota=true;},failIDB(){idbFail=true;},restoreIDB(){idbFail=false;},observe(l,i){api.observe(owner,l,i);},record(v,t=1){return JSON.stringify({v:1,uid:owner.uid,wid:owner.wid,raw:v,at:t});}};
 }
+test('borrowed-view interruption stays pending without a false storage failure and revalidates on board return',async()=>{
+ const h=draftHarness(),gate=defer();h.hooks.verify=()=>gate.promise;const source=h.raw,work=h.api.write();work.catch(()=>{});await tick();const committed=h.idb.get(h.key);assert.equal(JSON.parse(committed).raw,source);
+ h.borrow();gate.resolve();await assert.rejects(work,e=>e.psDeferred===true);assert.equal(h.api.pending(),true);assert.equal(h.api.snapshot().localDurable,false);assert.equal(h.api.snapshot().failed,false);assert.notEqual(h.states.at(-1),'fail');await assert.rejects(h.api.ready(),e=>e.psDeferred===true);
+ const writes=h.writes.length;h.borrowedEdit();assert.equal(await h.api.write(),false);assert.equal(h.writes.length,writes);assert.equal(h.idb.get(h.key),committed,'borrowed-view edits never replace the captured working board');
+ h.returnToBoard();delete h.hooks.verify;await h.api.ready();assert.equal(h.api.pending(),false);assert.equal(h.api.snapshot().localDurable,true);assert.equal(h.api.snapshot().failed,false);assert.equal(JSON.parse(h.idb.get(h.key)).raw,source);assert.equal(h.local.size,0);
+});
+test('a real IDB error followed by borrowed-view interruption remains a failed storage operation',async()=>{
+ const h=draftHarness(),old=h.record('{}'),gate=defer();h.idb.set(h.key,old);h.observe(null,old);h.hooks.get=async()=>{await gate.promise;throw Error('synthetic actual IDB failure');};
+ const work=h.api.write();work.catch(()=>{});await tick();h.borrow();gate.resolve();await assert.rejects(work,/synthetic actual IDB failure/);assert.equal(h.api.snapshot().failed,true);assert.equal(h.states.at(-1),'fail');assert.equal(h.api.pending(),true);assert.equal(h.idb.get(h.key),old);assert.equal(h.local.size,0);
+});
+test('a real foreign-source conflict is not downgraded by a later borrowed view',async()=>{
+ const h=draftHarness(),foreign=h.record('{"source":"foreign original"}',99),gate=defer();h.idb.set(h.key,foreign);let recovering=false;h.hooks.get=async k=>{if(k!==h.key){recovering=true;await gate.promise;}};
+ const work=h.api.write();work.catch(()=>{});await tick();assert.equal(recovering,true);h.borrow();gate.resolve();await assert.rejects(work,e=>e.psConflict===true);assert.equal(h.api.snapshot().failed,true);assert.equal(h.states.at(-1),'fail');assert.equal(h.api.pending(),true);assert.equal(h.idb.get(h.key),foreign);assert.equal(h.local.size,0);
+});
 test('ordinary unsaved edits and already committed lifecycle flushes never recreate LS copies',async()=>{
  const h=draftHarness();await h.api.ready();assert.equal(h.local.has(h.key),false);assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);await h.api.write({lifecycle:true});assert.equal(h.writes.filter(x=>x[0]==='local').length,0);
  h.edit();await h.api.ready();assert.equal(h.local.size,0);assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);assert.equal(h.api.pending(),false);

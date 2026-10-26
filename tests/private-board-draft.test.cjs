@@ -21,7 +21,7 @@ function harness(options={}){
   document:{body:{classList:{contains:()=>false}},addEventListener(){}},
   setTimeout(fn,ms){timers.push({fn,ms});return timers.length;},clearTimeout(){},
   localStorage:{getItem(k){reads.push(['ls',k]);return ls.get(k)??null;},setItem(k,v){if(options.quota)throw Error('synthetic quota');writes.push(['ls',k,String(v)]);ls.set(k,String(v));},removeItem(k){assert.ok(k.startsWith('ps_private_board_draft_v1:'),'only an owner-guarded private copy may be removed');ls.delete(k);}},
-  storage:{async get(k){reads.push(['idb',k]);return idb.has(k)?{value:idb.get(k)}:null;},async set(k,v,current){if(current)current();writes.push(['idb',k,v]);idb.set(k,v);return true;},async replaceIfValue(k,b,v,current){if(current)current();if((idb.get(k)??null)!==b)return false;idb.set(k,v);return true;}},
+  storage:{async get(k){reads.push(['idb',k]);return idb.has(k)?{value:idb.get(k)}:null;},async peek(k){reads.push(['peek',k]);return idb.has(k)?{value:idb.get(k)}:null;},async set(k,v,current){if(current)current();writes.push(['idb',k,v]);idb.set(k,v);return true;},async replaceIfValue(k,b,v,current){if(current)current();if((idb.get(k)??null)!==b)return false;idb.set(k,v);return true;}},
   store:{async get(){return null;}},$:id=>nodes[id]||null,toast:m=>messages.push(m),captureSnap(){return copy(c.state);},loadSnap(s){c.state=copy(s);},
   dc:copy,renderTokens(){},renderDrawings(){},updateDelUI(){},restoreAnimBeforeCapture(){},renderAnimFrames(){},
   setView(v){c.__csView=v;},addEventListener(type,fn){(events[type]||(events[type]=[])).push(fn);},
@@ -33,6 +33,38 @@ function harness(options={}){
  vm.createContext(c);vm.runInContext(helpers+writer+restore,c);
  return {c,ls,idb,reads,writes,saves,messages,events,timers,key:()=>c.PRIVATE_BOARD_PREFIX+encodeURIComponent(owner.uid),owner:()=>copy(owner),server:()=>copy(server),setServer(r){server=copy(r);},get(fn){getter=fn;},save(fn){saver=fn;},switch(o){owner={...owner,...o};},async boot(){assert.equal(await c.restoreLiveBoard(),true);},record(){return JSON.parse(ls.get(this.key())||idb.get(this.key())||'null');}};
 }
+
+function startupPageRestore(h){
+ const load=part('function loadIdx(i,keep){','function _lookStampPages(){'),consume=part('function _consumePending(){','try{ window.__psPagesConsume=');
+ h.c.renderTokens=()=>h.c.boardSaveLive();h.c.renderDrawings=()=>h.c.boardSaveLive();
+ vm.runInContext('var pages=null,idx=0,_inVault=false;var _clone=dc;function clearHistory(){}function render(){}'+load+consume,h.c);
+}
+test('startup page replay restores an existing capture lock on both return and exception',()=>{
+ const api=require('../studio/board-draft.js');for(const previous of [undefined,0,true,'nested capture'])for(const throws of [false,true]){
+  const w={__capLock:previous},load=i=>{assert.equal(i,7);assert.equal(w.__capLock,1);if(throws)throw Error('synthetic page replay error');return 'replayed';};
+  if(throws)assert.throws(()=>api.restorePage(w,load,7),/synthetic page replay error/);else assert.equal(api.restorePage(w,load,7),'replayed');assert.equal(w.__capLock,previous);
+ }
+});
+test('startup page replay is derived rendering and does not advance the private edit sequence',async()=>{
+ const h=harness();startupPageRestore(h);await h.boot();h.c.__pendingBoardPages=JSON.parse(payload(100)).boardPages;
+ const seq=h.c._boardPrivateEditSeq;h.c._consumePending();assert.equal(h.c._boardPrivateEditSeq,seq);assert.equal(h.c.boardManualChanged(),false);assert.equal(h.c.__capLock,undefined);
+});
+for(const view of ['session','meeting','synthetic-borrowed-view'])test('inputs in '+view+' never advance or store a private working-board edit',async()=>{
+ const h=harness();await h.boot();h.c.PSBoardDraft.install(h.c);const seq=h.c._boardPrivateEditSeq,writes=h.writes.length;
+ h.c.__csView=view;h.c.state=snap(999);h.c._boardUserTouched=true;h.c.boardSaveLive();assert.equal(h.c._boardPrivateEditSeq,seq);assert.equal(await h.c.__psBoardDraft.write(),false);assert.equal(h.writes.length,writes);assert.equal(h.c.__psBoardDraft.snapshot().blocked,true);
+});
+for(const view of ['board','match'])test('real '+view+' inputs still advance and durably preserve the private edit',async()=>{
+ const h=harness();await h.boot();h.c.PSBoardDraft.install(h.c);const seq=h.c._boardPrivateEditSeq;h.c.__csView=view;h.c.state=snap(999);h.c._boardUserTouched=true;h.c.boardSaveLive();assert.ok(h.c._boardPrivateEditSeq>seq);await h.c.psFlushPendingReady();assert.equal(h.c.psHasPending(),false);const record=JSON.parse(h.idb.get(h.c.boardDraftKey(h.owner())));assert.equal(JSON.parse(record.raw).snap.players[0].x,999);assert.equal(JSON.parse(record.raw).view,view);
+});
+for(const userEdit of [false,true])test('startup page replay during an exact head receipt '+(userEdit?'preserves a later real edit and rejects the stale receipt':'keeps full draft recovery available'),async()=>{
+ const h=harness();startupPageRestore(h);const o=h.owner(),key=h.key()+':unsaved',draft=JSON.stringify({v:1,uid:o.uid,wid:o.wid,raw:payload(521),at:Date.now()});h.idb.set(key,draft);h.setServer({raw:payload(100),cupd:1});
+ const gate=deferred(),verify=h.c.PSStorage.sharedVerified;let waiting=false;h.c.PSStorage.sharedVerified=async(k,raw)=>{await verify(k,raw);if(k===h.key()){waiting=true;await gate.promise;}};
+ const work=h.c.restoreLiveBoard();await ticks();assert.equal(waiting,true);const seq=h.c._boardPrivateEditSeq;h.c._consumePending();
+ if(userEdit){h.c.state=snap(999);h.c._boardUserTouched=true;h.c.boardSaveLive();}
+ gate.resolve();const restored=await work;await ticks();assert.equal(h.idb.get(key),draft,'the complete previous draft stays exact');
+ if(userEdit){assert.equal(restored,false);assert.ok(h.c._boardPrivateEditSeq>seq);assert.equal(h.c.state.players[0].x,999);assert.equal(!!h.c.__boardDraftPending,false);assert.equal(h.c.boardManualChanged(),true);}
+ else{assert.equal(restored,true);assert.equal(h.c._boardPrivateEditSeq,seq);assert.equal(h.c.__boardDraftPending.raw,JSON.parse(draft).raw);assert.equal(h.c.__psBoardPrivatePersistence.pending,false);assert.equal(h.c.__psBoardPrivatePersistence.failed,false);}
+});
 
 test('legacy team live, recovery and snapshots are neither read nor promoted, even with future timestamps',async()=>{
  const old=payload(900000),legacy=['cs_board_live_v1','cs_board_recovery_v1','cs_snap_board_v1','cs_snap_match_v2'];
@@ -56,6 +88,29 @@ async function guardedDraft(){
  h.c.parent.PSSync.session=()=>({uid:o.uid});h.c.parent.PSSync.boardLive.owner=()=>null;
  return {h,o,g,generation:h.c._boardPrivateGeneration,draft:h.idb.get(h.c.boardDraftKey(o))};
 }
+async function certifiedWorkingExit(options={}){
+ const h=harness(),initial=h.owner();h.switch({seal:JSON.stringify({uid:initial.uid,wid:initial.active})});await h.boot();h.c.state=snap(521);h.c._boardUserTouched=true;h.c.boardSaveLive();
+ vm.runInContext(part('function boardFlushLive(){','try{window.__boardFlushLive=boardFlushLive;}'),h.c);
+ if(options.flush)h.c.psFlushPendingReady=options.flush;if(options.has)h.c.psHasPending=options.has;if(options.shared)h.c.PSStorage.sharedReady=options.shared;
+ h.c.PSBoardDraft.install(h.c);const result=h.c.boardFlushLive('session');h.c.__csView='session';await result;await ticks();await h.c.psFlushPendingReady();return h;
+}
+function actualSourcePause(h,change){
+ const o=h.owner(),g={v:1,token:'synthetic-cert-switch',from:o.active,to:'team-b',epoch:'synthetic-cert-epoch',at:Date.now()};
+ h.ls.set('ps_active_ws',o.active);h.ls.set('ps_cache_owner_v1',JSON.stringify({uid:o.uid,wid:o.active,nonce:'actual recertification'}));h.ls.set('ps_ws_switch_epoch_v1',g.epoch);h.ls.set('ps_ws_switch_guard_v1',JSON.stringify(g));h.c.parent.PSSync.session=()=>({uid:o.uid});h.c.parent.PSSync.boardLive.owner=()=>null;if(change)change(h,o,g);h.c.boardPrivateAuthChanged();
+}
+test('certified borrowed source uses the actual valid source-pause proof for readonly team-switch verification',async()=>{
+ const h=await certifiedWorkingExit(),raw=h.ls.get(h.c.boardDraftKey(h.owner()))||h.idb.get(h.c.boardDraftKey(h.owner()));assert.equal(h.c.__psBoardDraft.snapshot().sourceSuspended,true);actualSourcePause(h);const writes=h.writes.length;await h.c.psFlushPendingReady();assert.equal(h.c.psHasPending(),false);assert.equal(h.writes.length,writes);assert.equal(h.ls.get(h.c.boardDraftKey(h.owner()))||h.idb.get(h.c.boardDraftKey(h.owner())),raw);
+});
+for(const kind of ['missing marker','expired marker','wrong epoch','wrong active team','foreign seal'])test('borrowed source cannot use an unproven '+kind+' pause',async()=>{
+ const h=await certifiedWorkingExit();actualSourcePause(h,(h,o,g)=>{if(kind==='missing marker')h.ls.delete('ps_ws_switch_guard_v1');if(kind==='expired marker')h.ls.set('ps_ws_switch_guard_v1',JSON.stringify({...g,at:Date.now()-90001}));if(kind==='wrong epoch')h.ls.set('ps_ws_switch_epoch_v1','unproven epoch');if(kind==='wrong active team')h.ls.set('ps_active_ws','other team');if(kind==='foreign seal')h.ls.set('ps_cache_owner_v1',JSON.stringify({uid:'foreign user',wid:o.active}));});const writes=h.writes.length;await assert.rejects(h.c.psFlushPendingReady());assert.equal(h.writes.length,writes);assert.equal(h.c.psHasPending(),true);
+});
+test('a certified private receipt never bypasses the original editor or shared storage barriers',async()=>{
+ let nativeError=null,sharedError=null,otherPending=false;const h=await certifiedWorkingExit({flush:()=>nativeError?Promise.reject(nativeError):true,shared:()=>sharedError?Promise.reject(sharedError):true,has:()=>otherPending});
+ nativeError=Error('synthetic editor pending');await assert.rejects(h.c.psFlushPendingReady(),/synthetic editor pending/);nativeError=null;sharedError=Error('synthetic shared storage failure');await assert.rejects(h.c.psFlushPendingReady(),/synthetic shared storage failure/);sharedError=null;otherPending=true;assert.equal(h.c.psHasPending(),true);otherPending=false;await h.c.psFlushPendingReady();assert.equal(h.c.psHasPending(),false);
+});
+test('the synchronous view-exit hook retains the original receiver, arguments, return and thrown error',async()=>{
+ for(const throws of [false,true]){const h=harness();await h.boot();const receiver={},result={},failure=Error('synthetic view-exit failure');let seen;h.c.boardFlushLive=function(...args){seen={receiver:this,args};if(throws)throw failure;return result;};h.c.PSBoardDraft.install(h.c);if(throws)assert.throws(()=>h.c.boardFlushLive.call(receiver,'session',7),e=>e===failure);else assert.equal(h.c.boardFlushLive.call(receiver,'session',7),result);assert.equal(seen.receiver,receiver);assert.deepEqual(seen.args,['session',7]);}
+});
 test('the actual intentional source guard suspends writes without invalidating an unchanged exact draft receipt',async()=>{
  const {h,o,generation,draft}=await guardedDraft(),before=h.writes.length;h.c.boardPrivateAuthChanged();
  assert.equal(h.c._boardPrivateLoaded,false);assert.equal(h.c.boardPrivateCurrent(o),false);assert.equal(h.c._boardPrivateGeneration,generation,'a proven source suspension preserves the existing read-only receipt generation');

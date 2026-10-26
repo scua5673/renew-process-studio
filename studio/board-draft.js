@@ -28,6 +28,10 @@
     var release=holdThumbs(w),work;try{work=fn.apply(this,arguments);}catch(e){release();throw e;}
     return Promise.resolve(work).then(function(v){release();return v;},function(e){release();throw e;});
   };}
+  function restorePage(w,load,index){
+    var lock=w.__capLock;w.__capLock=1;
+    try{return load(index);}finally{w.__capLock=lock;}
+  }
   function status(w,scope,next,error){try{var api=w.PSSaveState;if(api)api[next](scope,error);}catch(_){} }
   function conflict(){var e=new Error('다른 창의 개인 보드를 보존합니다');e.psCode='board_private_conflict';return e;}
   function headGuard(w,o,r){
@@ -102,19 +106,19 @@
   }
   function create(d){
     var job=null,known=null,recovery=null,tail=Promise.resolve(),cancelEpoch=0;
-    function error(){var e=new Error('작전판 초안을 기기에 보관하지 못했습니다. 다시 시도해 주세요');e.psCode='board_draft_storage';return e;}
+    function error(c){var e=new Error('작전판 초안을 기기에 보관하지 못했습니다. 다시 시도해 주세요');e.psCode='board_draft_storage';if(c&&c.borrowed&&c.blocked)e.psDeferred=true;return e;}
     function changed(){var e=error();e.psConflict=true;return e;}
     function same(j){var c=d.context();return !!j&&j===job&&j.epoch===cancelEpoch&&!!c&&c.needed&&c.seq===j.seq&&c.generation===j.generation&&JSON.stringify(c.owner)===j.ownerRaw;}
     function body(j){var c=d.capture();return !!c&&sameBody(c.raw,j.raw);}
     function source(j){var raw=d.local.getItem(j.key);return raw===j.localBefore||raw===j.record;}
-    function current(j,full){var c=d.context();if(!same(j)||c.blocked||!c.current||!source(j)||(full&&!body(j)))throw error();return true;}
+    function current(j,full){var c=d.context();if(!same(j)||c.blocked||!c.current||!source(j)||(full&&!body(j)))throw error(c);return true;}
     function recoveryFor(j){if(!recovery||recovery.owner!==j.ownerRaw)recovery={owner:j.ownerRaw,key:(d.recoveryKey?d.recoveryKey(j.owner):j.key+':kept:')+j.at+'-'+Math.random().toString(36).slice(2),local:null,idb:null};return recovery;}
     function localRecovery(j){
       var c=d.context(),branch=recoveryFor(j);if(!same(j)||c.blocked||!c.current||!body(j)||d.local.getItem(branch.key)!==branch.local)throw error();
       d.local.setItem(branch.key,j.record);if(d.local.getItem(branch.key)!==j.record)throw error();branch.local=j.record;return true;
     }
     function recover(j){
-      function guard(){var c=d.context();if(!same(j)||c.blocked||!c.current||!body(j))throw error();return true;}
+      function guard(){var c=d.context();if(!same(j)||c.blocked||!c.current||!body(j))throw error(c);return true;}
       var branch=recoveryFor(j);
       return Promise.resolve().then(async function(){
         guard();if(!d.storage||!d.storage.replaceIfValue||!d.verifyIDB)throw error();
@@ -136,25 +140,47 @@
       var a=parse(n.local,j),b=parse(n.idb,j);return !a||!b||a.raw!==b.raw;
     }
     function check(j,writing){
-      if(!same(j)||d.context().blocked||!source(j)||!body(j))return Promise.reject(error());
+      var c=d.context();if(!same(j)||c.blocked||!source(j)||!body(j))return Promise.reject(error(c));
       return Promise.resolve(d.storage.get(j.key)).then(function(v){
         if(writing)current(j);
-        if(!same(j)||d.context().blocked||!source(j)||!body(j))throw error();
+        var c=d.context();if(!same(j)||c.blocked||!source(j)||!body(j))throw error(c);
         var lv=d.local.getItem(j.key),iv=v&&v.value,a=parse(lv,j),b=parse(iv,j);
         j.checkedIDB=iv==null?null:iv;
         var selected=a&&b?(b.at>a.at?iv:lv):(a?lv:(b?iv:null));
         if(selected!==j.record)throw error();
         if(j.store==='idb'){
           if(iv!==j.record||!d.verifyIDB)throw error();
-          return d.verifyIDB(j.key,j.record).then(function(){if(writing)current(j);if(!same(j)||d.context().blocked||!source(j)||!body(j))throw error();return true;});
+          return d.verifyIDB(j.key,j.record).then(function(){if(writing)current(j);var c=d.context();if(!same(j)||c.blocked||!source(j)||!body(j))throw error(c);return true;});
         }
         return true;
       });
     }
-    function verify(j,writing){
-      return Promise.resolve().then(function(){return check(j,writing);}).catch(function(e){
-        if(same(j)){j.ok=false;if(d.state)d.state('fail',e);}throw e;
+    function verify(j,writing,attempt){
+      function guard(){if(j.receiptSeq!==attempt)throw error();}
+      return Promise.resolve().then(function(){guard();return check(j,writing);}).then(function(v){guard();return v;}).catch(function(e){
+        if(j.receiptSeq===attempt&&same(j))failed(j,e);throw e;
       });
+    }
+    function failed(j,e){j.ok=false;j.deferred=!!(e&&e.psDeferred);if(!j.deferred)j.failure=e;if(d.state&&same(j))d.state(j.deferred?'begin':'fail',e);}
+    function keepFailure(work,e){return work.catch(function(next){throw next&&next.psDeferred?e:next;});}
+    function certified(j,c){
+      var x=j&&j.cert;
+      return !!(x&&c&&c.borrowed&&same(j)&&(c.current||c.paused&&j.ok)&&!(j.failure&&j.failure.psConflict)&&x.raw===j.raw&&x.owner===j.ownerRaw&&x.seq===j.seq&&x.generation===j.generation&&x.epoch===j.epoch&&source(j));
+    }
+    function suspended(j,c){return !!(j&&j.ok&&certified(j,c));}
+    function sourceReceipt(j,attempt){
+      function guard(){if(j.receiptSeq!==attempt||!certified(j,d.context()))throw error();return true;}
+      return Promise.resolve().then(function(){guard();if(!d.storage||!d.storage.peek)throw error();return d.storage.peek(j.key);}).then(function(v){
+        guard();var lv=d.local.getItem(j.key),iv=v&&v.value;iv=iv==null?null:iv;
+        if(iv!==j.record&&iv!==j.cert.idb)throw changed();
+        var a=parse(lv,j),b=parse(iv,j),selected=a&&b?(b.at>a.at?iv:lv):(a?lv:(b?iv:null));
+        if(selected!==j.record)throw changed();
+        if(iv===j.record&&!d.verifyIDB)throw error();
+        return Promise.resolve(iv===j.record?d.verifyIDB(j.key,j.record):true).then(function(){
+          guard();if(d.local.getItem(j.key)!==lv)throw changed();
+          j.store=iv===j.record?'idb':'local';j.ok=true;j.suspended=true;j.deferred=false;j.failure=null;if(d.state)d.state('ok');return true;
+        });
+      }).catch(function(e){if(j.receiptSeq===attempt&&same(j))failed(j,e);throw e;});
     }
     function local(j){
       current(j,true);if(divergent(j))throw changed();if(!j.localOwned)throw error();
@@ -191,17 +217,18 @@
         });
       });
       return work.catch(function(e){
-        if(e&&e.psConflict)return recover(j).then(function(){
+        if(e&&e.psDeferred)throw e;
+        if(e&&e.psConflict)return keepFailure(recover(j).then(function(){
           // A lifecycle fallback belongs to this job, not to the conflicting
           // source. Move it to recovery before dropping only that exact copy.
           current(j,true);if(d.local.getItem(j.key)===j.record){d.local.removeItem(j.key);j.localBefore=null;}
           throw e;
-        });
+        }),e);
         // Operational IDB failure may use a complete LS receipt; conflicting
         // IDB contents still fail the ordinary reload-selection check below.
-        try{local(j);}catch(_){return recover(j).then(function(){throw e;});}
-        return check(j,true).then(function(){return d.recoverLocal?d.recoverLocal(j.key,j.record,function(){return current(j,true);}):true;}).then(function(){known={owner:j.ownerRaw,local:j.record,idb:j.checkedIDB,own:true};return true;});
-      }).then(function(){current(j,true);j.ok=true;if(d.state)d.state('ok');return true;});
+        try{local(j);}catch(_){return keepFailure(recover(j).then(function(){throw e;}),e);}
+        return keepFailure(check(j,true).then(function(){return d.recoverLocal?d.recoverLocal(j.key,j.record,function(){return current(j,true);}):true;}).then(function(){known={owner:j.ownerRaw,local:j.record,idb:j.checkedIDB,own:true};return true;}),e);
+      }).then(function(){current(j,true);j.ok=true;j.deferred=false;j.failure=null;if(d.state)d.state('ok');return true;});
     }
     function write(options){
       var c=d.context();
@@ -216,27 +243,39 @@
             record:JSON.stringify({v:1,uid:c.owner.uid,wid:c.owner.wid,raw:cap.raw,at:at}),ok:false,work:null,store:null,idbSeen:false};
         }catch(_){return Promise.reject(error());}
       }
-      var j=job;
+      var j=job,attempt=j.receiptSeq;if(!j.work)attempt=j.receiptSeq=(attempt||0)+1;
+      if(j.suspended){j.suspended=false;j.ok=false;}
+      if(options&&options.lifecycle&&!j.failure&&(c.view==='board'||c.view==='match'))try{
+        current(j,true);j.cert={raw:j.raw,owner:j.ownerRaw,seq:j.seq,generation:j.generation,epoch:j.epoch,view:c.view,target:options.exitTarget||'lifecycle',idb:known&&known.owner===j.ownerRaw?known.idb:j.localBefore};
+      }catch(_){}
       // The browser may terminate before IDB finishes. Only this last-chance
       // lifecycle path writes LS synchronously; ordinary committed edits do not.
       if(options&&options.lifecycle&&!j.ok)try{local(j);}catch(_){try{localRecovery(j);}catch(__){} }
       if(j.work)return j.work;
-      if(j.ok)return verify(j,true);
+      if(j.ok)return verify(j,true,attempt);
       if(d.state)d.state('begin');
       var work=tail.catch(function(){}).then(function(){return persist(j);});tail=work;
-      j.work=work.then(function(v){j.work=null;return v;},function(e){j.work=null;j.ok=false;if(d.state&&same(j))d.state('fail',e);throw e;});
+      j.work=work.then(function(v){j.work=null;return v;},function(e){j.work=null;failed(j,e);throw e;});
       return j.work;
     }
     function ready(){
       var c=d.context();if(!c||!c.needed)return Promise.resolve(true);
+      if(c.borrowed){
+        var j=job;
+        if(j&&j.failure&&j.failure.psConflict)return Promise.reject(j.failure);
+        if(j&&j.cert&&same(j)&&!source(j)){var e=changed();failed(j,e);return Promise.reject(e);}
+        if(!certified(j,c))return Promise.reject(error(c));
+        var attempt=j.receiptSeq=(j.receiptSeq||0)+1;
+        return Promise.resolve(j.work).catch(function(e){if(!e.psDeferred)throw e;}).then(function(){return sourceReceipt(j,attempt);});
+      }
       if(c.current&&d.prepare){d.prepare();c=d.context();}
-      if(c.blocked)return Promise.reject(error());
-      if(c.current){var work=write(),j=job;return work.then(function(){return verify(j,true);});}
+      if(c.blocked)return Promise.reject(error(c));
+      if(c.current){var work=write(),j=job,attempt=j&&j.receiptSeq;return work.then(function(){return verify(j,true,attempt);});}
       // The guard permits read-only verification of an unchanged receipt.
       if(!job||!job.ok||!same(job))return Promise.reject(error());
-      return verify(job,false);
+      return verify(job,false,job.receiptSeq=(job.receiptSeq||0)+1);
     }
-    function pending(){var c=d.context();return !!(c&&c.needed&&(c.blocked||!job||!job.ok||!same(job)));}
+    function pending(){var c=d.context();return !!(c&&c.needed&&(c.blocked&&!suspended(job,c)||!job||!job.ok||!same(job)));}
     function observe(owner,local,idb){var c=d.context();if(c&&c.current&&JSON.stringify(owner)===JSON.stringify(c.owner)&&(!job||!job.work&&!same(job)))known={owner:JSON.stringify(owner),local:local,idb:idb};}
     function clear(owner){
       var c=d.context(),ownerRaw=JSON.stringify(owner),seq=c&&c.seq,generation=c&&c.generation;
@@ -247,7 +286,7 @@
       guard();var local=d.local.getItem(k);if(local!==null&&lv.indexOf(local)>=0)d.local.removeItem(k);
       return iv.filter(function(v,i){return v!==null&&v!==undefined&&iv.indexOf(v)===i;}).reduce(function(p,v){return p.then(function(){guard();return d.storage&&d.storage.delIfValue?d.storage.delIfValue(k,v,guard):false;});},Promise.resolve(true));
     }
-    return {write:write,ready:ready,pending:pending,observe:observe,clear:clear,snapshot:function(){var c=d.context();return {owner:c&&JSON.stringify(c.owner),seq:c&&c.seq,generation:c&&c.generation,needed:!!(c&&c.needed),blocked:!!(c&&c.blocked),pending:pending(),localDurable:!!(job&&job.ok&&same(job)),store:job&&job.store,failed:!!(job&&same(job)&&!job.ok&&!job.work),unsaved:!!(c&&c.needed),serverConfirmed:false};}};
+    return {write:write,ready:ready,pending:pending,observe:observe,clear:clear,snapshot:function(){var c=d.context();return {owner:c&&JSON.stringify(c.owner),seq:c&&c.seq,generation:c&&c.generation,needed:!!(c&&c.needed),blocked:!!(c&&c.blocked),pending:pending(),localDurable:!!(job&&job.ok&&same(job)),sourceSuspended:suspended(job,c),store:job&&job.store,failed:!!(job&&same(job)&&!job.ok&&!job.work&&!job.deferred),unsaved:!!(c&&c.needed),serverConfirmed:false};}};
   }
   function install(w){
     if(w.__psBoardDraft||typeof w.boardDraftWriteNow!=='function')return;
@@ -261,11 +300,13 @@
         // The unchanged adopted board remains in the guest slot. Preserve that
         // existing suppression across the guard's temporary owner suspension;
         // a later edit or different owner must use the ordinary durable draft.
-        var needed=!!(o&&w.boardManualChanged()&&!guestSource),b=w.document.body;
-        var blocked=!!(w._vaultBoardContext||w._vaultBoardRestoring||w.__vaultEdit||w.__animExport||w.__capLock||w.__psThumbCapturing||b.classList.contains('editing')||b.classList.contains('comm-viewing'));
+        var needed=!!(o&&w.boardManualChanged()&&!guestSource),b=w.document.body,view=w.__csView||'board',borrowed=view!=='board'&&view!=='match';
+        var blocked=!!(borrowed||w._vaultBoardContext||w._vaultBoardRestoring||w.__vaultEdit||w.__animExport||w.__capLock||w.__psThumbCapturing||b.classList.contains('editing')||b.classList.contains('comm-viewing'));
         if(typeof animPlaying!=='undefined'&&animPlaying)blocked=true;
         if(typeof _bliveApplying!=='undefined'&&_bliveApplying)blocked=true;
-        return {owner:o,seq:seq,generation:w._boardPrivateGeneration,needed:needed,blocked:blocked,current:current};
+        var paused=false;
+        if(!current&&o)try{var session=w.parent.PSSync.session();paused=!!(w.boardPrivateSourcePause&&w.boardPrivateSourcePause(o,String(session&&session.uid||'')));}catch(_){}
+        return {owner:o,seq:seq,generation:w._boardPrivateGeneration,view:view,needed:needed,blocked:blocked,borrowed:borrowed,current:current,paused:paused};
       },
       prepare:function(){
         w.restoreAnimBeforeCapture();
@@ -281,9 +322,14 @@
       state:function(next,e){status(w,'board-draft',next,e);}
     });
     api.write=quiescent(w,api.write);api.ready=quiescent(w,api.ready);
-    var old=w.boardDraftWriteNow,flush=w.psFlushPendingReady,has=w.psHasPending;
+    var old=w.boardDraftWriteNow,flush=w.psFlushPendingReady,has=w.psHasPending,live=w.boardFlushLive,exitTarget='';
+    if(typeof live==='function')w.boardFlushLive=function(target){
+      var previous=exitTarget;exitTarget=typeof target==='string'?target:'';
+      try{return live.apply(this,arguments);}finally{exitTarget=previous;}
+    };
     w.boardDraftWriteNow=function(options){
       if(!w._boardPrivateOwner)return old.apply(this,arguments);
+      if(options&&options.lifecycle&&exitTarget)options=Object.assign({},options,{exitTarget:exitTarget});
       return api.write(options).catch(function(){return false;});
     };
     w.psFlushPendingReady=quiescent(w,function(){
@@ -305,5 +351,5 @@
     w.__psBoardDraft=api;
     return api;
   }
-  return {create:create,install:install,persistHead:persistHead,keepHead:keepHead,thumbGuard:thumbGuard};
+  return {create:create,install:install,persistHead:persistHead,keepHead:keepHead,thumbGuard:thumbGuard,restorePage:restorePage};
 });

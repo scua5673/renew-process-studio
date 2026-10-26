@@ -142,7 +142,11 @@
           if(b){
             if(b.unknown)result.unknown=true;
             if(b.failed)result.failed=true;
-            if(b.needed&&(b.blocked||b.pending||!b.localDurable))result.saving=true;
+            /* A borrowed canvas cannot be captured. Only an independently
+               verified receipt for the old working board may remain a local
+               draft; editor/shared barriers above still take precedence. */
+            var sourceSaved=b.sourceSuspended===true&&b.localDurable===true&&b.pending===false&&b.failed===false&&b.unknown===false&&b.unsaved===true&&b.serverConfirmed===false;
+            if(b.needed&&(b.blocked&&!sourceSaved||b.pending||!b.localDurable))result.saving=true;
             else if(b.needed&&b.unsaved&&b.localDurable){result.boardDraft=true;result.saved=true;result.localOnly=true;}
             if(b.serverPending){result.unconfirmed=true;result.saved=!!b.privateLocalDurable||result.saved;}
           }

@@ -8904,7 +8904,7 @@ function boardSaveLive(){
   if(window.__capLock)return;
   try{if(document.body.classList.contains("editing")){_schedEditorDraft();return;}}catch(_){}
   var v=(window.__csView||"board");
-  if(v==="session")return;
+  if(v!=="board"&&v!=="match")return;
   if(window.__animExport)return;   /* 2.752 — 내보내기 중간 좌표는 뷰 스냅에도 라이브에도 안 찍는다(끝나면 exportVideo/exportGif 가 한 번 부른다) */
   if((v==="board"||v==="match")&&!window.__vaultEdit&&!document.body.classList.contains("editing")){   /* 1.962 — 편집 중엔 뷰 스냅도 편집기 화면으로 덮지 않는다 */
     try{window.__viewSnaps=window.__viewSnaps||{};window.__viewSnaps[v]=captureSnap();}catch(_){}
@@ -14358,7 +14358,7 @@ window.__vaultEnterReset=function(){
 function setView(v){
   /* 다음 화면이 session이면 기존 400ms 저장은 더 이상 쓰지 못한다.
      캔버스를 바꾸기 전에 마지막 작업과 페이지를 기존 저장 경로로 확정한다. */
-  if(v==='session'&&(window.__csView||'board')==='board'&&!window.__vaultEdit&&!_vaultBoardContext)try{_liveBoardAnimOpen=!!($('animBar')&&$('animBar').classList.contains('on'));boardFlushLive();}catch(_){}
+  if(v==='session'&&(window.__csView||'board')==='board'&&!window.__vaultEdit&&!_vaultBoardContext)try{_liveBoardAnimOpen=!!($('animBar')&&$('animBar').classList.contains('on'));boardFlushLive('session');}catch(_){}
   try{wbCloseText();}catch(_){}
   try{const em=document.getElementById("editorModal");
     if(em&&em.classList.contains("on")&&v!=="session"&&!window.__closingEditor){
@@ -21148,7 +21148,7 @@ try{ var _nb=document.getElementById('dfNew');
   function _consumePending(){
     try{ var pb=window.__pendingBoardPages;
       if(!_inVault && pb && pb.pages && pb.pages.length>1){
-        pages=_clone(pb.pages); idx=(typeof pb.idx==="number"&&pb.idx>=0&&pb.idx<pages.length)?pb.idx:0; window.__pendingBoardPages=null; loadIdx(idx);clearHistory();
+        pages=_clone(pb.pages); idx=(typeof pb.idx==="number"&&pb.idx>=0&&pb.idx<pages.length)?pb.idx:0; window.__pendingBoardPages=null; PSBoardDraft.restorePage(window,loadIdx,idx);clearHistory();
       } }catch(_){}
     try{ render(); }catch(_){}
   }
