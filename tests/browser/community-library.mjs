@@ -41,6 +41,10 @@ try{
     await c.locator('[data-letter-jump="pl-training"]').click();
     assert.equal(await c.locator('.pl-play').count(),3);
     await page.screenshot({path:path.join(out,`training-${mode.size}-${mode.width}-${mode.dark?'dark':'light'}.png`)});
+    await c.locator('[data-letter-back]').first().click();await c.waitForSelector('[data-letter="3"] .pl-read');
+    assert.equal(await c.locator('[data-letter="1"] .pl-read').count(),0);
+    assert.equal(await c.evaluate(()=>document.documentElement.scrollWidth),geometry.vw,'read badges fit at every size');
+    await page.screenshot({path:path.join(out,`read-${mode.size}-${mode.width}-${mode.dark?'dark':'light'}.png`)});
     await c.locator('#prTabCoach').click();
     await c.locator('#upBtn').click();
     await c.waitForSelector('#upMenu:not([hidden])');

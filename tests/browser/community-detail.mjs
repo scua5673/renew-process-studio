@@ -11,7 +11,8 @@ try{
   await page.evaluate(()=>window.__psShowApp('community'));
   const c=await(await page.waitForSelector('#fComm',{state:'attached'})).contentFrame();await c.waitForSelector('.pl-row');
   await page.screenshot({path:path.join(out,mode.size+'-'+mode.width+'-library.png')});
-  await c.locator('.pl-row').first().click();
+  // This viewer test needs a training-bearing letter, independent of the catalog order.
+  await c.locator('[data-letter="46"]').click();
   const card=c.locator('[data-letter-play]').first();await card.click();await c.waitForSelector('#cvMask.on #cdCopy');
   const v=await(await c.waitForSelector('#cvFrame',{state:'attached'})).contentFrame();
   await v.waitForFunction(()=>document.body.classList.contains('comm-viewing')&&!document.documentElement.classList.contains('comm-boot'));

@@ -172,6 +172,7 @@
     ['ps_comm_elmiha_v1','device','ls','cache','community.html'],
     ['ps_comm_feed_cache_v1','device','ls','cache','community.html'],
     ['ps_comm_handle','device','ls','pref','community.html'],
+    ['ps_comm_letters_read_v1:','device','ls','seen','community-letters.js',{prefix:1}],   /* 계정별 레터 읽음 표시. 비로그인은 guest, 이 브라우저에만 보관 */
     ['ps_comm_look_v1','device','ls','pref','board-comm-look.js'],   /* 3.087 — 커뮤니티 뷰어 «보기»(평면 · 3D · 선수 모양 · board-comm-look.js) */
     ['ps_comm_proc_index_v1','device','ls','cache','community.html'],
     ['ps_comm_tab_v1','device','ls','pref','community.html'],

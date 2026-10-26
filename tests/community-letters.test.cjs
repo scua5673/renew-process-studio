@@ -30,10 +30,35 @@ test('all 46 prepared letters have their complete original body, including 1 wit
 });
 
 test('search covers issue number, letter, article and exercise titles; ordering retains all entries',()=>{
+  assert.equal(L.select(index)[0].number,1,'the default is issue 1 first');
   assert.equal(L.select(index,'','new')[0].number,46);assert.equal(L.select(index,'','old')[0].number,1);
   assert.equal(L.select(index,'3호','old')[0].number,3);
   for(const query of [read(3).title,read(3).pieces[0].title,read(3).training.exercises[0].title])assert.ok(L.select(index,query).some(x=>x.number===3));
   assert.equal(L.select(index,'__없는_문장__').length,0);assert.equal(index[0].number,1,'sorting does not mutate the source');
+});
+
+test('reading history survives reload, merges other tabs, and separates signed-in and guest readers',()=>{
+  const rows=new Map(),storage=()=>({getItem:k=>rows.get(k)||null,setItem:(k,v)=>rows.set(k,v)});
+  let uid='coach-a';const options={storage,owner:()=>uid};
+  const a=L.readHistory(options),b=L.readHistory(options);
+  assert.deepEqual(a.list(),[]);assert.equal(a.mark(1,a.owner()),true);
+  assert.deepEqual(L.readHistory(options).list(),[1]);
+  b.mark(2,b.owner());a.mark(3,a.owner());assert.deepEqual(L.readHistory(options).list(),[1,2,3]);
+  const originalOwner=a.owner();uid='coach-b';
+  assert.deepEqual(a.list(),[]);assert.equal(a.mark(4,originalOwner),false,'a response from the previous reader is discarded');
+  a.mark(5,a.owner());assert.deepEqual(a.list(),[5]);
+  uid=null;assert.deepEqual(a.list(),[]);a.mark(6,a.owner());assert.deepEqual(a.list(),[6]);
+  uid='coach-a';assert.deepEqual(a.list(),[1,2,3]);
+});
+
+test('invalid or unavailable reading storage does not break the reader',()=>{
+  let raw='{"bad":"shape"}';const options={owner:()=>null,storage:()=>({getItem:()=>raw,setItem:(_,v)=>raw=v})};
+  assert.deepEqual(L.readHistory(options).list(),[]);
+  raw='not json';const h=L.readHistory(options);assert.deepEqual(h.list(),[]);
+  raw='[1,1,2,"3",0,-1,1000,null]';assert.deepEqual(h.list(),[1,2]);
+  for(const n of [0,-1,1.5,1000,'3'])assert.equal(h.mark(n,h.owner()),false);
+  const blocked=L.readHistory({storage:()=>{throw Error('blocked');}});
+  assert.doesNotThrow(()=>blocked.mark(7,blocked.owner()));assert.deepEqual(blocked.list(),[7]);
 });
 
 test('reading markup preserves simple emphasis while refusing executable markup and URL schemes',()=>{
