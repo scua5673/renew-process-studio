@@ -19,6 +19,7 @@ test('the first tab is «프로세스» unless this device last looked at «코�
   const ls=v=>({getItem:k=>(k==='ps_comm_tab_v1'?v:null)});
   assert.equal(first(ls(null)),'proc','처음 쓰는 기기');
   assert.equal(first(ls('proc')),'proc');
+  assert.equal(first(ls('training')),'training');
   assert.equal(first(ls('coach')),'coach','마지막에 본 칸');
   assert.equal(first(ls('elmiha')),'elmiha','엘미하 칸(3.018)도');
   assert.equal(first(ls('fifa')),'fifa','FIFA 칸(3.071)도');
@@ -29,7 +30,7 @@ test('the first tab is «프로세스» unless this device last looked at «코�
 test('the tab is chosen once at start, remembered only when the user switches, and an upload lands on «코치 자료»',()=>{
   assert.match(src,/fillFilters\(\);\nprocSetTab\(procTabFirst\(\),true\);[^\n]*\nfetchPosts\(\);\n\}\)\(\);/,'처음 열 때 고른 칸으로 — 코치 자료의 개수는 그대로 받는다');
   const set=src.slice(src.indexOf('function procSetTab(t,boot){'),src.indexOf("$('prSeg').addEventListener('click'"));
-  assert.match(set,/t=\(t==='proc'\|\|t==='elmiha'\|\|t==='fifa'\)\?t:'coach'; if\(t===tabF&&!boot\)return;/,'칸 넷(3.071 — FIFA)');
+  assert.match(set,/t=\(t==='proc'\|\|t==='elmiha'\|\|t==='fifa'\|\|t==='training'\)\?t:'coach'; if\(t===tabF&&!boot\)return;/,'칸 넷(3.071 — FIFA)');
   assert.match(set,/if\(!boot\)try\{localStorage\.setItem\(PROC_TAB_KEY,t\);\}catch\(_\)\{\}/,'적는 것은 사용자가 칸을 바꿀 때만');
   assert.match(set,/if\(boot\)\{ if\(t!=='coach'\)render\(\); return; \}/,'처음 열 때는 받지 않는다(«불러오는 중»만) — 화면이 실제로 보일 때 받는다');
   assert.match(src,/setTimeout\(function\(\)\{ if\(!proc\.ready\)procFetch\(\); if\(!elm\.ready\)elmFetch\(\); \},tabF==='coach'\?800:0\);/,'프로세스(첫 화면)나 엘미하 칸으로 열면 목록을 곧바로');

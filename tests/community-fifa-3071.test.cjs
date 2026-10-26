@@ -85,7 +85,7 @@ test('the community page wires a fourth «FIFA» tab that reads the module and n
   assert.match(comm,/<link rel="stylesheet" href="community-fifa\.css">/);
   assert.match(comm,/if\(tabF==='fifa'\)\{fifaRender\(\);return;\}/,'render');
   assert.match(comm,/if\(tabF==='fifa'\)\{fifaChips\(\);return;\}/,'주제 칩');
-  assert.match(comm,/document\.body\.classList\.toggle\('pr-proc',t==='proc'\|\|t==='fifa'\);/,'고르개 · 올리기를 치우는 것은 프로세스 칸의 규칙');
+  assert.match(comm,/document\.body\.classList\.toggle\('pr-proc',t==='proc'\|\|t==='fifa'\|\|t==='training'\);/,'고르개 · 올리기를 치우는 것은 프로세스 칸의 규칙');
   assert.match(comm,/html body\.pr-fifa \.comm-nav \.nav-sec:has\(#typeNav\),html body\.pr-fifa \.comm-nav \.nav-sec:has\(\[data-sort-nav\]\)\{display:none!important\}/);
   const fn=comm.slice(comm.indexOf('function fifaRender(){'),comm.indexOf('function fifaChips(){'));
   assert.ok(fn.length>0&&!/fetch\(/.test(fn),'서버를 부르지 않는다');

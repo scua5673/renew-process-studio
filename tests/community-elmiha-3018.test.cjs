@@ -49,9 +49,9 @@ test('the head has the elmiha tab (3.071 — FIFA comes after it) and the elmiha
   const hero=cut(comm,'<div class="el-hero" id="elHero" hidden>','<div class="comm-count" id="commCount">');
   assert.match(hero,/<b>엘미하의 전술노트<\/b>/);
   assert.match(hero,/<a class="el-yt" id="elYt" href="https:\/\/www\.youtube\.com\/@ELMIHA_TacticalNote" target="_blank" rel="noopener noreferrer"/,'새 창 · 이 앱의 창을 넘기지 않는다');
-  assert.match(comm,/\[\['prTabCoach','coach'\],\['prTabProc','proc'\],\['prTabElm','elmiha'\],\['prTabFifa','fifa'\]\]/);
+  assert.match(comm,/\[\['prTabCoach','coach'\],\['prTabProc','proc'\],\['prTabTraining','training'\],\['prTabElm','elmiha'\],\['prTabFifa','fifa'\]\]/);
   assert.match(comm,/var hero=\$\('elHero'\); if\(hero\)hero\.hidden=\(t!=='elmiha'\);/);
-  assert.match(comm,/html body \.top \.pr-seg:not\(#_\):not\(#__\)\{order:9;flex:1 0 100%;display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}/,'폰에서는 칸 넷(3.071 — FIFA)이 한 줄');
+  assert.match(comm,/html body \.top \.pr-seg:not\(#_\):not\(#__\)\{order:9;flex:1 0 100%;display:flex;overflow-x:auto;white-space:nowrap\}/,'폰에서는 칸 넷(3.071 — FIFA)이 한 줄');
 });
 
 test('opening, playing and putting in the vault go the coach-post way — the viewer finds an elmiha post even outside the coach feed',()=>{
