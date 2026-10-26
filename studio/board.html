@@ -7538,7 +7538,7 @@ function renderSquadGrpRow(){
   var info; try{ info=epSquadInfo(); }catch(_){ info={players:[],groups:[]}; }
   var fixed=["A팀","B팀","C팀"], extras=[]; (info.groups||[]).forEach(function(g){ if(fixed.indexOf(g)<0)extras.push(g); });
   var h="";
-  function gb(g){ var has=(info.players||[]).some(function(p){return String(p.grp||"").trim()===g;}); h+='<button type="button" class="ep-sq-btn" data-grp="'+esc(g)+'" title="'+esc(g)+(has?' 선수를 우리 팀으로 배치':'에 등록된 선수가 없습니다')+'"'+(has?'':' disabled')+'>'+esc(g)+'</button>'; }
+  function gb(g){ var has=(info.players||[]).some(function(p){return String(p.grp||"").trim()===g;}); h+='<button type="button" class="ep-sq-btn" data-grp="'+esc(g)+'" title="'+esc(PSSchedule.groupLabel(g))+(has?' 선수를 우리 팀으로 배치':'에 등록된 선수가 없습니다')+'"'+(has?'':' disabled')+'>'+esc(PSSchedule.groupLabel(g))+'</button>'; }
   fixed.forEach(gb); h+='<button type="button" class="ep-sq-btn ep-sq-all" data-grp="" title="등록된 모든 선수를 배치"'+((info.players||[]).length?'':' disabled')+'>전체 선수</button>'; extras.forEach(gb);
   box.innerHTML=h;
   [].forEach.call(box.querySelectorAll(".ep-sq-btn"),function(b){ b.onclick=function(e){ e.stopPropagation(); var g=b.getAttribute("data-grp")||"";
@@ -13699,7 +13699,7 @@ function renderEpSquadLoad(){
   var btns="";
   function groupButton(g){
     var has=info.players.some(function(p){return String(p.grp||"").trim()===g;});
-    btns+='<button type="button" class="ep-sq-btn" data-grp="'+esc(g)+'" title="'+(has?(esc(g)+' 선수를 작전판에 올리고 인원을 채웁니다'):(esc(g)+'에 등록된 선수가 없습니다'))+'"'+(has?'':' disabled')+'>'+esc(g)+'</button>';
+    btns+='<button type="button" class="ep-sq-btn" data-grp="'+esc(g)+'" title="'+(has?(esc(PSSchedule.groupLabel(g))+' 선수를 작전판에 올리고 인원을 채웁니다'):(esc(PSSchedule.groupLabel(g))+'에 등록된 선수가 없습니다'))+'"'+(has?'':' disabled')+'>'+esc(PSSchedule.groupLabel(g))+'</button>';
   }
   fixed.forEach(groupButton);
   btns+='<button type="button" class="ep-sq-btn ep-sq-all" data-grp="" title="출결 상태와 관계없이 등록된 모든 선수를 작전판에 올립니다"'+(info.players.length?'':' disabled')+'>전체 선수</button>';

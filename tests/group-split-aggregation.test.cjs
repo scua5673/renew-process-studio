@@ -3,13 +3,14 @@
    실제 소스에서 함수를 잘라 실행한다(다른 회귀 테스트와 같은 방식). 원본 날짜가 바뀌지 않는 것도 함께 본다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=f=>fs.readFileSync(path.join(__dirname,'../studio',f),'utf8');
+function audienceContext(seed){const c=vm.createContext(seed);c.PSTeamAudience=require('../studio/team-audience.js');vm.runInContext(read('schedule-audience.js'),c);return c;}
 function part(s,a,b){const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j);}
 const P=read('process.html'),S=read('storage.js');
 const plain=x=>JSON.parse(JSON.stringify(x));
-function schedule(){const c=vm.createContext({});vm.runInContext(part(S,'  function hasMatch(','  var seq=0;')+part(S,'  function groupKind(','  window.PSSchedule='),c);return c;}
+function schedule(){const c=audienceContext({});vm.runInContext(part(S,'  function hasMatch(','  var seq=0;')+part(S,'  function groupKind(','  window.PSSchedule='),c);return c;}
 function page(extra={}){
   const s=schedule(),local=new Map();
-  const c=vm.createContext({PSSchedule:{groupKind:s.groupKind,groupList:s.groupList,groupDay:s.groupDay},__schedGrp:'',week:[],
+  const c=audienceContext({PSSchedule:{groupKind:s.groupKind,groupList:s.groupList,groupDay:s.groupDay},__schedGrp:'',week:[],
     localStorage:{getItem:k=>local.has(k)?local.get(k):null,setItem:(k,v)=>local.set(k,String(v))},
     schedGroups:()=>['A팀','B팀'],mxExtraList:d=>(d&&Array.isArray(d.matchAdd))?d.matchAdd.filter(x=>x&&typeof x==='object'):[],
     wkbdEsc:x=>String(x==null?'':x),...extra});

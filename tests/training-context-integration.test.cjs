@@ -35,7 +35,7 @@ function harness(){
     trMinutes:()=>0,endTime:()=>'',blockCard:()=>'',sessMetaHTML:()=>'',sessIntroHTML:()=>'',sessReviewHTML:()=>'',
     renderDrillShelf(){},bindAimsInput(){},bindTimePlayers(){},save(){writes.push(['save']);throw Error('must not save');},
   };c.window=c;
-  vm.createContext(c);vm.runInContext(refs+'\n'+functions,c,{filename:'process.html training reference functions'});
+  vm.createContext(c);c.PSTeamAudience=require('../studio/team-audience.js');vm.runInContext(fs.readFileSync(path.join(__dirname,'../studio/schedule-audience.js'),'utf8'),c);vm.runInContext(refs+'\n'+functions,c,{filename:'process.html training reference functions'});
   return {c,state,reads,writes,local,host,sheet,tr,days,select,intervals,
     input:()=>({date:'2026-09-02',session:tr,day:days[2]}),
     event(type,event={}){for(const handler of events[type]||[])handler(event);},

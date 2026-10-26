@@ -140,6 +140,7 @@ function idpCtx(o){
     setTimeout:f=>f(),document:{addEventListener(){}}});
   const a=idp.indexOf('var ilcSel=');const b=idp.lastIndexOf('document.addEventListener',idp.indexOf("'[data-ilc-pick],[data-ilc-go]"));
   assert.ok(a>0&&b>a);
+  vm.runInContext(cut(fs.readFileSync(path.join(__dirname,'../studio/storage.js'),'utf8'),'  function groupLabel(','  function groupKind(')+';var PSSchedule={groupLabel:groupLabel};',c);
   vm.runInContext(idp.slice(a,b),c);
   return {c,doc,saved,toasts};
 }
