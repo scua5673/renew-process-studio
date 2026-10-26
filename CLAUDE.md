@@ -1,5 +1,19 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.190 — shape-menu의 썸네일 선택 복원은 원래 thumb가 capture 표식을 복원한 뒤 실행된다. 그 뒤의 renderDrawings만 기존 __psThumbCapturing save/finally 범위에서 그려 파생 repaint를 실제 편집 seq로 기록하지 않는다. 원래 thumb 진입부터 표식을 켜면 새 썸네일 대신 캐시를 돌려주므로 금지한다. 실제 입력·owner·seq·CAS guard는 그대로이며 번호칸의 입력 없는 blur도 새 편집을 만들지 않는다.
+- 3.190 — 개인 보드 자동 재시도는 진행 중인 기기 head 저장이 끝난 뒤 최신 레코드를 사용한다. 대기 자체를 저장 성공으로 보지 않고 기존 attempt도 정확한 CAS·원문 readback을 다시 통과한 뒤 서버에 보낸다. 다른 소유자·세대·원본 충돌은 계속 거부하며, 같은 창의 재시도가 앞 명시 저장의 레코드를 먼저 바꿔 거짓 실패를 만드는 경합을 막는다.
+- 3.190 — 경기의 화면만 편집 가능하고 문서 준비표는 대기인 동안 친 글도 전환·새 판 적용 장벽에 포함한다. 메모리 typed를 저장 완료로 보지 않으며 현재 소유자·경기·담당 권한·기준 필드를 재확인한 뒤 기존 저장 큐로 전달한다. 준비가 안 됐으면 match_input_pending으로 거부하고, 60초 만료로 미저장 입력을 조용히 버리지 않는다. 이 보호는 영속 초안이나 실제 iPad OS 종료 복구의 증명이 아니다.
+- 3.190 — 이전 경기 값의 정상 저장 완료가 최신 미수용 입력의 대기 표시를 덮지 못하게 한다. 실제 실패를 우선하고, 이미 수용한 입력은 기존 320ms 저장 간격을 유지한다. 같은 입력의 I/O 실패를 300ms마다 재시도하지 않으며 명시 재시도나 동일 소유자의 새 의미 입력에서만 다시 검증한다.
+- 3.190 — 개인 보드 원본·미저장 초안은 IDB를 우선하고 exact readback/CAS/owner·편집 세대 확인 후에만 같은 LS 사본을 제거한다. pagehide에서 최신 durable receipt가 없으면 동기 전체 초안 fallback을 남기며, pending·전환 장벽을 성공으로 바꾸지 않는다.
+- 3.190 — 저장공간 경고는 안전 정리+작성자의 guarded flush 뒤 원문 확인이 필요하다. 공간 확보·다른 문서 성공만으로 실패를 해제하지 않는다. 큰 안내는 같은 실패 동안 반복하지 않되 실패 상태는 유지한다. 저장 상태 snapshot은 uid/wid/cache seal/epoch별이며 다른 팀의 늦은 결과를 표시하지 않는다.
+- 3.190 — 서버 확인 표시는 전역 동기화 시각이나 짧은 hash만으로 추정하지 않는다. 지원하는 키의 실제 원문 또는 검증된 CAS 수락 receipt만 인정하고, 보드 미저장 초안과 확인 범위 밖 문서는 기기 보관으로 표시한다.
+- 3.190 — 팀 전환의 같은 UID/source cache 재확인과 실제 소유자 변경을 구분한다. 유효한 source 잠금에서도 쓰기는 금지하고 기존 초안의 읽기 검증만 허용한다. 부팅 파생 seq 변화가 복원 발견을 버리게 하지 않되 owner·generation·새 저장·버리기 epoch·실제 사용자 편집의 방어는 유지한다.
+- 3.190 — 썸네일 idle/scroll도 boardPages 원문을 바꾼다. 초안 쓰기·최종 sharedReady까지 겹친 작업을 묶어 멈추고 epoch·실제 lexical anim.frames·자기 handle로 낡은 callback을 거부한다. 원문 비교를 완화하지 않고 완료 후 화면 생성을 재개한다.
+- 3.190 — 저장본 페이지의 지연 `_consumePending→loadIdx`는 실제 입력이 아니다. 그 동기 적용만 기존 `__capLock`을 save/finally 복원하며, 저장 검증 중 파생 seq 증가로 head receipt·복원 제안이 끊기지 않게 한다. 실제 입력의 seq·owner·CAS 장벽은 유지한다.
+- 3.190 — 다른 view의 canvas를 개인 보드 원문으로 비교하거나 저장하지 않는다. 떠나기 직전 동결한 working source의 raw·owner·seq·generation·epoch와 실제 저장소의 같은 원문만 읽기 확인하며, job별 검사 attempt로 오래된 병렬 결과를 거부한다. 선수단 pull 회복도 실패했던 정확한 키·원문·소유자·실패 번호와 LS/IDB 사본이 모두 같을 때만 인정한다.
+- 3.190 — borrowed view의 개인 보드 저장 차단과 미팅의 현재 슬라이드 갱신을 구분한다. 실제 meeting/meet-mode의 기존 guarded preview 예약은 유지하고 private seq/dirty/draft는 변경하지 않는다. 브라우저 fixture는 표시용 engine 변수뿐 아니라 실제 열린 browserType도 확인한다.
+- 3.190 — 이름 입력의 blur가 즉시 trim·장면 동기화·render를 수행하면 남은 40ms paint timer를 먼저 취소한다. 같은 내용의 중복 render가 저장 확인 중 새 편집 seq를 만들지 않게 하며, 실제 새 입력·소유자·CAS 방어는 유지한다. IDB 조회처럼 Promise를 반환하는 시험 조건은 waitForFunction의 Promise truthiness에 의존하지 말고 제한 시간 내 실제 page.evaluate 결과를 await한다.
+
 - 3.186 — 선수단·후보의 기본 표시는 player-workspace.js/CSS에서 읽기 전용으로 투영한다. 원문 편집은 기존 프로필·배치·메모 경로를 사용한다. 후보 준비 확인 전에는 명단을 추정하지 않는다. 질문 iframe에는 배치 포지션을 전달하며, 매칭되는 질문이 없으면 첫 그룹을 자동 선택하지 않는다. 새 명단 검사는 player-workspace 브라우저 시험, 옛 배치 편집 검사는 «배치·명단 편집» 진입 후 진행한다.
 
 - 3.182 — 팀 키(`meta.grpBase`, 선수·세션 `grp`)는 표시 이름과 분리한다. 이름 변경은 `meta.grpLabels[key]`만 바꾸며 선수·일정·보드 연결은 다시 쓰지 않는다. 새 조는 `uid('grp')` 키를 쓴다. 학년은 선수 `schoolYear`, 세션 `schoolYears`(1·2·3); 평가 `grade`와 별개다. 팀 안은 OR, 학년 안은 OR, 팀과 학년은 AND. 옛 `1학년` 조 키는 자동 변환하지 않는다. 일정의 학년 필터는 메모리에만 두며 `yearDay`가 표시 사본과 슬롯별 훈련 배열만 거른다. 다른 프레임의 이름 변경은 storage 이벤트로 다시 표시하되 일정 저장은 하지 않는다.

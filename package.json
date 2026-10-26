@@ -5,7 +5,7 @@
   "scripts": {
     "test": "node --test tests/*.test.cjs",
     "test:browser": "node tests/browser/run-critical.mjs",
-    "test:sql": "node scripts/test-sql.cjs"
+    "test:sql": "node scripts/test-sql.cjs && node --test tests/sql/*.test.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

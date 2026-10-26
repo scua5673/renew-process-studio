@@ -16,6 +16,7 @@
       if(!o.current())throw failure('mirror_owner_changed');
       o.mirror.setItem(o.key,o.value);
       if(o.mirror.getItem(o.key)!==o.value)throw failure('mirror_readback');
+      if(typeof o.recover==='function')return Promise.resolve(o.recover(o.key,o.value,function(){return o.current()&&o.mirror.getItem(o.key)===o.value;})).then(function(){return {stale:false};});
       return Promise.resolve({stale:false});
     }catch(e){error=failure('scout_mirror_write');error.cause=e;}
     // The IDB candidate is already committed. Restore only its exact previous

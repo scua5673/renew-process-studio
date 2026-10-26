@@ -63,10 +63,14 @@ try{
     await f.locator('#nameInput').press('Tab');
     const save = await f.evaluate(async () => {
       const trace=[];
-      const status=()=>({loaded:_boardPrivateLoaded,current:boardPrivateCurrent(_boardPrivateOwner),saving:!!_boardManualSaving,vault:!!_vaultBoardContext,vaultEdit:!!window.__vaultEdit,thumb:!!window.__psThumbCapturing,capLock:!!window.__capLock,applying:_bliveApplying,playing:animPlaying,exporting:!!window.__animExport,view:window.__csView,pending:!!(_boardPrivateRecord&&_boardPrivateRecord.pending),base:!!(_boardPrivateRecord&&_boardPrivateRecord.base),flight:!!_boardPrivateFlight});
+      const status=()=>({loaded:_boardPrivateLoaded,current:boardPrivateCurrent(_boardPrivateOwner),saving:!!_boardManualSaving,vault:!!_vaultBoardContext,vaultEdit:!!window.__vaultEdit,thumb:!!window.__psThumbCapturing,capLock:!!window.__capLock,applying:_bliveApplying,playing:animPlaying,exporting:!!window.__animExport,view:window.__csView,pending:!!(_boardPrivateRecord&&_boardPrivateRecord.pending),base:!!(_boardPrivateRecord&&_boardPrivateRecord.base),flight:!!_boardPrivateFlight,
+        generation:_boardPrivateGeneration,editSeq:_boardPrivateEditSeq,recordToken:_boardPrivateRecord&&_boardPrivateRecord.token,durableToken:_boardPrivateDurableToken,
+        knownLSLength:typeof _boardPrivateHead==='string'?_boardPrivateHead.length:null,knownIDBLength:typeof _boardPrivateIdbHead==='string'?_boardPrivateIdbHead.length:null,
+        persistence:window.__psBoardPrivatePersistence&&((p)=>({generation:p.generation,seq:p.seq,token:p.token,pending:p.pending,failed:p.failed}))(window.__psBoardPrivatePersistence)});
       const before=status(),persist=boardPrivatePersist,send=boardPrivateSend;
-      boardPrivatePersist=function(){return persist.apply(this,arguments).catch(e=>{trace.push(['persist',e.message]);throw e;});};
-      boardPrivateSend=function(){return send.apply(this,arguments).catch(e=>{trace.push(['send',e.message]);throw e;});};
+      const failure=e=>{let snapshot;try{snapshot=status();}catch(diagnostic){snapshot={diagnosticError:diagnostic.message};}return {stack:e.stack,status:snapshot};};
+      boardPrivatePersist=function(){return persist.apply(this,arguments).catch(e=>{trace.push(['persist',e.message,failure(e)]);throw e;});};
+      boardPrivateSend=function(){return send.apply(this,arguments).catch(e=>{trace.push(['send',e.message,failure(e)]);throw e;});};
       try {const ok=await __boardSaveExplicit();return {ok,before,after:status(),trace};}
       finally {boardPrivatePersist=persist;boardPrivateSend=send;}
     });

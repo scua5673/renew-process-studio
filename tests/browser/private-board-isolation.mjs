@@ -81,8 +81,26 @@ async function fixture(browser,spec){
   return {context,page,frame,errors,blocked};
 }
 async function ids(frame){return frame.evaluate(()=>captureSnap().players.map(p=>p.name||String(p.id)));}
-async function boardRecord(page,uid){return page.evaluate(({PREFIX,uid})=>JSON.parse(localStorage.getItem(PREFIX+uid)||'null'),{PREFIX,uid});}
-async function settled(frame,uid){await frame.waitForFunction(uid=>_boardPrivateLoaded&&_boardPrivateOwner?.uid===uid&&!_boardPrivateFlight,uid);}
+async function boardRecord(page,uid){
+  // IDB is the primary head. Reading localStorage alone mistakes successful
+  // mirror removal for missing data; a fixture read must not recreate it.
+  const row=await page.frame({url:/board.html\?fixture=private-isolation/}).evaluate(async key=>{
+    const local=localStorage.getItem(key),stored=await storage.peek(key);
+    if(localStorage.getItem(key)!==local)throw Error('Head mirror changed during fixture read');
+    return {local,raw:stored?.value??null};
+  },PREFIX+uid);
+  assert.equal(row.local,null,'a successful IDB-primary head must not recreate an LS mirror');
+  if(row.raw===null)return null;
+  assert.equal(typeof row.raw,'string');const record=JSON.parse(row.raw);
+  assert.equal(record.uid,uid,'durable head belongs to the requested account');
+  assert.equal(record.wid,uid===A?PA:PB,'durable head belongs to its personal workspace');
+  assert.equal(record.v,1);assert.equal(typeof record.raw,'string');
+  assert.equal(typeof record.token,'string');assert.ok(record.token);assert.ok(Number.isSafeInteger(record.seq));
+  return record;
+}
+// A loaded canvas precedes the final IDB persist. Wait for restore's own
+// completion barrier before comparing the full head record/token.
+async function settled(frame,uid){await frame.waitForFunction(uid=>_boardPrivateLoaded&&_boardPrivateOwner?.uid===uid&&!window.__boardRestoring&&!_boardPrivateFlight,uid);}
 async function switchTo(page,frame,uid,active=T1){await page.evaluate(({uid,active})=>fixture.switch(uid,active),{uid,active});await settled(frame,uid);}
 async function edit(frame,label){
   await frame.evaluate(label=>{
@@ -176,21 +194,31 @@ try{
 
       await page.reload();
       const reloaded=page.frame({url:/board.html\?fixture=private-isolation/});
-      await reloaded.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&_boardPrivateLoaded);
+      await reloaded.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&_boardPrivateLoaded&&!window.__boardRestoring);
       await page.waitForTimeout(250);assert.deepEqual(await ids(reloaded),['A-LATE-ACK']);
       await switchTo(page,reloaded,B);assert.deepEqual(await ids(reloaded),['B-NEW']);
       r.cases.push('reload-restores-only-explicit-current-account-data');
       const recovery=await reloaded.evaluate(async()=>{
-        const o=boardPrivateOwner(),key=boardPrivateKey(o),before=localStorage.getItem(key);
+        const o=boardPrivateOwner(),key=boardPrivateKey(o),before=(await storage.peek(key))?.value;
+        if(typeof before!=='string'||localStorage.getItem(key)!==null)throw Error('Expected an exact IDB-primary head without a small-store mirror');
+        const original=JSON.parse(before),originalToken=_boardPrivateDurableToken,serverBefore=JSON.stringify(parent.fixture.server[o.uid]),savesBefore=parent.fixture.requests.filter(r=>r.type==='save'&&r.owner.uid===o.uid).length;
+        if(original.uid!==o.uid||original.wid!==o.wid||before!==JSON.stringify(_boardPrivateRecord)||original.token!==originalToken)throw Error('Expected current exact owner-bound head before conflict');
         const oldKey=key+':kept:legacy-fixture';localStorage.setItem(oldKey,before);
-        const other=JSON.stringify({...JSON.parse(before),token:'synthetic-other-tab',seq:Date.now()+1000});localStorage.setItem(key,other);
+        const foreign=JSON.parse(before),foreignBody=JSON.parse(foreign.raw);foreignBody.snap.players[0].name='OTHER-TAB-ORIGINAL';
+        Object.assign(foreign,{raw:JSON.stringify(foreignBody),pending:true,attempt:null,token:'synthetic-other-tab',seq:Date.now()+1000});
+        const other=JSON.stringify(foreign);localStorage.setItem(key,other);
+        // Head-CAS fault probe: direct captures intentionally do not set the
+        // UI's manual-dirty draft state. Workspace/user-edit barriers are tested
+        // by workspace-board-draft; this probe must retain a failed head receipt.
         for(let i=0;i<30;i++){state.players[0].name='RECOVERY-'+i;await _boardLiveWriteNow(false);}
         const branch=_boardPrivateKept.key;await PSStorage.optimize();
-        const preserved=await storage.get(branch),legacy=await storage.get(oldKey);
-        return {mainSame:localStorage.getItem(key)===other,branchKeys:(await storage.keys()).filter(k=>k.startsWith(key+':kept:')),localBranch:localStorage.getItem(branch),localLegacy:localStorage.getItem(oldKey),legacySame:legacy?.value===before,lastName:JSON.parse(JSON.parse(preserved.value).raw).snap.players[0].name,durable:_boardPrivateDurableToken===_boardPrivateRecord.token};
+        const preserved=await storage.peek(branch),legacy=await storage.peek(oldKey),head=await storage.peek(key),kept=JSON.parse(preserved.value),status=__psBoardDraft.snapshot(),p=__psBoardPrivatePersistence;
+        window.fixtureHeadConflict={key,before,other,originalToken,serverBefore,savesBefore};
+        return {mainSame:localStorage.getItem(key)===other,idbOriginalSame:head?.value===before,branchKeys:(await storage.keys()).filter(k=>k.startsWith(key+':kept:')),localBranch:localStorage.getItem(branch),localLegacy:localStorage.getItem(oldKey),legacySame:legacy?.value===before,keptExact:preserved.value===JSON.stringify(_boardPrivateRecord),keptOwner:kept.uid===o.uid&&kept.wid===o.wid,lastName:JSON.parse(kept.raw).snap.players[0].name,serverSame:JSON.stringify(parent.fixture.server[o.uid])===serverBefore,noNewSave:parent.fixture.requests.filter(r=>r.type==='save'&&r.owner.uid===o.uid).length===savesBefore,originalReceiptRetained:_boardPrivateDurableToken===originalToken,durable:_boardPrivateDurableToken===_boardPrivateRecord.token,privateLocalDurable:status.privateLocalDurable,privatePersistenceFailed:!!(p&&p.failed&&p.token===_boardPrivateRecord.token&&p.owner===JSON.stringify(o)&&p.generation===_boardPrivateGeneration&&p.seq===_boardPrivateEditSeq),pendingBarrier:psHasPending(),failed:status.failed};
       });
-      assert.equal(recovery.mainSame,true);assert.equal(recovery.branchKeys.length,2);assert.equal(recovery.localBranch,null);assert.equal(recovery.localLegacy,null);assert.equal(recovery.legacySame,true);assert.equal(recovery.lastName,'RECOVERY-29');assert.equal(recovery.durable,true);
-      r.cases.push('real-indexeddb-bounds-conflict-draft-and-migrates-legacy-copy-with-exact-body');
+      r.recovery=recovery;
+      assert.equal(recovery.mainSame,true);assert.equal(recovery.idbOriginalSame,true);assert.equal(recovery.branchKeys.length,2);assert.equal(recovery.localBranch,null);assert.equal(recovery.localLegacy,null);assert.equal(recovery.legacySame,true);assert.equal(recovery.keptExact,true);assert.equal(recovery.keptOwner,true);assert.equal(recovery.lastName,'RECOVERY-29');assert.equal(recovery.serverSame,true);assert.equal(recovery.noNewSave,true);assert.equal(recovery.originalReceiptRetained,true);assert.equal(recovery.durable,false);assert.equal(recovery.privateLocalDurable,false);assert.equal(recovery.privatePersistenceFailed,true);assert.equal(recovery.failed,true);
+      r.cases.push('late-foreign-ls-and-original-idb-heads-survive-bounded-exact-recovery-without-false-primary-receipt');
       const quota=await reloaded.evaluate(async()=>{
         let full=false,n=0;const native=Storage.prototype.setItem;
         try{for(;n<80;n++)native.call(localStorage,'fixture-quota-'+n,'x'.repeat(128*1024));}catch(e){full=e.name==='QuotaExceededError';}
@@ -198,11 +226,12 @@ try{
         let probeFailed=false;try{native.call(localStorage,'fixture-quota-probe','x'.repeat(2048));}catch(e){probeFailed=e.name==='QuotaExceededError';}
         if(!probeFailed)throw Error('Quota fixture did not exhaust the small store');
         state.players[0].name='QUOTA-RECOVERED';await _boardLiveWriteNow(false);
-        const row=await storage.get(_boardPrivateKept.key),result={full,lastName:JSON.parse(JSON.parse(row.value).raw).snap.players[0].name,durable:_boardPrivateDurableToken===_boardPrivateRecord.token,falseBanner:!!document.getElementById('psStorageFull')};
+        const row=await storage.peek(_boardPrivateKept.key),head=await storage.peek(fixtureHeadConflict.key),kept=JSON.parse(row.value),status=__psBoardDraft.snapshot(),p=__psBoardPrivatePersistence,result={full,lastName:JSON.parse(kept.raw).snap.players[0].name,keptExact:row.value===JSON.stringify(_boardPrivateRecord),keptOwner:kept.uid===boardPrivateOwner().uid&&kept.wid===boardPrivateOwner().wid,foreignSame:localStorage.getItem(fixtureHeadConflict.key)===fixtureHeadConflict.other,idbOriginalSame:head?.value===fixtureHeadConflict.before,serverSame:JSON.stringify(parent.fixture.server[kept.uid])===fixtureHeadConflict.serverBefore,noNewSave:parent.fixture.requests.filter(r=>r.type==='save'&&r.owner.uid===kept.uid).length===fixtureHeadConflict.savesBefore,originalReceiptRetained:_boardPrivateDurableToken===fixtureHeadConflict.originalToken,durable:_boardPrivateDurableToken===_boardPrivateRecord.token,privateLocalDurable:status.privateLocalDurable,privatePersistenceFailed:!!(p&&p.failed&&p.token===_boardPrivateRecord.token&&p.owner===JSON.stringify(boardPrivateOwner())&&p.generation===_boardPrivateGeneration&&p.seq===_boardPrivateEditSeq),pendingBarrier:psHasPending(),failed:status.failed,falseBanner:!!document.getElementById('psStorageFull')};
         for(let i=0;i<n;i++)localStorage.removeItem('fixture-quota-'+i);return result;
       });
-      assert.equal(quota.full,true);assert.equal(quota.lastName,'QUOTA-RECOVERED');assert.equal(quota.durable,true);assert.equal(quota.falseBanner,false);
-      r.cases.push('real-localstorage-quota-falls-back-to-indexeddb-without-false-loss-banner');
+      r.quota=quota;
+      assert.equal(quota.full,true);assert.equal(quota.lastName,'QUOTA-RECOVERED');assert.equal(quota.keptExact,true);assert.equal(quota.keptOwner,true);assert.equal(quota.foreignSame,true);assert.equal(quota.idbOriginalSame,true);assert.equal(quota.serverSame,true);assert.equal(quota.noNewSave,true);assert.equal(quota.originalReceiptRetained,true);assert.equal(quota.durable,false);assert.equal(quota.privateLocalDurable,false);assert.equal(quota.privatePersistenceFailed,true);assert.equal(quota.failed,true);assert.equal(quota.falseBanner,false);
+      r.cases.push('real-localstorage-quota-preserves-exact-idb-recovery-and-both-conflicting-originals');
 
 
       assert.deepEqual(errors.filter(e=>!e.includes('ResizeObserver loop')),[]);

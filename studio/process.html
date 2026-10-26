@@ -3077,7 +3077,7 @@ function saveNow(){
       return true;
     }).then(function(){
       __schedWriteCurrent(entry);
-      return entry.fallback&&window.PSStorage&&PSStorage.sharedRecovered?PSStorage.sharedRecovered(STORE_KEY,raw):true;
+      return window.PSStorage&&PSStorage.sharedRecovered?PSStorage.sharedRecovered(STORE_KEY,raw,function(){__schedWriteCurrent(entry);return true;}):true;
     }).then(function(){
       __schedWriteCurrent(entry);__schedRev=currentScheduleRev;__schedSavedRaw=raw;
       __schedWritePending=false;__schedWriteError=null;try{window.PSSaveState.ok('schedule');}catch(_){}

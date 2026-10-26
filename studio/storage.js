@@ -267,6 +267,7 @@
   function readRetry(run){return run().catch(function(e){if(!transientIdb(e))throw e;if(e.name==='UnknownError')dbp=null;return run();});}
   function idbGet(k){ return readRetry(function(){return tx('readonly',function(s){ return s.get(k); });}); }
   function idbSet(k,v,current){
+    var attemptedOwner=migrationOwner(true);
     /* Read our write in the SAME transaction. A later writer may commit before
        a separate verification transaction and must not make this commit fail.
        tx resolves only after commit; callers that need the value to remain
@@ -277,7 +278,7 @@
       var e=new Error('storage verification failed');e.name='StorageVerificationError';throw e;
     }).catch(function(error){
       diagnostic('idb-set:'+k,error);
-      if(isQuotaErr(error))warnFull(k);
+      if(isQuotaErr(error)&&attemptedOwner!==null&&attemptedOwner===migrationOwner(true))warnFull(k,v);
       throw error;
     });
   }
@@ -326,6 +327,7 @@
 
   /* ── 용량 초과 경고 ── */
   var warned=false,fullKey='',fullFailures=Object.create(null),optionalMirrorKey='';
+  var fullBodies=Object.create(null),fullMarks=Object.create(null),fullSerial=0,fullOwner=null,fullJob=null;
   /* 3.126 — 가득 찬 기기에서 «무엇이» 칸을 차지하는지 서버가 알게 한다(2주 22명 · 229번 «일정 화면 사본 저장 공간 부족» — 무엇이 찼는지 몰랐다).
      자동 정리가 끝난 뒤 한 줄(ps_events storage_full): 실패한 키 · 작은 저장소 크기(정리 전 · 뒤) · 큰 키 넷(표 storage-keys.js 의 이름 — 사람별 id 는 뗀다) ·
      브라우저 저장 한도. 키 이름과 크기만 — 내용 · 계정 · 팀 이름은 보내지 않는다. 맨 위 창 하나에서 6시간에 한 번. */
@@ -357,17 +359,64 @@
       if(p&&p.then){p.then(send,function(){send(null);});setTimeout(function(){send(null);},3000);}else send(null);
     }catch(_){}
   }
-  function warnFull(key){
+  function fullReadContext(){return migrationOwner(true)===null?null:sharedReadContext();}
+  function fullCurrent(job){return !!job&&job===fullJob&&job.owner===fullReadContext();}
+  function fullNotice(job){
+    if(!fullCurrent(job)||!Object.keys(fullFailures).length||job.shown)return;
+    job.shown=true;
+    window.__psQuotaRecovery={owner:job.owner,checking:false};
+    try{banner();}catch(_){}
+    try{window.dispatchEvent(new CustomEvent('ps-storage-full',{detail:{key:fullKey,owner:job.owner}}));}catch(_){}
+  }
+  function fullClear(key,medium){
+    delete fullFailures[key];delete fullBodies[key];delete fullMarks[key];
+    if(Object.keys(fullFailures).length)return;
+    warned=false;fullKey='';
+    if(fullJob)try{clearTimeout(fullJob.timer);}catch(_){}
+    fullJob=null;window.__psQuotaRecovery=null;
+    var b=document.getElementById('psStorageFull');if(b)b.remove();
+    window.dispatchEvent(new CustomEvent('ps-storage-recovered',{detail:{key:key,verified:true,medium:medium}}));
+  }
+  function fullRecover(job){
+    // Cleanup does not acknowledge a write. Only an author's guarded flush
+    // followed by exact durable readback can clear the relevant failed key.
+    Promise.resolve().then(function(){
+      if(!fullCurrent(job))return;
+      return window.PSStorage&&window.PSStorage.optimize?window.PSStorage.optimize():null;
+    }).then(function(r){
+      if(!fullCurrent(job))return false;
+      fullReport(fullKey,r||null);
+      if(typeof window.psHasPending!=='function'||typeof window.psFlushPendingReady!=='function')return false;
+      return Promise.resolve(window.psFlushPendingReady()).then(function(){return fullCurrent(job)&&!window.psHasPending();});
+    }).then(function(ready){
+      if(!ready||!fullCurrent(job))return;
+      return Promise.all(Object.keys(fullFailures).map(function(key){
+        var raw=fullBodies[key];if(typeof raw!=='string')return;
+        return sharedRecovered(key,raw,function(){return fullCurrent(job)&&!window.psHasPending();}).catch(function(){});
+      }));
+    }).catch(function(){}).then(function(){fullNotice(job);});
+  }
+  function warnFull(key,raw){
     // Failing to save the warning's own telemetry or cleanup timestamp is not
     // an additional failed user document and must not keep its warning latched.
     if(key==='ps_full_report_at'||key==='ps_opt_auto_at'||key==='ps_opt_build_v1')return;
-    fullFailures[String(key)]=true;
-    if(warned) return; warned=true;fullKey=key;
+    key=String(key);var owner=fullReadContext();
+    if(fullOwner!==owner){
+      var hadFailure=warned||Object.keys(fullFailures).length>0;
+      if(fullJob)try{clearTimeout(fullJob.timer);}catch(_){}
+      fullOwner=owner;fullJob=null;warned=false;fullFailures=Object.create(null);fullBodies=Object.create(null);fullMarks=Object.create(null);
+      var old=hadFailure&&document.getElementById('psStorageFull');if(old)old.remove();
+    }
+    fullFailures[key]=true;fullBodies[key]=typeof raw==='string'?raw:null;fullMarks[key]=++fullSerial;
+    if(warned)return;warned=true;fullKey=key;
     try{ console.warn('[PSStorage] 저장소 용량 초과:',key); }catch(_){}
-    /* 배너를 먼저 띄운다. 이벤트가 앞서면 PSSaveState가 "배너 없음"으로 보고
-       같은 말을 하는 알림을 하나 더 띄운다. */
-    try{ banner(); }catch(_){}
-    try{ window.dispatchEvent(new CustomEvent('ps-storage-full',{detail:{key:key}})); }catch(_){}
+    var job={owner:owner,shown:false,timer:null};fullJob=job;
+    if(owner===null){window.__psQuotaRecovery={owner:null,checking:false};fullNotice(job);return;}
+    window.__psQuotaRecovery={owner:owner,checking:true};
+    try{window.dispatchEvent(new CustomEvent('ps-storage-checking',{detail:{key:key,owner:owner}}));}catch(_){}
+    // Never wait indefinitely or turn cleanup alone into a green saved label.
+    try{job.timer=setTimeout(function(){fullNotice(job);},OPEN_TIMEOUT*2+2000);}catch(_){fullNotice(job);}
+    fullRecover(job);
   }
   function mb(n){ return (Math.max(0,+n||0)/1048576).toFixed(n>=10485760?0:1)+'MB'; }
   /* 용량이 찼을 때 사용자가 그 자리에서 할 수 있는 일을 준다.
@@ -381,7 +430,8 @@
       +'background:#D6453D;color:#fff;font:700 13px/1.5 Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
       +'padding:11px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
     var msg=document.createElement('span'); msg.style.cssText='flex:1 1 240px';
-    msg.innerHTML='⚠ 저장 공간이 가득 찼어요 — <b>방금 변경이 저장되지 않았습니다.</b><br>'
+    b.setAttribute('role','alert');
+    msg.innerHTML='⚠ 저장 공간이 부족해 <b>최신 변경의 저장을 확인하지 못했습니다.</b><br>'
       +'아래 <b>지금 정리</b>로 중복 사본을 비운 뒤 다시 저장해 보세요.';
     b.appendChild(msg);
     /* 1.535 — 무엇이 자리를 차지하는지 이름으로 보여준다(크기만 알면 손쓸 수가 없다) */
@@ -412,10 +462,9 @@
       PSStorage.optimize().then(function(r){
         var _th=(r.thumbSaved>0)?(' · 썸네일 <b>'+r.thumbSlimmed+'장</b>에서 잔디 사진 <b>'+mb(r.thumbSaved)+'</b> 걷어냄'):'';
         if(r.freed>0||r.thumbSaved>0){
-          msg.innerHTML='✅ <b>'+mb(Math.max(r.freed,0)+Math.max(r.thumbSaved||0,0))+'</b>를 비웠습니다'
+          msg.innerHTML='<b>'+mb(Math.max(r.freed,0)+Math.max(r.thumbSaved||0,0))+'</b>를 비웠습니다'
             +(r.imgMoved?(' (사진 <b>'+r.imgMoved+'장</b>을 큰 저장소로 옮김)'):'')+_th
-            +'. 방금 하던 편집을 다시 저장해 보세요.';
-          b.style.background='#2E7D5B';
+            +'. <b>최신 변경의 저장은 아직 확인되지 않았습니다.</b> 다시 저장해 주세요.';
         }else{
           /* 1.535 — 이름과 '무엇을 줄이면 되는지'까지 말한다 */
           var L0=(r.largest&&r.largest[0])?spaceLabel(r.largest[0].key):null;
@@ -441,17 +490,24 @@
     };
 
     var x=mk('닫기');
-    x.onclick=function(){ try{b.remove();}catch(_){} warned=false; };
+    x.onclick=function(){ try{b.remove();}catch(_){} };
 
     b.appendChild(tidy); b.appendChild(bk); b.appendChild(x);
     document.body.appendChild(b);
-    /* 2.463 — 가득 찬 순간이 정리가 가장 필요한 순간인데, '지금 정리' 버튼을 아는
-       사용자만 눌렀다. 같은 안전 정리를 자동으로 한 번 돌리고, 결과는 버튼이 말하던
-       그 자리에서 말한다(정리 중… → 몇 MB를 비웠습니다). */
-    try{ setTimeout(function(){ if(b.isConnected&&!tidy.disabled)tidy.click(); },400); }catch(_){}
   }
   /* 저장이 다시 성공하면 경고 잠금을 푼다. 안 그러면 이후에 또 가득 차도 배너가 뜨지 않는다. */
-  try{ window.addEventListener('ps-storage-recovered',function(){ warned=false; }); }catch(_){}
+  try{ window.addEventListener('ps-storage-recovered',function(e){ if(e&&e.detail&&e.detail.verified===true&&!Object.keys(fullFailures).length)warned=false; }); }catch(_){}
+  function fullOwnerChanged(){
+    if(!warned||fullOwner===fullReadContext())return;
+    if(fullJob)try{clearTimeout(fullJob.timer);}catch(_){}
+    fullJob=null;window.__psQuotaRecovery=null;
+    var b=document.getElementById('psStorageFull');if(b)b.remove();
+    // Removing a previous owner's UI is not a successful save or a data clear.
+  }
+  try{
+    window.addEventListener('ps-auth-state',fullOwnerChanged);
+    window.addEventListener('storage',function(e){if(!e||!e.key||/^(ps_sync_session|ps_active_ws|ps_cache_owner_v1|ps_ws_switch_epoch_v1|ps_ws_switch_guard_v1)$/.test(e.key))fullOwnerChanged();});
+  }catch(_){}
   function isQuotaErr(e){
     if(!e) return false;
     return e.name==='QuotaExceededError' || e.name==='NS_ERROR_DOM_QUOTA_REACHED' || e.code===22 || e.code===1014;
@@ -470,7 +526,7 @@
         // The private-board writer verifies its full IndexedDB fallback and
         // reports failure if neither store succeeds. A failed small-store copy
         // alone must not announce that the board was lost before that result.
-        if(isQuotaErr(e)&&String(k).indexOf('ps_private_board_draft_v1:')!==0&&!(typeof optionalMirrorKey==='string'&&optionalMirrorKey===k)) warnFull(k); throw e;
+        if(isQuotaErr(e)&&String(k).indexOf('ps_private_board_draft_v1:')!==0&&!(typeof optionalMirrorKey==='string'&&optionalMirrorKey===k)) warnFull(k,String(v)); throw e;
       }
     };
   }catch(_){}
@@ -640,6 +696,12 @@
 
   window.storage={
     conditionalGuardVersion:1,
+    // Status readers must not invoke get()'s legacy migration/fallback writes.
+    peek:function(k){
+      var owner=fullReadContext();
+      function current(){if(owner===null||fullReadContext()!==owner){var e=new Error('storage observation owner changed');e.name='StorageOwnerChangedError';throw e;}}
+      return Promise.resolve().then(function(){current();return idbGet(k);}).then(function(v){current();return v==null?null:{value:v};});
+    },
     get:function(k){
       var reader=sharedReadContext();
       function readCurrent(){if(reader===null||sharedReadContext()!==reader){var e=new Error('storage read owner changed');e.name='StorageOwnerChangedError';throw e;}}
@@ -785,18 +847,35 @@
   /* Recover only this exact durable document's quota warning. A different key,
      owner, mirror or queued write cannot make a failed save look successful. */
   function sharedRecovered(k,raw,current){
-    var owner=sharedReadContext(),mirror=localStorage.getItem(k);
+    var owner=fullReadContext(),mirror=localStorage.getItem(k),mark=fullMarks[k];
+    if(owner===null){var invalid=new Error('recovery owner not ready');invalid.name='StorageOwnerChangedError';return Promise.reject(invalid);}
     return sharedCommitted(k,raw).then(function(){
-      if(owner===null||owner!==sharedReadContext()||localStorage.getItem(k)!==mirror||sharedWrites[k]||typeof current==='function'&&current()!==true){
+      if(owner!==fullReadContext()||localStorage.getItem(k)!==mirror||sharedWrites[k]||typeof current==='function'&&current()!==true){
         var e=new Error('shared recovery owner or source changed');e.name='StorageOwnerChangedError';throw e;
       }
       if(!fullFailures[k])return true;
-      delete fullFailures[k];
-      if(Object.keys(fullFailures).length)return true;
-      warned=false;fullKey='';
-      var b=document.getElementById('psStorageFull');if(b)b.remove();
-      window.dispatchEvent(new CustomEvent('ps-storage-recovered',{detail:{key:k,verified:true}}));
+      if(fullOwner!==owner||fullMarks[k]!==mark){var newer=new Error('newer quota failure remains');newer.name='StorageOwnerChangedError';throw newer;}
+      fullClear(k,'idb');
       return true;
+    });
+  }
+  /* A pulled mirror may retire only the exact failed body it just accepted.
+     A newer unsaved author action can leave both old stores unchanged. */
+  function sharedPullRecovered(k,raw,current){
+    if(typeof current!=='function'||typeof raw!=='string'||!fullFailures[k]||fullBodies[k]!==raw||fullOwner!==fullReadContext()||localStorage.getItem(k)!==raw)return Promise.resolve(false);
+    return sharedRecovered(k,raw,function(){return localStorage.getItem(k)===raw&&current()===true;});
+  }
+  /* A complete exact local fallback is durable on this device, not an IDB or
+     server acknowledgement. Only its author may supply the current-source guard. */
+  function localRecovered(k,raw,current){
+    var owner=fullReadContext(),mark=fullMarks[k];
+    return Promise.resolve().then(function(){
+      if(owner===null||owner!==fullReadContext()||typeof raw!=='string'||localStorage.getItem(k)!==raw||sharedWrites[k]||typeof current!=='function'||current()!==true){
+        var e=new Error('local recovery owner or source changed');e.name='StorageOwnerChangedError';throw e;
+      }
+      if(!fullFailures[k])return true;
+      if(fullOwner!==owner||fullMarks[k]!==mark){var newer=new Error('newer quota failure remains');newer.name='StorageOwnerChangedError';throw newer;}
+      fullClear(k,'local');return true;
     });
   }
   /* This is an optional READ mirror, never an authored save. Hold a readonly
@@ -962,6 +1041,9 @@
     sharedVerified:sharedVerified,
     sharedCommitted:sharedCommitted,
     sharedRecovered:sharedRecovered,
+    sharedPullRecovered:sharedPullRecovered,
+    localRecovered:localRecovered,
+    quotaState:function(){return {checking:!!(fullCurrent(fullJob)&&window.__psQuotaRecovery&&window.__psQuotaRecovery.checking),failed:fullOwner===fullReadContext()&&Object.keys(fullFailures).length>0};},
     mirrorSchedule:mirrorSchedule,
     auxGet:auxGet,
     reportFull:function(k){ fullReport(k,null); },   /* 3.131 — 동기화의 일정 거울 쓰기가 용량으로 실패해도 같은 storage_full 한 줄(키 이름 · 크기 · 한도만) */
@@ -1434,21 +1516,37 @@
 (function(){
   "use strict";
   var LABEL={saving:'저장 중…',saved:'저장됨',failed:'⚠ 저장 안 됨',idle:''};
-  var state={},bound=[];
+  var state={},scopeOwners={},bound=[];
+  function saveOwner(){
+    try{
+      var s=JSON.parse(localStorage.getItem('ps_sync_session')||'null'),uid=String(s&&s.uid||''),wid=localStorage.getItem('ps_active_ws')||'',seal=localStorage.getItem('ps_cache_owner_v1')||'',o=JSON.parse(seal||'null');
+      if((uid||wid||seal)&&(!uid||!wid||!o||o.uid!==uid||o.wid!==wid))return null;
+      return JSON.stringify([uid,wid,seal,localStorage.getItem('ps_ws_switch_epoch_v1')||'']);
+    }catch(_){return null;}
+  }
+  function scoped(scope){var owner=saveOwner();return scopeOwners[scope]===owner?state[scope]||'idle':'idle';}
+  function snapshot(){
+    var owner=saveOwner(),scopes={};
+    if(owner!==null)Object.keys(state).forEach(function(k){if(scopeOwners[k]===owner)scopes[k]=state[k];});
+    return {owner:owner,scopes:scopes};
+  }
+  function quotaChecking(){
+    try{
+      if(window.PSStorage&&window.PSStorage.quotaState)return window.PSStorage.quotaState().checking;
+      var pending=window.__psQuotaRecovery,owner=saveOwner();
+      return !!(pending&&pending.checking&&owner!==null&&pending.owner===JSON.stringify(JSON.parse(owner).concat(localStorage.getItem('ps_ws_switch_guard_v1')||'')));
+    }catch(_){return false;}
+  }
 
   function set(scope,next,error){
     scope=String(scope||'app');
+    var owner=saveOwner();
+    // An old frame's completion cannot acknowledge the next account's data.
+    if(next==='saved'&&Object.prototype.hasOwnProperty.call(scopeOwners,scope)&&scopeOwners[scope]!==owner)return false;
     state[scope]=next;
-    /* 저장이 한 번 성공했다면 저장소는 다시 쓸 수 있다는 뜻이다.
-       용량 초과로 잠갔던 표시를 함께 풀지 않으면 경고가 영영 남는다. */
-    if(next==='saved'&&state.storage==='failed'){
-      state.storage='saved';
-      var b=document.getElementById('psStorageFull');
-      if(b)try{ b.remove(); }catch(_){}
-      try{ window.dispatchEvent(new CustomEvent('ps-storage-recovered')); }catch(_){}
-    }
+    scopeOwners[scope]=owner;
     paint();
-    try{ window.dispatchEvent(new CustomEvent('ps-save-state',{detail:{scope:scope,state:next,error:error||null}})); }catch(_){}
+    try{ window.dispatchEvent(new CustomEvent('ps-save-state',{detail:{scope:scope,state:next,error:error||null,owner:owner}})); }catch(_){}
     if(next==='failed'){
       try{ window.PSStorageDiagnostic('save-failed:'+scope,error); }catch(_){}
       pill(true);
@@ -1457,12 +1555,12 @@
     }
     return next!=='failed';
   }
-  function anyFailed(){ return Object.keys(state).some(function(k){ return state[k]==='failed'; }); }
+  function anyFailed(){ return Object.keys(state).some(function(k){ return scoped(k)==='failed'; }); }
 
   function paint(){
     bound.forEach(function(b){
       if(!b.el||!b.el.isConnected){ b.el=null; return; }
-      var s=state[b.scope]||'idle';
+      var s=scoped(b.scope);
       b.el.textContent=(s==='idle'&&b.idle)?b.idle:LABEL[s];
       b.el.style.color=s==='failed'?'#C24A46':'';
       b.el.style.fontWeight=s==='failed'?'700':'';
@@ -1476,6 +1574,7 @@
     if(!document.body) return;
     var el=document.getElementById('psSaveFailed');
     if(!show){ if(el)try{el.remove();}catch(_){} return; }
+    if(quotaChecking())return;
     if(document.getElementById('psStorageFull')) return;
     if(el) return;
     el=document.createElement('div'); el.id='psSaveFailed';
@@ -1497,7 +1596,9 @@
     fail:function(scope,error){ return set(scope,'failed',error); },
     /* 저장 결과 불리언을 그대로 넘기면 상태가 정해진다. 호출부가 짧아진다. */
     done:function(scope,okFlag,error){ return okFlag?this.ok(scope):this.fail(scope,error); },
-    get:function(scope){ return state[String(scope||'app')]||'idle'; },
+    get:function(scope){ return scoped(String(scope||'app')); },
+    owner:saveOwner,
+    snapshot:snapshot,
     text:function(scope){ return LABEL[this.get(scope)]; },
     failed:anyFailed,
     /* 화면이 이미 가진 라벨을 이 상태에 묶는다. idle일 때 보여줄 기본 문구를 함께 준다. */
@@ -1574,8 +1675,9 @@
   window.addEventListener('ps-storage-full',function(e){
     set('storage','failed',(e&&e.detail)||null);
   });
+  window.addEventListener('ps-storage-checking',function(e){set('storage','saving',(e&&e.detail)||null);});
   window.addEventListener('ps-storage-recovered',function(e){
-    if(e&&e.detail&&e.detail.verified===true){state.storage='saved';paint();if(!anyFailed())pill(false);}
+    if(e&&e.detail&&e.detail.verified===true)set('storage','saved');
   });
 })();
 
