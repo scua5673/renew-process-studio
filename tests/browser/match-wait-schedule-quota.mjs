@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
 import {startFixture,openApp,SHOTS,WT,WP,A} from '../fixtures/team-app.mjs';
 // 3.131 — 아이패드 «팀 경기 자료를 불러오는 중입니다»에서 멈춤(10/21, 풋볼A 운영자 아이패드).
 // 그 기기는 일정 화면 사본(localStorage 거울 process_coach_v1)을 쓰면 늘 QuotaExceededError — 10/15 부터 58번 schedule_mirror_quota.
@@ -49,16 +51,40 @@ try{
   assert.equal(st1.mirror,null,'못 쓰는 거울은 비워 둔다(화면은 IDB 정본)');
   assert.notEqual(st1.state.kind,'error',JSON.stringify(st1.state));
   // 일정 정본은 IDB — 경기 화면이 일정 칸에 경기 번호(mid)를 붙여 저장하면 그것도 IDB 로 가서 서버에 올라간다. 곧 서버와 같아진다
-  let idb1=null,settled=false;
+  let idb1=null,settled=false,scoutSettlement=null;
   for(let i=0;i<60;i++){
     idb1=await page.evaluate(async()=>{const r=await window.storage.get('process_coach_v1');return r&&r.value;});
     // 경기 화면의 지연된 mid 정리가 끝나기 전에도 IDB=서버, pending=0일 수 있다.
     // 그 틈에 v2를 넣으면 이 시험은 거울 복구가 아니라 시작 중 동시 편집을 시험하게 된다.
     const matchDays=Object.values(JSON.parse(idb1||'{}').weeks||{}).flat().filter(d=>d.board?.sched==='경기');
-    settled=matchDays.length>=2&&matchDays.every(d=>d.mid)&&idb1===schedRow().v&&await page.evaluate(()=>!PSSync.pending().count);
+    // A root ACK can precede the child's final exact verification. Do not put
+    // another device's edit on top of that still-running local save attempt.
+    scoutSettlement=await sf.evaluate(expected=>{const raw=window.PSSchedule?.raw?.();return {pending:typeof psHasPending==='function'?psHasPending():null,team:window.PSSaveState?.get?.('team'),raw,exact:raw===expected};},idb1);
+    settled=matchDays.length>=2&&matchDays.every(d=>d.mid)&&idb1===schedRow().v&&await page.evaluate(()=>!PSSync.pending().count)&&scoutSettlement.pending===false&&scoutSettlement.team==='saved'&&scoutSettlement.exact===true;
     if(settled)break;
     await page.waitForTimeout(500);
   }
+  // Keep the same settlement decision/wait above. A CI failure previously had
+  // no final values, so preserve the complete synthetic copies on either path.
+  const describe=raw=>{
+    const result={raw,length:raw==null?0:raw.length,sha256:raw==null?null:crypto.createHash('sha256').update(raw).digest('hex')};
+    try{const doc=JSON.parse(raw||'null');result.revision=doc&&Object.fromEntries(['scheduleRev','scheduleBaseRev','scheduleToken','scheduleBaseToken','editedAt'].map(k=>[k,doc[k]]));
+      result.matchDays=Object.entries(doc?.weeks||{}).flatMap(([week,days])=>days.map((day,index)=>({week,index,sched:day.board?.sched,mid:day.mid})).filter(day=>day.sched==='경기'));
+    }catch(error){result.parseError=error.message;}
+    return result;
+  };
+  const settlement={engine,settled,observedAt:new Date().toISOString(),lastPolledIDB:describe(idb1),server:describe(schedRow().v),requiredScout:scoutSettlement&&{pending:scoutSettlement.pending,team:scoutSettlement.team,raw:describe(scoutSettlement.raw??null),exact:scoutSettlement.exact},frames:[],recentLogs:logs.slice(-40)};
+  for(const [role,frame]of [['root',page.mainFrame()],['scout',sf]]){
+    const actual=await frame.evaluate(async()=>{
+      const local=localStorage.getItem('process_coach_v1'),idb=await window.storage?.peek?.('process_coach_v1');
+      return {path:location.pathname,scopes:window.PSSaveState?.snapshot?.(),pending:window.psHasPending?.(),state:window.PSSync?.state?.(),syncPending:window.PSSync?.pending?.(),view:window.__psAutosaveView?.(),
+        local,idbRaw:idb?.value??null,memory:window.PSSchedule?.raw?.(),outboxLocal:localStorage.getItem('ps_sync_outbox_v1'),outboxIDB:(await window.storage?.peek?.('ps_sync_outbox_v1'))?.value??null};
+    }).catch(error=>({diagnosticReadError:error.message}));
+    for(const key of ['local','idbRaw','memory','outboxLocal','outboxIDB'])if(typeof actual[key]==='string'||actual[key]===null)actual[key]=describe(actual[key]);
+    settlement.frames.push({role,...actual});
+  }
+  settlement.recentLogsSha256=crypto.createHash('sha256').update(JSON.stringify(settlement.recentLogs)).digest('hex');
+  fs.writeFileSync(path.join(path.dirname(SHOTS),'settlement-diagnostic.json'),JSON.stringify(settlement,null,2),{flag:'wx',mode:0o600});
   assert.ok(settled,'경기 번호 정리와 서버 저장이 끝난 뒤 다음 기기 편집을 재현한다');
   assert.equal(idb1,schedRow().v,'IDB 정본 = 서버 원문(기기의 새 입력도 올라가 같아진다)');
   assert.equal(await page.evaluate(()=>PSSync.pending().count),0,'올릴 것이 남지 않는다');

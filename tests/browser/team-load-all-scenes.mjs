@@ -1,17 +1,19 @@
 import assert from 'node:assert/strict';
-import {startFixture,openApp} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,SIZES} from '../fixtures/team-app.mjs';
 // 3.137 — 오류 제보 738f37d1 «보드 설정에서 팀 불러오기를 통해 등록된 팀을 불러올 때, 선택된 장면에만 팀이 불러와지고 … 모든 장면에 적용되야».
 // 저장 팀 불러오기는 지금 페이지의 다른 장면을 같은 id 로만 찾아, 포메이션을 다시 놓은 장면(새 id)엔 이름이 안 들어갔고 다른 페이지 · 미팅의 다른 슬라이드는 그대로였다.
 // 이제 판 전체(board-tweaks.js 8 · team-load.js who · wear): 같은 선수(id, 아니면 불러오기 전 번호 · 미팅은 번호 먼저)를 모든 장면 · 페이지(미팅은 슬라이드)에.
 // 알림의 «이 장면만» · «이 슬라이드만»이 지금 장면만 남기고 되돌린다. 대기 줄 선수는 지금 페이지의 장면에만. 합성 팀 fixture 에서만 돈다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium';
+SIZES.desktop.engine=engine;
 const fx=await startFixture(),browsers={};
 // 6초짜리 알림의 단추는 붙는 순간을 적는다(3.102)
 const watch=f=>f.evaluate(()=>{window.__ftSeen=null;try{window.__ftMo&&window.__ftMo.disconnect();}catch(_){}const old=document.querySelector('#cs-ftoast .ftoast-act');
   window.__ftMo=new MutationObserver(()=>{const b=document.querySelector('#cs-ftoast .ftoast-act');if(b&&b!==old&&!window.__ftSeen)window.__ftSeen={btn:b,label:b.textContent,text:document.getElementById('cs-ftoast').textContent};});
   window.__ftMo.observe(document.body,{childList:true,subtree:true});});
 try{
-  const {page,logs}=await openApp(fx,'desktop',{browsers});
+  const {page,logs,context}=await openApp(fx,'desktop',{browsers});
+  const browserType=context.browser().browserType().name();assert.equal(browserType,engine,'the fixture must run the selected real browser engine');
   await page.waitForTimeout(2000);
   await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
   const f=await (await page.waitForSelector('#fBoard')).contentFrame();
@@ -86,5 +88,5 @@ try{
   assert.equal(await f.evaluate(w=>JSON.stringify(window.__psPages.pg().map(p=>[p.snap.players,((p.anim&&p.anim.frames)||[]).map(x=>x.snap.players)]))===w,workPages),true,'미팅에서 불러와도 작업 보드 페이지는 그대로(3.122)');
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
-  console.log('team-load-all-scenes ok',engine,JSON.stringify({toast:toast.text,meet:mt.text,slides}));
+  console.log('team-load-all-scenes ok',engine,JSON.stringify({browserType,toast:toast.text,meet:mt.text,slides}));
 }finally{for(const b of Object.values(browsers))try{await b.close();}catch(_){} try{await fx.close();}catch(_){}}

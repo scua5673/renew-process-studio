@@ -32,6 +32,11 @@
     var lock=w.__capLock;w.__capLock=1;
     try{return load(index);}finally{w.__capLock=lock;}
   }
+  function borrowedView(w,view){
+    if(view==='board'||view==='match')return false;
+    if(view==='meeting'&&w.document.body.classList.contains('meet-mode')&&typeof w.boardSchedulePreview==='function')w.boardSchedulePreview();
+    return true;
+  }
   function status(w,scope,next,error){try{var api=w.PSSaveState;if(api)api[next](scope,error);}catch(_){} }
   function conflict(){var e=new Error('다른 창의 개인 보드를 보존합니다');e.psCode='board_private_conflict';return e;}
   function headGuard(w,o,r){
@@ -351,5 +356,5 @@
     w.__psBoardDraft=api;
     return api;
   }
-  return {create:create,install:install,persistHead:persistHead,keepHead:keepHead,thumbGuard:thumbGuard,restorePage:restorePage};
+  return {borrowedView:borrowedView,create:create,install:install,persistHead:persistHead,keepHead:keepHead,thumbGuard:thumbGuard,restorePage:restorePage};
 });

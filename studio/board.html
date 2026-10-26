@@ -8904,7 +8904,7 @@ function boardSaveLive(){
   if(window.__capLock)return;
   try{if(document.body.classList.contains("editing")){_schedEditorDraft();return;}}catch(_){}
   var v=(window.__csView||"board");
-  if(v!=="board"&&v!=="match")return;
+  if(PSBoardDraft.borrowedView(window,v))return;
   if(window.__animExport)return;   /* 2.752 — 내보내기 중간 좌표는 뷰 스냅에도 라이브에도 안 찍는다(끝나면 exportVideo/exportGif 가 한 번 부른다) */
   if((v==="board"||v==="match")&&!window.__vaultEdit&&!document.body.classList.contains("editing")){   /* 1.962 — 편집 중엔 뷰 스냅도 편집기 화면으로 덮지 않는다 */
     try{window.__viewSnaps=window.__viewSnaps||{};window.__viewSnaps[v]=captureSnap();}catch(_){}
