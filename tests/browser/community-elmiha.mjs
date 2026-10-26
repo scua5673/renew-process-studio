@@ -48,7 +48,7 @@ try{
   // 1) 코치 자료. 엘미하 칸은 화면이 보이면 미리 받는다 — 서버가 안 되면 조용하다(코치 자료 화면은 그대로)
   await until(()=>asked.length>=1,'엘미하 칸 미리 받기');
   let s=await state();
-  assert.deepEqual([s.elm,s.pressed,s.label[0],s.label[2],s.hero,s.titles],[false,['true','false','false','false'],'코치 자료1','전술노트',false,['가상 코치 글']]);   // 프로세스 칸의 개수는 앱에 실린 사본 몫
+  assert.deepEqual([s.elm,s.pressed,s.label[0],s.label[3],s.hero,s.titles],[false,['true','false','false','false','false'],'코치 자료1','전술노트',false,['가상 코치 글']]);   // 프로세스 칸의 개수는 앱에 실린 사본 몫
   assert.ok(coachAsked.length>0,'코치 자료를 서버에서 받았다');
   assert.ok(coachAsked.every(o=>o==='neq.'+ELM),'코치 목록 요청에서 계정을 제외한다');
   await page.screenshot({path:path.join(SHOTS,`community-separated-${engine}-${size}-coach.png`)});
@@ -74,7 +74,7 @@ try{
   await c.click('#prTabElm');
   await c.waitForSelector('#elRetry');
   s=await state();
-  assert.deepEqual([s.elm,s.pressed,s.sub,s.ph,s.hero,s.titles,s.count],[true,['false','false','true','false'],'엘미하가 만든 전술 애니메이션','제목·내용 검색',true,[],'']);
+  assert.deepEqual([s.elm,s.pressed,s.sub,s.ph,s.hero,s.titles,s.count],[true,['false','false','false','true','false'],'엘미하가 만든 전술 애니메이션','제목·내용 검색',true,[],'']);
   assert.match(s.grid,/엘미하의 전술노트를 불러오지 못했어요/);
   const yt=await c.evaluate(()=>{const a=document.getElementById('elYt'),r=a.getBoundingClientRect();return {href:a.href,target:a.target,rel:a.rel,text:a.textContent,l:Math.round(r.left),r:Math.round(r.right),h:Math.round(r.height)};});
   assert.deepEqual([yt.href,yt.target,yt.rel,yt.text],['https://www.youtube.com/@ELMIHA_TacticalNote','_blank','noopener noreferrer','유튜브 채널']);
@@ -85,7 +85,7 @@ try{
   await c.click('#elRetry');
   await c.waitForSelector('#grid .card');
   s=await state();
-  assert.deepEqual([s.titles,s.count,s.label[2]],[['가상 전술노트 — 하프스페이스 침투'],'전술노트 1개','전술노트1']);
+  assert.deepEqual([s.titles,s.count,s.label[3]],[['가상 전술노트 — 하프스페이스 침투'],'전술노트 1개','전술노트1']);
   assert.equal(asked.every(o=>o==='eq.'+ELM),true,'계정 번호로 묻는다 '+JSON.stringify(asked));
   assert.equal(s.fab,'none','다른 코치에게는 이 칸에 «올리기»가 없다(올리면 코치 자료로 간다)');
   assert.equal(await c.locator('#commSearch').isVisible(),true,'전술노트 검색을 사용할 수 있다');
@@ -129,7 +129,7 @@ try{
   // 5) 코치 자료로 돌아가면 지금 화면 그대로
   await c.click('#prTabCoach');
   s=await state();
-  assert.deepEqual([s.elm,s.pressed,s.hero,s.titles,s.pickers],[false,['true','false','false','false'],false,['가상 코치 글'],[true]]);
+  assert.deepEqual([s.elm,s.pressed,s.hero,s.titles,s.pickers],[false,['true','false','false','false','false'],false,['가상 코치 글'],[true]]);
   assert.notEqual(s.fab,'none');
 
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
