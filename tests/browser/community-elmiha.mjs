@@ -88,7 +88,17 @@ try{
   assert.deepEqual([s.titles,s.count,s.label[2]],[['가상 전술노트 — 하프스페이스 침투'],'전술노트 1개','전술노트1']);
   assert.equal(asked.every(o=>o==='eq.'+ELM),true,'계정 번호로 묻는다 '+JSON.stringify(asked));
   assert.equal(s.fab,'none','다른 코치에게는 이 칸에 «올리기»가 없다(올리면 코치 자료로 간다)');
-  assert.notEqual(s.filters,'none','검색 · 정렬은 코치 자료와 같다');
+  assert.equal(await c.locator('#commSearch').isVisible(),true,'전술노트 검색을 사용할 수 있다');
+  if(size==='phone'){
+    await c.click('#commFiltBtn');
+    await c.waitForSelector('#commFiltSheet:not([hidden])');
+    assert.equal(await c.locator('#cfsSort button').first().isVisible(),true,'휴대폰 정렬은 필터 시트에서 연다');
+    await c.locator('#cfsSort button').first().click();
+    await c.locator('#commFiltSheet .ps-fsheet-x').click();
+  }else{
+    assert.equal(await c.locator('#cfSortSel').isVisible(),true,'큰 화면 정렬을 사용할 수 있다');
+    await c.selectOption('#cfSortSel','new');
+  }
   assert.equal(s.badge,true,'필터 단추는 엘미하 칸에서 골라 둔 연령을 세지 않는다');
   assert.deepEqual(s.pickers,[false],'3.042 — 엘미하 칸에는 훈련 주제 · 연령 · 인원 고르개가 없다(골라 둔 U12 도 거르지 않는다)');
   assert.equal(s.docW,s.vw,'가로로 넘치지 않는다');
