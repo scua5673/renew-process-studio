@@ -97,10 +97,20 @@ try{
     IDBObjectStore.prototype.put=function(value,key){const result=put.apply(this,arguments);if(key==='process_coach_v1'&&this.name==='kv'&&this.transaction.db.name==='ps-store')window.__scheduleGroupPuts.push({at:performance.now(),length:String(value).length});return result;};
    },arg:null}}));
    page.setDefaultTimeout(15000);frame=await openSchedule(page,width);
-   entry.viewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight,userAgent:navigator.userAgent}));
-   entry.frameWidth=await frame.evaluate(()=>innerWidth);
-   entry.frameDisplayWidth=await page.locator('#fProcess').evaluate(el=>el.getBoundingClientRect().width);
-   assert.equal(entry.viewport.width,width,'the requested viewport is the actual layout width');assert.equal(entry.frameWidth,entry.frameDisplayWidth,'the schedule uses its actual iframe display width, after the shell rail');
+   // Read parent and child geometry together after flushing the parent layout.
+   // syncDeskScale may keep a logical 768px desktop frame and scale it to the
+   // available width; verify that actual uniform scale, without copying its
+   // device/layout branches or comparing unrelated sequential measurements.
+   const geometryReady=await page.waitForFunction(expected=>{
+    const f=document.getElementById('fProcess');if(!f?.contentDocument?.documentElement)return false;
+    const rect=f.getBoundingClientRect(),client=f.clientWidth,available=f.parentElement.clientWidth,style=getComputedStyle(f),matrix=new DOMMatrix(style.transform==='none'?undefined:style.transform);
+    const borders=['borderLeftWidth','borderRightWidth','borderTopWidth','borderBottomWidth'].map(k=>parseFloat(style[k]));
+    const value={viewport:{width:innerWidth,height:innerHeight,userAgent:navigator.userAgent},frameWidth:f.contentWindow.innerWidth,frameDisplayWidth:rect.width,frameClientWidth:client,frameDocumentWidth:f.contentDocument.documentElement.clientWidth,frameOffsetWidth:f.offsetWidth,availableWidth:available,transform:style.transform,scale:{a:matrix.a,b:matrix.b,c:matrix.c,d:matrix.d,e:matrix.e,f:matrix.f},zoom:style.zoom,borders,framesMarginLeft:getComputedStyle(f.parentElement).marginLeft,device:document.documentElement.getAttribute('data-ps-device'),layout:localStorage.getItem('cs_layout')};
+    window.__scheduleGroupGeometry=value;
+    return innerWidth===expected&&client>0&&value.frameWidth===client&&rect.width===available&&f.offsetWidth===client&&matrix.is2D&&matrix.a>0&&matrix.b===0&&matrix.c===0&&matrix.a===matrix.d&&matrix.a===available/client&&style.zoom==='1'&&borders.every(v=>v===0)?value:false;
+   },width,{polling:'raf',timeout:15000});
+   Object.assign(entry,await geometryReady.jsonValue());await geometryReady.dispose();
+   assert.equal(entry.viewport.width,width,'the requested viewport is the actual layout width');assert.equal(entry.frameWidth,entry.frameClientWidth,'the schedule uses its actual iframe layout width, after the shell rail');
    await chooseGroup(frame,width,'');const before=await sources(page,frame,fx);assertOriginals(before,initial,'initial');
    await chooseGroup(frame,width,'A팀');entry.initialNotice=await notice(frame,1,4);
    const filtered=await sources(page,frame,fx);await noWrites(before,filtered,'A filter');assertOriginals(filtered,initial,'A filter');
@@ -152,7 +162,7 @@ try{
    assert.deepEqual(logs.filter(x=>x.type==='pageerror'),[]);
    Object.assign(entry,{passed:true,viewOnlyNoScheduleWrites:true,authoredRecords:6,programs:6,strictFilter:true,allRestoresView:true,reloadPreserved:true,storedSignature:sha(JSON.stringify(originals(reloaded.raws.server))),scheduleServerWrites:fx.writes.filter(x=>x.k===KEY).length});
    console.log(JSON.stringify({engine,width,passed:true,serverConfirmed:true,initialNotice:entry.initialNotice,afterTransferNotice:entry.afterTransferNotice}));
-  }catch(error){entry.error={name:error.name,message:error.message,stack:error.stack};entry.logs=logs.slice(-30);if(page)await page.screenshot({path:path.join(OUT,'failure-'+engine+'-'+width+'.png')}).catch(()=>{});if(page&&frame)entry.failureSources=await sources(page,frame,fx).catch(e=>({error:e.message}));throw error;
+  }catch(error){entry.error={name:error.name,message:error.message,stack:error.stack};entry.logs=logs.slice(-30);if(page){entry.lastGeometry=await page.evaluate(()=>window.__scheduleGroupGeometry).catch(()=>null);await page.screenshot({path:path.join(OUT,'failure-'+engine+'-'+width+'.png')}).catch(()=>{});}if(page&&frame)entry.failureSources=await sources(page,frame,fx).catch(e=>({error:e.message}));throw error;
   }finally{write();if(context)await context.close();await fx.close();}
  }
  report.passed=true;
