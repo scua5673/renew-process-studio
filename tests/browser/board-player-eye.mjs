@@ -30,6 +30,61 @@ async function seed(f){
   await f.waitForFunction(()=>!window.__animExport&&!_boardDraftT);
 }
 async function original(f){return f.evaluate(()=>JSON.stringify({snap:captureSnap(),frames:anim.frames,active:animActive,selection:sel&&sel.ref.id}));}
+async function controlsClear(f,touch){
+  const boxes=await f.evaluate(()=>{
+    const rect=id=>{const r=document.getElementById(id).getBoundingClientRect();return {id,x:r.x,y:r.y,right:r.right,bottom:r.bottom,w:r.width,h:r.height};};
+    return {w:innerWidth,h:innerHeight,canvas:rect('peCanvas'),buttons:['peLeft','peFront','peRight'].map(rect)};
+  });
+  assert.ok(boxes.canvas.h>60,JSON.stringify(boxes));
+  for(const b of boxes.buttons){
+    assert.ok(b.y>=boxes.canvas.bottom-1,'look controls never cover the pitch '+JSON.stringify(boxes));
+    assert.ok(b.x>=0&&b.right<=boxes.w+1&&b.bottom<=boxes.h+1,JSON.stringify(boxes));
+    if(touch)assert.ok(b.h>=44&&b.w>=44,'touch targets remain at least 44px '+JSON.stringify(b));
+  }
+}
+async function touchChecks(page,context,f,size){
+  const stable=()=>f.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+  async function tapPoint(x,y){
+    if(engine==='webkit'){
+      const v=await page.evaluate(()=>({x:visualViewport.offsetLeft,y:visualViewport.offsetTop,s:visualViewport.scale}));
+      x=(x-v.x)*v.s;y=(y-v.y)*v.s;
+    }
+    await page.touchscreen.tap(x,y);await stable();
+  }
+  async function tap(id){const r=await f.locator('#'+id).boundingBox();await tapPoint(r.x+r.width/2,r.y+r.height/2);}
+  await tap('peFront');await tap('peRight');
+  assert.equal(await f.locator('#psEyeDialog').getAttribute('data-head'),'30','native touch activates look controls');
+  await tap('peCompare');
+  const target=await f.evaluate(()=>{
+    const c=document.getElementById('peMap'),w=c.clientWidth,h=c.clientHeight,pad=w>260?22:13,p=state.players.find(p=>p.id==='eye1'),pr=PR(),unit=mppNow(),s=Math.min((w-2*pad)/(pr.PW/unit),(h-2*pad)/(pr.PH/unit));
+    return {x:w/2+(p.x-pr.CX)/unit*s,y:h/2+(p.y-pr.CY)/unit*s};
+  });
+  const map=await f.locator('#peMap').boundingBox();await tapPoint(map.x+target.x,map.y+target.y);
+  assert.equal(await f.locator('#psEyeDialog').getAttribute('data-player'),'eye1','native map tap changes the viewing player');
+  await f.locator('#pePlayer').selectOption('eye6');await tap('peEyeOnly');
+  if(engine==='chromium'){
+    const cdp=await context.newCDPSession(page),r=await f.locator('#peCanvas').boundingBox(),x=r.x+r.width*.35,y=r.y+r.height*.4;
+    await f.evaluate(()=>{window.__eyeTouches=[];document.getElementById('peCanvas').addEventListener('pointerdown',e=>__eyeTouches.push({type:e.pointerType,trusted:e.isTrusted}));});
+    const point=(id,dx=0,dy=0)=>({id,x:x+dx,y:y+dy,radiusX:4,radiusY:4});
+    const send=(type,touchPoints)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints});
+    await send('touchStart',[point(1)]);
+    await send('touchStart',[point(1),point(2,45,15)]);
+    await send('touchMove',[point(1),point(2,65,15)]);await stable();
+    assert.equal(await f.locator('#psEyeDialog').getAttribute('data-head'),'0','second finger does not take over the camera');
+    await send('touchEnd',[point(1)]);
+    await send('touchMove',[point(1,80)]);await stable();
+    assert.equal(await f.locator('#psEyeDialog').getAttribute('data-head'),'-20','first finger retains drag ownership');
+    assert.equal(await f.locator('#psEyeDialog').getAttribute('data-body'),'0');
+    await send('touchCancel',[]);await tap('peFront');
+    await send('touchStart',[point(3)]);await send('touchMove',[point(3,40)]);await send('touchEnd',[]);await stable();
+    assert.equal(await f.locator('#psEyeDialog').getAttribute('data-head'),'-10','a new drag works after touch cancellation');
+    assert.ok((await f.evaluate(()=>__eyeTouches)).every(e=>e.type==='touch'&&e.trusted),'browser-generated touch events, not synthetic dispatchEvent');
+    await cdp.detach();await tap('peFront');
+  }
+  await page.setViewportSize(size==='ipad'?{width:820,height:1100}:{width:812,height:375});await stable();await controlsClear(f,true);
+  await page.screenshot({path:path.join(SHOTS,'player-eye-rotated-'+size+'-'+engine+'.png')});
+  await page.setViewportSize(SIZES[size].ctx.viewport);await stable();await controlsClear(f,true);
+}
 try{
   browsers[engine]=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath(),args:['--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader']}:{})});
   for(const size of modes){
@@ -77,6 +132,8 @@ try{
       await page.screenshot({path:path.join(SHOTS,'player-eye-compare-'+size+'-'+engine+'.png')});
       await f.locator('#peEyeOnly').click();await page.waitForTimeout(350);
       await page.screenshot({path:path.join(SHOTS,'player-eye-'+size+'-'+engine+'.png')});
+      await controlsClear(f,size!=='desktop');
+      if(size!=='desktop'){await touchChecks(page,context,f,size);assert.equal(await original(f),before,'touch and rotation leave board data unchanged');}
       if(size==='desktop'){
         // Actual keyboard events must never reach board deletion / page / scene shortcuts.
         await f.locator('#peFront').focus();
