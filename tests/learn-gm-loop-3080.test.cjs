@@ -45,7 +45,7 @@ test('a game-model phase opens community filtered to the same standard sub-phase
 test('the learning home shows «나의 코칭 고리» and points at the first empty step',()=>{
   const code=learn.slice(learn.indexOf('var LOOP_CORE='),learn.indexOf('function loopVaultFetch('));
   assert.match(learn,/function loopHtml\(\)\{/);
-  assert.match(learn,/if\(window\.LR_STUDIO&&\(S\.role!=='player'\|\|myGameModel\(\)\)\)\{ h\+=loopHtml\(\); loopVaultFetch\(\); \}/);
+  assert.match(learn,/if\(window\.LR_STUDIO&&\(S\.role!=='player'\|\|myGameModel\(\)\)\)\{ h\+=.*?<details class="learn-application">.*?; h\+=loopHtml\(\); loopVaultFetch\(\); h\+=.*?; \}/);
   assert.ok(code.includes("['ao','공격 조직'],['do','수비 조직'],['dt','공격 → 수비 전환'],['at','수비 → 공격 전환']"));
   assert.match(app,/else if\(_sg==='mygm'\)\{ currentTeamKey=''; showApp\('gamemodel'\); \}/);
 });
