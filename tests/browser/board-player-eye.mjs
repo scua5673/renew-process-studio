@@ -154,11 +154,33 @@ try{
         await f.locator('.pe-settings summary').click();await f.locator('#peHeight').fill('1.4');await f.locator('#peFov').fill('70');
         assert.equal(await f.locator('#peHeightValue').innerText(),'1.40m');await f.locator('.pe-settings summary').click();
       }
+      // Quality and stadium are viewer-local; their controls remain reachable on touch layouts.
+      await f.locator('.pe-settings summary').click();
+      await f.locator('#peQuality').selectOption('light');
+      assert.equal(await f.locator('#psEyeDialog').getAttribute('data-quality'),'light');
+      assert.equal(await f.locator('#peQualityValue').innerText(),'경량');
+      const lightPixels=await f.evaluate(()=>{const c=document.getElementById('peCanvas');return c.width*c.height;});
+      assert.ok(lightPixels<=600000,'drawing resolution obeys the light budget');
+      await f.locator('#peStadium').uncheck();assert.equal(await f.locator('#psEyeDialog').getAttribute('data-stadium'),'false');
+      await f.locator('#peStadium').check();
+      await f.locator('#peQuality').selectOption('full');assert.equal(await f.locator('#psEyeDialog').getAttribute('data-quality'),'full');
+      await f.locator('#peQuality').selectOption('auto');assert.equal(await f.locator('#psEyeDialog').getAttribute('data-quality-mode'),'auto');
+      await f.locator('.pe-settings summary').click();
       await f.locator('#peClose').click();assert.equal(await original(f),before,'viewer close restores the identical untouched board');
       // Resource lifecycle and keyboard escape; repeated opening must not leave overlays behind.
       for(let i=0;i<2;i++){await enter();await f.waitForFunction(()=>document.getElementById('psEyeDialog')?.dataset.ready==='true');await page.keyboard.press('Escape');assert.equal(await f.locator('#psEyeDialog').count(),0);}
       assert.equal(await original(f),before);
       if(size==='desktop'){
+        // Deterministic pressure verifies the playback-to-policy wiring without claiming device FPS.
+        await f.evaluate(()=>{window.__eyeQualityCreate=PSPlayerEyeQuality.create;window.__eyeQualitySamples=0;PSPlayerEyeQuality.create=function(){const q=__eyeQualityCreate(),observe=q.observe;q.observe=function(){__eyeQualitySamples++;return observe(35,80);};return q;};});
+        await enter();await f.waitForFunction(()=>document.getElementById('psEyeDialog')?.dataset.ready==='true');
+        await f.locator('#pePlayer').selectOption('eye8');await f.locator('#peSpeed').selectOption('.5');await f.locator('#pePlay').click();
+        await f.waitForFunction(()=>document.getElementById('psEyeDialog')?.dataset.quality==='light');
+        assert.ok(await f.evaluate(()=>__eyeQualitySamples>=24),'only sustained playback triggers automatic simplification');
+        assert.equal(await f.locator('#psEyeDialog').getAttribute('data-quality-mode'),'auto');
+        assert.equal(await f.locator('#psEyeDialog').getAttribute('data-player'),'eye8');
+        await f.locator('#peClose').click();await f.evaluate(()=>{PSPlayerEyeQuality.create=__eyeQualityCreate;delete window.__eyeQualityCreate;});
+        assert.equal(await original(f),before,'automatic simplification leaves all original data unchanged');
         await f.evaluate(()=>{window.__eyeTestPitchN=state.pitchN;state.pitchN=2;});
         await enter();assert.equal(await f.locator('#psEyeDialog').count(),0,'multiple pitch scales are not shown as a false one-pitch view');
         await f.evaluate(()=>{state.pitchN=window.__eyeTestPitchN;delete window.__eyeTestPitchN;});
