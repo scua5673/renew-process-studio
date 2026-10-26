@@ -17,3 +17,10 @@ Physical iPad termination remains unverified. Investigate only new evidence or c
 The tablet event followed a quota failure, with age 20 seconds and loaded=1. This establishes neither an OS memory kill nor the cause of a physical iPad termination. Desktop WebKit fixture observations do not replace physical-device evidence.
 
 Status: fix prepared; end-to-end verification and normal staging/promotion pipeline pending.
+
+The first staging push CI failed in the new browser test after reload: its
+readiness predicate accessed `PSSync` before that document exposed the API.
+The exact PR CI had passed, so the staging failure is preserved separately.
+The readiness test must wait for the API's existence and then its original
+unlocked/non-booting conditions; no product guard or preservation assertion is
+weakened. This follow-up changes tests/documentation only and retains 3.183.
