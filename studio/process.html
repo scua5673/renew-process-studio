@@ -4390,11 +4390,11 @@ function wksFillRender(keep,focus){
     var own=[]; try{ own=Array.isArray(tr&&tr.grp)?tr.grp:((tr&&tr.grp)?[tr.grp]:[]); }catch(_){}
     var lbl=L.length?L.map(schedGroupLabel).join(' · '):'팀 공통';
     h+='<div class="wf-sec" id="wfSec-grp"><div class="pksub sm">참여 팀 <span class="cnt">'+wkbdEsc(lbl)+'</span></div><div class="fmtpick">'
-      + (function(){ try{ return schedGroups().filter(function(g){return !PSTeamAudience.legacy(g,schedAudienceDoc().meta)||own.indexOf(g)>=0;}).map(function(g){
+      + (function(){ try{ return schedTeamOptions().map(function(g){
             return '<button class="fp'+(own.indexOf(g)>=0?' on':'')+'" onclick="wksFillGrp(\''+_fillEsc(g)+'\')">'+wkbdEsc(schedGroupLabel(g))+'</button>'; }).join(''); }catch(_){ return ''; } })()
       /* 2.385 — 팀 공통을 **마지막**에(사용자). 조를 고르는 게 보통이고 팀 공통은 그 예외라 뒤가 맞다 */
       + '<button class="fp'+(own.length?'':' on')+'" onclick="wksFillGrp(\'\')">팀 공통</button>'
-      + '</div></div>';
+      + '</div>'+schedLegacyTeamButtons(own)+'</div>';
     if(!__fillNoSes)h+=schedFillYears(tr);
   })();
 

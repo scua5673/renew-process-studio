@@ -30,6 +30,7 @@ function tmSchoolYearButton(p){
 }
 function tmSchoolYearBar(){
   var anchor=document.getElementById('grpChips');if(!anchor)return;
-  var bar=document.getElementById('tmSchoolYears');if(!bar){bar=document.createElement('div');bar.id='tmSchoolYears';bar.className='tm-grpbar';bar.setAttribute('aria-label','학년 보기');(anchor.closest('.tm-workbar')||anchor).after(bar);}bar.innerHTML='<span style="align-self:center;margin-right:4px">학년</span>';
-  ['', '1','2','3'].forEach(function(y){var b=document.createElement('button');b.type='button';b.className='btn sm'+(tmSchoolYearFilter===y?' primary':'');b.textContent=y?y+'학년':'전체 학년';b.onclick=function(){tmSchoolYearFilter=y;renderTeam();};bar.appendChild(b);});
+  var bar=document.getElementById('tmSchoolYears');if(!bar){bar=document.createElement('div');bar.id='tmSchoolYears';anchor.after(bar);}bar.replaceChildren();
+  var b=document.createElement('button');b.type='button';b.className='btn sm'+(tmSchoolYearFilter?' primary':'');b.textContent=(tmSchoolYearFilter?tmSchoolYearFilter+'학년':'전체 학년')+' ▾';b.setAttribute('aria-label','학년 보기');
+  b.onclick=function(){psPickOpen(b,['','1','2','3'].map(function(y){return {v:y,lb:y?y+'학년':'전체 학년'};}),tmSchoolYearFilter,function(y){tmSchoolYearFilter=y;renderTeam();},'학년 보기');};bar.appendChild(b);
 }

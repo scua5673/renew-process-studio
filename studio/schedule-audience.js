@@ -3,6 +3,10 @@ var __schedYears=[];
 function schedAudienceDoc(){try{return JSON.parse(localStorage.getItem('scout_tool_v1')||'null')||{};}catch(_){return {};}}
 function schedGroupLabel(g){return PSTeamAudience.label(g,schedAudienceDoc().meta);}
 function schedTeamOptions(){var meta=schedAudienceDoc().meta;return schedGroups().filter(function(g){return !PSTeamAudience.legacy(g,meta);});}
+function schedLegacyTeamButtons(own){
+  var groups=schedGroups().filter(function(g){return PSTeamAudience.legacy(g);});if(!groups.length)return '';
+  return '<div class="pksub sm">기존 학년 이름 조</div><div class="fmtpick">'+groups.map(function(g){return '<button class="fp'+(own.indexOf(g)>=0?' on':'')+'" onclick="wksFillGrp(\''+_fillEsc(g)+'\')">'+wkbdEsc(schedGroupLabel(g))+'</button>';}).join('')+'</div><small>예전에 만든 조의 배정을 유지합니다. 아래 참여 학년과는 별개입니다.</small>';
+}
 function schedYearButtons(selected,action){
   var ys=PSTeamAudience.years(selected),h='<button type="button" class="fp'+(!ys.length?' on':'')+'" aria-pressed="'+(!ys.length)+'" onclick="'+action+'(\'\')">전체 학년</button>';
   ['1','2','3'].forEach(function(y){var on=ys.indexOf(y)>=0;h+='<button type="button" class="fp'+(on?' on':'')+'" aria-pressed="'+on+'" onclick="'+action+'(\''+y+'\')">'+y+'학년</button>';});return h;
