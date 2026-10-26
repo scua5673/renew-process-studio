@@ -48,6 +48,30 @@ test('edits remain unsaved until explicit save',async()=>{
 test('same account resumes a private working board across a team switch',async()=>{
  const h=harness();await h.boot();h.c.state=snap(25);h.c.boardSaveLive();await h.c.boardSaveExplicit();const pending=copy(h.record());await ticks();h.switch({active:'team-b',seal:'seal-b',switchEpoch:'2'});h.c.boardPrivateAuthChanged();await ticks();assert.equal(h.c.state.players[0].x,25);assert.equal(h.record().uid,pending.uid);assert.equal(h.record().wid,'personal-a');
 });
+async function guardedDraft(){
+ const h=harness(),initial=h.owner();h.switch({seal:JSON.stringify({uid:initial.uid,wid:initial.active})});await h.boot();h.c.state=snap(521);h.c._boardUserTouched=true;h.c.boardSaveLive();h.c.boardDraftWriteNow=()=>false;h.c.boardDraftKey=o=>h.c.boardPrivateKey(o)+':unsaved';
+ h.c.PSBoardDraft.install(h.c);await h.c.psFlushPendingReady();
+ const o=h.owner(),g={v:1,token:'synthetic-switch',from:o.active,to:'team-b',epoch:'synthetic-switch:epoch',at:Date.now()};
+ h.ls.set('ps_active_ws',o.active);h.ls.set('ps_cache_owner_v1',o.seal);h.ls.set('ps_ws_switch_epoch_v1',g.epoch);h.ls.set('ps_ws_switch_guard_v1',JSON.stringify(g));
+ h.c.parent.PSSync.session=()=>({uid:o.uid});h.c.parent.PSSync.boardLive.owner=()=>null;
+ return {h,o,g,generation:h.c._boardPrivateGeneration,draft:h.idb.get(h.c.boardDraftKey(o))};
+}
+test('the actual intentional source guard suspends writes without invalidating an unchanged exact draft receipt',async()=>{
+ const {h,o,generation,draft}=await guardedDraft(),before=h.writes.length;h.c.boardPrivateAuthChanged();
+ assert.equal(h.c._boardPrivateLoaded,false);assert.equal(h.c.boardPrivateCurrent(o),false);assert.equal(h.c._boardPrivateGeneration,generation,'a proven source suspension preserves the existing read-only receipt generation');
+ await h.c.psFlushPendingReady();assert.equal(h.c.psHasPending(),false);assert.equal(h.writes.length,before,'guarded receipt verification performs no new writes');assert.equal(h.idb.get(h.c.boardDraftKey(o)),draft);
+ h.c.state=snap(522);await assert.rejects(h.c.psFlushPendingReady(),/초안/);assert.equal(h.writes.length,before,'a changed guarded body cannot reuse the receipt or write');
+});
+test('a real same-source cache recertification under the guard preserves only the exact read-only draft receipt',async()=>{
+ const {h,o,generation,draft}=await guardedDraft(),before=h.writes.length;h.ls.set('ps_cache_owner_v1',JSON.stringify({uid:o.uid,wid:o.active,at:Date.now(),nonce:'synthetic-recertification'}));h.c.boardPrivateAuthChanged();
+ assert.equal(h.c._boardPrivateGeneration,generation);assert.equal(h.c._boardPrivateLoaded,false);assert.equal(h.c.boardPrivateCurrent(o),false);await h.c.psFlushPendingReady();assert.equal(h.c.psHasPending(),false);assert.equal(h.writes.length,before);assert.equal(h.idb.get(h.c.boardDraftKey(o)),draft);
+});
+for(const invalid of ['absent','expired','from','to','epoch','seal','seal-uid','seal-team','old-seal','active','malformed'])test('an unproven '+invalid+' suspension still invalidates the old draft generation',async()=>{
+ const {h,o,g,generation}=await guardedDraft();
+ if(invalid==='absent')h.ls.delete('ps_ws_switch_guard_v1');if(invalid==='expired')g.at-=100000;if(invalid==='from')g.from='other-team';if(invalid==='to')g.to=g.from;
+ if(['expired','from','to'].includes(invalid))h.ls.set('ps_ws_switch_guard_v1',JSON.stringify(g));if(invalid==='epoch')h.ls.set('ps_ws_switch_epoch_v1','other-epoch');if(invalid==='seal')h.ls.set('ps_cache_owner_v1','other-seal');if(invalid==='seal-uid')h.ls.set('ps_cache_owner_v1',JSON.stringify({uid:'other-account',wid:o.active}));if(invalid==='seal-team')h.ls.set('ps_cache_owner_v1',JSON.stringify({uid:o.uid,wid:'other-team'}));if(invalid==='old-seal')h.c._boardPrivateOwner.seal='malformed-old-seal';if(invalid==='active')h.ls.set('ps_active_ws','other-team');if(invalid==='malformed')h.ls.set('ps_ws_switch_guard_v1','{');
+ h.c.boardPrivateAuthChanged();assert.ok(h.c._boardPrivateGeneration>generation);await assert.rejects(h.c.psFlushPendingReady(),/초안/);
+});
 test('account switch clears previous canvas, pages, animation and undo without reading previous account drafts',async()=>{
  const h=harness();h.setServer({raw:payload(31),cupd:3});await h.boot();const old=copy(h.record());h.c.undoStack=[snap(90)];h.switch({uid:'synthetic-user-b',wid:'personal-b',seal:'seal-b'});h.setServer({raw:null,cupd:null});h.c.boardPrivateAuthChanged();assert.equal(h.c.state.players.length,0);assert.equal(h.c.anim.frames.length,0);assert.equal(h.c.pages,null);assert.equal(h.c.undoStack.length,0);await ticks();assert.equal(JSON.parse(h.ls.get('ps_private_board_draft_v1:synthetic-user-a')||h.idb.get('ps_private_board_draft_v1:synthetic-user-a')).raw,old.raw);
 });

@@ -5821,6 +5821,9 @@ window.__buildScoutForm=function(k){
   /* 2.349 — 하단 바 높이를 재서 `--ps-seg-h` 로. iframe 앱(IDP·학습)이 제 바를 이 위에 올린다 */
   (function(){
     var seg=document.getElementById('appSeg'),teamBottom=document.getElementById('teamBottom'); if(!seg)return;
+    var measureQueued=false;
+    function css(k,v){var s=document.documentElement.style;if(s.getPropertyValue(k)!==v)s.setProperty(k,v);}
+    function queueMeasure(){if(measureQueued)return;measureQueued=true;requestAnimationFrame(function(){measureQueued=false;measure();});}
     function measure(){
       try{
         /* The quiet footer sits above whichever navigation is actually visible. */
@@ -5828,15 +5831,15 @@ window.__buildScoutForm=function(k){
         [seg,teamBottom].forEach(function(nav){
           if(nav&&nav.offsetHeight>0&&getComputedStyle(nav).position==='fixed')footerNavHeight=Math.max(footerNavHeight,nav.getBoundingClientRect().height);
         });
-        document.documentElement.style.setProperty('--ps-footer-nav-h',footerNavHeight>0?footerNavHeight+'px':'env(safe-area-inset-bottom,0px)');
+        css('--ps-footer-nav-h',footerNavHeight>0?footerNavHeight+'px':'env(safe-area-inset-bottom,0px)');
         if(getComputedStyle(seg).position!=='fixed'){ document.documentElement.style.removeProperty('--ps-seg-h'); return; }
         var h=seg.offsetHeight;
-        if(h>0)document.documentElement.style.setProperty('--ps-seg-h',h+'px');
+        if(h>0)css('--ps-seg-h',h+'px');
       }catch(_){}
     }
     measure();
-    try{ if(window.ResizeObserver){var navSize=new ResizeObserver(measure);navSize.observe(seg);if(teamBottom)navSize.observe(teamBottom);} }catch(_){}
-    window.addEventListener('resize',measure,{passive:true});
+    try{ if(window.ResizeObserver){var navSize=new ResizeObserver(queueMeasure);navSize.observe(seg);if(teamBottom)navSize.observe(teamBottom);} }catch(_){}
+    window.addEventListener('resize',queueMeasure,{passive:true});
     window.addEventListener('orientationchange',function(){setTimeout(measure,120);});
     setTimeout(measure,300); setTimeout(measure,1200);   /* 폰트·부팅 뒤 한 번 더 */
   })();

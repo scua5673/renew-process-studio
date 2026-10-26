@@ -93,6 +93,34 @@ test('the save strip and the shell say what to do instead of «저장됨» over 
  assert.match(app,/PSAutosaveStatus\.combine\(out,localSaveStatus&&localSaveStatus\.read\(\)\)/,'the current observer combines exact child durability first');
 });
 
+for(const touched of [false,true])test('a delayed draft read with '+(touched?'real edits':'only derived rendering')+' does not reuse a stale write baseline',async()=>{
+ const raw=JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(40,1),at:Date.now()}),key='ps_private_board_draft_v1:synthetic-user-a:unsaved';
+ const h=harness({serverRaw:payload(12,1000),idb:[[key,raw]]});await h.boot();h.c.boardDraftBarHide();let observed=0;
+ const get=h.c.storage.get,observe=h.c.__psBoardDraft.observe;h.c.__psBoardDraft.observe=function(...args){observed++;return observe.apply(this,args);};
+ h.c.storage.get=async k=>{const v=await get(k);if(k===key){h.c._boardPrivateEditSeq++;h.c._boardManualDirty=true;h.c._boardUserTouched=touched;if(touched)h.c.state=snap(99);}return v;};
+ const shown=await h.c.boardDraftOffer(h.c._boardPrivateOwner,h.record());assert.equal(shown,!touched);assert.equal(observed,touched?0:1,'only an unchanged unedited source may establish a baseline for restoring the draft');assert.equal(h.idb.get(key),raw);
+ assert.equal(!!h.c.__boardDraftPending,!touched);assert.equal(h.c.state.players[0].x,touched?99:12,'readonly discovery cannot replace the current canvas');
+});
+for(const change of ['owner','generation','mirror'])test('a changed '+change+' still vetoes delayed recovery discovery',async()=>{
+ const raw=JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(40,1),at:Date.now()}),key='ps_private_board_draft_v1:synthetic-user-a:unsaved';
+ const h=harness({serverRaw:payload(12,1000),idb:[[key,raw]]});await h.boot();h.c.boardDraftBarHide();const get=h.c.storage.get;
+ h.c.storage.get=async k=>{const v=await get(k);if(k===key){if(change==='owner')h.c.parent.PSSync.boardLive.owner=()=>null;if(change==='generation')h.c._boardPrivateGeneration++;if(change==='mirror')h.ls.set(key,'synthetic concurrent original');}return v;};
+ assert.equal(await h.c.boardDraftOffer(h.c._boardPrivateOwner,h.record()),false);assert.equal(h.c.__boardDraftPending,null);assert.equal(h.idb.get(key),raw);
+});
+for(const action of ['save','discard'])test('a delayed recovery read cannot reoffer a draft after a newer '+action,async()=>{
+ const raw=JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(40,1),at:Date.now()}),key='ps_private_board_draft_v1:synthetic-user-a:unsaved';
+ const h=harness({serverRaw:payload(12,1000),idb:[[key,raw]]});await h.boot();h.c.boardDraftBarHide();const get=h.c.storage.get,chosen=h.record();
+ h.c.storage.get=async k=>{const v=await get(k);if(k===key){if(action==='save'){h.edit(99);assert.equal(await h.c.boardSaveExplicit(),true);}else{h.c._boardPrivateEditSeq++;await h.c.boardDraftClear(h.c._boardPrivateOwner);}}return v;};
+ assert.equal(await h.c.boardDraftOffer(h.c._boardPrivateOwner,chosen),false);assert.equal(h.c.__boardDraftPending,null);assert.equal(h.idb.has(key),false,'the explicitly retired record must stay retired');assert.equal(h.c.state.players[0].x,action==='save'?99:12);
+});
+test('a draft discovered during startup rendering can be restored and durably flushed with all pages and frames',async()=>{
+ const live=JSON.parse(payload(40,1));live.animFrames=[{snap:snap(40)},{snap:snap(41)}];live.boardPages={idx:1,pages:[{name:'original one',snap:snap(40)},{name:'original two',snap:snap(42)}]};
+ const baseline=payload(12,1000),key='ps_private_board_draft_v1:synthetic-user-a:unsaved',raw=JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:JSON.stringify(live),at:Date.now()}),h=harness({serverRaw:baseline,idb:[[key,raw]]});
+ const get=h.c.storage.get;let first=true;h.c.storage.get=async k=>{const v=await get(k);if(k===key&&first){first=false;h.c._boardPrivateEditSeq++;h.c._boardManualDirty=true;h.c._boardUserTouched=false;}return v;};
+ await h.boot();assert.ok(h.c.__boardDraftPending);assert.equal(h.c.__boardDraftRestore(),true);await h.c.psFlushPendingReady();assert.equal(h.c.psHasPending(),false);
+ const saved=JSON.parse(JSON.parse(h.idb.get(key)).raw);assert.deepEqual(saved.boardPages,live.boardPages);assert.deepEqual(saved.animFrames,live.animFrames);assert.equal(saved.snap.players[0].x,40);assert.equal((await h.c.parent.PSSync.boardLive.get()).raw,baseline,'a restored local draft never implicitly overwrites the manual server board');
+});
+
 /* ── 3.038 코드 리뷰에서 확인된 경로 ── */
 const now=Date.now();
 const newerDraft=(x,at)=>[['ps_private_board_draft_v1:synthetic-user-a:unsaved',JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(x,now-1000),at:at||now})]];

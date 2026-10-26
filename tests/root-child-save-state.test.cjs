@@ -152,3 +152,29 @@ test('opening an archive cannot make the shipped footer hide unconfirmed local c
   shown=combine(archived,{failed:true});c.draw();assert.equal(tx.textContent,'기기에 저장하지 못했어요');
   shown=combine(archived,{});c.draw();assert.equal(tx.textContent,'서버 저장 확인','A seen archive may be quiet only when the current save is confirmed');
 });
+
+test('an exact schedule receipt never claims the unsupported live team scope is server-confirmed',async()=>{
+  const f=fixture(),schedule=f.child(f.root,'schedule'),team=f.child(f.root,'team');
+  schedule.scopes.schedule='saved';schedule.win.localStorage={getItem:()=>'{"scheduleRev":2}'};team.scopes.team='saved';
+  f.root.win.PSSync={confirmedValue:(key,raw)=>key==='process_coach_v1'&&raw==='{"scheduleRev":2}'};
+  const m=observeShell(f.root.win,()=>{});m.read();await turn();const state=m.read(),shown=combine(view(server),state);
+  assert.equal(state.unconfirmed,false,'The schedule itself has an exact receipt');assert.equal(state.localOnly,true);
+  assert.equal(shown.text,'기기에 저장됨');assert.equal(shown.complete,false);assert.doesNotMatch(shown.detail,/기기 전용/);m.dispose();
+});
+
+function footerMeasure(){
+  const source=fs.readFileSync(require.resolve('../studio/app.html'),'utf8'),start=source.indexOf("  (function(){\n    var seg=document.getElementById('appSeg'),teamBottom=document.getElementById('teamBottom')"),end=source.indexOf('  function syncBoardMode',start);
+  assert.ok(start>0&&end>start);const values={},writes=[],frames=[];let height=57;
+  const seg={offsetHeight:57,getBoundingClientRect:()=>({height}),fixed:true},teamBottom={offsetHeight:0,fixed:false};
+  const style={setProperty(k,v){values[k]=v;writes.push([k,v]);},getPropertyValue:k=>values[k]||'',removeProperty(k){delete values[k];}};
+  const c=vm.createContext({document:{getElementById:id=>id==='appSeg'?seg:teamBottom,documentElement:{style}},getComputedStyle:e=>({position:e.fixed?'fixed':'static'}),ResizeObserver:function(cb){this.observe=()=>{};c.observer=cb;},requestAnimationFrame:fn=>(frames.push(fn),frames.length),setTimeout(){},addEventListener(){}});c.window=c;
+  vm.runInContext(source.slice(start,end),c);return {c,writes,frames,height(v){height=v;seg.offsetHeight=Math.round(v);}};
+}
+test('footer geometry notifications are coalesced outside the ResizeObserver delivery cycle',()=>{
+  const h=footerMeasure(),before=h.writes.length;h.height(60);
+  h.c.observer();h.c.observer();h.c.observer();assert.equal(h.writes.length,before,'The observer itself must not synchronously mutate layout');
+  assert.equal(h.frames.length,1);h.frames.shift()();assert.equal(h.writes.length,before+2);
+});
+test('an unchanged footer measurement does not rewrite the same CSS properties',()=>{
+  const h=footerMeasure(),before=h.writes.length;h.c.observer();if(h.frames.length)h.frames.shift()();assert.equal(h.writes.length,before);
+});

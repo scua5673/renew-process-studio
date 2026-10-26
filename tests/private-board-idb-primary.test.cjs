@@ -58,6 +58,10 @@ test('ordinary unsaved edits and already committed lifecycle flushes never recre
  const h=draftHarness();await h.api.ready();assert.equal(h.local.has(h.key),false);assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);await h.api.write({lifecycle:true});assert.equal(h.writes.filter(x=>x[0]==='local').length,0);
  h.edit();await h.api.ready();assert.equal(h.local.size,0);assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);assert.equal(h.api.pending(),false);
 });
+for(const path of ['ready','write','guarded-ready'])test('a failed '+path+' receipt recheck invalidates local durability and keeps the barrier pending',async()=>{
+ const h=draftHarness();await h.api.ready();assert.equal(h.api.snapshot().localDurable,true);h.idb.delete(h.key);if(path==='guarded-ready')h.lock();
+ await assert.rejects(path==='write'?h.api.write():h.api.ready());assert.equal(h.api.snapshot().localDurable,false);assert.equal(h.api.pending(),true);assert.equal(h.api.snapshot().failed,true);assert.equal(h.states.at(-1),'fail');assert.equal(h.idb.has(h.key),false,'verification must not recreate a missing original from stale memory');
+});
 test('two IDB-only edits in the same clock tick receive monotonically selectable draft receipts',async()=>{
  const h=draftHarness();h.d.now=()=>10;await h.api.ready();const before=JSON.parse(h.idb.get(h.key));h.edit();await h.api.ready();const after=JSON.parse(h.idb.get(h.key));assert.equal(after.raw,h.raw);assert.ok(after.at>before.at);assert.equal(h.local.size,0);
 });
@@ -76,6 +80,11 @@ test('a newer unsaved edit can advance its own committed CAS after the older exa
  const work=h.api.write();await tick();assert.notEqual(h.idb.get(h.key),old);h.edit();gate.resolve();await assert.rejects(work);assert.equal(h.local.get(h.key),old);assert.equal(h.api.pending(),true);
  delete h.hooks.verify;await h.api.ready();assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);assert.equal(h.local.has(h.key),false);assert.equal(h.api.pending(),false);
 });
+test('a stale source observation cannot replace own CAS provenance while an older job still verifies',async()=>{
+ const h=draftHarness(),old=h.record('{}'),gate=defer();h.idb.set(h.key,old);h.observe(null,old);h.hooks.verify=()=>gate.promise;
+ const first=h.api.write();first.catch(()=>{});await tick();const committed=h.idb.get(h.key);assert.notEqual(committed,old);h.edit();h.observe(null,old);gate.resolve();await assert.rejects(first);
+ delete h.hooks.verify;await h.api.ready();assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);assert.equal(h.api.pending(),false);assert.equal(h.local.has(h.key),false);
+});
 for(const phase of ['cas','verify'])test('a later edit can advance its own lifecycle LS source while the earlier '+phase+' is pending',async()=>{
  const h=draftHarness(),old=h.record('{}'),gate=defer();h.idb.set(h.key,old);h.observe(null,old);h.hooks[phase]=()=>gate.promise;
  const first=h.api.write();first.catch(()=>{});await tick();h.api.write({lifecycle:true}).catch(()=>{});const local=h.local.get(h.key);assert.equal(JSON.parse(local).raw,h.raw);
@@ -84,6 +93,15 @@ for(const phase of ['cas','verify'])test('a later edit can advance its own lifec
 test('different unsaved originals and the current edit survive separately, with transition blocked',async()=>{
  const h=draftHarness(),old=h.record('{"source":"LS"}'),other=h.record('{"source":"IDB"}',2);h.local.set(h.key,old);h.idb.set(h.key,other);h.observe(old,other);
  await assert.rejects(h.api.ready());assert.equal(h.local.get(h.key),old);assert.equal(h.idb.get(h.key),other);assert.equal(h.api.pending(),true);assert.ok([...h.idb].some(([k,v])=>k.includes(':kept:')&&JSON.parse(v).raw===h.raw));
+});
+for(const kind of ['different body','malformed original'])test('lifecycle preserves observed divergent '+kind+' sources before keeping the latest input separately',async()=>{
+ const h=draftHarness(),old=h.record('{"source":"LS"}'),other=kind==='different body'?h.record('{"source":"IDB"}',2):'synthetic malformed IDB source';
+ h.local.set(h.key,old);h.idb.set(h.key,other);h.observe(old,other);
+ const work=h.api.write({lifecycle:true});work.catch(()=>{});
+ assert.equal(h.local.get(h.key)===old,true,'synchronous fallback must preserve the observed LS original');assert.equal(h.idb.get(h.key)===other,true);
+ assert.ok([...h.local].some(([k,v])=>k.includes(':kept:')&&JSON.parse(v).raw===h.raw),'pagehide keeps the full latest input in a separate slot immediately');
+ await assert.rejects(work);assert.equal(h.local.get(h.key)===old,true);assert.equal(h.idb.get(h.key)===other,true);assert.equal(h.api.pending(),true);assert.equal(h.api.snapshot().localDurable,false);
+ assert.ok([...h.idb].some(([k,v])=>k.includes(':kept:')&&JSON.parse(v).raw===h.raw));
 });
 test('a synchronous lifecycle recovery does not overwrite a previously unobserved LS original',async()=>{
  const h=draftHarness(),old=h.record('{"source":"unobserved"}'),gate=defer();h.local.set(h.key,old);h.hooks.get=()=>gate.promise;

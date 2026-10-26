@@ -13,6 +13,21 @@
     for(var i=0;i<n;i++)if(a.charCodeAt(i)!==b.charCodeAt(i))return false;
     return true;
   }
+  function thumbState(w){return w.__psDraftThumbState||(w.__psDraftThumbState={epoch:0,held:0});}
+  function thumbGuard(w,readFrames){
+    var s=thumbState(w),epoch=s.epoch,frames=readFrames();
+    return function(){return !s.held&&s.epoch===epoch&&frames===readFrames();};
+  }
+  function holdThumbs(w){
+    var s=thumbState(w),released=false;s.epoch++;s.held++;
+    try{if(w.__afIdle){if(w.cancelIdleCallback)w.cancelIdleCallback(w.__afIdle);else w.clearTimeout(w.__afIdle);w.__afIdle=0;}}catch(_){}
+    try{if(w.__afWinRaf){w.clearTimeout(w.__afWinRaf);w.__afWinRaf=0;}}catch(_){}
+    return function(){if(released)return;released=true;s.held--;if(!s.held&&typeof w.__afWindow==='function')w.setTimeout(function(){if(!s.held)w.__afWindow();},0);};
+  }
+  function quiescent(w,fn){return function(){
+    var release=holdThumbs(w),work;try{work=fn.apply(this,arguments);}catch(e){release();throw e;}
+    return Promise.resolve(work).then(function(v){release();return v;},function(e){release();throw e;});
+  };}
   function status(w,scope,next,error){try{var api=w.PSSaveState;if(api)api[next](scope,error);}catch(_){} }
   function conflict(){var e=new Error('다른 창의 개인 보드를 보존합니다');e.psCode='board_private_conflict';return e;}
   function headGuard(w,o,r){
@@ -89,7 +104,7 @@
     var job=null,known=null,recovery=null,tail=Promise.resolve(),cancelEpoch=0;
     function error(){var e=new Error('작전판 초안을 기기에 보관하지 못했습니다. 다시 시도해 주세요');e.psCode='board_draft_storage';return e;}
     function changed(){var e=error();e.psConflict=true;return e;}
-    function same(j){var c=d.context();return j===job&&j.epoch===cancelEpoch&&!!c&&c.needed&&c.seq===j.seq&&c.generation===j.generation&&JSON.stringify(c.owner)===j.ownerRaw;}
+    function same(j){var c=d.context();return !!j&&j===job&&j.epoch===cancelEpoch&&!!c&&c.needed&&c.seq===j.seq&&c.generation===j.generation&&JSON.stringify(c.owner)===j.ownerRaw;}
     function body(j){var c=d.capture();return !!c&&sameBody(c.raw,j.raw);}
     function source(j){var raw=d.local.getItem(j.key);return raw===j.localBefore||raw===j.record;}
     function current(j,full){var c=d.context();if(!same(j)||c.blocked||!c.current||!source(j)||(full&&!body(j)))throw error();return true;}
@@ -116,6 +131,10 @@
       try{var r=JSON.parse(raw);if(r&&r.v===1&&r.uid===j.owner.uid&&r.wid===j.owner.wid&&typeof r.raw==='string'&&r.at>0){JSON.parse(r.raw);return r;}}catch(_){}
       return null;
     }
+    function divergent(j){
+      var n=known;if(!n||n.owner!==j.ownerRaw||n.own||n.local===null||n.idb===null||n.local===n.idb)return false;
+      var a=parse(n.local,j),b=parse(n.idb,j);return !a||!b||a.raw!==b.raw;
+    }
     function check(j,writing){
       if(!same(j)||d.context().blocked||!source(j)||!body(j))return Promise.reject(error());
       return Promise.resolve(d.storage.get(j.key)).then(function(v){
@@ -132,8 +151,13 @@
         return true;
       });
     }
+    function verify(j,writing){
+      return Promise.resolve().then(function(){return check(j,writing);}).catch(function(e){
+        if(same(j)){j.ok=false;if(d.state)d.state('fail',e);}throw e;
+      });
+    }
     function local(j){
-      current(j,true);if(!j.localOwned)throw error();
+      current(j,true);if(divergent(j))throw changed();if(!j.localOwned)throw error();
       if(d.local.getItem(j.key)!==j.record)d.local.setItem(j.key,j.record);
       if(d.local.getItem(j.key)!==j.record)throw error();current(j,true);
       // Ownership of a complete synchronous fallback is separate from an IDB
@@ -149,7 +173,7 @@
         return d.storage.get(j.key).then(function(v){
           current(j);var before=v&&v.value;before=before==null?null:before;
           if(!j.idbSeen){j.idbSeen=true;j.idbBefore=known&&known.owner===j.ownerRaw?known.idb:j.localBefore;}
-          if(known&&known.owner===j.ownerRaw&&!known.own&&known.local!==null&&known.idb!==null&&known.local!==known.idb){var a=parse(known.local,j),b=parse(known.idb,j);if(!a||!b||a.raw!==b.raw)throw changed();}
+          if(divergent(j))throw changed();
           if(before!==j.idbBefore&&before!==j.record)throw changed();
           var previous=parse(before,j);
           // Never overwrite a concurrent/future draft first seen after capture.
@@ -197,7 +221,7 @@
       // lifecycle path writes LS synchronously; ordinary committed edits do not.
       if(options&&options.lifecycle&&!j.ok)try{local(j);}catch(_){try{localRecovery(j);}catch(__){} }
       if(j.work)return j.work;
-      if(j.ok)return check(j,true);
+      if(j.ok)return verify(j,true);
       if(d.state)d.state('begin');
       var work=tail.catch(function(){}).then(function(){return persist(j);});tail=work;
       j.work=work.then(function(v){j.work=null;return v;},function(e){j.work=null;j.ok=false;if(d.state&&same(j))d.state('fail',e);throw e;});
@@ -207,13 +231,13 @@
       var c=d.context();if(!c||!c.needed)return Promise.resolve(true);
       if(c.current&&d.prepare){d.prepare();c=d.context();}
       if(c.blocked)return Promise.reject(error());
-      if(c.current)return write().then(function(){return check(job,true);});
+      if(c.current){var work=write(),j=job;return work.then(function(){return verify(j,true);});}
       // The guard permits read-only verification of an unchanged receipt.
       if(!job||!job.ok||!same(job))return Promise.reject(error());
-      return check(job,false);
+      return verify(job,false);
     }
     function pending(){var c=d.context();return !!(c&&c.needed&&(c.blocked||!job||!job.ok||!same(job)));}
-    function observe(owner,local,idb){var c=d.context();if(c&&c.current&&JSON.stringify(owner)===JSON.stringify(c.owner)&&(!job||!same(job)))known={owner:JSON.stringify(owner),local:local,idb:idb};}
+    function observe(owner,local,idb){var c=d.context();if(c&&c.current&&JSON.stringify(owner)===JSON.stringify(c.owner)&&(!job||!job.work&&!same(job)))known={owner:JSON.stringify(owner),local:local,idb:idb};}
     function clear(owner){
       var c=d.context(),ownerRaw=JSON.stringify(owner),seq=c&&c.seq,generation=c&&c.generation;
       if(!c||!c.current||JSON.stringify(c.owner)!==ownerRaw)return Promise.resolve(false);
@@ -256,18 +280,19 @@
       recoverLocal:function(k,raw,current){return w.PSStorage&&w.PSStorage.localRecovered?w.PSStorage.localRecovered(k,raw,current):false;},
       state:function(next,e){status(w,'board-draft',next,e);}
     });
+    api.write=quiescent(w,api.write);api.ready=quiescent(w,api.ready);
     var old=w.boardDraftWriteNow,flush=w.psFlushPendingReady,has=w.psHasPending;
     w.boardDraftWriteNow=function(options){
       if(!w._boardPrivateOwner)return old.apply(this,arguments);
       return api.write(options).catch(function(){return false;});
     };
-    w.psFlushPendingReady=function(){
+    w.psFlushPendingReady=quiescent(w,function(){
       try{w.clearTimeout(w._boardDraftT);w._boardDraftT=null;}catch(_){}
       // A deferred thumbnail redraw must not change the exact captured source
       // after its receipt. restoreAnimBeforeCapture preserves the edit itself.
       try{w.clearTimeout(w._boardPreviewTimer);w._boardPreviewTimer=null;}catch(_){}
       return Promise.resolve().then(function(){return flush?flush():true;}).then(api.ready).then(function(){return w.PSStorage&&w.PSStorage.sharedReady?w.PSStorage.sharedReady():true;});
-    };
+    });
     w.psHasPending=function(){return !!((has&&has())||api.pending());};
     var snap=api.snapshot;api.snapshot=function(){
       var value=snap(),r=w._boardPrivateRecord,o=w._boardPrivateOwner||w.boardPrivateOwner&&w.boardPrivateOwner(),owner=JSON.stringify(o),p=w.__psBoardPrivatePersistence,receipt=w.__psBoardPrivateReceipt;
@@ -280,5 +305,5 @@
     w.__psBoardDraft=api;
     return api;
   }
-  return {create:create,install:install,persistHead:persistHead,keepHead:keepHead};
+  return {create:create,install:install,persistHead:persistHead,keepHead:keepHead,thumbGuard:thumbGuard};
 });

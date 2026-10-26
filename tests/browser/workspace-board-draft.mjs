@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import {startFixture,openApp,SIZES,A,WT,WP} from '../fixtures/team-app.mjs';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',out=process.env.PS_TEST_OUTPUT||'/tmp/ps3169-evidence';
 fs.mkdirSync(out,{recursive:true});
@@ -29,6 +30,7 @@ try{
   console.log(JSON.stringify({engine,width,mode,stage:'open'}));
   SIZES.draft={engine,ctx:{viewport:{width,height:860},deviceScaleFactor:1}};
   const {page,context,logs}=await openApp(fx,'draft',{browsers});
+  let restoredCapture=null;
   try{
    await page.evaluate(()=>document.querySelector('#appSeg button[data-app="board"]').click());let f=await frame(page,WT);
    console.log(JSON.stringify({engine,width,mode,stage:'board-ready'}));
@@ -70,6 +72,7 @@ try{
    console.log(JSON.stringify({engine,width,mode,stage:'switch-started'}));
    if(mode==='quota-delay'){
     await f.waitForFunction(()=>window.__qaDraftWaiting);
+    await f.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
     assert.ok(await f.evaluate(()=>window.__qaDraftFaults>0),'the quota fixture actually rejected localStorage writes');
     assert.equal(await page.evaluate(()=>PSSync.activeWs()),WT);assert.equal(await page.evaluate(()=>localStorage.getItem('ps_ws_switch_guard_v1')),null,'guard waits for actual draft durability');
     assert.equal(await f.evaluate(()=>_boardPrivateLoaded&&boardManualChanged()),true);
@@ -107,8 +110,14 @@ try{
    await f.locator('#boardDraftBar .bd-keep').click();
    const clicked=await f.evaluate(()=>({ok:window.__boardDraftPending===null&&boardManualChanged(),called:window.__qaRestoreClick||null,pending:!!window.__boardDraftPending,dirty:boardManualChanged(),current:boardPrivateCurrent(_boardPrivateOwner),owner:!!boardPrivateOwner(),busy:boardDraftBusy(),loaded:_boardPrivateLoaded,view:window.__csView,classes:document.body.className,x:captureSnap().players[0]?.x}));
    assert.equal(clicked.ok,true,'the visible recovery button restores unsaved work: '+JSON.stringify(clicked));
-   const restored=await f.evaluate(()=>boardLiveCapture('board').raw);
+   restoredCapture=await f.evaluate(()=>({raw:boardLiveCapture('board').raw,seq:_boardPrivateEditSeq,generation:_boardPrivateGeneration,state:__psBoardDraft.snapshot()}));
+   const restored=restoredCapture.raw;
    assert.deepEqual(restoredBody(restored),restoredBody(expected),'restoring the offered draft returns every page, frame and board field');
+   await f.evaluate(()=>psFlushPendingReady());
+   const receipt=await f.evaluate(async()=>({pending:psHasPending(),state:__psBoardDraft.snapshot(),local:localStorage.getItem(boardDraftKey(_boardPrivateOwner)),idb:(await storage.peek(boardDraftKey(_boardPrivateOwner)))?.value??null}));
+   assert.equal(receipt.pending,false);assert.equal(receipt.state.localDurable,true);assert.equal(receipt.state.pending,false);assert.equal(receipt.state.failed,false);assert.equal(receipt.state.serverConfirmed,false);assert.equal(receipt.local,null,'a successfully restored IDB draft must not recreate its full LS copy');
+   const committed=JSON.parse(receipt.idb);assert.equal(committed.uid,A);assert.equal(committed.wid,WP);assert.deepEqual(restoredBody(committed.raw),restoredBody(expected),'the restored complete pages/frames are durably saved before another transition');
+   const restoredReceipt={medium:'idb',pending:false,localDurable:true,serverConfirmed:false,length:receipt.idb.length,bodyLength:committed.raw.length,bodyHash:crypto.createHash('sha256').update(committed.raw).digest('hex')};
    assert.equal(fx.db.get(WP+'|cs_private_board_v1').v,baseline,'unsaved draft never overwrites the explicit server board');
    assert.equal(fx.writes.filter(w=>w.k==='cs_private_board_v1').length,0);
    if(width===375||width===1280&&mode==='immediate'){
@@ -117,11 +126,12 @@ try{
     await page.screenshot({path:path.join(out,`board-draft-restored-${engine}-${width}.png`),animations:'disabled'});
    }
    assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[]);
-   results.push({width,mode,draftRetained:true,fullRestore:true,serverUnchanged:true});console.log(JSON.stringify({engine,width,mode,passed:true}));
+   results.push({width,mode,draftRetained:true,fullRestore:true,serverUnchanged:true,restoredDraftDurable:true,restoredReceipt});console.log(JSON.stringify({engine,width,mode,passed:true}));
   }catch(e){
    const state=await page.evaluate(()=>({active:window.PSSync?.activeWs(),sync:window.PSSync?.state(),guard:localStorage.getItem('ps_ws_switch_guard_v1'),lastSwitch:localStorage.getItem('ps_last_switch_err'),result:window.__qaDraftResult,booting:document.body.classList.contains('ps-booting'),board:(()=>{try{const w=document.getElementById('fBoard').contentWindow;return {loaded:w._boardPrivateLoaded,dirty:w.boardManualChanged?.(),ownerCurrent:w.boardPrivateCurrent?.(w._boardPrivateOwner),pending:w.psHasPending?.(),restoreClick:w.__qaRestoreClick};}catch(_){return null;}})()})).catch(()=>null);
    const draftFailure=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('qa-board-draft-failure')||'null')).catch(()=>null);
-   fs.writeFileSync(path.join(out,`workspace-board-draft-${engine}-failure.json`),JSON.stringify({width,mode,error:e.message,state,draftFailure,logs},null,2));
+   const restoreFailure=restoredCapture?await page.evaluate(async()=>{const w=document.getElementById('fBoard').contentWindow,key=w.boardDraftKey(w._boardPrivateOwner);return {seq:w._boardPrivateEditSeq,generation:w._boardPrivateGeneration,state:w.__psBoardDraft.snapshot(),current:w.boardLiveCapture('board').raw,local:w.localStorage.getItem(key),idb:(await w.storage.peek(key))?.value??null};}).catch(error=>({error:error.message})):null;
+   fs.writeFileSync(path.join(out,`workspace-board-draft-${engine}-failure.json`),JSON.stringify({width,mode,error:e.message,state,draftFailure,restoredCapture,restoreFailure,logs},null,2));
    await page.screenshot({path:path.join(out,`workspace-board-draft-${engine}-failure.png`)}).catch(()=>{});throw e;
   }finally{await context.close();}
  }

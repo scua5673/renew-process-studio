@@ -10,10 +10,16 @@ import {startFixture,openApp,SIZES,WT,OUT,SHOTS,root} from '../fixtures/team-app
 const engine=process.env.PS_BROWSER_ENGINE||'chromium';assert.ok(['chromium','webkit'].includes(engine));
 SIZES.saveStatus={engine,ctx:{viewport:{width:1280,height:900},deviceScaleFactor:1,hasTouch:engine==='webkit'}};
 const KEY='process_coach_v1',browsers={},hash=v=>crypto.createHash('sha256').update(String(v)).digest('hex');
-const result={engine,physicalDevice:false,source:Object.fromEntries(['studio/app.html','studio/autosave-status.js','studio/storage.js','studio/sync.js','studio/sync-confirmation.js','studio/process.html','studio/board-draft.js','studio/board.html'].map(f=>[f,hash(fs.readFileSync(path.join(root,f)))])),cases:[],passed:false};
+const result={engine,physicalDevice:false,source:Object.fromEntries(['studio/app.html','studio/autosave-status.js','studio/storage.js','studio/sync.js','studio/sync-confirmation.js','studio/process.html','studio/board-draft.js','studio/board.html'].map(f=>[f,hash(fs.readFileSync(path.join(root,f)))])),cases:[],responsive:[],passed:false};
 const write=()=>fs.writeFileSync(path.join(OUT,'results.json'),JSON.stringify(result,null,2)+'\n');
 async function until(fn,label,ms=35000){const end=Date.now()+ms;while(Date.now()<end){if(await fn())return;await new Promise(r=>setTimeout(r,100));}throw Error('Timed out: '+label);}
-const init={fn:()=>{
+const init={arg:{traceResize:process.env.PS_TRACE_RESIZE==='1'},fn:({traceResize})=>{
+ window.__saveStatusViewportAt=Date.now();window.addEventListener('resize',()=>{window.__saveStatusViewportAt=Date.now();});
+ window.__saveStatusLayoutErrors=[];
+ if(traceResize&&window.ResizeObserver){const Native=window.ResizeObserver;window.__saveStatusRecentRO=[];
+  window.ResizeObserver=class extends Native{constructor(callback){const meta={stack:new Error().stack,targets:[],calls:0};super((entries,observer)=>{meta.calls++;window.__saveStatusRecentRO.push({stack:meta.stack,targets:meta.targets,calls:meta.calls,entries:entries.map(e=>({target:e.target.id||e.target.tagName,width:e.contentRect.width,height:e.contentRect.height}))});if(window.__saveStatusRecentRO.length>12)window.__saveStatusRecentRO.shift();return callback(entries,observer);});this.__saveStatusRO=meta;}observe(target,options){this.__saveStatusRO.targets.push(target.id||target.tagName);return super.observe(target,options);}};
+ }
+ window.addEventListener('error',e=>{if(e.message==='ResizeObserver loop completed with undelivered notifications.')window.__saveStatusLayoutErrors.push({path:location.pathname,message:e.message,at:Date.now(),width:innerWidth,height:innerHeight,observers:window.__saveStatusRecentRO||[]});});
  // Read-only, test-only protocol tracing. The original methods and their
  // return values stay in control; no receipt or server version is fabricated.
  let confirmation;Object.defineProperty(window,'PSSyncConfirmation',{configurable:true,get:()=>confirmation,set:api=>{
@@ -48,10 +54,16 @@ try{
  fx.db.get(WT+'|'+KEY).v=JSON.stringify(initial);
  ({page,context,logs}=await openApp(fx,'saveStatus',{browsers,init,phoneStart:true}));page.setDefaultTimeout(20000);
  const tx=page.locator('#psSyncStripTx');
- async function record(name,details={}){const current=await page.evaluate(()=>({view:window.__psAutosaveView?.(),engine:PSSync.state(),root:PSSaveState.snapshot()}));result.cases.push({name,...details,...current,passed:true});write();console.log(JSON.stringify({engine,case:name,passed:true}));}
+ async function record(name,details={},captured=null){const current=captured||await page.evaluate(()=>({view:window.__psAutosaveView?.(),engine:PSSync.state(),root:PSSaveState.snapshot()}));result.cases.push({name,...details,...current,passed:true});write();console.log(JSON.stringify({engine,case:name,passed:true}));}
  async function shots(label,text){
-  for(const width of [375,768,1280]){await page.setViewportSize({width,height:900});await page.waitForFunction(expected=>document.getElementById('psSyncStripTx').textContent===expected,text);
+  for(const width of [375,768,1280]){await page.evaluate(()=>{window.__saveStatusRequestedViewportAt=Date.now();});await page.setViewportSize({width,height:900});await page.waitForFunction(expected=>document.getElementById('psSyncStripTx').textContent===expected,text);
+   await page.waitForFunction(async()=>{
+    if(Date.now()-Math.max(window.__saveStatusViewportAt||0,window.__saveStatusRequestedViewportAt||0)<220)return false;
+    function geometry(){return JSON.stringify([innerWidth,document.body.className,...Array.from(document.querySelectorAll('.frames,.frames>iframe')).filter(e=>getComputedStyle(e).display!=='none').map(e=>{const r=e.getBoundingClientRect();return [e.id,r.x,r.y,r.width,r.height,e.clientWidth];})]);}
+    const before=geometry();await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);return before===geometry();
+   });
    const box=await page.locator('#psSyncStrip').boundingBox();assert.ok(box&&box.height<=26&&box.x>=0&&box.x+box.width<=width+1);
+   result.responsive.push({label,width,geometry:await page.evaluate(()=>({viewport:innerWidth,classes:document.body.className,frames:Array.from(document.querySelectorAll('.frames>iframe')).filter(e=>getComputedStyle(e).display!=='none').map(e=>{const r=e.getBoundingClientRect(),stage=e.contentDocument?.getElementById('stage')?.getBoundingClientRect();return {id:e.id,width:r.width,height:r.height,logical:e.clientWidth,stage:stage&&{width:stage.width,height:stage.height}};})}))});
    await page.screenshot({path:path.join(SHOTS,engine+'-'+width+'-'+label+'.png')});}
  }
  const nav=page.locator('#teamNav [data-team-key="training"]:visible, #teamBottom [data-tb="training"]:visible').first();
@@ -78,9 +90,14 @@ try{
  await page.evaluate(()=>PSSync.syncNow('synthetic-normal-cas-confirmation'));
  await until(async()=>await frame.evaluate(key=>{const raw=localStorage.getItem(key);return typeof raw==='string'&&PSSaveState.get('schedule')==='saved'&&!psHasPending()&&parent.PSSync.confirmedValue(key,raw)===true;},KEY),'actual normal-CAS exact schedule ACK');
  await page.evaluate(()=>window.dispatchEvent(new Event('ps-sync-state')));
- await page.waitForFunction(()=>__psAutosaveView().text==='서버 저장 확인');
- const localRaw=await frame.evaluate(key=>localStorage.getItem(key),KEY);assert.equal(localRaw,fx.db.get(WT+'|'+KEY).v);
- await shots('exact-schedule-ack','서버 저장 확인');await record('exact current schedule body has actual server receipt',{rawHash:hash(localRaw)});
+ const scheduleSaved=await frame.evaluate(async key=>{const local=localStorage.getItem(key),durable=(await storage.peek(key))?.value??null;return {local,durable,state:PSSaveState.get('schedule'),pending:psHasPending(),confirmed:parent.PSSync.confirmedValue(key,local)};},KEY),localRaw=scheduleSaved.local,serverRaw=fx.db.get(WT+'|'+KEY).v;
+ assert.equal(localRaw,scheduleSaved.durable);assert.equal(localRaw,serverRaw);assert.equal(scheduleSaved.state,'saved');assert.equal(scheduleSaved.pending,false);assert.equal(scheduleSaved.confirmed,true);
+ const scheduleScope={state:scheduleSaved.state,pending:scheduleSaved.pending,confirmed:scheduleSaved.confirmed,localHash:hash(localRaw),idbHash:hash(scheduleSaved.durable),serverHash:hash(serverRaw)};
+ const team=page.frames().find(f=>/\/studio\/scout\.html/.test(f.url()));assert.ok(team,'The real team-navigation frame remains loaded');
+ const teamScope=await team.evaluate(async()=>{const key='scout_tool_v1',raw=localStorage.getItem(key),disk=(await storage.peek(key))?.value??null;return {state:PSSaveState.get('team'),pending:psHasPending(),exactLocal:raw!==null&&raw===disk,unsupportedReceipt:parent.PSSync.confirmedValue(key,raw)};});
+ assert.deepEqual(teamScope,{state:'saved',pending:false,exactLocal:true,unsupportedReceipt:false});
+ await page.waitForFunction(()=>__psAutosaveView().text==='기기에 저장됨');assert.equal(await page.evaluate(()=>__psAutosaveView().complete),false);
+ await shots('exact-schedule-ack-conservative-root','기기에 저장됨');await record('exact schedule ACK coexists with conservative root for unsupported live team scope',{scheduleScope,teamScope});
  await page.evaluate(()=>window.__psShowApp('board'));
  const board=await(await page.waitForSelector('#fBoard')).contentFrame();
  await board.waitForFunction(()=>window.__psBoardDraft&&_boardPrivateLoaded&&!__boardRestoring&&typeof renderTokens==='function');
@@ -88,7 +105,10 @@ try{
  await board.waitForFunction(()=>{const s=__psBoardDraft.snapshot();return s.needed&&s.unsaved&&s.localDurable&&!s.pending&&!s.failed;});
  await page.waitForFunction(()=>__psAutosaveView().text==='보드 초안 · 기기에 저장됨');
  assert.equal(await page.evaluate(()=>__psAutosaveView().complete),false);assert.equal(await board.evaluate(()=>__psBoardDraft.snapshot().serverConfirmed),false);
- await shots('device-only-board-draft','보드 초안 · 기기에 저장됨');await record('unsaved board draft is durable locally without a server claim');
+ await shots('device-only-board-draft','보드 초안 · 기기에 저장됨');
+ const draftProof=await page.waitForFunction(()=>{const b=document.getElementById('fBoard').contentWindow.__psBoardDraft.snapshot(),view=__psAutosaveView();if(!b.needed||!b.unsaved||!b.localDurable||b.pending||b.failed||view.text!=='보드 초안 · 기기에 저장됨')return false;return {view,engine:PSSync.state(),root:PSSaveState.snapshot(),draftScope:{needed:b.needed,unsaved:b.unsaved,localDurable:b.localDurable,pending:b.pending,failed:b.failed,serverConfirmed:b.serverConfirmed}};});
+ const capturedDraft=await draftProof.jsonValue();await draftProof.dispose();assert.equal(capturedDraft.draftScope.serverConfirmed,false);assert.equal(capturedDraft.view.complete,false);
+ await record('unsaved board draft is durable locally without a server claim',{},capturedDraft);
  // A real, current-origin child uses the actual PSSaveState API. Its frame is
  // removed and replaced; late events from the detached document cannot linger.
  await context.route('**/__save_state_child*',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><script src="/studio/storage.js"></script><title>Synthetic save-state child</title>'}));
@@ -115,7 +135,9 @@ try{
   for(const f of page.frames())if(/\/studio\/[^/]+\.html/.test(f.url()))result.diagnostics.frames.push(await f.evaluate(async key=>{
    const raw=localStorage.getItem(key),durable=(await window.storage?.peek?.(key))?.value??null,S=window.PSSync||parent.PSSync;
    async function describe(value){let parsed;try{parsed=JSON.parse(value);}catch{}const digest=value===null?null:Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))).map(x=>x.toString(16).padStart(2,'0')).join('');return {hash:digest,length:value?.length??null,rev:parsed?.scheduleRev,editedAt:parsed?.editedAt};}
-   return {path:location.pathname,local:await describe(raw),durable:await describe(durable),equal:raw===durable,confirmedLocal:S?.confirmedValue?.(key,raw),confirmedDurable:S?.confirmedValue?.(key,durable),proofDebug:window.__saveStatusProofDebug?.(key,raw),state:window.PSSaveState?.snapshot?.(),pending:window.psHasPending?.(),board:window.__psBoardDraft?.snapshot?.(),view:window.__psAutosaveView?.(),trace:window.__saveStatusProofTrace};
+   const state=window.PSSaveState?.snapshot?.(),documents=[];
+   if(state?.scopes?.team)for(const k of ['scout_tool_v1','cs_squad_v1','cs_team_attrs_v1','cs_team_matches_v1']){const local=localStorage.getItem(k),disk=(await window.storage?.peek?.(k))?.value??null;documents.push({key:k,local:await describe(local),durable:await describe(disk),equal:local===disk,confirmedLocal:S?.confirmedValue?.(k,local)});}
+   return {path:location.pathname,key,local:await describe(raw),durable:await describe(durable),equal:raw===durable,confirmedLocal:S?.confirmedValue?.(key,raw),confirmedDurable:S?.confirmedValue?.(key,durable),proofDebug:window.__saveStatusProofDebug?.(key,raw),state,pending:window.psHasPending?.(),board:window.__psBoardDraft?.snapshot?.(),documents,view:window.__psAutosaveView?.(),trace:window.__saveStatusProofTrace,layoutErrors:window.__saveStatusLayoutErrors};
   },KEY).catch(e=>({error:e.message})));
   await page.screenshot({path:path.join(SHOTS,engine+'-failure.png')}).catch(()=>{});
  }throw error;}

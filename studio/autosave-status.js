@@ -62,7 +62,7 @@
     }
     if(l.saved&&r.kind==='off')return out('pending','기기에 저장됨','기기 전용 자료나 초안의 저장을 확인했습니다. 이 표시만으로 서버 저장 완료를 뜻하지는 않습니다.');
     if(l.unconfirmed)return out(r.kind==='busy'?'busy':'pending','기기에 저장됨 · 서버 확인 대기','기기 저장은 확인했지만 현재 원문의 서버 저장 완료는 아직 확인하지 못했습니다.','retry');
-    if(l.saved&&l.localOnly)return out('pending','기기에 저장됨','기기 전용 자료나 초안의 저장을 확인했습니다. 이 표시만으로 서버 저장 완료를 뜻하지는 않습니다.');
+    if(l.saved&&l.localOnly)return out('pending','기기에 저장됨','기기 저장을 확인했습니다. 일부 자료는 현재 원문의 서버 저장 완료를 별도로 확인하지 못해, 전체 저장 완료로 표시하지 않습니다.');
     if(r.complete){var confirmed={};Object.keys(r).forEach(function(k){confirmed[k]=r[k];});confirmed.text='서버 저장 확인';return confirmed;}
     return r;
   }

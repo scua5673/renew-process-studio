@@ -95,6 +95,14 @@ try{
       await page.waitForTimeout(2800); // Allow the real entry splash animation to finish.
       const bootEvents=[];for(const frame of page.frames())bootEvents.push(...await frame.evaluate(()=>window.__quietEntryEvents||[]));
       assert.deepEqual(bootEvents,[],'Real initial boot shows no transient modal, account menu or legacy notice');
+      // This matrix deliberately supplies fictitious sync states. Its local
+      // snapshot baseline is also explicitly idle; real psHasPending barriers
+      // stay intact. The separate root-child suite covers real mixed sources.
+      let localSnapshotsMocked=0;
+      for(const frame of page.frames())localSnapshotsMocked+=await frame.evaluate(()=>{
+        const api=window.PSSaveState;if(!api?.snapshot||!api.owner)return 0;
+        window.__realPresentationLocalSnapshot=api.snapshot;api.snapshot=()=>({owner:api.owner(),scopes:{}});return 1;
+      });
       await page.evaluate(()=>{
         window.__realAutosaveRecovery=window.PSAutosaveRecovery;
         window.__fixtureSaveState={kind:'ok',at:100,n:0,review:0,archivedCount:0};window.__fixtureRetries=0;window.__fixtureChoices=0;window.__fixtureRecovery=0;
@@ -192,10 +200,10 @@ try{
       assert.equal(await page.locator('#psAutosaveRecoveryDialog').count(),0,'The real ownership fence revokes the open recovery view');
       const runtimeErrors=errors.filter((e,i)=>!navAborts.isAbort(e,errorAt[i])).filter(e=>!/^ResizeObserver loop (completed with undelivered notifications\.|limit exceeded)$/.test(e));
       assert.deepEqual(runtimeErrors,[],'No runtime errors');
-      results.push({width:spec.width,compactStates:cases.length,noBootPopup:true,noAutomaticDialog:true,advancedRecovery:true,noDocumentChoices:true,exactOriginalExport:true,recoveryOwnerGuard:true,realRecoveryBridge:true,passed:true});
+      results.push({width:spec.width,compactStates:cases.length,localSnapshotsMocked,localPendingBarriersRetained:true,noBootPopup:true,noAutomaticDialog:true,advancedRecovery:true,noDocumentChoices:true,exactOriginalExport:true,recoveryOwnerGuard:true,realRecoveryBridge:true,passed:true});
       console.log(JSON.stringify(results.at(-1)));
     }catch(e){await page.screenshot({path:path.join(out,spec.width+'-failure.png')}).catch(()=>{});throw e;}
     finally{fs.writeFileSync(path.join(out,spec.width+'-network.json'),JSON.stringify({calls,blocked,errors},null,2));await context.close();}
   }
-  fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({passed:true,engine:'chromium',network:'All external requests mocked or blocked. Synthetic accounts and status fixtures only.',results},null,2));
+  fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({passed:true,engine,network:'All external requests mocked or blocked. Synthetic accounts and status fixtures only.',localModel:'After real quiet boot, local snapshots are explicitly idle for the mocked sync presentation matrix; real pending barriers remain intact. Real mixed-source behavior is verified separately.',results},null,2));
 }finally{await browser?.close();await new Promise(r=>server.close(r));}
