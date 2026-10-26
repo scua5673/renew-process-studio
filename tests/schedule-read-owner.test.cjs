@@ -4,7 +4,7 @@ const source=fs.readFileSync(path.join(__dirname,'../studio/process.html'),'utf8
 const raw=JSON.stringify,tick=()=>new Promise(r=>setImmediate(r));
 function harness(){
   let resolve;const pending=new Promise(r=>resolve=r),old=raw({team:'A',scheduleRev:1,editedAt:1,weeks:{}}),incoming=raw({team:'A',scheduleRev:9,editedAt:9,weeks:{}}),local=new Map([['process_coach_v1',old],['ps_sync_session','{"uid":"coach"}'],['ps_active_ws','A'],['ps_cache_owner_v1','{"uid":"coach","wid":"A","nonce":"one"}']]),writes=[],renders=[],queued=[],state={unlocked:true,reads:0,editing:false,quota:false};
-  const c={Promise,JSON,STORE_KEY:'process_coach_v1',__schedWritePending:false,localStorage:{getItem:k=>local.get(k)??null,setItem(k,v){if(state.quota)throw Error('quota');writes.push(k);local.set(k,v);}},storage:{get(){state.reads++;return pending;}},parent:{PSSync:{dataUnlocked:()=>state.unlocked}},__schedEditorActive:()=>state.editing,__schedRenderIncoming:v=>renders.push(v),__schedQueueIncoming:v=>queued.push(v),__schedDrainIncoming(){},setTimeout(){}};
+  const c={Promise,JSON,STORE_KEY:'process_coach_v1',__schedWritePending:false,__schedWriteSeq:0,localStorage:{getItem:k=>local.get(k)??null,setItem(k,v){if(state.quota)throw Object.assign(Error('quota'),{name:state.errorName||'QuotaExceededError'});writes.push(k);local.set(k,v);}},storage:{get(){state.reads++;return pending;}},parent:{PSSync:{dataUnlocked:()=>state.unlocked}},__schedEditorActive:()=>state.editing,__schedRenderIncoming:v=>renders.push(v),__schedQueueIncoming:v=>queued.push(v),__schedDrainIncoming(){},setTimeout(){}};
   c.window=c;vm.createContext(c);vm.runInContext(code,c);return{c,local,writes,renders,queued,state,old,incoming,finish:async()=>{resolve({value:incoming});await tick();}};
 }
 test('same-owner exact mirror accepts a newer IDB schedule and respects an active editor',async()=>{
@@ -20,4 +20,26 @@ test('a later same-team mirror edit is never overwritten even by a higher revisi
 test('locked start never reads and a quota failure may show only its unchanged-owner verified IDB schedule',async()=>{
   const locked=harness();locked.state.unlocked=false;locked.c.__schedIdbCheck();assert.equal(locked.state.reads,0);
   const h=harness();h.state.quota=true;h.c.__schedIdbCheck();await h.finish();assert.equal(h.c.__schedMirrorFull,true);assert.equal(h.local.get('process_coach_v1'),h.old);assert.deepEqual(h.renders,[h.incoming]);
+});
+function recovery(h){
+ const calls=[],state={failed:false,confirmed:0,wait:Promise.resolve()};h.c.PSSaveState={get:()=>state.failed?'failed':'idle'};
+ h.c.PSStorage={sharedRecovered(key,raw,current){calls.push({key,raw});return state.wait.then(()=>{assert.equal(current(),true);state.confirmed++;return true;});}};
+ return{calls,state};
+}
+test('boot mirror quota awaits exact durable recovery while the displayed IDB body stays intact',async()=>{
+ const h=harness(),r=recovery(h);h.state.quota=true;const work=h.c.__schedIdbCheck();assert.ok(work&&typeof work.then==='function');await h.finish();await work;
+ assert.deepEqual(r.calls,[{key:'process_coach_v1',raw:h.incoming}]);assert.equal(r.state.confirmed,1);assert.equal(h.local.get('process_coach_v1'),h.old);assert.deepEqual(h.renders,[h.incoming]);
+});
+test('a non-quota mirror exception cannot claim quota recovery',async()=>{
+ const h=harness(),r=recovery(h);h.state.quota=true;h.state.errorName='SecurityError';const work=h.c.__schedIdbCheck();await h.finish();await work;assert.deepEqual(r.calls,[]);
+});
+for(const change of ['pending','editor','failed','sequence'])test('boot read never recovers an already changed '+change,async()=>{
+ const h=harness(),r=recovery(h);h.state.quota=true;const work=h.c.__schedIdbCheck();
+ if(change==='pending')h.c.__schedWritePending=true;if(change==='editor')h.state.editing=true;if(change==='failed')r.state.failed=true;if(change==='sequence')h.c.__schedWriteSeq++;
+ await h.finish();await work;assert.deepEqual(r.calls,[]);assert.equal(r.state.confirmed,0);
+});
+for(const change of ['pending','failed','sequence','mirror','owner'])test('a new '+change+' vetoes boot recovery at its final async boundary',async()=>{
+ const h=harness(),r=recovery(h);let release;r.state.wait=new Promise(resolve=>release=resolve);h.state.quota=true;const work=h.c.__schedIdbCheck();await h.finish();assert.equal(r.calls.length,1);
+ if(change==='pending')h.c.__schedWritePending=true;if(change==='failed')r.state.failed=true;if(change==='sequence')h.c.__schedWriteSeq++;if(change==='mirror')h.local.set('process_coach_v1','new exact mirror');if(change==='owner')changes.team(h);
+ release();await work;assert.equal(r.state.confirmed,0);
 });

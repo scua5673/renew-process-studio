@@ -133,8 +133,8 @@ test('same cupd/hash without a real schedule marker still requests full server d
   assert.equal((await h.run()).error,undefined);assert.ok(h.requests.some(r=>r.stage==='kv_pull'));assert.equal(h.ready(),true);
 });
 
-for(const [name,options]of [['missing mirror',{idb:doc()}],['missing IDB',{mirror:doc()}],['split IDB',{mirror:doc(),idb:doc('stale')}]]){
-  test(`repairs ${name} before readiness`,async()=>{const h=harness(options);h.baseline(doc());assert.equal((await h.run()).error,undefined);assert.equal(h.ready(),true);assert.equal(h.idb.get(KEY),doc());assert.equal(h.local.get(KEY),doc());});
+for(const [name,options]of [['missing mirror',{idb:doc()}],['missing IDB',{mirror:doc()}],['exact confirmed previous IDB',{mirror:doc(),idb:doc('stale'),cupd:2,confirmedBase:doc('stale')}]]){
+  test(`repairs ${name} before readiness`,async()=>{const h=harness(options);h.baseline(options.confirmedBase||doc());assert.equal((await h.run()).error,undefined);assert.equal(h.ready(),true);assert.equal(h.idb.get(KEY),doc());assert.equal(h.local.get(KEY),doc());});
 }
 
 test('verified server and both local stores absent allows a genuinely new schedule',async()=>{
