@@ -8453,10 +8453,12 @@ async function boardPrivateRead(o){
 function boardPrivateSend(o){
   if(_boardPrivateFlight)return _boardPrivateFlight;
   var work=(async function(){
+    await PSBoardDraft.headReady(window,o);
     if(!boardPrivateCurrent(o)||!_boardPrivateLoaded)throw new Error('개인 보드를 먼저 확인해 주세요');
     var r=_boardPrivateRecord;if(!r||!r.pending)return true;
     if(!r.base)throw new Error('다른 기기의 보드를 확인하지 못해 현재 작업을 기기에 보관합니다');
-    if(!r.attempt){r=boardPrivateMake(o,r.raw,r.base,true,{raw:r.raw,base:r.base});await boardPrivatePersist(o,r);}
+    if(!r.attempt)r=boardPrivateMake(o,r.raw,r.base,true,{raw:r.raw,base:r.base});
+    await boardPrivatePersist(o,r);
     var attempt=r.attempt,a=boardPrivateAPI();
     if(!boardPrivateCurrent(o)||!a)throw new Error('보드 계정이 바뀌었습니다');
     var ack=await a.save(attempt.raw,{uid:o.uid,wid:o.wid,expected_raw:attempt.base.raw,expected_cupd:attempt.base.cupd});

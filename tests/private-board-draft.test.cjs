@@ -248,3 +248,34 @@ test('a loaded GET receipt confirms its exact durable source, but a modified bas
  const h=harness();h.c.PSBoardDraft.install(h.c);h.setServer({raw:payload(25),cupd:7});await h.boot();assert.equal(h.c.__psBoardDraft.snapshot().privateServerConfirmed,true);assert.equal(h.c.__psBoardPrivateReceipt.source,'get');
  h.c._boardPrivateRecord.base.cupd=8;assert.equal(h.c.__psBoardDraft.snapshot().privateServerConfirmed,false);h.c.__psBoardPrivateReceipt=null;assert.equal(h.c.__psBoardDraft.snapshot().privateServerConfirmed,false);
 });
+
+function holdPrivateHead(h,phase){
+ const d=deferred();let held=false;const stop=async()=>{if(held)return;held=true;await d.promise;};
+ if(phase==='read'){const get=h.c.storage.get;h.c.storage.get=async k=>{const value=await get(k);if(k===h.key())await stop();return value;};}
+ if(phase==='cas'){const cas=h.c.storage.replaceIfValue;h.c.storage.replaceIfValue=async(k,b,v,current)=>{if(k===h.key())await stop();return cas(k,b,v,current);};}
+ if(phase==='verify'){const verify=h.c.PSStorage.sharedVerified;h.c.PSStorage.sharedVerified=async(k,raw)=>{await verify(k,raw);if(k===h.key())await stop();};}
+ return {get held(){return held;},release:()=>d.resolve()};
+}
+async function boundedPrivate(work){
+ let timeout;try{return await Promise.race([work,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('private board save did not settle')),1000);})]);}finally{clearTimeout(timeout);}
+}
+for(const phase of ['read','cas','verify'])test('same-owner automatic retry joins the explicit '+phase+' head receipt without self-conflict',async()=>{
+ const h=harness();await h.boot();h.c.state=snap(345);h.c._boardUserTouched=true;h.c.boardSaveLive();const gate=holdPrivateHead(h,phase),saving=h.c.boardSaveExplicit({quiet:true});await ticks();assert.equal(gate.held,true);
+ const retry=h.c.boardApplyServerLive(),join=h.c.boardPrivateSend(h.owner());await ticks();gate.release();const result=await boundedPrivate(Promise.all([saving,retry,join]));await ticks();
+ assert.deepEqual(result,[true,true,true]);assert.equal(h.saves.length,1,'one explicit intent has one actual server submission');assert.equal(h.c._boardPrivateRecord.pending,false);assert.equal(h.c._boardPrivateRecord.token,h.c._boardPrivateDurableToken);assert.equal(h.idb.get(h.key()),JSON.stringify(h.c._boardPrivateRecord));assert.equal(h.server().raw,h.c._boardPrivateRecord.raw);assert.equal(JSON.parse(h.server().raw).snap.players[0].x,345);assert.equal(h.c._boardManualDirty,false);assert.ok(!h.messages.some(m=>typeof m==='string'&&m.includes('기기에 저장하지 못했습니다')));
+});
+for(const medium of ['ls','idb'])test('automatic retry cannot turn a foreign '+medium+' head into overwrite permission',async()=>{
+ const h=harness();await h.boot();h.c.state=snap(345);h.c._boardUserTouched=true;h.c.boardSaveLive();const key=h.key(),gate=holdPrivateHead(h,'verify'),saving=h.c.boardSaveExplicit({quiet:true});await ticks();assert.equal(gate.held,true);
+ const retry=h.c.boardApplyServerLive();await ticks();const foreign=JSON.stringify({...h.c._boardPrivateRecord,raw:payload(999),token:'synthetic-other-window',seq:Date.now()+100});h[medium].set(key,foreign);gate.release();const result=await boundedPrivate(Promise.all([saving,retry]));
+ assert.deepEqual(result,[false,false]);assert.equal(h[medium].get(key),foreign);assert.equal(h.saves.length,0);assert.equal(h.c._boardPrivateRecord.pending,true);assert.notEqual(h.c._boardPrivateDurableToken,h.c._boardPrivateRecord.token);assert.equal(h.c.state.players[0].x,345);assert.ok(!h.messages.some(m=>m&&m.type==='boardLiveSaved'));
+});
+test('an owner change while an explicit receipt and retry wait cannot send or acknowledge the old board',async()=>{
+ const h=harness();await h.boot();h.c.state=snap(345);h.c.boardSaveLive();const key=h.key(),gate=holdPrivateHead(h,'verify'),saving=h.c.boardSaveExplicit({quiet:true});await ticks();assert.equal(gate.held,true);const exactOld=h.idb.get(key),retry=h.c.boardApplyServerLive();await ticks();h.switch({uid:'synthetic-user-b',wid:'personal-b',seal:'seal-b'});gate.release();const result=await boundedPrivate(Promise.all([saving,retry]));
+ assert.deepEqual(result,[false,false]);assert.equal(h.saves.length,0);assert.equal(h.idb.get(key),exactOld);assert.equal(h.idb.has(h.key()),false);assert.equal(h.ls.has(h.key()),false);assert.ok(!h.messages.some(m=>m&&m.type==='boardLiveSaved'));
+});
+test('both-store failure during an explicit receipt and retry remains pending without a server acknowledgement',async()=>{
+ const h=harness({quota:true});await h.boot();h.c.state=snap(345);h.c.boardSaveLive();const d=deferred(),original=h.c.storage.get;let held=false;
+ h.c.storage.get=async k=>{if(k!==h.key())return original(k);if(!held){held=true;await d.promise;}throw Error('synthetic actual IDB failure');};
+ const saving=h.c.boardSaveExplicit({quiet:true});await ticks();assert.equal(held,true);const retry=h.c.boardApplyServerLive();await ticks();d.resolve();const result=await boundedPrivate(Promise.all([saving,retry]));
+ assert.deepEqual(result,[false,false]);assert.equal(h.saves.length,0);assert.equal(h.c._boardPrivateRecord.pending,true);assert.notEqual(h.c._boardPrivateDurableToken,h.c._boardPrivateRecord.token);assert.equal(h.c._boardManualDirty,true);assert.ok(!h.messages.some(m=>m&&m.type==='boardLiveSaved'));assert.equal(h.idb.has(h.key()),false);assert.equal(h.ls.has(h.key()),false);
+});

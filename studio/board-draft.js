@@ -39,6 +39,17 @@
   }
   function status(w,scope,next,error){try{var api=w.PSSaveState;if(api)api[next](scope,error);}catch(_){} }
   function conflict(){var e=new Error('다른 창의 개인 보드를 보존합니다');e.psCode='board_private_conflict';return e;}
+  async function headReady(w,o){
+    var generation=w._boardPrivateGeneration,tail;
+    function current(){if(!w.boardPrivateCurrent(o)||generation!==w._boardPrivateGeneration)throw conflict();}
+    do{
+      current();tail=w._boardPrivateLocal;
+      // Order the send after the latest local job. A failed old job is not a
+      // receipt: the caller must persist/read back its exact attempt again.
+      try{await tail;}catch(_){}
+      current();
+    }while(tail!==w._boardPrivateLocal);
+  }
   function headGuard(w,o,r){
     var generation=w._boardPrivateGeneration,seq=w._boardPrivateEditSeq;
     return function(){if(!w.boardPrivateCurrent(o)||w._boardPrivateRecord!==r||generation!==w._boardPrivateGeneration||seq!==w._boardPrivateEditSeq)throw conflict();return true;};
@@ -356,5 +367,5 @@
     w.__psBoardDraft=api;
     return api;
   }
-  return {borrowedView:borrowedView,create:create,install:install,persistHead:persistHead,keepHead:keepHead,thumbGuard:thumbGuard,restorePage:restorePage};
+  return {borrowedView:borrowedView,create:create,install:install,persistHead:persistHead,keepHead:keepHead,headReady:headReady,thumbGuard:thumbGuard,restorePage:restorePage};
 });
