@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {startFixture,openApp,SIZES} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,SIZES,OUT} from '../fixtures/team-app.mjs';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',fx=await startFixture(),browsers={};for(const s of Object.values(SIZES))s.engine=engine;
 try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').map(Number)){
  const size=width<700?'phone':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:900};
@@ -8,8 +8,16 @@ try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').ma
  await f.evaluate(()=>{__setTilt(false);boardShowDefault();state.tool='move';state.drawings=[{type:'rect',color:'#fff',pts:[{x:200,y:200},{x:300,y:300}]}];anim.frames=[];animActive=-1;document.getElementById('animAdd').click();document.getElementById('animAdd').click();document.getElementById('animAdd').click();selectAnimFrame(1);state.drawings[0].pts[0].x=240;renderDrawings();});
  await page.waitForTimeout(450);
  const before=await f.evaluate(()=>JSON.stringify(anim.frames[0]));
- await f.evaluate(()=>window.__psShapeMenu.open(state.drawings[0],100,130));
- await f.locator('#psShapeMenu [data-act=reset]').click();
+ // Desktop users focus the board through the drawing's pointer event before opening its menu.
+ // Calling open() directly leaves the iframe unfocused; WebKit may close the menu on the next focus transition.
+ try{
+  if(width>=1000)await f.locator('#drawLayer > g').first().click({button:'right'});
+  else await f.evaluate(()=>window.__psShapeMenu.open(state.drawings[0],100,130));
+  await f.locator('#psShapeMenu [data-act=reset]').click();
+ }catch(error){
+  console.error('shape-menu-diagnostic',JSON.stringify({engine,width,board:await f.evaluate(()=>({focused:document.hasFocus(),active:document.activeElement&&document.activeElement.id,ready:window.__boardReady,drawings:state.drawings.map(d=>({type:d.type,points:d.pts})),frames:anim.frames.length,frame:animActive,menu:!!document.getElementById('psShapeMenu'),size:[innerWidth,innerHeight]})),shell:await page.evaluate(()=>({app:document.body.dataset.psApp,classes:document.body.className,focused:document.hasFocus()}))}));
+  await page.screenshot({path:OUT+'/'+width+'-shape-menu-failure.png'});throw error;
+ }
  const result=await f.evaluate(()=>({x:anim.frames[2].snap.drawings[0].pts[0].x,same:JSON.stringify(anim.frames[0]),id:state.drawings[0]._sceneId}));assert.equal(result.x,240);assert.equal(result.same,before);assert.ok(result.id);
  await f.evaluate(()=>undoLast());assert.equal(await f.evaluate(()=>anim.frames[2].snap.drawings[0].pts[0].x),200);
  await f.evaluate(()=>{_afCtx=false;document.activeElement?.blur();});const last=await f.evaluate(()=>anim.frames.length-1);await page.keyboard.press('End');assert.equal(await f.evaluate(()=>animActive),last);await page.keyboard.press('Home');assert.equal(await f.evaluate(()=>animActive),0);
