@@ -15,12 +15,12 @@ const trainings=raw=>Object.values(JSON.parse(raw).weeks||{}).flatMap(days=>days
 const target=(raw,slot)=>trainings(raw).find(t=>t.slot===slot);
 async function until(fn,label,ms=35000){const end=Date.now()+ms;while(Date.now()<end){if(await fn())return;await new Promise(r=>setTimeout(r,100));}throw Error('Timed out: '+label);}
 async function openSchedule(page){
- await page.waitForFunction(()=>PSSync.dataUnlocked()&&!document.body.classList.contains('ps-booting'));
+ await page.waitForFunction(()=>!!(window.PSSync&&PSSync.dataUnlocked()&&document.body&&!document.body.classList.contains('ps-booting')));
  const nav=page.locator('#teamNav [data-team-key="training"]:visible, #teamBottom [data-tb="training"]:visible').first();
  if(!await nav.isVisible())await page.locator('#appSeg [data-team-hub]:visible').click();
  await nav.click();
  const frame=await(await page.waitForSelector('#fProcess')).contentFrame();
- await frame.waitForFunction(()=>typeof weeksMap==='object'&&PSSchedule.raw());
+ await frame.waitForFunction(()=>!!(typeof weeksMap==='object'&&window.PSSchedule&&PSSchedule.raw()));
  if(!await frame.locator('#weekView').isVisible())await frame.locator('#vtoggle [data-v="week"]').click();
  await frame.locator('#weekView').waitFor({state:'visible'});return frame;
 }
