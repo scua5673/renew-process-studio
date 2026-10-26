@@ -64,9 +64,14 @@ async function chooseGroup(frame,width,value){
  await frame.waitForFunction(value=>__schedGrp===value,value);
 }
 async function openSchedule(page,width){
- if(!await page.evaluate(()=>document.body.classList.contains('ps-team-open')))await page.locator('#appSeg [data-team-hub]').click();
- const desktop=page.locator('#teamNav [data-team-key="training"]');
- if(await desktop.isVisible())await desktop.click();else await page.locator('#teamBottom [data-tb="training"]').click();
+ await page.waitForFunction(()=>window.PSSync?.dataUnlocked()&&document.body&&!document.body.classList.contains('ps-booting'),null,{timeout:15000});
+ // Phone startup can open Today after unlock. Resolve the visible navigation at
+ // click time, rather than retaining a body-class decision while its hub hides.
+ const training='#teamNav [data-team-key="training"]:visible, #teamBottom [data-tb="training"]:visible';
+ const visibleTraining=page.locator(training).first();
+ if(await visibleTraining.isVisible())await visibleTraining.click();
+ else await page.locator(training+', #appSeg [data-team-hub]:visible').first().click();
+ if(!await page.locator('#fProcess').isVisible())await visibleTraining.click();
  const frame=await(await page.waitForSelector('#fProcess')).contentFrame();
  await frame.waitForFunction(()=>typeof weeksMap==='object'&&PSSchedule.raw()!=null);
  if(!await frame.locator('#weekView').isVisible()){
