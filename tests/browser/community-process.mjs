@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import {startFixture,openApp,root,SHOTS} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,root,SHOTS,A} from '../fixtures/team-app.mjs';
 
 // The whole prepared letter catalog, local source text and native board/vault flow.
 // All accounts are synthetic; the fixture blocks every production request.
@@ -26,9 +26,12 @@ try{
   await c.waitForSelector('#prSeg');await c.evaluate(()=>location.reload());
   c=await (await page.waitForSelector('#fComm')).contentFrame();
   await c.waitForSelector('[data-letter-retry]');
-  indexDown=false;await c.click('[data-letter-retry]');await c.waitForSelector('.pl-row');
+  indexDown=false;await c.click('[data-letter-retry]');
+  try{await c.waitForSelector('.pl-row');}catch(e){console.log('letter index diagnostics',await c.locator('#grid').innerText(),bodies,logs.filter(x=>x.type==='pageerror'));throw e;}
   const ids=()=>c.locator('.pl-row').evaluateAll(rows=>rows.map(x=>+x.dataset.letter));
-  assert.deepEqual(await ids(),Array.from({length:46},(_,i)=>46-i));
+  assert.deepEqual(await ids(),Array.from({length:46},(_,i)=>i+1));
+  assert.equal(await c.locator('#plOrder').inputValue(),'old');
+  assert.equal(await c.locator('.pl-read').count(),0,'listing does not mark unopened letters read');
   assert.equal(await c.locator('#prProcN').textContent(),'46');
   assert.equal(await c.locator('#txBar').isVisible(),false,'training age/topic filters must not hide letters');
   assert.equal(await c.locator('#commViewSeg').isVisible(),false,'the letter catalog has one clear list view');
@@ -37,6 +40,13 @@ try{
   assert.equal(geometry.doc,geometry.vw);assert.ok(geometry.rows.every(r=>r.left>=0&&r.right<=geometry.vw+1));
   const shot=n=>page.screenshot({path:path.join(SHOTS,`process-letters-${engine}-${size}-${n}.png`)});
   await shot('list');
+  await c.click('[data-letter="1"]');await c.waitForSelector('[data-letter-reader="1"]');
+  await c.locator('[data-letter-back]').first().click();await c.waitForSelector('[data-letter="1"] .pl-read');
+  assert.equal(await c.locator('[data-letter="2"] .pl-read').count(),0);
+  await c.evaluate(()=>location.reload());c=await (await page.waitForSelector('#fComm')).contentFrame();
+  await c.waitForSelector('[data-letter="1"] .pl-read');
+  assert.equal((await ids())[0],1,'return visits start at issue 1 and retain reading history');
+  await c.selectOption('#plOrder','new');assert.equal((await ids())[0],46);
   await c.selectOption('#plOrder','old');assert.equal((await ids())[0],1);
   await c.fill('#commSearch',letter(3).title);await c.waitForFunction(()=>document.querySelectorAll('.pl-row').length===1);
   assert.deepEqual(await ids(),[3]);await c.click('[data-letter="3"]');await c.waitForSelector('[data-letter-reader="3"]');
@@ -45,6 +55,9 @@ try{
   assert.equal(await c.locator('.pl-play').count(),3);
   for(const evidence of letter(3).training.why.evidence)assert.ok((await c.locator('.pl-why').textContent()).includes(evidence.text));
   assert.equal(await c.locator('.pl-title h1').evaluate(e=>document.activeElement===e),true,'reading begins at a focused title');
+  const title=await c.locator('.pl-title h1').elementHandle();
+  await c.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  assert.equal(await title.evaluate(e=>e.isConnected),true,'returning focus keeps the current article and reading position');
   await shot('article');
   await c.click('[data-letter-jump="pl-training"]');await c.waitForSelector('.pl-training');await shot('training');
   await c.click('[data-letter-play="3"][data-training="1"]');
@@ -68,6 +81,7 @@ try{
   assert.deepEqual(saved,[[3,3]]);
   await page.evaluate(()=>window.__psShowApp('community'));await c.waitForSelector('[data-letter-reader="3"]');
   await c.locator('[data-letter-back]').first().click();await c.waitForSelector('.pl-row');assert.deepEqual(await ids(),[3],'the search is retained on return');
+  assert.equal(await c.locator('[data-letter="3"] .pl-read').count(),1,'successful reading is marked in the filtered list');
   await c.fill('#commSearch','__없는_문장__');await c.waitForSelector('[data-letter-clear]');await c.click('[data-letter-clear]');await c.waitForFunction(()=>document.querySelectorAll('.pl-row').length===46);
   await c.click('[data-letter="1"]');await c.waitForSelector('[data-letter-reader="1"]');assert.equal(await c.locator('.pl-play').count(),0);assert.match(await c.locator('#pl-training').textContent(),/연결된 훈련 세션이 없습니다/);
   await c.locator('[data-letter-back]').first().click();await c.click('[data-letter="46"]');await c.waitForSelector('[data-letter-reader="46"]');
@@ -79,11 +93,16 @@ try{
   packResolve();await c.waitForFunction(button=>!button.hasAttribute('aria-busy'),detachedButton);
   assert.equal(await c.locator('#cvMask.on').count(),0,'a late training response cannot open after returning to the list');
   assert.equal(await c.locator('.pl-row').count(),46);
-  await c.click('[data-letter="43"]');await c.waitForSelector('[data-letter-retry]');detailDown=false;await c.click('[data-letter-retry]');await c.waitForSelector('[data-letter-reader="43"]');
+  await c.click('[data-letter="43"]');await c.waitForSelector('[data-letter-retry]');
+  const readNumbers=()=>c.evaluate(uid=>JSON.parse(localStorage.getItem('ps_comm_letters_read_v1:'+uid)||'[]'),A);
+  assert.ok(!(await readNumbers()).includes(43),'a failed body load is not read');
+  detailDown=false;await c.click('[data-letter-retry]');await c.waitForSelector('[data-letter-reader="43"]');
+  assert.ok((await readNumbers()).includes(43),'a successful retry is read');
   await c.locator('[data-letter-back]').first().click();await c.click('[data-letter="42"]');
   for(let i=0;i<50&&!lateResolve;i++)await page.waitForTimeout(100);assert.ok(lateResolve);
   await c.click('#prTabCoach');lateResolve();for(let i=0;i<50&&!lateDone;i++)await page.waitForTimeout(100);
   assert.equal(await c.locator('.pl-reader').count(),0,'a late body cannot paint over the coach tab');
+  assert.ok(!(await readNumbers()).includes(42),'a body arriving after leaving the tab is not read');
   assert.equal(await c.locator('body').evaluate(e=>e.classList.contains('pr-letters')),false);
   await c.click('#prTabProc');await c.waitForSelector('[data-letter-reader="42"]');
   await c.click('#prTabFifa');await c.waitForSelector('.fi-card');assert.equal(await c.locator('.pl-reader').count(),0);

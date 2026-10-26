@@ -12,6 +12,24 @@
   function href(v){try{var u=new URL(v);return /^https?:$/.test(u.protocol)?u.href:'';}catch(_){return '';}}
   function link(url,label){var u=href(url);return u?'<a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+' ↗</a>':'';}
   function paras(rows){return array(rows).map(function(s){return '<p>'+rich(s)+'</p>';}).join('');}
+  var READ_PREFIX='ps_comm_letters_read_v1:';
+  function readHistory(options){
+    var memory=Object.create(null);
+    function owner(){try{return String(options.owner&&options.owner()||'guest');}catch(_){return 'guest';}}
+    function valid(n){return Number.isInteger(n)&&n>0&&n<=999;}
+    function list(who){
+      who=who==null?owner():who;
+      var stored=[];try{stored=JSON.parse(options.storage().getItem(READ_PREFIX+who)||'[]');}catch(_){}
+      return memory[who]=Array.from(new Set(array(memory[who]).concat(array(stored)).filter(valid))).sort(function(a,b){return a-b;});
+    }
+    function mark(n,who){
+      if(!valid(n)||who!==owner())return false;
+      var rows=list(who);if(rows.indexOf(n)<0)rows.push(n);rows.sort(function(a,b){return a-b;});
+      try{options.storage().setItem(READ_PREFIX+who,JSON.stringify(rows));}catch(_){}
+      return true;
+    }
+    return {owner:owner,list:list,mark:mark};
+  }
   function indexRead(data){
     if(!data||!Array.isArray(data.issues))throw Error('Invalid letter index');
     var seen={};
@@ -20,7 +38,7 @@
   function select(list,q,order){
     q=String(q||'').trim().toLowerCase();
     return list.filter(function(d){var hay=[d.number,d.number+'호',nn(d.number),d.title,d.sub].concat(array(d.pieces).map(function(p){return p.title;}),d.training?[d.training.title,d.training.theme].concat(array(d.training.exercises).map(function(e){return e.title;})):[]).join(' ').toLowerCase();return !q||hay.indexOf(q)>=0;})
-      .slice().sort(function(a,b){return order==='old'?a.number-b.number:b.number-a.number;});
+      .slice().sort(function(a,b){return order==='new'?b.number-a.number:a.number-b.number;});
   }
   function facts(rows){return '<dl class="pl-facts">'+array(rows).map(function(r){return '<div><dt>'+esc(r[0])+'</dt><dd>'+rich(r[1])+(r[2]?'<small>'+rich(r[2])+'</small>':'')+'</dd></div>';}).join('')+'</dl>';}
   function pairs(rows){return '<dl class="pl-pairs">'+array(rows).map(function(r){return '<div><dt>'+rich(r[0])+'</dt><dd>'+rich(r[1])+'</dd></div>';}).join('')+'</dl>';}
@@ -51,7 +69,8 @@
   }
   function create(options){
     var doc=options.doc,host=doc.getElementById('grid'),count=doc.getElementById('commCount'),win=doc.defaultView;
-    var list=null,loading=null,error=false,cache={},selected=null,query='',order='new',seq=0,listY=0,lastNumber=0;
+    var list=null,loading=null,error=false,cache={},selected=null,query='',order='old',seq=0,listY=0,lastNumber=0;
+    var history=readHistory({storage:function(){return win.localStorage;},owner:options.owner}),readerOwner=history.owner(),readSnapshot='';
     function active(){return options.active();}
     function status(message,retry){host.innerHTML='<div class="pl-status" role="status"><p>'+esc(message)+'</p>'+(retry?'<button type="button" data-letter-retry>다시 시도</button>':'')+(selected?' <button type="button" data-letter-back>레터 전체 목록</button>':'')+'</div>';if(count)count.textContent='';}
     function get(file){return options.fetch('letters/'+file,{credentials:'omit',redirect:'error'}).then(function(r){if(!r.ok)throw Error('Letter request failed');return r.json();});}
@@ -64,29 +83,36 @@
     }
     function paint(force){
       if(!active())return;
+      var who=history.owner();
+      if(who!==readerOwner){readerOwner=who;selected=null;seq++;}
+      var seen=new Set(history.list(who)),snapshot=who+':'+Array.from(seen).join(',');
+      force=force||snapshot!==readSnapshot;readSnapshot=snapshot;
       doc.body.classList.add('pr-letters');
       if(!list){status(error?'레터 목록을 불러오지 못했어요. 연결을 확인하고 다시 시도해 주세요.':'레터를 불러오는 중…',error);if(!error)load();return;}
-      if(selected){if(!force&&host.querySelector('[data-letter-reader="'+selected+'"]'))return;read(selected,false);return;}
+      if(selected){if(host.querySelector('[data-letter-reader="'+selected+'"]'))return;read(selected,false);return;}
       if(!force&&host.querySelector('.pl-list'))return;
       var shown=select(list,query,order);
-      if(count)count.textContent='레터 '+shown.length+'개'+(query?' · 전체 '+list.length+'개':'');
-      host.innerHTML='<div class="pl-shelf"><div class="pl-shelf-head"><div><span class="pl-kicker">PROCESS LETTER</span><h2>읽고, 생각하고, 훈련으로.</h2><p>좋은 팀, 좋은 선수, 좋은 코치를 위한 글과 훈련을 모았습니다.</p></div><label class="pl-order">정렬<select id="plOrder" aria-label="레터 정렬"><option value="new"'+(order==='new'?' selected':'')+'>최신호부터</option><option value="old"'+(order==='old'?' selected':'')+'>1호부터</option></select></label></div>'
-        +'<div class="pl-list">'+(shown.length?shown.map(function(d){return '<button type="button" class="pl-row" data-letter="'+d.number+'" aria-label="'+esc(d.number+'호 · '+d.title)+'"><span class="pl-number"><small>LETTER</small>'+nn(d.number)+'</span><span class="pl-row-copy"><strong>'+esc(d.title)+'</strong><span>'+esc(d.sub)+'</span><small>글 '+array(d.pieces).length+'편'+(d.training?' · 관련 훈련 '+array(d.training.exercises).length+'개':'')+'</small></span><span class="pl-arrow" aria-hidden="true">→</span></button>';}).join(''):'<div class="pl-status"><p>검색에 맞는 레터가 없어요.</p><button type="button" data-letter-clear>검색 지우기</button></div>')+'</div></div>';
+      if(count)count.textContent='레터 '+shown.length+'개'+(query?' · 전체 '+list.length+'개':'')+' · 읽음 '+shown.filter(function(d){return seen.has(d.number);}).length+'개';
+      host.innerHTML='<div class="pl-shelf"><div class="pl-shelf-head"><div><span class="pl-kicker">PROCESS LETTER</span><h2>읽고, 생각하고, 훈련으로.</h2><p>좋은 팀, 좋은 선수, 좋은 코치를 위한 글과 훈련을 모았습니다.</p></div><label class="pl-order">정렬<select id="plOrder" aria-label="레터 정렬"><option value="old"'+(order==='old'?' selected':'')+'>1호부터</option><option value="new"'+(order==='new'?' selected':'')+'>최신호부터</option></select></label></div>'
+        +'<div class="pl-list">'+(shown.length?shown.map(function(d){var read=seen.has(d.number);return '<button type="button" class="pl-row'+(read?' is-read':'')+'" data-letter="'+d.number+'" aria-label="'+esc(d.number+'호 · '+d.title)+(read?' · 읽음':'')+'"><span class="pl-number"><small>LETTER</small>'+nn(d.number)+'</span><span class="pl-row-copy"><strong>'+esc(d.title)+'</strong><span>'+esc(d.sub)+'</span><small class="pl-row-meta"><span>글 '+array(d.pieces).length+'편'+(d.training?' · 관련 훈련 '+array(d.training.exercises).length+'개':'')+'</span>'+(read?'<span class="pl-read"><span aria-hidden="true">✓</span> 읽음</span>':'')+'</small></span><span class="pl-arrow" aria-hidden="true">→</span></button>';}).join(''):'<div class="pl-status"><p>검색에 맞는 레터가 없어요.</p><button type="button" data-letter-clear>검색 지우기</button></div>')+'</div></div>';
       host.querySelector('#plOrder').onchange=function(){order=this.value;paint(true);};
     }
     function read(n,focus){
-      var ticket=++seq;selected=n;lastNumber=n;
+      var ticket=++seq,who=history.owner();selected=n;lastNumber=n;
       if(!cache[n])status('레터 본문을 불러오는 중…');
       var pending=cache[n]?Promise.resolve(cache[n]):get(nn(n)+'.json');
       return pending.then(function(d){
         if(!d||d.number!==n||!Array.isArray(d.pieces)||!d.title)throw Error('Invalid letter');
         cache[n]=d;
         if(ticket!==seq||selected!==n||!active())return;
+        if(who!==history.owner()){paint(true);return;}
         host.innerHTML=article(d);if(count)count.textContent='레터 '+n+'호 · 글 '+d.pieces.length+'편'+(d.training?' · 관련 훈련 '+d.training.exercises.length+'개':'');
+        history.mark(n,who);
         if(focus){host.scrollIntoView({block:'start'});host.querySelector('.pl-title h1').focus({preventScroll:true});}
       }).catch(function(){if(ticket===seq&&active())status('레터 본문을 불러오지 못했어요. 다시 시도해 주세요.',true);});
     }
     function back(){selected=null;seq++;paint(true);var b=host.querySelector('[data-letter="'+lastNumber+'"]');if(b)b.focus({preventScroll:true});win.scrollTo(0,listY);}
+    function refresh(){var who=history.owner();if(who!==readerOwner||who+':'+history.list(who).join(',')!==readSnapshot)paint(false);}
     host.addEventListener('click',function(e){
       if(!active())return;
       var b=e.target.closest('button');if(!b||!host.contains(b))return;
@@ -97,7 +123,9 @@
       else if(b.hasAttribute('data-letter-clear')){var q=doc.getElementById('commSearch');q.value='';q.dispatchEvent(new win.Event('input',{bubbles:true}));q.focus();}
       else if(b.hasAttribute('data-letter-play'))options.openTraining(+b.dataset.letterPlay,+b.dataset.training,b);
     });
-    return {render:function(q){q=String(q||'');var changed=q!==query;query=q;if(changed){selected=null;seq++;}paint(changed);},count:function(){return list?list.length:null;},isReading:function(n){return active()&&selected===n;}};
+    win.addEventListener('storage',function(e){if(e.key===null||e.key===READ_PREFIX+history.owner()||e.key==='ps_sync_session')refresh();});
+    win.addEventListener('focus',refresh);
+    return {render:function(q){q=String(q||'');var changed=q!==query;query=q;if(changed){selected=null;seq++;}paint(changed);},refresh:refresh,count:function(){return list?list.length:null;},isReading:function(n){return active()&&selected===n;}};
   }
-  return {create:create,indexRead:indexRead,select:select,article:article,rich:rich,href:href};
+  return {create:create,indexRead:indexRead,select:select,article:article,rich:rich,href:href,readHistory:readHistory};
 });
