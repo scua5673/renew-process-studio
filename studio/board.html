@@ -12842,7 +12842,7 @@ function _legacyMethodText(d){try{
   if(d&&String(d.method||"").trim())return String(d.method||"");
   return ["description","desc","overview","setup","func","prog"].map(function(k){return d&&d[k];}).filter(function(v){return v&&String(v).trim();}).map(function(v){return String(v).trim();}).join("\n\n");
 }catch(_){return "";}}
-function _trainDraftFrom(d){var draft={type:d.type||"train",name:d.name||"",minutes:d.minutes,sets:(+d.sets>0)?+d.sets:1,rpe:d.rpe||5,focus:d.focus,gmPhases:(Array.isArray(d.gmPhases)?d.gmPhases.slice():[]),gmPhaseNames:(Array.isArray(d.gmPhaseNames)?d.gmPhaseNames.slice():[]),/* 2.182 — 초안을 새로 만들며 국면을 떨어뜨리던 것이 "저장해도 적용 안 됨"의 원인(사용자) */memoQuick:d.memoQuick||d.memo||"",overview:d.overview||d.note||"",method:_legacyMethodText(d),spDesc:d.spDesc||_legacyMethodText(d),setup:d.setup||"",func:d.func||"",coaching:d.coaching||"",prog:d.prog||"",tags:(d.tags||[]).slice()};draft.sp=(d.sp&&typeof d.sp==="object")?Object.assign({},d.sp):null;draft.spCall=d.spCall||"";sectionsOf(draft).forEach(function(s){if(draft[s[0]]==null)draft[s[0]]=(d[s[0]]!=null?d[s[0]]:"");});return draft;}
+function _trainDraftFrom(d){var draft={type:d.type||"train",name:d.name||"",minutes:d.minutes,sets:(+d.sets>0)?+d.sets:1,rpe:d.rpe||5,focus:d.focus,gmPhases:(Array.isArray(d.gmPhases)?d.gmPhases.slice():[]),gmPhaseNames:(Array.isArray(d.gmPhaseNames)?d.gmPhaseNames.slice():[]),/* 2.182 — 초안을 새로 만들며 국면을 떨어뜨리던 것이 "저장해도 적용 안 됨"의 원인(사용자) */memoQuick:d.memoQuick||d.memo||"",overview:d.overview||d.note||"",method:_legacyMethodText(d),spDesc:d.spDesc||_legacyMethodText(d),setup:d.setup||"",func:d.func||"",coaching:d.coaching||"",prog:d.prog||"",tags:(d.tags||[]).slice()};draft.sp=(d.sp&&typeof d.sp==="object")?Object.assign({},d.sp):null;draft.spCall=d.spCall||"";if(d.roster&&typeof d.roster==="object")draft.roster=Object.assign({},d.roster);sectionsOf(draft).forEach(function(s){if(draft[s[0]]==null)draft[s[0]]=(d[s[0]]!=null?d[s[0]]:"");});return draft;}
 function _blankTraining(name,type){return {draft:_trainDraftFrom({type:type||"train",name:name,minutes:15,sets:1,rpe:5,focus:"bp"}),scenes:[{snap:null,thumb:""}],sceneIdx:0,frames:null,animIdx:0,animOn:false};}
 function _drillToTraining(d){return {draft:_trainDraftFrom(d),scenes:[{snap:dc(d.snap||null),thumb:d.thumb||""}].concat(dc(Array.isArray(d.scenes)?d.scenes:[])),sceneIdx:0,
   /* 2.613 — 애니메이션은 훈련마다 따로(사용자 "훈련 1 애니메이션·훈련 2 애니메이션 따로 연결"). 카드 최상위 d.frames 하나만 있던 때는
@@ -12871,8 +12871,8 @@ function loadEditorTrainings(item,fallbackName,type){
   else if(item){editorTrainings=[_drillToTraining(item)];}
   else{editorTrainings=[_blankTraining(fallbackName||"훈련 1",type)];}
   editorTrainIdx=0;}
-function _activateTraining(i){editorTrainIdx=i;var t=editorTrainings[i];editorDraft=t.draft;editorScenes=t.scenes;editorSceneIdx=Math.min(t.sceneIdx||0,editorScenes.length-1);loadSnap(editorScenes[editorSceneIdx].snap||{},{skipPitch:true});try{_trainAnimApply(t);}catch(_){}}   /* 2.613 — 이 훈련의 애니메이션을 바에 */
-function captureActiveTraining(){if(!editorTrainings)return;editorCaptureScene();var t=editorTrainings[editorTrainIdx];if(t){t.draft=editorDraft;t.scenes=editorScenes;t.sceneIdx=editorSceneIdx;_trainAnimCapture(t);}}   /* 2.613 — 애니메이션도 훈련에 */
+function _activateTraining(i){editorTrainIdx=i;var t=editorTrainings[i];editorDraft=t.draft;if(editorDraft.roster)syncEpRosterUI({counts:editorDraft.roster,syncInputs:true});editorScenes=t.scenes;editorSceneIdx=Math.min(t.sceneIdx||0,editorScenes.length-1);loadSnap(editorScenes[editorSceneIdx].snap||{},{skipPitch:true});try{_trainAnimApply(t);}catch(_){}}   /* 2.613 — 이 훈련의 애니메이션을 바에 */
+function captureActiveTraining(){if(!editorTrainings)return;editorCaptureScene();var t=editorTrainings[editorTrainIdx];if(t){if(editorDraft.roster){var r=syncEpRosterUI({});editorDraft.roster={gk:r.gk,field:r.field,rehab:r.rehab,out:r.out};}t.draft=editorDraft;t.scenes=editorScenes;t.sceneIdx=editorSceneIdx;_trainAnimCapture(t);}}   /* 2.613 — 애니메이션도 훈련에 */
 function switchTraining(i){if(!editorTrainings||i===editorTrainIdx||!editorTrainings[i])return;captureActiveTraining();_activateTraining(i);fillEditorPanel();renderSceneStrip();renderTrainingTabs();try{renderTokens();}catch(_){}}
 function addTraining(){if(!editorTrainings)return;if(editorTrainings.length>=TRAIN_MAX){toast("훈련은 최대 "+TRAIN_MAX+"개까지");return;}captureActiveTraining();var _t=(editorDraft&&editorDraft.type==="setpiece")?"setpiece":"train";var pfx=(_t==="setpiece")?"세트피스 ":"훈련 ";var __lk=null;try{__lk=lookNow();}catch(_){}editorTrainings.push(_blankTraining(pfx+(editorTrainings.length+1),_t));_activateTraining(editorTrainings.length-1);try{if(__lk){var __c=lookApply(__lk);try{buildLines();buildGrid();}catch(_){}lookRebuild(__c);lookSyncUI();}}catch(_){}   /* 2.929 — 같은 카드의 새 훈련은 지금 훈련 설정으로(페이지 추가와 같은 규칙) */fillEditorPanel();renderSceneStrip();renderTrainingTabs();try{renderTokens();}catch(_){}toast("훈련 "+editorTrainings.length+" 추가됨");}
 function delTraining(i){if(!editorTrainings||editorTrainings.length<=1)return;psConfirm("이 훈련을 파일에서 삭제할까요?",function(){if(i!==editorTrainIdx)captureActiveTraining();editorTrainings.splice(i,1);if(editorTrainIdx>i)editorTrainIdx--;else if(editorTrainIdx===i)editorTrainIdx=Math.max(0,i-1);_activateTraining(editorTrainIdx);fillEditorPanel();renderSceneStrip();renderTrainingTabs();try{renderTokens();}catch(_){}});}
@@ -13709,7 +13709,7 @@ async function openLibDrawEditor(libId, readOnly, opts){
   /* 2.724 — 보관함에서 연 카드의 훈련 인원 복원(사용자 "복제했을 때 훈련인원 등 전부 복제되게"). 카드에는 2.182 부터 roster 가 저장되고
      복제(dc)에도 그대로 실리는데, 이 문(openLibDrawEditor)만 복원을 안 해 세션에 남은 직전 값(다른 카드 것이거나 0명)을 보여 줬다 —
      openEditor(id) 의 2.182 복원과 같은 한 줄. 카드에 roster 가 없으면(2.182 이전 카드) 다른 카드 숫자를 물려받지 않게 0 으로. */
-  try{ syncEpRosterUI({counts:(d.roster&&typeof d.roster==="object")?d.roster:{},syncInputs:true}); }catch(_){}
+  try{ syncEpRosterUI({counts:editorDraft.roster||((d.roster&&typeof d.roster==="object")?d.roster:{}),syncInputs:true}); }catch(_){}
   moveBoardTo($("editorBoardWrap"));$("editorModal").classList.add("on");document.body.classList.add("editing");try{parent.postMessage({source:"board",type:"editorState",open:true},"*");}catch(_){}try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}try{applyView();}catch(_){}try{renderBench();}catch(_){}renderTokens();
   try{renderAnimFrames();_animFitPad();}catch(_){}   /* 2.613 — 애니메이션은 _activateTraining 이 훈련별로 올렸다. 편집기 판 크기에 바를 다시 맞춘다 */
   applyEditorReadOnly(d);
@@ -13986,7 +13986,7 @@ function openEditor(id,type){
     $("modalTitle").textContent="훈련 편집";editorDrillId=id;editorFileName=d.name||"";
     try{$("editorCancel").textContent="닫기";$("editorDone").textContent="변경 저장";var _ef=$("editorFlow");if(_ef)_ef.textContent="편집 중 · 저장하면 기존 항목에 반영";}catch(_){}
     loadEditorTrainings(d);_activateTraining(0);   /* 2.613 — d.frames 는 loadEditorTrainings 가 훈련에 얹는다 */
-    try{ if(d.roster)syncEpRosterUI({counts:d.roster,syncInputs:true}); }catch(_){}   /* 2.182 — 카드에 남긴 인원 복원 */}
+    try{ if(editorDraft.roster||d.roster)syncEpRosterUI({counts:editorDraft.roster||d.roster,syncInputs:true}); }catch(_){}   /* 2.182 — 카드에 남긴 인원 복원 */}
   else{var _ety=(type==="setpiece")?"setpiece":"train";
     /* 1.972 — 되돌릴 보드 피치는 초안 복원 '전에' 기억한다. loadSnap 은 skipPitch 여도 스냅에 pitchTheme 이 있으면 항상 적용하는데,
        새로고침(업데이트) 뒤 남은 초안 장면(pitchTheme:'train')을 아래 _activateTraining 이 먼저 올리고 나서야 기억하던 탓에

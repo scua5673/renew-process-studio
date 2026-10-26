@@ -43,3 +43,30 @@ test('existing method wins, while setpiece receives a compatible description',()
   assert.equal(setpiece.spDesc,'세트피스 설명');
   assert.equal(setpiece.coaching,'상대 대응');
 });
+
+test('explicit training rosters survive draft conversion without sharing the source object',()=>{
+  const c=harness(),sourceRoster={gk:2,field:20,rehab:0,out:0};
+  const d=c._trainDraftFrom({roster:sourceRoster});
+  assert.equal(d.roster.field,20);
+  d.roster.field=18;
+  assert.equal(sourceRoster.field,20);
+  assert.equal(c._trainDraftFrom({name:'legacy'}).roster,undefined);
+});
+
+test('switching individual trainings restores their roster and captures edits separately',()=>{
+  const c=harness();
+  Object.assign(c,{
+    editorTrainings:[{draft:{roster:{gk:2,field:20,rehab:0,out:0}},scenes:[{snap:{}}]},
+      {draft:{roster:{gk:0,field:10,rehab:0,out:0}},scenes:[{snap:{}}]},
+      {draft:{name:'legacy'},scenes:[{snap:{}}]}],
+    currentRoster:{gk:0,field:0,rehab:0,out:0},
+    syncEpRosterUI(opts){if(opts.counts)c.currentRoster={...opts.counts};return {...c.currentRoster};},
+    loadSnap(){},_trainAnimApply(){},editorCaptureScene(){},_trainAnimCapture(){}
+  });
+  vm.runInContext(source.slice(source.indexOf('function _activateTraining('),source.indexOf('function switchTraining(')),c);
+  c._activateTraining(0);assert.equal(c.currentRoster.gk,2);assert.equal(c.currentRoster.field,20);
+  c.currentRoster.field=18;c.captureActiveTraining();
+  c._activateTraining(1);assert.equal(c.currentRoster.gk,0);assert.equal(c.currentRoster.field,10);
+  c._activateTraining(0);assert.equal(c.currentRoster.field,18);
+  c._activateTraining(2);assert.equal(c.currentRoster.field,18);
+});
