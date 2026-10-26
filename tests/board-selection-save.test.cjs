@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const src=fs.readFileSync(require.resolve('../studio/board.html'),'utf8');
 function setup(){
- const c=vm.createContext({console,sel:{ref:{id:1}},multiSel:[{id:2}],_vaultBoardContext:false,_vaultBoardRestoring:false,_bliveApplying:false,_boardPrivateLoaded:true,_boardPrivateOwner:{id:'test'},_boardPrivateEditSeq:0,_bliveT:null,animPlaying:false,location:{search:''},URLSearchParams,setTimeout:()=>1,clearTimeout:()=>{},document:{body:{classList:{contains:()=>false}}},captureSnap:()=>({players:[]}),boardManualStatus:()=>{},boardPrivateCurrent:()=>true,psDragging:()=>false,_setSelRings:()=>{}});
+ const c=vm.createContext({PSBoardDraft:require('../studio/board-draft.js'),console,sel:{ref:{id:1}},multiSel:[{id:2}],_vaultBoardContext:false,_vaultBoardRestoring:false,_bliveApplying:false,_boardPrivateLoaded:true,_boardPrivateOwner:{id:'test'},_boardPrivateEditSeq:0,_bliveT:null,animPlaying:false,location:{search:''},URLSearchParams,setTimeout:()=>1,clearTimeout:()=>{},document:{body:{classList:{contains:()=>false}}},captureSnap:()=>({players:[]}),boardManualStatus:()=>{},boardPrivateCurrent:()=>true,psDragging:()=>false,_setSelRings:()=>{}});
  vm.runInContext('window=this; writes=0; thumbs=0; renders=0;',c);
  vm.runInContext(src.slice(src.indexOf('function boardThumbSVG(){'),src.indexOf('function _boardThumbSVGRaw()')),c);
  vm.runInContext(src.slice(src.indexOf('function boardSaveLive(){'),src.indexOf('function restoreAnimBeforeCapture()')),c);

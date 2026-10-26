@@ -5,7 +5,7 @@ assert.ok(start>=0&&end>start);const callback=html.slice(start,end);
 const saveStart=html.indexOf('function boardSaveLive(){'),saveEnd=html.indexOf('function restoreAnimBeforeCapture()',saveStart);
 const save=html.slice(saveStart,saveEnd);
 function fixture({dirty=false,edit=0,cap,ready=false,fail=false}={}){
- let image;const c={Image:function(){image=this;},URLSearchParams,location:{search:''},clearTimeout(){},document:{body:{classList:{contains:()=>false}},getElementById:()=>null},
+ let image;const c={PSBoardDraft:require('../studio/board-draft.js'),Image:function(){image=this;},URLSearchParams,location:{search:''},clearTimeout(){},document:{body:{classList:{contains:()=>false}},getElementById:()=>null},
  BALL_IMG:{white:'synthetic-ball.avif'},__capLock:cap,__boardReady:ready,__boardRestoring:7,__csView:'board',_vaultBoardContext:false,_vaultBoardRestoring:false,_bliveApplying:false,animPlaying:false,
  _boardPrivateLoaded:true,_boardPrivateOwner:{uid:'fixture'},boardPrivateCurrent:()=>true,_bliveDirty:false,_boardPrivateEditSeq:edit,_boardManualDirty:dirty,_bliveT:null,_boardDraftBar:false,
  kitPropagateIfChanged(){},captureSnap:()=>({synthetic:true}),boardDraftSchedule(){},boardManualStatus(){},renderPitchImg(){}};

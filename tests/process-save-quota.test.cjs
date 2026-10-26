@@ -50,6 +50,21 @@ test('the matching quota warning recovers only after exact durable confirmation 
  const h=harness(),g=deferred();let recovered=false;h.c.PSStorage.sharedRecovered=(k,raw)=>{assert.equal(k,KEY);assert.equal(h.disk.get(k),raw);assert.equal(h.local.has(KEY),false);return g.promise.then(()=>recovered=true);};
  h.c.saveNow();await tick();h.commits[0].resolve(true);await tick();assert.equal(h.c.psHasPending(),true);assert.equal(h.states.filter(s=>s[1]==='saved').length,0);g.resolve(true);await h.c.psFlushPendingReady();assert.equal(recovered,true);assert.equal(h.states.at(-1)[1],'saved');
 });
+test('a normal accepted schedule write also recovers its exact earlier quota failure',async()=>{
+ const h=harness('normal'),g=deferred();let recovered=false;
+ h.c.PSStorage.sharedRecovered=(k,raw,current)=>{assert.equal(k,KEY);assert.equal(h.disk.get(k),raw);assert.equal(h.local.get(k),raw);assert.equal(current(),true);return g.promise.then(()=>{assert.equal(current(),true);recovered=true;});};
+ h.c.saveNow();await tick();h.commits[0].resolve(true);await tick();
+ assert.equal(h.c.psHasPending(),true);assert.equal(h.states.filter(s=>s[1]==='saved').length,0);
+ g.resolve();await h.c.psFlushPendingReady();assert.equal(recovered,true);assert.equal(h.c.psHasPending(),false);assert.equal(h.states.at(-1)[1],'saved');
+});
+for(const change of ['owner','edit'])test('normal quota recovery still vetoes a changed '+change,async()=>{
+ const h=harness('normal'),g=deferred();let current;
+ h.c.PSStorage.sharedRecovered=(k,raw,guard)=>{current=guard;return g.promise.then(()=>guard());};
+ h.c.saveNow();await tick();h.commits[0].resolve(true);await tick();assert.equal(typeof current,'function');
+ if(change==='owner')h.ownerChanged();else h.c.__schedWriteSeq++;
+ assert.throws(()=>current(),/changed|stale|저장|이동|바뀌/);g.resolve();await tick();
+ assert.equal(h.states.filter(s=>s[1]==='saved').length,0);assert.equal(h.c.psHasPending(),true);
+});
 for(const change of ['team','seal','epoch','guard'])test('quota tidy never retries an old draft after changed '+change,async()=>{
  const h=harness(),g=deferred();h.hooks.optimize=()=>g.promise;h.c.psSaveShared=null;h.c.saveNow();await tick();assert.equal(h.c.__schedTidying,true);assert.equal(h.c.psHasPending(),true);
  h.ownerChanged(change);g.resolve({freed:1000});await tick();await tick();await assert.rejects(h.c.psFlushPendingReady());assert.equal(h.commits.length,0);assert.equal(h.local.get(KEY),'old mirror');assert.equal(h.toasts.length,0);assert.equal(h.states.filter(s=>s[1]==='saved').length,0);

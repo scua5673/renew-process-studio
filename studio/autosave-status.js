@@ -42,5 +42,142 @@
     if(kind==='ok'&&Number(s.at)>0)return result('ok','저장됨','서버에 저장된 내용을 확인했습니다.','',false,true);
     return result('pending','저장 확인 중…','아직 서버 저장을 확인하지 못했습니다.','retry');
   }
-  return {view:view};
+  /* The sync engine cannot see a child editor's rejected/pending local write.
+     Keep the local barrier separate; a successful local write is never an ACK. */
+  function combine(shown,local){
+    var r=shown||view(null),l=local;
+    function out(kind,text,detail,action,attention){return {kind:kind,text:text,detail:detail,action:action||'',attention:!!attention,complete:false};}
+    if(!l)return r.kind==='bad'?r:out('pending','기기 저장 확인 중…','현재 화면의 기기 저장 상태를 아직 확인하지 못했습니다.','retry');
+    if(l.failed)return out('bad','기기에 저장하지 못했어요','방금 편집의 기기 저장을 확인하지 못했습니다. 화면을 닫기 전에 내용을 따로 복사하고 저장을 다시 시도해 주세요.','retry',true);
+    if(l.unknown)return r.kind==='bad'?r:out('pending','기기 저장 확인 중…','현재 화면의 기기 저장 상태를 아직 확인하지 못했습니다.','retry');
+    if(l.saving)return out('busy','기기에 저장 중…','화면의 변경사항을 기기에 저장하고 있습니다. 아직 저장 완료가 아닙니다.');
+    if(r.kind==='bad'){
+      if(l.saved&&r.action!=='login'&&r.text.indexOf('오프라인')>=0)return out('pending','기기에 저장됨 · 오프라인','기기 저장은 확인했습니다. 인터넷에 연결된 뒤 서버 저장 여부를 다시 확인합니다.','retry');
+      return r;
+    }
+    if(l.boardDraft)return out('pending','보드 초안 · 기기에 저장됨','작전판의 미저장 변경을 이 기기에 초안으로 보관했습니다. 서버 저장을 확인한 것은 아닙니다. «보드 저장»으로 마무리해 주세요.','',true);
+    if(r.kind==='held'){
+      if(l.localOnly||l.unconfirmed){var held={};Object.keys(r).forEach(function(k){held[k]=r[k];});held.complete=false;return held;}
+      return r;
+    }
+    if(l.saved&&r.kind==='off')return out('pending','기기에 저장됨','기기 전용 자료나 초안의 저장을 확인했습니다. 이 표시만으로 서버 저장 완료를 뜻하지는 않습니다.');
+    if(l.unconfirmed)return out(r.kind==='busy'?'busy':'pending','기기에 저장됨 · 서버 확인 대기','기기 저장은 확인했지만 현재 원문의 서버 저장 완료는 아직 확인하지 못했습니다.','retry');
+    if(l.saved&&l.localOnly)return out('pending','기기에 저장됨','기기 저장을 확인했습니다. 일부 자료는 현재 원문의 서버 저장 완료를 별도로 확인하지 못해, 전체 저장 완료로 표시하지 않습니다.');
+    if(r.complete){var confirmed={};Object.keys(r).forEach(function(k){confirmed[k]=r[k];});confirmed.text='서버 저장 확인';return confirmed;}
+    return r;
+  }
+
+  /* Same-origin direct listeners, rather than trusting postMessage payloads.
+     Each callback is bound to the actual Document and account/team epoch.
+     Removed/reloaded frames are dropped; an old live frame is unknown until it
+     loads or publishes a current-owner save state. No polling or storage writes. */
+  function observe(w,options){
+    var o=options||{},rows=[],closed=false,queued=false,serial=0;
+    function owner(){try{return o.owner();}catch(_){return null;}}
+    function notify(){if(closed||queued)return;queued=true;Promise.resolve().then(function(){queued=false;if(!closed&&o.change)o.change();});}
+    function alive(row){try{return row.w.document===row.doc&&(!row.frame||row.frame.isConnected!==false);}catch(_){return false;}}
+    function forget(row){row.handlers.forEach(function(h){try{row.w.removeEventListener(h[0],h[1],true);}catch(_){}});try{if(row.observer)row.observer.disconnect();}catch(_){}}
+    function invalidate(row){row.receipts=Object.create(null);row.serial=++serial;}
+    function attach(win,doc,frame){
+      var row=rows.filter(function(r){return r.doc===doc&&r.frame===frame;})[0];if(row)return row;
+      row={w:win,doc:doc,frame:frame,owner:owner(),serial:++serial,receipts:Object.create(null),handlers:[]};rows.push(row);
+      function on(name,fn){try{win.addEventListener(name,fn,true);row.handlers.push([name,fn]);}catch(_){}}
+      on('ps-save-state',function(e){
+        if(!alive(row))return;var current=owner(),d=e&&e.detail;
+        if(!d||d.owner!==current||current===null)return;
+        row.owner=current;invalidate(row);notify();
+      });
+      function changed(){if(alive(row)){invalidate(row);notify();}}
+      on('input',changed);on('change',changed);on('storage',changed);
+      on('ps-storage-recovered',changed);on('load',function(e){if(!e||e.target===doc||String(e.target&&e.target.tagName).toUpperCase()==='IFRAME')notify();});
+      try{if(win.MutationObserver&&doc.documentElement){row.observer=new win.MutationObserver(function(changes){
+        function frameNode(n){return n&&n.nodeType===1&&(String(n.tagName).toUpperCase()==='IFRAME'||(n.querySelector&&n.querySelector('iframe')));}
+        if(changes.some(function(c){return Array.prototype.some.call(c.addedNodes||[],frameNode)||Array.prototype.some.call(c.removedNodes||[],frameNode);}))notify();
+      });row.observer.observe(doc.documentElement,{childList:true,subtree:true});}}catch(_){}
+      return row;
+    }
+    function scan(){
+      var live=[],loading=false;
+      function visit(win,frame){
+        var doc;try{doc=win.document;if(!doc)return;if(frame&&String(win.location.href)==='about:blank'){if(frame.getAttribute('src')&&frame.getAttribute('src')!=='about:blank')loading=true;return;}if(frame&&doc.readyState&&doc.readyState!=='complete')loading=true;}catch(_){return;}
+        var row=attach(win,doc,frame);live.push(row);
+        var frames=[];try{frames=doc.querySelectorAll('iframe');}catch(_){}
+        for(var i=0;i<frames.length;i++)try{if(frames[i].contentWindow)visit(frames[i].contentWindow,frames[i]);}catch(_){}
+      }
+      visit(w,null);rows=rows.filter(function(row){if(live.indexOf(row)>=0&&alive(row))return true;forget(row);return false;});
+      return loading;
+    }
+    function receipt(row,scope){
+      if(!o.confirm)return null;
+      var old=row.receipts[scope];if(old)return old;
+      var version=row.serial,current=owner(),work;
+      try{work=o.confirm(row.w,scope);}catch(_){work=Promise.resolve(false);}
+      if(work===null||work===undefined){old={localOnly:true};row.receipts[scope]=old;return old;}
+      old={pending:true,confirmed:false};row.receipts[scope]=old;
+      Promise.resolve(work).then(function(result){
+        if(!closed&&alive(row)&&row.serial===version&&row.owner===current&&owner()===current&&row.receipts[scope]===old){old.pending=false;old.confirmed=result===true||!!(result&&result.confirmed===true);notify();}
+      },function(){if(!closed&&alive(row)&&row.serial===version&&row.receipts[scope]===old){old.pending=false;old.confirmed=false;notify();}});
+      return old;
+    }
+    function read(){
+      var current=owner(),result={failed:false,saving:false,unknown:false,saved:false,localOnly:false,unconfirmed:false,boardDraft:false};
+      result.unknown=scan()||current===null;
+      rows.forEach(function(row){
+        var api,snap;try{api=row.w.PSSaveState;snap=api&&api.snapshot&&api.snapshot();}catch(_){result.unknown=true;return;}
+        if(!snap||snap.owner!==current||current===null){result.unknown=true;return;}
+        if(!row.frame)row.owner=current;
+        if(row.owner!==current){result.unknown=true;return;}
+        var draft,b;try{draft=row.w.__psBoardDraft;b=draft&&draft.snapshot&&draft.snapshot();}catch(_){result.unknown=true;}
+        Object.keys(snap.scopes||{}).forEach(function(scope){
+          if(scope==='board-draft'&&b&&!b.unknown&&!b.needed)return;
+          var state=snap.scopes[scope];if(state==='failed')result.failed=true;
+          else if(state==='saving')result.saving=true;
+          else if(state==='saved'&&scope!=='storage'){
+            result.saved=true;var r=receipt(row,scope);
+            if(!r||r.localOnly)result.localOnly=true;else if(!r.confirmed)result.unconfirmed=true;
+          }
+        });
+        try{if(row.w.psHasPending&&row.w.psHasPending())result.saving=true;}catch(_){result.unknown=true;}
+        try{
+          if(b){
+            if(b.unknown)result.unknown=true;
+            if(b.failed)result.failed=true;
+            /* A borrowed canvas cannot be captured. Only an independently
+               verified receipt for the old working board may remain a local
+               draft; editor/shared barriers above still take precedence. */
+            var sourceSaved=b.sourceSuspended===true&&b.localDurable===true&&b.pending===false&&b.failed===false&&b.unknown===false&&b.unsaved===true&&b.serverConfirmed===false;
+            if(b.needed&&(b.blocked&&!sourceSaved||b.pending||!b.localDurable))result.saving=true;
+            else if(b.needed&&b.unsaved&&b.localDurable){result.boardDraft=true;result.saved=true;result.localOnly=true;}
+            if(b.serverPending){result.unconfirmed=true;result.saved=!!b.privateLocalDurable||result.saved;}
+          }
+        }catch(_){result.unknown=true;}
+      });
+      return result;
+    }
+    return {read:read,refresh:function(){rows.forEach(invalidate);notify();},dispose:function(){closed=true;rows.forEach(forget);rows=[];}};
+  }
+  function observeShell(w,onChange){
+    return observe(w,{
+      owner:function(){return w.PSSaveState.owner();},change:onChange,
+      confirm:function(child,scope){
+        /* A tracker may cover several keys. Only a scope with fully known
+           coverage may turn local durability into an exact server claim. */
+        if(scope==='board-private'){
+          var board=child.__psBoardDraft,b=board&&board.snapshot&&board.snapshot();
+          return !!(b&&!b.unknown&&!b.serverPending&&b.privateServerConfirmed&&!(child.psHasPending&&child.psHasPending()));
+        }
+        if(scope!=='schedule')return null;
+        var S=w.PSSync;if(!S||typeof S.confirmedValue!=='function')return Promise.resolve(false);
+        var expected=w.PSSaveState.owner(),doc=child.document,key='process_coach_v1',raw=child.localStorage.getItem(key);
+        function current(){return expected!==null&&w.PSSaveState.owner()===expected&&child.document===doc&&child.localStorage.getItem(key)===raw&&!(child.psHasPending&&child.psHasPending());}
+        var read=raw!==null?Promise.resolve(raw):(child.storage&&child.storage.peek?child.storage.peek(key).then(function(r){return r?r.value:null;}):Promise.resolve(null));
+        return read.then(function(value){if(!current()||typeof value!=='string')return false;return Promise.resolve(S.confirmedValue(key,value)).then(function(r){
+          if(!current()||!(r===true||r&&r.confirmed===true))return false;
+          if(raw!==null)return true;
+          return child.storage.peek(key).then(function(latest){return current()&&!!latest&&latest.value===value;});
+        });});
+      }
+    });
+  }
+  return {view:view,combine:combine,observe:observe,observeShell:observeShell};
 });
