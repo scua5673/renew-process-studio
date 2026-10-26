@@ -6495,7 +6495,7 @@ function scRenderProfile(pl){
   var un=block.querySelector('[data-sc-unplace]');if(un)un.onclick=function(){scUnplace(pl.id);};var place=block.querySelector('[data-sc-place]');if(place)place.onclick=function(){closePlayer();__scOpenAttach({id:c.id,nameKr:c.info.name});};
   block.querySelectorAll('[data-sc-variant]').forEach(function(b){b.onclick=function(){try{scStore().check();var v=diff[+b.dataset.scVariant];PSScoutStore.edit(scStore().state.doc,c.id,v.field,v.value,scStore().stamp());save();openPlayer(pl.id);}catch(e){scWarn(e);}};});
   var pts=document.createElement('details');pts.id='plScoutPoints';pts.className='sc-profile-source';pts.innerHTML='<summary>스카우팅 포인트</summary><iframe title="후보 스카우팅 포인트 평가"></iframe>';
-  pts.addEventListener('toggle',function(){if(pts.open&&!pts.querySelector('iframe').src)pts.querySelector('iframe').src='scouting.html?view=evaluate&candidate='+encodeURIComponent(c.id);});$('plLevels').parentNode.insertBefore(pts,$('plLevels'));
+  pts.addEventListener('toggle',function(){if(pts.open&&!pts.querySelector('iframe').src)pts.querySelector('iframe').src='scouting.html?view=evaluate&candidate='+encodeURIComponent(c.id)+'&position='+encodeURIComponent(tmAbbrOf(pl));});$('plLevels').parentNode.insertBefore(pts,$('plLevels'));
 }
 
 var scClient=null,scPreparing=null,scMainMigrationPending=false;
@@ -21982,5 +21982,6 @@ html.ps-page-scout .match-shell .mr-act .mr-more:not(#_):not(#__):hover,html.ps-
 html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srgb,var(--team-c-dark,#9FB3D6) 10%,var(--surface,#1B1E23));border-color:var(--team-c-dark,#9FB3D6)!important;box-shadow:inset 3px 0 0 var(--team-c-dark,#9FB3D6)!important}
 </style>
 <link rel="stylesheet" href="team-criteria.css">
+<link rel="stylesheet" href="player-workspace.css"><script src="player-workspace.js"></script>
 </body>
 </html>

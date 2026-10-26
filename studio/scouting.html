@@ -7,7 +7,7 @@
 <title>스카우팅 · 후보 선수 DB</title>
 <script>document.documentElement.classList.add('ps-page-scouting')</script>
 <script src="storage.js"></script>
-<script src="scouting-store.js"></script>
+<script src="scouting-store.js"></script><script src="scouting-position.js"></script>
 <script src="perms.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 -->
 <script src="profile-sheet.js"></script><!-- 2.617 — 프로필 한 장(A4) · scout.html 과 공용 --><script src="pdf-export.js"></script><!-- 3.094 — PDF 내보내기 창 -->
@@ -1119,14 +1119,12 @@ $("ptGroupAdd").addEventListener("click",function(){var t=prompt("그룹 이름 
   db.meta.pointSets=db.meta.pointSets||[];db.meta.pointSets.push({name:t,positions:[],text:""});ptOpen=db.meta.pointSets.length-1;save();renderPtSet();});
 /* ── 스카우팅 포인트: 평가지 ── */
 var ptEvalPlayer=null;
-function ptPickSet(p){var sets=db.meta.pointSets||[];
-  for(var i=0;i<sets.length;i++){if((sets[i].positions||[]).some(function(x){return (p.pos||[]).indexOf(x)>=0;}))return i;}
-  return 0;}
+function ptPickSet(p){var hint=new URLSearchParams(location.search).get('position');return PSScoutPosition.pick(db.meta.pointSets||[],hint?[hint]:(p.pos||[]));}
 function renderPtEval(){
   var p=ptEvalPlayer;if(!p)return;
-  var sets=db.meta.pointSets||[],si=+($("ptEvalSet").value||0)||0;if(si>=sets.length)si=0;
+  var sets=db.meta.pointSets||[],si=Number($("ptEvalSet").value);if(si>=sets.length)si=-1;
   var set=sets[si];var host=$("ptEvalBody");host.innerHTML="";
-  if(!set){host.innerHTML='<div class="pt-empty">세트가 없습니다 — 포인트 설정에서 만들어주세요.</div>';renderOldPointRecords(host,p,sets);return;}
+  if(!set){host.innerHTML='<div class="pt-empty">'+(sets.length?'포지션에 맞는 질문 그룹을 위에서 선택해 주세요.':'세트가 없습니다 — 포인트 설정에서 만들어주세요.')+'</div>';renderOldPointRecords(host,p,sets);return;}
   var secs=parsePoints(set.text);
   if(!secs.length){host.innerHTML='<div class="pt-empty">이 그룹에 질문이 없습니다 — 포인트 설정에서 붙여넣어 주세요.</div>';renderOldPointRecords(host,p,sets);return;}
   /* 2.012 — 평가표 재설계: 요약 띠(이 그룹 평균·응답 진행·척도 말·안 매긴 것만) → 섹션 헤더(평균·응답) → 번호 질문 + 말 붙은 1~5 */
@@ -1179,7 +1177,7 @@ function renderOldPointRecords(host,p,sets){
 }
 function openPtEval(p){
   ptEvalPlayer=p;
-  var sets=db.meta.pointSets||[],sel=$("ptEvalSet");sel.innerHTML="";
+  var sets=db.meta.pointSets||[],sel=$("ptEvalSet");sel.innerHTML='<option value="-1">질문 그룹 선택</option>';
   sets.forEach(function(s,i){var o=document.createElement("option");o.value=i;o.textContent=s.name;sel.appendChild(o);});
   sel.value=String(ptPickSet(p));
   $("ptEvalTitle").textContent=(p.nameKr||"선수")+" · 포인트 평가";
