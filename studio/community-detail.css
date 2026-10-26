@@ -70,9 +70,9 @@ html.ps-page-board.cd-player body.comm-viewing #commPlayControls{bottom:12px}
   html.ps-page-community #wrap#wrap#wrap{display:block}
   #wrap#wrap#wrap .cl-heading{margin-bottom:16px}
   #wrap#wrap#wrap .top{display:flex;border-bottom:1px solid var(--c-line);margin-bottom:20px}
-  #wrap#wrap#wrap #prSeg{position:static;display:flex;flex-direction:row;flex-wrap:wrap;padding:0;border:0;gap:20px}
+  #wrap#wrap#wrap #prSeg{position:static;display:flex;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:0;border:0;gap:20px}
   #wrap#wrap#wrap #prSeg:before,#wrap#wrap#wrap #prSeg:after{display:none}
-  #wrap#wrap#wrap #prSeg button{padding:0 10px;gap:8px}
+  #wrap#wrap#wrap #prSeg button{flex:0 0 auto;padding:0 10px;gap:8px}
 }
 @media(max-width:600px){
   #wrap#wrap#wrap .cl-heading h1{font-size:calc(var(--t-7) * 1.3)}

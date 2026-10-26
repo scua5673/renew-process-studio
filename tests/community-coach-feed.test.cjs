@@ -7,6 +7,7 @@ const vm=require('node:vm');
 const src=fs.readFileSync(path.join(__dirname,'../studio/community.html'),'utf8');
 const feed=src.slice(src.indexOf('function fetchPosts('),src.indexOf('function paintLike('));
 const readers=src.slice(src.indexOf('var ELM_UID='),src.indexOf('function elmPath('));
+const training=require('../studio/community-training.js');
 const plain=x=>JSON.parse(JSON.stringify(x));
 
 async function load({sort='new',cache=false,fallback=false}={}){
@@ -14,7 +15,7 @@ async function load({sort='new',cache=false,fallback=false}={}){
   let painted;
   const rendered=new Promise(resolve=>{painted=resolve;});
   const ctx=vm.createContext({
-    sort,posts:[],ready:false,tabF:'coach',FEED_CK:'feed',FEED_TTL:60000,
+    PSCommunityTraining:training,sort,posts:[],ready:false,tabF:'coach',FEED_CK:'feed',FEED_TTL:60000,
     COMM_FULL:'id,owner,likes',COMM_LEAN:'id,owner',
     cmStage(){},base:()=> 'https://fixture.invalid',hd:()=>({}),$:()=>({}),
     fetchMyLikes:()=>Promise.resolve(),render:()=>painted(),elmStale(){},
@@ -27,7 +28,8 @@ async function load({sort='new',cache=false,fallback=false}={}){
   });
   vm.runInContext(readers+feed,ctx);
   ctx.rows=[{id:'elm',owner:ctx.ELM_UID,owner_name:'바뀐 이름'},
-    {id:'coach',owner:'another-account',owner_name:'엘미하'}];
+    {id:'coach',owner:'another-account',owner_name:'엘미하'},
+    {id:training.catalog.posts[0].id,owner:training.catalog.owner,owner_name:'프로세스'}];
   if(cache)stored.set('feed',JSON.stringify({sort,at:Date.now(),posts:ctx.rows}));
   ctx.fetchPosts();
   await rendered;
@@ -39,6 +41,7 @@ for(const sort of ['new','views','likes','copies'])test(`coach feed excludes the
   assert.equal(requests.length,1);
   assert.equal(requests[0].searchParams.get('owner'),'neq.'+ctx.ELM_UID);
   assert.equal(requests[0].searchParams.get('limit'),'100');
+  assert.equal(requests[0].searchParams.get('id'),new URL('https://fixture.invalid/?'+training.exclude().slice(1)).searchParams.get('id'));
   assert.equal(requests[0].searchParams.get('order'),sort==='new'?'created_at.desc':sort+'.desc,created_at.desc');
   assert.deepEqual(plain(ctx.posts),[ctx.rows[1]],'account identity controls the split, regardless of display names');
   assert.deepEqual(JSON.parse(stored.get('feed')).posts,[ctx.rows[1]],'only coach rows enter the new cache');
