@@ -58,3 +58,8 @@ test('failed durable writes never clear a quota warning or replay an older body'
   h.writes[0].reject(new Error('fixture disk full'));await fail;await rejected;
   assert.equal(h.writes.length,1);assert.equal(h.disk.get(k),'old');assert.equal(h.node.removed,false);
 });
+test('a newer failed editor action can veto recovery immediately before its warning clears',async()=>{
+  const h=harness(),k='process_coach_v1',g=gate();h.c.warnFull(k);h.disk.set(k,'new');let safe=true;
+  h.onRead(()=>g.promise);const recovered=h.c.sharedRecovered(k,'new',()=>safe);const rejected=assert.rejects(recovered,/changed/);
+  await tick();safe=false;g.resolve();await rejected;assert.equal(h.node.removed,false);
+});

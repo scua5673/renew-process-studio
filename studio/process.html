@@ -8863,8 +8863,14 @@ function __schedReadScope(){
 window.__schedIdbCheck=function(){
   try{
     if(!(window.storage&&window.storage.get))return;
-    var scope=__schedReadScope(),before=localStorage.getItem(STORE_KEY);if(scope===null)return;
-    window.storage.get(STORE_KEY).then(function(r){
+    var scope=__schedReadScope(),before=localStorage.getItem(STORE_KEY),seq=__schedWriteSeq;if(scope===null)return;
+    function recoveryCurrent(){
+      if(__schedReadScope()!==scope||localStorage.getItem(STORE_KEY)!==before||__schedWriteSeq!==seq||__schedWritePending||__schedEditorActive()||window.PSSaveState&&PSSaveState.get('schedule')==='failed'){
+        var e=new Error('일정 저장 확인 중 새 편집이 생겼습니다');e.name='StorageOwnerChangedError';throw e;
+      }
+      return true;
+    }
+    return window.storage.get(STORE_KEY).then(function(r){
       if(__schedReadScope()!==scope||localStorage.getItem(STORE_KEY)!==before)return;
       var idb=r&&r.value; if(!idb)return;
       var mir=null; try{ mir=localStorage.getItem(STORE_KEY); }catch(_){}
@@ -8872,11 +8878,15 @@ window.__schedIdbCheck=function(){
       var rev=function(s){ try{ var o=JSON.parse(s)||{}; return [(+o.scheduleRev||0),(+o.editedAt||0)]; }catch(_){ return [0,0]; } };
       var ri=rev(idb), rm=rev(mir);
       if(mir!=null&&(rm[0]>ri[0]||(rm[0]===ri[0]&&rm[1]>=ri[1])))return;   /* 거울이 더 새로움(이 기기 편집) — 그대로 */
+      var quota=false;
       try{ localStorage.setItem(STORE_KEY,idb); window.__schedMirrorFull=false; }
-      catch(_){ window.__schedMirrorFull=true; }   /* 저장 공간 부족 — 거울 수리 실패, 화면만이라도 새 판으로 */
+      catch(e){ window.__schedMirrorFull=true;quota=!!(e&&/^(QuotaExceededError|NS_ERROR_DOM_QUOTA_REACHED)$/.test(e.name||'')); }
       if(__schedReadScope()!==scope)return;
       if(__schedWritePending||__schedEditorActive()){ __schedQueueIncoming(idb); setTimeout(__schedDrainIncoming,0); }
       else __schedRenderIncoming(idb);
+      if(quota&&window.PSStorage&&PSStorage.sharedRecovered){
+        recoveryCurrent();return Promise.resolve(PSStorage.sharedRecovered(STORE_KEY,idb,recoveryCurrent)).then(recoveryCurrent);
+      }
     }).catch(function(){});
   }catch(_){}
 };

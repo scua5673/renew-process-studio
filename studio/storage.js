@@ -784,10 +784,10 @@
   }
   /* Recover only this exact durable document's quota warning. A different key,
      owner, mirror or queued write cannot make a failed save look successful. */
-  function sharedRecovered(k,raw){
+  function sharedRecovered(k,raw,current){
     var owner=sharedReadContext(),mirror=localStorage.getItem(k);
     return sharedCommitted(k,raw).then(function(){
-      if(owner===null||owner!==sharedReadContext()||localStorage.getItem(k)!==mirror||sharedWrites[k]){
+      if(owner===null||owner!==sharedReadContext()||localStorage.getItem(k)!==mirror||sharedWrites[k]||typeof current==='function'&&current()!==true){
         var e=new Error('shared recovery owner or source changed');e.name='StorageOwnerChangedError';throw e;
       }
       if(!fullFailures[k])return true;

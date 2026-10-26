@@ -41,7 +41,9 @@ async function snapshot(page,fx,slot,label){
  return{label,state,idbHash:hash(disk),serverHash:hash(server),idbTarget:disk&&target(disk,slot),serverTarget:target(server,slot),frames,protected:await protectedState(page),scheduleWrites:fx.writes.filter(w=>w.k===KEY&&w.v!=null).length};
 }
 const init={fn:()=>{
- window.__quotaCase={lsFaults:0,idbFaults:0};
+ window.__quotaCase={lsFaults:0,idbFaults:0,idbChecksStarted:0,idbChecksCompleted:0};
+ // Observe the real 900ms boot check and its Promise; never replace its guards.
+ let checker;Object.defineProperty(window,'__schedIdbCheck',{configurable:true,get:()=>checker,set:fn=>{checker=function(...args){const work=fn.apply(this,args);if(!work||typeof work.then!=='function')return work;window.__quotaCase.idbChecksStarted++;return work.then(v=>{window.__quotaCase.idbChecksCompleted++;return v;},e=>{window.__quotaCase.idbChecksCompleted++;throw e;});};}});
  const mode=()=>localStorage.getItem('qa_process_quota')||'off',set=Storage.prototype.setItem,put=IDBObjectStore.prototype.put;
  Storage.prototype.setItem=function(k,v){if(this===localStorage&&k==='process_coach_v1'&&mode()!=='off'){window.__quotaCase.lsFaults++;throw new DOMException('Synthetic schedule small-store quota','QuotaExceededError');}return set.apply(this,arguments);};
  IDBObjectStore.prototype.put=function(v,k){if(k==='process_coach_v1'&&this.name==='kv'&&this.transaction.db.name==='ps-store'&&mode()==='both'){window.__quotaCase.idbFaults++;throw new DOMException('Synthetic schedule durable-store quota','QuotaExceededError');}return put.apply(this,arguments);};
@@ -75,9 +77,12 @@ try{
     for(const f of saved.frames){assert.equal(f.banner,false,'no obsolete full banner: '+f.frame);assert.equal(f.pill,false,'no obsolete failed pill: '+f.frame);assert.notEqual(f.storage,'failed');}
     await page.screenshot({path:path.join(SHOTS,engine+'-quota-saved.png')});
     await page.reload({waitUntil:'domcontentloaded'});frame=await openSchedule(page);
+    await frame.waitForFunction(()=>window.__quotaCase.idbChecksCompleted>0&&window.__quotaCase.idbChecksCompleted===window.__quotaCase.idbChecksStarted);
     await frame.waitForFunction(({slot,note})=>Object.values(weeksMap).some(ds=>ds.some(d=>(d.trainings||[]).some(t=>t.slot===slot&&t.note===note))),{slot,note});
     await until(async()=>{const raw=await page.evaluate(async key=>(await storage.get(key))?.value,KEY);return raw===fx.db.get(WT+'|'+KEY).v&&await page.evaluate(()=>PSSync.pending().count===0);},'reopened IDB retains the acknowledged edit');
     const reopened=await snapshot(page,fx,slot,'reopened');entry.observations.push(reopened);assert.equal(reopened.idbTarget.note,note);assert.equal(reopened.serverTarget.note,note);assert.equal(reopened.protected[HEAD].bodyHash,before.protected[HEAD].bodyHash,'reopening preserves the original board body');assert.equal(reopened.protected[UNSAVED].hash,before.protected[UNSAVED].hash,'reopening preserves the unsaved board original');
+    assert.ok(reopened.frames.find(f=>f.frame==='/studio/process.html').idbChecksCompleted>0,'the actual delayed boot read completed before warning checks');
+    for(const f of reopened.frames){assert.equal(f.banner,false,'reopened obsolete full banner: '+f.frame);assert.equal(f.pill,false,'reopened obsolete failed pill: '+f.frame);assert.notEqual(f.storage,'failed');}
     await page.screenshot({path:path.join(SHOTS,engine+'-quota-reopened.png')});
    }else{
     await frame.waitForFunction(()=>PSSaveState.get('schedule')==='failed'&&psHasPending());
