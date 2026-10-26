@@ -5934,7 +5934,7 @@ function syncViews(shouldSave){            // 모든 변경 후 단일 호출 �
      닫히는 순간(scrim 관찰자) 한 번 그린다. 다른 기기에서 온 변경(shouldSave===false)은 예전처럼 바로 그린다. */
   if(shouldSave!==false&&__sheetCovering()){ __viewsStale=true; return; }
   __viewsStale=false;
-  /* 3.179 — 조를 바꾸고 나면 이전 필터의 안내도 실제 원문으로 다시 센다.
+  /* 3.181 — 조를 바꾸고 나면 이전 필터의 안내도 실제 원문으로 다시 센다.
      세그를 다시 만들지 않아 포커스는 유지하며, 보기 안내는 자료를 저장하지 않는다. */
   try{renderSchedGrpNote();}catch(_){}
   try{renderWeek();}catch(_){}

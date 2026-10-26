@@ -36,12 +36,7 @@ test('the tab is chosen once at start, remembered only when the user switches, a
   assert.match(src,/toast\('커뮤니티에 올라갔어요 ✓'\);sort='new';\$\('sortSel'\)\.value='new';if\(tabF==='proc'\)procSetTab\('coach'\);fetchPosts\(true\);/,'올리고 나면 방금 올린 글이 있는 칸');
 });
 
-test('a session card shows one large picture, picks it with 1·2·3 and opens the viewer on the picked training',()=>{
-  const card=src.slice(src.indexOf('function renderProc(){'),src.indexOf('function procEnsure('));
-  assert.ok(!/pr-tri/.test(src),'작은 그림 셋은 없다');
-  assert.match(card,/'<div class="pr-hero">'\+procThumb\(s,k\+1\)\+'<\/div>'/,'그림은 한 장 — 그 위에 얹는 것은 없다');
-  assert.match(card,/aria-label="훈련 그림 고르기"/);
-  assert.match(card,/if\(e\.target!==c\)return;/,'1·2·3 단추의 Enter·Space 는 단추 몫');
-  assert.match(src,/function procViewOpen\(p,post\)\{ var n=p\.item\.trainings\.length,k=\(\(?p\.proc(\|\|p\.fifa\))?\)?&&\+p\.__k>0&&\+p\.__k<n\)\?\+p\.__k:0;/,'뷰어는 고른 훈련부터');
-  assert.match(src,/\.pr-hero\{aspect-ratio:3\/2;/,'판 비율 그대로');
+test('a related training opens the native viewer on the exercise selected in the letter',()=>{
+  assert.match(src,/p\.__k=k;procOpen\(p,button,function\(\)\{return procLetters\.isReading\(n\);\}\);/);
+  assert.match(src,/function procViewOpen\(p,post\)\{ var n=p\.item\.trainings\.length,k=\(\(?p\.proc(\|\|p\.fifa\))?\)?&&\+p\.__k>0&&\+p\.__k<n\)\?\+p\.__k:0;/);
 });

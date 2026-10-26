@@ -13,9 +13,10 @@ try{
  await page.waitForFunction(()=>typeof window.__psShowApp==='function');
  await page.evaluate(()=>window.__psShowApp('community'));
  const c=await (await page.waitForSelector('#fComm',{state:'attached'})).contentFrame();
- await c.waitForSelector('.pr-card[data-proc="46"]',{timeout:45000});
- assert.equal(await c.locator('.pr-card').count(),45,'the real official catalog has 45 sessions');
- await c.locator('.pr-card[data-proc="46"] .pr-tt').click();
+ await c.waitForSelector('[data-letter="46"]',{timeout:45000});
+ assert.equal(await c.locator('.pl-row').count(),46,'the complete letter catalog includes the first issue without training');
+ await c.locator('[data-letter="46"]').click();
+ await c.locator('[data-letter-play="46"][data-training="0"]').click();
  await c.waitForFunction(()=>document.getElementById('cvFrame')?.contentDocument?.getElementById('epName')?.value.includes('골문 앞 3v2'));
  let v=await (await c.waitForSelector('#cvFrame',{state:'attached'})).contentFrame();
  await v.waitForFunction(()=>window.__commView&&document.getElementById('epName')?.value.includes('골문 앞 3v2'));
@@ -52,7 +53,9 @@ try{
  }
  // Actual public selectors, then «save» uses the normal confirmation route.
  await c.locator('#cvClose').click();
- await c.locator('.pr-card[data-proc="41"] .pr-tt').click();
+ await c.locator('[data-letter-back]').first().click();
+ await c.locator('[data-letter="41"]').click();
+ await c.locator('[data-letter-play="41"][data-training="0"]').click();
  await c.waitForFunction(()=>document.getElementById('cvFrame')?.contentDocument?.getElementById('epName')?.value.startsWith('골문 앞 3v2+GK'));
  v=await (await c.waitForSelector('#cvFrame',{state:'attached'})).contentFrame();
  await v.waitForFunction(()=>document.getElementById('epName')?.value.startsWith('골문 앞 3v2+GK'));
@@ -91,8 +94,9 @@ try{
  await ph.page.waitForFunction(()=>typeof window.__psShowApp==='function');
  await ph.page.evaluate(()=>window.__psShowApp('community'));
  const pc=await (await ph.page.waitForSelector('#fComm',{state:'attached'})).contentFrame();
- await pc.waitForSelector('.pr-card[data-proc="41"]',{timeout:45000});
- await pc.locator('.pr-card[data-proc="41"] .pr-tt').click();
+ await pc.waitForSelector('[data-letter="41"]',{timeout:45000});
+ await pc.locator('[data-letter="41"]').click();
+ await pc.locator('[data-letter-play="41"][data-training="0"]').click();
  await pc.waitForFunction(()=>document.getElementById('cvFrame')?.contentDocument?.getElementById('epName')?.value.startsWith('골문 앞 3v2+GK'));
  await pc.locator('#prCvTabs button:nth-child(2)').click();
  await pc.waitForFunction(()=>document.getElementById('cvFrame')?.contentDocument?.getElementById('epName')?.value.startsWith('가운데 구역 4v4'));

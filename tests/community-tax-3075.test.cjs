@@ -46,7 +46,7 @@ test('the community page uses it on every tab — coach, process, FIFA filter; e
   assert.match(comm,/<script src="community-tax\.js"><\/script>/); assert.match(comm,/<link rel="stylesheet" href="community-tax\.css">/);
   assert.match(comm,/<div class="tx-bar" id="txBar" hidden><\/div>/);
   assert.match(comm,/if\(TX&&!TX\.ok\(txC\(p\)\)\)return false;/,'코치 자료');
-  assert.match(comm,/procMatch\(s,procG,searchF\)&&\(!TX\|\|TX\.ok\(TX\.fromProc\(s\)\)\)/,'프로세스');
+  assert.match(comm,/function renderProc\(\)\{[\s\S]*?txDraw\(null\);/,'레터 전체 목록에는 훈련 주제 필터를 적용하지 않는다');
   assert.match(comm,/ok:TX&&function\(e\)\{ return TX\.ok\(TX\.fromFifa\(e,F\.animOf\(e\)\)\); \}/,'FIFA');
   assert.match(comm,/txDraw\(elmTab\?null:posts\.map\(txC\)\);/,'엘미하 칸에는 고르개가 없다');
   assert.doesNotMatch(comm,/TX\.open\(/,'3.091 — 미리보기 창 없음(카드를 누르면 바로 뷰어)');
