@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {startFixture,openApp,A,WT} from '../fixtures/team-app.mjs';
+const require=createRequire(import.meta.url),store=require('../../studio/scouting-store.js');
+const fx=await startFixture(),browsers={},engine=process.env.PS_BROWSER_ENGINE||'chromium';
+const target=store.reconcile(null,{v:1,players:[{id:'gk-placement',dbId:'gk',type:'target',name:'가상 GK 후보',posId:'pos_GK',grade:'A',scoutSt:'rep',levels:{},profile:{}}]});
+target.scoutRegistry.meta={pointSets:[{name:'공격수',positions:['ST'],text:'전방 공간을 만드는가?'},{name:'골키퍼',positions:['GK'],text:'슈팅을 안정적으로 막는가?'}]};
+fx.db.set(WT+'|cs_scout_targets_v1',{workspace_id:WT,k:'cs_scout_targets_v1',v:JSON.stringify(target),cupd:1000,updated_by:A});
+try{
+  const phone=engine==='webkit',app=await openApp(fx,phone?'phone':'desktop',{browsers}),{page,logs}=app;
+  await page.locator('#appSeg [data-team-hub]').click();
+  await page.locator(phone?'#teamBottom [data-tb="players"]':'#teamNav [data-team-key="players"]').click();
+  const frame=await (await page.waitForSelector('#fScout')).contentFrame();
+  await frame.locator('#pwTeam .pw-table tbody tr').first().waitFor();
+  assert.equal(await frame.locator('#pwTeam .pw-table tbody tr').count(),18);
+  assert.equal(await frame.locator('.tb-board').isVisible(),false,'the default view starts with the roster');
+  await frame.getByRole('searchbox',{name:'선수 검색'}).fill('가상 선수 18');
+  assert.equal(await frame.locator('#pwTeam .pw-table tbody tr').count(),1);
+  await frame.getByRole('searchbox',{name:'선수 검색'}).fill('');
+  await frame.getByRole('checkbox',{name:'가상 선수 1 비교 선택',exact:true}).check();
+  await frame.getByRole('checkbox',{name:'가상 선수 2 비교 선택',exact:true}).check();
+  await frame.getByRole('button',{name:'선수 비교',exact:true}).click();
+  assert.equal(await frame.getByRole('heading',{name:'선수 비교 · 2명'}).isVisible(),true);
+  await frame.getByRole('button',{name:'닫기',exact:true}).click();
+  await frame.getByRole('button',{name:'가상 선수 1 GK',exact:true}).click();
+  assert.equal(await frame.getByRole('tab',{name:'요약',exact:true}).getAttribute('aria-selected'),'true');
+  await frame.getByRole('tab',{name:'요약',exact:true}).press('ArrowRight');
+  assert.equal(await frame.getByRole('tab',{name:'평가',exact:true}).getAttribute('aria-selected'),'true');
+  await frame.getByRole('button',{name:'선수 상세 닫기'}).click();
+  await frame.getByRole('button',{name:'배치·명단 편집',exact:true}).click();
+  assert.equal(await frame.locator('#teamList').isVisible(),true,'existing edit controls remain reachable');
+  if(phone){await page.locator('#teamBottom [data-tb="more"]').click();await page.locator('#teamMoreSheet [data-tb="scouting"]').click();}
+  else await page.locator('#teamNav [data-team-key="scouting"]').click();
+  await frame.getByRole('button',{name:'가상 GK 후보 GK',exact:true}).click();
+  await frame.getByRole('tab',{name:'평가',exact:true}).click();
+  const points=frame.frameLocator('#pwDetailBody iframe');
+  await points.getByRole('combobox',{name:'포지션 그룹'}).waitFor();
+  assert.equal(await points.getByRole('combobox',{name:'포지션 그룹'}).inputValue(),'1','GK opens the GK set even without legacy source.pos');
+  await points.getByRole('button',{name:'4',exact:true}).click();
+  await frame.getByRole('button',{name:'선수 상세 닫기'}).click();
+  await frame.getByText('포인트 1개 기록',{exact:true}).waitFor();
+  assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[]);
+  console.log(JSON.stringify({passed:true,engine,search:true,comparison:true,detail:true,gkQuestions:true,pointSave:true}));
+}finally{for(const b of Object.values(browsers))await b.close();await fx.close();}

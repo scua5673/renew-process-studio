@@ -56,6 +56,7 @@ try{
           emptyCards:slots.filter(s=>!s.querySelector('.tb-pill')).length,tray:document.getElementById('tbTrayN').textContent,
           lm:(slots.find(s=>s.dataset.posid===pos.LM)||{}).style?.cssText||''};
       },scenario);
+      await page.getByRole('button',{name:'배치·명단 편집',exact:true}).click();
       await page.locator('#tbPitch').scrollIntoViewIfNeeded();
       await page.screenshot({path:path.join(out,`${engine}-${scenario}.png`),animations:'disabled'});
       assert.equal(state.cards,11,'eleven position cards');
