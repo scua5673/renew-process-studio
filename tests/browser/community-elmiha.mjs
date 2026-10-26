@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import {startFixture,openApp} from '../fixtures/team-app.mjs';
+import path from 'node:path';
+import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 // 3.018 — 커뮤니티 안의 «엘미하» 칸(사용자 «엘미하 페이지를 또 만들어 줘 · 보관함으로 가져오기도 · 엘미하가 애니메이션 만든 거 공유할 수 있게»).
 // 엘미하 계정이 «＋ 올리기»로 올린 커뮤니티 글을 계정 번호로 모은다. 카드 → 읽기 전용 뷰어(애니메이션 재생) → «내 보관함에 담기»는 코치 글과 같은 길.
 // 합성 팀 fixture 에서만 돈다(서버 답은 아래 route 가 흉내 낸다).
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'phone':'desktop');
 const ELM='33a9d4e2-1868-40f4-8f82-3ebb4ecf011e',OTHER='22222222-2222-4222-8222-222222222222';
 const snap=s=>({pitchSpec:'fifa',players:[{id:101,team:'blue',num:'6',pos:'',x:400+s*40,y:300},{id:102,team:'red',num:'4',pos:'',x:520,y:330+s*12}],equipment:[],drawings:[],
   ball:{x:410+s*30,y:310,scale:.62},lines:true,gridType:'off',tokenScale:.6,label:'num',tokShape:'circle',orientation:'h',area:'full',pitchView:'full',pitchN:1,tokV:2});
@@ -16,12 +17,13 @@ const COACH={id:'Ccoach1',owner:OTHER,owner_name:'가상코치',title:'가상 �
 const fx=await startFixture(),browsers={};
 try{
   const {page,context,logs}=await openApp(fx,size,{browsers});
-  const asked=[],writes=[];let elmDown=true;
+  const asked=[],coachAsked=[],writes=[];let elmDown=true;
   await context.route('**/rest/v1/ps_community**',route=>{const r=route.request(),u=new URL(r.url());
     if(r.method()!=='GET')return route.fallback();
     const cors={'access-control-allow-origin':'*'},sel=u.searchParams.get('select')||'',owner=u.searchParams.get('owner');
-    if(owner){ asked.push(owner); if(elmDown)return route.fulfill({status:503,headers:cors,body:'busy'}); }
-    const body=sel==='item'?[{item:u.searchParams.get('id')==='eq.Celm1'?ITEM:{name:'가상 코치 글',type:'train',snap:snap(0)}}]:owner==='eq.'+ELM?[POST,SPOOF]:[COACH];
+    if(owner==='eq.'+ELM){ asked.push(owner); if(elmDown)return route.fulfill({status:503,headers:cors,body:'busy'}); }
+    if(sel!=='item'&&owner!=='eq.'+ELM)coachAsked.push(owner);
+    const body=sel==='item'?[{item:u.searchParams.get('id')==='eq.Celm1'?ITEM:{name:'가상 코치 글',type:'train',snap:snap(0)}}]:owner==='eq.'+ELM?[POST,SPOOF]:[POST,COACH];
     return route.fulfill({status:200,contentType:'application/json',headers:cors,body:JSON.stringify(body)});});
   page.on('request',r=>{const u=r.url();if(/ps_community|ps_comm_/.test(u)&&r.method()!=='GET')writes.push(r.method()+' '+u.replace(/^.*\/rest\/v1\//,''));});
   await page.waitForTimeout(2500);
@@ -46,7 +48,23 @@ try{
   // 1) 코치 자료. 엘미하 칸은 화면이 보이면 미리 받는다 — 서버가 안 되면 조용하다(코치 자료 화면은 그대로)
   await until(()=>asked.length>=1,'엘미하 칸 미리 받기');
   let s=await state();
-  assert.deepEqual([s.elm,s.pressed,s.label[0],s.label[2],s.hero,s.titles],[false,['true','false','false','false'],'코치 자료1','엘미하',false,['가상 코치 글']]);   // 프로세스 칸의 개수는 앱에 실린 사본 몫
+  assert.deepEqual([s.elm,s.pressed,s.label[0],s.label[2],s.hero,s.titles],[false,['true','false','false','false'],'코치 자료1','전술노트',false,['가상 코치 글']]);   // 프로세스 칸의 개수는 앱에 실린 사본 몫
+  assert.ok(coachAsked.length>0,'코치 자료를 서버에서 받았다');
+  assert.ok(coachAsked.every(o=>o==='neq.'+ELM),'코치 목록 요청에서 계정을 제외한다');
+  await page.screenshot({path:path.join(SHOTS,`community-separated-${engine}-${size}-coach.png`)});
+  // 옛 판의 섞인 캐시를 읽어도 코치 자료의 카드 · 개수 · 검색에 전술노트가 들어오지 않는다.
+  const requested=coachAsked.length;
+  await c.evaluate(rows=>sessionStorage.setItem('ps_comm_feed_cache_v1',JSON.stringify({at:Date.now(),sort:'new',posts:rows})),[POST,COACH]);
+  await c.click('#prTabProc');
+  await c.click('#prTabCoach');
+  await until(async()=>(await state()).titles.join()==='가상 코치 글','옛 캐시에서도 전술노트 제외');
+  assert.equal(coachAsked.length,requested,'캐시 경로를 확인한다');
+  s=await state();
+  assert.equal(s.label[0],'코치 자료1');
+  await c.fill('#commSearch','하프스페이스');
+  await until(async()=>(await state()).titles.length===0,'코치 자료 검색에도 전술노트 없음');
+  await c.fill('#commSearch','');
+  await until(async()=>(await state()).titles.join()==='가상 코치 글','코치 자료 검색 해제');
   assert.deepEqual(s.pickers,[true],'코치 자료에는 훈련 주제 · 연령 · 인원 고르개');
   // 3.042 — 코치 자료에서 연령을 골라 둬도 엘미하 칸은 거르지 않는다(엘미하 글은 «성인»)
   await c.evaluate(()=>{ [...document.querySelectorAll('#txBar .tx-chip')].find(b=>b.textContent==='U12').click(); });   // 3.075 — 공통 분류의 연령 칩
@@ -67,13 +85,14 @@ try{
   await c.click('#elRetry');
   await c.waitForSelector('#grid .card');
   s=await state();
-  assert.deepEqual([s.titles,s.count,s.label[2]],[['가상 전술노트 — 하프스페이스 침투'],'전술노트 1개','엘미하1']);
+  assert.deepEqual([s.titles,s.count,s.label[2]],[['가상 전술노트 — 하프스페이스 침투'],'전술노트 1개','전술노트1']);
   assert.equal(asked.every(o=>o==='eq.'+ELM),true,'계정 번호로 묻는다 '+JSON.stringify(asked));
   assert.equal(s.fab,'none','다른 코치에게는 이 칸에 «올리기»가 없다(올리면 코치 자료로 간다)');
   assert.notEqual(s.filters,'none','검색 · 정렬은 코치 자료와 같다');
   assert.equal(s.badge,true,'필터 단추는 엘미하 칸에서 골라 둔 연령을 세지 않는다');
   assert.deepEqual(s.pickers,[false],'3.042 — 엘미하 칸에는 훈련 주제 · 연령 · 인원 고르개가 없다(골라 둔 U12 도 거르지 않는다)');
   assert.equal(s.docW,s.vw,'가로로 넘치지 않는다');
+  await page.screenshot({path:path.join(SHOTS,`community-separated-${engine}-${size}-notes.png`)});
   const foot=await c.evaluate(()=>document.querySelector('#grid .card .foot .who').textContent);
   assert.equal(foot,'@엘미하');
 

@@ -45,7 +45,7 @@ test('sorting by views, likes or saves keeps the newest first among equals; the 
 });
 
 test('the head has the elmiha tab (3.071 — FIFA comes after it) and the elmiha tab carries the YouTube channel link',()=>{
-  assert.match(comm,/<button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">엘미하<span id="prElmN"><\/span><\/button><button type="button" id="prTabFifa" data-pr-tab="fifa"/);
+  assert.match(comm,/<button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">전술노트<span id="prElmN"><\/span><\/button><button type="button" id="prTabFifa" data-pr-tab="fifa"/);
   const hero=cut(comm,'<div class="el-hero" id="elHero" hidden>','<div class="comm-count" id="commCount">');
   assert.match(hero,/<b>엘미하의 전술노트<\/b>/);
   assert.match(hero,/<a class="el-yt" id="elYt" href="https:\/\/www\.youtube\.com\/@ELMIHA_TacticalNote" target="_blank" rel="noopener noreferrer"/,'새 창 · 이 앱의 창을 넘기지 않는다');

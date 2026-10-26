@@ -360,7 +360,7 @@
   </section>
   <div class="top">
     <!-- 2.999 — 커뮤니티 안의 두 칸: 코치들이 올린 자료 | 프로세스가 만든 훈련 세션 · 3.018 — 셋째 칸: 엘미하(유튜브 «엘미하의 전술노트»)가 올린 전술 애니메이션 -->
-    <div class="pr-seg" id="prSeg" role="group" aria-label="커뮤니티 칸"><button type="button" id="prTabCoach" data-pr-tab="coach" aria-pressed="true">코치 자료<span id="prCoachN"></span></button><button type="button" id="prTabProc" data-pr-tab="proc" aria-pressed="false">프로세스<span id="prProcN"></span></button><button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">엘미하<span id="prElmN"></span></button><button type="button" id="prTabFifa" data-pr-tab="fifa" aria-pressed="false">FIFA<span id="prFifaN"></span></button></div>
+    <div class="pr-seg" id="prSeg" role="group" aria-label="커뮤니티 칸"><button type="button" id="prTabCoach" data-pr-tab="coach" aria-pressed="true">코치 자료<span id="prCoachN"></span></button><button type="button" id="prTabProc" data-pr-tab="proc" aria-pressed="false">프로세스<span id="prProcN"></span></button><button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">전술노트<span id="prElmN"></span></button><button type="button" id="prTabFifa" data-pr-tab="fifa" aria-pressed="false">FIFA<span id="prFifaN"></span></button></div>
     <span class="sub" id="prSub">작전판·훈련·경기 분석 탐색</span>
   </div>
   <div class="comm-shell">
@@ -664,14 +664,14 @@ function fetchPosts(force){ cmStage('cmFF');
     elmStale();}   /* 3.018 — 올리기·고치기·지우기 뒤에는 엘미하 칸도 새로 받는다 */
   else{
     try{var c=JSON.parse(sessionStorage.getItem(FEED_CK)||'null');
-      if(c&&c.sort===sort&&Array.isArray(c.posts)&&Date.now()-c.at<FEED_TTL){posts=c.posts;ready=true;fetchMyLikes().then(render);return;}
+      if(c&&c.sort===sort&&Array.isArray(c.posts)&&Date.now()-c.at<FEED_TTL){posts=coachRead(c.posts);ready=true;fetchMyLikes().then(render);return;}
     }catch(_){}
   }
   var withLikes = sort==='likes';
   var order = withLikes?'likes.desc,created_at.desc' : sort==='views'?'views.desc,created_at.desc' : sort==='copies'?'copies.desc,created_at.desc' : 'created_at.desc';
-  function run(cols,ord){ return fetch(b+'/rest/v1/ps_community?select='+cols+'&deleted=eq.false&order='+ord+'&limit=100',{headers:hd()}); }
-  function done(j){ if(j){ posts=j; ready=true;
-    try{sessionStorage.setItem(FEED_CK,JSON.stringify({at:Date.now(),sort:sort,posts:j}))}catch(_){}
+  function run(cols,ord){ return fetch(b+'/rest/v1/ps_community?select='+cols+'&owner=neq.'+ELM_UID+'&deleted=eq.false&order='+ord+'&limit=100',{headers:hd()}); }
+  function done(j){ if(j){ posts=coachRead(j); ready=true;
+    try{sessionStorage.setItem(FEED_CK,JSON.stringify({at:Date.now(),sort:sort,posts:posts}))}catch(_){}
     fetchMyLikes().then(render); } }
   /* 2.068 — 응답이 늦을 때 20초 가까이 빈칸이던 것을 없앤다(빈 화면 없음) */
   if(tabF==='coach')grid.innerHTML='<div class="empty loading"><b>커뮤니티를 불러오는 중…</b></div>';
@@ -1591,7 +1591,7 @@ function buildUpload(me,handle,flowEpoch){
     /* 3.042 — 엘미하 칸: 만든 것 전부 · 분류 · 연령대 · 인원 없이 제목만(사용자 «엘미하 페이지는 훈련 주제 분류 필요없고 원하는 거 올릴 수 있게») */
     var elmUp=(tabF==='elmiha');
     lib=(Array.isArray(lib)?lib:[]).filter(function(d){var t=(d&&d.type)||'train';if(!d||!d.libId)return false;return elmUp?(t!=='analysis'):(t==='train'||t==='setpiece'||t==='board');});
-    var h='<h2>커뮤니티에 올리기</h2><div class="hint" style="margin-top:2px">'+(elmUp?'엘미하 칸에 올립니다 — 보관함의 작전판 · 패턴북 · 훈련 · 세트피스 · 미팅 자료 · 경기 분석 무엇이든.':'내 보관함에서 작전판이나 훈련을 골라 모든 코치에게 공유합니다.')+(elmIsOwner()?' 사진은 자동으로 빠지고, 토큰의 선수 이름은 그대로 보여요.':' 사진 · 선수 이름은 자동으로 빠져요.')+' 아이디 <b>@'+esc(handle)+'</b> 로 올라갑니다.</div>';
+    var h='<h2>커뮤니티에 올리기</h2><div class="hint" style="margin-top:2px">'+(elmUp?'전술노트에 올립니다 — 보관함의 작전판 · 패턴북 · 훈련 · 세트피스 · 미팅 자료 · 경기 분석 무엇이든.':'내 보관함에서 작전판이나 훈련을 골라 모든 코치에게 공유합니다.')+(elmIsOwner()?' 사진은 자동으로 빠지고, 토큰의 선수 이름은 그대로 보여요.':' 사진 · 선수 이름은 자동으로 빠져요.')+' 아이디 <b>@'+esc(handle)+'</b> 로 올라갑니다.</div>';
     if(!lib.length){
       h+='<div class="empty" style="padding:40px 10px"><b>보관함이 비어 있어요</b>'+(IN_SHELL?'여기서 바로 훈련을 만들 수 있어요 — 저장하면 이 창으로 돌아와요.':'작전판이나 훈련을 보관함에 저장한 뒤 올릴 수 있어요.')+'</div>'
         +'<div class="drow"><button class="btn" id="upClose">닫기</button>'+(IN_SHELL?'<button class="btn primary" id="upNewEmpty">＋ 새로 만들기</button>':'')+'</div>';   /* 2.924 — 막다른 길 대신 만들기 문 */
@@ -1732,9 +1732,11 @@ $('sortSel').onchange=function(){sort=this.value;fetchPosts();};
      그래서 카드 · 미리보기의 ▶ 애니메이션 · 읽기 전용 뷰어 · «내 보관함에 담기» · 좋아요 · 조회가 코치 자료와 똑같이 된다.
    · 누구의 글인지는 표시 이름(owner_name — 올리는 쪽이 적는 값)이 아니라 계정 번호(owner — 서버 RLS comm_ins 가 auth.uid() 로 지킨다)로 고른다.
      이름으로 고르면 누구든 같은 이름을 적어 이 칸에 글을 끼워 넣을 수 있다.
-   · 엘미하 글은 코치 자료 칸에도 그대로 보인다(코치 자료 = 모든 코치의 글). «올리기»는 엘미하 계정으로 볼 때만 이 칸에 있다. ══ */
+   · 엘미하 글은 전술노트 칸에만 보인다. «올리기»는 엘미하 계정으로 볼 때만 이 칸에 있다. ══ */
 /* ── 3.018 · 엘미하 칸 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
 var ELM_UID='33a9d4e2-1868-40f4-8f82-3ebb4ecf011e',ELM_MAX=200;
+/* 코치 자료의 서버 응답 · 이전 캐시에서도 전술노트 계정의 글을 제외한다. */
+function coachRead(list){ return (Array.isArray(list)?list:[]).filter(function(p){return p&&p.owner!==ELM_UID;}); }
 function elmPath(cols){ return '/rest/v1/ps_community?select='+cols+'&owner=eq.'+ELM_UID+'&deleted=eq.false&order=created_at.desc&limit='+ELM_MAX; }
 /* 서버 답 → 엘미하 계정의 글만. 서버가 owner 로 걸러 주지만 받는 쪽에서도 한 번 더 본다(다른 계정 글 · 모양이 다른 줄 · 같은 글 두 번은 버린다). */
 function elmRead(j){
