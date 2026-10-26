@@ -899,6 +899,7 @@ function communityLibraryAuthChanged(forced){
   var unlocked=!__communityLibraryForcedLock&&raw;
   if(!unlocked)communityLibraryCloseFlow();
   __communityLibraryUnlockedLast=unlocked;
+  if(procLetters)procLetters.refresh();
 }
 mask.addEventListener('click',function(e){if(e.target===mask){if(__communityLibraryFlow)communityLibraryCloseFlow();else mask.classList.remove('on');if(window.mvStop)mvStop();}});
 try{
@@ -1958,7 +1959,7 @@ function procChipsRender(){
 function renderProc(){ cmStage('cmRP');
   try{cpAnimStop();}catch(_){}
   txDraw(null);
-  if(!procLetters)procLetters=PSCommunityLetters.create({doc:document,fetch:fetch.bind(window),active:function(){return tabF==='proc';},
+  if(!procLetters)procLetters=PSCommunityLetters.create({doc:document,fetch:fetch.bind(window),active:function(){return tabF==='proc';},owner:function(){var me=sess();return me&&me.uid;},
     onCount:prCounts,openTraining:function(n,k,button){
       var id='proc-'+String(n).padStart(2,'0');
       button.setAttribute('aria-busy','true');
