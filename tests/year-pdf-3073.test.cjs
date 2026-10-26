@@ -37,6 +37,7 @@ function ctx(Y,opt){
   c.save=()=>{c.saves++;};
   if(opt.roster){ const LS={scout_tool_v1:JSON.stringify(opt.roster)}; c.localStorage={getItem:k=>LS[k]||null}; c.window=c;
     vm.runInContext(fs.readFileSync(require.resolve('../studio/participation.js'),'utf8'),c); }
+  c.PSTeamAudience=require('../studio/team-audience.js');vm.runInContext(fs.readFileSync(require.resolve('../studio/schedule-audience.js'),'utf8'),c);
   vm.runInContext([
     part('function mxExtraList(','function mxExtraHtml('),
     part('function yearDayKind(','function yearActivityStats('),

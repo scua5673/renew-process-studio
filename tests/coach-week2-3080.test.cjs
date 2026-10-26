@@ -6,7 +6,7 @@ const P=read('process.html'),S=read('scout.html'),B=read('board.html'),I=read('i
 function fn(src,name){const a=src.indexOf('function '+name+'(');assert.ok(a>=0,name);let j=src.indexOf('{',a),d=0;for(;j<src.length;j++){if(src[j]==='{')d++;else if(src[j]==='}'&&--d===0)break;}return src.slice(a,j+1);}
 
 test('schedule: one word per match kind, extra matches keep cup',()=>{
-  const c={};vm.runInNewContext(fn(P,'mxExtraLabel')+fn(P,'mKindLb')+';this.L=mxExtraLabel;this.K=mKindLb;',c);
+  const c={PSTeamAudience:require('../studio/team-audience.js')};vm.runInNewContext(read('schedule-audience.js')+fn(P,'mxExtraLabel')+fn(P,'mKindLb')+';this.L=mxExtraLabel;this.K=mKindLb;',c);
   assert.equal(c.K(c.L({kind:'cup'}).k),'컵');assert.equal(c.K(c.L({kind:'friendly'}).k),'친선');assert.equal(c.K(c.L({}).k),'리그');
   assert.equal(c.L({kind:'friendly'}).friendly,true);
   assert.ok(!/>경기 ▾</.test(P),'weekly kind button names the kind');assert.ok(!P.includes("'경기일 ▾'"));

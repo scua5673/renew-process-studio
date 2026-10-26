@@ -8,6 +8,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script src="storage.js"></script>
+<link rel="stylesheet" href="team-audience.css"><script src="team-audience.js"></script><script src="roster-audience.js"></script>
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
 <script src="roster-outbox.js?v=2.826"></script>
@@ -6914,7 +6915,7 @@ function rosterRecoveryCommit(s,next,ids){
     unchanged();var expectedCount=next.players.filter(function(p){return p.type!=="target"&&String(p.name||"").trim();}).length;
     if(!result||result.skipped||result.held||result.n!==expectedCount||!Number.isFinite(result.wrote)||result.wrote<0)throw new Error("선수별 복구 저장을 확인하지 못했습니다. 보관 원본은 남아 있습니다.");
     var mirror={name:(next.meta&&next.meta.teamName)||"",players:next.players.filter(function(p){return p.type!=="target"&&String(p.name||"").trim();}).map(function(p){
-      var pos=next.positions.find(function(x){return x.id===p.posId;});return {id:p.id,num:p.num||"",name:p.name||"",pos:pos?posAbbr(pos.name):"",foot:p.foot||"",bench:p.bench===true,status:plStatusOf(p),grp:String(p.grp||"").trim()};})};
+      var pos=next.positions.find(function(x){return x.id===p.posId;});return {id:p.id,num:p.num||"",name:p.name||"",pos:pos?posAbbr(pos.name):"",foot:p.foot||"",bench:p.bench===true,status:plStatusOf(p),grp:String(p.grp||"").trim(),...(p.schoolYear?{schoolYear:String(p.schoolYear)}:{})};})};
     var raw=JSON.stringify(mirror);
     if(!window.psSaveShared||!window.PSStorage||!PSStorage.sharedReady||!PSStorage.sharedVerified||!window.psSaveShared("cs_squad_v1",raw))throw new Error("복구 명단의 공유 사본을 저장하지 못했습니다.");
     return PSStorage.sharedReady("cs_squad_v1").then(function(){unchanged();return PSStorage.sharedVerified("cs_squad_v1",raw);});
@@ -7095,7 +7096,7 @@ function idpRosterMirror(main){
   return ((main&&main.players)||[]).filter(function(p){return p&&p.type!=="target"&&String(p.name||"").trim();})
     .map(function(p){var po=pos.find(function(x){return x.id===p.posId;});
       var ab=po?posAbbr(po.name):"";try{if(ab&&typeof tmNorm==="function")ab=tmNorm(ab);}catch(_){}   /* 명단 칩과 같은 이름(ST→CF 등) */
-      return {id:String(p.id),num:String(p.num||""),name:String(p.name).trim(),pos:ab,grp:String(p.grp||"").trim()};});
+      return {id:String(p.id),num:String(p.num||""),name:String(p.name).trim(),pos:ab,grp:String(p.grp||"").trim(),...(p.schoolYear?{schoolYear:String(p.schoolYear)}:{})};});
 }
 function rosterSaveMirrors(main){
   /* 속성 목록만 공개 미러(cs_team_attrs_v1) — 선수는 scout_tool_v1(전체 평가)을 서버에서 못 받지만
@@ -7117,7 +7118,7 @@ function rosterSaveMirrors(main){
     cats:(main.meta.cats||[]).map(c=>({id:c.id,name:c.name})),
     /* 2.215 — 선수→조 · 조 이름(공개): 선수 기기가 자기 조의 일정(grpWeeks)을 읽기 위해. 이름·평가는 안 넣는다 */
     grpBy:(function(){ var m={}; (main.players||[]).forEach(function(p){ if(p&&p.type!=="target"&&String(p.grp||"").trim())m[p.id]=String(p.grp).trim(); }); return m; })(),
-    grpBase:(main.meta.grpBase||[]).slice(),
+    grpBase:(main.meta.grpBase||[]).slice(),grpLabels:Object.assign({},main.meta.grpLabels||{}),
     /* 2.945 — 선수가 합류할 때 «명단에서 나를 고르기»(사용자 승인 · 설계 목업 ③). 선수는 scout_tool_v1·cs_squad_v1 을
        못 읽으므로 **고를 수 있는 최소**(번호·이름·자리·조)만 여기에 둔다. 평가·상태·부상·연락처·메모는 넣지 않는다. */
     roster:idpRosterMirror(main),
@@ -7126,9 +7127,9 @@ function rosterSaveMirrors(main){
   }))accepted=false;}catch(e){teamSaves.track("cs_team_attrs_v1",Promise.reject(e));accepted=false;}
   try{
   const ours=main.players.filter(p2=>p2.type!=="target"&&String(p2.name||"").trim());
-  const squadMirror={name:(main.meta&&main.meta.teamName)||"",
+  const squadMirror={name:(main.meta&&main.meta.teamName)||"",grpLabels:Object.assign({},main.meta&&main.meta.grpLabels||{}),
     players:ours.map(p2=>{const po=main.positions.find(x=>x.id===p2.posId);
-      return {id:p2.id,num:p2.num||"",name:p2.name||"",pos:po?posAbbr(po.name):"",foot:p2.foot||"",bench:p2.bench===true,status:plStatusOf(p2),grp:(p2.grp||"").trim()};})};   /* status: 작전판이 부상자를 걸러낼 수 있게. grp(조): 1.699 — 작전판/훈련에서 A팀·B팀별로 올릴 수 있게 함께 전달 */
+      return {id:p2.id,num:p2.num||"",name:p2.name||"",pos:po?posAbbr(po.name):"",foot:p2.foot||"",bench:p2.bench===true,status:plStatusOf(p2),grp:(p2.grp||"").trim(),schoolYear:String(p2.schoolYear||"")};})};   /* status: 작전판이 부상자를 걸러낼 수 있게. grp(조): 1.699 — 작전판/훈련에서 A팀·B팀별로 올릴 수 있게 함께 전달 */
   if(!scoutStore.set("cs_squad_v1",squadMirror))accepted=false;
 }catch(e){teamSaves.track("cs_squad_v1",Promise.reject(e));accepted=false;}
   return accepted;
@@ -8238,7 +8239,7 @@ function posPickOpen(anchor,cur,onPick){
 function grpPickOpen(anchor,cur,onPick){
   var cyc=null; try{ cyc=tmGrpCycle(); }catch(_){}
   if(!cyc||!cyc.length)cyc=["A팀","B팀","C팀",""];
-  var items=cyc.map(function(g){ return {v:g,lb:(String(g||"").trim()||"없음"),col:null}; });
+  var items=cyc.map(function(g){ return {v:g,lb:(tmGrpLabel(String(g||"").trim())||"없음"),col:null}; });
   psPickOpen(anchor,items,String(cur||"").trim(),onPick,"조 고르기");
 }
 /* 2.527 — sbGradeNext(등급 순환)는 2.514 고르개로 대체된 뒤 아무도 부르지 않았다 → 걷어냈다 */
@@ -8303,7 +8304,7 @@ function renderSbGrpChips(){
     b.onclick=function(){ tmGrpFilter=val; renderScoutBoard(); try{renderTeam();}catch(_){} };
     box.appendChild(b);
   };
-  mk("전체",""); gs.forEach(function(g){ mk(g,g); });
+  mk("전체",""); gs.forEach(function(g){ mk(tmGrpLabel(g),g); });
 }
 function renderScoutBoard(){
   var wrap=$("sbWrap"); if(!wrap) return;
@@ -11044,26 +11045,18 @@ function tmMigrate(){ // 구 팀구성(cs_squad_v1) → 선수 DB로 1회 이전
 let tmGrpFilter="";
 /* 1.543 — 'IDP 미연결만 보기'. 화면을 떠나면 풀리는 일시 상태라 저장하지 않는다. */
 let tmUnlinkedOnly=false;
-function tmGrpFlt(pl){return !tmGrpFilter||((pl.grp||"").trim()===tmGrpFilter);}
+function tmGrpFlt(pl){return (!tmGrpFilter||((pl.grp||"").trim()===tmGrpFilter))&&(!tmSchoolYearFilter||String(pl.schoolYear||"")===tmSchoolYearFilter);}
 /* 1.550 — 알약에 넣을 짧은 표기. 'A팀'→'A', 'B조'→'B', 그 외엔 첫 글자. 조가 없으면 '–'. */
 function tmGrpShort(g){
-  g=String(g||"").trim(); if(!g)return "–";
+  g=tmGrpLabel(String(g||"").trim()); if(!g)return "–";
   var m=g.match(/^([A-Za-z0-9])/); if(m)return m[1].toUpperCase();
   return g.charAt(0);
 }
 /* 순환 순서 = A팀·B팀(항상) + 팀이 따로 쓰는 조 + '없음'.
    있는 조에서만 뽑으면, A팀 한 명뿐일 때 'A팀 → 없음'으로 건너뛰어 B팀을 만들 수가 없다. */
-/* 2.213 — 조 이름은 팀마다 다르다(A팀 / 1군 / 1학년…). data.meta.grpBase 에 저장, 바꾸면 선수의 grp 문자열도 같이 옮긴다 */
+/* 2.213 — 조 이름은 팀마다 다르다(A팀 / 1군 / 1학년…). data.meta.grpBase는 연결 키, meta.grpLabels는 표시 이름. 이름 변경은 연결 키를 옮기지 않는다 */
 function tmGrpBase(){ var b=data&&data.meta&&Array.isArray(data.meta.grpBase)?data.meta.grpBase.filter(function(x){return String(x||"").trim();}):null; return (b&&b.length)?b.slice():["A팀","B팀","C팀"]; }
-function tmGrpRename(){
-  var cur=tmGrpBase();
-  var v=prompt("조 이름을 쉼표로 나눠 적어 주세요 (예: 1군, 2군, 3군 / 1학년, 2학년, 3학년)",cur.join(", "));
-  if(v==null)return; var nx=v.split(/[,，]/).map(function(x){return x.trim();}).filter(Boolean);
-  if(!nx.length){ toast("조 이름이 비었어요"); return; }
-  data.meta=data.meta||{};
-  tmOurs().forEach(function(pl){ var g=String(pl.grp||"").trim(); var i=cur.indexOf(g); if(i>=0&&nx[i]&&nx[i]!==g)pl.grp=nx[i]; });
-  data.meta.grpBase=nx; save(); renderTeam(); try{renderScoutBoard();}catch(_){} try{toast("조 이름 저장됨");}catch(_){}
-}
+function tmGrpRename(){tmRenameGroups();}
 function tmGrpCycle(){
   var base=tmGrpBase();   /* 1.556 — A~D (사용자 확정) · 1.935 — D팀 기본 칩 제거(사용자). 이미 D팀을 준 선수가 있으면 tmGroups()로 계속 보인다 */
   var rest=tmGroups().filter(function(g){ return base.indexOf(g)<0; });
@@ -11099,7 +11092,7 @@ function tmGrpBarEl(){
     b2.className="btn sm"+(tmGrpFilter===val?" primary":""); b2.textContent=label;
     b2.onclick=function(){ tmGrpFilter=val; renderTeam(); };
     bar.appendChild(b2); };
-  mk("전체",""); gs.forEach(function(g){ mk(g,g); });
+  mk("전체",""); gs.forEach(function(g){ mk(tmGrpLabel(g),g); });
   return bar;
 }
 /* 2.903 — 폰 선수단(목업 ②)은 행 규칙과 같은 ≤600 에서만 바뀐다(601~767 은 옛 모양 그대로). */
@@ -11129,15 +11122,15 @@ function renderGrpChips(){
     try{ var _n=val===""?_gcTot:(_gc[val]||0), _ns=document.createElement("span"); _ns.className="grp-n"; _ns.textContent=String(_n); b2.appendChild(_ns); }catch(_){}
     b2.onclick=()=>{tmGrpFilter=val;renderTeam();};
     box.appendChild(b2);};
-  mk("전체","");gs.forEach(g=>mk(g,g));
+  mk("전체","");gs.forEach(g=>mk(tmGrpLabel(g),g));tmSchoolYearBar();
   (function(){ var e=document.createElement("button"); e.type="button"; e.className="btn sm grp-edit"; e.title="조 이름 바꾸기 (A팀 / 1군 / 학년…)"; e.setAttribute("aria-label","조 이름 바꾸기"); e.innerHTML='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>'; e.style.cssText="height:34px;padding:0 10px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;";   /* 2.963 — 작은 ✎ 글자는 % 처럼 읽혔다(디자인 점검) — 선 아이콘으로 */ e.onclick=function(){ if(typeof teEditable==="function"&&!teEditable()){ try{toast("운영진만 바꿀 수 있어요");}catch(_){} return; } tmGrpRename(); }; box.appendChild(e); })();   /* 2.213 */
   /* 2.249 — 조 추가(사용자 "조 더 추가할 수 있게"): grpBase 에 덧붙인다. 일정의 조 세그(process.html schedGroups)·조 순환·칩은 전부 grpBase 를 읽어 자동 반영 */
   (function(){ var e=document.createElement("button"); e.type="button"; e.className="btn sm grp-add"; e.title="조 추가 (예: D팀 / 3군 / 6학년)"; e.setAttribute("aria-label","조 추가"); e.textContent="＋ 조"; e.style.cssText="height:34px;padding:0 10px;font-size:13px;"; e.onclick=function(){
     if(typeof teEditable==="function"&&!teEditable()){ try{toast("운영진만 바꿀 수 있어요");}catch(_){} return; }
     var v=prompt("새 조 이름 (예: D팀 / 3군 / 6학년)",""); if(v==null)return; v=String(v).trim(); if(!v){ toast("조 이름이 비었어요"); return; }
-    var cur=tmGrpBase(); if(cur.indexOf(v)>=0){ toast("이미 있는 조예요 — "+v); tmGrpFilter=v; renderTeam(); return; }
-    data.meta=data.meta||{}; data.meta.grpBase=cur.concat([v]); save();
-    tmGrpFilter=v; renderTeam(); try{renderScoutBoard();}catch(_){}
+    var cur=tmGrpBase(),existing=PSTeamAudience.keys(data).find(function(k){return tmGrpLabel(k)===v;}); if(existing){ toast("이미 있는 조예요 — "+v); tmGrpFilter=existing; renderTeam(); return; }
+    if(v.length>40){toast("조 이름은 40자 이내로 적어 주세요.");return;}var key=uid("grp");data.meta=data.meta||{};data.meta.grpBase=cur.concat([key]);data.meta.grpLabels=Object.assign({},data.meta.grpLabels||{});data.meta.grpLabels[key]=v;save();
+    tmGrpFilter=key; renderTeam(); try{renderScoutBoard();}catch(_){}
     try{toast(v+" 조 추가됨 — 선수의 팀 버튼(A·B…)을 눌러 배정하세요. 일정 탭에도 이 조가 생겼어요");}catch(_){}
   }; box.appendChild(e); })();
   /* 2.903 — 폰 ⋯: 조 이름 · 조 추가 · 포메이션 · 편집 권한. 숨겨 둔 원래 버튼·select 를 그대로 눌러 권한 확인·저장 경로를 공유한다. */
@@ -11424,7 +11417,7 @@ function tbPillHTML(p,first){
      읽기 전용이던 1.549 태그를 버튼으로 바꿨다. 거르는 중에도 보여야 누른 결과를 알 수 있다. */
   var _g=String(p.grp||"").trim();
   var grpTag='<button type="button" class="tb-grp'+(_g?"":" none")+'" data-grp-pid="'+esc(p.id)+'" aria-haspopup="menu" title="'
-    +(_g?esc(_g):"조 없음")+' — 눌러서 조 고르기">'+esc(tmGrpShort(_g))+'</button>';
+    +(_g?esc(tmGrpLabel(_g)):"조 없음")+' — 눌러서 조 고르기">'+esc(tmGrpShort(_g))+'</button>';
   /* 1.558 — 행·열 정돈. 번호가 없는 선수는 <u> 를 아예 안 그려서 이름 칸이 왼쪽으로 밀렸다.
      번호 칸은 비어 있어도 자리를 지키고, 이름은 span 으로 감싸 한 열로 고정한다.
      (조·상태는 각자 마지막 두 열) */
@@ -11892,7 +11885,7 @@ function renderTeam(){
   if(!oursRaw.length&&tmGrpFilter){   /* 2.250 — 필터로 비어 보일 때: '선수 없음' 빈 카드가 필터 줄까지 지워 되돌아갈 길이 없었다 */
     box.classList.add("tm-4col"); setTimeout(tmGrpFloatSync,0);   /* 2.954 — 명단 위 조 줄은 걷었다(머리 하나 + 따라오는 줄) */
     var _fe=document.createElement("div"); _fe.className="tm-empty"; _fe.style.cssText="grid-column:1/-1;padding:20px 4px;color:var(--dim,#646A73);font-size:13px";
-    _fe.textContent=tmGrpFilter+" 조에 아직 선수가 없어요 — 선수 행의 팀 버튼(A·B…)으로 배정하세요";
+    _fe.textContent=tmGrpLabel(tmGrpFilter)+" 조에 아직 선수가 없어요 — 선수 행의 팀 버튼(A·B…)으로 배정하세요";
     box.appendChild(_fe); return;
   }
   /* 2.981 — 새 기기에서 명단이 서버에서 오는 몇 초 동안 «아직 선수가 없어요 · ＋ 첫 선수 추가» 가 섰다(47명 팀에서도).
@@ -12096,9 +12089,9 @@ function renderTeam(){
         var g=String(P.grp||"").trim();
         grpB.className="t-grp"+(g?"":" none");
         grpB.textContent=tmGrpShort(g);
-        grpB.title=(g||"조 없음")+" — 눌러서 조 고르기";
+        grpB.title=(tmGrpLabel(g)||"조 없음")+" — 눌러서 조 고르기";
         grpB.setAttribute("aria-haspopup","menu");
-        grpB.setAttribute("aria-label",(P.name||"선수")+" 조 "+(g||"없음")+". 눌러서 고르기");
+        grpB.setAttribute("aria-label",(P.name||"선수")+" 조 "+(tmGrpLabel(g)||"없음")+". 눌러서 고르기");
       }
       paint();
       grpB.onclick=function(e){
@@ -12150,7 +12143,7 @@ function renderTeam(){
 
     /* 2.269 — 평가 5칸 복귀(사용자 v3 목업 승인 — 2.165 번복): 후보 목록과 같은 catAvgCellsHTML 재사용, 새 계산 없음 */
     var fitEl=document.createElement("span"); fitEl.className="t-fit"; try{ fitEl.innerHTML=catAvgCellsHTML(pl.levels||{}); }catch(_){}
-    row.append(num,name,footEl,fitEl,injury,grpB,plsB,idpB,profQ,pos2,memo,acts);   /* 2.541 «한눈에» · 2.548 «메모» */
+    row.append(num,name,footEl,fitEl,injury,grpB,tmSchoolYearButton(pl),plsB,idpB,profQ,pos2,memo,acts);   /* 2.541 «한눈에» · 2.548 «메모» */
     /* 2.547 — 되돌리기는 액션 묶음 안으로(격자 칸을 새로 만들지 않는다 — 2.544 의 교훈) */
     try{ if(backB)acts.insertBefore(backB,acts.firstChild); }catch(_){}
     if(!_isStart)row.classList.add("tm-sub-row");
@@ -12158,7 +12151,7 @@ function renderTeam(){
   Object.keys(_cols).forEach(function(k){
     var n=_cols[k].querySelectorAll(".tm-row").length;
     var t=_cols[k].querySelector(".tm-col-h");
-    if(t)t.innerHTML=esc(k||"조 없음")+'<u>'+n+'</u>';   /* 2.203 — _GRPL(옛 포지션 열 라벨 사전)이 사라져 ReferenceError 로 renderTeam 끝부분이 죽던 것. 열 키는 조 이름 */
+    if(t)t.innerHTML=esc(tmGrpLabel(k)||"조 없음")+'<u>'+n+'</u>';   /* 2.203 — _GRPL(옛 포지션 열 라벨 사전)이 사라져 ReferenceError 로 renderTeam 끝부분이 죽던 것. 열 키는 조 이름 */
   });
   var _la=document.createElement("button");_la.type="button";_la.className="tm-listadd";_la.textContent="＋ 선수 추가";_la.onclick=function(){data.players.push({id:uid("pl"),name:"",num:"",foot:"",type:"ours",posId:"",levels:plSeedLv(""),memo:"",manual:true});save();renderTeam();redrawTeamPitch();};box.appendChild(_la);
 }
@@ -12222,7 +12215,7 @@ function plsRender(){
   var uid=""; try{ uid=avUidOf(p.id); }catch(_){ }
   var doc=plsDoc(uid), pos=(data.positions||[]).filter(function(q){return q.id===p.posId;})[0];
   if(ttl)ttl.innerHTML=esc(p.name||"이름 없음")
-    +'<small>'+esc([pos?(posAbbr(pos.name)||pos.name):"",p.grp||"",p.num?("#"+p.num):""].filter(Boolean).join(" · "))+'</small>';
+    +'<small>'+esc([pos?(posAbbr(pos.name)||pos.name):"",tmGrpLabel(p.grp)||"",p.num?("#"+p.num):""].filter(Boolean).join(" · "))+'</small>';
   if(!uid){
     host.innerHTML='<div class="pls-nolink"><b>계정이 연결되지 않았어요</b>'
       +'<span>연결되면 이 선수가 쓴 일지·회고·경기 리뷰가 여기 모입니다. 개인 전달사항·성장 리뷰도 그때부터 갑니다.</span></div>';
@@ -16314,7 +16307,7 @@ function avRetroPanel(){
   }else{
     h+='<div class="av-rt-n">'+ls.length+'명이 썼어요</div>';
     h+=ls.map(function(x){
-      return '<div class="av-rt-r"><div class="nm">'+esc(x.nm)+(x.grp?'<small>'+esc(x.grp)+'</small>':'')+'</div>'
+      return '<div class="av-rt-r"><div class="nm">'+esc(x.nm)+(x.grp?'<small>'+esc(tmGrpLabel(x.grp))+'</small>':'')+'</div>'
         +(x.good?'<div class="g"><i>잘된 것</i><p>'+esc(x.good)+'</p></div>':'')
         +(x.better?'<div class="b"><i>고칠 것</i><p>'+esc(x.better)+'</p></div>':'')+'</div>';
     }).join("");
@@ -18776,7 +18769,7 @@ function tmPosGrpOf(p){
   try{ var ps=(data.positions||[]).filter(function(x){return x.id===p.posId;})[0];
     return posGroupOf(ps?ps.name:""); }catch(_){ return ""; }
 }
-function tmGroupLabel(g){ return (g==="\u0000")?"조 미지정":(/^[A-Za-z0-9]$/.test(g)?g+"팀":g); }
+function tmGroupLabel(g){ return (g==="\u0000")?"조 미지정":tmGrpLabel(g); }
 function tmGroupAvail(ours){
   var byG={}, order=[], any=false;
   (ours||[]).forEach(function(p){

@@ -105,6 +105,8 @@
         if(!pg){warn('player-group-unknown','조가 확인되지 않은 선수는 이 조의 참고 목록에서 제외했습니다.');return;}
         if(sc.groups.indexOf(pg)<0)return;
       }
+      var schoolYears=Array.isArray(input.session&&input.session.schoolYears)?input.session.schoolYears.map(String).filter(function(y){return /^[1-3]$/.test(y);}):[];
+      if(schoolYears.length&&schoolYears.indexOf(String(p.schoolYear||''))<0)return;
       if(!pid||!text(p.name)){warn('player-identity-unknown','선수 ID나 이름을 확인할 수 없는 항목은 제외했습니다.');return;}
       if(seenPid[pid]!==1){warn('player-identity-ambiguous','선수 ID가 중복된 항목은 연결을 확인한 뒤 볼 수 있습니다.');return;}
       var links=byPid[pid]||[];
