@@ -86,7 +86,11 @@
   function install(){if(installed)return;installed=true;css();var ctl=doc.querySelector('.sel-ctl');if(ctl){var b=doc.createElement('button');b.type='button';b.id='psEyeSelected';b.className='ps-eye-entry';b.hidden=true;b.onclick=function(e){e.stopPropagation();open();};ctl.appendChild(b);}var seg=doc.getElementById('tiltSeg');if(seg){var entry=doc.createElement('button');entry.type='button';entry.dataset.playerEyeEntry='true';entry.className='ps-eye-entry';entry.textContent='선수 시점';entry.onclick=function(e){e.stopPropagation();open();};seg.parentElement.appendChild(entry);}selectionChanged();}
   win.PSPlayerEye={open:open,close:close,selectionChanged:selectionChanged,button:function(){var b=doc.createElement('button');b.type='button';b.dataset.playerEyeEntry='true';b.className='ps-eye-entry';b.setAttribute('aria-label','선수 시점');b.title='선택한 선수 눈높이에서 보기';b.innerHTML=icon('eye');b.onclick=function(e){e.stopPropagation();open();};return b;}};
   if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',install,{once:true});else install();
-  win.addEventListener('keydown',function(e){if(!current)return;if(current.key)current.key(e);else if(e.key==='Escape'){e.preventDefault();close();}e.stopImmediatePropagation();},true);
+  win.addEventListener('keydown',function(e){if(!current)return;
+    // Safari can navigate back on Backspace even when board shortcuts are stopped.
+    // Keep text-field editing native, including while the viewer is still loading.
+    if((e.key==='Backspace'||e.key==='Delete')&&!e.target.matches('input,select,textarea')&&!e.target.isContentEditable)e.preventDefault();
+    if(current.key)current.key(e);else if(e.key==='Escape'){e.preventDefault();close();}e.stopImmediatePropagation();},true);
   win.addEventListener('pagehide',close);
   win.addEventListener('message',function(e){var d=e.data||{};if(e.source===win.parent&&e.origin===win.location.origin&&d.source==='process-studio'&&d.type==='ps-auth-state'&&d.unlocked===false)close();});
 })(window);

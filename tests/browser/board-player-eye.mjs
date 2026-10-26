@@ -137,11 +137,18 @@ try{
       if(size==='desktop'){
         // Actual keyboard events must never reach board deletion / page / scene shortcuts.
         await f.locator('#peFront').focus();
-        for(const key of ['Delete','Backspace','KeyN','Shift+KeyN','Control+KeyZ','Meta+KeyZ','ArrowRight'])await page.keyboard.press(key);
+        for(const key of ['Delete','Backspace','KeyN','Shift+KeyN','Control+KeyZ','Meta+KeyZ','ArrowRight']){
+          await page.keyboard.press(key);
+          await f.evaluate(()=>new Promise(r=>requestAnimationFrame(r)));
+          assert.equal(await original(f),before,key+' leaves the app and board intact');
+        }
         assert.equal(await original(f),before,'modal shortcuts leave board data and scenes unchanged');
         await f.locator('#peTrack').click();assert.equal(await f.locator('#peTrack').getAttribute('aria-pressed'),'true');
         const box=await f.locator('#peCanvas').boundingBox();
         await page.mouse.move(box.x+box.width*.5,box.y+box.height*.6);await page.mouse.down();await page.mouse.move(box.x+box.width*.65,box.y+box.height*.65,{steps:5});await page.mouse.up();
+        // Drag rendering is coalesced to RAF; wait for the visible control state,
+        // rather than assuming the final native mouse event also painted a frame.
+        await f.waitForFunction(()=>document.getElementById('peTrack').getAttribute('aria-pressed')==='false');
         assert.equal(await f.locator('#peTrack').getAttribute('aria-pressed'),'false','dragging takes over from ball tracking');
         await f.locator('#peFront').click();
         await f.locator('#pePlayer').selectOption('eye8');assert.equal(await f.locator('#psEyeDialog').getAttribute('data-player'),'eye8');
