@@ -34,7 +34,9 @@ function build(opt){
     pNextMatch:()=>{throw new Error('주간 보드는 다음 경기를 묻지 않는다');},
     wkbdMatchPlace:(ymd,opp)=>(ymd==='2026-10-03'&&opp==='광주FC U15')?'원정 · 광주 월드컵 보조구장':''
   });
+  c.PSTeamAudience=require('../studio/team-audience.js');vm.runInContext(fs.readFileSync(require.resolve('../studio/schedule-audience.js'),'utf8'),c);
   vm.runInContext([
+    part('function schedDayGrp(','function wksGroupKind('),
     part('function psMin(','\n'),part('function psSesMin(','function trOwnerDay('),part('function trMinutes(','function endTime('),
     part('function sessionLoadMin(','// 부하 = 세션 단위'),part('function getLoad(','function loadShort('),part('function loadRpe(','function rpeBand('),
     part('function dayIsMatch(','function mdMatchOffsets('),part('function mMatchKind(','function yearLoadRpe('),

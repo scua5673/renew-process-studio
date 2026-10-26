@@ -186,3 +186,4 @@ test('reading frozen input neither writes records nor returns mutable references
   r.rows[0].weekly.text='표시 객체';r.rows[0].coach.goals[0].text='표시 객체';r.scope.groups.push('C팀');
   assert.equal(JSON.stringify(f),before);
 });
+test('grade-scoped personal references only include selected school years within the selected teams',()=>{const f=fixture();f.session.grp=['A팀','B팀'];f.session.schoolYears=['2'];f.roster.players[0].schoolYear='1';f.roster.players[1].schoolYear='2';assert.deepEqual(focus.build(f).rows.map(p=>p.playerId),['p2']);delete f.roster.players[1].schoolYear;f.roster.players[1].grade='2';assert.equal(focus.build(f).rows.length,0);});

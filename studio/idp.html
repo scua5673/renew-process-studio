@@ -5,7 +5,7 @@
 <!-- PROCESS — IDP (선수 개인 성장: 프로필·셀프 평가·개인 훈련) · 설계: IDP-설계.md v1.1 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="storage.js"></script>
+<script src="storage.js"></script><script src="team-audience.js"></script>
 <script src="idp-evidence.js"></script>
 <script src="idp-recovery.js"></script>
 <script src="idp-roster-refresh.js"></script>
@@ -10324,7 +10324,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     return '<section class="card ilc-card"><div class="ilc-k">팀 명단과 연결</div><h3 class="ilc-t">명단에서 나를 골라 주세요</h3>'
       +'<p class="ilc-sub">고르면 코치에게 «이 선수가 나예요»가 가고, 코치가 확인하면 내 IDP가 팀과 이어져요.</p>'
       +'<input type="search" class="ilc-q" placeholder="이름·번호" aria-label="이름·번호로 찾기">'
-      +'<div class="ilc-list">'+L.map(function(p){var tk=!!st.taken[String(p.id)],meta=[p.pos,p.grp].filter(Boolean).join(' · ');
+      +'<div class="ilc-list">'+L.map(function(p){var tk=!!st.taken[String(p.id)],meta=[p.pos,PSSchedule.groupLabel(p.grp)].filter(Boolean).join(' · ');
         var key=esc(String(p.name||'').replace(/\s+/g,'').toLowerCase()+' '+String(p.num||''));
         if(tk)return '<div class="ilc-row tk" data-ilc-key="'+key+'"><span class="ilc-av ok">'+tick+'</span><span class="ilc-tx"><b>'+esc(ilcLabel(p))+'</b><small>'+esc(meta||' ')+'</small></span><em>이미 연결됨</em></div>';
         var on=sel&&String(sel.id)===String(p.id);
@@ -11252,6 +11252,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
      원본 process_coach_v1에는 절대 역변환하거나 다시 쓰지 않는다. */
   /* 2.215 — 조별 일정: 보고 있는 선수의 조(cs_team_attrs_v1.grpBy[playerId], 공개 미러)를 찾아 그 조의 일정을 읽는다. 조가 없거나 그 조 일정이 없으면 전체 */
   function myGrp(){ try{ var uid=viewedUid(); if(!uid)return ''; var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'); var pid=pm&&pm.members&&pm.members[uid]&&pm.members[uid].playerId; if(!pid)return ''; var at=JSON.parse(localStorage.getItem('cs_team_attrs_v1')||'null'); return (at&&at.grpBy&&at.grpBy[pid])||''; }catch(_){ return ''; } }
+  function mySchoolYear(){try{var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'),pid=pm&&pm.members&&pm.members[viewedUid()]&&pm.members[viewedUid()].playerId;
+    var at=JSON.parse(localStorage.getItem('cs_team_attrs_v1')||'null'),p=(at&&at.roster||[]).find(function(x){return String(x.id)===String(pid);});return p&&/^[1-3]$/.test(String(p.schoolYear))?String(p.schoolYear):'';}catch(_){return '';}}
   function teamScheduleRead(){
     try{
       var ps=window.PSSchedule;
@@ -11271,7 +11273,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var n=Math.round((d-mon)/864e5);cell={wk:Math.floor(n/7),di:((n%7)+7)%7};
     }
     var week=weeks[String(cell.wk)]||weeks[cell.wk];
-    return Array.isArray(week)?(week[cell.di]||null):null;
+    var day=Array.isArray(week)?(week[cell.di]||null):null,y=mySchoolYear();return y?PSTeamAudience.yearDay(day,[y]):day;
   }
   /* 계획 강도만 읽는다. 선수 개인 기록의 실제 체감 RPE(doc.log[].rpe)와는 섞지 않는다.
      최신 보드는 1~10 문자열, 구형 보드는 낮음/중간/높음, 상세 세션은 load/fitness 객체다. */

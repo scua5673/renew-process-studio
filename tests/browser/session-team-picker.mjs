@@ -10,6 +10,6 @@ try{
  assert.deepEqual(await page.evaluate(()=>week[0].trainings.map(t=>t.grp)),[['A팀'],['B팀']]);assert.equal(await sheet.locator('#wfSec-grp').getByRole('button',{name:'B팀',exact:true}).getAttribute('class'),'fp on');
  await sheet.getByRole('button',{name:'닫기',exact:true}).click();await page.waitForFunction(()=>JSON.parse(localStorage.getItem('process_coach_v1')).weeks[0][0].trainings.length===2);
  await page.reload({waitUntil:'domcontentloaded'});await add.first().waitFor();assert.deepEqual(await page.evaluate(()=>week[0].trainings.map(t=>t.grp)),[['A팀'],['B팀']]);
- await page.setViewportSize({width:390,height:844});await add.nth(1).click();await sheet.getByRole('button',{name:'전체 선택',exact:true}).click();assert.equal(await sheet.locator('[aria-pressed="true"]').count(),3);assert.ok(await sheet.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+ await page.setViewportSize({width:390,height:844});await add.nth(1).click();await sheet.getByRole('button',{name:'전체 선택',exact:true}).click();assert.equal(await sheet.locator('[onclick^="wksSessionTeamToggle"][aria-pressed="true"]').count(),3);assert.ok(await sheet.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
  console.log(JSON.stringify({engine,passed:true,cases:['no-separate-group-editor','cancel-preserves-data','selected-team-only','reload-preserves-both-sessions','empty-day-add','mobile-multi-team']}));await context.close();
 }finally{await browser.close();}
