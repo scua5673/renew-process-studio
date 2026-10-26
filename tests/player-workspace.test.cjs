@@ -40,3 +40,35 @@ test('세부 포지션과 표준 별칭을 질문 그룹에 연결하고 미지�
   const sets=[{positions:['CB']},{positions:['WB']},{positions:['ST']}];
   assert.equal(positions.pick(sets,['LCB']),0);assert.equal(positions.pick(sets,['RWB']),1);assert.equal(positions.pick(sets,['CF']),2);assert.equal(positions.pick([],['GK']),-1);
 });
+
+test('뎁스는 실제 배치마다 후보를 표시하고 같은 자리 중복과 전체 인원 중복을 제거한다',()=>{
+  const rows=[{id:'c1',name:'여러 자리',placements:[{posId:'l',pid:'a',statusKey:'rep',status:'추천',order:3},{posId:'r',pid:'b',statusKey:'go',status:'영입대상',order:0},{posId:'l',pid:'c',statusKey:'rep',status:'추천',order:4}]},{id:'c2',name:'미배치',pos:'GK',placements:[]}];
+  const defs=[{id:'l',name:'왼쪽',abbr:'LCB'},{id:'r',name:'오른쪽',abbr:'RCB'},{id:'g',name:'골키퍼',abbr:'GK'}],before=JSON.stringify({rows,defs});
+  const b=workspace.depthBoard(rows,defs,['g'],{});
+  assert.equal(b.total,2);assert.equal(b.shown,2);assert.equal(b.cards.find(c=>c.id==='g').all.length,0);
+  assert.deepEqual(b.cards.find(c=>c.id==='l').all.map(r=>[r.id,r.pid,r.statusKey]),[['c1','a','rep']]);
+  assert.deepEqual(b.cards.find(c=>c.id==='r').all.map(r=>[r.id,r.pid,r.statusKey]),[['c1','b','go']]);
+  assert.deepEqual(b.unplaced.rows.map(r=>r.id),['c2']);
+  assert.equal(JSON.stringify({rows,defs}),before,'projection does not mutate the source');
+  const filtered=workspace.depthBoard(rows,defs,['g'],{status:'go'});
+  assert.equal(filtered.shown,1);assert.equal(filtered.cards.find(c=>c.id==='l').rows.length,0);
+  assert.equal(filtered.cards.find(c=>c.id==='r').rows[0].pid,'b');
+});
+test('같은 약어의 사용자 포지션을 합치지 않고 미확인 배치는 미배치에서 찾는다',()=>{
+  const b=workspace.depthBoard([{id:'a',posId:'one',name:'가상 A'},{id:'b',posId:'two',name:'가상 B'},{id:'c',posId:'removed',name:'가상 C'}],[{id:'one',name:'LCB'},{id:'two',name:'LCB'}],[],{});
+  assert.equal(b.cards.length,2);assert.deepEqual(b.cards.map(c=>c.rows[0].id),['a','b']);assert.equal(b.unplaced.rows[0].id,'c');
+});
+test('한 자리의 많은 후보를 자르지 않고 검색해도 배치 순서를 보존한다',()=>{
+  const rows=Array.from({length:138},(_,i)=>({id:'c'+i,name:'후보 '+i,placements:[{posId:'p',pid:'placement'+i,statusKey:'rep',order:137-i}]}));
+  const b=workspace.depthBoard(rows,[{id:'p',name:'LCB'}],[],{});
+  assert.equal(b.cards[0].rows.length,138);assert.equal(b.max,138);assert.equal(b.cards[0].rows[0].id,'c137');
+  const searched=workspace.depthBoard(rows,[{id:'p',name:'LCB'}],[],{q:'후보 137'});
+  assert.equal(searched.shown,1);assert.equal(searched.cards[0].rows[0].rank,1);
+  assert.equal(searched.cards[0].all.length,138);
+});
+test('같은 자리의 서로 다른 단계는 상이로 남기고 빈 정의도 안전하게 표시한다',()=>{
+  const b=workspace.depthBoard([{id:'c',placements:[{posId:'p',statusKey:'rep'},{posId:'p',statusKey:'done'}]}],[{id:'p',name:'GK'}],[],{});
+  assert.equal(b.cards[0].all[0].statusKey,'mixed');
+  assert.equal(workspace.depthBoard([],[],[],{}).unplaced.rows.length,0);
+  assert.equal(workspace.depthBoard([],[{id:'p',name:'GK'}],[],{}).cards.length,1);
+});
