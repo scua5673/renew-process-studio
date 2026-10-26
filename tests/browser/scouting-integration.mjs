@@ -107,6 +107,7 @@ try{
   await frame.locator('[data-sc-import]').click();await frame.locator('[data-legacy-id="qa-db"]').check();await frame.locator('#scImportPoints').check();await frame.locator('[data-import]').click();
   await frame.evaluate(()=>scoutStore.ready());
   assert.equal(await frame.evaluate(()=>scStore().state.doc.scoutRegistry.candidates['db:unselected-local']),undefined);
+  await frame.getByRole('button',{name:'배치·명단 편집',exact:true}).click();
   await frame.locator('[data-sccard="qa-candidate"]').click();
   await frame.locator('#plName').fill('원본 하나로 바꾼 이름');
   await frame.locator('#plName').focus();
@@ -131,6 +132,8 @@ try{
   await frame.waitForFunction(()=>document.querySelector('#plScoutPoints iframe').contentWindow.location.href.includes('view=evaluate'));
   let evaluator=page.frames().find(f=>f.url().includes('view=evaluate'));
   try{await evaluator.locator('#ptEval.on').waitFor({timeout:10000});}catch(e){console.log('EVALUATOR',await evaluator.locator('body').innerText(),errors);await page.screenshot({path:path.join(out,'failed-evaluator.png')});throw e;}await evaluator.locator('#scStoreState').waitFor({state:'hidden'});
+  assert.equal(await evaluator.locator('#ptEvalSet').inputValue(),'-1','GK does not automatically select an imported ST question set');
+  await evaluator.locator('#ptEvalSet').selectOption('0');
   assert.match(await evaluator.locator('#ptEvalBody').innerText(),/공간을 먼저 찾는가/);
   await evaluator.locator('.pe-q .pe-rate button').nth(3).click();
   await evaluator.evaluate(()=>PSStorage.sharedReady());
