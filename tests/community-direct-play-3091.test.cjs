@@ -13,7 +13,7 @@ test('every community card opens the viewer directly — no preview window in be
   assert.doesNotMatch(comm,/\btx(Coach|Proc|Fifa)\(/,'미리보기 창을 여는 함수가 남지 않는다');
   assert.doesNotMatch(comm,/TX\.open\(/);
   assert.match(comm,/if\(_pv&&getComputedStyle\(_pv\)\.display==='none'\)\{ openPost\(p\); \}/,'코치 자료 · 엘미하 카드 → 뷰어');
-  assert.match(comm,/if\(li\)procPick\(p,s,c,\+li\.getAttribute\('data-k'\)\);[^\n]*\n\s*procOpen\(p,c\); \};/,'프로세스 카드 → 고른 훈련부터 뷰어');
+  assert.match(comm,/p\.__k=k;procOpen\(p,button,function\(\)\{return procLetters\.isReading\(n\);\}\);/,'레터의 관련 훈련 → 고른 훈련부터 뷰어');
   assert.match(comm,/onOpen:fifaOpen,/,'FIFA 애니메이션 카드 → 뷰어');
 });
 
