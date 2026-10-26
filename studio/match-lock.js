@@ -103,43 +103,122 @@
     doc.addEventListener('focusin', function (e) { var t = e.target; if (t && t.matches && t.matches(FIELD) && lockedField(t)) blocked(t, null); }, true);
 
     // ── 회차가 도는 중에 친 글을 잃지 않는다 ──
-    // 글 칸(input · textarea — 체크박스 · 날짜 · 고르개는 본문이 change 로 다룬다)에 친 값을 경기별로 적어 둔다(typed[key] = {v, t, mid}).
-    // 300ms 마다: 회차가 끝났고 고칠 수 있으면 모델이 그 값이 아닐 때 넣고 저장을 건다(모델이 이미 같으면 지운다 — 보통은 첫 번에 지워진다).
-    // 다시 그리기가 칸을 비웠으면(쓰는 중이 아닐 때) 칸도 돌려놓는다. 60초가 지나도 못 넣은 값은 버린다(그 사이 다른 기기가 바꾼 것을 영영 덮지 않게).
-    var typed = {}, tickT = 0, focusMid = '';
-    function cur() { try { return typeof matchCurrent !== 'undefined' ? String(matchCurrent || '') : ''; } catch (_) { return ''; } }   // eslint-disable-line no-undef
+    // Memory-only input belongs to its exact author/match/field. It remains a
+    // barrier until the ordinary native save verifies it; a timer is no receipt.
+    var typed = Object.create(null), tickT = 0, focusMid = '', focusOwner = null, flight = null, flightOwner = null;
+    var nativeHas = win.psHasPending, nativeReady = win.psFlushPendingReady, nativeFlush = win.psFlushPending, nativeSay = win.matchSayState;
+    function cur() { try { return typeof matchCurrent !== 'undefined' ? String(matchCurrent || '') : String(win.matchGet && win.matchGet() && win.matchGet().id || ''); } catch (_) { return ''; } }   // eslint-disable-line no-undef
+    function owner() {
+      try {
+        var raw = win.teamSaveOwner(), a = JSON.parse(raw), ls = win.localStorage, seal = a && JSON.parse(a[2]), session = JSON.parse(ls.getItem('ps_sync_session') || 'null');
+        if (!Array.isArray(a) || a.length !== 5 || a.some(function (v) { return typeof v !== 'string'; }) || !a[0] || !a[1] || !seal || seal.uid !== a[1] || seal.wid !== a[0] || !session || session.uid !== a[1] || ls.getItem('ps_active_ws') !== a[0] || ls.getItem('ps_cache_owner_v1') !== a[2] || (ls.getItem('ps_ws_switch_epoch_v1') || '') !== a[3] || (ls.getItem('cs_perms_v1') || '') !== a[4] || ls.getItem('ps_ws_switch_guard_v1') || win.teamSaveOwner() !== raw) return null;
+        return raw;
+      } catch (_) { return null; }
+    }
     function fieldOf(t) { return t && t.matches && t.matches('[data-match-field]') && t.tagName !== 'SELECT' && !/^(checkbox|radio|date|time)$/.test(String(t.type || '')) ? t : null; }
     function editable(shell) { return !!shell && !shell.classList.contains('readonly'); }
     function pending() { try { return typeof win.matchDocPending === 'function' ? !!win.matchDocPending() : false; } catch (_) { return true; } }
-    function note(el, v) { typed[el.getAttribute('data-match-field')] = { v: v, t: Date.now(), mid: cur() }; if (!tickT) tickT = win.setTimeout(tick, 300); }
+    function active() { var o = owner(); return Object.keys(typed).map(function (k) { return typed[k]; }).filter(function (e) { return o === null || e.owner === null || e.owner === o; }); }
+    function model(mid) {
+      try { var m = win.matchGet && win.matchGet(); if (m && String(m.id) === mid) return m; var s = win.matchLoad && win.matchLoad(); return s && s.matches && s.matches.filter(function (r) { return String(r.id) === mid; })[0] || null; } catch (_) { return null; }
+    }
+    function value(m, k) { return String(m && m[k] != null ? m[k] : ''); }
+    function allowed(e) { try { return e.owner !== null && owner() === e.owner && !pending() && typeof win.matchCanEdit === 'function' && win.matchCanEdit() === true && typeof win.matchCanEditOne === 'function' && win.matchCanEditOne(e.mid) === true && owner() === e.owner; } catch (_) { return false; } }
+    function covered(e) { var m = model(e.mid); return !!(e.covered && allowed(e) && m && value(m, e.field) === e.v && (cur() === e.mid || e.accepted)); }
+    function inputPending() { return active().some(function (e) { return !covered(e); }); }
+    function accepted(e) { var m = model(e.mid); return !!(e.accepted && m && value(m, e.field) === e.v); }
+    function nativePending() { try { return !!(nativeHas && nativeHas.call(win)); } catch (_) { return true; } }
+    function waiting() {
+      var o = owner(), mid = cur(), m = model(mid);
+      return o !== null && !!m && Object.keys(typed).some(function (k) { var e = typed[k]; return e.owner === o && e.mid === mid && value(m, e.field) !== e.v; }) && owner() === o;
+    }
+    // An older native save may still finish legitimately. Its success cannot
+    // label a newer, rejected input as saved; actual native failures keep priority.
+    if (typeof nativeSay === 'function') win.matchSayState = function () {
+      var args = Array.prototype.slice.call(arguments);
+      if (!args[1] && waiting()) args[0] = '저장 대기 중…';
+      return nativeSay.apply(this, args);
+    };
+    function fail() { var e = new Error('아직 경기 입력을 저장하지 못했습니다. 이 경기에서 저장을 다시 확인해 주세요.'); e.psCode = 'match_input_pending'; return e; }
+    function schedule() { if (!tickT && active().some(function (e) { return !e.autoPaused; })) tickT = win.setTimeout(tick, 300); }
+    function note(el, v) {
+      var o = owner(), mid = cur(), field = el.getAttribute('data-match-field'), key = JSON.stringify([o, mid, field]), previous = typed[key], m = model(mid), base = previous ? previous.base : value(m, field);
+      if (previous && value(m, field) === previous.v) base = previous.v;
+      var changed = previous ? previous.v !== String(v) : value(m, field) !== String(v);
+      // A new edit can retry this owner's whole MATCH document. Repainting the
+      // same text cannot resume a failed write, and cannot release another owner.
+      if (o !== null && changed && owner() === o) Object.keys(typed).forEach(function (k) { if (typed[k].owner === o) typed[k].autoPaused = false; });
+      var e = { key: key, owner: o, mid: mid, field: field, v: String(v), base: base, accepted: false, covered: false, autoPaused: !!(previous && !changed && previous.autoPaused) }; typed[key] = e;
+      // The capture listener runs before the native input handler. Observe its
+      // acceptance afterwards, without replaying or claiming durable storage.
+      Promise.resolve().then(function () {
+        if (typed[key] !== e || e.owner === null || owner() !== e.owner || cur() !== e.mid) return;
+        if (value(model(mid), field) === e.v) e.accepted = true;
+        else try { if (typeof win.matchSayState === 'function') win.matchSayState('저장 대기 중…', false); } catch (_) {}
+      });
+      schedule();
+    }
+    function drain() {
+      var rows = active(), ok = true;
+      rows.forEach(function (e) {
+        var m = model(e.mid), current = value(m, e.field);
+        if (!allowed(e) || !m || (cur() !== e.mid && !(e.accepted && current === e.v)) || (current !== e.base && current !== e.v)) { ok = false; return; }
+        if (cur() === e.mid && (!accepted(e) || e.autoPaused)) {
+          if (typeof win.matchQueueSave !== 'function') { ok = false; return; }
+          m[e.field] = e.v;
+          try { if (win.matchQueueSave() === false) { ok = false; return; } } catch (_) { ok = false; return; }
+          e.accepted = true; e.autoPaused = false;
+        }
+      });
+      return { rows: rows, ok: ok };
+    }
     function tick() {
       tickT = 0;
-      var keys = Object.keys(typed); if (!keys.length) return;
-      var pend = pending(), m = null, can = false, now = Date.now(), mid = cur(), again = false;
-      try { m = typeof win.matchGet === 'function' ? win.matchGet() : null; } catch (_) { m = null; }
-      try { can = typeof win.matchCanEdit === 'function' ? !!win.matchCanEdit() : false; } catch (_) { can = false; }
-      keys.forEach(function (k) {
-        var e = typed[k];
-        if (!e || e.mid !== mid || now - e.t > 60000) { delete typed[k]; return; }
-        var el = doc.querySelector('.match-shell [data-match-field="' + k + '"]');
-        if (el && el.isConnected && el.value !== e.v && doc.activeElement !== el) el.value = e.v;   // 다시 그리기가 칸을 지웠다
-        if (pend || !m || !can) { again = true; return; }
-        if (String(m[k] == null ? '' : m[k]) === e.v) { delete typed[k]; return; }
-        m[k] = e.v; try { if (typeof win.matchQueueSave === 'function') win.matchQueueSave(); } catch (_) {}
-        delete typed[k];
+      active().forEach(function (e) {
+        if (e.owner === null || owner() !== e.owner || e.mid !== cur()) return;
+        var el = doc.querySelector('.match-shell [data-match-field="' + e.field + '"]');
+        if (el && el.isConnected && el.value !== e.v && doc.activeElement !== el) el.value = e.v;
       });
-      if (again || Object.keys(typed).length) tickT = win.setTimeout(tick, 300);
+      var rows = active();
+      // Normal accepted typing belongs to the native debounce. Never flush it
+      // early, and do not turn a real I/O failure into a 300ms write retry loop.
+      if (rows.some(function (e) { return e.autoPaused; })) return;
+      if (!flight && rows.length && !(rows.every(accepted) && nativePending())) win.psFlushPendingReady().catch(function () {}).then(schedule);
+      else schedule();
     }
+    win.psHasPending = function () { return inputPending() || !!(nativeHas && nativeHas.apply(this, arguments)); };
+    win.psFlushPending = function () { drain(); return nativeFlush ? nativeFlush.apply(this, arguments) : false; };
+    win.psFlushPendingReady = function () {
+      var expected = owner(), self = this, args = arguments;
+      if (flight && flightOwner === expected) return inputPending() ? Promise.reject(fail()) : flight;
+      var d = drain(); if (!d.ok || d.rows.length && expected === null) { schedule(); return Promise.reject(fail()); }
+      d.rows.forEach(function (e) { e.covered = true; });
+      var work;
+      try { if (typeof nativeReady !== 'function') throw fail(); work = nativeReady.apply(self, args); } catch (e) { work = Promise.reject(e); }
+      var result = Promise.resolve(work).then(function (v) {
+        if (owner() !== expected) throw fail();
+        if (d.rows.some(function (e) { return typed[e.key] === e && !covered(e); })) throw fail();
+        d.rows.forEach(function (e) { if (typed[e.key] === e) delete typed[e.key]; });
+        if (inputPending()) throw fail();
+        return v;
+      }).catch(function (e) { d.rows.forEach(function (r) { r.covered = false; if (typed[r.key] === r && (!e || e.psCode !== 'match_input_pending')) r.autoPaused = true; }); throw e; });
+      flight = result; flightOwner = expected;
+      result.then(function () { if (flight === result) flight = null; schedule(); }, function () { if (flight === result) flight = null; schedule(); });
+      return result;
+    };
+    function lifecycle() { drain(); }
+    win.addEventListener('pagehide', lifecycle, true);
+    doc.addEventListener('visibilitychange', function () { if (doc.visibilityState === 'hidden') lifecycle(); }, true);
     doc.addEventListener('input', function (e) { var t = fieldOf(e.target); if (t && editable(t.closest('.match-shell'))) note(t, t.value); }, true);
-    doc.addEventListener('focusin', function (e) { if (fieldOf(e.target)) focusMid = cur(); }, true);
+    doc.addEventListener('focusin', function (e) { if (fieldOf(e.target)) { focusMid = cur(); focusOwner = owner(); } }, true);
     // renderMatch 는 모든 칸에 모델 값을 다시 적는다 — 쓰는 중인 칸은 친 글을 돌려놓고(모델은 tick 이 맞춘다), 다른 경기로 바뀐 뒤면 그대로 둔다
     function wrapRender() {
       var f = win.renderMatch; if (typeof f !== 'function') return false; if (f.__psLock) return true;
       var g = function () {
         var a = doc.activeElement, keep = null;
-        if (fieldOf(a) && editable(a.closest('.match-shell')) && focusMid === cur()) { keep = { el: a, v: a.value, s: a.selectionStart, e: a.selectionEnd }; }
+        if (fieldOf(a) && editable(a.closest('.match-shell')) && focusMid === cur() && focusOwner === owner()) { keep = { el: a, v: a.value, s: a.selectionStart, e: a.selectionEnd }; }
         var r = f.apply(this, arguments);
-        if (keep && keep.el.isConnected && cur() === focusMid) {
+        if (keep && keep.el.isConnected && cur() === focusMid && focusOwner === owner()) {
           if (keep.el.value !== keep.v) { keep.el.value = keep.v; note(keep.el, keep.v); }
           // 다시 그리기가 커서를 떨어뜨렸으면(아무도 안 가져갔을 때만) 쓰던 자리로 — 판이 잠깐 숨었다 다시 보이는 때는 그 뒤(setTimeout 0)에
           var back = function () { var a2 = doc.activeElement; if (a2 === keep.el || (a2 && a2 !== doc.body) || !keep.el.isConnected || cur() !== focusMid) return; try { keep.el.focus({ preventScroll: true }); keep.el.setSelectionRange(keep.s, keep.e); } catch (_) {} };
@@ -151,7 +230,7 @@
     }
     var tries = 0;
     (function hook() { if (!wrapRender() && ++tries < 40) win.setTimeout(hook, 250); })();
-    return { reason: function () { return reason(win); }, readyInfo: function () { return readyInfo(win); }, typed: function () { return Object.keys(typed); } };
+    return { reason: function () { return reason(win); }, readyInfo: function () { return readyInfo(win); }, typed: function () { return active().map(function (e) { return e.field; }); } };
   }
 
   if (typeof window !== 'undefined' && window.document && /\/studio\/scout\.html/.test(String(window.location && window.location.pathname))) window.__psMatchLockApi = install(window);
