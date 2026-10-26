@@ -1450,6 +1450,10 @@ function scheduleReadyCommit(m,raw,uid,wid,seal,current){
     var next=JSON.stringify(latest);localStorage.setItem(MKEY,next);
     if(localStorage.getItem(MKEY)!==next)throw syncIssue('sync_storage','schedule_ready_commit','일정 준비표 저장을 확인하지 못했습니다');
     guard();m.r=m.r||{};m.r[SCHEDULE_KEY]=marker;scheduleReadyPending=false;return true;
+  }).then(function(confirmed){
+    guard();
+    if(typeof raw!=='string'||!window.PSStorage||!PSStorage.sharedRecovered)return confirmed;
+    return Promise.resolve(PSStorage.sharedRecovered(SCHEDULE_KEY,raw)).then(function(){guard();return confirmed;});
   });
 }
 /* 경기 준비표는 단순 최종 상태가 아니라 “서버 원문·IDB·거울이
@@ -5563,8 +5567,19 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
         var before=r?r.value:null,mirror=null;try{mirror=localStorage.getItem(k);}catch(_){}
         var current=(mirror!=null?mirror:before);
         if((scheduleGuarded&&scheduleHeld())||current!==expectedLoc){writeGuard.stale=true;return {stale:true};}
+        var pinned=scheduleGuarded&&Object.prototype.hasOwnProperty.call(writeGuard,'expectedIdb');
+        if(pinned&&before!==writeGuard.expectedIdb){writeGuard.stale=true;return {stale:true};}
         try{rescueStash(k,expectedLoc,v);}catch(_){}
-        return window.storage.set(k,v).then(function(){
+        function repairCurrent(){
+          if(!ownerCurrent()||scheduleHeld()||localStorage.getItem(k)!==mirror)
+            throw syncIssue('sync_local_changed','schedule_repair_source','일정 사본을 확인하는 동안 새 편집 또는 작업 공간 변경이 생겼습니다');
+        }
+        var write=pinned
+          ? (window.storage.replaceIfValue?window.storage.replaceIfValue(k,writeGuard.expectedIdb,v,repairCurrent).then(function(changed){
+              if(!changed)throw syncIssue('sync_local_changed','schedule_repair_idb_changed','일정 사본을 확인하는 동안 새 기기 편집이 생겼습니다');
+            }):Promise.reject(syncIssue('sync_storage','schedule_repair_cas','일정 사본을 안전하게 비교 저장할 수 없습니다')))
+          : window.storage.set(k,v);
+        return write.then(function(){
           if(!ownerCurrent()){
             /* 검사와 IDB transaction 사이에 전환됐으면 방금 쓴 이전 팀 원문을 회수한다. */
             return undoStaleIdbWrite();
@@ -7204,6 +7219,15 @@ function syncNowCore(reason){
         if(k===SCHEDULE_KEY&&row&&typeof row.v==='string'&&loc===row.v&&
            ((idbVals[k]===undefined?null:idbVals[k])!==row.v||localStorage.getItem(k)!==row.v)&&
            !(row.v===scheduleMirrorLeft&&idbVals[k]===row.v&&localStorage.getItem(k)===null&&!scheduleMirrorTry(row.v))){   /* 3.131 */
+          var repairIdb=idbVals[k]===undefined?null:idbVals[k];
+          // A server-equal mirror does not prove a different IDB body is stale.
+          // Only its full exact confirmed previous base can be repaired over.
+          if(repairIdb!==null&&repairIdb!==row.v&&
+             (syncBaseGet(k)!==repairIdb||(m.h[k]||'')!==hash(repairIdb))){
+            scheduleGuard.stale=true;scheduleDependencyBlocked=true;
+            writes.push(Promise.reject(syncIssue('sync_storage','schedule_copies_differ','일정의 기기 사본이 서로 달라 원문을 보존했습니다. 저장 내용을 확인해 주세요.')));return;
+          }
+          scheduleGuard.expectedIdb=repairIdb;
           if(roundKvWrite(k,row.v,writes,loc,scheduleGuard)){applied++;scheduleAppliedPlanned++;}
         }
         /* 1.644 — 읽기 전용 기기는 dirty 판정보다 서버 일정이 먼저다.

@@ -6,7 +6,7 @@ function setup({optimize,saveNow}){
   assert.ok(start>0&&end>start);
   const toasts=[],states=[],calls={optimize:0,saveNow:0};
   const c=vm.createContext({window:{PSStorage:{optimize:()=>{calls.optimize++;return optimize();}},PSSaveState:{begin:s=>states.push('begin:'+s)}},
-    toast:t=>toasts.push(t),saveNow:()=>{calls.saveNow++;return saveNow();},Promise,Date});
+    toast:t=>toasts.push(t),saveNow:()=>{calls.saveNow++;return saveNow();},__schedSaveOwner:()=> 'same-owner',__schedWriteSeq:0,__schedWriteEntry:null,__saveQueued:false,__schedWritePending:false,__schedWriteWork:Promise.resolve(true),__schedUpdateSignal(){},Promise,Date});
   c.PSStorage=c.window.PSStorage;c.window.PSSaveState=c.window.PSSaveState;c.PSSaveState=c.window.PSSaveState;
   vm.runInContext(html.slice(start,end),c);
   return {c,toasts,states,calls};

@@ -325,7 +325,7 @@
   }
 
   /* ── 용량 초과 경고 ── */
-  var warned=false,fullKey='';
+  var warned=false,fullKey='',fullFailures=Object.create(null);
   /* 3.126 — 가득 찬 기기에서 «무엇이» 칸을 차지하는지 서버가 알게 한다(2주 22명 · 229번 «일정 화면 사본 저장 공간 부족» — 무엇이 찼는지 몰랐다).
      자동 정리가 끝난 뒤 한 줄(ps_events storage_full): 실패한 키 · 작은 저장소 크기(정리 전 · 뒤) · 큰 키 넷(표 storage-keys.js 의 이름 — 사람별 id 는 뗀다) ·
      브라우저 저장 한도. 키 이름과 크기만 — 내용 · 계정 · 팀 이름은 보내지 않는다. 맨 위 창 하나에서 6시간에 한 번. */
@@ -358,6 +358,10 @@
     }catch(_){}
   }
   function warnFull(key){
+    // Failing to save the warning's own telemetry or cleanup timestamp is not
+    // an additional failed user document and must not keep its warning latched.
+    if(key==='ps_full_report_at'||key==='ps_opt_auto_at'||key==='ps_opt_build_v1')return;
+    fullFailures[String(key)]=true;
     if(warned) return; warned=true;fullKey=key;
     try{ console.warn('[PSStorage] 저장소 용량 초과:',key); }catch(_){}
     /* 배너를 먼저 띄운다. 이벤트가 앞서면 PSSaveState가 "배너 없음"으로 보고
@@ -768,13 +772,30 @@
      A newer owner, mirror, durable value or queued write is never acknowledged. */
   function sharedCommitted(k,raw){
     var owner=sharedReadContext(),mirror=localStorage.getItem(k),pending=sharedWrites[k];
-    function current(){if(owner===null||sharedReadContext()!==owner||localStorage.getItem(k)!==mirror){var e=new Error('shared confirmation owner or source changed');e.name='StorageOwnerChangedError';throw e;}}
+    function current(){if(owner===null||sharedReadContext()!==owner||localStorage.getItem(k)!==mirror||sharedWrites[k]&&sharedWrites[k]!==pending){var e=new Error('shared confirmation owner or source changed');e.name='StorageOwnerChangedError';throw e;}}
     return Promise.resolve(pending).catch(function(){}).then(function(){
       return afterMigrate(function(){current();return idbGet(k);});
     }).then(function(saved){
       current();
       if(saved!==raw)throw new Error('shared storage verification failed');
       if(pending&&sharedWrites[k]===pending&&sharedLatest[k]===raw){delete sharedWrites[k];delete sharedLatest[k];delete sharedOwners[k];}
+      return true;
+    });
+  }
+  /* Recover only this exact durable document's quota warning. A different key,
+     owner, mirror or queued write cannot make a failed save look successful. */
+  function sharedRecovered(k,raw){
+    var owner=sharedReadContext(),mirror=localStorage.getItem(k);
+    return sharedCommitted(k,raw).then(function(){
+      if(owner===null||owner!==sharedReadContext()||localStorage.getItem(k)!==mirror||sharedWrites[k]){
+        var e=new Error('shared recovery owner or source changed');e.name='StorageOwnerChangedError';throw e;
+      }
+      if(!fullFailures[k])return true;
+      delete fullFailures[k];
+      if(Object.keys(fullFailures).length)return true;
+      warned=false;fullKey='';
+      var b=document.getElementById('psStorageFull');if(b)b.remove();
+      window.dispatchEvent(new CustomEvent('ps-storage-recovered',{detail:{key:k,verified:true}}));
       return true;
     });
   }
@@ -914,6 +935,7 @@
     sharedReady:sharedReady,
     sharedVerified:sharedVerified,
     sharedCommitted:sharedCommitted,
+    sharedRecovered:sharedRecovered,
     auxGet:auxGet,
     reportFull:function(k){ fullReport(k,null); },   /* 3.131 — 동기화의 일정 거울 쓰기가 용량으로 실패해도 같은 storage_full 한 줄(키 이름 · 크기 · 한도만) */
     auxSet:auxSet,
@@ -1524,6 +1546,9 @@
   /* 용량 초과는 곧 저장 실패다. 어느 경로로 났든 같은 상태로 모은다. */
   window.addEventListener('ps-storage-full',function(e){
     set('storage','failed',(e&&e.detail)||null);
+  });
+  window.addEventListener('ps-storage-recovered',function(e){
+    if(e&&e.detail&&e.detail.verified===true){state.storage='saved';paint();if(!anyFailed())pill(false);}
   });
 })();
 
