@@ -32,7 +32,7 @@
     if (d.type !== 'text' || !d.bg) return g;
     var rect = g.querySelector('rect'), b = _textBox(d), p = d.pts[0];
     if (rect) {
-      var width = Math.max.apply(null, b.lines.map(function (l) { return _txMeasW(l, b.fs); })) + b.padX * 2;
+      var width = Math.max.apply(null, b.lines.map(function (l) { return _txMeasW(l, b.fs, d); })) + b.padX * 2;
       var x = d.align === 'left' ? p.x - b.boxW / 2 : d.align === 'right' ? p.x + b.boxW / 2 - width : p.x - width / 2;
       rect.setAttribute('x', x); rect.setAttribute('width', width);
       rect.setAttribute('fill-opacity', opacity(d.bgOp)); rect.classList.add('ps-text-bg');
@@ -40,7 +40,7 @@
     return g;
   }
   function fitEditor(ed, d, fs, w, sc, bounds, barHeight) {
-    var b = _textBox({text: ed.value, size: fs, w: w}), k = Math.min(1, fs * sc / 16);
+    var b = _textBox(Object.assign({text: ed.value, size: fs, w: w},ed.__psTextStyle)), k = Math.min(1, fs * sc / 16);
     var maxW = Math.max(32, bounds.w - 16), maxH = Math.max(32, bounds.h - barHeight - 34);
     var width = Math.min(maxW, Math.max(b.boxW * sc, b.padX * sc * 2 + fs * sc));
     var wrap = Math.max(fs, (width - b.padX * sc * 2) / sc);

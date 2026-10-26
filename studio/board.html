@@ -4232,7 +4232,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.167"></script>
 <script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-stadium-ground.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script>
+<script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -5435,13 +5435,7 @@ function enableDrag(g,p,removable,kind){
       const c=g.querySelector("circle,path,rect");if(c)c.setAttribute("opacity",".8");
       /* 2.030 — ⌥+드래그 = 끌면서 복제(놓는 순간 원자리에 사본이 남는다) · Shift+드래그 = 수평/수직 고정 */
       _mvAlt=!!e.altKey&&kind!=="ball"; _mvP0={x:p.x,y:p.y}; _mvAxis=null;
-      /* ══ 2.375 · 잡은 지점을 기억한다(사용자 "원근뷰로 했을 때 토큰이동 정확하게") ═════════
-         예전에는 움직일 때 토큰을 **포인터 위치로 그냥 옮겼다**(아래 `p.x=s.x`). 토큰 가운데를 정확히
-         누른 게 아니면 잡는 순간 토큰이 손가락 밑으로 **튄다.** 평면에서는 반 토큰(≈13px)이라 눈에 잘
-         안 띄었지만, 원근 뷰는 세로가 1.44배 눌려 있어 **화면에서 조금 위쪽을 잡아도 잔디에서는 크게 뒤**다
-         — 그래서 원근에서만 "정확하지 않다"로 드러났다.
-         이제 **잔디 좌표에서의 차이**를 기억해 그만큼 유지한다. 화면 px 오프셋이 아니라 잔디 좌표라야
-         기울임·배율이 바뀌어도 맞는다(화면 px 은 원근에서 위치마다 다른 거리를 뜻한다). */
+      /* Keep the grab offset in pitch coordinates, including perspective views. */
       try{ var _g0=toUnit(e); _mvGrab=(_g0&&isFinite(_g0.x)&&isFinite(_g0.y))?{x:p.x-_g0.x,y:p.y-_g0.y}:null; }catch(_){ _mvGrab=null; }
       if(multiSel.length>=2&&multiSel.indexOf(p)>=0){
         grp=multiSel.map(o=>{var _di=state.drawings.indexOf(o);if(_di>=0)return{o:o,draw:true,locked:!!(o&&o.locked),pts0:(o.pts||[]).map(q=>({x:q.x,y:q.y})),g:PSBoardText.node(o)};return{o:o,x0:o.x,y0:o.y,locked:!!(o&&o.locked),g:tokenLayer.querySelector('[data-id="'+o.id+'"]')};});
@@ -5467,9 +5461,9 @@ function enableDrag(g,p,removable,kind){
   function applyDragMove(e){if(!mode)return;
     if(Math.hypot(e.clientX-sx,e.clientY-sy)>4)moved=true;
     if(mode==="draw"){_inkMove(e);}   /* 3.025 — 펜의 중간 점까지 */
-    else if(grp){if(!grpUndo){pushUndo();grpUndo=true;}const u=toUnit(e);let dx=u.x-gu0.x,dy=u.y-gu0.y;
+    else if(grp){if(!grpUndo){pushUndo();grpUndo=true;}const u=toUnit(e);let dx=u.x-gu0.x,dy=u.y-gu0.y;const ds=PSBoardEdit.snapDelta(grp,p,dx,dy,e);dx=ds.x;dy=ds.y;
       if(e.shiftKey){ if(!_mvAxis&&(Math.abs(dx)>6||Math.abs(dy)>6))_mvAxis=Math.abs(dx)>=Math.abs(dy)?"x":"y"; if(_mvAxis==="x")dy=0; else if(_mvAxis==="y")dx=0; } else _mvAxis=null;
-      grp.forEach(it=>{if(it.draw&&!it.locked){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&!g2.locked&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else if(!it.draw&&!it.locked){it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});renderMultiGuides();if(_dirLive()||grp.some(function(it){return !it.locked&&it.o&&(it.o.vis||it.o.shaper);})){renderVisionRAF();}}
+      grp.forEach(it=>{if(it.locked)return;if(it.draw&&!it.locked){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&!g2.locked&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else if(!it.draw&&!it.locked){it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});renderMultiGuides();if(_dirLive()||grp.some(function(it){return !it.locked&&it.o&&(it.o.vis||it.o.shaper);})){renderVisionRAF();}}
     else{if(!mvUndo){pushUndo();mvUndo=true;}
       var _u0=toUnit(e);
       /* 2.375 — 잡은 지점 보정. 스냅(snapDrag)은 보정한 뒤에 걸어야 한다 — 보정 전에 걸면 스냅이
@@ -6680,7 +6674,7 @@ function enableDrawingDrag(g,d){
   g.addEventListener("pointermove",e=>{if(!dragging)return;const p=toUnit(e);
     let dx=p.x-p0.x,dy=p.y-p0.y;if(Math.hypot(dx,dy)>3)moved=true;
     if(grp){if(!grpUndo){pushUndo();grpUndo=true;}
-      grp.forEach(it=>{if(it.draw&&!it.locked){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&!g2.locked&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else if(!it.draw&&!it.locked){it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});
+      grp.forEach(it=>{if(it.locked)return;if(it.draw&&!it.locked){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&!g2.locked&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else if(!it.draw&&!it.locked){it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});
       renderMultiGuides();return;}
     const _cs=d.pts.reduce((a,q)=>({x:a.x+q.x,y:a.y+q.y}),{x:0,y:0}),_n=d.pts.length||1,c0x=_cs.x/_n,c0y=_cs.y/_n,_CTH=13;
     if(Math.abs((c0x+dx)-CX)<=_CTH){dx=CX-c0x;}
@@ -6957,7 +6951,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
     const x0=p.x-B.boxW/2,y0=p.y-B.boxH/2,hasBg=!!d.bg;
     /* 세로 필드는 world가 방향에 따라 ±90° 회전한다.
        텍스트는 반대 각도로 보정해 어느 진영에서도 정방향을 유지한다. */
-    const tgw=(state.orientation==="v")?("rotate("+(state.spFlip?-90:90)+" "+p.x+" "+p.y+")"):null;
+    const ta=((state.orientation==="v")?(state.spFlip?-90:90):0)+PSBoardEdit.textStyle(d).textAngle,tgw=ta?"rotate("+ta+" "+p.x+" "+p.y+")":null;
     if(hasBg){const bgr=el("rect",{x:x0,y:y0,width:B.boxW,height:B.boxH,rx:9,fill:d.bg});if(tgw)bgr.setAttribute("transform",tgw);g.appendChild(bgr);}
     const fillC=_textFill(d,hasBg?d.bg:null);
     /* 2.578 — 정렬(사용자 "텍스트 정렬기능 왼쪽 가운데 오른쪽"). d.align = left|right, 없으면 가운데(옛 자료 그대로).
@@ -6966,7 +6960,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
     const ax=al==="left"?(x0+B.padX):al==="right"?(x0+B.boxW-B.padX):p.x;
     const tatt={"text-anchor":(al==="left"?"start":al==="right"?"end":"middle"),"dominant-baseline":"central","font-size":fs,"font-weight":"700","font-family":"Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif",fill:fillC,style:"pointer-events:none"};
     if(!hasBg){tatt.stroke="rgba(0,0,0,.58)";tatt["stroke-width"]=Math.max(1.5,fs*.08);tatt["paint-order"]="stroke";}
-    const tx=el("text",tatt);
+    tatt['font-weight']=PSBoardEdit.textStyle(d).textWeight;tatt['font-style']=PSBoardEdit.textStyle(d).textItalic?'italic':'normal';const tx=el("text",tatt);
     B.lines.forEach(function(ln,i){const ts=el("tspan",{x:ax,y:(p.y+(i-(B.lines.length-1)/2)*B.lh),"dominant-baseline":"central"});ts.textContent=ln;tx.appendChild(ts);});
     if(tgw)tx.setAttribute("transform",tgw);
     const hit=el("rect",{x:x0,y:y0,width:B.boxW,height:B.boxH,fill:"#000",opacity:"0","pointer-events":"all"});if(tgw)hit.setAttribute("transform",tgw);
@@ -7096,7 +7090,7 @@ function addText(u,existing){
   pt.x=d?d.pts[0].x:u.x;pt.y=d?d.pts[0].y:u.y;
   const q=pt.matrixTransform(ctm);
   const sc=Math.hypot(ctm.a,ctm.b)||1;
-  let _fs=((d&&d.size)||30);
+  let _fs=((d&&d.size)||30);const _ts=PSBoardEdit.textStyle(d);
   let _tc=(d&&d.textColor)||null;
   let _bg=(d?(d.bg||null):null),_bgOp=PSBoardText.opacity(d&&d.bgOp);
   const _baseColor=(d&&d.color)||state.color||"#1c1c1e";
@@ -7157,13 +7151,13 @@ function addText(u,existing){
     try{ if(!_w&&_wDef){ var _lg=v.split("\n").reduce(function(a,b){return _txMeasW(b,_fs)>a?_txMeasW(b,_fs):a;},0); if(_lg>_wDef)_w=_wDef; } }catch(_){}
     if(d){
       if(!v.trim()){_activateMoveTool();renderDrawings();selectItem("drawing",d);toast("빈 내용은 삭제되지 않아요 — 삭제 버튼을 사용하세요");return;}
-      var before=JSON.stringify([d.text,d.size||30,d.textColor||null,d.bg||null,d.w||0,d.align||"center",PSBoardText.opacity(d.bgOp)]);
-      var after=JSON.stringify([v,_fs,_tc||null,_bg||null,_w||0,_al,_bgOp]);
-      if(before!==after){pushUndo();d.text=v;d.size=_fs;if(_tc)d.textColor=_tc;else delete d.textColor;
+      var before=JSON.stringify([d.text,d.size||30,d.textColor||null,d.bg||null,d.w||0,d.align||"center",PSBoardText.opacity(d.bgOp),PSBoardEdit.textStyle(d)]);
+      var after=JSON.stringify([v,_fs,_tc||null,_bg||null,_w||0,_al,_bgOp,_ts]);
+      if(before!==after){pushUndo();Object.assign(d,_ts);d.text=v;d.size=_fs;if(_tc)d.textColor=_tc;else delete d.textColor;
         if(_bg)d.bg=_bg;else delete d.bg;if(_bgOp<1)d.bgOp=_bgOp;else delete d.bgOp;if(_w)d.w=_w;else delete d.w;if(_al!=="center")d.align=_al;else delete d.align;}   /* 2.578 */
       _activateMoveTool();renderDrawings();selectItem("drawing",d);toast(before!==after?"텍스트 수정 완료":"변경된 내용이 없어요");
     }else if(v.trim()){
-      pushUndo();const nd={type:"text",pts:[{x:u.x,y:u.y}],text:v,color:_baseColor,size:_fs};
+      pushUndo();const nd=Object.assign({type:"text",pts:[{x:u.x,y:u.y}],text:v,color:_baseColor,size:_fs},_ts);
       if(_bgOp<1)nd.bgOp=_bgOp;if(_tc)nd.textColor=_tc;if(_bg)nd.bg=_bg;if(_w)nd.w=_w;if(_al!=="center")nd.align=_al;state.drawings.push(nd);   /* 2.578 */
       _activateMoveTool();renderDrawings();selectItem("drawing",nd);toast("텍스트 추가 완료 — 다시 탭하거나 ‘내용 수정’을 누르세요");
     }
@@ -7200,7 +7194,7 @@ function addText(u,existing){
   ed._tcAuto=mkB("글자 자동",()=>{_tc=null;paintPreview();});
   ed._bgIn=mkColor("배경",_colorInputHex(_bg,"#12161e"),function(v){_bg=v;});
   ed._bgNone=mkB("배경 없음",()=>{_bg=null;paintPreview();});
-  ed._bgOpacity=PSBoardText.opacityControl(bar,_bgOp,v=>{_bgOp=v;paintPreview();});
+  ed._bgOpacity=PSBoardText.opacityControl(bar,_bgOp,v=>{_bgOp=v;paintPreview();});PSBoardEdit.editorStyle(bar,ed,_ts,()=>{paintPreview();fitW();});
   if(d){const g=PSBoardText.node(d);if(g){g.style.visibility="hidden";g.setAttribute("data-text-editing","");}}
   document.body.append(ed,bar,hd);_bTxtEd=ed;ed.__finish=finish;
   /* ↔ 핸들 — 실제 기능대로 폭만 조절. 44px 히트 영역으로 펜·손가락·마우스 공통. */
@@ -15839,7 +15833,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
         var _items=[];
         if(typeof multiSel!=="undefined"&&multiSel.length)_items=multiSel.slice();
         else if(sel&&sel.ref)_items=[sel.ref];
-        if(!_items.length)return;
+        _items=_items.filter(o=>!o.locked);if(!_items.length)return;
         e.preventDefault();
         var _st=e.shiftKey?MPP:MPP/5;
         var _dx=e.key==="ArrowLeft"?-_st:e.key==="ArrowRight"?_st:0;
@@ -15987,7 +15981,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   if($("lookBtn"))$("lookBtn").onclick=()=>toggleLookAt();
   if($("lockSelBtn"))$("lockSelBtn").onclick=()=>{var ts=selectedLockables();if(!ts.length)return;var on=!ts.every(function(o){return !!o.locked;});try{pushUndo();}catch(_){}
     ts.forEach(function(o){if(on)o.locked=true;else delete o.locked;});
-    try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}try{updateDelUI();}catch(_){}try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}
+    try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}try{updateDelUI();}catch(_){}try{positionSelCtl();}catch(_){}try{autoSaveAnimFrame();boardSaveLive();}catch(_){}
     try{toast(ts.length>1?(ts.length+"개 위치 "+(on?"고정":"고정 해제")):(on?"위치 고정 — 해제 전까지 움직이지 않아요":"위치 고정 해제"));}catch(_){} };
   if($("visWide"))$("visWide").onclick=()=>visWidth(12);
   if($("visNarrow"))$("visNarrow").onclick=()=>visWidth(-12);
