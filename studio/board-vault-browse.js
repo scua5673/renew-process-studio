@@ -293,7 +293,7 @@
     }
     // 폰을 돌리면: 세로 화면이면 세로로, 가로 화면이면 연 때의 방향으로
     function reorient() {
-      var s = st(); if (!s || !doc.body.classList.contains('vcreating') || !W.__vaultViewMode || !W.__vaultReadOnly) return;
+      var s = st(); if (!s || doc.getElementById('psEyeDialog') || !doc.body.classList.contains('vcreating') || !W.__vaultViewMode || !W.__vaultReadOnly) return;
       if (phoneViewOn(W)) { if (s.orientation !== 'v') { orig = { o: s.orientation || 'h', f: !!s.spFlip }; s.orientation = 'v'; s.spFlip = false; redraw(); } }
       else if (orig && s.orientation === 'v') { s.orientation = orig.o; s.spFlip = orig.f; orig = null; redraw(); }
       sync();

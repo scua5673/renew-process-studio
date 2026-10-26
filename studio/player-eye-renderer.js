@@ -108,11 +108,13 @@
       var shirt=mesh(new T.LatheGeometry(profile,24),kit,0,0,0,group);shirt.scale.z=.62;
       capsule(.065,.07,skin,0,1.46,0);
       oval(.112,.148,.105,skin,0,1.64,.006);
-      var cap=mesh(new T.SphereGeometry(.116,16,12,0,Math.PI*2,0,1.52),hair,0,1.65,0,group);cap.scale.set(1,1.28,.96);
+      var cap=mesh(new T.SphereGeometry(.116,16,12,0,Math.PI*2,0,1.36),hair,0,1.65,0,group);cap.scale.set(1,1.28,.96);
       oval(.103,.075,.035,hair,0,1.61,-.08);
-      for(var sign of [-1,1]){oval(.018,.031,.018,skin,sign*.111,1.63,0);oval(.008,.006,.006,hair,sign*.039,1.665,.099);}
+      for(var sign of [-1,1]){oval(.018,.031,.018,skin,sign*.111,1.63,0);oval(.008,.006,.006,hair,sign*.039,1.66,.113);}
       oval(.019,.027,.027,skin,0,1.628,.108);
-      bone([-.073,1.424,.04],[0,1.35,.142],.009,.009,trim);bone([0,1.35,.142],[.073,1.424,.04],.009,.009,trim);
+      var collar=new T.CatmullRomCurve3([[-.067,1.417,.085],[-.047,1.391,.125],[0,1.35,.151],[.047,1.391,.125],[.067,1.417,.085]].map(function(v){return new T.Vector3().fromArray(v);}));
+      mesh(new T.TubeGeometry(collar,12,.009,6,false),trim,0,0,0,group);
+      oval(.17,.09,.10,shorts,0,.865,0);
       var limbs=[];
       for(var sign of [-1,1]){
         var arm=new T.Group();arm.position.set(sign*.225,1.345,0);arm.rotation.z=sign*.075;group.add(arm);
@@ -120,7 +122,7 @@
         bone([sign*.02,-.15,0],[sign*.035,-.32,.012],.061,.052,skin,arm);oval(.052,.052,.052,skin,sign*.035,-.32,.012,arm);
         bone([sign*.035,-.32,.012],[sign*.015,-.51,.115],.05,.035,skin,arm);oval(.039,.06,.033,skin,sign*.015,-.54,.13,arm);
         var leg=new T.Group();leg.position.set(sign*.105,.88,0);leg.rotation.z=-sign*.025;group.add(leg);
-        capsule(.105,.15,shorts,0,-.075,0,leg);capsule(.079,.14,skin,0,-.25,.01,leg);oval(.066,.072,.065,skin,0,-.37,.017,leg);
+        capsule(.09,.14,shorts,0,-.10,0,leg);capsule(.079,.14,skin,0,-.25,.01,leg);oval(.066,.072,.065,skin,0,-.37,.017,leg);
         capsule(.056,.27,kit,0,-.56,0,leg);bone([0,-.42,0],[0,-.44,0],.058,.058,trim,leg);
         oval(.073,.052,.146,boots,0,-.817,.052,leg);oval(.074,.012,.147,trim,0,-.858,.052,leg);
         mergeRigid(arm);mergeRigid(leg);limbs.push(leg,arm);

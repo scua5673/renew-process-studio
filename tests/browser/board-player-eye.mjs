@@ -64,16 +64,16 @@ async function touchChecks(page,context,f,size){
   await f.locator('#pePlayer').selectOption('eye6');await tap('peEyeOnly');
   if(engine==='chromium'){
     const cdp=await context.newCDPSession(page),r=await f.locator('#peCanvas').boundingBox(),x=r.x+r.width*.35,y=r.y+r.height*.4;
-    await f.evaluate(()=>{window.__eyeTouches=[];document.getElementById('peCanvas').addEventListener('pointerdown',e=>__eyeTouches.push({type:e.pointerType,trusted:e.isTrusted}));});
+    await f.evaluate(()=>{window.__eyeTouches=[];for(const name of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture'])document.getElementById('peCanvas').addEventListener(name,e=>__eyeTouches.push({event:e.type,id:e.pointerId,primary:e.isPrimary,x:e.clientX,type:e.pointerType,trusted:e.isTrusted}));});
     const point=(id,dx=0,dy=0)=>({id,x:x+dx,y:y+dy,radiusX:4,radiusY:4});
     const send=(type,touchPoints)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints});
     await send('touchStart',[point(1)]);
     await send('touchStart',[point(1),point(2,45,15)]);
     await send('touchMove',[point(1),point(2,65,15)]);await stable();
     assert.equal(await f.locator('#psEyeDialog').getAttribute('data-head'),'0','second finger does not take over the camera');
-    await send('touchEnd',[point(1)]);
+    await send('touchEnd',[point(2,65,15)]);
     await send('touchMove',[point(1,80)]);await stable();
-    assert.equal(await f.locator('#psEyeDialog').getAttribute('data-head'),'-20','first finger retains drag ownership');
+    assert.equal(await f.locator('#psEyeDialog').getAttribute('data-head'),'-20','first finger retains drag ownership '+JSON.stringify(await f.evaluate(()=>__eyeTouches)));
     assert.equal(await f.locator('#psEyeDialog').getAttribute('data-body'),'0');
     await send('touchCancel',[]);await tap('peFront');
     await send('touchStart',[point(3)]);await send('touchMove',[point(3,40)]);await send('touchEnd',[]);await stable();
@@ -81,9 +81,9 @@ async function touchChecks(page,context,f,size){
     assert.ok((await f.evaluate(()=>__eyeTouches)).every(e=>e.type==='touch'&&e.trusted),'browser-generated touch events, not synthetic dispatchEvent');
     await cdp.detach();await tap('peFront');
   }
-  await page.setViewportSize(size==='ipad'?{width:820,height:1100}:{width:812,height:375});await stable();await controlsClear(f,true);
+  await page.setViewportSize(size==='ipad'?{width:820,height:1100}:{width:812,height:375});await page.waitForTimeout(250);await stable();await controlsClear(f,true);
   await page.screenshot({path:path.join(SHOTS,'player-eye-rotated-'+size+'-'+engine+'.png')});
-  await page.setViewportSize(SIZES[size].ctx.viewport);await stable();await controlsClear(f,true);
+  await page.setViewportSize(SIZES[size].ctx.viewport);await page.waitForTimeout(250);await stable();await controlsClear(f,true);
 }
 try{
   browsers[engine]=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath(),args:['--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader']}:{})});

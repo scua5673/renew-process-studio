@@ -16877,7 +16877,7 @@ try{PSBoardGuest.mount(window)}catch(_){}try{Promise.resolve(restoreLiveBoard())
     }catch(_){ return null; }
   }
   function apply(){
-    if(!autoOrient||window.__boardReady===false)return;   /* IndexedDB 마지막 작업 복원이 끝난 뒤에만 새 보드 자동 방향 적용 */
+    if(!autoOrient||window.__boardReady===false||document.getElementById("psEyeDialog"))return; /* 복원·선수 시점 중에는 원본 방향 유지 */
     var want=wantOrient(); if(!want||state.orientation===want)return;
     state.orientation=want;
     try{document.querySelectorAll("#orientSeg button").forEach(function(b){b.classList.toggle("on",b.dataset.o===want);});}catch(_){}
