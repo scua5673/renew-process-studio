@@ -336,7 +336,12 @@
             var ref=resolve(one),restored=marks.map(resolve).filter(Boolean);
             sel=ref?{type:one.type,ref:ref}:null;multiSel=restored;
             if(typeof selPanelOpen!=='undefined')selPanelOpen=panel;
-            call('_setSelRings');call('renderDrawings');call('updateDelUI');call('updateAlignBar');call('renderMultiGuides');call('positionSelCtl');
+            call('_setSelRings');
+            // Repaint the restored selection without recording a new edit.
+            // The original thumbnail renderer has already restored this flag.
+            var capturing=win.__psThumbCapturing;win.__psThumbCapturing=true;
+            try{call('renderDrawings');}finally{win.__psThumbCapturing=capturing;}
+            call('updateDelUI');call('updateAlignBar');call('renderMultiGuides');call('positionSelCtl');
           }
         }
       };

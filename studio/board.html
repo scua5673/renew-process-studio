@@ -15967,7 +15967,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     ni.addEventListener("compositionstart",()=>{composing=true;});
     ni.addEventListener("input",()=>{dirty=true;applyValue(false);});   /* 2.975 — 조합 중에도 판에(applyValue 는 조합 중 입력칸을 다시 쓰지 않는다) */
     ni.addEventListener("compositionend",()=>{composing=false;dirty=true;applyValue(true);});
-    ni.addEventListener("blur",()=>{composing=false;if(selectedPlayers(false).length===1||dirty)applyValue(true);undoRef=null;dirty=false;try{updateDelUI();}catch(_){}});
+    ni.addEventListener("blur",()=>{composing=false;if(dirty)applyValue(true);undoRef=null;dirty=false;try{updateDelUI();}catch(_){}});
     ni.addEventListener("pointerdown",e=>e.stopPropagation());
     ni.addEventListener("keydown",e=>{if(e.key==="Enter"){if(composing||e.isComposing||e.keyCode===229)return;e.preventDefault();ni.blur();}});})();
   $("sizeUp").onclick=()=>scaleSel(1.18);$("sizeDown").onclick=()=>scaleSel(1/1.18);
