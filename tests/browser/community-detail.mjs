@@ -9,9 +9,10 @@ try{
  for(const mode of process.env.PS_COMM_DETAIL_MODE?modes.filter(m=>m.size===process.env.PS_COMM_DETAIL_MODE):modes){
   const {page,context,logs}=await openApp(fx,mode.size,{browsers,dark:mode.dark});await page.setViewportSize({width:mode.width,height:mode.height});
   await page.evaluate(()=>window.__psShowApp('community'));
-  const c=await(await page.waitForSelector('#fComm',{state:'attached'})).contentFrame();await c.waitForSelector('.pr-card');
+  const c=await(await page.waitForSelector('#fComm',{state:'attached'})).contentFrame();await c.waitForSelector('.pl-row');
   await page.screenshot({path:path.join(out,mode.size+'-'+mode.width+'-library.png')});
-  const card=c.locator('.pr-card').first();await card.click();await c.waitForSelector('#cvMask.on #cdCopy');
+  await c.locator('.pl-row').first().click();
+  const card=c.locator('[data-letter-play]').first();await card.click();await c.waitForSelector('#cvMask.on #cdCopy');
   const v=await(await c.waitForSelector('#cvFrame',{state:'attached'})).contentFrame();
   await v.waitForFunction(()=>document.body.classList.contains('comm-viewing')&&!document.documentElement.classList.contains('comm-boot'));
   const geometry=await c.evaluate(()=>{const r=document.querySelector('.cv-shell').getBoundingClientRect();return {width:innerWidth,doc:document.documentElement.scrollWidth,dialog:{left:r.left,right:r.right,top:r.top,bottom:r.bottom},vh:innerHeight,comments:document.querySelectorAll('textarea,[class*="comment"]').length,title:document.querySelector('#cvTitle').textContent,desc:document.querySelector('#cd-panel-description').textContent};});
