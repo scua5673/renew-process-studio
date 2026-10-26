@@ -859,6 +859,12 @@
       return true;
     });
   }
+  /* A pulled mirror may retire only the exact failed body it just accepted.
+     A newer unsaved author action can leave both old stores unchanged. */
+  function sharedPullRecovered(k,raw,current){
+    if(typeof current!=='function'||typeof raw!=='string'||!fullFailures[k]||fullBodies[k]!==raw||fullOwner!==fullReadContext()||localStorage.getItem(k)!==raw)return Promise.resolve(false);
+    return sharedRecovered(k,raw,function(){return localStorage.getItem(k)===raw&&current()===true;});
+  }
   /* A complete exact local fallback is durable on this device, not an IDB or
      server acknowledgement. Only its author may supply the current-source guard. */
   function localRecovered(k,raw,current){
@@ -1035,6 +1041,7 @@
     sharedVerified:sharedVerified,
     sharedCommitted:sharedCommitted,
     sharedRecovered:sharedRecovered,
+    sharedPullRecovered:sharedPullRecovered,
     localRecovered:localRecovered,
     quotaState:function(){return {checking:!!(fullCurrent(fullJob)&&window.__psQuotaRecovery&&window.__psQuotaRecovery.checking),failed:fullOwner===fullReadContext()&&Object.keys(fullFailures).length>0};},
     mirrorSchedule:mirrorSchedule,

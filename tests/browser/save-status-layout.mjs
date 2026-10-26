@@ -122,6 +122,19 @@ try{
         for(const name of ['psVaultShowLock','setView']){const f=window[name];if(typeof f!=='function')continue;window[name]=function(){log.push({t:at(),call:name,arg:String(arguments[0]==null?'':arguments[0]).slice(0,20),unlocked:unlocked()});return f.apply(this,arguments);};}
       });
       await page.waitForTimeout(700);
+      // This is a fictitious global-state layout matrix. Existing confirmed
+      // child scopes are neutral here; actual saving/failure states and every
+      // psHasPending/draft barrier stay real so new faults still fail the test.
+      report.presentationLocalBaseline=[];
+      for(const fr of page.frames()){
+        const local=await fr.evaluate(()=>{
+          const api=window.PSSaveState;if(!api?.snapshot)return null;
+          const snapshot=api.snapshot,before=snapshot.call(api);
+          api.snapshot=function(){const value=snapshot.call(api);return {...value,scopes:Object.fromEntries(Object.entries(value.scopes||{}).filter(([,state])=>state!=='saved'&&state!=='idle'))};};
+          return {frame:location.pathname,neutralScopes:Object.keys(before.scopes||{}).filter(k=>before.scopes[k]==='saved'||before.scopes[k]==='idle'),retainedScopes:Object.fromEntries(Object.entries(before.scopes||{}).filter(([,state])=>state!=='saved'&&state!=='idle')),pending:!!window.psHasPending?.()};
+        });
+        if(local)report.presentationLocalBaseline.push(local);
+      }
       const states=[
         ['off',{kind:'off'}],['busy',{kind:'busy',n:1}],['ok',{kind:'ok',at:100,n:0}],
         ['pending',{kind:'pending',n:1}],['bad',{kind:'bad',reason:'sync_storage',n:1}],
@@ -216,7 +229,7 @@ try{
         window.__fixtureSaveState={kind:'ok',at:Date.now(),n:0};
         window.__fixtureRetryResolve({saved:1});
       });
-      await page.waitForFunction(()=>document.getElementById('psSyncStripTx').textContent==='저장됨');
+      await page.waitForFunction(()=>document.getElementById('psSyncStripTx').textContent==='서버 저장 확인');
       const actionAfter=await geometry();
       for(const k of ['main','frame','scrollBox','scrollTop','anchor'])assert.deepEqual(actionAfter[k],actionBefore[k],'Retry and ACK preserve '+k);
       await state({kind:'ok',at:Date.now()+1,n:0,archivedCount:2});

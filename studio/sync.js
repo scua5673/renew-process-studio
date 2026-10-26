@@ -5655,7 +5655,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
             catch(e){syncDiagnostic('match-mirror-write',e);throw e;}
           }else if(k==='scout_tool_v1'||k==='cs_scout_targets_v1'){
             return PSMirrorSync.write({key:k,value:v,before:expectedLoc!==undefined?idbExpected:(r&&r.value!=null?r.value:null),mirrorBefore:afterMirror,
-              mirror:localStorage,storage:window.storage,current:ownerCurrent});
+              mirror:localStorage,storage:window.storage,current:ownerCurrent,recover:window.PSStorage&&PSStorage.sharedPullRecovered});
           }else try{ if(k==='cs_perms_v1'||(!mirrorLeftover&&localStorage.getItem(k)!==null)) localStorage.setItem(k,v); }catch(_){}
           if(k==='cs_perms_v1')permsCacheSet(v,rpcContext());
           if(k==='cs_board_live_v1')boardLivePulled(v);
