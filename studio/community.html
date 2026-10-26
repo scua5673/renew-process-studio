@@ -2089,7 +2089,7 @@ function procSetTab(t,boot){ cmStage('cmT'+String(t||'').slice(0,4));
   [['prTabCoach','coach'],['prTabProc','proc'],['prTabTraining','training'],['prTabElm','elmiha'],['prTabFifa','fifa']].forEach(function(x){ var b=$(x[0]); if(b)b.setAttribute('aria-pressed',x[1]===t?'true':'false'); });
   var sub=$('prSub'); if(sub)sub.textContent=(t==='training')?'책에서 찾은 훈련 · 프로세스가 재구성한 재생 자료':(t==='proc')?'프로세스 레터 · 본문과 관련 훈련':(t==='elmiha')?'엘미하가 만든 전술 애니메이션':(t==='fifa')?'FIFA 훈련센터의 훈련 세션':'작전판·훈련·경기 분석 탐색';
   var lb=$('prCatLb'); if(lb)lb.textContent=(t==='proc')?'세션 주제':'훈련 주제';
-  var q=$('commSearch'); if(q)q.placeholder=(t==='training')?'도서·훈련 이름 검색':(t==='proc')?'레터 호수·제목·훈련 검색':(t==='elmiha')?'제목·내용 검색':(t==='fifa')?'훈련·지도자 이름 검색':'제목·작성자·내용 검색';
+  var q=$('commSearch'); if(q)q.placeholder=(t==='training')?'훈련 이름·목적 검색':(t==='proc')?'레터 호수·제목·훈련 검색':(t==='elmiha')?'제목·내용 검색':(t==='fifa')?'훈련·지도자 이름 검색':'제목·작성자·내용 검색';
   var hero=$('elHero'); if(hero)hero.hidden=(t!=='elmiha');   /* 3.018 */
   try{upMenuClose();}catch(_){}
   try{var fs=$('commFiltSheet'); if(fs)fs.hidden=true;}catch(_){}
