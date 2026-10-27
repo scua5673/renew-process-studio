@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {buildPublicLetters} from './build-public-letters.mjs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import crypto from 'node:crypto';
@@ -17,6 +18,7 @@ export function packageSite(root=path.resolve(path.dirname(fileURLToPath(import.
  // Only known runtime paths from the committed repository can reach the site.
  for(const file of files){const target=path.join(out,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(root,file),target);}
  for(const required of ['studio/app.html','studio/board.html','studio/board-token-depth.js','sw.js','_headers','_redirects'])if(!files.includes(required))throw Error('Missing deploy file: '+required);
+ files.push(...buildPublicLetters(out,root));
  const manifest=buildManifest(out,files);fs.writeFileSync(path.join(out,MANIFEST),JSON.stringify(manifest));
  console.log('Packaged '+files.length+' runtime files into dist ('+manifest.release+', manifest '+Object.keys(manifest.files).length+' files).');return files;
 }

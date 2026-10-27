@@ -15,6 +15,7 @@
   var HOME={idb:'IndexedDB',ls:'localStorage'};
   var ROLE={data:'자료',recovery:'복구 사본',queue:'보낼 것 · 대기',draft:'작성 중 초안',pref:'화면 설정',seen:'안내 본 표시',session:'계정 · 공간 상태',cache:'다시 만들 수 있는 사본',diag:'진단 기록',probe:'저장 확인용 임시'};
   var ROWS=[
+    ['ps_letter_visitor_v1','device','ls','session','letter-social.js'],
     /* ── 팀 공간에서 팀과 맞추는 키(sync.js KEYS — PERSONAL 은 아래 personal) ── */
     ['cs_assign_v1','team','ls','data','scout.html'],
     ['cs_gamemodel_v1','team','idb','data','scout.html',{mirror:1}],

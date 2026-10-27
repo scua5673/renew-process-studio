@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.173">
 <script src="storage.js"></script>
 <script src="community-detail.js?v=3.169"></script>
-<script src="community-letters.js"></script>
+<script src="letter-social.js"></script><script src="community-letters.js"></script>
 <script src="community-training-catalog.js"></script><script src="community-training.js"></script>
 <link rel="stylesheet" href="community-training.css">
 <script src="community-fifa.js"></script><!-- 3.071 — «FIFA» 칸의 목록 · 카드 --><script src="community-tax.js"></script><!-- 3.075 — 공통 분류 -->
@@ -647,7 +647,7 @@ var COMM_FULL='id,owner,owner_name,title,summary,cat,age,players,thumb,views,cop
 var COMM_LEAN='id,owner,owner_name,title,summary,cat,age,thumb,views,copies,created_at';
 /* 3.019 — 처음 여는 칸은 «프로세스»(사용자 «커뮤니티에 올린 훈련을 더 잘 보이게» → 프로세스를 첫 화면으로). 마지막에 본 칸(코치 자료 · 엘미하도)은 이 기기에 적어 두고 다음에 그 칸으로 연다. */
 var PROC_TAB_KEY='ps_comm_tab_v1';
-function procTabFirst(){ try{ var t=localStorage.getItem(PROC_TAB_KEY); return (t==='coach'||t==='elmiha'||t==='fifa'||t==='training')?t:'proc'; }catch(_){ return 'proc'; } }
+function procTabFirst(){ try{ if(typeof location!=='undefined'&&typeof URLSearchParams!=='undefined'&&/^[1-9]\d{0,2}$/.test(new URLSearchParams(location.search).get('letter')||''))return 'proc'; var t=localStorage.getItem(PROC_TAB_KEY); return (t==='coach'||t==='elmiha'||t==='fifa'||t==='training')?t:'proc'; }catch(_){ return 'proc'; } }
 
 function fetchMyLikes(){
   var me=sess(); if(!me||!me.at||!me.uid){ myLikes=new Set(); return Promise.resolve(); }
@@ -1972,7 +1972,7 @@ function procChipsRender(){
 function renderProc(){ cmStage('cmRP');
   try{cpAnimStop();}catch(_){}
   txDraw(null);
-  if(!procLetters)procLetters=PSCommunityLetters.create({doc:document,fetch:fetch.bind(window),active:function(){return tabF==='proc';},owner:function(){var me=sess();return me&&me.uid;},
+  if(!procLetters)procLetters=PSCommunityLetters.create({doc:document,fetch:fetch.bind(window),active:function(){return tabF==='proc';},config:cfg,session:sess,owner:function(){var me=sess();return me&&me.uid;},
     onCount:prCounts,openTraining:function(n,k,button){
       var id='proc-'+String(n).padStart(2,'0');
       button.setAttribute('aria-busy','true');
@@ -2285,6 +2285,6 @@ html body.pr-elm:not(.pr-elm-own) .fab:not(#_):not(#__),html body.pr-elm:not(.pr
 <link rel="stylesheet" href="community-fifa.css"><!-- 3.071 — «FIFA» 칸 --><link rel="stylesheet" href="community-tax.css">
 <link rel="stylesheet" href="community-library.css?v=3.162">
 <link rel="stylesheet" href="community-detail.css?v=3.169">
-<link rel="stylesheet" href="community-letters.css">
+<link rel="stylesheet" href="community-letters.css"><link rel="stylesheet" href="letter-social.css">
 </body>
 </html>
