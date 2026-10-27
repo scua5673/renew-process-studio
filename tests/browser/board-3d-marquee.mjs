@@ -17,7 +17,7 @@ fs.mkdirSync(out,{recursive:true});
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'&&process.env.PS_CHROME_PATH?{executablePath:process.env.PS_CHROME_PATH}:{})});
 // 상자(운동장 좌표): (370,270)–(570,450). 안: A·B·콘. 밖: C(멀리) · D(왼쪽 경계 바로 밖) · E(오른쪽 경계 바로 밖).
 const BOX={x0:370,y0:270,x1:570,y1:450},INSIDE=['mq-a','mq-b','mq-cone'],SAMPLE={x:465,y:440};
-const results=[];
+const results=[],pageErrors=[];
 try{for(const device of ['desktop','phone']){
   const viewport=device==='phone'?{width:393,height:852}:{width:1280,height:900};
   const context=await browser.newContext({viewport,serviceWorkers:'block',...(device==='phone'?{hasTouch:true,isMobile:engine==='chromium'}:{})}),errors=[];
@@ -120,7 +120,9 @@ try{for(const device of ['desktop','phone']){
       return {live,thumb:/lassoRect|rgba\(47,168,255,\.16\)/.test(thumb),xml:/lassoRect|rgba\(47,168,255,\.16\)/.test(xml)};
     });
     assert.deepEqual(pics,{live:true,thumb:false,xml:false},'the selection box never reaches pictures '+JSON.stringify(pics));
-    assert.deepEqual(errors,[]);
-  }finally{await context.close();}
-}}finally{await browser.close();fs.writeFileSync(path.join(out,'marquee.json'),JSON.stringify({engine,results},null,2));}
+    // Match the other board suites: retain WebKit's deferred-layout notice as
+    // evidence, while pixel, selection, export and every other error still gate.
+    assert.deepEqual(errors.filter(e=>!(engine==='webkit'&&e==='ResizeObserver loop completed with undelivered notifications.')),[]);
+  }finally{pageErrors.push({device,errors});await context.close();}
+}}finally{await browser.close();fs.writeFileSync(path.join(out,'marquee.json'),JSON.stringify({engine,results,pageErrors},null,2));}
 console.log(JSON.stringify({test:'board-3d-marquee',engine,cases:results.length,passed:true}));

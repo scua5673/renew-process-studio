@@ -1,5 +1,10 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.193 — 훈련 도크 시험은 보드 내부 ready만으로 저장 단추의 hit-test를 시작하지 않는다. 셸의 ps-booting이 끝나고 loading이 ps-boot-done이 된 실제 표시 경계를 기다린다. 고정 1400ms 대기는 WebKit의 초기 레이아웃에서 아직 숨겨진 iframe을 검사할 수 있다. 저장·되돌리기·배치 충돌 단정은 그대로 유지한다.
+- 3.193 — marquee·drag-performance도 기존 보드 시험처럼 WebKit의 정확한 «ResizeObserver loop completed with undelivered notifications.» 알림을 별도 기록한다. 결과 JSON의 pageErrors에 남기며 픽셀·선택·내보내기·투영·입력·갱신 횟수와 그 밖의 오류 단정은 완화하지 않는다.
+
+- 3.191 — 선수단·스카우팅 기본은 작전판+후보 패널. player-workspace의 depthBoard는 posId별 읽기 전용 투영이며 같은 후보를 각 실제 배치에 표시하고 전체 인원은 중복 제외한다. 미배치 후보를 선호 포지션에 자동 배치하지 않는다. 후보는 3명 미리보기·6명씩 더 보기, 단계는 rep/go/done 그대로이며 선택한 배치 pid·포지션을 기존 상세/편집으로 전달한다. 보기 상태는 메모리만 사용한다.
+
 - 3.190 — shape-menu의 썸네일 선택 복원은 원래 thumb가 capture 표식을 복원한 뒤 실행된다. 그 뒤의 renderDrawings만 기존 __psThumbCapturing save/finally 범위에서 그려 파생 repaint를 실제 편집 seq로 기록하지 않는다. 원래 thumb 진입부터 표식을 켜면 새 썸네일 대신 캐시를 돌려주므로 금지한다. 실제 입력·owner·seq·CAS guard는 그대로이며 번호칸의 입력 없는 blur도 새 편집을 만들지 않는다.
 - 3.190 — 개인 보드 자동 재시도는 진행 중인 기기 head 저장이 끝난 뒤 최신 레코드를 사용한다. 대기 자체를 저장 성공으로 보지 않고 기존 attempt도 정확한 CAS·원문 readback을 다시 통과한 뒤 서버에 보낸다. 다른 소유자·세대·원본 충돌은 계속 거부하며, 같은 창의 재시도가 앞 명시 저장의 레코드를 먼저 바꿔 거짓 실패를 만드는 경합을 막는다.
 - 3.190 — 경기의 화면만 편집 가능하고 문서 준비표는 대기인 동안 친 글도 전환·새 판 적용 장벽에 포함한다. 메모리 typed를 저장 완료로 보지 않으며 현재 소유자·경기·담당 권한·기준 필드를 재확인한 뒤 기존 저장 큐로 전달한다. 준비가 안 됐으면 match_input_pending으로 거부하고, 60초 만료로 미저장 입력을 조용히 버리지 않는다. 이 보호는 영속 초안이나 실제 iPad OS 종료 복구의 증명이 아니다.

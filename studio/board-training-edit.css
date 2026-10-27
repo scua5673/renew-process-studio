@@ -1,0 +1,16 @@
+#psEditToolsToggle{font:600 var(--t-3)/1.3 Pretendard,sans-serif;border:1px solid var(--c-line);border-radius:var(--r-1);padding:var(--sp-2) var(--sp-3);background:var(--c-surface);color:var(--c-ink);cursor:pointer;white-space:nowrap}
+#psEditToolsToggle.pe-fallback{position:absolute;left:var(--sp-3);top:var(--sp-3);z-index:80}
+#psEditTools[hidden],#psEditToolsToggle[hidden]{display:none}
+#psEditTools{box-sizing:border-box;position:fixed;z-index:280;width:320px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);overflow:auto;padding:var(--sp-4);border:1px solid var(--pop-border,var(--c-line));border-radius:var(--r-2);background:var(--pop-bg,var(--c-surface));color:var(--pop-ink,var(--c-ink));box-shadow:var(--sh-3);font:500 var(--t-4)/1.5 Pretendard,sans-serif}
+#psEditTools .pe-head,#psEditTools .pe-row{display:flex;gap:var(--sp-2);align-items:center;justify-content:space-between;margin-bottom:var(--sp-2)}
+#psEditTools .pe-head strong{font-size:var(--t-6)}
+#psEditTools p{margin:var(--sp-2) 0;color:var(--pop-dim,var(--c-muted))}
+#psEditTools .pe-grid,#psEditTools .pe-bibs{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-2);margin:var(--sp-2) 0}
+#psEditTools .pe-bibs{grid-template-columns:repeat(3,1fr)}
+#psEditTools button,#psEditTools select{font:600 var(--t-3)/1.3 Pretendard,sans-serif;min-height:44px;padding:var(--sp-2);border:1px solid var(--pop-border,var(--c-line));border-radius:var(--r-1);background:var(--pop-well,var(--c-surface-2));color:inherit;cursor:pointer}
+#psEditTools button:disabled{opacity:.4;cursor:default}
+#psEditTools button[aria-pressed=true]{outline:2px solid var(--c-act);outline-offset:-2px}
+#psEditTools .pe-bibs button::before{content:'';display:inline-block;vertical-align:middle;width:1em;height:1em;margin-right:var(--sp-1);border:1px solid var(--c-line);border-radius:2px;background:var(--bib-color,transparent)}
+#psEditTools hr{border:0;border-top:1px solid var(--pop-border,var(--c-line));margin:var(--sp-3) 0}
+#psEditTools .pe-hint{font-size:var(--t-3)}
+@media(max-width:640px){#psEditToolsToggle{min-height:44px}#psEditTools .pe-row>button{flex:1}.ps-text-editor-bar input[aria-label="텍스트 회전 각도"]{min-height:44px}}
