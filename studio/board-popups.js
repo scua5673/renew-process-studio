@@ -19,7 +19,7 @@
     return Math.round(vh - Math.min.apply(null, tops) + GAP);
   }
   var N6 = ':not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______)';
-  var N = 'html.ps-page-board body:not(.ps-dock):not(.ps-insp-on) .sel-ctl.sel-ctl.sel-near' + N6;
+  var N = 'html.ps-page-board body:not(.ps-dock):not(.ps-insp-on) .sel-ctl.sel-ctl.sel-near:not(.ps-selection-menu)' + N6;
   function css() {
     var font = 'Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif';
     return [
@@ -48,7 +48,7 @@
       N + '[data-kind="multi"]>#nameCtl{grid-column:span 4!important}',
       N + '[data-kind="multi"]>:is(#ringCtl,#coachBtn,#labelVisBtn,#photoBtn,#photoDelBtn,#visBtn,#visBlindBtn,#trailBtn,#lookBtn,#shaperBtn,#ballLookBtn,#lockSelBtn,#gkBtn){grid-column:span 2!important;padding:0 4px!important}',
       // 도형 오른쪽 클릭 메뉴가 열린 동안은 옆 패널을 숨긴다(한 도형에 창 둘)
-      'html.ps-page-board body.ps-shape-menu-on .sel-ctl.sel-ctl.sel-near' + N6 + '{display:none!important}',
+      'html.ps-page-board body.ps-shape-menu-on .sel-ctl.sel-ctl.sel-near:not(.ps-selection-menu)' + N6 + '{display:none!important}',
       // ── 메뉴들 — 같은 카드
       '.anim-frame-menu{min-width:150px!important;padding:6px!important;border-radius:var(--pop-radius)!important;background:var(--pop-solid)!important;border:1px solid var(--pop-border)!important;box-shadow:var(--pop-shadow)!important;color:var(--pop-ink)!important}',
       '.anim-frame-menu button{height:36px!important;padding:0 12px!important;border-radius:9px!important;font-size:13px!important;font-weight:700!important}',

@@ -30,10 +30,10 @@
     else return false;
     return !!(dx || dy);
   }
-  function alignPlan(items, mode, vertical) {
+  function alignPlan(items, mode, vertical, flip) {
     var axis = /X$/.test(mode) ? 'x' : 'y';
     if (vertical) axis = axis === 'x' ? 'y' : 'x';
-    if (!/^(rowY|colX|distX|distY)$/.test(mode)) return [];
+    if (!/^(rowY|colX|distX|distY|minX|maxX|minY|maxY)$/.test(mode)) return [];
     var a=items.filter(o=>o&&!o.locked).map(o=>({o,p:center(o)})).filter(v=>v.p);
     if(a.length<2)return [];
     if (/^dist/.test(mode)) {
@@ -41,7 +41,12 @@
       a.sort((u,v)=>u.p[axis]-v.p[axis]);
       var first=a[0].p[axis],step=(a[a.length-1].p[axis]-first)/(a.length-1);
       a.forEach((v,i)=>v.target=first+step*i);
-    } else { var mean=a.reduce((sum,v)=>sum+v.p[axis],0)/a.length;a.forEach(v=>v.target=mean); }
+    } else {
+      var values=a.map(v=>v.p[axis]), edge=/^(min|max)/.test(mode);
+      var reverse=vertical && (/X$/.test(mode)?!flip:!!flip);
+      var target=edge?((/^min/.test(mode)!==reverse)?Math.min.apply(null,values):Math.max.apply(null,values)):values.reduce((sum,v)=>sum+v,0)/a.length;
+      a.forEach(v=>v.target=target);
+    }
     return a.map(v=>({o:v.o,dx:axis==='x'?v.target-v.p.x:0,dy:axis==='y'?v.target-v.p.y:0})).filter(v=>Math.abs(v.dx)+Math.abs(v.dy)>1e-8);
   }
   function snapPoint(p, grid, others, pitch, tolerance) {
@@ -96,7 +101,7 @@
       if(!c)return {x:dx,y:dy};var p=win.snapDrag(anchor,'group',{x:c.x+dx,y:c.y+dy});win.drawSnapGuides(p.gx,p.gy);return {x:p.x-c.x,y:p.y-c.y};
     };
     win.alignMulti=function(mode){
-      if(!editable())return;var items=selected(),plan=alignPlan(items,mode,S().orientation==='v');
+      if(!editable())return;var items=selected(),plan=alignPlan(items,mode,S().orientation==='v',!!S().spFlip);
       if(!plan.length){win.toast('움직일 항목을 '+(/^dist/.test(mode)?'3':'2')+'개 이상 선택하세요');return;}
       win.pushUndo();plan.forEach(p=>translate(p.o,p.dx,p.dy));finish();
       win.toast(items.some(o=>o.locked)?'정렬 완료 · 고정한 항목은 유지했어요':'정렬 완료');

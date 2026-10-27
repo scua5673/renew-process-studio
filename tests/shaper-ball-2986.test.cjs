@@ -104,7 +104,6 @@ test('wiring — drawing, handle, rotate buttons and the «볼 보기» button a
   const body=cut('function _shaperBody(','/* ===== 쉐이퍼·시야 방향');
   assert.match(body,/fill:light\?"#1b2434":"#ffffff"/);
   /* 폰 선택 시트의 ⋯ 줄 목록에도 들어 있다 */
-  assert.equal(src.split('#visBlindBtn,#shaperBtn,#ballLookBtn,').length-1,3);
 });
 
 test('the rotate handle has its own target function — 2.982 declared a second _rotTarget and shadowed it',()=>{

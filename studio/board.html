@@ -3238,17 +3238,7 @@ function communityBoardReadOnly(){
 try{document.documentElement.dataset.pitch="";}catch(_){}
 </script>
 <link rel="stylesheet" href="mobile-polish.css">
-<style id="ps-2202-sheet">/* 2.202 → 2.205 — 폰 선택 카드(body.ps-dock): 사용자 "더 작게, 우상단에". 바텀시트(mobile-polish 786)를 덮어 오른쪽 위 작은 카드로. 링크는 mobile-polish.css 바로 뒤여야 이긴다 */
-html.ps-page-board body.ps-dock .sel-ctl{position:fixed!important;inset:auto!important;top:calc(var(--ps-top-h,0px) + 8px)!important;right:8px!important;left:auto!important;bottom:auto!important;width:min(56vw,212px)!important;max-width:212px!important;max-height:min(62dvh,520px)!important;margin:0!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;padding:7px!important;border-radius:14px!important;overflow-y:auto!important;overflow-x:hidden!important;z-index:170!important}
-html.ps-page-board body.ps-dock .sel-ctl::before{padding:0 2px 5px!important;font-size:10px!important}
-html.ps-page-board body.ps-dock .sel-ctl>*{height:32px!important;min-height:32px!important;font-size:12px!important}
-html.ps-page-board body.ps-dock .sel-ctl>.namebox,html.ps-page-board body.ps-dock .sel-ctl>#colorCtl,html.ps-page-board body.ps-dock .sel-ctl>.del-sel,html.ps-page-board body.ps-dock .sel-ctl>.text-edit-btn{grid-column:1 / -1!important}
-html.ps-page-board body.ps-dock .sel-ctl>#colorCtl{height:auto!important;min-height:0!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;overflow:visible!important;padding:5px 6px 6px!important}
-html.ps-page-board body.ps-dock .sel-ctl>#colorCtl .color-trig{align-self:flex-start;height:24px!important}
-html.ps-page-board body.ps-dock .sel-ctl>#colorCtl .color-pop{position:static!important;display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;width:100%!important;max-width:none!important;gap:6px 3px!important;justify-items:center!important;padding:6px 0 0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important;transform:none!important;left:auto!important;top:auto!important}
-html.ps-page-board body.ps-dock .sel-ctl>#colorCtl .color-pop .cdot{width:24px!important;height:24px!important}
-html.ps-page-board body.ps-dock .sel-ctl .sizebox button,html.ps-page-board body.ps-dock .sel-ctl .numbox input,html.ps-page-board body.ps-dock .sel-ctl .namebox input{height:26px!important;font-size:12px!important}
-</style>
+
 <link rel="stylesheet" href="premium-ui.css">
 <link rel="stylesheet" href="design-v2.css">
 <script>document.documentElement.classList.add('ps-page-board')</script>
@@ -4233,7 +4223,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.167"></script>
 <script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-stadium-ground.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script>
+<script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -22852,33 +22842,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl:not(#_):not(#__),html
 html.ps-page-board body:not(.ps-dock) .sel-ctl > .sizebox:not(#_):not(#__){width:auto!important;justify-content:space-between!important}
 html.ps-page-board body:not(.ps-dock) .sel-ctl > #alignBar:not(#_){grid-column:1/-1}
 </style>
-<style id="ps-2608-selcol">/* 2.608 — 선택 패널을 1열·얇고 길게(사용자 "가로를 최대한 얇게, 텍스트 크기를 줄이고 얇고 길게" → "1열로 길게"). 2.607 의 2열 236px 를 1열 124px 로. 글자 11px→10px, 줄 높이 30→26px, 줄 간격 6→4px. 폰(ps-dock)은 그대로. */
-html.ps-page-board body:not(.ps-dock) .sel-ctl.sel-ctl:not(#_):not(#__){grid-template-columns:minmax(0,1fr)!important;width:124px!important;max-width:124px!important;gap:4px!important;padding:6px!important;border-radius:8px!important;right:12px!important}
-/* 2.607 의 display:grid!important 가 코드의 인라인 display:none 을 덮어 아무것도 안 골랐을 때도 «선택 항목» 빈 패널이 떠 있었다(실측) */
-html.ps-page-board body:not(.ps-dock) .sel-ctl.sel-ctl[style*="display: none"]:not(#_):not(#__),html.ps-page-board body:not(.ps-dock) .sel-ctl.sel-ctl[style*="display:none"]:not(#_):not(#__){display:none!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl.sel-ctl:not(#_):not(#__)::before{font-size:10px!important;padding:1px 2px 3px!important;margin:0!important;letter-spacing:0}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > *:not(#_):not(#__):not(#colorCtl):not(#alignBar){grid-column:1/-1!important;height:26px!important;min-height:26px!important;padding:0 6px!important;font-size:10px!important;letter-spacing:0!important;border-radius:6px!important;gap:4px!important;margin-top:0!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl:not(#_):not(#__){height:26px!important;min-height:26px!important;border-radius:6px!important;padding:0!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-trig:not(#_):not(#__){height:26px!important;flex-basis:26px!important;font-size:10px!important;padding:0 6px!important;gap:5px!important;justify-content:center!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-trig-sw:not(#_){width:12px!important;height:12px!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > .numbox:not(#_):not(#__),html.ps-page-board body:not(.ps-dock) .sel-ctl > .namebox:not(#_):not(#__){padding:0 6px!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > .numbox .numhash:not(#_){font-size:10px!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > .numbox input:not(#_),html.ps-page-board body:not(.ps-dock) .sel-ctl > .namebox input:not(#_){height:24px!important;font-size:11px!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > .numbox input::placeholder,html.ps-page-board body:not(.ps-dock) .sel-ctl > .namebox input::placeholder{font-size:10px!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > .sizebox:not(#_):not(#__){padding:0 2px!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > .sizebox button:not(#_){width:22px!important;height:22px!important;border-radius:5px!important;font-size:11px!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > .sizebox .szlbl:not(#_){font-size:10px!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > .dup-sel .ic:not(#_),html.ps-page-board body:not(.ps-dock) .sel-ctl > .del-sel .ic:not(#_){width:12px!important;height:12px!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > .text-color-field input[type=color]:not(#_){width:18px!important;height:18px!important;flex-basis:18px!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > .text-color-field .text-color-reset:not(#_){height:20px!important;min-width:28px!important;font-size:10px!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .cdot:not(#_){width:20px!important;height:20px!important}
-/* 색 팔레트(172px)가 124px 패널 안에서 overflow 에 잘렸다(실측: 알 12개 중 양끝이 안 보임) — 패널은 넘침 허용, 팔레트는 패널 왼쪽 바깥으로 */
-html.ps-page-board body:not(.ps-dock) .sel-ctl.sel-ctl:not(#_):not(#__){overflow:visible!important;max-height:none!important}
-/* 2.609 — 다중 선택의 정렬 줄(#alignBar: 줄맞춤·균등·간격 m 스테퍼)을 데스크톱 패널에서 아예 뺀다(사용자 "균등 간격 이런 거 필요 없어 지워줘"). 코드·단축키는 그대로, 보이지만 않는다. 폰(ps-dock)은 손대지 않음. */
-/* JS 가 패널 안으로 옮기기 전(무대 아래 띠로 뜰 때, 실측 parent=stage)도 있어 자리와 상관없이 숨긴다 */
-html.ps-page-board body:not(.ps-dock) #alignBar:not(#_):not(#__),html.ps-page-board body:not(.ps-dock) #alignBar.on:not(#_):not(#__){display:none!important}
-html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):not(#__){left:auto!important;right:calc(100% + 10px)!important;top:-4px!important;bottom:auto!important;transform:none!important;padding:8px!important;gap:6px 5px!important}
-</style>
+
 <style id="ps-2980-selrow">/* 2.980 — 데스크톱·아이패드 선택 패널(1열 124px)에 «맨 앞»이 생겼다. 한 줄을 더 쌓으면 여럿 골랐을 때 패널이 낮은 화면(아이패드 가로)의 판 높이를 넘는다 →
    격자를 반 칸 둘로 나누고 «복제 | 맨 앞»만 반 칸씩, 나머지는 예전처럼 한 줄 전체. 폰(ps-dock)은 손대지 않는다(거기선 ⋯ 줄에 있다). */
 html.ps-page-board body:not(.ps-dock) .sel-ctl.sel-ctl:not(#_):not(#__):not(#___){grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
@@ -23365,37 +23329,7 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
 
 <!-- 2.711 — 폰(≤700·ps-dock)에서 토큰 선택 패널을 «도크 위 한 줄 시트»로(사용자 목업 제안 1). 첫 줄 번호·이름·⋯, 둘째 줄 크기·색·C·글자 숨김·복제·삭제.
      사진·시야·잔상·시선·쉐이퍼·GK·대칭·회전은 ⋯ 을 누르면 셋째 줄에. 늘 같은 자리(도크 바로 위)라 손이 기억한다. 데스크톱·아이패드 가로는 2.683 토큰 옆 그대로. -->
-<style id="ps-2711-selsheet">
-@media (max-width:700px){
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not([style*="display:none"]):not([style*="display: none"]){position:fixed!important;left:8px!important;right:8px!important;top:auto!important;bottom:calc(var(--ps-dock-h,100px) + 8px)!important;
-    width:auto!important;min-width:0!important;max-width:none!important;max-height:none!important;display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;align-content:flex-start!important;
-    gap:6px!important;padding:8px 10px!important;border-radius:12px!important;overflow:visible!important;z-index:160!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__)::before{display:none!important}
-  /* 인라인 display:none 으로 숨긴 것(글자 도구·사진 입력 등)은 건드리지 않는다 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__) > *:not([style*="display:none"]):not([style*="display: none"]){flex:0 0 auto!important;width:auto!important;max-width:none!important;margin:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .numbox input,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .namebox input{height:30px!important;min-height:30px!important;font-size:13px!important;padding:0 8px!important;width:100%!important;box-sizing:border-box!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .numbox,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .namebox{height:30px!important;min-height:30px!important;padding:0!important;display:inline-flex!important;align-items:center!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .numbox{order:1!important;flex:0 0 84px!important;width:84px!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .namebox{order:2!important;flex:1 1 90px!important;min-width:0!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #selMoreBtn{order:3!important;flex:0 0 34px!important;width:34px!important;min-height:30px!important;height:30px!important;padding:0!important;font-weight:800;border-radius:9px!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #selRowBreak{order:4!important;flex:0 0 100%!important;width:100%!important;height:0!important;min-height:0!important;max-height:0!important;line-height:0!important;font-size:0!important;margin:-6px 0 0!important;padding:0!important;border:0!important;display:block!important;overflow:hidden!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #sizeCtl{order:5!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #colorCtl{order:6!important;position:relative!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #coachBtn{order:7!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #labelVisBtn{order:8!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #dupSelBtn{order:9!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #delSelBtn{order:10!important;margin-left:auto!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textEditBtn,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textSizeCtl,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textColorCtl,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textBgCtl{order:12!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#ballLookBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){order:20!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(.sel-more) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#ballLookBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){display:none!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___).sel-more > #selMoreBtn{background:var(--accent,var(--ps-navy,#14213D))!important;color:#fff!important;border-color:var(--accent,var(--ps-navy,#14213D))!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #alignBar{order:30!important;flex:0 0 100%!important;width:100%!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > button,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .sizebox{min-height:30px!important;height:30px!important;font-size:11px!important;padding:0 9px!important;border-radius:9px!important}
-  /* 색 팔레트는 시트 안에 펼쳐 두지 않고(폰 예전 판은 늘 펼침) «색상» 을 눌렀을 때만 시트 위로 띄운다 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #colorCtl #colorPop{display:none!important;position:absolute!important;left:0!important;bottom:calc(100% + 8px)!important;top:auto!important;z-index:5!important;background:rgba(24,28,36,.97)!important;border:1px solid rgba(255,255,255,.14)!important;border-radius:10px!important;padding:8px!important;box-shadow:0 8px 24px rgba(0,0,0,.35)!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #colorCtl.open #colorPop{display:grid!important}
-}
-</style>
+
 <!-- 2.802 — 폰 토큰 시트 정돈(사용자 «조금 더 깔끔하게»). 2.711 구조(번호·이름·⋯ / 크기·색·C·글자 / 복제·삭제)는 그대로, 높이 40 통일·줄마다 같은 폭·간격 8·둥글기 12 한 값·판 여백 12·그림자. -->
 <style id="ps-2804-pos">
   .sel-ctl .posbox{padding:0 6px;cursor:pointer}
@@ -23406,47 +23340,7 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   .sel-ctl #lockSelBtn.on{background:rgba(255,255,255,.86)!important;color:#14171c!important;border-color:transparent!important}
   .tok-lock{pointer-events:none}
 </style>
-<style id="ps-2802-selsheet">
-@media (max-width:700px){
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not([style*="display:none"]):not([style*="display: none"]){left:12px!important;right:12px!important;bottom:calc(var(--ps-dock-h,100px) + 12px)!important;
-    gap:8px!important;padding:12px!important;border-radius:16px!important;background:rgba(20,23,28,.96)!important;border:1px solid rgba(255,255,255,.06)!important;box-shadow:0 14px 34px -14px rgba(0,0,0,.55)!important;backdrop-filter:blur(10px)!important}
-  /* 모든 제어 40px · 둥글기 12 · 글자 12 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > button,
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .sizebox,
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .numbox,
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .namebox{height:40px!important;min-height:40px!important;border-radius:12px!important;font-size:12px!important;font-weight:600!important;padding:0 10px!important;box-sizing:border-box!important;
-    background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.08)!important;color:#EDEFF3!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .numbox input,
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .namebox input{height:38px!important;min-height:38px!important;font-size:14px!important;background:transparent!important;border:0!important;color:#EDEFF3!important;padding:0 4px!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .numbox .numhash{opacity:.5!important;font-size:13px!important}
-  /* 1줄: 번호 88 · 이름 나머지 · ⋯ 40 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .numbox{flex:0 0 72px!important;width:72px!important}
-  /* 2.804 — 1줄: 번호 72 · 포지션 92 · 이름 · ⋯ 40 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #posCtl{order:1!important;flex:0 0 92px!important;width:92px!important;padding:0 8px!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #posCtl select{width:100%!important;height:38px!important;font-size:13px!important;color:#EDEFF3!important;max-width:none!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #labelModeBtn{order:20!important;flex:1 1 calc(25% - 6px)!important;min-width:calc(25% - 6px)!important;padding:0 6px!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____):not(.sel-more) > #labelModeBtn{display:none!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #lockSelBtn{order:11!important;flex:1 1 calc(50% - 4px)!important;min-width:calc(50% - 4px)!important;max-width:calc(50% - 4px)!important;padding:0 6px!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #selMoreBtn{flex:0 0 40px!important;width:40px!important;padding:0!important;font-size:18px!important;font-weight:700!important;letter-spacing:-.02em!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #selRowBreak{margin:-8px 0 0!important}
-  /* 2줄: 크기·색상·C·글자 숨김 — 같은 폭 넷 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #sizeCtl,
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #colorCtl,
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #coachBtn,
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #labelVisBtn{flex:1 1 calc(25% - 6px)!important;width:auto!important;min-width:calc(25% - 6px)!important;max-width:calc(25% - 6px)!important;padding:0 6px!important;white-space:nowrap!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #sizeCtl{padding:0!important;gap:6px!important;justify-content:center!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #sizeCtl > span{display:none!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #sizeCtl > button{width:34px!important;height:34px!important;min-height:34px!important;border-radius:9px!important;background:rgba(255,255,255,.08)!important;border:0!important;color:#EDEFF3!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #colorCtl > .color-trig{height:38px!important;border:0!important;background:transparent!important;padding:0!important;gap:6px!important;color:#EDEFF3!important;font-size:12px!important;font-weight:600!important;width:100%!important;justify-content:center!important}
-  /* 3줄: 복제·삭제 — 반반, 삭제는 붉은 글자만 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #dupSelBtn,
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #delSelBtn{flex:1 1 calc(50% - 4px)!important;width:auto!important;min-width:calc(50% - 4px)!important;max-width:calc(50% - 4px)!important;margin-left:0!important;gap:6px!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #delSelBtn{background:rgba(226,75,74,.12)!important;border-color:rgba(226,75,74,.22)!important;color:#FF7B73!important}
-  /* ⋯ 펼친 줄(사진·시야·잔상·시선·쉐이퍼·GK·대칭·회전)도 같은 결 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____).sel-more > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#ballLookBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){flex:1 1 calc(25% - 6px)!important;min-width:calc(25% - 6px)!important;padding:0 6px!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____).sel-more > #selMoreBtn{background:#EDEFF3!important;color:#14171c!important;border-color:#EDEFF3!important}
-}
-</style>
+
 <script>
 (function(){ /* 2.804 — 포지션 select 채우기·바꾸기 · «번호/포지션 표시» 토글(폰엔 보드 설정이 없어 되돌릴 길이 필요) */
   var ps=document.getElementById("posSel"); if(ps){

@@ -11,7 +11,7 @@ try{
   await page.waitForTimeout(2500);
   await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
   const f=await (await page.waitForSelector('#fBoard')).contentFrame();
-  await f.waitForFunction(()=>typeof renderTokens==='function'&&typeof anim==='object'&&window.__psShapeMenu&&window.__psPopups&&document.getElementById('backSelBtn'));
+  await f.waitForFunction(()=>typeof renderTokens==='function'&&typeof anim==='object'&&window.__psShapeMenu&&window.__psPopups&&window.__psSelectionMenu&&document.getElementById('backSelBtn'));
   await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&boardPrivateCurrent(window._boardPrivateOwner),null,{timeout:20000}).catch(()=>{});
   await page.waitForTimeout(1200);
   const box=await (await page.$('#fBoard')).boundingBox();
@@ -21,7 +21,7 @@ try{
     sel=null;multiSel=[];renderTokens();renderDrawings();updateDelUI();});
   const panel=()=>f.evaluate(()=>{const p=document.querySelector('.sel-ctl');if(!p)return null;const cs=getComputedStyle(p),r=p.getBoundingClientRect();
     const row=id=>{const e=document.getElementById(id);if(!e||getComputedStyle(e).display==='none')return null;const b=e.getBoundingClientRect();return [Math.round(b.top),Math.round(b.width),Math.round(b.height)];};
-    return {near:p.classList.contains('sel-near'),disp:cs.display,w:Math.round(r.width),radius:cs.borderRadius,bg:cs.backgroundImage,color:cs.color,front:row('frontSelBtn'),back:row('backSelBtn'),dup:row('dupSelBtn'),del:row('delSelBtn'),size:row('sizeCtl'),title:getComputedStyle(p,'::before').content};});
+    return {near:p.classList.contains('sel-near'),disp:cs.display,w:Math.round(r.width),radius:cs.borderRadius,bg:cs.backgroundColor,color:cs.color,front:row('frontSelBtn'),back:row('backSelBtn'),dup:row('dupSelBtn'),del:row('delSelBtn'),size:row('sizeCtl'),title:p.querySelector('.ps-in-nm').textContent};});
   const isTouch=size!=='desktop';
 
   if(!isTouch){
@@ -30,16 +30,13 @@ try{
     const r=await U(410,280);await page.mouse.click(r.x,r.y);await page.waitForTimeout(350);
     let p=await panel();
     assert.ok(p&&p.near&&p.disp!=='none','그림을 고르면 옆 패널');
-    assert.equal(p.w,224,'카드 폭 224 '+JSON.stringify(p));
-    assert.equal(p.radius,'14px');
-    assert.match(p.bg,/gradient/,'밝은 카드(그라디언트) — 검정 작은 카드가 아니다');
-    assert.ok(p.front&&p.back&&p.dup,'복제 · 맨 앞 · 맨 뒤가 보인다');
-    assert.equal(p.front[0],p.back[0],'«맨 뒤»는 «맨 앞»과 같은 줄 '+JSON.stringify([p.front,p.back]));
-    assert.equal(p.dup[0],p.front[0],'복제도 같은 줄');
-    assert.ok(Math.abs(p.front[1]-p.back[1])<=2&&Math.abs(p.dup[1]-p.front[1])<=2,'셋이 같은 폭');
-    assert.ok(p.del[1]>=190,'삭제는 전폭 '+p.del[1]);
-    assert.equal(p.front[2],34,'단추 높이 34');
-    assert.equal(p.title,'"그림"');
+    assert.ok(p.w>=274&&p.w<=286,'compact card width '+JSON.stringify(p));
+    assert.equal(p.radius,'13px');assert.equal(p.bg,'rgb(255, 255, 255)');
+    assert.ok(p.dup&&p.del[1]>=240,'duplicate and full width delete are directly accessible');
+    assert.equal(p.title,'도형 편집');
+    await f.locator('.ps-sm-more summary').click();
+    assert.ok(await f.locator('#frontSelBtn').isVisible()&&await f.locator('#backSelBtn').isVisible(),'stacking is accessible in expanded settings');
+    await f.locator('.ps-sm-more summary').click();
     if(SHOT)await page.screenshot({path:SHOT+'/popups-near-rect.png'});
     // 2) 도형 메뉴가 열리면 옆 패널은 숨고, 닫히면 다시
     step('menu-hides-panel');
@@ -63,7 +60,7 @@ try{
     // 4) 글(텍스트) 패널도 같은 카드 · 메뉴엔 «내용 수정»
     step('text');
     await f.evaluate(()=>{selectItem('drawing',state.drawings[2]);updateDelUI();});await page.waitForTimeout(300);
-    p=await panel();assert.equal(p.title,'"텍스트"');assert.equal(p.w,224);assert.match(p.bg,/gradient/);
+    p=await panel();assert.equal(p.title,'글자 편집');assert.ok(p.w>=274&&p.w<=286);assert.equal(p.bg,'rgb(255, 255, 255)');
     await f.evaluate(()=>window.__psShapeMenu.open(state.drawings[2],300,300));
     assert.equal(await f.evaluate(()=>[...document.querySelectorAll('#psShapeMenu button[data-act]')].map(b=>b.dataset.act).join(',')),'edit,position-all,reset,front,back,dup,lock,del','글은 굵기 없이 내용 수정 · 모든 장면 위치 적용 · 이후 장면 리셋 · 순서 · 복제 · 고정 · 삭제');
     assert.equal(await f.evaluate(()=>!!document.getElementById('psSmW')),false);

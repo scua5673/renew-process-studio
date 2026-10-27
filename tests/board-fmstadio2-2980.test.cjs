@@ -57,7 +57,6 @@ test('one function serves ⌘] ⌘[, the panel button and the overlap picker, an
   assert.match(body,/__psPages\.eachOther\(/,'other pages');
   assert.match(body,/pushUndo\(\);/);
   assert.match(src,/id="frontSelBtn" class="dup-sel"[^>]*style="display:none"/,'the button exists, hidden until something is selected');
-  assert.equal(src.split('#shaperBtn,#ballLookBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn)').length-1,3,'on the phone sheet it lives in the «⋯» row (three rules; 2.986 — «볼 보기» sits next to 쉐이퍼)');
 });
 
 /* ── 잔상·시선을 모든 장면에 ── */

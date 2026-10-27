@@ -29,9 +29,9 @@ try{
    });
    const ctl=f.locator('.sel-ctl'),hd=f.locator('.ps-in-hd'),player=f.locator('#tokenLayer [data-id="panel-feedback-player"]');
    if(width<600){
-    mark('phone-original-dock');
+    mark('phone-context-sheet');
     const phone=await f.evaluate(()=>({dock:document.body.classList.contains('ps-dock'),active:window.__psInspector.active(),headerHeight:document.querySelector('.ps-in-hd').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth-innerWidth,dragHeight:document.querySelector('.sel-ctl').style.getPropertyValue('--ps-insp-drag-height')}));
-    assert.equal(phone.dock,true);assert.equal(phone.active,false);assert.equal(phone.headerHeight,0);assert.ok(phone.overflow<=1);assert.equal(phone.dragHeight,'');
+    assert.equal(phone.dock,true);assert.equal(phone.active,false);assert.ok(phone.headerHeight>30);assert.ok(phone.overflow<=1);assert.equal(phone.dragHeight,'');
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
     results.push({width,phoneDockPreserved:true,noHorizontalOverflow:true});continue;
    }
@@ -70,13 +70,14 @@ try{
    await open();const initial=await geometry();
    assert.ok(initial.width>=247&&initial.width<=289,'original inspector width');
    assert.equal(await ctl.evaluate(p=>p.style.getPropertyValue('--ps-insp-drag-height')),'','untouched default card height');
+   await click(f.locator('.ps-sm-more summary'));await stable();
    await click(f.locator('#lookBtn'),{finger:touch&&engine==='chromium'});
    const ball=await f.evaluate(()=>{
     const r=document.querySelector('.sel-ctl').getBoundingClientRect(),p=document.getElementById('board').createSVGPoint();p.x=r.left+80;p.y=r.top+110;
     const q=p.matrixTransform(document.getElementById('world').getScreenCTM().inverse());state.ball.x=q.x;state.ball.y=q.y;renderTokens();
     return {x:p.x,y:p.y,covered:!!document.elementFromPoint(p.x,p.y)?.closest('.sel-ctl')};
    });assert.equal(ball.covered,true,'default fixed card reproduces the report');
-   await ctl.evaluate(p=>p.scrollTop=0);
+   await ctl.evaluate(p=>p.querySelector('.ps-sm-body').scrollTop=0);
    const positions=await f.evaluate(()=>JSON.stringify({players:state.players.map(p=>[p.id,p.x,p.y]),ball:[state.ball.x,state.ball.y]}));
    mark(touch&&engine==='chromium'?'native-touch-drag':'mouse-drag');
    if(touch&&engine==='chromium'){const b=await hd.boundingBox();await nativeTouch(b.x+55,b.y+18,-initial.left+24,60);}else await mouseDrag(-initial.left+24,60);
@@ -100,17 +101,18 @@ try{
    else{const inputBox=await f.locator('#nameInput').boundingBox(),a=await screenPoint(inputBox.x+15,inputBox.y+12),b=await screenPoint(inputBox.x+75,inputBox.y+12);await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(b.x,b.y,{steps:5});await page.mouse.up();}
    await stable();same(await geometry(),moved,'using text input is not a panel drag');
    mark('content-scroll');
+   if(!await f.locator('.ps-sm-more').evaluate(e=>e.open))await click(f.locator('.ps-sm-more summary'));
    await click(f.locator('#colorTrig'),{finger:touch&&engine==='chromium'});await stable();
-   assert.ok(await ctl.evaluate(p=>p.scrollHeight>p.clientHeight),'expanded color choices create a real scrollable card');
+   assert.ok(await ctl.evaluate(p=>{const body=p.querySelector('.ps-sm-body');return body.scrollHeight>body.clientHeight;}),'expanded color choices create a real scrollable card');
    const cb=await ctl.boundingBox();await ctl.evaluate(p=>p.scrollTop=0);
    if(touch&&engine==='chromium')await nativeTouch(cb.x+cb.width/2,cb.y+cb.height-80,0,-160);
    else if(touch){
     // Mobile WebKit has no wheel/drag API. Focusing a lower control exercises
     // native focus scrolling; Chromium above exercises the actual touch pan.
-    await f.locator('#delSelBtn').focus();
+    await f.locator('#colorPop button').last().focus();
    }
    else{const p=await screenPoint(cb.x+cb.width/2,cb.y+cb.height-50);await page.mouse.move(p.x,p.y);await page.mouse.wheel(0,300);}
-   await f.waitForFunction(()=>document.querySelector('.sel-ctl').scrollTop>0);
+   await f.waitForFunction(()=>document.querySelector('.ps-sm-body').scrollTop>0);
    same(await geometry(),moved,'contents scroll without dragging card');
    mark('close-reopen');await ctl.evaluate(p=>p.scrollTop=0);await click(f.locator('.ps-in-x'),{finger:touch&&engine==='chromium'});
    assert.equal(await f.evaluate(()=>window.__psInspector.active()),false,'close button keeps original action');
@@ -122,7 +124,7 @@ try{
    const keyPositions=await f.evaluate(()=>JSON.stringify(state.players.map(p=>[p.id,p.x,p.y])));
    await hd.focus();await page.keyboard.press('ArrowRight');let key=await geometry();assert.ok(Math.abs(key.left-moved.left-8)<2,'arrow keys move header by 8px');
    await page.keyboard.press('Shift+ArrowDown');key=await geometry();assert.ok(Math.abs(key.top-moved.top-32)<2,'Shift moves 32px');
-   await page.keyboard.press('Home');await stable();same(await geometry(),initial,'Home restores the original default position');
+   await page.keyboard.press('Home');await stable();inside(await geometry());assert.equal(await ctl.evaluate(p=>p.style.getPropertyValue('--ps-insp-drag-height')),'','Home restores automatic placement next to the current selection');
    assert.equal(await f.evaluate(()=>JSON.stringify(state.players.map(p=>[p.id,p.x,p.y]))),keyPositions,'header arrow keys never move selected players');
    await mouseDrag(-2000,-2000);inside(await geometry());
    await mouseDrag(2400,2400);inside(await geometry());

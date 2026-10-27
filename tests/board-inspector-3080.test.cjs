@@ -10,7 +10,7 @@ test('header line and footedness',()=>{
 });
 test('only in the floating dock, only while the panel is shown',()=>{
   const c=ins.css();
-  assert.match(c,/body\.ps-dock-float\.ps-insp-on \.sel-ctl(:not\(#in\d+\)){16}:not\(\[style\*="display: none"\]\):not\(\[style\*="display:none"\]\)\{position:fixed/);
+  assert.match(c,/body\.ps-dock-float\.ps-insp-on \.sel-ctl:not\(\.ps-selection-menu\)(:not\(#in\d+\)){16}:not\(\[style\*="display: none"\]\):not\(\[style\*="display:none"\]\)\{position:fixed/);
   assert.doesNotMatch(c,/body:not\(\.ps-dock-float\)/);
 });
 test('wiring: script tag after the film dock, offline cache',()=>{

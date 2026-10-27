@@ -22,7 +22,7 @@
   function setFoot(p, v) { if (!p) return false; if (v === 'L' || v === 'R') p.foot = v; else delete p.foot; return true; }
 
   var N = []; for (var i = 0; i < 16; i++) N.push(':not(#in' + i + ')');
-  var C = 'html.ps-page-board body.ps-dock-float.ps-insp-on .sel-ctl' + N.join('') + ':not([style*="display: none"]):not([style*="display:none"])';
+  var C = 'html.ps-page-board body.ps-dock-float.ps-insp-on .sel-ctl:not(.ps-selection-menu)' + N.join('') + ':not([style*="display: none"]):not([style*="display:none"])';
   var SECTIONS = [['name', '이름 · 번호', 1], ['pos', '포지션', 4], ['color', '색', 6], ['act', '다음 장면 동작', 8], ['foot', '주발', 10], ['tools', '도구', 12]];
   function css() {
     var font = 'Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif';
@@ -114,6 +114,7 @@
       return '#1b2f6b';
     }
     function paint() {
+      if (win.__psSelectionMenu) { win.__psSelectionMenu.sync(); return; }
       var on = active(); if (body.classList.contains('ps-insp-on') !== on) body.classList.toggle('ps-insp-on', on);
       if (!on) { heads.act.style.removeProperty('display'); if (ctl.__inPlaced) { ctl.__inPlaced = false; ['left', 'right', 'top', 'bottom'].forEach(function (k) { if (ctl.style.getPropertyPriority(k) === 'important') ctl.style.removeProperty(k); }); } return; }
       place();

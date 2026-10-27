@@ -15,13 +15,13 @@ test('알림 자리 — 보이는 띠가 있으면 그 맨 위보다 12px 위, �
 
 test('선택 옆 패널 규칙 — 선수 패널(.ps-insp-on) · 폰(.ps-dock)은 빼고, id 여섯으로 1.846 · 2.980 규칙을 이긴다',()=>{
   const c=P.css();
-  const N='html.ps-page-board body:not(.ps-dock):not(.ps-insp-on) .sel-ctl.sel-ctl.sel-near:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______)';
+  const N='html.ps-page-board body:not(.ps-dock):not(.ps-insp-on) .sel-ctl.sel-ctl.sel-near:not(.ps-selection-menu):not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______)';
   assert.ok(c.includes(N+'{width:224px!important;max-width:224px!important'),'카드 폭');
   assert.ok(c.includes(N+'>#dupSelBtn,'+N+'>#frontSelBtn,'+N+'>#backSelBtn{grid-column:span 2!important'),'복제 · 맨 앞 · 맨 뒤 한 줄');
   assert.ok(c.includes(N+'>#mirHBtn,'+N+'>#mirVBtn{grid-column:span 3!important'),'좌우 · 상하 한 줄');
   assert.ok(c.includes(N+'>#delSelBtn{color:var(--pop-danger)'),'삭제는 빨강');
   assert.ok(c.includes('[data-kind="multi"]>:is(#ringCtl,'),'묶음의 토글은 한 줄 셋');
-  assert.ok(c.includes('body.ps-shape-menu-on .sel-ctl.sel-ctl.sel-near:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______){display:none!important}'),'도형 메뉴가 열리면 옆 패널은 숨긴다');
+  assert.ok(c.includes('body.ps-shape-menu-on .sel-ctl.sel-ctl.sel-near:not(.ps-selection-menu):not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______){display:none!important}'),'도형 메뉴가 열리면 옆 패널은 숨긴다');
   // 토큰은 밝은 카드 + 다크 · 글래스
   assert.ok(/html\.ps-page-board body\{--pop-bg:/.test(c)&&/body\.fmdark,html\.ps-page-board body\.ps-dock-float\.ps-skin-glass\{--pop-bg:/.test(c));
   for(const s of ['.anim-frame-menu{','#ps-tb-menu{','#lsPop{'])assert.ok(c.includes(s+'background:var(--pop-')||c.includes(s+'min-width:150px'),s);

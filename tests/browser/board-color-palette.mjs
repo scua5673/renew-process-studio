@@ -41,7 +41,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
   const press=locator=>spec.touch?locator.tap():locator.click();
   // 2.975 — 마우스는 토큰 정보 창을 오른쪽 클릭으로 연다(왼쪽 클릭은 고르기만). 손가락은 탭 그대로.
   const pressTok=locator=>spec.touch?locator.tap():locator.click({button:'right'});
-  async function open(id='color-a'){await pressTok(frame.locator('.token[data-id="'+id+'"]'));if(!await frame.locator('#colorCtl.open').count())await press(frame.locator('#colorTrig'));await frame.locator('#colorPop').waitFor({state:'visible'});}
+  async function open(id='color-a'){await pressTok(frame.locator('.token[data-id="'+id+'"]'));if(!await frame.locator('.ps-sm-more').evaluate(e=>e.open))await frame.locator('.ps-sm-more summary').click();if(!await frame.locator('#colorCtl.open').count())await press(frame.locator('#colorTrig'));await frame.locator('#colorPop').waitFor({state:'visible'});}
   // Replay browser composition events against the real controls. This does not emulate a native OS IME.
   await pressTok(frame.locator('.token[data-id="color-a"]'));
   for(const [id,value] of [['nameInput','홍길동'],['numInput','김']]){
@@ -71,7 +71,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
   await undo();assert.deepEqual(await colors(),['#e23b3b',null],'saved color applies through undo');
   await open();await press(frame.locator('#myDots [data-col="'+custom+'"]'));
   await frame.evaluate(()=>{sel=null;multiSel=state.players.slice();renderTokens();updateDelUI();updateAlignBar();});
-  if(!await frame.locator('#colorCtl.open').count())await press(frame.locator('#colorTrig'));await press(frame.locator('#myDots [data-col="'+custom+'"]'));assert.deepEqual(await colors(),[custom,custom],'both selected tokens use the saved color');
+  if(!await frame.locator('.ps-sm-more').evaluate(e=>e.open))await frame.locator('.ps-sm-more summary').click();if(!await frame.locator('#colorCtl.open').count())await press(frame.locator('#colorTrig'));await press(frame.locator('#myDots [data-col="'+custom+'"]'));assert.deepEqual(await colors(),[custom,custom],'both selected tokens use the saved color');
   await undo();assert.deepEqual(await colors(),[custom,null],'multi-color change is a single undo step');
   await open();await press(frame.locator('#myColEdit'));await page.screenshot({path:path.join(out,spec.name+'-edit.png')});const before=await colors();await press(frame.locator('#myDots [data-col="#808080"]'));assert.deepEqual(await colors(),before,'removing a fixed color never recolors players');assert.equal(await frame.locator('#myDots [data-col="#808080"]').count(),0);await press(frame.locator('#myColEdit'));
   const bounds=await frame.locator('#colorPop').evaluate(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,background:getComputedStyle(el).backgroundColor,width:innerWidth,height:innerHeight,overflow:el.scrollWidth-el.clientWidth,dots:[...el.querySelectorAll('.cdot')].filter(d=>getComputedStyle(d).display!=='none').map(d=>{const b=d.getBoundingClientRect();return {width:b.width,height:b.height};})};});assert.ok(bounds.left>=0&&bounds.right<=bounds.width&&bounds.top>=0&&bounds.bottom<=bounds.height,JSON.stringify(bounds));assert.ok(bounds.overflow<2,JSON.stringify(bounds));assert.ok(bounds.dots.every(d=>d.width===d.height&&d.width>=24),'color swatches remain square touch targets');
@@ -88,7 +88,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
     assert.equal(await frame.locator('#cmd-player-stamp').evaluate(el=>getComputedStyle(el).touchAction),'none');
     assert.equal(await frame.locator('#railEquip .chip').first().evaluate(el=>getComputedStyle(el).touchAction),'none');
     await press(frame.locator('#colorTrig'));
-    const panel=await frame.locator('.sel-ctl').evaluate(el=>({height:el.getBoundingClientRect().height,max:innerHeight*.62,overflow:getComputedStyle(el).overflowY}));
+    const panel=await frame.locator('.sel-ctl').evaluate(el=>({height:el.getBoundingClientRect().height,max:innerHeight,overflow:getComputedStyle(el.querySelector('.ps-sm-body')).overflowY}));
     assert.ok(panel.height<=panel.max+1,JSON.stringify(panel));assert.equal(panel.overflow,'auto');
     await press(frame.locator('#delSelBtn'));assert.equal((await colors()).length,1,'landscape tablet can reach and use delete');
     if(engine==='chromium'){
@@ -115,7 +115,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
     await page.mouse.move(stamp.x+stamp.width/2,stamp.y+stamp.height/2);await page.mouse.down();await page.mouse.move(pitch.x+pitch.width*.4,pitch.y+pitch.height*.4,{steps:10});await page.mouse.up();
     assert.equal(await frame.evaluate(()=>state.players.length),countBefore+1,'training editor accepts a palette drag');
     const trainingPlayer=await frame.evaluate(()=>state.players.at(-1).id);
-    await pressTok(frame.locator('.token[data-id="'+trainingPlayer+'"]'));await press(frame.locator('#colorTrig'));await press(frame.getByRole('button',{name:'회색',exact:true}));
+    await pressTok(frame.locator('.token[data-id="'+trainingPlayer+'"]'));await press(frame.locator('.ps-sm-more summary'));await press(frame.locator('#colorTrig'));await press(frame.getByRole('button',{name:'회색',exact:true}));
     await press(frame.locator('#colorTrig'));await press(frame.locator('#delSelBtn'));assert.equal(await frame.evaluate(()=>state.players.length),countBefore,'training editor delete is reachable in landscape');
     await page.screenshot({path:path.join(out,spec.name+'-training.png')});
 

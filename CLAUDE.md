@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.195 — 선택 메뉴는 board-selection-menu.js/CSS에서 기존 입력·단추를 옮겨 구성한다. 저장·되돌리기는 원래 핸들러를 유지한다. 추가 기능은 .ps-sm-more를 펼치고, 스크롤은 .ps-sm-body가 맡는다. 위치는 CSS 변수로만 쓰며 옛 top 제거 감시자와 충돌하지 않는다. inspector paint는 새 메뉴에 위임한다. 열기·닫기·배치 자체는 renderTokens/저장을 호출하지 않는다. 폰은 하단 시트, Esc는 선택을 남긴 채 닫는다. 합성 자료 검사는 board-selection-menu 브라우저 시험.
+
 - 3.193 — 훈련 도크 시험은 보드 내부 ready만으로 저장 단추의 hit-test를 시작하지 않는다. 셸의 ps-booting이 끝나고 loading이 ps-boot-done이 된 실제 표시 경계를 기다린다. 고정 1400ms 대기는 WebKit의 초기 레이아웃에서 아직 숨겨진 iframe을 검사할 수 있다. 저장·되돌리기·배치 충돌 단정은 그대로 유지한다.
 - 3.193 — marquee·drag-performance도 기존 보드 시험처럼 WebKit의 정확한 «ResizeObserver loop completed with undelivered notifications.» 알림을 별도 기록한다. 결과 JSON의 pageErrors에 남기며 픽셀·선택·내보내기·투영·입력·갱신 횟수와 그 밖의 오류 단정은 완화하지 않는다.
 

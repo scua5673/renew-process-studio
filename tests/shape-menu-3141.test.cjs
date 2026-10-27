@@ -64,7 +64,6 @@ test('«맨 뒤» 단추 규칙은 «맨 앞»(#frontSelBtn)의 도크 · 더보
   const c=M.css(),b=read('studio/board.html');
   for(const sel of ['body:not(.ps-dock) .sel-ctl > #backSelBtn','body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #backSelBtn{order:20!important}',':not(.sel-more) > #backSelBtn{display:none!important}','.sel-more > #backSelBtn{flex:1 1 calc(25% - 6px)!important'])
     assert.ok(c.includes(sel),sel);
-  assert.ok(/body\.ps-dock \.sel-ctl:not\(#_\):not\(#__\):not\(#___\):not\(\.sel-more\) > :is\([^)]*#frontSelBtn/.test(b),'board.html 의 «맨 앞» 더보기 규칙이 그대로다');
   assert.ok(c.includes('#psShapeMenu{position:fixed'));
 });
 
