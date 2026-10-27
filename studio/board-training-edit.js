@@ -43,7 +43,7 @@
       a.forEach((v,i)=>v.target=first+step*i);
     } else {
       var values=a.map(v=>v.p[axis]), edge=/^(min|max)/.test(mode);
-      var reverse=vertical && (/X$/.test(mode)?!flip:!!flip);
+      var reverse=vertical && (/X$/.test(mode)?!!flip:!flip);
       var target=edge?((/^min/.test(mode)!==reverse)?Math.min.apply(null,values):Math.max.apply(null,values)):values.reduce((sum,v)=>sum+v,0)/a.length;
       a.forEach(v=>v.target=target);
     }

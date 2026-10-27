@@ -10,7 +10,7 @@ test('six alignment directions follow horizontal and both vertical pitch views',
  for(const vertical of [false,true])for(const flip of [false,true])for(const mode of ['minX','maxX','minY','maxY']){
   const items=[{x:10,y:20},{x:70,y:80},{x:99,y:99,locked:true}];
   edit.alignPlan(items,mode,vertical,flip).forEach(p=>edit.translate(p.o,p.dx,p.dy));
-  const screen=p=>vertical?(flip?{x:p.y,y:-p.x}:{x:-p.y,y:p.x}):p,axis=mode.endsWith('X')?'x':'y';
+  const screen=p=>vertical?(flip?{x:-p.y,y:p.x}:{x:p.y,y:-p.x}):p,axis=mode.endsWith('X')?'x':'y';
   const originals=[{x:10,y:20},{x:70,y:80}].map(p=>screen(p)[axis]),target=mode.startsWith('min')?Math.min(...originals):Math.max(...originals);
   assert.equal(screen(items[0])[axis],target);assert.equal(screen(items[1])[axis],target);assert.deepEqual(items[2],{x:99,y:99,locked:true});
  }

@@ -22926,7 +22926,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #dupSelBtn:not(#_):not(#__):not
      갈려 Linux WebKit 에서 운동장이 띠 밑으로 들어갔다(board-savebar CI 2회 · 진단 4번 중 3번). 예전엔 보드 메시지 'sync' 가 보기 메뉴를
      여닫으며 생긴 재계산이 우연히 68px 을 마지막에 남겼다(2.936 에서 그 토글을 고치며 드러남). 조건은 _animFitPad 와 같다. */
   function phoneSaveBar(){ try{ return document.body.classList.contains('ps-savebar')&&!!(window.matchMedia&&matchMedia('(max-width:639px)').matches); }catch(_){ return false; } }
-  function fix(){ if(busy)return; busy=true; try{ if(!document.body.classList.contains('ps-dock')&&!phoneSaveBar()){
+  function fix(){ if(busy)return; busy=true; try{ if(window.__psSelectionMenu&&window.__psSelectionMenu.mobileOpen())return; if(!document.body.classList.contains('ps-dock')&&!phoneSaveBar()){
       /* 숨은 iframe의 폭은 0이어도 WebKit은 padding만큼 높이를 돌려준다.
          그 높이를 도크 겹침으로 쓰면 여백이 매번 12px씩 늘어 observer가 끝나지 않는다. */
       var sr=st.getBoundingClientRect(); if(!(sr.width>0&&sr.height>0))return;

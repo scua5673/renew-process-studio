@@ -68,7 +68,7 @@ try{
    mark('open-and-original-cover');
    if(touch&&engine==='webkit'){await click(player.locator('.tok-c'),{finger:true});await f.waitForFunction(()=>window.__psInspector.active());await click(f.locator('.ps-in-x'),{finger:true});assert.equal(await f.evaluate(()=>window.__psInspector.active()),false);}
    await open();const initial=await geometry();
-   assert.ok(initial.width>=247&&initial.width<=289,'original inspector width');
+   assert.ok(await ctl.evaluate(p=>p.offsetWidth>=247&&p.offsetWidth<=289),'menu keeps its readable width inside a scaled board');
    assert.equal(await ctl.evaluate(p=>p.style.getPropertyValue('--ps-insp-drag-height')),'','untouched default card height');
    await click(f.locator('.ps-sm-more summary'));await stable();
    await click(f.locator('#lookBtn'),{finger:touch&&engine==='chromium'});
