@@ -25,7 +25,7 @@ try{
    await f.evaluate(()=>{
     stopAnim();state.tool='move';state.players=[{id:'panel-feedback-player',team:'blue',name:'가상 시선 선수',num:7,x:400,y:330},{id:'panel-second-player',team:'red',name:'다른 선수',num:9,x:200,y:440}];
     state.equipment=[];state.drawings=[];state.ball={id:'ball',x:650,y:330};sel=null;multiSel=[];renderTokens();renderDrawings();updateDelUI();
-    window.__qaPanelPointers=[];document.querySelector('.ps-in-hd').addEventListener('gotpointercapture',e=>window.__qaPanelPointers.push({type:e.type,pointerType:e.pointerType,trusted:e.isTrusted}));
+    window.__qaPanelPointers=[];for(const type of ['pointerdown','pointerup','click'])document.querySelector('.ps-in-x').addEventListener(type,e=>window.__qaPanelPointers.push({type:'close-'+type,pointerType:e.pointerType,trusted:e.isTrusted,x:e.clientX,y:e.clientY}),true);document.querySelector('.ps-in-hd').addEventListener('gotpointercapture',e=>window.__qaPanelPointers.push({type:e.type,pointerType:e.pointerType,trusted:e.isTrusted}));
    });
    const ctl=f.locator('.sel-ctl'),hd=f.locator('.ps-in-hd'),player=f.locator('#tokenLayer [data-id="panel-feedback-player"]');
    const geometry=()=>f.evaluate(()=>{
@@ -46,12 +46,13 @@ try{
     const b=await loc.boundingBox(),p=await screenPoint(b.x+b.width/2,b.y+b.height/2,finger);
     if(finger)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y,{button});
    };
+   const close=async options=>{await click(f.locator('.ps-in-x'),options);await ctl.waitFor({state:'hidden'});};
    if(width<600){
     mark('phone-context-sheet');await click(player.locator('.tok-c'),{finger:true});await stable();
     const phone=await f.evaluate(()=>({dock:document.body.classList.contains('ps-dock'),active:window.__psInspector.active(),headerHeight:document.querySelector('.ps-in-hd').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth-innerWidth,dragHeight:document.querySelector('.sel-ctl').style.getPropertyValue('--ps-insp-drag-height')}));
     assert.equal(phone.dock,true);assert.equal(phone.active,false);assert.ok(phone.headerHeight>30);assert.ok(phone.overflow<=1);assert.equal(phone.dragHeight,'');
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
-    await click(f.locator('.ps-in-x'),{finger:true});await stable();assert.equal(await ctl.isVisible(),false,'phone sheet closes without clearing selection');
+    await close({finger:true});await stable();assert.equal(await ctl.isVisible(),false,'phone sheet closes without clearing selection');
     results.push({width,phoneDockPreserved:true,noHorizontalOverflow:true});continue;
    }
    const same=(a,b,label)=>assert.ok(Math.abs(a.left-b.left)<2&&Math.abs(a.top-b.top)<2,label+JSON.stringify({a,b}));
@@ -67,7 +68,7 @@ try{
     await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await stable();
    };
    mark('open-and-original-cover');
-   if(touch&&engine==='webkit'){await click(player.locator('.tok-c'),{finger:true});await f.waitForFunction(()=>window.__psInspector.active());await click(f.locator('.ps-in-x'),{finger:true});assert.equal(await f.evaluate(()=>window.__psInspector.active()),false);}
+   if(touch&&engine==='webkit'){await click(player.locator('.tok-c'),{finger:true});await f.waitForFunction(()=>window.__psInspector.active());await close({finger:true});assert.equal(await f.evaluate(()=>window.__psInspector.active()),false);}
    await open();const initial=await geometry();
    assert.ok(await ctl.evaluate(p=>p.offsetWidth>=247&&p.offsetWidth<=289),'menu keeps its readable width inside a scaled board');
    assert.equal(await ctl.evaluate(p=>p.style.getPropertyValue('--ps-insp-drag-height')),'','untouched default card height');
@@ -115,10 +116,10 @@ try{
    else{const p=await screenPoint(cb.x+cb.width/2,cb.y+cb.height-50);await page.mouse.move(p.x,p.y);await page.mouse.wheel(0,300);}
    await f.waitForFunction(()=>document.querySelector('.ps-sm-body').scrollTop>0);
    same(await geometry(),moved,'contents scroll without dragging card');
-   mark('close-reopen');await ctl.evaluate(p=>p.scrollTop=0);await click(f.locator('.ps-in-x'),{finger:touch&&engine==='chromium'});
+   mark('close-reopen');await ctl.evaluate(p=>p.scrollTop=0);await close({finger:touch&&engine==='chromium'});
    assert.equal(await f.evaluate(()=>window.__psInspector.active()),false,'close button keeps original action');
    await open();same(await geometry(),moved,'reopening remembers position for this session');
-   await click(f.locator('.ps-in-x'),{finger:touch&&engine==='chromium'});
+   await close({finger:touch&&engine==='chromium'});
    await click(f.locator('#tokenLayer [data-id="panel-second-player"] .tok-c'),{button:'right'});await stable();
    same(await geometry(),moved,'another player uses the same movable card');
    mark('keyboard-clamp-resize-transform');
