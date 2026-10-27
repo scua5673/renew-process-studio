@@ -50,7 +50,7 @@
     function hide(n,on){if(n.hidden!==on)n.hidden=on;}
     function text(n,s){if(n.textContent!==s)n.textContent=s;}
     function viewport(){
-      var host=win.frameElement,r=host&&host.getBoundingClientRect();physicalWidth=r&&r.width>0?r.width:win.innerWidth;uiScale=win.innerWidth/physicalWidth;
+      var host=win.frameElement,r=host&&host.getBoundingClientRect();physicalWidth=r&&r.width>0?r.width:win.innerWidth;uiScale=physicalWidth>0&&win.innerWidth>0?win.innerWidth/physicalWidth:1;
       var mobile=physicalWidth<=760;if(ctl.classList.contains('ps-sm-mobile')!==mobile)ctl.classList.toggle('ps-sm-mobile',mobile);cls('ps-selection-mobile',mobile);put('--sm-ui-scale',String(uiScale));put('--sm-mobile-width',Math.max(200,physicalWidth-24)+'px');
     }
     function sync(){
@@ -88,7 +88,7 @@
       var vv=win.visualViewport,left=vv?vv.offsetLeft:0,top=vv?vv.offsetTop:0,width=vv?vv.width:win.innerWidth,height=vv?vv.height:win.innerHeight,mobile=physicalWidth<=760,pad=12*uiScale;
       var area={left:left+pad,right:left+width-pad,top:top+pad,bottom:top+height-pad};
       if(!mobile)doc.querySelectorAll('#ps-command-dock,#ps-dock,#boardToolbar,#boardPageStrip').forEach(function(n){var r=n.getBoundingClientRect();if(!r.width||!r.height||win.getComputedStyle(n).display==='none')return;if(r.top>top+height*.5)area.bottom=Math.min(area.bottom,r.top-pad);else if(n.id==='boardPageStrip')area.top=Math.max(area.top,r.bottom+pad);});
-      var r=ctl.getBoundingClientRect(),sx=r.width/(ctl.offsetWidth||r.width)||1,sy=r.height/(ctl.offsetHeight||r.height)||1;
+      var r=ctl.getBoundingClientRect(),style=win.getComputedStyle(ctl),sx=r.width/(parseFloat(style.width)||r.width)||1,sy=r.height/(parseFloat(style.height)||r.height)||1;
       put('--sm-height',Math.max(160,Math.min(mobile?height*.54:height,area.bottom-area.top)/sy)+'px');
       r=ctl.getBoundingClientRect();
       if(mobile){var stage=doc.getElementById('boardStage'),sr=stage.getBoundingClientRect(),reserve=Math.round(Math.max(0,sr.bottom-area.bottom)+r.height+pad)+'px';if(!reserved){previousPadding=stage.style.getPropertyValue('padding-bottom');reserved=true;}if(stage.style.getPropertyValue('padding-bottom')!==reserve){stage.style.setProperty('padding-bottom',reserve,'important');if(win.applyView)win.applyView();}}
