@@ -41,8 +41,10 @@ try{
     return {x:(x-v.x)*v.s,y:(y-v.y)*v.s};
    };
    const click=async(loc,{finger=false,button='left'}={})=>{
-    await loc.scrollIntoViewIfNeeded();
+    // Locator actions retry if the pitch replaces a token while fitting the view.
+    if(finger)await loc.tap({trial:true});else await loc.click({trial:true,button});
     assert.equal(await loc.evaluate(el=>{const r=el.getBoundingClientRect(),hit=el.ownerDocument.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return el===hit||el.contains(hit);}),true,'the actual element center is reachable');
+    if(engine==='chromium'){if(finger)await loc.tap();else await loc.click({button});return;}
     const b=await loc.boundingBox(),p=await screenPoint(b.x+b.width/2,b.y+b.height/2,finger);
     if(finger)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y,{button});
    };
@@ -143,6 +145,7 @@ try{
    results.push(result);fs.writeFileSync(path.join(out,`player-panel-${engine}-${width}.json`),JSON.stringify(result,null,2));
   }catch(e){
    const state=f&&await f.evaluate(()=>{const p=document.querySelector('.sel-ctl'),r=p?.getBoundingClientRect();return {classes:document.body.className,selection:typeof sel!=='undefined'&&sel&&{type:sel.type,id:sel.ref?.id},mouse:typeof _ptrMouse!=='undefined'&&_ptrMouse,panelOpen:typeof selPanelOpen!=='undefined'&&selPanelOpen,panel:r&&{left:r.left,top:r.top,width:r.width,height:r.height,scroll:p.scrollTop,style:p.getAttribute('style')},pointers:window.__qaPanelPointers};}).catch(()=>null);
+   console.error('panel-failure',JSON.stringify({step,state}));
    fs.writeFileSync(path.join(out,`player-panel-${engine}-${width}-failure.json`),JSON.stringify({step,error:e.message,state,logs},null,2));
    await page.screenshot({path:path.join(out,`player-panel-${engine}-${width}-failure.png`)}).catch(()=>{});throw e;
   }finally{await context.close();}
