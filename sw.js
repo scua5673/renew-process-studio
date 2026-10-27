@@ -46,7 +46,7 @@ const OPTIONAL = [
   '/', '/index.html', '/manifest.json',
   /* 3.076 — 관리자 화면(admin.html · admin-*, 약 0.4MB)은 미리 받지 않는다. 운영자만 쓰고, 열면 그때 받아 이 판 캐시에 담긴다(cacheFirst). */
   '/studio/', '/studio/index.html',
-  '/studio/board.html',
+  '/studio/board.html', '/studio/board-player-eye.js', '/studio/player-eye.css',
   '/studio/gamemodel.html', '/studio/scout.html', '/studio/terms.html', '/studio/idp.html', '/studio/note.html', '/studio/scouting.html', '/studio/community.html', '/studio/analysis.html', '/studio/learning.html', '/studio/playbook.html',
   '/studio/balls.js', '/studio/pitches.js', '/studio/rpt-i18n.js',
   '/studio/vault-examples.js',   /* 3.001 — 빈 보관함 첫 화면의 예시. 없으면 첫 화면은 옛 모양 그대로 */
