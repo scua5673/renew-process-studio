@@ -18,6 +18,7 @@ const server=http.createServer(async(req,res)=>{
     const pathname=new URL(req.url,base).pathname;requests.push(pathname);
     if(pathname.startsWith('/rest/v1/rpc/ps_letter_')){
       if(apiDown){res.writeHead(503);res.end('{}');return;}
+      if(req.headers.authorization==='Bearer fixture-expired-account'){res.writeHead(401);res.end('{}');return;}
       let raw='';for await(const chunk of req)raw+=chunk;const p=JSON.parse(raw),name=pathname.split('/').pop();
       const args=name==='ps_letter_stats'?[p.p_visitor]:[p.p_issue,p.p_visitor,p.p_action,p.p_liked];
       const rows=await call(db,req.headers.authorization==='Bearer fixture-letter-account'?uid:null,name,args);
@@ -73,6 +74,9 @@ try{
   // The same browser can sign in without counting its anonymous visit a second time.
   await p.evaluate(uid=>localStorage.setItem('ps_sync_session',JSON.stringify({uid,at:'fixture-letter-account'})),uid);
   await p.reload();await p.waitForTimeout(6000);assert.equal(await p.locator('[data-letter-readers="3"]').first().textContent(),'2');
+  await p.evaluate(uid=>localStorage.setItem('ps_sync_session',JSON.stringify({uid,at:'fixture-expired-account',exp:Date.now()-1000})),uid);
+  await p.reload();await p.waitForFunction(()=>document.querySelector('[data-letter-readers="3"]').textContent==='2');
+  assert.equal(await p.locator('[data-letter-like="3"]').first().isEnabled(),true,'expired app login does not block a public visitor');
   // Direct training deep links open the letter even when the previous community tab was Coach.
   await p.evaluate(()=>{localStorage.removeItem('ps_sync_session');localStorage.setItem('ps_comm_tab_v1','coach');});
   await p.goto(base+'/studio/community.html?letter=3&training=1');await p.waitForSelector('[data-letter-reader="3"]');

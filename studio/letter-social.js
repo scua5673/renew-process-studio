@@ -33,7 +33,14 @@
   function create(options){
     var win=options.window,doc=win.document,id=visitor(win),rows={},host=null,detail=null,watch=null,watchN=null,elapsed=0,busy={},generation=0,revision=0,loading=null,error=false;
     var fetcher=options.fetch||win.fetch.bind(win),now=options.now||Date.now;
-    function session(){try{return options.session&&options.session()||null;}catch(_){return null;}}
+    function session(){
+      try{
+        var s=options.session&&options.session()||null;
+        // Public readers do not run the app's token refresh. An expired login is a guest visit.
+        if(s&&s.exp!=null&&(!Number.isFinite(Number(s.exp))||Number(s.exp)<=now()))return null;
+        return s;
+      }catch(_){return null;}
+    }
     function identity(){var s=session();return s&&s.uid&&s.at?'u:'+s.uid:'v:'+(id||'');}
     var who=identity();
     function usable(){return !!id||identity().indexOf('u:')===0;}

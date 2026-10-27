@@ -14,6 +14,14 @@ test('anonymous identity survives visits and fails closed when browser storage i
   assert.equal(S.visitor(w),id);assert.equal(S.visitor(w),id);assert.equal(minted,1);
   assert.equal(S.visitor({get localStorage(){throw Error('blocked');}}),null);
 });
+test('an expired app login reads public counts as a guest without sending the stale token',async()=>{
+  let time=1000;const requests=[],map=new Map(),id='11111111-1111-4111-8111-111111111111';
+  const w={document:{},crypto:{randomUUID:()=>id},localStorage:{getItem:k=>map.get(k),setItem:(k,v)=>map.set(k,v)},AbortController,setTimeout,clearTimeout,addEventListener(){}};
+  const social=S.create({window:w,now:()=>time,session:()=>({uid:'account',at:'access-token',exp:2000}),fetch:async(url,init)=>{requests.push(init);return {ok:true,json:async()=>[]};}});
+  await social.refresh();assert.equal(requests[0].headers.Authorization,'Bearer access-token');
+  time=2001;await social.refresh();assert.equal(requests[1].headers.Authorization,undefined);
+  assert.equal(JSON.parse(requests[1].body).p_visitor,id,'same browser identity can merge on the next valid login');
+});
 test('popular sorting uses reader and reaction counts and remains deterministic on ties',()=>{
   const rows=[{number:1,title:'one'},{number:2,title:'two'},{number:3,title:'three'}],stats={1:{readers:1,likes:5},2:{readers:4,likes:0},3:{readers:4,likes:2}};
   assert.deepEqual(L.select(rows,'','readers',stats).map(r=>r.number),[2,3,1]);
