@@ -55,7 +55,7 @@ test('every place that writes a stored thumbnail into innerHTML goes through PSS
   assert.deepEqual(hits,[],'날것의 썸네일 자리');
   const board=read('studio/board.html');
   assert.match(board,/function thumbView\(d\)\{ var t=thumbViewRaw\(d\); return \(typeof t==="string"&&t\)\?PSSafe\.svg\(t\):t; \}/);
-  assert.match(board,/function printThumb\(s\)\{[^\n]*return PSSafe\.svg\(\(s&&s\.thumb\)\|\|""\); \}/);
+  assert.match(board,/function printThumb\(s\)\{[^\n]*return PSSafe\.svg\(pdfFullBoardSVG\(t\|\|\(\(s&&s\.thumb\)\|\|""\)\)\); \}/,'PDF 전체 판 복원 뒤 SVG 정리');
 });
 
 test('messages from other sites are stopped before any screen listener, and the shell bridge checks the origin',()=>{

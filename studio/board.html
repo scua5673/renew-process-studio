@@ -12401,7 +12401,17 @@ function esc(s){
 }
 /* 2.710 — PDF 그림은 저장된 썸네일이 아니라 **스냅에서 지금 토큰 크기로 다시** 그린다(사용자 "PDF 내보내기 했을 때 토큰 크게 한 거 적용되게").
    저장 때 굳은 썸네일은 그 뒤 키운 토큰을 모른다. 스냅이 없거나 그리기에 실패하면 썸네일로 폴백. */
-function printThumb(s){ try{ if(s&&s.snap&&window.__snapToThumb){ var t=window.__snapToThumb(s.snap); if(t)return t; } }catch(_){} return PSSafe.svg((s&&s.thumb)||""); }   /* 2.929 — 그 훈련의 크기로(2.710 의 «지금 크기» 강제는 다른 보드 크기가 번지는 길이라 걷었다) */
+/* 보관함 썸네일은 내용을 크게 보이려고 viewBox 를 좁혀 둘 수 있다(data-psfit).
+   PDF 는 그 확대 영역이 아니라 저장 당시 전체 판(data-psvb)을 보여 줘야 운동장 가장자리가 잘리지 않는다. */
+function pdfFullBoardSVG(svg){
+  var m=/^\s*<svg\b[^>]*>/.exec(String(svg||""));if(!m)return String(svg||"");
+  var full=(/\sdata-psvb="([^"]+)"/.exec(m[0])||[])[1],q=full&&full.trim().split(/[\s,]+/).map(Number);
+  if(!q||q.length!==4||!q.every(isFinite)||!(q[2]>0&&q[3]>0))return String(svg||"");
+  var tag=m[0];tag=/\sviewBox="[^"]*"/.test(tag)?tag.replace(/\sviewBox="[^"]*"/,' viewBox="'+q.join(" ")+'"'):tag.replace(/^\s*<svg\b/,'<svg viewBox="'+q.join(" ")+'"');
+  tag=/\spreserveAspectRatio="[^"]*"/.test(tag)?tag.replace(/\spreserveAspectRatio="[^"]*"/,' preserveAspectRatio="xMidYMid meet"'):tag.replace(/>$/,' preserveAspectRatio="xMidYMid meet">');
+  return tag+String(svg||"").slice(m[0].length);
+}
+function printThumb(s){ var t="";try{ if(s&&s.snap&&window.__snapToThumb)t=window.__snapToThumb(s.snap)||""; }catch(_){} return PSSafe.svg(pdfFullBoardSVG(t||((s&&s.thumb)||""))); }   /* 3.194 — PDF 는 내용 확대 썸네일이 아니라 전체 판 */
 function buildDrillPage(d,opts){opts=opts||{};
   const _ink=s=>opts.ink?inkifySVG(s||""):(s||"");
   const f=focusOf(d.focus);const ov=(d.overview||d.note||"");
