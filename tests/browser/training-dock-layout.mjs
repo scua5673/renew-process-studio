@@ -57,7 +57,10 @@ try{
    await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
    const frame=await page.locator('#fBoard').elementHandle().then(e=>e.contentFrame());
    await frame.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window.__psPages&&document.getElementById('ps-command-dock'));
-   await page.waitForTimeout(1400);await page.mouse.move(0,0);
+   // Board internals can be ready while the shell still hides the iframe during
+   // its boot layout pass. Check the real reveal boundary before hit-testing.
+   await page.waitForFunction(()=>document.body&&!document.body.classList.contains('ps-booting')&&!document.querySelector('#loading:not(.ps-boot-done)'));
+   await page.mouse.move(0,0);
    const initial=await inspect(frame);result.states.push({stage:'board',...initial});if(!baseline)check(initial,false);
    await enter(page,frame);await page.mouse.move(0,0);
    const edit=await inspect(frame);result.states.push({stage:'training',...edit});await page.screenshot({path:path.join(out,spec.width+'-training.png')});
