@@ -27,6 +27,7 @@
     function proxy(target,text){return button(text,text,function(){var n=doc.querySelector(target);if(n)n.click();soon();});}
     var scroll=el('div','ps-sm-body'),identity=el('div','ps-sm-identity'),align=el('section','ps-sm-align'),bib=el('section','ps-sm-bibs'),size=el('div','ps-sm-size'),quick=el('div','ps-sm-quick'),more=el('details','ps-sm-more'),summary=el('summary','','포지션 · 주발 · 장면'),extras=el('div','ps-sm-extras'),bottom=el('div','ps-sm-footer');
     more.append(summary,extras);scroll.append(identity,align,bib,size,quick,more);
+    ['left','right','top','bottom'].forEach(function(k){ctl.style.removeProperty(k);});
     ctl.classList.add('ps-selection-menu','sel-near');ctl.setAttribute('role','region');ctl.setAttribute('aria-label','선택 항목 편집');
     ctl.append(head,scroll,bottom);
     label('이름',identity);label('번호',identity);move('nameCtl',identity);move('numCtl',identity);

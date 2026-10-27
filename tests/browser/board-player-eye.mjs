@@ -102,7 +102,11 @@ try{
         const bar=f.locator('#boardPageStrip [data-player-eye-entry]');
         if(await bar.isVisible()){await bar.click();return;}
         const selected=f.locator('#psEyeSelected');
-        if(await selected.isVisible()){await selected.click();return;}
+        if(await selected.count()){
+          if(!await f.locator('.sel-ctl').isVisible())await f.locator('#tokenLayer [data-id="eye6"]').click({button:'right'});
+          if(!await f.locator('.ps-sm-more').evaluate(e=>e.open))await f.locator('.ps-sm-more summary').click();
+          if(await selected.isVisible()){await selected.click();return;}
+        }
         await f.evaluate(()=>{__psToggleBoardSettings('open');document.getElementById('cmd-board-settings-pop').__psSelectTab('view');});
         await f.locator('[data-player-eye-entry]').filter({visible:true}).first().click();
       }

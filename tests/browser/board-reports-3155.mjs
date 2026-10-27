@@ -26,6 +26,8 @@ try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').ma
  const box=await page.locator('#fBoard').boundingBox(),scale=engine==='webkit'&&width<1000?await page.evaluate(()=>visualViewport.scale):1;
  if(width<1000)await page.touchscreen.tap((box.x+pos.x)*scale,(box.y+pos.y)*scale);else await page.mouse.click(box.x+pos.x,box.y+pos.y);
  await f.locator('.ps-text-inline-editor').fill('벤치 위 합성 글',{timeout:5000});await page.keyboard.press('Home');assert.equal(await f.evaluate(()=>animActive),1,'typing keeps Home in the editor');await f.getByRole('button',{name:'완료',exact:true}).click();
+ // Close the editing card before checking whether the bench text itself receives a pointer.
+ if(await f.locator('.ps-in-x').isVisible())await f.locator('.ps-in-x').click();
  const text=await f.evaluate(()=>{const d=state.drawings.find(d=>d.type==='text');zOrderItems([d],true);const g=PSBoardText.node(d),r=g.getBoundingClientRect(),vb=__exportVB(),b=__exportLayerBBox(g);return{y:d.pts[0].y,outside:d.pts[0].y>H,hit:g.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),exportFits:b.y+b.height<=vb[1]+vb[3],xml:boardImageXML().xml.includes('벤치 위 합성 글')};});
  assert.equal(text.outside,true,JSON.stringify(text));assert.equal(text.hit,true,JSON.stringify(text));assert.equal(text.exportFits,true);assert.equal(text.xml,true);
  console.log(JSON.stringify({engine,width,reset:true,undo:true,homeEnd:true,benchText:true,exportFits:true}));await context.close();

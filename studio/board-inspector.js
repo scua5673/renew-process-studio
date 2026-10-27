@@ -130,6 +130,7 @@
     var placing = false, selfStyle = null, rafP = 0;
     function soon() { if (rafP) return; rafP = win.requestAnimationFrame(function () { rafP = 0; try { paint(); } catch (_) {} }); }
     function place() {
+      if (win.__psSelectionMenu) { win.__psSelectionMenu.place(); return; }
       if (placing || !body.classList.contains('ps-insp-on')) return; placing = true;
       try {
         var r = ctl.getBoundingClientRect(), tb = doc.querySelector('#boardPageStrip.ps-tb>.tb-r'), top = 76;
