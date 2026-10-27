@@ -28,13 +28,6 @@ try{
     window.__qaPanelPointers=[];document.querySelector('.ps-in-hd').addEventListener('gotpointercapture',e=>window.__qaPanelPointers.push({type:e.type,pointerType:e.pointerType,trusted:e.isTrusted}));
    });
    const ctl=f.locator('.sel-ctl'),hd=f.locator('.ps-in-hd'),player=f.locator('#tokenLayer [data-id="panel-feedback-player"]');
-   if(width<600){
-    mark('phone-context-sheet');
-    const phone=await f.evaluate(()=>({dock:document.body.classList.contains('ps-dock'),active:window.__psInspector.active(),headerHeight:document.querySelector('.ps-in-hd').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth-innerWidth,dragHeight:document.querySelector('.sel-ctl').style.getPropertyValue('--ps-insp-drag-height')}));
-    assert.equal(phone.dock,true);assert.equal(phone.active,false);assert.ok(phone.headerHeight>30);assert.ok(phone.overflow<=1);assert.equal(phone.dragHeight,'');
-    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
-    results.push({width,phoneDockPreserved:true,noHorizontalOverflow:true});continue;
-   }
    const geometry=()=>f.evaluate(()=>{
     const p=document.querySelector('.sel-ctl'),r=p.getBoundingClientRect(),v=window.visualViewport;
     return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height,scroll:p.scrollTop,view:{left:v?.offsetLeft||0,top:v?.offsetTop||0,width:v?.width||innerWidth,height:v?.height||innerHeight}};
@@ -53,6 +46,14 @@ try{
     const b=await loc.boundingBox(),p=await screenPoint(b.x+b.width/2,b.y+b.height/2,finger);
     if(finger)await page.touchscreen.tap(p.x,p.y);else await page.mouse.click(p.x,p.y,{button});
    };
+   if(width<600){
+    mark('phone-context-sheet');await click(player.locator('.tok-c'),{finger:true});await stable();
+    const phone=await f.evaluate(()=>({dock:document.body.classList.contains('ps-dock'),active:window.__psInspector.active(),headerHeight:document.querySelector('.ps-in-hd').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth-innerWidth,dragHeight:document.querySelector('.sel-ctl').style.getPropertyValue('--ps-insp-drag-height')}));
+    assert.equal(phone.dock,true);assert.equal(phone.active,false);assert.ok(phone.headerHeight>30);assert.ok(phone.overflow<=1);assert.equal(phone.dragHeight,'');
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+    await click(f.locator('.ps-in-x'),{finger:true});await stable();assert.equal(await ctl.isVisible(),false,'phone sheet closes without clearing selection');
+    results.push({width,phoneDockPreserved:true,noHorizontalOverflow:true});continue;
+   }
    const same=(a,b,label)=>assert.ok(Math.abs(a.left-b.left)<2&&Math.abs(a.top-b.top)<2,label+JSON.stringify({a,b}));
    const inside=p=>assert.ok(p.left>=p.view.left+6&&p.top>=p.view.top+6&&p.right<=p.view.left+p.view.width-6+2&&p.bottom<=p.view.top+p.view.height-6+2,'entire card stays in viewport '+JSON.stringify(p));
    const open=async()=>{await click(player.locator('.tok-c'),touch&&engine==='chromium'?{finger:true}:{button:'right'});await f.waitForFunction(()=>window.__psInspector.active()&&document.body.classList.contains('ps-insp-on'));await stable();};
@@ -109,7 +110,7 @@ try{
    else if(touch){
     // Mobile WebKit has no wheel/drag API. Focusing a lower control exercises
     // native focus scrolling; Chromium above exercises the actual touch pan.
-    await f.locator('#colorPop button').last().focus();
+    await f.locator('.ps-sm-extras button:visible').last().focus();
    }
    else{const p=await screenPoint(cb.x+cb.width/2,cb.y+cb.height-50);await page.mouse.move(p.x,p.y);await page.mouse.wheel(0,300);}
    await f.waitForFunction(()=>document.querySelector('.ps-sm-body').scrollTop>0);

@@ -16,7 +16,7 @@
   }
   function install(win){
     var doc=win.document,ctl=doc.querySelector('.sel-ctl');if(!ctl||ctl.__selectionMenu)return;ctl.__selectionMenu=true;
-    var body=doc.body,head=ctl.querySelector('.ps-in-hd'),foot=ctl.querySelector('.ps-in-foot'),lastKey='',syncing=false,frame=0,uiScale=1,physicalWidth=win.innerWidth,reserved=false,previousPadding='';
+    var body=doc.body,head=ctl.querySelector('.ps-in-hd'),foot=ctl.querySelector('.ps-in-foot'),lastKey='',dismissed=false,syncing=false,frame=0,uiScale=1,physicalWidth=win.innerWidth,reserved=false,previousPadding='';
     function el(tag,cls,text){var n=doc.createElement(tag);n.className=cls;if(text)n.textContent=text;return n;}
     function selected(){try{return typeof multiSel!=='undefined'&&multiSel.length?multiSel.slice():(typeof sel!=='undefined'&&sel&&sel.ref?[sel.ref]:[]);}catch(_){return [];}}
     function S(){return typeof state!=='undefined'?state:null;}
@@ -28,6 +28,7 @@
     var scroll=el('div','ps-sm-body'),identity=el('div','ps-sm-identity'),align=el('section','ps-sm-align'),bib=el('section','ps-sm-bibs'),size=el('div','ps-sm-size'),quick=el('div','ps-sm-quick'),more=el('details','ps-sm-more'),summary=el('summary','','포지션 · 주발 · 장면'),extras=el('div','ps-sm-extras'),bottom=el('div','ps-sm-footer');
     more.append(summary,extras);scroll.append(identity,align,bib,size,quick,more);
     ['left','right','top','bottom'].forEach(function(k){ctl.style.removeProperty(k);});
+    body.classList.add('ps-selection-ui');
     ctl.classList.add('ps-selection-menu','sel-near');ctl.setAttribute('role','region');ctl.setAttribute('aria-label','선택 항목 편집');
     ctl.append(head,scroll,bottom);
     label('이름',identity);label('번호',identity);move('nameCtl',identity);move('numCtl',identity);
@@ -46,7 +47,7 @@
     function collect(){Array.from(ctl.children).forEach(function(n){if(n===head||n===scroll||n===bottom||n.classList.contains('ps-in-h'))return;if(n.id==='alignBar'||n.id==='selMoreBtn'||n.id==='selRowBreak')return;extras.appendChild(n);});}
     collect();
     function readOnly(){return !!(S()&&S().boardLocked)||win.__vaultReadOnly||win.__animExport||doc.getElementById('psRoHide')||body.classList.contains('comm-viewing')||body.classList.contains('focus-board')||(win.communityBoardReadOnly&&win.communityBoardReadOnly());}
-    function shown(){return !readOnly()&&ctl.style.display!=='none'&&selected().length>0&&!body.classList.contains('ps-shape-menu-on');}
+    function shown(){return !dismissed&&!readOnly()&&ctl.style.display!=='none'&&selected().length>0&&!body.classList.contains('ps-shape-menu-on');}
     function cls(name,on){if(body.classList.contains(name)!==on)body.classList.toggle(name,on);}
     function hide(n,on){if(n.hidden!==on)n.hidden=on;}
     function text(n,s){if(n.textContent!==s)n.textContent=s;}
@@ -58,9 +59,9 @@
       if(syncing)return;syncing=true;
       try{
         viewport();collect();var list=selected(),s=S(),many=list.length>1,players=s?list.filter(p=>s.players.includes(p)&&!p.coach):[],one=list[0],singlePlayer=!many&&one&&kind(one)==='player';
+        var key=list.map(o=>String(o.id||kind(o))).join('|');if(key!==lastKey){dismissed=false;more.open=false;scroll.scrollTop=0;lastKey=key;}
         cls('ps-selection-open',shown());cls('ps-insp-on',!!singlePlayer&&shown());
         ctl.dataset.open=shown()?'true':'false';ctl.dataset.multiple=many?'true':'false';ctl.dataset.readonly=readOnly()?'true':'false';
-        var key=list.map(o=>String(o.id||kind(o))).join('|');if(key!==lastKey){more.open=false;scroll.scrollTop=0;lastKey=key;}
         var title=many?list.length+'개 선택':singlePlayer?'선수 편집':one?({equip:'장비 편집',ball:'공 편집',drawing:one.type==='text'?'글자 편집':'도형 편집'}[kind(one)]||'선택 항목'):'선택 항목';
         text(head.querySelector('.ps-in-nm'),title);text(head.querySelector('.ps-in-ball'),many?String(list.length):singlePlayer?String(one.num||''):'·');
         var counts={};list.forEach(o=>{var k=kind(o);counts[k]=(counts[k]||0)+1;});
@@ -100,6 +101,11 @@
     }
     function soon(){if(!frame)frame=win.requestAnimationFrame(function(){frame=0;sync();});}
     win.__psSelectionMenu={sync:sync,place:place,mobileOpen:function(){return physicalWidth<=760&&shown();}};
+    // Touch redraws may show the legacy panel again. Keep an explicit dismissal
+    // until the user selects a token or another feature deliberately opens it.
+    var oldOpen=win.__selPanelOpen;win.__selPanelOpen=function(on){dismissed=on===false;var result=oldOpen.apply(this,arguments);sync();return result;};
+    doc.addEventListener('pointerdown',function(e){if(e.target.closest&&e.target.closest('#tokenLayer .token'))dismissed=false;},true);
+    doc.addEventListener('contextmenu',function(e){if(e.target.closest&&e.target.closest('#tokenLayer .token'))dismissed=false;},true);
     win.positionSelCtl=function(){if(!ctl.classList.contains('sel-near'))ctl.classList.add('sel-near');sync();};
     ['updateDelUI','updateAlignBar'].forEach(function(name){var old=win[name];win[name]=function(){var result=old.apply(this,arguments);sync();return result;};});
     var oldLayout=win.psSelBarLayout;win.psSelBarLayout=function(){if(!ctl.classList.contains('sel-near'))ctl.classList.add('sel-near');if(reserved&&shown()&&physicalWidth<=760){place();return;}return oldLayout.apply(this,arguments);};
