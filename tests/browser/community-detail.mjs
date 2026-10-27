@@ -15,7 +15,7 @@ try{
   await c.locator('[data-letter="46"]').click();
   const card=c.locator('[data-letter-play]').first();await card.click();await c.waitForSelector('#cvMask.on #cdCopy');
   const v=await(await c.waitForSelector('#cvFrame',{state:'attached'})).contentFrame();
-  await v.waitForFunction(()=>document.body.classList.contains('comm-viewing')&&!document.documentElement.classList.contains('comm-boot'));
+  await v.waitForFunction(()=>document.body&&document.body.classList.contains('comm-viewing')&&!document.documentElement.classList.contains('comm-boot'));
   const geometry=await c.evaluate(()=>{const r=document.querySelector('.cv-shell').getBoundingClientRect();return {width:innerWidth,doc:document.documentElement.scrollWidth,dialog:{left:r.left,right:r.right,top:r.top,bottom:r.bottom},vh:innerHeight,comments:document.querySelectorAll('textarea,[class*="comment"]').length,title:document.querySelector('#cvTitle').textContent,desc:document.querySelector('#cd-panel-description').textContent};});
   assert.equal(geometry.width,geometry.doc,'library has no horizontal overflow');
   assert.ok(geometry.dialog.left>=0&&geometry.dialog.right<=geometry.width+1&&geometry.dialog.top>=0&&geometry.dialog.bottom<=geometry.vh+1,'dialog fits viewport');assert.equal(geometry.comments,0,'no comment area or input');assert.ok(geometry.desc.length>50,'registered source description is present');
@@ -25,7 +25,7 @@ try{
   await c.locator('#cd-tab-coaching').click();assert.equal(await c.locator('#cd-tab-coaching').getAttribute('aria-selected'),'true');assert.ok((await c.locator('#cd-panel-coaching').innerText()).length>30);
   await c.locator('#cd-tab-progressions').click();assert.equal(await c.locator('#cd-panel-description').isVisible(),false);assert.ok((await c.locator('#cd-panel-progressions').innerText()).length>8);
   await c.locator('#prCvTabs button').nth(1).click();await c.waitForFunction(t=>document.querySelector('#cvTitle').textContent!==t,geometry.title);
-  const v2=await(await c.waitForSelector('#cvFrame',{state:'attached'})).contentFrame();await v2.waitForFunction(()=>document.body.classList.contains('comm-viewing')&&!document.documentElement.classList.contains('comm-boot'));
+  const v2=await(await c.waitForSelector('#cvFrame',{state:'attached'})).contentFrame();await v2.waitForFunction(()=>document.body&&document.body.classList.contains('comm-viewing')&&!document.documentElement.classList.contains('comm-boot'));
   assert.equal(await c.locator('#cd-tab-description').getAttribute('aria-selected'),'true','new training starts at description');
   await c.locator('#cdCopy').click();const b=await(await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();await b.waitForSelector('#lpOv');await b.locator('#lpCancel').click();
   await page.evaluate(()=>window.__psShowApp('community'));await card.click();await c.waitForSelector('#cvMask.on');
