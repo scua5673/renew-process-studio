@@ -104,6 +104,13 @@
     // Touch redraws may show the legacy panel again. Keep an explicit dismissal
     // until the user selects a token or another feature deliberately opens it.
     var oldOpen=win.__selPanelOpen;win.__selPanelOpen=function(on){dismissed=on===false;var result=oldOpen.apply(this,arguments);sync();return result;};
+    // A touch after scrolling can deliver pointerup without a compatibility click.
+    // Reuse the original close action for a stationary touch inside its button.
+    var closeButton=head.querySelector('.ps-in-x'),closeTouch=null;
+    closeButton.addEventListener('pointerdown',function(e){if(e.pointerType!=='mouse'&&e.isPrimary!==false&&e.button===0)closeTouch={id:e.pointerId,x:e.clientX,y:e.clientY};});
+    closeButton.addEventListener('pointermove',function(e){if(closeTouch&&closeTouch.id===e.pointerId&&Math.hypot(e.clientX-closeTouch.x,e.clientY-closeTouch.y)>8)closeTouch=null;});
+    closeButton.addEventListener('pointercancel',function(){closeTouch=null;});
+    closeButton.addEventListener('pointerup',function(e){var t=closeTouch;closeTouch=null;if(!t||t.id!==e.pointerId||!closeButton.contains(doc.elementFromPoint(e.clientX,e.clientY)))return;e.preventDefault();e.stopPropagation();closeButton.click();});
     doc.addEventListener('pointerdown',function(e){if(e.target.closest&&e.target.closest('#tokenLayer .token'))dismissed=false;},true);
     doc.addEventListener('contextmenu',function(e){if(e.target.closest&&e.target.closest('#tokenLayer .token'))dismissed=false;},true);
     win.positionSelCtl=function(){if(!ctl.classList.contains('sel-near'))ctl.classList.add('sel-near');sync();};

@@ -42,7 +42,8 @@ try{
    };
    const click=async(loc,{finger=false,button='left'}={})=>{
     // Locator actions retry if the pitch replaces a token while fitting the view.
-    if(finger)await loc.tap({trial:true});else await loc.click({trial:true,button});
+    if(engine==='webkit'){await loc.evaluate(el=>el.scrollIntoView({block:'nearest',inline:'nearest'}));await stable();}
+    else if(finger)await loc.tap({trial:true});else await loc.click({trial:true,button});
     assert.equal(await loc.evaluate(el=>{const r=el.getBoundingClientRect(),hit=el.ownerDocument.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return el===hit||el.contains(hit);}),true,'the actual element center is reachable');
     if(engine==='chromium'){if(finger)await loc.tap();else await loc.click({button});return;}
     const b=await loc.boundingBox(),p=await screenPoint(b.x+b.width/2,b.y+b.height/2,finger);
