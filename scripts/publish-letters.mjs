@@ -100,7 +100,7 @@ export async function publish({source,workspace,prepareOnly=false}={}){
    const paths=git(['diff','--name-only','origin/main','origin/staging'],checkout).split('\n').filter(Boolean);
    if(paths.some(p=>!p.startsWith('studio/letters/')&&!['studio/app.html','sw.js'].includes(p)))throw Error('Staging includes unrelated changes; do not promote automatically.');
    for(const file of ['studio/app.html','sw.js']){const before=git(['show','origin/main:'+file],checkout),after=git(['show','origin/staging:'+file],checkout);const normalize=x=>x.replace(/window\.PS_BUILD='[0-9.]+'/g,"window.PS_BUILD='VERSION'").replace(/\?v=[0-9.]+/g,'?v=VERSION').replace(/const CACHE = 'process-[0-9.]+';/g,"const CACHE = 'process-VERSION';");if(normalize(before)!==normalize(after))throw Error('Unrelated shell changes; do not promote automatically.');}
-   const stageCommit=gh('git/ref/heads/staging').object.sha;await waitGate(stageCommit);await waitDeploy(TEST,stageCommit);
+   const stageCommit=gh('git/ref/heads/staging').object.sha;record({stagingCommit:stageCommit});await waitGate(stageCommit);await waitDeploy(TEST,stageCommit);
    if(await readRevision('https://testprocess.netlify.app','/studio/letters')!==revision)throw Error('Staging manuscript mismatch');
    if(gh('git/ref/heads/main').object.sha!==main)throw Error('Main changed; review before promotion.');
    let promotion=JSON.parse(run('gh',['pr','list','--repo',REPO,'--head','staging','--base','main','--state','open','--json','number,url'],checkout));
@@ -113,7 +113,7 @@ export async function publish({source,workspace,prepareOnly=false}={}){
    const commit=gh('git/ref/heads/main').object.sha;record({studioCommit:commit});await waitGate(commit);await waitDeploy(STUDIO,commit);
    if(await readRevision('https://processstudio.netlify.app','/studio/letters')!==revision)throw Error('Studio production revision mismatch');
    git(['fetch','origin','+refs/heads/main:refs/remotes/origin/main','+refs/heads/staging:refs/remotes/origin/staging'],checkout);if(gh('git/ref/heads/staging').object.sha===stageCommit)git(['push','origin','origin/main:staging'],checkout);
-   }else{await waitGate(main);await waitDeploy(STUDIO,main);}
+   }else{await waitGate(main);await waitDeploy(STUDIO,main);if(state.stagingCommit&&gh('git/ref/heads/staging').object.sha===state.stagingCommit){git(['fetch','origin','+refs/heads/main:refs/remotes/origin/main'],checkout);git(['push','origin','origin/main:staging'],checkout);}}
   }
   if(!samePublic){const fresh=await api('GET','/sites/'+LETTER);if(fresh.published_deploy.id!==site.published_deploy.id)throw Error('Public site changed; rerun to preserve its updates.');const d=await deploy(false);const published=await api('GET','/sites/'+LETTER);if(published.published_deploy.id!==d.id)throw Error('Public publication not confirmed');}
   if(await readRevision('https://process-letter.netlify.app','/letters')!==revision||await readRevision('https://processstudio.netlify.app','/studio/letters')!==revision)throw Error('The two live revisions do not match');
