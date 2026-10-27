@@ -60,7 +60,12 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
   }
   assert.equal(await frame.evaluate(()=>captureSnap().players[0].name),'홍길동');
   // The extra sheet-layout fixture has the shell's CSS marker, not its injected toolbar.
-  const undo=()=>spec.shellDock?frame.evaluate(()=>undoLast()):press(frame.locator('#undoBtn'));
+  const undo=async()=>{
+    if(spec.shellDock)return frame.evaluate(()=>undoLast());
+    // The phone sheet temporarily covers the tool dock. Close it to use history.
+    if(spec.width<600&&await frame.locator('.ps-in-x').isVisible())await press(frame.locator('.ps-in-x'));
+    return press(frame.locator('#undoBtn'));
+  };
   const colors=()=>frame.evaluate(()=>state.players.map(p=>p.color||null));
   await open();await press(frame.getByRole('button',{name:'회색',exact:true}));assert.deepEqual(await colors(),['#808080',null]);
   await press(frame.locator('#myColPin'));assert.equal(await frame.locator('#myDots [data-col="#808080"]').count(),1);
