@@ -1,8 +1,8 @@
 'use strict';
-/* 3.198 — 선수 명단(scout_tool_v1)의 두 기기 사본(IDB · localStorage 거울)이 갈라졌을 때.
+/* 3.201 — 선수 명단(scout_tool_v1)의 두 기기 사본(IDB · localStorage 거울)이 갈라졌을 때.
    3.144 는 «옛 거울 ← 서버 원문» 한 경우만 고치고 나머지는 회차 전체를 roster_copies_differ 로 실패시켰다 — 다음 회차도 그대로라
    영영 끝나지 않았고, 그 기기는 다른 자료도 받지 못했다(10/25~10/28 16명 · 800번 넘게 · 제보 419fead1 «데이터가 안 불러와집니다»).
-   이제 옛 쪽이 분명하면 새 쪽을 남기고, 모르면 그 키만 «자료 확인»에 맡기며 회차는 끝난다.
+   이제 옛 쪽이 분명하면 새 쪽을 남기고, 둘 다 새것이면 거울을 남기며 그 키만 «자료 확인»에 맡기며 회차는 끝난다.
    실제 sync.js 회차(kvWrite · CAS · 확인 목록)를 schedule-readiness 의 harness 로 돌린다 — 선수 키만 KEYS 에 둔다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {createRequire}=require('node:module');

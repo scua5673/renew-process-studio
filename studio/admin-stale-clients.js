@@ -1,4 +1,4 @@
-/* 3.198 — 운영 홈 «옛 판으로 도는 기기»(ps_admin_stale_clients, migrations/20261028_admin_client_versions.sql).
+/* 3.201 — 운영 홈 «옛 판으로 도는 기기»(ps_admin_stale_clients, migrations/20261028_admin_client_versions.sql).
    최근 48시간 안에 가장 새 판보다 20판 넘게 뒤진 판으로 이벤트를 남긴 기기를 사람 × 기기 × 판으로 보인다.
    제보 381d132d 의 아이패드가 3.131 에 일주일 머문 것을 제보 뒤에야 알았다 — 제보 전에 먼저 보려고 만들었다.
    값은 판 번호 · 기기 종류 · 횟수뿐이며, 사람 이름 · 이메일은 ps_support_reporter 가 관리자에게만 준다(여기서 이스케이프). */

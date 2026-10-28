@@ -58,7 +58,7 @@
     var rows=[],cursor=null,adminConfirmed=false,listLoading=false,detailLoading=false,busy=false,selected='',detail=null,currentDraft=null;
     var listError='',detailError='',notice='',drafts=new Map(),watch=null,renderedSelected='';
     var filter='',counts=null,triage=false,fixedDraft='',statusTicket=0;
-    /* 3.198 — 제보자 기기 현황(ps_support_reporter_devices): undefined 아직 · null 못 받음 · {latest,devices} */
+    /* 3.201 — 제보자 기기 현황(ps_support_reporter_devices): undefined 아직 · null 못 받음 · {latest,devices} */
     var devices,devicesTicket=0;
     function readOwner(){try{var c=o.context()||{};return {uid:String(c.uid||''),epoch:String(c.epoch==null?'':c.epoch),ready:c.ready===true};}catch(_){return {uid:'',epoch:'',ready:false};}}
     function equalOwner(a,b){return !!a&&!!b&&a.uid===b.uid&&a.epoch===b.epoch&&a.ready===b.ready;}
@@ -147,7 +147,7 @@
       root.querySelector('.admSupportInbox').scrollTop=inboxScroll;root.querySelector('.admSupportDetail').scrollTop=detailScroll;
     }
     function detailReporter(){ if(!detail||!detail.report||detail.report.is_own)return null; return reporterOf(detail.report.reporter)||(rowOf(selected)||{}).reporter||null; }
-    /* 3.198 — 제보자의 최근 7일 기기 × 앱 판. 제보 본문을 읽기 전에 «이 사람의 아이패드가 옛 판에 머물러 있나»를 본다.
+    /* 3.201 — 제보자의 최근 7일 기기 × 앱 판. 제보 본문을 읽기 전에 «이 사람의 아이패드가 옛 판에 머물러 있나»를 본다.
        함수가 없거나(옛 서버) 실패하면 조용히 숨긴다 — 제보 열기 · 답변은 그대로. */
     function versionNo(v){return VERSION.test(String(v||''))?Math.round(parseFloat(v)*1000):null;}
     function loadDevices(s,id){

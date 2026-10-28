@@ -1,4 +1,4 @@
-/* 3.198 — 제보 상세의 «제보자 기기 현황»(ps_support_reporter_devices). 제보 열기 · 답변 흐름은 tests/admin-support.test.cjs 그대로. */
+/* 3.201 — 제보 상세의 «제보자 기기 현황»(ps_support_reporter_devices). 제보 열기 · 답변 흐름은 tests/admin-support.test.cjs 그대로. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const support = require('../studio/admin-support.js');

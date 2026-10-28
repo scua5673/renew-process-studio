@@ -3,6 +3,12 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const D=require('../studio/sync-diagnosis.js'),UI=require('../studio/sync-diagnosis-ui.js');
 const key='scout_tool_v1',clone=x=>JSON.parse(JSON.stringify(x));
 const raw=(players=[{id:'p1',name:'가상 선수',memo:'첫 메모'}],extra={})=>JSON.stringify({players,attrs:[],positions:[],...extra});
+test('status line tolerates a partial sync API and resumes after diagnosis becomes available',async()=>{
+  const callbacks=[],line={textContent:'확인 중'},button={addEventListener(){}};let calls=0;
+  const win={PSSync:{},document:{getElementById:id=>id==='psDiagOpen'?button:line,addEventListener(){}},setInterval:fn=>callbacks.push(fn),setTimeout(){}};
+  assert.doesNotThrow(()=>UI.install(win));assert.doesNotThrow(()=>callbacks[0]());assert.equal(line.textContent,'확인 중');
+  win.PSSync.diag=async()=>{calls++;return {current:()=>true,online:true,lastPull:0,pending:[]};};callbacks[0]();await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,1);assert.match(line.textContent,/전송 대기 목록 없음/);
+});
 function sources(a,b=a,c=a){return [a,b,c].map((value,i)=>({id:['screen','device','server'][i],status:'read',raw:value}));}
 function fixture(){
   let owner={uid:'coach-a',wid:'team-a',seal:'A'},mirror=raw(),idb=raw(),server=raw();const reads=[],hooks={};

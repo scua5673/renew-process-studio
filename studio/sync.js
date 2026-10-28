@@ -7192,7 +7192,7 @@ function syncNowCore(reason){
           }
           return;
         }
-        /* 3.198 — 갈라진 사본은 PSRosterCopies(sync-roster-copies.js)가 가른다: 새 쪽을 두 사본에 · 회차는 계속 */
+        /* 3.201 — 갈라진 사본은 PSRosterCopies(sync-roster-copies.js)가 가른다: 새 쪽을 두 사본에 · 회차는 계속 */
         if(k==='scout_tool_v1'&&loc!=null&&localStorage.getItem(k)!==loc){
           var q=localStorage.getItem(k),rp=PSRosterCopies.plan({idb:loc,mirror:q,server:row&&typeof row.v==='string'?row.v:null,confirmed:m.h[k]||'',base:syncBaseGet(k),hash:hash}).action;
           if(roundKvWrite(k,rp==='repair'?row.v:rp==='mirror'?q:loc,writes,q===null?loc:q,{stale:false,expectedIdb:loc})){applied++;if(rp==='repair'){m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);}}
