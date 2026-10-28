@@ -5,6 +5,7 @@
 - 레터: `assets/brand/letter-1024-v1.png` · 공유 카드 `assets/brand/letter-share-v1.png`
 - 앱: `assets/brand/studio-1024-v1.png` · 512/192/180/64 크기와 불투명 maskable 변형 · 공유 카드 `assets/brand/studio-share-v1.png`
 - 공유 카드는 1200×630, 아이콘을 자르지 않는 여백을 두었다. 기존 파일명은 설치·즐겨찾기의 호환용 사본으로 유지했다.
+- 새로 복사·공유하는 링크에는 `?share=letter-v1`을 붙여 기존 주소의 링크 미리보기 캐시와 구분한다. canonical 주소와 이전 링크는 계속 유효하다.
 - `/assets/`는 장기 캐시되므로 이미지 내용이 바뀌면 파일명의 v1을 올린다. 카카오톡에서 이미 보낸 메시지의 캐시나 설치된 운영체제 아이콘을 강제로 바꾸지는 않는다.
 
 ## 제작 기록
