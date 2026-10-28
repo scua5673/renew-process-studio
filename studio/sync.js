@@ -7192,17 +7192,10 @@ function syncNowCore(reason){
           }
           return;
         }
-        /* Repair an old partial pull only when the mirror is the last confirmed
-           base and IDB is the exact current server raw. Preserve ambiguous edits. */
+        /* 3.201 — 갈라진 사본은 PSRosterCopies(sync-roster-copies.js)가 가른다: 새 쪽을 두 사본에 · 회차는 계속 */
         if(k==='scout_tool_v1'&&loc!=null&&localStorage.getItem(k)!==loc){
-          var rosterMirror=localStorage.getItem(k);
-          if(!row||typeof row.v!=='string'||loc!==row.v||
-             (rosterMirror!==null&&hash(rosterMirror)!==(m.h[k]||''))){
-            writes.push(Promise.reject(syncIssue('sync_storage','roster_copies_differ','선수 자료의 기기 사본을 확인해야 합니다')));return;
-          }
-          if(roundKvWrite(k,row.v,writes,rosterMirror===null?loc:rosterMirror,{stale:false,expectedIdb:loc})){
-            applied++;m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);
-          }
+          var q=localStorage.getItem(k),rp=PSRosterCopies.plan({idb:loc,mirror:q,server:row&&typeof row.v==='string'?row.v:null,confirmed:m.h[k]||'',base:syncBaseGet(k),hash:hash}).action;
+          if(roundKvWrite(k,rp==='repair'?row.v:rp==='mirror'?q:loc,writes,q===null?loc:q,{stale:false,expectedIdb:loc})){applied++;if(rp==='repair'){m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);}}
           return;
         }
         /* 서버 확인본과 화면이 같아도 IDB 또는 거울 한쪽이 빠졌으면 복구한다.
@@ -10994,25 +10987,18 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
   keyLabel:keyLabel,   /* 3.040 — 저장 공간 줄의 «큰 항목» 이름(storage.js 에 이름이 없는 키) */
   /* 2.916 — 지난 회차 서버 목록에 그 키가 있었나. 모르면 null(같은 워크스페이스·10분 안의 목록만 믿는다) */
   serverHasKey:function(k){ var L=lastServerKeys; if(!L||L.wid!==activeWs()||Date.now()-L.at>600000)return null; return !!L.keys[String(k||'')]; },
-  diag:function(){
-    var wid=activeWs();
-    return outboxRead().then(function(q){
-      var sc=outboxScope(outboxOwner(),wid);
-      var heldK={};try{holdList().forEach(function(x){if(x&&x.kind==='conflict'&&!x.choice)heldK[x.k]=1;});}catch(_){}
-      var rows=(q||[]).filter(function(it){return it&&outboxScope(it.uid,it.wid)===sc;})
-        .map(function(it){
-          var code=it.lastError||it.roundError||'';
-          /* 2.952 — 자료 확인에 맡긴 항목은 «기다리는 중»이 아니라 고를 차례다 */
-          return {key:it.key,label:keyLabel(it.key),code:code,text:heldK[it.key]?'두 판을 자동으로 못 합쳐 «자료 확인»에서 고를 차례':(code?syncCodeText(code):'아직 보낼 차례를 기다리는 중'),
-            stage:it.lastStage||it.roundStage||'',attempts:+it.attempts||0,rounds:+it.roundFails||0,
-            at:+it.updatedAt||+it.at||0};
-        });
-      var lastPull=0; try{ lastPull=+localStorage.getItem('ps_last_pull_at')||0; }catch(_){}
-      var bytes=0,largest=[]; try{ if(window.PSStorage){ bytes=PSStorage.localBytes?PSStorage.localBytes():0; largest=PSStorage.largestLocal?PSStorage.largestLocal(3):[]; } }catch(_){}
-      return { recent:SYNC_DIAG_LOG.slice(-12), ws:(activeWsObj()||{}).name||'', online:navigator.onLine!==false, session:!!getSess(),
-        lastPull:lastPull, pending:rows, localBytes:bytes, largest:largest.map(function(r){return {key:r.key,label:keyLabel(r.key),bytes:r.bytes};}) };
-    });
-  },
+  diag:function(){return window.PSSyncDiagnosis.collect({
+    context:autosaveContext,current:function(c){return JSON.stringify(c)===JSON.stringify(autosaveContext());},
+    outbox:function(){return outboxRead(true);},held:holdList,label:keyLabel,text:syncCodeText,
+    info:function(){var bytes=0,largest=[];if(window.PSStorage){bytes=PSStorage.localBytes?PSStorage.localBytes():0;largest=PSStorage.largestLocal?PSStorage.largestLocal(3):[];}
+      return {canInspect:!!histRosterContext(),recent:SYNC_DIAG_LOG.slice(-12),ws:(activeWsObj()||{}).name||'',online:navigator.onLine!==false,session:!!getSess(),lastPull:+localStorage.getItem('ps_last_pull_at')||0,localBytes:bytes,largest:largest.map(function(r){return {key:r.key,label:keyLabel(r.key),bytes:r.bytes};})};}
+  });},
+  inspectRosterCopies:function(){return window.PSSyncDiagnosis.inspect({
+    context:histRosterContext,current:histRosterCurrent,mirror:function(){return localStorage.getItem('scout_tool_v1');},
+    stored:function(){return storage.get('scout_tool_v1');},
+    server:function(ctx){return ensureToken().then(function(at){if(!histRosterCurrent(ctx))throw new Error('팀 자료 접근 권한이 바뀌었습니다');if(!at)throw new Error('로그인 확인이 필요합니다');
+      return syncFetch('diagnosis_roster',BASE+'/rest/v1/ps_kv?workspace_id=eq.'+ctx.wid+'&k=eq.scout_tool_v1&select=k,v,cupd',{headers:hj(at)}).then(function(r){if(!r.ok)throw syncHttpError('diagnosis_roster',r.status);return r.json();});});}
+  });},
   /* ══ 2.465 · 팀 기록(판 역사) — 사용자 "로그를 남겨서 그쪽으로 가거나 되돌리거나" ═══════
      재료는 서버에 이미 있었다: ps_kv_history(90일, supabase-sync-safety.sql) +
      updated_by(supabase-updated-by.sql). 읽는 통로만 일정 한 키(ps_sched_history)라
