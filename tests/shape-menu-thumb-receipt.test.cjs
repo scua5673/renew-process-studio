@@ -5,7 +5,7 @@ vm.runInNewContext(prefix+'\nmodule.exports={harness,deferred,ticks,snap};',scop
 const {harness,deferred,ticks,snap}=scope.module.exports,source=fs.readFileSync(require.resolve('../studio/board-shape-menu.js'),'utf8');
 function installShape(h,options={}){
  const c=h.c,draw={type:'rect',_sceneId:'synthetic-drawing',pts:[{x:1,y:2},{x:30,y:40}]},calls={thumb:0,paint:0,flags:[]};c.state.drawings=[draw];c.sel={type:'drawing',ref:draw};c.multiSel=[draw,c.state.players[0]];c.selPanelOpen=true;
- c.document.readyState='complete';c.document.head={appendChild(){}};c.document.createElement=()=>({style:{},addEventListener(){},querySelector(){return null;},querySelectorAll(){return [];}});c.document.getElementById=()=>null;c.document.removeEventListener=()=>{};c.removeEventListener=()=>{};
+ c.document.readyState='complete';c.document.head={appendChild(){}};c.document.createElement=()=>({style:{},addEventListener(){},querySelector(){return null;},querySelectorAll(){return [];}});c.document.querySelector=()=>null;c.document.getElementById=()=>null;c.document.removeEventListener=()=>{};c.removeEventListener=()=>{};
  c.typeOfItem=o=>o.type?'drawing':'player';c._setSelRings=()=>{};c.updateAlignBar=()=>{};c.renderMultiGuides=()=>{};c.positionSelCtl=()=>{};
  // Match the production renderDrawings save hook, while retaining the actual
 // private writer, edit sequence, CAS and receipt verification from the harness.

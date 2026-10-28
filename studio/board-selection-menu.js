@@ -55,8 +55,10 @@
       var host=win.frameElement,r=host&&host.getBoundingClientRect();physicalWidth=r&&r.width>0?r.width:win.innerWidth;uiScale=physicalWidth>0&&win.innerWidth>0?win.innerWidth/physicalWidth:1;
       var mobile=physicalWidth<=760;if(ctl.classList.contains('ps-sm-mobile')!==mobile)ctl.classList.toggle('ps-sm-mobile',mobile);cls('ps-selection-mobile',mobile);put('--sm-ui-scale',String(uiScale));put('--sm-mobile-width',Math.max(200,physicalWidth-24)+'px');
     }
+    /* 3.207 — 썸네일을 그리느라 판을 잠깐 갈아 끼우는 동안(__psThumbCapturing — __snapToThumb 의 loadSnap 두 번)은 선택이 비었다 돌아오므로 key 가 바뀌어
+       «포지션 · 주발 · 장면»(더보기)을 접고 스크롤을 맨 위로 올렸다(폰 폭 CI 가 잡음 — board-feedback-3163). 그 사이의 sync 는 건너뛴다(되돌린 뒤 rAF 의 sync 가 같은 선택을 본다). */
     function sync(){
-      if(syncing)return;syncing=true;
+      if(syncing||win.__psThumbCapturing)return;syncing=true;
       try{
         viewport();collect();var list=selected(),s=S(),many=list.length>1,players=s?list.filter(p=>s.players.includes(p)&&!p.coach):[],one=list[0],singlePlayer=!many&&one&&kind(one)==='player';
         var key=list.map(o=>String(o.id||kind(o))).join('|');if(key!==lastKey){dismissed=false;more.open=false;scroll.scrollTop=0;lastKey=key;}

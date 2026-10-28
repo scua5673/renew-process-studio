@@ -321,6 +321,7 @@
       var thumb=win.__snapToThumb;
       if(typeof thumb==='function')win.__snapToThumb=function(){
         var single=SEL(),many=(MULTI()||[]).slice(),panel=typeof selPanelOpen!=='undefined'?selPanelOpen:false;
+        var menuScroll=doc.querySelector('.ps-sm-body'),menuTop=menuScroll?menuScroll.scrollTop:0;
         function mark(o,type){return {ref:o,type:type||call('typeOfItem',o),index:draws().indexOf(o)};}
         var one=single&&mark(single.ref,single.type),marks=many.map(function(o){return mark(o);});
         function resolve(m){
@@ -342,6 +343,9 @@
             var capturing=win.__psThumbCapturing;win.__psThumbCapturing=true;
             try{call('renderDrawings');}finally{win.__psThumbCapturing=capturing;}
             call('updateDelUI');call('updateAlignBar');call('renderMultiGuides');call('positionSelCtl');
+            // WebKit clamps scroll while updateDelUI briefly hides the selection
+            // menu. Restore only after the live selection and its controls return.
+            if(menuScroll&&menuScroll.isConnected&&(ref||restored.length))menuScroll.scrollTop=menuTop;
           }
         }
       };
