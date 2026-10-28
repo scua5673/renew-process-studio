@@ -72,7 +72,7 @@
   }
   function install(win){
     var doc=win.document,b=doc.getElementById('psDiagOpen');if(!b)return;
-    function line(){if(!win.PSSync)return;win.PSSync.diag().then(function(d){var el=doc.getElementById('psDiagLine');if(!el||!d.current())return;el.textContent=(d.online?'':'오프라인 · ')+'마지막 받음 '+ago(d.lastPull)+' · '+(d.pending.length?'전송 대기 '+d.pending.length+'건':'전송 대기 목록 없음');}).catch(function(){});}
+    function line(){if(!win.PSSync||typeof win.PSSync.diag!=='function')return;win.PSSync.diag().then(function(d){var el=doc.getElementById('psDiagLine');if(!el||!d.current())return;el.textContent=(d.online?'':'오프라인 · ')+'마지막 받음 '+ago(d.lastPull)+' · '+(d.pending.length?'전송 대기 '+d.pending.length+'건':'전송 대기 목록 없음');}).catch(function(){});}
     b.addEventListener('click',function(){open(win);});line();win.setInterval(line,60000);
     doc.addEventListener('click',function(e){if(e.target&&e.target.closest&&e.target.closest('#gearWrap'))win.setTimeout(line,150);});
   }
