@@ -50,5 +50,27 @@ try{
   await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');await page.waitForTimeout(1500);
   assert.equal(downloads,before,'취소하면 내려받지 않는다');
   assert.equal((await f.evaluate(()=>window.__ev.filter(x=>x[0]==='pdf_picker_failed'))).length,1,'취소는 기록하지 않는다');
+
+  // 4) 3.205 — 저장 창이 뜨는 사이 한 번 더 눌러도(맥 크롬 «File picker already active») 창은 하나 · 알림만 · 내려받기 · 기록 없음, 고른 곳에 한 번 쓴다
+  await f.evaluate(()=>{window.__pickCalls=0;window.__written=[];window.showSaveFilePicker=()=>{window.__pickCalls++;return new Promise(r=>{window.__pickResolve=r;});};});
+  const dl0=downloads;
+  await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');
+  await f.waitForFunction(()=>window.__pickCalls===1,null,{timeout:5000});
+  await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');
+  await page.waitForTimeout(400);
+  assert.equal(await f.evaluate(()=>window.__pickCalls),1,'저장 창은 한 번만 연다');
+  assert.match(await hint(),/저장 창이 이미 열려 있어요/);
+  await f.evaluate(()=>{window.__pickResolve({name:'한 번.pdf',createWritable:async()=>({write:async b=>{window.__written.push(b.size);},close:async()=>{}})});});
+  await f.waitForFunction(()=>window.__written.length===1,null,{timeout:20000});
+  await page.waitForTimeout(600);
+  assert.equal(await f.evaluate(()=>window.__written.length),1,'고른 곳에 한 번만 쓴다');
+  assert.equal(downloads,dl0,'두 번째 누름이 내려받기를 만들지 않는다');
+  assert.equal((await f.evaluate(()=>window.__ev.filter(x=>x[0]==='pdf_picker_failed'))).length,1,'«이미 열림»은 기록하지 않는다');
+  // 크롬이 두 번째 창을 거절한 꼴(NotAllowedError … active)도 같다
+  await f.evaluate(()=>{window.showSaveFilePicker=async()=>{const e=new Error("Failed to execute 'showSaveFilePicker' on 'Window': File picker already active.");e.name='NotAllowedError';throw e;};});
+  await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');await page.waitForTimeout(1500);
+  assert.equal(downloads,dl0,'거절을 «창 없음»으로 읽어 내려받지 않는다');
+  assert.match(await hint(),/저장 창이 이미 열려 있어요/);
+  assert.equal((await f.evaluate(()=>window.__ev.filter(x=>x[0]==='pdf_picker_failed'))).length,1);
   console.log(JSON.stringify({ok:true,engine}));
 }finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close();}
