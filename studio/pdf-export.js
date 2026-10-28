@@ -87,6 +87,7 @@
     if (!doc || win.__psPdfExportOn) return null;
     win.__psPdfExportOn = 1;
     var ov = null, cfg = null, fontData = {}, facesP = null;
+    var picking = false, PICK_BUSY = '저장 창이 이미 열려 있어요 — 그 창에서 폴더를 고르세요';   // 3.205 — 저장 창은 한 번에 하나
 
     function b64(buf) { var u = new Uint8Array(buf), s = '', CH = 0x8000; for (var i = 0; i < u.length; i += CH) s += String.fromCharCode.apply(null, u.subarray(i, i + CH)); return win.btoa(s); }
     function faces() {
@@ -210,14 +211,23 @@
       var each = cfg.pages && fd.querySelector(cfg.pages.sel) ? rasterizeEach(fd, cfg.pages) : null;
       return (each || rasterize(fd, !!cfg.land)).then(function (imgs) { return jpegPagesToPdf(imgs, !!cfg.land); });
     }
-    // «다른 이름으로 저장» 창(크롬 · 엣지 데스크톱) — 누른 그 순간에만 열리니 PDF 를 만들기 전에 연다
+    // «다른 이름으로 저장» 창(크롬 · 엣지 데스크톱) — 누른 그 순간에만 열리니 PDF 를 만들기 전에 연다.
+    // 3.205 — 창은 한 번에 하나: 떠 있는 동안 또 누르면(맥 크롬 «File picker already active» 거절 · 2.974 영상과 같은 구멍) «취소»로 치고 알림만 — 다운로드 폴더로 보내지 않는다
     function pickTarget(name) {
       if (typeof win.showSaveFilePicker !== 'function') return Promise.resolve(null);
+      if (picking) { toast(PICK_BUSY); return Promise.resolve(false); }
+      picking = true;
       return win.showSaveFilePicker({ suggestedName: name, types: [{ description: 'PDF 문서', accept: { 'application/pdf': ['.pdf'] } }] })
-        .then(function (h) { return h; }, function (e) { return (e && e.name === 'AbortError') ? false : null; });
+        .then(function (h) { picking = false; return h; }, function (e) {
+          picking = false;
+          if (e && e.name === 'AbortError') return false;
+          if (e && e.name === 'NotAllowedError' && /activ/i.test(String(e.message || ''))) { toast(PICK_BUSY); return false; }
+          return null;
+        });
     }
     function save(btn) {
       var name = safeName(cfg.fname || cfg.title) + '.pdf';
+      busy(btn, true, '저장 위치 고르는 중…');
       return pickTarget(name).then(function (target) {
         if (target === false) return;   // 취소
         busy(btn, true, '만드는 중…');
