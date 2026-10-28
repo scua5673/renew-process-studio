@@ -151,7 +151,7 @@
     if($('psInstNudge'))return;
     var c=copy(kind),n=doc.createElement('div');
     n.id='psInstNudge'; n.setAttribute('role','dialog'); n.setAttribute('aria-labelledby','psInstNudgeT'); n.setAttribute('aria-describedby','psInstNudgeB');
-    n.innerHTML='<div class="psn-top"><img class="psn-ic" src="/icon-mac-192.png" alt="" width="44" height="44">'
+    n.innerHTML='<div class="psn-top"><img class="psn-ic" src="/assets/brand/studio-192-v1.png" alt="" width="44" height="44">'
       +'<div class="psn-tx"><b class="psn-t" id="psInstNudgeT">'+esc(c.title)+'</b><span class="psn-b" id="psInstNudgeB">'+esc(c.body)+'</span></div></div>'
       +'<div class="psn-btns"><button type="button" class="psn-no">괜찮아요</button><button type="button" class="psn-go">방법 보기</button></div>';
     n.querySelector('.psn-no').addEventListener('click',later);
