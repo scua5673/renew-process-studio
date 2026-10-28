@@ -70,7 +70,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 
 ## 배포
 - 가지 → PR(`staging`) → CI «Storage safety» → 합치면 testprocess.netlify.app. 승격 PR `staging` → `main` → processstudio.netlify.app.
-- Netlify 는 그 커밋의 `release-gate` 가 초록이 될 때까지 최대 12분 기다린다(`scripts/verify-release.mjs`). main 합친 뒤 실서버까지 보통 8~10분.
+- Netlify 는 그 커밋의 `release-gate` 가 초록이 될 때까지 최대 **20분** 기다린다(`scripts/verify-release.mjs` `GATE_WAIT_MS` — 10/28 까지는 12분이었고, CI 가 실행기 줄서기로 17분 걸린 날 testprocess 3.201 게시가 실패했다). main 합친 뒤 실서버까지 보통 15분 안팎. 승격 전엔 다른 PR 의 CI 가 돌고 있지 않은지 본다 — 문서만 바꾼 PR 의 CI 라도 실행기를 나눠 쓴다.
 - 확인: `curl -s https://processstudio.netlify.app/sw.js | grep -o "process-3\.[0-9]*"` (testprocess 도 같이).
 - 3.084 — GitHub 가 승격 PR 을 «충돌»로 보이는데 로컬 합치기는 깨끗하면: 공통 조상이 둘(엇갈린 합치기)이다. main 을 staging 에 되합치는 PR(트리 그대로)로 푼다.
 - 합쳐진 가지에 새 일을 할 때는 origin/staging 에서 가지를 다시 잡는다(`git checkout -B <가지> origin/staging`).
