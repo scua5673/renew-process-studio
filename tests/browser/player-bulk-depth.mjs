@@ -133,6 +133,16 @@ try{
   await frame.getByRole('button',{name:'판 편집 끝',exact:true}).click();
   await frame.waitForFunction(()=>!document.querySelector('#pwTeam .pw-depth-slot.is-editing'));
   assert.equal(await frame.locator('#pwTeam .pw-depth-addpos').count(),0);
+  // 3.205 — 줄마다 자리 넷: 카드 폭은 모두 같고(줄의 1/4 — 넷 든 줄이 줄 폭을 채운다), 혼자인 GK 는 줄 가운데
+  await showPitch();
+  const widths=await frame.locator('#pwTeam .pw-depth-slot').evaluateAll(els=>els.map(e=>Math.round(e.getBoundingClientRect().width)));
+  assert.ok(widths.length>=8&&Math.max(...widths)-Math.min(...widths)<=2,'카드 폭이 다 같다 '+widths.join(','));
+  const gkSlot=frame.locator('#pwTeam .pw-depth-slot',{has:frame.locator('.pw-depth-slothead b',{hasText:/^GK$/})}).first();
+  const gkLine=gkSlot.locator('xpath=ancestor::section[contains(@class,"pw-depth-line")]');
+  assert.equal(await gkLine.locator('.pw-depth-slot').count(),1,'GK 는 혼자인 줄');
+  const gb=await gkSlot.boundingBox(),lb=await gkLine.locator('.pw-depth-slots').boundingBox();
+  assert.ok(Math.abs((gb.x+gb.width/2)-(lb.x+lb.width/2))<=3,'혼자인 GK 는 줄 가운데 '+JSON.stringify([gb,lb]));
+  assert.ok(gb.width<lb.width/3&&gb.width>lb.width/6,'GK 카드도 넷 든 줄과 같은 폭(줄의 1/4) '+gb.width+'/'+lb.width);
 
   // 5) 스카우팅 «＋ 여러 명» — 등록부에 들어가고 포지션을 고른 후보는 배치된다
   await page.locator('#teamNav [data-team-key="scouting"]').click().catch(()=>{});
