@@ -2,7 +2,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const mod=require('../studio/board-pdf-save.js');
 
-function win(o){return Object.assign({navigator:{},toast(){},PSSync:{event(name,p){(this.log=this.log||[]).push([name,p]);}},document:{createElement(){return {click(){},remove(){}};},body:{appendChild(){}}},URL:{createObjectURL(){return 'blob:';}}},o);}
+function win(o){return Object.assign({navigator:{},toast(){},PSSync:{event(name,p){(this.log=this.log||[]).push([name,p]);}},document:{createElement(){return {click(){},remove(){}};},body:{appendChild(){}},hasFocus(){return false;}},URL:{createObjectURL(){return 'blob:';}},addEventListener(){},removeEventListener(){},setTimeout:(f,ms)=>setTimeout(f,ms),clearTimeout:(t)=>clearTimeout(t),__psPdfSilentMs:40},o);}
 
 test('저장 창이 있으면 그 손잡이를 돌려주고, 취소(AbortError)는 false',async()=>{
   const handle={name:'훈련.pdf'};
@@ -60,4 +60,32 @@ test('mount 는 _ppbSavePdf 를 감싸 저장 창이 떠 있는 동안 «PDF 내
   release();await p;
   assert.equal(btn.disabled,false);assert.equal(btn.textContent,'PDF 내려받기');
   const f=w._ppbSavePdf;mod.mount(w);assert.equal(w._ppbSavePdf,f,'두 번 감싸지 않는다');
+});
+
+/* 3.206 — 창이 안 뜨는 맥 크롬: 맨 위 창에서 열고, 초점을 잃지 않으면 «창이 안 뜸»으로 보고 받는다 */
+test('같은 출처의 맨 위 창이 저장 창을 열 수 있으면 거기서 연다(iframe 안 작전판)',async()=>{
+  const handle={name:'top.pdf'};let frameCalls=0,topCalls=0;
+  const top={showSaveFilePicker:async()=>{topCalls++;return handle;},document:{hasFocus(){return false;}},addEventListener(){},removeEventListener(){}};
+  const w=win({showSaveFilePicker:async()=>{frameCalls++;return {name:'frame.pdf'};}});w.top=top;
+  assert.equal(await mod.pick(w,'훈련.pdf'),handle);assert.equal(topCalls,1);assert.equal(frameCalls,0);
+  assert.equal(mod.hostOf(win({})).top,undefined,'맨 위 창이 없으면 제 창');
+  const cross=win({showSaveFilePicker:async()=>handle});Object.defineProperty(cross,'top',{get(){throw new Error('cross');}});
+  assert.equal(await mod.pick(cross,'훈련.pdf'),handle,'다른 출처의 맨 위 창이면 제 창에서 연다');
+});
+test('창이 떠서 초점을 잃었으면(blur · hasFocus 거짓) 사용자가 고를 때까지 기다린다',async()=>{
+  const handle={name:'훈련.pdf'};const w=win({showSaveFilePicker:()=>new Promise(r=>setTimeout(()=>r(handle),120))});
+  assert.equal(await mod.pick(w,'훈련.pdf'),handle,'hasFocus 거짓(창이 떠 있음) — 40ms 감시가 지나도 기다린다');
+  assert.equal(w.__psPdfPickerSilent,undefined);assert.equal(w.PSSync.log,undefined);
+  let onBlur=null;const w2=win({document:{hasFocus(){return true;},createElement(){return {click(){},remove(){}};},body:{appendChild(){}}},addEventListener(t,f){if(t==='blur')onBlur=f;},showSaveFilePicker:()=>new Promise(r=>setTimeout(()=>r(handle),120))});
+  const p=mod.pick(w2,'훈련.pdf');onBlur();
+  assert.equal(await p,handle,'blur 가 왔으면 초점이 참이어도 기다린다');
+});
+test('초점을 잃지 않은 채 감시 시간이 지나면 «창이 안 뜸»: 내려받기(null) · 알림 · 기록 silent · 다음부터는 묻지 않는다',async()=>{
+  const toasts=[];let calls=0;
+  const w=win({document:{hasFocus(){return true;},createElement(){return {click(){},remove(){}};},body:{appendChild(){}}},showSaveFilePicker:()=>{calls++;return new Promise(()=>{});},toast(m){toasts.push(m);},matchMedia(){return {matches:true};}});
+  assert.equal(await mod.pick(w,'훈련.pdf'),null);
+  assert.equal(w.__psPdfPicking,false,'단추 잠금은 풀린다');assert.equal(w.__psPdfPickerSilent,true);
+  assert.match(toasts[0],/저장 창이 열리지 않아.*저장 위치 확인/);
+  assert.deepEqual(w.PSSync.log.map(x=>[x[0],x[1].error_code,x[1].meta.top,x[1].meta.standalone]),[['pdf_picker_failed','silent',false,true]]);
+  assert.equal(await mod.pick(w,'훈련.pdf'),null,'다음 호출은 창을 다시 부르지 않고 바로 받는다');assert.equal(calls,1);assert.equal(toasts.length,2);
 });

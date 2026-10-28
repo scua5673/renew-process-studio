@@ -47,6 +47,8 @@ try{
 
   /* 판을 화면 안으로 — Playwright 마우스는 뷰포트 밖 좌표엔 이벤트를 못 보낸다(CI 글꼴이 달라 판이 아래로 밀리면 끌기가 조용히 안 된다) */
   async function showPitch(){await frame.evaluate(()=>document.querySelector('#pwTeam .pw-depth-pitch').scrollIntoView({block:'start'}));await page.waitForTimeout(250);}
+  /* 3.205 — 느린 WebKit 은 여러 명 추가 뒤의 지연 재그리기가 700ms 를 넘겨 막 찾은 요소가 바뀐다(boundingBox null) — 보일 때까지 다시 찾는다 */
+  async function box(loc){for(let i=0;i<40;i++){const b=await loc.boundingBox().catch(()=>null);if(b)return b;await page.waitForTimeout(100);}return null;}
   function inView(b,what){const vp=page.viewportSize();assert.ok(b&&b.y>=0&&b.y+b.height<=vp.height&&b.x>=0&&b.x+b.width<=vp.width,what+' 가 화면 안에 있어야 한다 '+JSON.stringify(b)+' / '+JSON.stringify(vp));}
   /* 끌기: 마우스를 옮긴 뒤 표식이 보일 때까지 1px 씩 흔들며 기다린다(느린 실행기에서 마지막 move 와 검사 사이에 그림이 늦는다) */
   async function dragTo(from,to,seen){
@@ -63,7 +65,7 @@ try{
   const cmBefore=await cmNames.evaluateAll(els=>els.map(e=>e.querySelector('strong').textContent));
   assert.ok(cmBefore.length>=2,'CM 에 둘 이상');
   await showPitch();
-  const sb=await src.boundingBox(),t1=await cmNames.nth(1).boundingBox();inView(sb,'LB 의 가상 선수 6');inView(t1,'CM 2번째');
+  const sb=await box(src),t1=await box(cmNames.nth(1));inView(sb,'LB 의 가상 선수 6');inView(t1,'CM 2번째');
   const marked=await dragTo({x:sb.x+sb.width/2,y:sb.y+sb.height/2},{x:t1.x+t1.width/2,y:t1.y+4},()=>cmSlot.evaluate(el=>el.classList.contains('is-dropping')&&!!el.querySelector('.pw-depth-drop')));
   assert.equal(marked,true,'놓을 칸이 켜지고 선이 보인다');
   assert.equal(await frame.locator('.pw-depth-ghost').count(),1);
@@ -91,7 +93,7 @@ try{
   assert.ok(fwBefore.length<=4&&fwBefore.includes('pos_CF'));
   const amHead=frame.locator('#pwTeam .pw-depth-slot[data-pw-slot="pos_AM"] .pw-depth-slothead');
   await showPitch();
-  const hb=await amHead.boundingBox(),rw=await fwRow.locator('.pw-depth-slot[data-pw-slot="pos_RW"]').boundingBox();inView(hb,'AM 카드 머리');inView(rw,'RW 카드');
+  const hb=await box(amHead),rw=await box(fwRow.locator('.pw-depth-slot[data-pw-slot="pos_RW"]'));inView(hb,'AM 카드 머리');inView(rw,'RW 카드');
   assert.equal(await dragTo({x:hb.x+hb.width/2,y:hb.y+hb.height/2},{x:rw.x+8,y:rw.y+40},async()=>(await fwRow.locator('.pw-depth-placeholder').count())===1),true,'들어갈 자리가 보인다');
   await page.mouse.up();
   await frame.waitForFunction(()=>Array.isArray((data.meta||{}).depthRows)&&data.meta.depthRows[0].includes('pos_AM'));
@@ -104,7 +106,7 @@ try{
   // 가득 찬 줄에는 못 넣는다
   const dmHead=frame.locator('#pwTeam .pw-depth-slot[data-pw-slot="pos_DM"] .pw-depth-slothead');
   await showPitch();
-  const db=await dmHead.boundingBox(),cf=await fwRow.locator('.pw-depth-slot[data-pw-slot="pos_CF"]').boundingBox();inView(db,'DM 카드 머리');inView(cf,'CF 카드');
+  const db=await box(dmHead),cf=await box(fwRow.locator('.pw-depth-slot[data-pw-slot="pos_CF"]'));inView(db,'DM 카드 머리');inView(cf,'CF 카드');
   assert.equal(await dragTo({x:db.x+db.width/2,y:db.y+db.height/2},{x:cf.x+8,y:cf.y+40},()=>fwRow.evaluate(el=>el.classList.contains('is-full'))),true,'가득 찬 줄은 빨간 점선');
   await page.mouse.up();
   assert.deepEqual((await roster()).meta.depthRows,laid.meta.depthRows,'가득 찬 줄로의 끌기는 저장을 바꾸지 않는다');
@@ -140,7 +142,7 @@ try{
   const gkSlot=frame.locator('#pwTeam .pw-depth-slot',{has:frame.locator('.pw-depth-slothead b',{hasText:/^GK$/})}).first();
   const gkLine=gkSlot.locator('xpath=ancestor::section[contains(@class,"pw-depth-line")]');
   assert.equal(await gkLine.locator('.pw-depth-slot').count(),1,'GK 는 혼자인 줄');
-  const gb=await gkSlot.boundingBox(),lb=await gkLine.locator('.pw-depth-slots').boundingBox();
+  const gb=await box(gkSlot),lb=await box(gkLine.locator('.pw-depth-slots'));
   assert.ok(Math.abs((gb.x+gb.width/2)-(lb.x+lb.width/2))<=3,'혼자인 GK 는 줄 가운데 '+JSON.stringify([gb,lb]));
   assert.ok(gb.width<lb.width/3&&gb.width>lb.width/6,'GK 카드도 넷 든 줄과 같은 폭(줄의 1/4) '+gb.width+'/'+lb.width);
 
