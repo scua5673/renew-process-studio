@@ -278,6 +278,7 @@
 <link rel="stylesheet" href="studio/admin-content.css?v=2.890">
 <link rel="stylesheet" href="studio/admin-density.css?v=3.090">
 <link rel="stylesheet" href="studio/admin-today.css?v=3.090">
+<link rel="stylesheet" href="studio/admin-stale-clients.css?v=3.198">
 </head>
 <body>
 
@@ -440,6 +441,11 @@
       <div class="panel">
         <div class="sec-t">안정성 · 확인 필요 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 최근 7일</span></div>
         <div id="hmHealth"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <!-- 3.198 — 옛 판으로 도는 기기(studio/admin-stale-clients.js · ps_admin_stale_clients): 제보 전에 먼저 본다 -->
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">옛 판으로 도는 기기 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 최근 48시간 · 최신보다 20판 넘게 뒤진 기기</span></div>
+        <div id="hmStale"><div class="loading">불러오는 중…</div></div>
       </div>
       <div class="panel" style="margin-top:12px">
         <div class="sec-t">운영 조치 목록 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 먼저 확인할 일</span></div>
@@ -610,12 +616,13 @@
 <script src="studio/admin-user-detail.js?v=2.964"></script>
 <script src="studio/admin-operations.js?v=3.090"></script>
 <script src="studio/admin-today.js?v=3.090"></script>
+<script src="studio/admin-stale-clients.js?v=3.198"></script>
 <script src="studio/admin-actions.js?v=20261014"></script>
 <script src="studio/admin-community.js?v=20261014"></script>
 <script src="studio/support-diagnostics.js?v=2.816"></script>
 <script src="studio/support-image.js?v=3.153"></script>
 <script src="studio/support.js?v=3.153"></script>
-<script src="studio/admin-support.js?v=3.153"></script>
+<script src="studio/admin-support.js?v=3.198"></script>
 <script src="studio/admin-content-data.js?v=2.854"></script>
 <script src="studio/admin-content.js?v=2.890"></script>
 <script>
@@ -1398,9 +1405,16 @@ function loadHealthSummary(){
     });
   }).catch(function(){return null;});
 }
+var adminStale=null;
+function loadStaleClients(){
+  if(!window.PSAdminStaleClients||!$('hmStale'))return;
+  if(!adminStale)adminStale=PSAdminStaleClients.create({host:$('hmStale'),rpc:rpc,openUser:openAdminUser,missing:fnMiss});
+  return adminStale.load();
+}
 function loadHome(){
   todayFill();
   if(HOME){ renderHome(); return; }
+  loadStaleClients();
   Promise.all([
     rpc('ps_admin_idp_funnel').catch(function(){return null;}),
     rpc('ps_admin_activity_ws').catch(function(){return [];}),
