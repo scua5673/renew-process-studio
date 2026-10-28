@@ -1,0 +1,33 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const workspace=require('../studio/player-workspace.js');
+
+const card=(id,abbr)=>({id,abbr,name:abbr,family:workspace.family(abbr),all:[],rows:[]});
+const cards=['LW','CF','RW','AM','CM','DM','LB','LCB','RCB','RB','GK'].map(a=>card('p-'+a,a));
+const ids=rows=>workspace.rowsIds(rows);
+
+test('저장이 없으면 역할군별로 넷씩 끊어 줄을 만든다(DF 넷은 한 줄, 다섯이면 둘로)',()=>{
+  const rows=workspace.layoutRows(cards,null,4);
+  assert.deepEqual(ids(rows),[['p-LW','p-CF','p-RW'],['p-AM','p-CM','p-DM'],['p-LB','p-LCB','p-RCB','p-RB'],['p-GK']]);
+  const five=workspace.layoutRows(cards.concat([card('p-CB','CB')]),null,4);
+  assert.deepEqual(ids(five)[2],['p-LB','p-LCB','p-RCB','p-RB']);assert.deepEqual(ids(five)[3],['p-CB']);
+  assert.deepEqual(rows.map(workspace.rowLabel),['FW','MF','DF','GK']);
+});
+test('저장된 줄을 그대로 쓰되 없는 카드는 빼고 빠진 카드는 뒤 줄에 덧붙인다',()=>{
+  const saved=[['p-AM','p-LW','p-CF','p-RW'],['p-CM','p-DM','p-없음'],['p-LB','p-LCB','p-RCB','p-RB','p-GK']];
+  const rows=workspace.layoutRows(cards,saved,4);
+  assert.deepEqual(ids(rows),[['p-AM','p-LW','p-CF','p-RW'],['p-CM','p-DM'],['p-LB','p-LCB','p-RCB','p-RB'],['p-GK']]);
+  assert.equal(workspace.rowLabel(rows[0]),'FW');
+});
+test('카드 옮기기: 다른 줄 가운데로, 가득 찬 줄은 거부, 새 줄은 뒤에, 빈 줄은 없앤다',()=>{
+  const rows=workspace.layoutRows(cards,null,4);
+  const moved=workspace.moveCard(rows,'p-AM',0,1,4);
+  assert.deepEqual(ids(moved),[['p-LW','p-AM','p-CF','p-RW'],['p-CM','p-DM'],['p-LB','p-LCB','p-RCB','p-RB'],['p-GK']]);
+  assert.equal(workspace.moveCard(moved,'p-CM',0,0,4),null,'네 장이 찬 줄에는 못 넣는다');
+  const fresh=workspace.moveCard(moved,'p-GK',moved.length,0,4);
+  assert.deepEqual(ids(fresh)[fresh.length-1],['p-GK']);
+  const same=workspace.moveCard(rows,'p-RW',0,0,4);
+  assert.deepEqual(ids(same)[0],['p-RW','p-LW','p-CF']);
+  assert.equal(workspace.moveCard(rows,'p-없음',0,0,4),null);
+  assert.deepEqual(ids(rows)[0],['p-LW','p-CF','p-RW'],'원본은 바뀌지 않는다');
+});

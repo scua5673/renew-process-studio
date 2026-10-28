@@ -186,3 +186,47 @@ html.ps-page-scout:has(#pwDrawer[open]){overflow:hidden}
 @media(max-width:1100px){.pw-depth-layout{grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr)}.pw-depth-slots{column-gap:var(--sp-1)}}
 @media(max-width:900px){.pw-depth-layout{grid-template-columns:minmax(0,1fr)}.pw-workspace .pw-depth-back{display:block}.pw-depth-panel>header{padding:var(--sp-4)}.pw-depth-candidate-name{grid-template-columns:1fr 1fr}.pw-depth-slots{gap:var(--sp-2)}}
 @media(max-width:500px){.pw-depth-pitch{padding:var(--sp-4) var(--sp-2);gap:var(--sp-4)}.pw-depth-slots{grid-template-columns:repeat(var(--pw-phone-cols),minmax(0,1fr));gap:var(--sp-1)}.pw-depth-name .pw-depth-rank{display:none}.pw-depth-heading>span{display:none}.pw-depth-slothead{flex-wrap:wrap}.pw-depth-unplaced>span{max-width:60%}.pw-workspace .pw-depth-name{min-height:44px}.pw-workspace .pw-depth-slotfoot{min-height:44px}}
+
+/* 3.203 — 뎁스 판 끌기 · 판 편집(포지션 카드 줄 배치 · ＋ 포지션) · «여러 명 한 번에 추가» 시트 */
+.pw-depth-slot{position:relative}
+.pw-workspace .pw-depth-name{cursor:grab}
+.pw-depth-name.is-dragging,.pw-depth-slot.is-dragging{opacity:.35}
+.pw-depth-ghost{position:fixed;left:0;top:0;z-index:2147483000;pointer-events:none;margin:0;background:var(--c-surface);border:1px solid var(--c-act);border-radius:var(--r-1);box-shadow:0 12px 30px rgba(0,0,0,.24);transform-origin:center;rotate:-2deg;opacity:.96;display:flex;align-items:center;gap:var(--sp-1);padding:var(--sp-2);min-height:40px;font:inherit;color:var(--c-ink);text-align:left}
+.pw-depth-ghost.pw-depth-slot{display:block;padding:0;rotate:-1.5deg}
+.pw-depth-slot.is-dropping{border-color:var(--c-act);box-shadow:0 0 0 2px var(--c-act),var(--sh-1)}
+.pw-depth-drop{height:3px;margin:-1px var(--sp-2);border-radius:3px;background:var(--c-act)}
+.pw-depth-unplaced.is-dropping{outline:2px solid var(--c-act);outline-offset:2px}
+.pw-depth-line.is-dropping .pw-depth-slots{outline:2px solid var(--c-act);outline-offset:6px;border-radius:var(--r-2)}
+.pw-depth-line.is-full .pw-depth-slots{outline:2px dashed var(--c-bad,#d12f38);outline-offset:6px;border-radius:var(--r-2)}
+.pw-depth-placeholder{border:2px dashed var(--c-act);border-radius:var(--r-2);background:color-mix(in srgb,var(--c-act) 8%,transparent);box-shadow:none;min-height:120px}
+.pw-depth-slot.is-editing .pw-depth-slothead{padding-left:28px;padding-right:36px;cursor:grab;touch-action:none}
+.pw-depth-grip{position:absolute;left:8px;top:10px;color:var(--c-muted);font-size:var(--t-5);line-height:1;pointer-events:none}
+.pw-workspace .pw-depth-posmenu{position:absolute;right:4px;top:4px;min-height:28px;padding:0 var(--sp-2);border:0;background:transparent;color:var(--c-muted);font-size:var(--t-6);line-height:1}
+.pw-workspace .pw-depth-addpos{min-height:120px;border:1px dashed var(--c-line);border-radius:var(--r-2);background:transparent;color:var(--c-muted);font-size:var(--t-3);font-weight:600}
+.pw-workspace .pw-depth-addpos:hover{border-color:var(--c-act);color:var(--c-act)}
+.pw-depth-newrow .pw-depth-slots{max-width:230px}
+.pw-undo{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2147483001;display:flex;align-items:center;gap:var(--sp-3);max-width:calc(100vw - 32px);padding:10px 14px;border-radius:12px;background:#14161A;color:#fff;font-size:var(--t-4);line-height:1.4;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.pw-undo button{font:inherit;font-size:var(--t-3);font-weight:700;color:#fff;background:rgba(255,255,255,.14);border:0;border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+.pw-bulk-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:rgba(10,14,20,.45);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);padding:12px}
+.pw-bulk-card{background:#fff;color:#14161A;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.35);padding:18px 18px 14px;width:min(680px,96vw);max-height:90vh;overflow:auto;font:inherit}
+.pw-bulk-card.is-dark{background:#1C232E;color:#E7EBF1}
+.pw-bulk-card *{box-sizing:border-box}
+.pw-bulk-title{font-size:var(--t-5);font-weight:800;margin-bottom:2px}
+.pw-bulk-sub{font-size:var(--t-3);color:#6a7078;margin-bottom:12px;line-height:1.5}.is-dark .pw-bulk-sub{color:#9AA4B3}
+.pw-bulk-head,.pw-bulk-row{display:grid;grid-template-columns:24px minmax(0,1.4fr) 112px 118px 68px 28px;gap:6px;align-items:center}
+.pw-bulk-scout .pw-bulk-head,.pw-bulk-scout .pw-bulk-row{grid-template-columns:24px minmax(0,1.2fr) 100px minmax(0,1fr) 84px 60px 28px}
+.pw-bulk-head{font-size:var(--t-2);font-weight:700;color:#6a7078;margin-bottom:4px}.is-dark .pw-bulk-head{color:#9AA4B3}
+.pw-bulk-rows{display:grid;gap:6px}
+.pw-bulk-n{font-size:var(--t-2);color:#9AA4B3;text-align:right;font-variant-numeric:tabular-nums}
+.pw-bulk-row input,.pw-bulk-row select{width:100%;min-width:0;font:inherit;font-size:var(--t-4);height:34px;padding:0 10px;border:1.5px solid rgba(128,140,160,.45);border-radius:8px;background:transparent;color:inherit;outline:none}
+.pw-bulk-row input:focus-visible,.pw-bulk-row select:focus-visible{border-color:var(--ps-navy,#14213D)}
+.pw-bulk-row input[data-f="num"]{text-align:center;padding:0 6px}
+.pw-bulk-row button{font:inherit;border:0;background:transparent;color:#9AA4B3;font-size:var(--t-6);cursor:pointer;min-height:34px}
+.pw-bulk-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.pw-bulk-add{font:inherit;font-size:var(--t-3);height:32px;padding:0 12px;border-radius:10px;font-weight:700;border:1px dashed rgba(128,140,160,.6);background:transparent;color:inherit;cursor:pointer}
+.pw-bulk-sum{margin-left:auto;font-size:var(--t-3);color:#6a7078}.is-dark .pw-bulk-sum{color:#9AA4B3}
+.pw-bulk-new{font-style:normal;font-size:var(--t-1);color:#b45309;background:#fef3c7;border-radius:6px;padding:1px 5px}
+.pw-bulk-foot{display:flex;gap:7px;justify-content:flex-end;margin-top:14px}
+.pw-bulk-foot button{font:inherit;font-size:var(--t-3);height:36px;padding:0 15px;border-radius:10px;cursor:pointer;font-weight:700;border:1px solid rgba(128,140,160,.38);background:transparent;color:inherit}
+.pw-bulk-foot button.is-primary{font-weight:800;border:0;background:var(--ps-navy,#14213D);color:#fff}
+@media(max-width:640px){.pw-bulk-head{display:none}.pw-bulk-row,.pw-bulk-scout .pw-bulk-row{grid-template-columns:20px minmax(0,1fr) 28px;grid-auto-rows:auto}.pw-bulk-row select,.pw-bulk-row input[data-f="club"],.pw-bulk-row input[data-f="num"]{grid-column:2}.pw-bulk-row button{grid-row:1}.pw-bulk-n{grid-row:1}}
