@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.207 후속 검증 — `sync()`만 썸네일 표식 동안 건너뛰어도 WebKit에서는 기존 `updateDelUI`가 선택 메뉴를 잠깐 숨겨 스크롤을 줄인다(375px, 190→100 재현). `board-shape-menu.js`의 기존 썸네일 선택 복원에서 메뉴 스크롤도 보관하고, 선택·컨트롤 복원이 끝난 뒤 같은 메뉴에 되돌린다. `board-feedback-3163`에서 펼침뿐 아니라 스크롤·선택·작전판 원문 보존도 검사한다.
+
 - 3.199 — 저장 진단은 sync-diagnosis.js/UI로 분리한다. 항목의 보관 선택·이전 전송 오류·공통 회차 중단을 섞지 않고, 대기 0을 전체 서버 저장 완료로 말하지 않는다. 선수 명단 비교는 운영진의 같은 계정·팀·권한에서 LS/IDB/서버 원문만 읽고, 기기 사본이 바뀌면 표시와 내보내기를 닫는다. 원문 파일은 자동 복구·가져오기 파일이 아니며, sq: 개별 문서·계정 연결은 비교 범위 밖이다. 실제 대기나 충돌을 비교만으로 해제하지 않는다.
 
 - 3.201 — 선수 명단(`scout_tool_v1`)의 IDB·localStorage 거울이 어긋나면 `sync-roster-copies.js`(`PSRosterCopies.plan`)가 가른다: 옛 쪽(마지막 확정 hash·기준본과 같거나 없음)이 분명하면 새 쪽을 두 사본에 쓰고 다음 회차에 보통 길, 둘 다 새것이면 화면이 보이던 거울. 3.144 의 `roster_copies_differ` 회차 실패는 다음 회차도 그대로라 끝나지 않았다(10/25~10/28 16명·800번, 제보 419fead1 «데이터가 안 불러와집니다») — 회차 실패로 «보존»하지 않는다. 확인 목록(hold)은 회차 끝 정리가 IDB 값으로 판단하므로 여기서 만들면 바로 지워진다. 시험 `tests/roster-copies-3198`(schedule-readiness 의 실제 회차 harness 에 KEYS·idbBacked·currentValueForKey·bigDrop 를 선수 키로 덮어 쓴다). sync.js 남은 몫 약 360 바이트.

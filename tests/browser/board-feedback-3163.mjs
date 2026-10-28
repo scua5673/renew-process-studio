@@ -18,6 +18,11 @@ try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').ma
  await f.locator('.ps-sm-more summary').click();await f.waitForFunction(()=>document.querySelector('.ps-sm-more').open);
  // 3.207 — 장면 줄의 늦은 썸네일 채우기(__snapToThumb: 판을 갈아 끼웠다 되돌림)가 «더보기»를 접었다(느린 CI 실행기에서 summary 클릭 뒤에 돌아 45초 동안 단추가 안 보임 — PR #684 · #685)
  assert.equal(await f.evaluate(()=>{window.__snapToThumb(anim.frames[2].snap);return document.querySelector('.ps-sm-more').open;}),true,'thumbnail capture keeps «더보기» open');
+ // The legacy controls briefly hide during capture. WebKit clamps their scroll
+ // even when the details element stays open, so check the restored visible menu.
+ const menuBefore=await f.evaluate(async()=>{await document.fonts.ready;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const s=document.querySelector('.ps-sm-body');s.scrollTop=s.scrollHeight;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));return {top:s.scrollTop,content:JSON.stringify({players:state.players,drawings:state.drawings}),selected:sel.ref._sceneId};});
+ const menuAfter=await f.evaluate(async()=>{for(let i=0;i<3;i++)window.__snapToThumb(anim.frames[2].snap);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));return {top:document.querySelector('.ps-sm-body').scrollTop,content:JSON.stringify({players:state.players,drawings:state.drawings}),selected:sel.ref._sceneId};});
+ assert.deepEqual(menuAfter,menuBefore,'thumbnail capture preserves menu scroll, selected text and board content');
  await f.locator('#textPositionAllBtn').click();
  if(width===375||width===1280)await page.screenshot({path:path.join(SHOTS,`feedback-${engine}-${width}-text.png`)});
  let pos=await f.evaluate(()=>anim.frames.map(fr=>fr.snap.drawings.map(d=>({id:d._sceneId,text:d.text,x:d.pts[0].x,color:d.color}))));
