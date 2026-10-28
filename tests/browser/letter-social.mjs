@@ -56,18 +56,18 @@ try{
   await p.locator('[data-letter-like="3"]').first().click();
   await p.waitForFunction(()=>document.querySelector('[data-letter-likes="3"]').textContent==='0');
   await p.locator('[data-letter-share="3"]').first().click();
-  await p.waitForFunction(()=>!!window.copied);assert.equal(await p.evaluate(()=>window.copied),base+'/studio/letter/03/');
+  await p.waitForFunction(()=>!!window.copied);const sharedUrl=await p.evaluate(()=>window.copied);assert.equal(sharedUrl,base+'/studio/letter/03/?share=letter-v1');
   await p.evaluate(()=>{window.copied=null;Object.defineProperty(navigator,'share',{value:async()=>{throw new DOMException('Cancelled','AbortError');},configurable:true});});
   await p.locator('[data-letter-share="3"]').first().click();assert.equal(await p.evaluate(()=>window.copied),null,'cancel does not unexpectedly copy');
   await p.evaluate(()=>{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'clipboard',{value:{writeText:async()=>{throw Error('Denied');}},configurable:true});});
   await p.locator('[data-letter-share="3"]').first().click();await p.waitForSelector('#plShareDialog[open]');
-  assert.equal(await p.getByLabel('공유할 레터 주소').inputValue(),base+'/studio/letter/03/');await p.getByRole('button',{name:'닫기',exact:true}).click();
+  assert.equal(await p.getByLabel('공유할 레터 주소').inputValue(),base+'/studio/letter/03/?share=letter-v1');await p.getByRole('button',{name:'닫기',exact:true}).click();
   for(const width of [375,1100,1280]){
     await p.setViewportSize({width,height:900});await p.evaluate(async()=>{await document.fonts.ready;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));});
     assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no public reader horizontal overflow at '+width);
     await p.screenshot({path:path.join(out,'public-'+width+'.png')});
   }
-  const {c:peer,p:peerPage}=await context();await peerPage.goto(base+'/studio/letter/03/');
+  const {c:peer,p:peerPage}=await context();await peerPage.goto(sharedUrl);
   await peerPage.waitForFunction(()=>document.querySelector('[data-letter-readers="3"]').textContent==='2');
   assert.equal(await peerPage.locator('[data-letter-like="3"]').first().getAttribute('aria-pressed'),'false');
   await peer.close();
@@ -93,7 +93,7 @@ try{
   apiDown=true;await p.goto(base+'/studio/letter/46/');await p.waitForSelector('.pl-social-status:not(:empty)');
   assert.equal(await p.locator('#pl-piece-2').count(),1);assert.equal(await p.locator('[data-letter-readers="46"]').first().textContent(),'—');
   assert.equal(await p.locator('[data-letter-like="46"]').first().isDisabled(),true);
-  await p.locator('[data-letter-share="46"]').first().click();await p.waitForFunction(()=>!!window.copied);assert.equal(await p.evaluate(()=>window.copied),base+'/studio/letter/46/');
+  await p.locator('[data-letter-share="46"]').first().click();await p.waitForFunction(()=>!!window.copied);assert.equal(await p.evaluate(()=>window.copied),base+'/studio/letter/46/?share=letter-v1');
   apiDown=false;
   const {c:nojs,p:staticPage}=await context({javaScriptEnabled:false});
   for(const n of ['01','46']){await staticPage.goto(base+'/studio/letter/'+n+'/');assert.equal(await staticPage.locator('#pl-piece-2').count(),1);assert.equal(await staticPage.locator('h1').count(),1);}

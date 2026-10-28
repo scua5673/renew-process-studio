@@ -10,7 +10,8 @@
   var UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   var COUNT_NOTE='집계 시작 이후의 기록입니다. 로그인한 사람은 계정, 비로그인 방문자는 브라우저 기준으로 중복을 제외합니다.';
   function issue(n){return Number.isInteger(n)&&n>0&&n<=999;}
-  function url(n,origin){if(!issue(n))throw Error('Invalid letter');return new URL('/studio/letter/'+String(n).padStart(2,'0')+'/',origin).href;}
+  // A new shared URL lets link-preview caches request the new LETTER image. Existing canonical links still work.
+  function url(n,origin){if(!issue(n))throw Error('Invalid letter');return new URL('/studio/letter/'+String(n).padStart(2,'0')+'/?share=letter-v1',origin).href;}
   function visitor(win){
     try{
       var s=win.localStorage,v=s.getItem(KEY);if(UUID.test(v||''))return v;

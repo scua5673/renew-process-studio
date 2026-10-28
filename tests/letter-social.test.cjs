@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const S=require('../studio/letter-social.js'),L=require('../studio/community-letters.js');
 test('public share addresses select a letter and contain no account information',()=>{
-  assert.equal(S.url(3,'https://processstudio.netlify.app'),'https://processstudio.netlify.app/studio/letter/03/');
+  assert.equal(S.url(3,'https://processstudio.netlify.app'),'https://processstudio.netlify.app/studio/letter/03/?share=letter-v1');
   for(const n of [0,-1,'3',1.5,1000])assert.throws(()=>S.url(n,'https://example.invalid'));
 });
 test('counts reject absent and malformed data rather than claiming zero',()=>{
