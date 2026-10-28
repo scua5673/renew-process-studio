@@ -8,7 +8,10 @@ export function verdict(checks,sha){
 }
 /* 10/21(판 그대로 3.141 — 배포 묶음 밖 스크립트) — 토큰 없는 GitHub API 는 IP 하나에 시간당 60번이다. Netlify 짓기 기계는 IP 를 여럿이 같이 써서 한도가 바닥나면
    403 «API rate limit exceeded» 가 났고, 예전엔 그 자리에서 멈춰 3.137 · 3.141 실서버 게시가 실패했다(testprocess 는 다른 기계라 통과).
-   Netlify 환경 변수 GITHUB_TOKEN(읽기 전용이면 충분)이 있으면 그것으로 묻고(시간당 5,000번), 한도 403 · 429 는 멈추지 않고 12분 안에서 다시 묻는다. */
+   Netlify 환경 변수 GITHUB_TOKEN(읽기 전용이면 충분)이 있으면 그것으로 묻고(시간당 5,000번), 한도 403 · 429 는 멈추지 않고 기다리는 동안 다시 묻는다.
+   10/28(3.201) — 기다리는 시간 12분 → 20분. CI «Storage safety» 는 실행기가 비어 있을 때 13~14분, PR 둘이 함께 돌면 17~18분이다.
+   12분은 그 사이의 운에 걸려 있었다(10/28 staging 3.201 게시가 17분 CI 에 걸려 실패, 3.117 때도 main 이 18분). */
+export const GATE_WAIT_MS=20*60*1000;
 export function rateLimited(response){
  if(!response||response.ok)return false;
  if(response.status===429)return true;
@@ -23,7 +26,7 @@ export async function verify({env=process.env,fetcher=fetch,sleep=ms=>new Promis
  const headers={Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
  if(token)headers.Authorization='Bearer '+token;
  log('release-gate lookup '+(token?'with GITHUB_TOKEN':'without a token (60 requests/hour per build IP — set GITHUB_TOKEN in Netlify)'));
- const deadline=now()+12*60*1000;let limited=false;
+ const deadline=now()+GATE_WAIT_MS;let limited=false;
  while(now()<deadline){
   const response=await fetcher(`https://api.github.com/repos/${REPOSITORY}/commits/${sha}/check-runs?filter=latest&per_page=100`,{headers});
   if(rateLimited(response)){limited=true;log('GitHub API rate limit on this build machine — retrying in 30s');await sleep(30000);continue;}
@@ -33,7 +36,7 @@ export async function verify({env=process.env,fetcher=fetch,sleep=ms=>new Promis
   if(state==='fail')throw Error('release-gate failed; production deploy stopped.');
   log('Waiting for release-gate on '+sha.slice(0,12));await sleep(30000);
  }
- if(limited)throw Error('GitHub API rate limit kept the release-gate check from answering for 12 minutes; production deploy stopped. Add GITHUB_TOKEN to the Netlify environment (docs/OPERATIONS.md §2).');
- throw Error('release-gate was not confirmed within 12 minutes; production deploy stopped.');
+ if(limited)throw Error('GitHub API rate limit kept the release-gate check from answering for 20 minutes; production deploy stopped. Add GITHUB_TOKEN to the Netlify environment (docs/OPERATIONS.md §2).');
+ throw Error('release-gate was not confirmed within 20 minutes; production deploy stopped.');
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)verify().catch(e=>{console.error(e.message);process.exitCode=1;});

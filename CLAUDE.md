@@ -2,6 +2,10 @@
 
 - 3.199 — 저장 진단은 sync-diagnosis.js/UI로 분리한다. 항목의 보관 선택·이전 전송 오류·공통 회차 중단을 섞지 않고, 대기 0을 전체 서버 저장 완료로 말하지 않는다. 선수 명단 비교는 운영진의 같은 계정·팀·권한에서 LS/IDB/서버 원문만 읽고, 기기 사본이 바뀌면 표시와 내보내기를 닫는다. 원문 파일은 자동 복구·가져오기 파일이 아니며, sq: 개별 문서·계정 연결은 비교 범위 밖이다. 실제 대기나 충돌을 비교만으로 해제하지 않는다.
 
+- 3.201 — 선수 명단(`scout_tool_v1`)의 IDB·localStorage 거울이 어긋나면 `sync-roster-copies.js`(`PSRosterCopies.plan`)가 가른다: 옛 쪽(마지막 확정 hash·기준본과 같거나 없음)이 분명하면 새 쪽을 두 사본에 쓰고 다음 회차에 보통 길, 둘 다 새것이면 화면이 보이던 거울. 3.144 의 `roster_copies_differ` 회차 실패는 다음 회차도 그대로라 끝나지 않았다(10/25~10/28 16명·800번, 제보 419fead1 «데이터가 안 불러와집니다») — 회차 실패로 «보존»하지 않는다. 확인 목록(hold)은 회차 끝 정리가 IDB 값으로 판단하므로 여기서 만들면 바로 지워진다. 시험 `tests/roster-copies-3198`(schedule-readiness 의 실제 회차 harness 에 KEYS·idbBacked·currentValueForKey·bigDrop 를 선수 키로 덮어 쓴다). sync.js 남은 몫 약 360 바이트.
+
+- 3.201 — 관리자 «제보자 기기 현황»(제보 상세) · «옛 판으로 도는 기기»(운영 홈)는 ps_events 의 판·기기·횟수만 읽는 관리자 RPC 둘(migrations/20261028_admin_client_versions.sql). 제보를 열면 먼저 그 사람의 기기별 앱 판을 본다 — 381d132d 의 아이패드는 3.131 에 일주일 머물렀는데 «새 판에서 고쳤다»고만 답했다. 옛 판 기준은 최근 48시간 최신 판보다 10판(제보)·20판(홈) — 하루 8판쯤 나오므로 판 수로 «어제 안 연 폰»을 잡지 않게 한다. 함수가 없으면 두 화면 모두 조용히 숨긴다.
+
 - 3.195 — 선택 메뉴는 board-selection-menu.js/CSS에서 기존 입력·단추를 옮겨 구성한다. 저장·되돌리기는 원래 핸들러를 유지한다. 추가 기능은 .ps-sm-more를 펼치고, 스크롤은 .ps-sm-body가 맡는다. 위치는 CSS 변수로만 쓰며 옛 top 제거 감시자와 충돌하지 않는다. inspector paint는 새 메뉴에 위임한다. 열기·닫기·배치 자체는 renderTokens/저장을 호출하지 않는다. 폰은 하단 시트, Esc는 선택을 남긴 채 닫는다. 합성 자료 검사는 board-selection-menu 브라우저 시험.
 
 - 3.193 — 훈련 도크 시험은 보드 내부 ready만으로 저장 단추의 hit-test를 시작하지 않는다. 셸의 ps-booting이 끝나고 loading이 ps-boot-done이 된 실제 표시 경계를 기다린다. 고정 1400ms 대기는 WebKit의 초기 레이아웃에서 아직 숨겨진 iframe을 검사할 수 있다. 저장·되돌리기·배치 충돌 단정은 그대로 유지한다.
@@ -66,7 +70,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 
 ## 배포
 - 가지 → PR(`staging`) → CI «Storage safety» → 합치면 testprocess.netlify.app. 승격 PR `staging` → `main` → processstudio.netlify.app.
-- Netlify 는 그 커밋의 `release-gate` 가 초록이 될 때까지 최대 12분 기다린다(`scripts/verify-release.mjs`). main 합친 뒤 실서버까지 보통 8~10분.
+- Netlify 는 그 커밋의 `release-gate` 가 초록이 될 때까지 최대 **20분** 기다린다(`scripts/verify-release.mjs` `GATE_WAIT_MS` — 10/28 까지는 12분이었고, CI 가 실행기 줄서기로 17분 걸린 날 testprocess 3.201 게시가 실패했다). main 합친 뒤 실서버까지 보통 15분 안팎. 승격 전엔 다른 PR 의 CI 가 돌고 있지 않은지 본다 — 문서만 바꾼 PR 의 CI 라도 실행기를 나눠 쓴다.
 - 확인: `curl -s https://processstudio.netlify.app/sw.js | grep -o "process-3\.[0-9]*"` (testprocess 도 같이).
 - 3.084 — GitHub 가 승격 PR 을 «충돌»로 보이는데 로컬 합치기는 깨끗하면: 공통 조상이 둘(엇갈린 합치기)이다. main 을 staging 에 되합치는 PR(트리 그대로)로 푼다.
 - 합쳐진 가지에 새 일을 할 때는 origin/staging 에서 가지를 다시 잡는다(`git checkout -B <가지> origin/staging`).
