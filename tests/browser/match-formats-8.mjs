@@ -34,16 +34,23 @@ try{
  const page=await context.newPage();page.setDefaultTimeout(12000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base+'/fixture.html');const f=page.frames().find(f=>f.url().includes('scout.html'));assert.ok(f);
  await f.waitForFunction(()=>typeof matchLoad==='function'&&window.PSStorage&&typeof scoutBootPending!=='undefined'&&!scoutBootPending&&!!window.PSMatchFormats);
- const open=async(tab)=>f.evaluate(async(tab)=>{
-  await PSStorage.sharedReady();
-  const P=(id,name,num,posId)=>({id,name,num,type:'ours',manual:true,grp:'A팀',posId,status:'ok'});
-  const roster={attrs:[],positions:[{id:'gk',name:'GK',targets:{}},{id:'cb',name:'CB',targets:{}},{id:'cm',name:'CM',targets:{}},{id:'st',name:'ST',targets:{}}],
-   players:[P('p1','골키퍼','1','gk'),P('p2','수비 둘','2','cb'),P('p3','수비 셋','3','cb'),P('p4','미드 넷','4','cm'),P('p5','미드 다섯','5','cm'),P('p6','미드 여섯','6','cm'),P('p7','공격 일곱','7','st'),P('p8','공격 여덟','8','st')],
-   meta:{tbCards:['gk','cb','cm','st'],tbXY:{gk:{x:14,y:50},cb:{x:29,y:50},cm:{x:59,y:50},st:{x:89,y:50}},grpBase:['A팀']}};
-  const m=matchBlank();m.id='qa-match';m.opponent='가상 유소년';m.date='2026-10-25';m.squad={start:[],res:[]};
-  data=roster;scoutStore.set('scout_tool_v1',roster);scoutStore.set('cs_team_matches_v1',{version:1,matches:[m]});await scoutStore.ready();
-  await scPrepare();load();data=roster;matchState=null;matchLoad();setView('match');matchOpen('qa-match');matchTab=tab;matchStage=tab;renderMatch();
- },tab);
+ /* 10/28(3.201 뒤 · 시험만) — 한 evaluate 안에서 저장 큐(sharedReady · scoutStore.ready)를 await 하면 크로미움 CI 에서 가끔 «Resulting promise was garbage collected»
+    로 끝났다(10/28 두 번 — 부팅 직후 init() 의 자동 저장이 아직 큐에 있을 때). 긴 기다림은 제한 시간을 둔 짧은 evaluate 로 나눠 실제 결과를 본다(3.190 규칙). */
+ const settled=async(what,fn)=>{for(let i=0;i<40;i++){const ok=await f.evaluate(fn);if(ok===true)return;await page.waitForTimeout(250);}throw new Error(what+' 이(가) 10초 안에 끝나지 않았습니다');};
+ const open=async(tab)=>{
+  await settled('저장 큐',()=>(async()=>{const race=Promise.race([Promise.resolve(PSStorage.sharedReady()).then(()=>true,()=>false),new Promise(r=>setTimeout(()=>r(false),200))]);return race;})());
+  await f.evaluate(()=>{
+   const P=(id,name,num,posId)=>({id,name,num,type:'ours',manual:true,grp:'A팀',posId,status:'ok'});
+   const roster={attrs:[],positions:[{id:'gk',name:'GK',targets:{}},{id:'cb',name:'CB',targets:{}},{id:'cm',name:'CM',targets:{}},{id:'st',name:'ST',targets:{}}],
+    players:[P('p1','골키퍼','1','gk'),P('p2','수비 둘','2','cb'),P('p3','수비 셋','3','cb'),P('p4','미드 넷','4','cm'),P('p5','미드 다섯','5','cm'),P('p6','미드 여섯','6','cm'),P('p7','공격 일곱','7','st'),P('p8','공격 여덟','8','st')],
+    meta:{tbCards:['gk','cb','cm','st'],tbXY:{gk:{x:14,y:50},cb:{x:29,y:50},cm:{x:59,y:50},st:{x:89,y:50}},grpBase:['A팀']}};
+   const m=matchBlank();m.id='qa-match';m.opponent='가상 유소년';m.date='2026-10-25';m.squad={start:[],res:[]};
+   window.__qaRoster=roster;data=roster;scoutStore.set('scout_tool_v1',roster);scoutStore.set('cs_team_matches_v1',{version:1,matches:[m]});
+  });
+  await settled('명단 저장',()=>(async()=>Promise.race([Promise.resolve(scoutStore.ready()).then(()=>true,()=>false),new Promise(r=>setTimeout(()=>r(false),200))]))());
+  await settled('scPrepare',()=>(async()=>Promise.race([Promise.resolve(scPrepare()).then(()=>true,()=>false),new Promise(r=>setTimeout(()=>r(false),200))]))());
+  await f.evaluate((tab)=>{load();data=window.__qaRoster;matchState=null;matchLoad();setView('match');matchOpen('qa-match');matchTab=tab;matchStage=tab;renderMatch();},tab);
+ };
 
  // 1) 경기 준비(02)의 옛 경기 보드(#mb2Card)는 지금 숨어 있다(경기 보드는 작전판 미팅) — 같은 표 · 같은 고르개로 바꿔 두었는지만 본다
  await open('prep');await f.waitForSelector('#mb2FormOp optgroup',{state:'attached'});await page.waitForTimeout(300);
