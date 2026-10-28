@@ -13,7 +13,7 @@ const PAGE_BUDGET={
   'studio/scout.html':1900*1024,
   'studio/idp.html':1504*1024,
   'studio/process.html':820*1024,
-  'studio/app.html':960*1024,
+  'studio/app.html':956*1024,
   'studio/sync.js':832*1024,
   'studio/community.html':192*1024
 };
