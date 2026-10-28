@@ -7192,17 +7192,10 @@ function syncNowCore(reason){
           }
           return;
         }
-        /* Repair an old partial pull only when the mirror is the last confirmed
-           base and IDB is the exact current server raw. Preserve ambiguous edits. */
+        /* 3.198 — 갈라진 사본은 PSRosterCopies(sync-roster-copies.js)가 가른다: 새 쪽을 두 사본에 · 회차는 계속 */
         if(k==='scout_tool_v1'&&loc!=null&&localStorage.getItem(k)!==loc){
-          var rosterMirror=localStorage.getItem(k);
-          if(!row||typeof row.v!=='string'||loc!==row.v||
-             (rosterMirror!==null&&hash(rosterMirror)!==(m.h[k]||''))){
-            writes.push(Promise.reject(syncIssue('sync_storage','roster_copies_differ','선수 자료의 기기 사본을 확인해야 합니다')));return;
-          }
-          if(roundKvWrite(k,row.v,writes,rosterMirror===null?loc:rosterMirror,{stale:false,expectedIdb:loc})){
-            applied++;m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);
-          }
+          var q=localStorage.getItem(k),rp=PSRosterCopies.plan({idb:loc,mirror:q,server:row&&typeof row.v==='string'?row.v:null,confirmed:m.h[k]||'',base:syncBaseGet(k),hash:hash}).action;
+          if(roundKvWrite(k,rp==='repair'?row.v:rp==='mirror'?q:loc,writes,q===null?loc:q,{stale:false,expectedIdb:loc})){applied++;if(rp==='repair'){m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);}}
           return;
         }
         /* 서버 확인본과 화면이 같아도 IDB 또는 거울 한쪽이 빠졌으면 복구한다.
