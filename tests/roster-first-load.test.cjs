@@ -46,7 +46,7 @@ function harness(opt={}){
     localStorage:{getItem(k){if(hooks.localRead)hooks.localRead(k);return local.has(k)?local.get(k):null;},setItem(k,v){if(hooks.localWrite)hooks.localWrite(k,String(v));local.set(k,String(v));},removeItem:k=>local.delete(k),key:i=>[...local.keys()][i]||null,get length(){return local.size;}},
     storage:{async get(k){if(hooks.idbRead)await hooks.idbRead(k);return idb.has(k)?{value:idb.get(k)}:null;},async set(k,v){if(hooks.idbWrite)await hooks.idbWrite(k,v);idb.set(k,v);},
       async replaceIfValue(k,old,value,current){if(hooks.idbWrite)await hooks.idbWrite(k,value);if(hooks.idbReplace)await hooks.idbReplace(k,old,value);if(current)current();if((idb.has(k)?idb.get(k):null)!==old)return false;if(value==null)idb.delete(k);else idb.set(k,value);return true;}},
-    PSStorage:{async sharedReady(k){if(hooks.sharedReady)await hooks.sharedReady(k);}},editMirrorCommit:Promise.resolve(),PSScoutStore:S,PSMirrorSync:require('../studio/sync-mirror.js'),
+    PSStorage:{async sharedReady(k){if(hooks.sharedReady)await hooks.sharedReady(k);}},editMirrorCommit:Promise.resolve(),PSScoutStore:S,PSMirrorSync:require('../studio/sync-mirror.js'),PSRosterCopies:require('../studio/sync-roster-copies.js'),
     HOLD_LIST:'ps_hold_list_v1',OWNERKEY:OWNER,MKEY:META,MATCH_KEY:MATCH,SCHEDULE_KEY:SCHEDULE,KEYS:[KEY],PERSONAL:{},MERGE_KEYS:{[KEY]:1},MERGE_LIST:{},
     ITEMS_ACTIVE:false,COPIES_OFF:true,PLAYER_BLIND:[],MAXLEN,SKIPKEY:'skip',TOMBKEY:'tomb',IDP_PRIV_PREFIX:'cs_idp_v1_',
     lastIssue:null,busy:false,busyDog:0,signOutEpoch:0,dataReady:true,localSwitchToken:'',kvWho:true,KV_PULL_CHUNK:20,
@@ -347,12 +347,20 @@ test('old partial roster pull repairs only the confirmed base mirror and exact r
   await succeeds(h);assert.equal(h.local.get(KEY),value);assert.equal(h.idb.get(KEY),value);assert.equal(pushed(h).length,0);
 });
 
-test('ambiguous split roster preserves both copies and never claims completion or pushes',async()=>{
+/* 3.198 — 갈라진 두 사본은 회차를 실패시키지 않는다(그러면 다음 회차도 같아 영영 끝나지 않았다 — 제보 419fead1).
+   IDB 가 새 pull 이고 거울에 보내지 않은 편집이 있으면 화면이 보이던 거울을 두 사본에 남기고, 서버 변경과의 충돌은 다음 회차의 «자료 확인»이 맡는다. */
+test('split roster keeps the screen copy on both stores without pushing, and a real server change then goes to review',async()=>{
   const before=raw(roster()),next=roster();next.players[0].memo='remote update';const value=raw(next);
   const edit=roster();edit.players[0].memo='unsent local edit';const edited=raw(edit);
   const h=harness({server:value,idb:value,mirror:edited,cupd:2});h.baseline(before);
-  const result=await h.run();assert.equal(result.code,'sync_storage');assert.equal(h.c.rosterReady('team-a'),false);
-  assert.equal(h.local.get(KEY),edited);assert.equal(h.idb.get(KEY),value);assert.equal(h.server.get(KEY).v,value);assert.equal(pushed(h).length,0);
+  await succeeds(h);assert.equal(h.c.rosterReady('team-a'),false,'nothing is confirmed yet');
+  assert.equal(h.local.get(KEY),edited);assert.equal(h.idb.get(KEY),edited);assert.equal(h.server.get(KEY).v,value);assert.equal(pushed(h).length,0);
+  assert.equal(h.c.meta().h[KEY],h.c.hash(before),'metadata is not advanced by the copy repair');
+  /* 실제 sync.js 처럼: 선수 키는 병합 키가 아니고(안정 ID 병합 없음), 확인 목록 정리는 IDB 값을 읽는다 */
+  h.c.MERGE_KEYS={};h.c.currentValueForKey=k=>Promise.resolve(h.idb.has(k)?h.idb.get(k):null);
+  h.c.busy=false;await succeeds(h);
+  assert.equal(h.server.get(KEY).v,value);assert.equal(h.local.get(KEY),edited);assert.equal(h.idb.get(KEY),edited);assert.equal(pushed(h).length,0);
+  assert.ok(JSON.parse(h.local.get('ps_hold_list_v1')||'[]').some(x=>x.kind==='conflict'&&x.k===KEY),'local edit vs remote update is left to the review list');
 });
 
 test('a later network failure cannot hide the unresolved storage failure',async()=>{

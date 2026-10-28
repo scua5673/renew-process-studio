@@ -24,7 +24,8 @@
   }[kind]||'요청을 완료하지 못했습니다.';}
   /* 20261014 — 처리 상태. 서버(ps_support_list)가 줄마다 stage 를 준다: needs(답변 필요) · answered(답변함) · closed(닫힘).
      옛 서버(stage 없음)는 예전처럼 «대화 n개 / 새 제보»만 보인다. */
-  var STAGES=['needs','answered','closed'],FIXED=/^\d{1,2}\.\d{3}$/;
+  var STAGES=['needs','answered','closed'],FIXED=/^\d{1,2}\.\d{3}$/,VERSION=FIXED,DEVICE={desktop:'컴퓨터',tablet:'태블릿',mobile:'폰',unknown:'기기 미확인'};
+  function ago(iso,now){var t=Date.parse(String(iso||''));if(!isFinite(t))return '시각 미확인';var m=Math.round((now-t)/60000);if(m<1)return '방금';if(m<60)return m+'분 전';var h=Math.round(m/60);if(h<48)return h+'시간 전';return Math.round(h/24)+'일 전';}
   function stageLabel(r){
     if(!r||STAGES.indexOf(r.stage)<0)return r&&r.reply_count>0?'대화 '+r.reply_count+'개':'새 제보';
     if(r.stage==='closed')return r.fixed_in?'고침 '+r.fixed_in+' · 닫힘':'닫힘';
@@ -57,11 +58,13 @@
     var rows=[],cursor=null,adminConfirmed=false,listLoading=false,detailLoading=false,busy=false,selected='',detail=null,currentDraft=null;
     var listError='',detailError='',notice='',drafts=new Map(),watch=null,renderedSelected='';
     var filter='',counts=null,triage=false,fixedDraft='',statusTicket=0;
+    /* 3.201 — 제보자 기기 현황(ps_support_reporter_devices): undefined 아직 · null 못 받음 · {latest,devices} */
+    var devices,devicesTicket=0;
     function readOwner(){try{var c=o.context()||{};return {uid:String(c.uid||''),epoch:String(c.epoch==null?'':c.epoch),ready:c.ready===true};}catch(_){return {uid:'',epoch:'',ready:false};}}
     function equalOwner(a,b){return !!a&&!!b&&a.uid===b.uid&&a.epoch===b.epoch&&a.ready===b.ready;}
     function stamp(){return {uid:owner.uid,epoch:owner.epoch,ready:owner.ready,generation:generation};}
     function valid(s){return !destroyed&&active&&!!s&&s.generation===generation&&s.ready&&!!s.uid&&equalOwner(s,readOwner());}
-    function clearView(){rows=[];cursor=null;adminConfirmed=false;listLoading=false;detailLoading=false;busy=false;selected='';detail=null;currentDraft=null;listError='';detailError='';notice='';fixedDraft='';statusTicket++;filter='';counts=null;triage=false;}
+    function clearView(){rows=[];cursor=null;adminConfirmed=false;listLoading=false;detailLoading=false;busy=false;selected='';detail=null;currentDraft=null;listError='';detailError='';notice='';fixedDraft='';statusTicket++;filter='';counts=null;triage=false;devices=undefined;devicesTicket++;}
     function rowOf(id){return rows.find(function(r){return r.id===id;})||null;}
     function shareCounts(){if(triage&&validCounts(counts)&&typeof o.onCounts==='function'){try{o.onCounts(Object.assign({},counts));}catch(_){}}}
     function moveCount(from,to){if(!triage||!validCounts(counts)||from===to)return;if(STAGES.indexOf(from)>=0&&counts[from]>0)counts[from]--;if(STAGES.indexOf(to)>=0)counts[to]++;shareCounts();}
@@ -126,7 +129,7 @@
       else if(can&&detail){
         var r=detail.report,entry=currentDraft,count=r.diagnostics&&Array.isArray(r.diagnostics.logs)?r.diagnostics.logs.length:0,who=detailReporter();
         h+='<article class="admSupportReport"><h2>'+esc(r.title)+'</h2><small>'+esc(date(r.created_at))+'</small>'
-          +(who?'<p class="admSupportWho">보낸 사람 <b>'+esc(reporterLine(who,true))+'</b></p>':'')+'<p>'+esc(r.body)+'</p>'
+          +(who?'<p class="admSupportWho">보낸 사람 <b>'+esc(reporterLine(who,true))+'</b></p>':'')+devicesHtml()+'<p>'+esc(r.body)+'</p>'
           +(detail.image?'<div class="support-image-view" data-adm-support-image></div>':'')+'<details class="admSupportLogs"><summary>제보 당시 사용 환경 · 오류 로그 '+count+'건</summary><pre>'+esc(diagnosticText(r.diagnostics))+'</pre></details>'
           +'<button type="button" data-adm-support="copy">제보·대화·사용 환경·로그 전체 복사</button></article>'
           +statusHtml()
@@ -144,6 +147,28 @@
       root.querySelector('.admSupportInbox').scrollTop=inboxScroll;root.querySelector('.admSupportDetail').scrollTop=detailScroll;
     }
     function detailReporter(){ if(!detail||!detail.report||detail.report.is_own)return null; return reporterOf(detail.report.reporter)||(rowOf(selected)||{}).reporter||null; }
+    /* 3.201 — 제보자의 최근 7일 기기 × 앱 판. 제보 본문을 읽기 전에 «이 사람의 아이패드가 옛 판에 머물러 있나»를 본다.
+       함수가 없거나(옛 서버) 실패하면 조용히 숨긴다 — 제보 열기 · 답변은 그대로. */
+    function versionNo(v){return VERSION.test(String(v||''))?Math.round(parseFloat(v)*1000):null;}
+    function loadDevices(s,id){
+      var ticket=++devicesTicket;
+      call(s,'ps_support_reporter_devices',{p_report_id:id}).then(function(r){
+        if(!safe(s)||ticket!==devicesTicket||selected!==id)return;
+        var ok=r&&typeof r==='object'&&Array.isArray(r.devices)&&r.devices.every(function(d){return d&&typeof d==='object'&&typeof d.device==='string'&&typeof d.app_version==='string'&&typeof d.last_at==='string';});
+        devices=ok?{latest:VERSION.test(String(r.latest||''))?String(r.latest):'',days:Number.isInteger(r.days)?r.days:7,devices:r.devices.slice(0,12)}:null;render();
+      }).catch(function(){if(!safe(s)||ticket!==devicesTicket)return;devices=null;render();});
+    }
+    function devicesHtml(){
+      if(!devices||!detail||detail.report.is_own)return '';
+      var latest=versionNo(devices.latest),now=Date.now();
+      if(!devices.devices.length)return '<ul class="admSupportDevices"><li class="admSupportDevicesHead">최근 '+devices.days+'일 기기 기록 없음</li></ul>';
+      return '<ul class="admSupportDevices"><li class="admSupportDevicesHead">제보자 기기 · 최근 '+devices.days+'일'+(devices.latest?' · 최신 판 '+esc(devices.latest):'')+'</li>'+devices.devices.map(function(d){
+        var v=versionNo(d.app_version),old=latest!=null&&v!=null&&latest-v>=10,crash=Number.isInteger(d.crashes)&&d.crashes>0?d.crashes:0,full=Number.isInteger(d.storage_full)&&d.storage_full>0?d.storage_full:0;
+        return '<li class="'+(old?'is-old':'')+'"><span>'+esc(DEVICE[d.device]||d.device)+(d.standalone===true?' · 설치 앱':'')+'</span><b>'+esc(d.app_version)+'</b>'
+          +(old?'<span class="adm-stale-tag warn">옛 판</span>':'')+'<small>'+esc(ago(d.last_at,now))+'</small>'
+          +(crash?'<small class="adm-stale-bad">비정상 종료 '+crash+'</small>':'')+(full?'<small class="adm-stale-bad">저장공간 가득 '+full+'</small>':'')+'</li>';
+      }).join('')+'</ul>';
+    }
     function statusHtml(){
       var row=rowOf(selected);if(!triage||!row||STAGES.indexOf(row.stage)<0)return '';
       var closed=row.status==='closed';
@@ -179,13 +204,13 @@
     }
     function openReport(id){
       if(!reconcile()||!adminConfirmed||busy||!UUID.test(id||'')||!rows.some(function(r){return r.id===id;}))return Promise.resolve();
-      var s=stamp(),ticket=++detailTicket;selected=id;detail=null;currentDraft=draftFor(id);detailLoading=true;detailError='';notice='';fixedDraft=(rowOf(id)||{}).fixed_in||'';statusTicket++;render();
+      var s=stamp(),ticket=++detailTicket;selected=id;detail=null;currentDraft=draftFor(id);detailLoading=true;detailError='';notice='';fixedDraft=(rowOf(id)||{}).fixed_in||'';statusTicket++;devices=undefined;devicesTicket++;render();
       try{if(w.matchMedia('(max-width:700px)').matches)root.scrollIntoView({block:'start'});}catch(_){}
       return call(s,w.PSSupportImage?'ps_support_get_with_image':'ps_support_get',{p_report_id:id}).catch(function(e){if(w.PSSupportImage&&errorKind(e)==='unavailable')return call(s,'ps_support_get',{p_report_id:id});throw e;}).then(function(result){
         if(!safe(s)||ticket!==detailTicket)return;
         if(!result||!result.report||result.report.id!==id||typeof result.report.title!=='string'||typeof result.report.body!=='string'||!Array.isArray(result.replies))throw fault('support_failed');
         if(result.replies.some(function(q){return !q||!UUID.test(q.id||'')||q.report_id!==id||typeof q.body!=='string'||['admin','reporter'].indexOf(q.author_role)<0;}))throw fault('support_failed');
-        detail=result;
+        detail=result;loadDevices(s,id);
         if(currentDraft.attempt){var confirmed=detail.replies.find(function(q){return matchingReply(q,currentDraft.attempt);});if(confirmed&&acknowledge(currentDraft,confirmed))notice='답변 저장을 확인했습니다.';}
       }).catch(function(e){if(!safe(s)||ticket!==detailTicket)return;var kind=errorKind(e);if(kind==='denied'){denied();return;}if(kind==='missing'){lockView(errorText('missing'));return;}detailError=errorText(kind);})
         .finally(function(){if(safe(s)&&ticket===detailTicket){detailLoading=false;render();}});
