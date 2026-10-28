@@ -88,6 +88,7 @@
     win.__psPdfExportOn = 1;
     var ov = null, cfg = null, fontData = {}, facesP = null;
     var picking = false, PICK_BUSY = '저장 창이 이미 열려 있어요 — 그 창에서 폴더를 고르세요';   // 3.205 — 저장 창은 한 번에 하나
+    var pickSilent = false, PICK_SILENT_MS = 2500, PICK_SILENT = '저장 창이 열리지 않아 다운로드 폴더에 받았어요 — 크롬 설정 › 다운로드 › «다운로드 전에 각 파일의 저장 위치 확인»을 켜면 폴더를 고를 수 있어요';   // 3.206
 
     function b64(buf) { var u = new Uint8Array(buf), s = '', CH = 0x8000; for (var i = 0; i < u.length; i += CH) s += String.fromCharCode.apply(null, u.subarray(i, i + CH)); return win.btoa(s); }
     function faces() {
@@ -213,17 +214,34 @@
     }
     // «다른 이름으로 저장» 창(크롬 · 엣지 데스크톱) — 누른 그 순간에만 열리니 PDF 를 만들기 전에 연다.
     // 3.205 — 창은 한 번에 하나: 떠 있는 동안 또 누르면(맥 크롬 «File picker already active» 거절 · 2.974 영상과 같은 구멍) «취소»로 치고 알림만 — 다운로드 폴더로 보내지 않는다
+    // 3.206 — 이 창은 iframe 안이다: 같은 출처의 맨 위 창에서 연다. 창이 떴으면 페이지가 초점을 잃는다(blur · hasFocus 거짓) — 그 신호가 없으면
+    // «창이 안 뜸»(맥 크롬이 호출을 받고도 창을 안 보임)으로 보고 다운로드 폴더로 받되 알리고, 같은 창에서는 다시 묻지 않는다(board-pdf-save.js 와 같은 규칙)
+    function pickHost() { try { var t = win.top; if (t && t !== win && typeof t.showSaveFilePicker === 'function' && t.document) return t; } catch (_) {} return win; }
     function pickTarget(name) {
       if (typeof win.showSaveFilePicker !== 'function') return Promise.resolve(null);
+      if (pickSilent) { toast(PICK_SILENT); return Promise.resolve(null); }
       if (picking) { toast(PICK_BUSY); return Promise.resolve(false); }
       picking = true;
-      return win.showSaveFilePicker({ suggestedName: name, types: [{ description: 'PDF 문서', accept: { 'application/pdf': ['.pdf'] } }] })
-        .then(function (h) { picking = false; return h; }, function (e) {
-          picking = false;
-          if (e && e.name === 'AbortError') return false;
-          if (e && e.name === 'NotAllowedError' && /activ/i.test(String(e.message || ''))) { toast(PICK_BUSY); return false; }
-          return null;
+      var host = pickHost(), blurred = false, done = false, timer = null;
+      function onBlur() { blurred = true; }
+      function listen(on) { try { win[on ? 'addEventListener' : 'removeEventListener']('blur', onBlur); if (host !== win) host[on ? 'addEventListener' : 'removeEventListener']('blur', onBlur); } catch (_) {} }
+      function finish() { done = true; picking = false; win.clearTimeout(timer); listen(false); }
+      listen(true);
+      return new Promise(function (resolve) {
+        var p; try { p = host.showSaveFilePicker({ suggestedName: name, types: [{ description: 'PDF 문서', accept: { 'application/pdf': ['.pdf'] } }] }); } catch (e) { p = Promise.reject(e); }
+        Promise.resolve(p).then(function (h) { if (done) return; finish(); resolve(h); }, function (e) {
+          if (done) return; finish();
+          if (e && e.name === 'AbortError') return resolve(false);
+          if (e && e.name === 'NotAllowedError' && /activ/i.test(String(e.message || ''))) { toast(PICK_BUSY); return resolve(false); }
+          resolve(null);
         });
+        timer = win.setTimeout(function () {
+          if (done) return;
+          var focused = true; try { focused = !!(host.document && host.document.hasFocus()); } catch (_) {}
+          if (blurred || !focused) return;   // 창이 떠서 초점을 가져갔다 — 사용자가 고를 때까지 기다린다
+          finish(); pickSilent = true; toast(PICK_SILENT); resolve(null);
+        }, win.__psPdfSilentMs || PICK_SILENT_MS);
+      });
     }
     function save(btn) {
       var name = safeName(cfg.fname || cfg.title) + '.pdf';
