@@ -35,6 +35,8 @@
       +(c.document.length?'<details class="sd-diff"><summary>명단 순서·공통 설정 <span>'+c.document.length+'개 항목 차이</span></summary>'+fieldRows(c.document)+'</details>':'')
       +'<p class="sd-meta">원문 파일에는 선수 이름과 메모가 포함돼요. 내려받은 파일은 안전한 곳에 보관해 주세요.</p><button type="button" class="ps-btn-secondary sd-export">세 사본 원문 내려받기</button></div>';
   }
+  /* 시험 픽스처나 아직 안 읽힌 sync.js 처럼 PSSync 에 diag 가 없으면 조용히 건너뛴다(예전 app.html 인라인 처리와 같다) */
+  function ready(win){return !!(win.PSSync&&typeof win.PSSync.diag==='function');}
   function open(win){
     var doc=win.document,previous=doc.activeElement,sync=win.PSSync,closed=false,invalidated=false,host,report=null,timer,checking=false;
     if(active.has(doc))active.get(doc)();active.set(doc,close);
@@ -72,7 +74,7 @@
   }
   function install(win){
     var doc=win.document,b=doc.getElementById('psDiagOpen');if(!b)return;
-    function line(){if(!win.PSSync)return;win.PSSync.diag().then(function(d){var el=doc.getElementById('psDiagLine');if(!el||!d.current())return;el.textContent=(d.online?'':'오프라인 · ')+'마지막 받음 '+ago(d.lastPull)+' · '+(d.pending.length?'전송 대기 '+d.pending.length+'건':'전송 대기 목록 없음');}).catch(function(){});}
+    function line(){if(!ready(win))return;win.PSSync.diag().then(function(d){var el=doc.getElementById('psDiagLine');if(!el||!d.current())return;el.textContent=(d.online?'':'오프라인 · ')+'마지막 받음 '+ago(d.lastPull)+' · '+(d.pending.length?'전송 대기 '+d.pending.length+'건':'전송 대기 목록 없음');}).catch(function(){});}
     b.addEventListener('click',function(){open(win);});line();win.setInterval(line,60000);
     doc.addEventListener('click',function(e){if(e.target&&e.target.closest&&e.target.closest('#gearWrap'))win.setTimeout(line,150);});
   }
