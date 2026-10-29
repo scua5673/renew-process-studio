@@ -49,7 +49,7 @@ try{
     await bf.evaluate(()=>{const pick=t=>[...document.querySelectorAll('#evSheet .ev-b')].find(b=>b.textContent===t).click();pick('720p');pick('15fps');pick('2초');document.querySelector('#evSheet #evGo').click();});
     await bf.waitForFunction(()=>window.__closed===1,null,{timeout:120000});
     const r=await bf.evaluate(()=>({n:window.__pick.suggestedName,wrote:window.__wrote,seen:window.__seen.length,frames:anim.frames.length,meet:document.body.classList.contains('meet-mode'),slides:anim.slides.length}));
-    assert.match(r.n,/^미팅_슬라이드\.(mp4|webm)$/);assert.ok(r.wrote>1000,JSON.stringify(r));
+    assert.match(r.n,/^\d{6}_미팅_슬라이드\.(mp4|webm)$/);assert.ok(r.wrote>1000,JSON.stringify(r));
     assert.ok(r.seen>3,'2장의 장면 애니메이션이 영상에 들어갔다 '+JSON.stringify(r));
     assert.equal(r.slides,9);assert.ok(r.meet);
     await page.waitForTimeout(1200);   /* 끝난 뒤 미팅 저장 타이머가 돌아도 */

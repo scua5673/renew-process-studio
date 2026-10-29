@@ -212,7 +212,7 @@ try{
   const canVideo=await f.evaluate(()=>typeof MediaRecorder!=='undefined'||(typeof VideoEncoder==='function'&&!(/^Apple/.test(navigator.vendor||'')&&!/Mac|iPhone|iPad|iPod/.test(navigator.platform||''))));
   if(canVideo){
   assert.ok(vid&&vid.size>1000,'영상이 만들어졌다 '+JSON.stringify(vid&&{n:vid.name,t:vid.type,s:vid.size}));
-  assert.match(vid.name,/^작전판.*\.(mp4|webm)$/,'파일 이름 '+vid.name);
+  assert.match(vid.name,/^\d{6}_작전판.*\.(mp4|webm)$/,'파일 이름 '+vid.name);
   if(vid.meta&&vid.meta.w){ assert.equal(vid.meta.w,1280);assert.equal(vid.meta.h,720,'16:9'); }
   const bx=vid.box; assert.ok(Math.abs(bx[2]/bx[3]-16/9)<0.01,'16:9 상자');
   const cx=bx[0]+bx[2]/2; assert.ok(Math.abs(cx-555)<1,'운동장 가운데 '+cx);
