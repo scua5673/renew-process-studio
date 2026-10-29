@@ -54,12 +54,12 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       // white chips with the player's name. None of it reaches pictures or exports.
       assert.equal(r.goalColor,'rgb(255, 255, 255)');assert.equal(r.chips,2);assert.equal(r.names,'A,B');
       assert.equal(r.stage,'rgb(5, 8, 6)');
-      // The stadium is one picture (an SVG image): it must decode, and carry the grass, boards, crowd and dugouts.
+      // The stadium is one picture (an SVG image): it must decode, and carry the grass, boards and crowd without sideline benches.
       const pic=await page.evaluate(async()=>{const im=document.querySelector('#tiltSurface img.tilt-stadium');if(!im)return null;let ok=false;try{await im.decode();ok=true;}catch(_){}
         const sv=decodeURIComponent(im.src.slice(im.src.indexOf(',')+1)),b=im.getBoundingClientRect();
-        return {ok,grass:sv.includes('fill="url(#psStGrass)"'),boards:(sv.match(/>PROCESS STUDIO</g)||[]).length,crowd:/id="psStCrowd"[^>]*><image /.test(sv),dugouts:(sv.match(/stroke-dasharray/g)||[]).length,w:b.width,h:b.height};});
+        return {ok,grass:sv.includes('fill="url(#psStGrass)"'),boards:(sv.match(/>PROCESS STUDIO</g)||[]).length,crowd:/id="psStCrowd"[^>]*><image /.test(sv),benches:(sv.match(/fill="#18212a"/g)||[]).length,technicalAreas:new DOMParser().parseFromString(sv,'image/svg+xml').querySelectorAll('path[stroke="#fff"][stroke-opacity=".75"][stroke-dasharray]').length,w:b.width,h:b.height};});
       assert.ok(pic&&pic.ok,'the stadium picture decodes');assert.equal(pic.grass,true);assert.ok(pic.boards>=8,'ad boards around the pitch');
-      assert.equal(pic.crowd,true,'stands carry the crowd texture');assert.ok(pic.dugouts>=2,'two technical areas by the dugouts');assert.ok(pic.w>0&&pic.h>0);
+      assert.equal(pic.crowd,true,'stands carry the crowd texture');assert.equal(pic.benches,0,'no sideline benches');assert.equal(pic.technicalAreas,0,'no technical-area markings');assert.ok(pic.w>0&&pic.h>0);
       assert.ok(r.line.match(/\d+/g).slice(0,3).every(v=>+v>=230),'pitch lines are light on the stadium grass: '+r.line);assert.equal(r.exportHasStadium,false);
       assert.equal(r.flags,4,'a corner flag stands at each corner');assert.equal(r.frame,'none','no card border line across the tilted board');
       await page.evaluate(()=>{sel=null;multiSel=[];renderTokens();updateDelUI();});
@@ -164,7 +164,7 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
     assert.ok(new Set(Object.values(t3.cam).map(c=>c.tf)).size===3,'the camera changes the board transform');
     assert.deepEqual([t3.deco.full.crowd,t3.deco.simple.crowd,t3.deco.grass.crowd],[true,false,false],'stands only in «전체»');
     assert.deepEqual([t3.deco.full.boards,t3.deco.simple.boards,t3.deco.grass.boards],[true,true,false],'boards in «전체»·«간단»');
-    assert.deepEqual([t3.deco.simple.bench,t3.deco.grass.bench],[true,false]);
+    assert.deepEqual([t3.deco.full.bench,t3.deco.simple.bench,t3.deco.grass.bench],[false,false,false],'no benches in any stadium mode');
     // Compact phone framing reaches the same 12px edge limit in every stadium mode.
     assert.ok(t3.deco.simple.k>=t3.deco.full.k&&t3.deco.grass.k>=t3.deco.simple.k,'less stadium never shrinks the pitch '+JSON.stringify(t3.deco));
     assert.equal(t3.adEsc,true,'ad text is escaped');assert.equal(t3.adDecodes,true,'the stadium picture still decodes');assert.equal(t3.adBack,true,'empty → PROCESS STUDIO');

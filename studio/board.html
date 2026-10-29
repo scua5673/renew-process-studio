@@ -14898,7 +14898,6 @@ function init(){
        잔디 — 실사 잔디 타일(pitches.js «real», 밝은 줄 5m + 어두운 줄 5m)을 골라인에 맞춰 깐다. 잔디결은 실제처럼
               터치라인에 수직. AVIF 를 못 그리는 기기는 같은 간격의 두 색 줄무늬. 골 에어리어·페널티 점·센터의 닳은 자국.
        광고판 — 얇고 밝은 LED 패널(파랑·흰색·검정 세 가지가 번갈아). 운동장을 바라본다: 먼 쪽 글자는 바로, 가까운 쪽은 뒤집혀 보인다.
-       벤치 — 한쪽 터치라인(world 아래쪽) 가운데 양옆에 벤치 둘과 테크니컬 에어리어 점선, 가운데 대기심 자리.
        관중석 — 좌석과 관중 무늬(crowdTile, 고정 시드라 매번 같다), 계단 통로, 층 사이 통로와 LED 띠, 출입구, 맨 앞 벽.
        지붕 — 위층 바깥을 덮는 회색 지붕, 트러스, 안쪽 가장자리의 조명등.
      ⚠ 그리는 것은 viewBox·회전·운동장 크기·잔디 타일 준비가 바뀔 때뿐(__sig). 선수를 끌 때는 다시 그리지 않는다.
@@ -15005,15 +15004,6 @@ function init(){
     if(goals){const gm=M2U(sp.goal)*GOAL_K.mouth,gd=M2U(sp.goalD||2)*GOAL_K.depth*1.35,pad=gm*.08;
       o+='<rect x="'+f(R)+'" y="'+f(CY-gm/2-pad)+'" width="'+f(gd)+'" height="'+f(gm+2*pad)+'" fill="url(#psStGoalSh)"/>'
         +'<rect transform="rotate(180 '+f(L)+' '+f(CY)+')" x="'+f(L)+'" y="'+f(CY-gm/2-pad)+'" width="'+f(gd)+'" height="'+f(gm+2*pad)+'" fill="url(#psStGoalSh)"/>';}
-    /* 벤치 둘 · 테크니컬 에어리어(점선) · 대기심 자리 — world 아래쪽 터치라인 */
-    if(!whole&&deco!=="grass"){const by=B+gy*.5,bd=Math.min(gy*.3,m*1.8),bl=S*.075,tx=m*1,dash=f(m*.6)+' '+f(m*.45);let bn='';
-      [-1,1].forEach(sd2=>{const x0=sd2<0?CX-S*.03-bl:CX+S*.03;
-        bn+='<path d="M'+f(x0-tx)+' '+f(by)+'V'+f(B+tx)+'H'+f(x0+bl+tx)+'V'+f(by)+'" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="'+f(m*.12)+'" stroke-dasharray="'+dash+'"/>'
-          +'<rect x="'+f(x0+m*.3)+'" y="'+f(by+m*.35)+'" width="'+f(bl)+'" height="'+f(bd)+'" rx="'+f(m*.3)+'" fill="#000" fill-opacity=".35"/>'
-          +'<rect x="'+f(x0)+'" y="'+f(by)+'" width="'+f(bl)+'" height="'+f(bd)+'" rx="'+f(m*.3)+'" fill="#18212a"/>'
-          +'<rect x="'+f(x0+m*.25)+'" y="'+f(by+bd*.45)+'" width="'+f(bl-m*.5)+'" height="'+f(bd*.35)+'" fill="#2f3c49"/>'
-          +'<rect x="'+f(x0)+'" y="'+f(by)+'" width="'+f(bl)+'" height="'+f(bd*.62)+'" rx="'+f(m*.3)+'" fill="#d6e7f5" fill-opacity=".2" stroke="#eef6fc" stroke-opacity=".55" stroke-width="'+f(m*.1)+'"/>';});
-      o+=bn+'<rect x="'+f(CX-m*.8)+'" y="'+f(by+m*.2)+'" width="'+f(m*1.6)+'" height="'+f(m*.7)+'" rx="'+f(m*.15)+'" fill="#20272e"/><rect x="'+f(CX-m*.55)+'" y="'+f(by+m*.3)+'" width="'+f(m*1.1)+'" height="'+f(m*.25)+'" fill="#3b82f6" fill-opacity=".8"/>';}
     /* 광고판 — 얇고 밝은 LED. 글자의 위쪽이 늘 바깥(운동장을 바라본다) */
     if(deco!=="grass"){
     o+=ring(0,bt,'#0a1018')+line(0,'#ffffff',S*.0009,.55);
