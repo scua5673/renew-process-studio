@@ -37,12 +37,12 @@ try{
  await f.evaluate(()=>new Promise((resolve,reject)=>{window.__vaultPending.name='리저브 검증';window.__vaultSave({skipSheet:true,after:resolve,onerror:()=>reject(Error('save failed'))});}));
  const saved=await f.evaluate(async()=>{const it=(await libGet()).find(x=>x.name==='리저브 검증');return it;});
  console.log('reserve: saved');assert.equal(saved.slides[1].title,'RESERVE');assert.equal(saved.slides[1].snap.players[0].meetingRole,'reserve');
- await f.evaluate(id=>window.__vaultOpenMeeting(id),saved.libId);await f.waitForFunction(()=>!window.__ksNav);
+ await f.evaluate(id=>window.__vaultOpenMeeting(id),saved.libId);await f.waitForFunction(id=>window.__curVaultId===id&&document.body.classList.contains('meet-mode')&&!window.__ksNav,saved.libId);
  assert.equal(await f.evaluate(()=>anim.slides[1].snap.players[0].name),'리저브 선수');
  assert.equal(await f.evaluate(()=>meetingPdfSlides().length),10);
  // Legacy meetings keep their original pages until explicit insertion. Insert from another page too.
  const legacy={...saved,libId:'VRESERVELEGACY',slides:saved.slides.filter(s=>s.title!=='RESERVE')};
- await f.evaluate(async s=>{const lib=await libGet();lib.unshift(s);await libWrite(lib);await window.__vaultOpenMeeting(s.libId);},legacy);await f.waitForFunction(()=>!window.__ksNav);
+ await f.evaluate(async s=>{const lib=await libGet();lib.unshift(s);await libWrite(lib);await window.__vaultOpenMeeting(s.libId);},legacy);await f.waitForFunction(id=>window.__curVaultId===id&&document.body.classList.contains('meet-mode')&&!window.__ksNav,legacy.libId);
  assert.equal(await f.evaluate(()=>anim.slides.length),9);
  await f.evaluate(()=>window.__meet.go(4));await f.waitForFunction(()=>!window.__ksNav);
  const before=await f.evaluate(()=>{window.__meet.saveCur();return JSON.stringify(anim.slides,(k,v)=>k==='thumb'?undefined:v);});
@@ -55,7 +55,10 @@ try{
  assert.deepEqual(await f.evaluate(()=>anim.slides.slice(0,3).map(s=>s.title)),['표지','BEST 11','RESERVE'],'insertion while cover is selected still follows BEST');
  assert.equal(await f.evaluate(()=>JSON.stringify(window.__psPages.pg(),(k,v)=>k==='thumb'?undefined:v)),work,'private work board unchanged');
  await f.evaluate(()=>document.getElementById('vCreateCancel').click());
- await f.evaluate(async s=>{const lib=await libGet();s.createdBy=psMyUid();s.libId+='RO';lib.unshift(s);await libWrite(lib);window.psMyUid=()=>'99999999-9999-4999-8999-999999999999';await window.__vaultOpenMeeting(s.libId);},legacy);await f.waitForFunction(()=>!window.__ksNav);
+ // Closing and opening are asynchronous; !__ksNav alone also matches the closed previous meeting.
+ await f.waitForFunction(()=>window.__csView==='session'&&!document.body.classList.contains('meet-mode'));
+ const roId=await f.evaluate(async s=>{const lib=await libGet();s.createdBy='99999999-9999-4999-8999-999999999999';s.libId+='RO';lib.unshift(s);await libWrite(lib);window.__vaultOpenMeeting(s.libId);return s.libId;},legacy);
+ await f.waitForFunction(id=>window.__vvMeetLib===id&&window.__vaultReadOnly===true&&document.body.classList.contains('meet-mode')&&!window.__ksNav,roId);
  assert.equal(await f.locator('#psMeetReserveAdd').count(),0);assert.equal(await f.evaluate(()=>window.__meetAddReserve()),false);
  assert.equal(await f.evaluate(()=>anim.slides.length),9);
  assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[]);
