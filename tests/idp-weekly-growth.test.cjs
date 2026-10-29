@@ -22,3 +22,11 @@ test('calendar week is correct over year and DST boundaries',()=>{
   assert.equal(W.weekData({},null,'2027-01-01').start,'2026-12-28');
   assert.equal(W.weekData({},null,'2026-11-01').start,'2026-10-26');
 });
+test('coach home distinguishes a wiped cache being refilled from an empty roster',()=>{
+  let waiting=true;
+  const ui=W.create({coach:()=>({owner:'fixture',rows:[],model:null,waiting})});
+  assert.match(ui.renderCoach(),/팀 자료를 받는 중이에요/);
+  assert.doesNotMatch(ui.renderCoach(),/0명|명단이 비어/);
+  waiting=false;assert.doesNotMatch(ui.renderCoach(),/팀 자료를 받는 중이에요/);
+  assert.match(ui.renderCoach(),/선수 명단이 준비되면/);
+});

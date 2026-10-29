@@ -6111,7 +6111,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           return {id:String(p.id),name:p.name||'선수',num:p.num||'',position:sqEvalPosName(p.posId),state:ctx.state,message:messages[ctx.state]||'',count:w?w.scenes.length:0,ctx:ctx};});
         var row=rows.find(function(r){return r.id===selected;})||rows[0],m=null;
         if(row){m=row.state==='ready'?idpWeeklyModel(row.ctx.doc,PREFIX+row.ctx.uid,row.name):{state:row.state,message:row.message,name:row.name};m.id=row.id;}
-        return {owner:idpWeeklyOwner(),rows:rows,model:m};
+        var waiting=false;try{waiting=!rows.length&&!!localStorage.getItem('ps_cache_wiped_v1');}catch(_){}
+        return {owner:idpWeeklyOwner(),rows:rows,model:m,waiting:waiting};
       },
       writePlayer:function(m,patch,flush){
         if(!m.owner||m.owner!==idpWeeklyOwner()||m.today!==ymd(new Date())||m.sourceDoc!==doc||!idpOwnActionAllowed(m.key))return false;
