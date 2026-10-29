@@ -56,7 +56,7 @@ try{
   assert.ok(bytes.includes(Buffer.from('/Filter /DCTDecode')),'판 그림');assert.ok(bytes.length>30000,'PDF '+bytes.length);
 
   const names=await f.evaluate(()=>window.__qxNames.slice());
-  assert.equal(names.length,2,JSON.stringify(names));assert.match(names[0],/\.png$/);assert.match(names[1],/\.pdf$/);assert.equal(names[0].replace(/\.png$/,''),names[1].replace(/\.pdf$/,''),'같은 이름(작전판 · 페이지)');
+  assert.equal(names.length,2,JSON.stringify(names));assert.match(names[0],/^\d{6}_.+\.png$/);assert.match(names[1],/^\d{6}_.+\.pdf$/);assert.equal(names[0].replace(/\.png$/,''),names[1].replace(/\.pdf$/,''),'같은 이름(작전판 · 페이지)');
   // 5) 로그인 전에는 받지 않고 알려 준다
   await f.evaluate(()=>{window.__qxUnlocked=window.psVaultUnlocked;window.psVaultUnlocked=()=>false;});
   let fired=false;const onDl=()=>{fired=true;};page.on('download',onDl);
