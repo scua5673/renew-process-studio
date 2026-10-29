@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.211 리저브(로컬, 미배포) — `board-meet-reserve.js`를 `board-meet-form.js`보다 먼저 읽는다. 11·8인제의 기존 기본 9장 생성기를 감싸 BEST 다음에 RESERVE를 더해 10장으로 만든다. 포메이션 선택의 RESERVE는 BEST와 같은 전체 운동장 배치이고 우리 팀만 둔다. 토큰의 `meetingRole:'reserve'`와 별도 id로 선발 이름 연동·예전 미팅 이름 보충을 분리한다. 기존 미팅은 자동 삽입하지 않으며 BEST 아래 «＋ 리저브»로 추가한다. `meeting-reserve` 시험은 두 방향·저장/재열기·같은 번호 이름 분리·기존 자료/작업 보드 보존·표지에서 추가·보기 전용을 확인한다. 원래 9장 원형의 단위 시험과 구버전 자료 시험은 그대로 유지한다.
+
 - 3.209 후속 — 표지 PNG는 가로 1600×900/세로 900×1600, 표지 포함 MP4는 첫 표지의 비율(16:9/9:16)로 저장한다. `PSMeetCover.videoFrame`은 운동장 viewBox를 가운데 기준으로 확장해 늘어짐을 막고 표지 없는 미팅은 예전 출력 크기를 유지한다. 두 비율의 실제 인코딩 파일을 검증했으며 CI는 Chromium 가로·WebKit 세로를 확인한다.
 
 - 3.209 — 미팅 표지는 `board-meet-cover.js/CSS`의 `slide.cover`로 저장한다. `meetStore`와 `meetingPdfSlides`는 표지를 운동장 캡처로 덮지 않는다. SVG·PNG·PPT·MP4가 같은 글자 배치를 쓰며, MP4는 표지 다음 슬라이드의 첫 장면만 cut(내부 애니메이션 유지). `board-export-name.js`는 내보내는 순간의 기기 날짜 YYMMDD를 파일명에만 붙인다. `meeting-cover` 브라우저 시험은 저장·재열기·작업 보드 보존·보기 전용·실제 영상 첫 프레임과 PPT를 확인한다.

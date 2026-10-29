@@ -4223,7 +4223,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.167"></script>
 <script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-stadium-ground.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script>
+<script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -16211,11 +16211,12 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
      id 를 먼저 보지 않는 이유: 경기에서 가져온 «선발 11» 장은 id 가 순서대로라 기본 장의 다른 자리 선수와 id 가 겹친다. */
   window.__meetSyncNames=function(p){
     if(!p||p.coach||!document.body.classList.contains("meet-mode")||!anim.slides||!anim.slides.length)return 0;
+    if(window.PSMeetReserve&&window.PSMeetReserve.isReserve(anim.slides[meetIdx]))p.meetingRole="reserve";
     var pn=String(p.num==null?"":p.num).trim(),nm=p.name||null;
-    function same(q){ if(!q||q.coach||q.team!==p.team)return false; var qn=String(q.num==null?"":q.num).trim(); return pn?qn===pn:q.id===p.id; }
+    function same(q){ if(!q||q.coach||q.team!==p.team||(q.meetingRole||"")!==(p.meetingRole||""))return false; var qn=String(q.num==null?"":q.num).trim(); return pn?qn===pn:q.id===p.id; }
     function put(sn){ var ch=0; ((sn&&sn.players)||[]).forEach(function(q){ if(same(q)&&(q.name||null)!==nm){q.name=nm;ch++;} }); return ch; }
     var n=0;
-    anim.slides.forEach(function(sl,i){ if(!sl)return; var ch=put(sl.snap);
+    anim.slides.forEach(function(sl,i){ if(!sl)return; if(window.PSMeetReserve&&window.PSMeetReserve.isReserve(sl)!==(p.meetingRole==="reserve"))return; var ch=put(sl.snap);
       if(Array.isArray(sl.frames))sl.frames.forEach(function(f){ if(f)ch+=put(f.snap); });
       if(sl===meetBound)(anim.frames||[]).forEach(function(f){ if(f)ch+=put(f.snap); });
       if(ch&&i!==meetIdx){ n++; try{ if(window.__snapToThumb)sl.thumb=window.__snapToThumb(sl.snap)||sl.thumb; }catch(_){} if(Array.isArray(sl.frames))sl.frames.forEach(function(f,k){ if(k>0&&f)delete f.thumb; }); }
@@ -16262,8 +16263,8 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     /* 이름 */
     var snaps=[]; sls.forEach(function(sl,i){ if(!sl||isLine(sl))return; if(sl.snap)snaps.push({i:i,k:0,sn:sl.snap}); if(Array.isArray(sl.frames))sl.frames.forEach(function(fr,k){ if(fr&&fr.snap&&fr.snap!==sl.snap)snaps.push({i:i,k:k,sn:fr.snap}); }); });
     var seen={};
-    snaps.forEach(function(o){(o.sn.players||[]).forEach(function(q){ if(!q||q.coach)return; var n=meetNum(q),nm=String(q.name||"").trim(); if(!n||!nm)return; var key=q.team+"|"+n; (seen[key]=seen[key]||{})[nm]=1; });});
-    snaps.forEach(function(o){(o.sn.players||[]).forEach(function(q){ if(!q||q.coach)return; var n=meetNum(q); if(!n||String(q.name||"").trim())return; var nn=Object.keys(seen[q.team+"|"+n]||{}); if(nn.length!==1)return;
+    snaps.forEach(function(o){(o.sn.players||[]).forEach(function(q){ if(!q||q.coach)return; var n=meetNum(q),nm=String(q.name||"").trim(); if(!n||!nm)return; var key=(q.meetingRole||"")+"|"+q.team+"|"+n; (seen[key]=seen[key]||{})[nm]=1; });});
+    snaps.forEach(function(o){(o.sn.players||[]).forEach(function(q){ if(!q||q.coach)return; var n=meetNum(q); if(!n||String(q.name||"").trim())return; var nn=Object.keys(seen[(q.meetingRole||"")+"|"+q.team+"|"+n]||{}); if(nn.length!==1)return;
       q.name=nn[0]; res.names++; touched[o.i]=1; if(o.k>0&&sls[o.i].frames&&sls[o.i].frames[o.k])delete sls[o.i].frames[o.k].thumb; });});
     /* 맨 위 문구 */
     var brands={},src=null; sls.forEach(function(sl){ if(sl&&sl.pageBrand!=null){brands[String(sl.pageBrand)]=1; if(!src)src=sl;} });

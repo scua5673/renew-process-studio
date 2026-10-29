@@ -22,7 +22,7 @@ try{
     await f.evaluate(()=>document.getElementById('dfNew').click());
     await f.waitForSelector('.vcc-item');
     await f.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());
-    await f.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===9,null,{timeout:15000});
+    await f.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===10,null,{timeout:15000});
     await f.waitForFunction(()=>{const o=document.getElementById('psMeetForm');return o&&o.classList.contains('on')&&o.getBoundingClientRect().width>0;},null,{timeout:10000});
     await f.click('#psMeetForm [data-start=filled]'); // 기존 포메이션 검사는 기본 자료 포함으로 시작
 
@@ -50,7 +50,7 @@ try{
   await f.click('#psMeetForm .mf-go');
   await f.waitForFunction(()=>!document.querySelector('#psMeetForm.on'));
   await f.waitForFunction(()=>anim.slides.every(s=>s.snap.pitchTheme==='white'),null,{timeout:10000});
-  assert.deepEqual([...new Set(await slides())],['white|grid|h|landscape|'+want.big+'|2|true'],'9장 모두 화이트 · 격자 · 가로');
+  assert.deepEqual([...new Set(await slides())],['white|grid|h|landscape|'+want.big+'|2|true'],'10장 모두 화이트 · 격자 · 가로');
   st=await f.evaluate(()=>({pitch:document.documentElement.dataset.pitch,grid:state.gridType,o:state.orientation,tok:state.tokenScale,pref:localStorage.getItem('ps_meet_orient_v2'),
     blue:anim.slides[2].snap.players.filter(p=>p.team==='blue').map(p=>p.pos).sort().join(','),mem:JSON.parse(localStorage.getItem('ps_meet_form_v1')).look}));
   assert.deepEqual(st,{pitch:'white',grid:'grid',o:'h',tok:want.big,pref:'landscape',blue:'AM,GK,LB,LCB,LDM,LM,RB,RCB,RDM,RM,ST',mem:{pitch:'white',grid:'grid',custom:null}},JSON.stringify(st));
@@ -86,7 +86,7 @@ try{
   await f.waitForFunction(()=>window.__mfr instanceof Promise||window.__mfr===true);
   assert.equal(await f.evaluate(async()=>await window.__mfr),true);
   let made=await lib('가상 상대전 미팅');
-  assert.equal(made.length,10,'경기 장면 1 + 기본 9장');
+  assert.equal(made.length,11,'경기 장면 1 + 기본 10장');
   assert.equal(new Set(made.map(r=>r.split('|').slice(0,4).join('|'))).size,1,JSON.stringify(made));
   assert.equal(made[0].split('|').slice(0,4).join('|'),'custom|off|v|portrait','경기 장면까지 직접 색 · 구역 없음 · 세로');
   assert.deepEqual(await f.evaluate(async()=>[...new Set(((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.name==='가상 상대전 미팅').slides.map(s=>s.snap.pitchCustom))]),['#c2410c']);
@@ -100,8 +100,8 @@ try{
   await f.click('#psMeetForm .mf-skip');
   assert.equal(await f.evaluate(async()=>await window.__mfr),true,'기본 그대로 = 만든다');
   made=await lib('가상 상대전 미팅 2');
-  assert.equal(made.length,10);assert.equal(made[0].split('|').slice(0,4).join('|'),'|grid15|v|portrait','네이비 · 15존 · 지금 미팅 방향');
-  // 기본 9장 없이(경기 장면만) — 운동장만 고르는 창
+  assert.equal(made.length,11);assert.equal(made[0].split('|').slice(0,4).join('|'),'|grid15|v|portrait','네이비 · 15존 · 지금 미팅 방향');
+  // 기본 10장 없이(경기 장면만) — 운동장만 고르는 창
   cur='match-look-only';
   await f.evaluate(sp=>{window.__mfr=window.__meetingFromMatch({template:false,name:'가상 상대전 미팅 3',slides:sp});},sp);
   await f.waitForFunction(()=>document.querySelector('#psMeetForm.on'));

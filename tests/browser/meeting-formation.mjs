@@ -25,17 +25,18 @@ try{
     await f.evaluate(()=>document.getElementById('dfNew').click());
     await f.waitForSelector('.vcc-item');
     await f.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());
-    await f.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===9,null,{timeout:15000});
+    await f.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===10,null,{timeout:15000});
     await f.waitForFunction(()=>{const o=document.getElementById('psMeetForm');return o&&o.classList.contains('on')&&o.getBoundingClientRect().width>0;},null,{timeout:10000});
     await f.click('#psMeetForm [data-start=filled]'); // 기존 포메이션 검사는 기본 자료 포함으로 시작
     await f.click('#psMeetForm .mf-pvn button[aria-label="다음 장"]');
-    await f.click('#psMeetForm .mf-pvn button[aria-label="다음 장"]'); // 기존 미드블록(3/9) 검사의 시작 위치
+    await f.click('#psMeetForm .mf-pvn button[aria-label="다음 장"]');
+    await f.click('#psMeetForm .mf-pvn button[aria-label="다음 장"]'); // 미드블록(4/10) 검사의 시작 위치
 
   };
-  const slides=()=>f.evaluate(()=>anim.slides.map(s=>({t:s.title,spec:s.snap.pitchSpec,th:/<svg/.test(s.thumb||''),
+  const slides=()=>f.evaluate(()=>anim.slides.filter(s=>!PSMeetReserve.isReserve(s)).map(s=>({t:s.title,spec:s.snap.pitchSpec,th:/<svg/.test(s.thumb||''),
     p:s.snap.players.map(p=>({team:p.team,num:String(p.num),pos:p.pos||'',x:p.x,y:p.y,id:p.id})),ball:s.snap.ball})));
 
-  // ① 보관함 «미팅 만들기» — 9장이 채워진 뒤 창이 뜬다. 처음엔 기본(4-3-3 · 4-4-2)이 골라져 있다
+  // ① 보관함 «미팅 만들기» — 10장이 채워진 뒤 창이 뜬다. 처음엔 기본(4-3-3 · 4-4-2)이 골라져 있다
   await newMeeting();
   const before=await slides();
   let st=await f.evaluate(()=>({o:window.__psMeetFormOpen(),fmt:[...document.querySelectorAll('#psMeetForm .mf-fmt button')].map(b=>b.textContent+(b.classList.contains('on')?'*':'')),
@@ -44,7 +45,7 @@ try{
   assert.deepEqual(st.o,{path:'vault',fmt:'11',us:'433',op:'442'},JSON.stringify(st));
   assert.deepEqual(st.fmt,['11 대 11*','8 대 8']);
   assert.equal(st.us.length,10);assert.ok(st.us.includes('4-2-3-1')&&st.us.includes('3-5-2'));
-  assert.deepEqual(st.on,['433','442']);assert.match(st.cap,/미드블록\s+3 \/ 9/);assert.ok(st.dots>=23,'미리보기에 22명 + 공 '+st.dots);
+  assert.deepEqual(st.on,['433','442']);assert.match(st.cap,/미드블록\s+4 \/ 10/);assert.ok(st.dots>=23,'미리보기에 22명 + 공 '+st.dots);
   await page.screenshot({path:path.join(SHOTS,'meeting-formation-picker-'+size+'.png')});
 
   // 고르면 미리보기가 따라 바뀐다 · 장을 넘겨 본다
@@ -52,12 +53,12 @@ try{
   await f.click('#psMeetForm [data-team="us"] [data-k="4231"]');await f.click('#psMeetForm [data-team="op"] [data-k="352"]');
   assert.notEqual(await f.evaluate(()=>document.querySelector('#psMeetForm .mf-pic').innerHTML),pv0,'미리보기가 바뀐다');
   await f.click('#psMeetForm .mf-pvn button[aria-label="다음 장"]');
-  assert.match(await f.evaluate(()=>document.querySelector('#psMeetForm .mf-pvn span').textContent),/로우블록\s+4 \/ 9/);
+  assert.match(await f.evaluate(()=>document.querySelector('#psMeetForm .mf-pvn span').textContent),/로우블록\s+5 \/ 10/);
   await page.screenshot({path:path.join(SHOTS,'meeting-formation-picked-'+size+'.png')});
   await f.click('#psMeetForm .mf-go');
   await f.waitForFunction(()=>!document.querySelector('#psMeetForm.on'));
   const after=await slides();
-  assert.deepEqual(after.map(s=>s.t),before.map(s=>s.t),'9장 그대로(제목)');
+  assert.deepEqual(after.map(s=>s.t),before.map(s=>s.t),'기존 9개 전술 페이지 제목 보존');
   // 4-2-3-1 · 3-5-2 번호와 포지션 — 장마다 같은 선수(번호)
   const lab=(s,tm)=>s.p.filter(p=>p.team===tm).map(p=>p.num+p.pos).sort().join(',');
   assert.equal(lab(after[0],'blue'),'10AM,11RM,1GK,2RB,3LB,4LCB,5RCB,6LDM,7LM,8RDM,9ST','BEST 11 = 4-2-3-1');
@@ -87,7 +88,7 @@ try{
     mem:JSON.parse(localStorage.getItem('ps_meet_form_v1')||'null'),toast:(document.getElementById('cs-ftoast')||{}).textContent||''}));
   assert.equal(cur.board,after[cur.idx].p.map(p=>p.num+p.pos).sort().join(','),'지금 판 = 지금 장');
   assert.deepEqual(cur.mem&&cur.mem['11'],{us:'4231',op:'352'},'고른 값 기억');
-  assert.match(cur.toast,/9장을 채웠어요 — 우리 4-2-3-1 · 상대 3-5-2/);
+  assert.match(cur.toast,/10장을 채웠어요 — 우리 4-2-3-1 · 상대 3-5-2/);
   await page.waitForTimeout(700);
   await page.screenshot({path:path.join(SHOTS,'meeting-formation-applied-'+size+'.png')});
 
@@ -106,7 +107,7 @@ try{
   await f.waitForFunction(()=>window.__ftSeen,null,{timeout:10000});
   let k=await f.evaluate(()=>({blue:anim.slides.map(s=>(s.snap.teamColors||{}).blue),label:window.__ftSeen.label,text:window.__ftSeen.text}));
   assert.ok(k.blue.every((c,i)=>i===2||c==='#e85a9b'),'다른 모든 슬라이드 '+JSON.stringify(k));
-  assert.equal(k.label,'이 슬라이드만');assert.match(k.text,/유니폼을 모든 슬라이드에 적용했어요 \(다른 슬라이드 8장\)/);
+  assert.equal(k.label,'이 슬라이드만');assert.match(k.text,/유니폼을 모든 슬라이드에 적용했어요 \(다른 슬라이드 9장\)/);
   assert.deepEqual(await pagesKit(),pages0,'작업 보드의 페이지는 그대로(미팅의 «모든 장»은 슬라이드)');
   await f.evaluate(()=>{const e=document.getElementById('psKitEd');if(e)e.classList.remove('on');});
   await f.waitForFunction(()=>window.__psPitchThumbsLeft()===0,null,{timeout:30000});
@@ -135,6 +136,7 @@ try{
   const e8=await slides();
   assert.deepEqual(e8.map(s=>s.t),['BEST 8','하이블록','미드블록','로우블록','빌드업','전진·전개','침투·마무리','코너킥 수비','코너킥 공격']);
   assert.ok(e8.every(s=>s.spec==='u12'&&s.th),'8인제 운동장 · 그림');
+  assert.deepEqual(await f.evaluate(()=>{const b=anim.slides[0],r=anim.slides[1];return {title:r.title,n:r.snap.players.length,same:JSON.stringify(r.snap.players.map(p=>[p.pos,p.x,p.y]))===JSON.stringify(b.snap.players.map(p=>[p.pos,p.x,p.y]))};}),{title:'RESERVE',n:8,same:true});
   assert.equal(lab(e8[2],'blue'),'1GK,2LCB,3RCB,4LM,5LCM,6RCM,7RM,8ST');assert.equal(lab(e8[2],'red'),'1GK,2LCB,3CB,4RCB,5LCM,6RCM,7ST,8ST');
   assert.equal(await f.evaluate(()=>state.pitchSpec),'u12','지금 판도 8인제');
 
@@ -155,8 +157,8 @@ try{
   assert.equal(await f.evaluate(()=>window.__mfr),true);
   const made=await f.evaluate(async()=>{const d=((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.name==='가상 상대전 미팅 2');
     return d&&{n:d.slides.length,blue:d.slides[2].snap.players.filter(p=>p.team==='blue').map(p=>p.pos).sort().join(','),red:d.slides[2].snap.players.filter(p=>p.team==='red').map(p=>p.pos).sort().join(','),th:d.slides.every(s=>/<svg/.test(s.thumb||''))};});
-  assert.deepEqual(made,{n:9,blue:'AM,GK,LB,LCB,LDM,LM,RB,RCB,RDM,RM,ST',red:'DM,GK,LB,LCB,LCM,LW,RB,RCB,RCM,RW,ST',th:true},JSON.stringify(made));
-  // 창 밖에서 부른 기본 9장(예전 미팅 고치기 등)은 그대로
+  assert.deepEqual(made,{n:10,blue:'AM,GK,LB,LCB,LDM,LM,RB,RCB,RDM,RM,ST',red:'DM,GK,LB,LCB,LCM,LW,RB,RCB,RCM,RW,ST',th:true},JSON.stringify(made));
+  // 창 밖에서 부른 기본 10장(예전 미팅 고치기 등)은 그대로
   assert.equal(await f.evaluate(()=>window.__meetTplSlides({},false,'h')[2].snap.players.filter(p=>p.team==='blue').map(p=>p.pos).sort().join(',')),'DM,GK,LB,LCB,LCM,LW,RB,RCB,RCM,RW,ST');
 
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
