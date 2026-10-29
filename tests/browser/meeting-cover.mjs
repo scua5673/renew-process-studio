@@ -12,13 +12,13 @@ try{
  await f.waitForFunction(()=>window.__psMeetCover&&window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&boardPrivateCurrent(_boardPrivateOwner)&&document.getElementById('dfNew'));
  console.log('cover: board ready');await f.click('#dfNew');await f.locator('.vcc-item').filter({hasText:'미팅 자료'}).click();
  await f.waitForSelector('#psMeetForm.on');await f.click('#psMeetForm [data-start=filled]');await f.click('#psMeetForm .mf-go');
- await f.waitForFunction(()=>window.__meet.idx()===0&&anim.slides.length===9&&!window.__ksNav);
+ await f.waitForFunction(()=>window.__meet.idx()===0&&anim.slides.length===10&&!window.__ksNav);
  await f.evaluate(()=>window.__meetSyncCur({thumb:true}));
  const work=await f.evaluate(()=>JSON.stringify(window.__psPages.pg(),(k,v)=>k==='thumb'?undefined:v));
  const baseline=await f.evaluate(()=>JSON.stringify(anim.slides,(k,v)=>k==='thumb'?undefined:v));
  console.log('cover: meeting ready');await f.click('#ksStrip .mc-add-cover');await f.waitForSelector('#psMeetCover:not([hidden])');
  console.log("cover: added");const first=await f.evaluate(()=>({i:window.__meet.idx(),count:anim.slides.length,cover:anim.slides[0].cover,rest:JSON.stringify(anim.slides.slice(1),(k,v)=>k==='thumb'?undefined:v)}));
- assert.equal(first.i,0);assert.equal(first.count,10);assert.equal(first.cover.v,1);assert.equal(first.rest,baseline,'inserting a cover leaves all existing slides unchanged');
+ assert.equal(first.i,0);assert.equal(first.count,11);assert.equal(first.cover.v,1);assert.equal(first.rest,baseline,'inserting a cover leaves all existing slides unchanged');
  await f.selectOption('#psMeetCover [data-cover=format]',format);
  await f.fill('#psMeetCover [data-cover=background]','#234567');
  await f.fill('#psMeetCover [data-block=text]','가상 FC\n경기 준비');

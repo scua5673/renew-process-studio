@@ -13022,7 +13022,7 @@ function mmCreateSheet(m,opts){
   if(!mmCanLib()){ toast("보관함 편집 권한이 있어야 미팅을 만들 수 있어요"); return; }
   var parts=matchMeetParts(m), team=mmIsTeamWs(), opp=String(m.opponent||"").trim()||"상대";
   /* 2.965 — «기본 9장»: 보관함 › 만들기 › 미팅과 같은 판(BEST 11 · 하이·미드·로우블록 · 빌드업 · 전진·전개 · 침투·마무리 · 코너킥). 판은 보관함이 만든다 */
-  parts.push({key:"tpl",label:"기본 9장",ok:true,detail:"BEST 11 · 하이·미드·로우블록 · 빌드업 · 전진·전개 · 침투·마무리 · 코너킥",slides:[]});
+  parts.push({key:"tpl",label:"기본 10장",ok:true,detail:"BEST 11 · RESERVE · 하이·미드·로우블록 · 빌드업 · 전진·전개 · 침투·마무리 · 코너킥",slides:[]});
   var only=Array.isArray(opts.only)?opts.only:null;
   var rows=parts.map(function(p){ var on=p.ok&&(!only||only.indexOf(p.key)>=0); return '<label class="'+(p.ok?"":"off")+'"><input type="checkbox" data-mm-part="'+p.key+'"'+(p.ok?(on?" checked":""):" disabled")+'><b>'+esc(p.label)+'</b><span title="'+esc(p.detail)+'">'+esc(p.detail)+'</span></label>'; }).join("");
   var nm0=only?(opp+"전 경기 준비 보드"):(opp+"전 미팅");
