@@ -29,3 +29,19 @@ test('first import opens an editable card; reopening retains the existing edited
 test('switching workspace before confirmation writes nothing and keeps the dialog open',async()=>{
  const h=boardHarness('d01');await h.show();h.switchWorkspace();await h.click('담고 수정하기');assert.equal(h.writes,0);assert.equal(h.opened.length,0);assert.ok(h.elements.has('psTextbookDialog'));
 });
+test('reviewed teaching scenes preserve measured zones and start each comparison at its first pass',()=>{
+ const close=(a,b)=>Math.abs(a-b)<1e-7;
+ for(const key of keys.filter(k=>/^d\d\d$/.test(k))){
+  const d=pack(key).drills[0],bounds=d.snap.drawings[0].pts,scale=(bounds[1].x-bounds[0].x)/d.trainingArea.width;
+  assert.equal(d.textbookRevision,2);
+  for(const f of d.frames){const pass=f.snap.drawings.find(s=>s.type==='pass');assert.ok(close(f.snap.ball.x,pass.pts[0].x+17)&&close(f.snap.ball.y,pass.pts[0].y+17),key+' ball marks the first pass origin');}
+  if(d.snap.players.some(p=>p.pos==='GK'))assert.ok(d.snap.drawings.some(s=>s.type==='rectline'&&close(Math.abs(s.pts[1].x-s.pts[0].x)/scale,6)&&close(Math.abs(s.pts[1].y-s.pts[0].y)/scale,12)),key+' has a 6 by 12 metre keeper area');
+ }
+ for(const [key,depth]of[['d02',3],['d05',3],['d09',2],['d10',3],['d17',3],['d18',2]]){
+  const d=pack(key).drills[0],bounds=d.snap.drawings[0].pts,scale=(bounds[1].x-bounds[0].x)/d.trainingArea.width;
+  for(const side of(key==='d18'?['right']:['left','right'])){const x=side==='left'?bounds[0].x+depth*scale:bounds[1].x-depth*scale;assert.ok(d.snap.drawings.some(s=>s.type==='dashline'&&s.pts.every(p=>close(p.x,x))),key+' '+side+' end zone matches its stated depth');}
+ }
+});
+test('a reviewed teaching copy is added without replacing an earlier edited copy',async()=>{
+ const h=boardHarness('d01',{existing:true});await h.show();await h.click('보강판 새 사본으로 담기');assert.equal(h.library.length,2);assert.equal(h.library[0].textbook.revision,2);assert.equal(h.library[1],h.original);assert.equal(h.opened[0],h.library[0].libId);
+});
