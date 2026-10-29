@@ -194,7 +194,8 @@
         note.textContent += ' 이전 판의 수정본은 그대로 유지합니다. 보강판을 새 사본으로 담으면 설명과 현장 개입이 보강된 카드가 추가됩니다.';
         button('보강판 새 사본으로 담기', function () { save('upgrade'); }, true);
       } else if (rows.some(function (row) { return existing(library, row.textbookItem, request.mode); })) button('새 사본으로 담기', function () { save(true); });
-      button(rows.every(function (row) { return existing(library, row.textbookItem, request.mode); }) ? (rows.length === 1 ? '수정본 이어 열기' : '보관함에서 보기') : (rows.length === 1 ? '담고 수정하기' : '보관함에 담기'), function () { save(false); }, !outdated);
+      var directScene = !!CATALOG[request.chapter].scene;
+      button(rows.every(function (row) { return existing(library, row.textbookItem, request.mode); }) ? (directScene ? '수정본 이어 열기' : '보관함에서 보기') : (directScene ? '담고 수정하기' : '보관함에 담기'), function () { save(false); }, !outdated);
       dialog.addEventListener('cancel', function (e) { if (saving) e.preventDefault(); else { e.preventDefault(); close(); } });
       doc.body.appendChild(dialog); dialog.showModal();
     }
