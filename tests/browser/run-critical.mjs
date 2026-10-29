@@ -24,7 +24,7 @@ const suites={
   entry:['admin-logout-handoff','admin-operations','admin-support','autosave-status','root-child-save-state','guidance','ipad-team-navigation','mobile-oauth','oauth-same-document','quiet-entry','phone-start','install-door','board-cold-restore','vault-hidden-previews','permissions-filter','csp-report-only'],   /* 3.085 install-door — 홈 화면 설치 문 · 한 번 뜨는 안내 */
   records:['team-criteria','idp-player-matches','idp-start','match-lineup','personal-large-upload','roster-history-review','roster-projection','roster-recovery','save-status-layout','storage-commit','team-position-delete','training-context','training-dock-layout','coach-idp-entry','invite-link-export','board-reports-3155','board-rotation-fade','board-feedback-3163','board-page-history','squad-cards','schedule-group-visibility']
 };
-suites.board2.push('board-training-edit','meeting-cover','meeting-reserve');
+suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
 suites.entry.push('sync-diagnosis');
 const PER_TEST_MS={'board-drag-performance':360000};   /* 3.012 — 한 테스트 한도(기본 240초)의 예외. 위 boardperf 참고 */
 /* 3.012 — 엔진과 상관없이 Chromium 을 직접 띄우는 시험(PS_BROWSER_ENGINE 을 읽지 않는다). WebKit 잡에서는 Chrome 경로가 없어 바로 죽거나

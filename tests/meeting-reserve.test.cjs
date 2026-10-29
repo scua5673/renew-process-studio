@@ -2,6 +2,23 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const R=require('../studio/board-meet-reserve.js');
 const eight=require('../studio/board-meet-8.js');
 const form=require('../studio/board-meet-form.js');
+const tweaks=require('../studio/board-tweaks.js');
+test('reserve additions exceed eleven, use free positions and unique numbers across repeated batches',()=>{
+  const box={x:30,y:30,w:1050,h:680},old=R.create({snap:eight.slides({},false,'v')[0].snap}).snap.players;
+  const a=R.additions(old,12,box),b=R.additions(old.concat(a),7,box),all=old.concat(a,b);
+  assert.equal(all.length,27);assert.equal(new Set(all.map(p=>String(p.num))).size,27);
+  assert.equal(new Set(all.map(p=>p.x+','+p.y)).size,27);
+  assert.ok(a.concat(b).every(p=>p.x>30&&p.x<1080&&p.y>30&&p.y<710));
+  assert.equal(R.additions([{num:'9007199254740992',x:100,y:100}],1,box)[0].num,'1','oversized jersey labels cannot stall number allocation');
+  for(const n of [0,-1,1.5,31,NaN,Infinity])assert.deepEqual(R.additions(old,n,box),[]);
+});
+test('kit changes cannot cross a reserve page in either direction, even after duplication and renaming',()=>{
+  const slides=[{title:'BEST 11',snap:{}},{title:'RESERVE',snap:{}},{title:'후보 B',reserve:true,snap:{}},{title:'빌드업',snap:{}}];
+  for(const index of [1,2])assert.deepEqual(tweaks.spreadKit(R.spreadTargets(slides,index),{teamColors:{blue:'#fedcba'}},index),[]);
+  const changed=tweaks.spreadKit(R.spreadTargets(slides,0),{teamColors:{blue:'#123456'}},0);
+  assert.equal(changed.length,1);assert.equal(changed[0].it,slides[3]);
+  assert.deepEqual(slides[1].snap,{});assert.deepEqual(slides[2].snap,{});
+});
 test('reserve follows BEST in both formats and orientations, with independent identities and snapshots',()=>{
   for(const oh of ['h','v']){
     const old=eight.slides({teamColors:{blue:{color:'#123456'}}},false,oh),raw=JSON.stringify(old);

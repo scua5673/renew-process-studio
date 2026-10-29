@@ -106,12 +106,13 @@ try{
   await f.evaluate(()=>document.querySelector('#psKitEd .ke-sw [data-c="#e85a9b"]').click());
   await f.waitForFunction(()=>window.__ftSeen,null,{timeout:10000});
   let k=await f.evaluate(()=>({blue:anim.slides.map(s=>(s.snap.teamColors||{}).blue),label:window.__ftSeen.label,text:window.__ftSeen.text}));
-  assert.ok(k.blue.every((c,i)=>i===2||c==='#e85a9b'),'다른 모든 슬라이드 '+JSON.stringify(k));
-  assert.equal(k.label,'이 슬라이드만');assert.match(k.text,/유니폼을 모든 슬라이드에 적용했어요 \(다른 슬라이드 9장\)/);
+  assert.equal(k.blue[1]??null,JSON.parse(kit0[1]),'리저브 유니폼은 다른 페이지와 별도');
+  assert.ok(k.blue.every((c,i)=>i===2||i===1||c==='#e85a9b'),'다른 모든 슬라이드 '+JSON.stringify(k));
+  assert.equal(k.label,'이 슬라이드만');assert.match(k.text,/유니폼을 모든 슬라이드에 적용했어요 \(다른 슬라이드 8장\)/);
   assert.deepEqual(await pagesKit(),pages0,'작업 보드의 페이지는 그대로(미팅의 «모든 장»은 슬라이드)');
   await f.evaluate(()=>{const e=document.getElementById('psKitEd');if(e)e.classList.remove('on');});
   await f.waitForFunction(()=>window.__psPitchThumbsLeft()===0,null,{timeout:30000});
-  assert.ok(await f.evaluate(()=>anim.slides.every((s,i)=>i===2||/e85a9b/i.test(s.thumb||''))),'다른 슬라이드 그림도 새 색');
+  assert.ok(await f.evaluate(()=>anim.slides.every((s,i)=>i===2||i===1||/e85a9b/i.test(s.thumb||''))),'다른 슬라이드 그림도 새 색');
   await page.screenshot({path:path.join(SHOTS,'meeting-kit-all-slides-'+size+'.png')});
   await f.evaluate(()=>window.__ftSeen.btn.click());
   k=await f.evaluate(()=>({blue:anim.slides.map(s=>JSON.stringify((s.snap.teamColors||{}).blue||null)),board:state.teamColors.blue}));
