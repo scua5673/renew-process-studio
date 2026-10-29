@@ -5,6 +5,7 @@ import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 // 예전: 보기 전용인데 제목 · 메모를 고칠 수 있었고 닫으면 말없이 사라졌다 · 발표에서 위쪽 막대가 슬라이드 제목 · 메모를 덮었다 ·
 // «나가기»와 흰 운동장의 메모가 흰 판 위에서 거의 안 보였다. 합성 팀 fixture 의 예시 미팅(«경기 전 미팅 — 상대 4-4-2»)으로 본다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'ipad':'desktop');
+// macOS WebKit의 End는 입력 커서를 끝으로 옮기지 않는다. 선택 범위만 끝으로 두고 실제 키 입력·저장 단정은 유지한다.
 const NAME='경기 전 미팅 — 상대 4-4-2';
 const fx=await startFixture(),browsers={};
 try{
@@ -31,7 +32,7 @@ try{
   assert.deepEqual(ro.locked,[true,true,true,true],'제목 · 메모 · 맨 위 문구 · 제목 띠 잠금');
   // 써 보면 바뀌지 않고, 안내가 뜬다
   await f.waitForFunction(()=>{const e=document.getElementById('ksTitle');const r=e.getBoundingClientRect();return r.width>0&&r.height>0;},null,{timeout:5000});
-  await f.click('#ksTitle');await page.keyboard.press('End');await page.keyboard.type(' 고침');
+  await f.click('#ksTitle');await f.evaluate(()=>{const e=document.getElementById('ksTitle');e.setSelectionRange(e.value.length,e.value.length);});await page.keyboard.type(' 고침');
   await page.waitForTimeout(300);
   const typed=await f.evaluate(()=>({v:document.getElementById('ksTitle').value,t:anim.slides[0].title,hint:(document.getElementById('hint')||{}).textContent||''}));
   assert.equal(typed.v,ro.title0,'칸이 그대로');assert.equal(typed.t,ro.title0,'슬라이드도 그대로');
@@ -46,7 +47,7 @@ try{
   assert.equal(ed.title,'미팅 수정');assert.doesNotMatch(ed.sub,/보기 전용/);
   assert.deepEqual(ed.locked,[false,false,false,false],'편집에서는 풀린다');
   await f.waitForFunction(()=>{const e=document.getElementById('ksTitle');const r=e.getBoundingClientRect();return r.width>0&&r.height>0;},null,{timeout:5000});
-  await f.click('#ksTitle');await page.keyboard.press('End');await page.keyboard.type(' 고침');
+  await f.click('#ksTitle');await f.evaluate(()=>{const e=document.getElementById('ksTitle');e.setSelectionRange(e.value.length,e.value.length);});await page.keyboard.type(' 고침');
   await f.waitForFunction(t=>anim.slides[0].title===t+' 고침',ro.title0,{timeout:5000});
 
   // 3) 발표 — 위쪽 막대 두 줄을 걷고, 제목 띠 · 메모가 보이고, «나가기»가 읽힌다

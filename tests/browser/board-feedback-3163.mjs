@@ -45,10 +45,10 @@ try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').ma
  step='meeting-start';
  await page.evaluate(()=>document.querySelector('#appSeg button[data-app="design"]:not([data-train])').click());await f.waitForFunction(()=>document.getElementById('dfNew'));
  await f.evaluate(()=>document.getElementById('dfNew').click());await f.waitForSelector('.vcc-item');await f.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());await f.waitForSelector('#psMeetForm.on');
- assert.equal(await f.locator('#psMeetForm [data-start=categories]').getAttribute('aria-pressed'),'true');assert.equal(await f.locator('#psMeetForm [data-team=us]').isVisible(),false);assert.equal(await f.locator('#psMeetForm .mf-categories input').count(),9);
+ assert.equal(await f.locator('#psMeetForm [data-start=categories]').getAttribute('aria-pressed'),'true');assert.equal(await f.locator('#psMeetForm [data-team=us]').isVisible(),false);assert.equal(await f.locator('#psMeetForm .mf-categories input').count(),10);
  const bounds=await f.evaluate(()=>{const b=document.querySelector('#psMeetForm .mf-box'),r=b.getBoundingClientRect();return {left:r.left,right:r.right,w:innerWidth,overflow:b.scrollWidth-b.clientWidth};});assert.ok(bounds.left>=0&&bounds.right<=bounds.w+1&&bounds.overflow<=1,JSON.stringify({width,bounds}));
  if(width===375||width===1280)await page.screenshot({path:path.join(SHOTS,`feedback-${engine}-${width}-start.png`)});
- const choices=f.locator('#psMeetForm .mf-categories input');for(let i=0;i<9;i++)await choices.nth(i).uncheck();assert.equal(await f.locator('#psMeetForm .mf-go').isEnabled(),false);await choices.nth(0).check();await choices.nth(4).check();await f.locator('#psMeetForm .mf-go').click();
+ const choices=f.locator('#psMeetForm .mf-categories input');for(let i=0;i<10;i++)await choices.nth(i).uncheck();assert.equal(await f.locator('#psMeetForm .mf-go').isEnabled(),false);await choices.nth(0).check();await choices.nth(4).check();await f.locator('#psMeetForm .mf-go').click();
  await f.waitForFunction(()=>!document.querySelector('#psMeetForm.on')&&anim.slides.length===2);assert.equal(await f.evaluate(()=>anim.slides.every(s=>!s.snap.players.length&&!s.snap.drawings.length&&!s.snap.equipment.length&&s.snap.ball===null&&!s.points.length)),true);
  step='library-copy';
  const originals=await f.evaluate(async()=>{

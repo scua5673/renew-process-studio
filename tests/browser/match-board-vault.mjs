@@ -3,7 +3,7 @@ import path from 'node:path';
 import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 // 2.965 — 사용자 «경기 준비에 보드가 따로 있는 게 아니고 보관함에 있는 거 가져와서 바로 보일 수 있게».
 // 합성 팀(셸 전체)에서: 경기 준비의 «경기 보드»가 보관함 미팅·작전판을 가져와 그 자리에서 띄우고(넘기기·크게 보기),
-// «편집 ›»은 보관함으로, 보관함의 «‹ 경기 준비로»는 그 경기로 돌아오며, «＋ 새 미팅»은 기본 9장을 붙여 경기에 이은 채 만든다.
+// «편집 ›»은 보관함으로, 보관함의 «‹ 경기 준비로»는 그 경기로 돌아오며, «＋ 새 미팅»은 기본 10장을 붙여 경기에 이은 채 만든다.
 // 옛 경기 준비 보드(운동장)는 접혀 있고 2.971 부터는 명단(우리 팀 · 선발/리저브) 카드도 함께 접힌다. 실제 서버는 건드리지 않는다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'phone':'desktop');   // PS_SIZE=ipad 로 아이패드 폭도
 const fx=await startFixture(),browsers={};
@@ -120,7 +120,7 @@ try{
   bf=await board();await bf.waitForFunction(()=>!document.body.classList.contains('vc-match'),null,{timeout:15000});
   await page.evaluate(()=>{const b=document.querySelector('[data-team-key="match"]');if(b)b.click();});
   await sf.evaluate(id=>{setView('match');matchOpen(id);matchTab='prep';matchStage='prep';renderMatch();},mid);
-  // 7) «＋ 새 미팅» — 시트 없이 바로 만들고 그 자리에서 연다(기본 9장 — 2.971 부터 선발 11 없음)
+  // 7) «＋ 새 미팅» — 시트 없이 바로 만들고 그 자리에서 연다(기본 10장 — 2.971 부터 선발 11 없음)
   await sf.waitForSelector('#matchMeetActs [data-mm-new]');await sf.click('#matchMeetActs [data-mm-new]');
   assert.equal(await sf.evaluate(()=>!!document.getElementById('mmSheetOv')),false,'시트를 거치지 않는다');
   await page.waitForFunction(()=>document.body.classList.contains('ps-match-edit')&&document.body.getAttribute('data-ps-app')==='design',null,{timeout:15000});
@@ -136,7 +136,7 @@ try{
   assert.ok(newId,'보관함에 저장됐다');
   const lib=()=>bf.evaluate(async id=>{const d=((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.libId===id);return {name:d.name,folder:d.folder,n:d.slides.length,titles:d.slides.map(s=>s.title),thumbs:d.slides.filter(s=>/<svg/.test(s.thumb||'')).length};},newId);
   const made=await lib();
-  assert.equal(made.name,'가상 상대 FC전 미팅');assert.ok(made.n===9,'기본 9장(선발 11 이 있으면 그것이 BEST 11 자리) '+JSON.stringify(made));
+  assert.equal(made.name,'가상 상대 FC전 미팅');assert.ok(made.n===10,'기본 10장(선발 11 이 있으면 그것이 BEST 11 자리) '+JSON.stringify(made));
   assert.ok(made.titles.includes('하이블록')&&made.titles.includes('코너킥 공격'),JSON.stringify(made.titles));assert.equal(made.thumbs,made.n,'장마다 그림');
   assert.equal(await bf.evaluate(async id=>((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.libId===id).slides.find(s=>s.title==='미드블록').snap.players.filter(p=>p.team==='red').map(p=>p.pos).sort().join(','),newId),
     'DM,GK,LB,LCB,LCM,LW,RB,RCB,RCM,RW,ST','고른 상대 포메이션(4-3-3)');

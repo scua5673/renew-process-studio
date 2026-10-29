@@ -358,6 +358,7 @@
       if (!doc.body.classList.contains('meet-mode') || playing() || win.__ksNav || win.__meetVideoBusy || win.__animExport) return null;
       var slides = slidesOf(), kit = kitNow(); if (!slides || !kit) return null;
       var skip = -1; try { skip = win.__meet && win.__meet.idx ? win.__meet.idx() : -1; } catch (_) {}
+      if(win.PSMeetReserve)slides=win.PSMeetReserve.spreadTargets(slides,skip);
       var recs = spreadKit(slides, kit, skip, kitKeys()); if (!recs.length) return null;
       var now = Date.now(); if (!kitRun || now - kitRun.t > 8000) kitRun = { recs: [], t: now }; kitRun.t = now;
       kitMerge(kitRun.recs, recs);
@@ -428,6 +429,7 @@
       var items = null, skip = -1, recs = [];
       if (meet) { var a = A(); items = (a && Array.isArray(a.slides) && a.slides.length > 1) ? a.slides : null; try { skip = win.__meet.idx(); } catch (_) {} }
       else { var P = win.__psPages; try { items = P && P.pg ? P.pg() : null; skip = (P && P.book && P.book.idx) ? P.book.idx() : -1; } catch (_) { items = null; } }
+      if(meet&&items&&win.PSMeetReserve)items=win.PSMeetReserve.spreadTargets(items,skip);
       (items || []).forEach(function (it, i) {
         if (!it || i === skip) return;
         var r = { it: it, snap: null, frames: [] }, fr = meet ? it.frames : (it.anim && it.anim.frames);

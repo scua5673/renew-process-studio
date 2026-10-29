@@ -23,7 +23,7 @@ try{
   await bf.evaluate(()=>document.getElementById('dfNew').click());
   await bf.waitForSelector('.vcc-item');
   await bf.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());
-  await bf.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===9,null,{timeout:15000});
+  await bf.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===10,null,{timeout:15000});
   await bf.waitForFunction(()=>{const o=document.getElementById('psMeetForm');return o&&o.classList.contains('on')&&o.getBoundingClientRect().width>0;},null,{timeout:10000});
   await bf.click('#psMeetForm [data-start=filled]'); // 상대 분석의 기본 배치 경로도 계속 검증
 
@@ -110,7 +110,13 @@ try{
   // 실제 입력·저장 경로를 거친 메모로 검사한다. 메모리만 바꾸면 정상 새로고침에서 사라진다.
   const notes={oppAttack:'가상 공격 메모 1\n가상 공격 메모 2',oppConclusion:'가상 결론',oppSetPlay:'가상 세트피스 메모'};
   for(const [key,value] of Object.entries(notes))await sf.locator(`[data-match-field="${key}"]`).fill(value);
-  await sf.waitForFunction(()=>!matchSaveTimer&&!scoutStore.hasPending()&&!_mprT);
+  // Input held while the match document is loading may outlive the ordinary save timers.
+  // Wait for every entered field in the stored document; do not refresh an older document into the form.
+  await sf.waitForFunction(([id,notes])=>{
+    if(matchSaveTimer||scoutStore.hasPending()||_mprT)return false;
+    const m=(scoutStore.get(MATCH_KEY)?.matches||[]).find(m=>m.id===id);
+    return m&&Object.entries(notes).every(([k,v])=>m[k]===v);
+  },[mid,notes],{timeout:15000});
   assert.deepEqual(await sf.evaluate(()=>{
     __matchRefresh();const m=matchGet();
     return {oppAttack:m.oppAttack,oppConclusion:m.oppConclusion,oppSetPlay:m.oppSetPlay};
