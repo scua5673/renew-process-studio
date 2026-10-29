@@ -305,7 +305,6 @@
       if (meet) { try { if (win.__meetSyncCur) win.__meetSyncCur({ thumb: true }); } catch (_) {} items = slides; }   // 지금 슬라이드도 담고 그림(썸네일)도 새로
       else { var P = win.__psPages; try { items = P && P.pg ? P.pg() : null; skip = (P && P.book && P.book.idx) ? P.book.idx() : -1; } catch (_) { items = null; } }
       if (!items || items.length < 2) return null;
-      if(meet&&win.PSMeetReserve)items=win.PSMeetReserve.spreadTargets(items,win.__meet.idx());
       var recs = spreadPitch(items, cur, skip);
       if (!recs.length) return null;
       try { win.boardSaveLive(); } catch (_) {}
