@@ -14,7 +14,7 @@ try{
   const ids=await bf.evaluate(async()=>{
     const OLD=[[5,34],[19,9],[16,25],[16,43],[19,59],[28,34],[36,22],[36,46],[47,10],[49,34],[47,58]],NUM=[1,3,4,5,2,6,8,10,7,9,11];
     const mk=(libId,createdBy)=>{
-      const slides=window.__meetTplSlides(captureSnap(),false,'v').map(s=>({pdfOrientation:'portrait',snap:s.snap,thumb:'',title:s.title,points:[]}));
+      const slides=window.__meetTplSlides(captureSnap(),false,'v').filter(s=>!PSMeetReserve.isReserve(s)).map(s=>({pdfOrientation:'portrait',snap:s.snap,thumb:'',title:s.title,points:[]}));
       NUM.forEach((n,i)=>{const q=slides[0].snap.players.find(p=>p.team==='blue'&&String(p.num)===String(n));q.x=Math.round((L+OLD[i][0]*MPP)*10)/10;q.y=Math.round((T+OLD[i][1]*MPP)*10)/10;});
       const b7=k=>slides[k].snap.players.find(p=>p.team==='blue'&&String(p.num)==='7'),b9=k=>slides[k].snap.players.find(p=>p.team==='blue'&&String(p.num)==='9');
       b7(0).name='김민수';b9(1).name='박지성';b9(2).name='차범근';slides[0].pageBrand='프로세스FC 미팅';

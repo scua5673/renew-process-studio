@@ -83,7 +83,8 @@ try{
   assert.equal(mt.label,'이 슬라이드만',JSON.stringify(mt));
   assert.match(mt.text,/다른 슬라이드 \d+장에도 넣었어요/,mt.text);
   await page.waitForTimeout(800);
-  const slides=await f.evaluate(()=>anim.slides.map(s=>s.snap.players.filter(p=>p.team==='blue'&&p.name).length));
+  const slides=await f.evaluate(()=>anim.slides.filter(s=>!PSMeetReserve.isReserve(s)).map(s=>s.snap.players.filter(p=>p.team==='blue'&&p.name).length));
+  assert.equal(await f.evaluate(()=>anim.slides.find(PSMeetReserve.isReserve).snap.players.filter(p=>p.name).length),0,'리저브 이름은 따로 편집');
   assert.ok(slides.length>=6&&slides.every(n=>n>=10),'모든 슬라이드에 이름 '+JSON.stringify(slides));
   assert.equal(await f.evaluate(w=>JSON.stringify(window.__psPages.pg().map(p=>[p.snap.players,((p.anim&&p.anim.frames)||[]).map(x=>x.snap.players)]))===w,workPages),true,'미팅에서 불러와도 작업 보드 페이지는 그대로(3.122)');
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
