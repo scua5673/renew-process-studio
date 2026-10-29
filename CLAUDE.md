@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.210 — 개인 IDP의 `home`은 `idp-weekly-growth.js/CSS`의 이번 주 성장 카드다. 시도·장면·다음 행동은 기존 `log[날짜].try/memo/next`, 기회 없음은 `tryOpportunity:false`(횟수 0과 구분)에 저장하며 기존 일지에서 시도를 고르면 이 표식을 지운다. 선수 입력은 기존 복구·저장 경로를 쓰고, 코치 질문·확인일은 `cs_idp_pub_v1_<uid>.reacts['day:날짜'].t/nextAt`에만 쓴다. 계정·팀·캐시 소유자·명단 연결·장면·답글 판본을 다시 확인하며 실패하면 코치 입력을 유지한다. `keyReady`는 공개 IDP 준비표를 발급하지 않으므로 해당 키의 쓰기 조건으로 쓰지 않는다. 코치 오늘 한 장의 기존 일간·주간 표와 6주 리뷰는 접어서 연다. `idp-weekly-growth` 브라우저 시험은 합성 계정으로 두 역할·저장 실패·동시 답글·소유자 변경·375px·다크를 확인한다.
+
 - 3.209 후속 — 표지 PNG는 가로 1600×900/세로 900×1600, 표지 포함 MP4는 첫 표지의 비율(16:9/9:16)로 저장한다. `PSMeetCover.videoFrame`은 운동장 viewBox를 가운데 기준으로 확장해 늘어짐을 막고 표지 없는 미팅은 예전 출력 크기를 유지한다. 두 비율의 실제 인코딩 파일을 검증했으며 CI는 Chromium 가로·WebKit 세로를 확인한다.
 
 - 3.209 — 미팅 표지는 `board-meet-cover.js/CSS`의 `slide.cover`로 저장한다. `meetStore`와 `meetingPdfSlides`는 표지를 운동장 캡처로 덮지 않는다. SVG·PNG·PPT·MP4가 같은 글자 배치를 쓰며, MP4는 표지 다음 슬라이드의 첫 장면만 cut(내부 애니메이션 유지). `board-export-name.js`는 내보내는 순간의 기기 날짜 YYMMDD를 파일명에만 붙인다. `meeting-cover` 브라우저 시험은 저장·재열기·작업 보드 보존·보기 전용·실제 영상 첫 프레임과 PPT를 확인한다.

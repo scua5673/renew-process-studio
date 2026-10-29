@@ -1,0 +1,68 @@
+.wg-root{color:var(--c-ink);font:var(--t-4)/1.65 var(--ps-font);min-width:0}
+.wg-root *{box-sizing:border-box}
+.wg-root h1,.wg-root h2,.wg-root h3,.wg-root p{margin:0}
+.wg-root h1{font-size:var(--t-7);letter-spacing:-.035em;line-height:1.4;margin:var(--sp-2) 0}
+.wg-root h2{font-size:var(--t-7);letter-spacing:-.03em;line-height:1.55}
+.wg-root h3{font-size:var(--t-6);line-height:1.5;margin-bottom:var(--sp-2)}
+.wg-root button,.wg-root input,.wg-root textarea{font:inherit}
+.wg-root button{cursor:pointer;min-height:40px}
+.wg-root button:disabled{opacity:.5;cursor:default}
+.wg-root :focus-visible{outline:2px solid var(--c-act);outline-offset:3px}
+.wg-root textarea,.wg-root input{color:var(--c-ink);background:var(--c-surface);border:1px solid var(--c-line);border-radius:var(--r-control);padding:var(--sp-3);max-width:100%}
+.wg-root textarea{width:100%;resize:vertical;min-height:80px;display:block}
+.wg-heading{display:flex;justify-content:space-between;align-items:center;gap:var(--sp-4);margin:var(--sp-2) 0 var(--sp-5)}
+.wg-heading p,.wg-hint{color:var(--c-muted);font-size:var(--t-3)}
+.wg-eyebrow{display:block;font-size:var(--t-2);font-weight:700;letter-spacing:.06em;color:var(--c-muted);margin-bottom:var(--sp-2)}
+.wg-player-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(240px,1fr);gap:var(--sp-4);align-items:start}
+.wg-panel{background:var(--c-surface);border:1px solid var(--c-line);border-radius:var(--r-card);padding:var(--sp-5);min-width:0;overflow-wrap:anywhere}
+.wg-main{border-top:3px solid var(--c-act)}
+.wg-aside,.wg-coach-detail{display:grid;gap:var(--sp-4);min-width:0}
+.wg-focus{margin-bottom:var(--sp-3)}
+.wg-focus h2{max-width:34em}
+.wg-focus p{color:var(--c-muted);margin-top:var(--sp-3)}
+.wg-schedule{margin-top:var(--sp-4);padding:var(--sp-4);background:var(--c-surface-2);border-radius:var(--r-2)}
+.wg-schedule ul{list-style:none;padding:0;margin:0 0 var(--sp-2)}
+.wg-schedule li{display:flex;gap:var(--sp-3);padding:var(--sp-1) 0}
+.wg-schedule time{color:var(--c-muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.wg-section{border-top:1px solid var(--c-line);padding-top:var(--sp-5);margin-top:var(--sp-5)}
+.wg-section-title,.wg-meta{display:flex;justify-content:space-between;gap:var(--sp-3);align-items:baseline}
+.wg-section-title>span,.wg-section-title>time,.wg-meta{font-size:var(--t-3);color:var(--c-muted)}
+.wg-attempts{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:var(--sp-2) 0 var(--sp-4)}
+.wg-attempts button,.wg-prompts button{color:var(--c-muted);border:1px solid var(--c-line);background:var(--c-surface);border-radius:var(--r-control);padding:var(--sp-2) var(--sp-3);font-size:var(--t-3)}
+.wg-attempts [aria-pressed=true]{background:var(--c-surface-2);color:var(--c-act);border-color:var(--c-act);font-weight:700}
+.wg-label{display:block;font-weight:650;margin:var(--sp-3) 0 var(--sp-2)}
+.wg-actions{display:flex;justify-content:flex-end;align-items:center;gap:var(--sp-3);flex-wrap:wrap;margin-top:var(--sp-3)}
+.wg-actions>.wg-hint{margin-right:auto}
+.wg-status{color:var(--c-muted);font-size:var(--t-3);margin-top:var(--sp-3)}
+.wg-status:empty{display:none}
+.wg-scene{padding:var(--sp-4) 0;border-bottom:1px solid var(--c-line)}
+.wg-scene:last-child{border-bottom:0;padding-bottom:0}
+.wg-scene p{white-space:pre-wrap;margin-top:var(--sp-2);line-height:1.8}
+.wg-scene small{display:block;color:var(--c-muted);margin-top:var(--sp-2)}
+.wg-next-read{margin-top:var(--sp-3);font-size:var(--t-3);color:var(--c-muted)}
+.wg-next-read b{color:var(--c-ink);margin-right:var(--sp-2)}
+.wg-question{border-top:3px solid var(--c-ok)}
+.wg-question>.wg-eyebrow{color:var(--c-ok)}
+.wg-question blockquote{margin:var(--sp-3) 0;font-size:var(--t-6);white-space:pre-wrap}
+.wg-empty{color:var(--c-muted);padding:var(--sp-3) 0;font-size:var(--t-4)}
+.wg-coach-grid{display:grid;grid-template-columns:minmax(210px,.65fr) minmax(0,1.75fr);gap:var(--sp-4);align-items:start}
+.wg-roster{padding:var(--sp-4)}
+.wg-roster-list{display:grid;gap:var(--sp-2);margin-top:var(--sp-4);max-height:70vh;overflow:auto}
+.wg-roster-list button{display:flex;width:100%;gap:var(--sp-3);align-items:center;text-align:left;border:1px solid transparent;border-radius:var(--r-control);padding:var(--sp-3);background:transparent;color:var(--c-ink)}
+.wg-roster-list button[aria-pressed=true]{background:var(--c-surface-2);border-color:var(--c-act)}
+.wg-roster-list small{display:block;color:var(--c-muted);font-size:var(--t-2)}
+.wg-avatar{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:36px;height:36px;background:var(--c-surface-2);border:1px solid var(--c-line);border-radius:var(--r-2);font-weight:700;color:var(--c-act)}
+.wg-arrow{margin-left:auto;color:var(--c-muted)}
+.wg-prompts{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:var(--sp-3) 0}
+.wg-followup{display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap;margin-top:var(--sp-3)}
+.wg-previous{margin-top:var(--sp-4)}
+.wg-previous summary,.wg-legacy>summary{cursor:pointer;color:var(--c-muted);font-size:var(--t-4);padding:var(--sp-3) 0}
+.wg-personal{margin-top:var(--sp-3)}
+.wg-personal summary{cursor:pointer;color:var(--c-muted);padding:var(--sp-2) 0}
+.wg-personal p{padding:var(--sp-2) 0}
+.wg-personal small{display:block;color:var(--c-muted)}
+.wg-stale{padding:var(--sp-3) 0;color:var(--c-muted)}
+.wg-legacy{margin-top:var(--sp-5)}
+#layers button[data-l=home]{order:-11}
+@media(max-width:900px){.wg-player-grid{grid-template-columns:minmax(0,1fr)}.wg-aside{grid-template-columns:repeat(2,minmax(0,1fr))}.wg-aside>section:first-child{grid-row:span 2}.wg-coach-grid{grid-template-columns:210px minmax(0,1fr)}}
+@media(max-width:600px){.wg-heading{align-items:flex-start}.wg-heading>.ps-btn-text{flex-shrink:0}.wg-panel{padding:var(--sp-4)}.wg-coach-grid,.wg-aside{grid-template-columns:minmax(0,1fr)}.wg-roster-list{max-height:220px}.wg-heading p{max-width:24em}.wg-root textarea{font-size:var(--t-6)}.wg-attempts{gap:var(--sp-1)}.wg-attempts button{flex:1;padding:var(--sp-2) var(--sp-1)}.wg-actions .ps-btn-primary{min-height:44px}}

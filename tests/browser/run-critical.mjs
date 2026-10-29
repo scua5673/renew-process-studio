@@ -22,7 +22,7 @@ const suites={
      비교하는 일회용 점검이라 넣지 않는다). Chromium 실측 합 7분 남짓이라 둘로 나눠 다른 묶음과 나란히 돈다 — entry: 진입·계정·안내 / records: 기록·저장·선수단·훈련.
      first-work 는 guidance.mjs 를 import 만 하는 옛 이름이라 넣지 않는다(같은 시험이 두 번 돈다). */
   entry:['admin-logout-handoff','admin-operations','admin-support','autosave-status','root-child-save-state','guidance','ipad-team-navigation','mobile-oauth','oauth-same-document','quiet-entry','phone-start','install-door','board-cold-restore','vault-hidden-previews','permissions-filter','csp-report-only'],   /* 3.085 install-door — 홈 화면 설치 문 · 한 번 뜨는 안내 */
-  records:['team-criteria','idp-player-matches','idp-start','match-lineup','personal-large-upload','roster-history-review','roster-projection','roster-recovery','save-status-layout','storage-commit','team-position-delete','training-context','training-dock-layout','coach-idp-entry','invite-link-export','board-reports-3155','board-rotation-fade','board-feedback-3163','board-page-history','squad-cards','schedule-group-visibility']
+  records:['team-criteria','idp-player-matches','idp-start','idp-weekly-growth','match-lineup','personal-large-upload','roster-history-review','roster-projection','roster-recovery','save-status-layout','storage-commit','team-position-delete','training-context','training-dock-layout','coach-idp-entry','invite-link-export','board-reports-3155','board-rotation-fade','board-feedback-3163','board-page-history','squad-cards','schedule-group-visibility']
 };
 suites.board2.push('board-training-edit','meeting-cover');
 suites.entry.push('sync-diagnosis');
