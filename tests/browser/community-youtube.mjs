@@ -9,7 +9,7 @@ const sample=[['Cmvrx0ojpstsx','26.10.25.(일) 첼시 0:2 토트넘 | PL'],['Cmv
 let rows=process.env.PS_YOUTUBE_PREVIEW_POSTS?JSON.parse(fs.readFileSync(process.env.PS_YOUTUBE_PREVIEW_POSTS,'utf8')):sample;
 const fx=await startFixture(),browsers={};
 try{
-  const {page,context,logs}=await openApp(fx,size,{browsers});
+  const {page,context,logs}=await openApp(fx,size,{browsers,dark:process.env.PS_DARK==='1'});
   page.setDefaultTimeout(20000);context.setDefaultTimeout(20000);
   let mode='ok',posted=null;const requested=[],mutations=[];
   await context.route('https://i.ytimg.com/**',r=>{
@@ -35,6 +35,17 @@ try{
   c=await (await page.waitForSelector('#fComm')).contentFrame();
   await c.click('#prTabElm');
   await c.waitForFunction(()=>document.querySelectorAll('.el-video-link').length===5);
+  const originalViewport=page.viewportSize();
+  for(const width of [320,390,767,1100]){
+    await page.setViewportSize({width,height:844});
+    await c.evaluate(()=>window.scrollTo(0,0));
+    const layout=await c.evaluate(()=>{const card=document.querySelector('#grid .card'),th=card.querySelector('.th').getBoundingClientRect(),cue=card.querySelector('.open-cue').getBoundingClientRect(),link=card.querySelector('.el-video-link').getBoundingClientRect();return {width:innerWidth,scroll:document.documentElement.scrollWidth,ratio:th.width/th.height,cue:{left:cue.left,right:cue.right,top:cue.top,height:cue.height},link:{left:link.left,right:link.right,top:link.top,height:link.height},tabs:[...document.querySelectorAll('#prSeg button')].map(b=>{const r=b.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&b.scrollWidth<=b.clientWidth+1;})};});
+    assert.equal(layout.width,layout.scroll,'video cards fit after resizing');assert.ok(layout.tabs.every(Boolean),'all five sources fit');
+    assert.ok(Math.abs(layout.ratio-16/9)<.02,'video artwork remains 16:9');
+    assert.ok(layout.cue.height>=44&&layout.link.height>=44&&layout.cue.right<=layout.link.left&&Math.abs(layout.cue.top-layout.link.top)<1,'native and video actions are adjacent touch targets');
+    if(width===390||width===1100)await page.screenshot({path:path.join(SHOTS,`explore-${engine}-${width}-${process.env.PS_DARK==='1'?'dark':'light'}.png`)});
+  }
+  await page.setViewportSize(originalViewport);
   const images=c.locator('#grid .el-video-art img');
   for(let i=0;i<5;i++){await images.nth(i).scrollIntoViewIfNeeded();await c.waitForFunction(i=>{const n=document.querySelectorAll('#grid .el-video-art img')[i];return n&&n.complete&&n.naturalWidth>120;},i);}
   const check=await c.evaluate(()=>({links:[...document.querySelectorAll('.el-video-link')].map(a=>[a.href,a.target,a.rel,a.getBoundingClientRect().height]),width:innerWidth,scroll:document.documentElement.scrollWidth}));

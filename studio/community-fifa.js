@@ -310,6 +310,7 @@
     sc.textContent='훈련 1 · 장면 '+(an.trainings[0].scenes||0);
     var ft=el(doc,'div','fi-foot');
     ft.appendChild(el(doc,'span','fi-by','FIFA Training Centre 참고'+(e.by?' · '+e.by:'')));
+    var play=el(doc,'button','fi-play','훈련 보기 →');play.type='button';play.setAttribute('aria-label',e.ko+' — 훈련 보기');play.onclick=function(ev){ev.stopPropagation();if(onOpen)onOpen(e,c,k);};ft.appendChild(play);
     var src=el(doc,'a','fi-go','원문 ↗'); src.href=e.url; src.target='_blank'; src.rel='noopener noreferrer'; src.setAttribute('aria-label','FIFA 원문 — 새 탭에서 열기');
     src.onclick=function(ev){ ev.stopPropagation(); };
     ft.appendChild(src); bd.appendChild(ft);
@@ -324,13 +325,13 @@
     a.setAttribute('aria-label',e.ko+(e.by?' · '+e.by:'')+' — FIFA 훈련센터에서 열기(새 탭)');
     var top=el(doc,'div','fi-top');
     top.appendChild(el(doc,'span','fi-badge',e.sec===e.label?e.label:(e.sec+' · '+e.label)));
-    top.appendChild(el(doc,'span','fi-src','FIFA'));
+    top.appendChild(el(doc,'span','fi-src','외부 자료'));
     a.appendChild(top);
     a.appendChild(el(doc,'div','fi-tt',e.ko));
     if(e.en)a.appendChild(el(doc,'div','fi-en',e.en));
     var ft=el(doc,'div','fi-foot');
     ft.appendChild(el(doc,'span','fi-by',e.by||'FIFA Training Centre'));
-    ft.appendChild(el(doc,'span','fi-go','FIFA에서 보기 ↗'));
+    ft.appendChild(el(doc,'span','fi-go','원문 보기 ↗'));
     a.appendChild(ft);
     return a;
   }

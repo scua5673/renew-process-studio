@@ -57,9 +57,11 @@
     var host=card.querySelector('.th'),body=card.querySelector('.bd');if(!host||!body)return;
     artwork(host,v);
     var link=card.ownerDocument.createElement('a');link.className='el-video-link';link.href=v.url;link.target='_blank';link.rel='noopener noreferrer';
-    link.textContent='유튜브 보기 ↗';link.setAttribute('aria-label',(post.title||'전술노트')+' — 유튜브 영상 새 탭에서 보기');
+    link.textContent='영상 보기 ↗';link.setAttribute('aria-label',(post.title||'전술노트')+' — 유튜브 영상 새 탭에서 보기');
     link.onclick=link.ondblclick=function(e){e.stopPropagation();};
-    body.insertBefore(link,body.querySelector('.open-cue'));
+    body.appendChild(link);
+    var cue=body.querySelector('.open-cue');if(cue){cue.textContent='전술 보기 →';cue.setAttribute('aria-label',(post.title||'전술노트')+' — 전술 보기');}
+    var meta=body.querySelector('.meta');if(meta&&!post.cat&&!post.age&&!post.players)meta.remove();
   }
   function uploadField(doc,host){
     if(!host||host.querySelector('#upYoutube'))return;

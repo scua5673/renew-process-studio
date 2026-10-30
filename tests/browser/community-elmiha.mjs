@@ -48,7 +48,8 @@ try{
   // 1) 코치 자료. 엘미하 칸은 화면이 보이면 미리 받는다 — 서버가 안 되면 조용하다(코치 자료 화면은 그대로)
   await until(()=>asked.length>=1,'엘미하 칸 미리 받기');
   let s=await state();
-  assert.deepEqual([s.elm,s.pressed,s.label[0],s.label[3],s.hero,s.titles],[false,['true','false','false','false','false'],'코치 자료1','전술노트',false,['가상 코치 글']]);   // 프로세스 칸의 개수는 앱에 실린 사본 몫
+  assert.deepEqual([s.elm,s.pressed,s.label[0],s.label[3],s.hero,s.titles],[false,['true','false','false','false','false'],'코치자료1','전술노트',false,['가상 코치 글']]);   // 프로세스 칸의 개수는 앱에 실린 사본 몫
+  assert.equal(await c.locator('#prTabCoach').getAttribute('aria-label'),'코치 자료','short visible label retains the full accessible name');
   assert.ok(coachAsked.length>0,'코치 자료를 서버에서 받았다');
   assert.ok(coachAsked.every(o=>o==='neq.'+ELM),'코치 목록 요청에서 계정을 제외한다');
   await page.screenshot({path:path.join(SHOTS,`community-separated-${engine}-${size}-coach.png`)});
@@ -60,7 +61,7 @@ try{
   await until(async()=>(await state()).titles.join()==='가상 코치 글','옛 캐시에서도 전술노트 제외');
   assert.equal(coachAsked.length,requested,'캐시 경로를 확인한다');
   s=await state();
-  assert.equal(s.label[0],'코치 자료1');
+  assert.equal(s.label[0],'코치자료1');
   await c.fill('#commSearch','하프스페이스');
   await until(async()=>(await state()).titles.length===0,'코치 자료 검색에도 전술노트 없음');
   await c.fill('#commSearch','');

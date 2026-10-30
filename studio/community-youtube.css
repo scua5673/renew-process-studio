@@ -5,3 +5,20 @@ html body.pr-elm #wrap#wrap#wrap .card .el-video-link{display:flex;align-items:c
 html body.pr-elm #wrap#wrap#wrap .card .el-video-link:hover{text-decoration:underline}
 html body.pr-elm #wrap#wrap#wrap .card .el-video-link:focus-visible{outline:2px solid var(--c-act);outline-offset:2px;border-radius:var(--r-1)}
 .el-video-field input[aria-invalid=true]{border-color:var(--c-bad)}
+
+/* Compact channel header and separate native-board / video actions. */
+#wrap#wrap#wrap #elHero{align-items:center;flex-wrap:nowrap;border:0;border-radius:0;background:transparent;padding:0;margin:0 0 var(--sp-3);gap:var(--sp-2)}
+#wrap#wrap#wrap .el-hero-tx b{font-size:var(--t-5);font-weight:600}
+#wrap#wrap#wrap .el-hero-tx span{font-size:var(--t-3);line-height:1.6;margin-top:var(--sp-1);color:var(--c-muted)}
+#wrap#wrap#wrap .el-yt{min-height:44px;padding:0 var(--sp-2);background:transparent;color:var(--c-muted);font-size:var(--t-3);font-weight:500}
+html body.pr-elm #wrap#wrap#wrap .card:has(.el-video-link) .bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--sp-2)}
+html body.pr-elm #wrap#wrap#wrap .card:has(.el-video-link) .bd>div{grid-column:1/-1}
+html body.pr-elm #wrap#wrap#wrap .card:has(.el-video-link) .open-cue,
+html body.pr-elm #wrap#wrap#wrap .card .el-video-link{width:100%;display:flex;align-items:center;justify-content:center;min-height:44px;padding:var(--sp-2);margin:var(--sp-3) 0 0;border:1px solid var(--c-line);border-radius:var(--r-control);font:inherit;font-size:var(--t-3);font-weight:600;line-height:1.5;text-decoration:none;white-space:normal}
+html body.pr-elm #wrap#wrap#wrap .card:has(.el-video-link) .open-cue{order:1;background:var(--c-ink);color:var(--c-surface);border-color:var(--c-ink)}
+html body.pr-elm #wrap#wrap#wrap .card .el-video-link{order:2;background:var(--c-surface);color:var(--c-ink)}
+html body.pr-elm #wrap#wrap#wrap .card .el-video-link:hover{background:var(--c-surface-2);text-decoration:none}
+@media(max-width:767px){
+  #wrap#wrap#wrap .el-hero-tx span{display:none}
+  html body.pr-elm #wrap#wrap#wrap #grid .th:after{left:var(--sp-3);top:auto;bottom:var(--sp-3);transform:none;background:var(--c-surface);color:var(--c-ink)}
+}

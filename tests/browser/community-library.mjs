@@ -9,7 +9,7 @@ fs.mkdirSync(out,{recursive:true});
 const index=JSON.parse(fs.readFileSync(path.join(root,'studio/letters/index.json'),'utf8'));
 const fx=await startFixture(),browsers={},report=[];
 try{
-  for(const mode of [{size:'desktop',width:1280,height:900,dark:true},{size:'ipad',width:1100,height:820,dark:false},{size:'phone',width:375,height:812,dark:false},{size:'phone',width:393,height:852,dark:true}]){
+  for(const mode of [{size:'desktop',width:1280,height:900,dark:true},{size:'ipad',width:1100,height:820,dark:false},{size:'phone',width:320,height:812,dark:false},{size:'phone',width:375,height:812,dark:false},{size:'phone',width:393,height:852,dark:true}]){
     const {page,context,logs}=await openApp(fx,mode.size,{dark:mode.dark,browsers});
     await page.setViewportSize({width:mode.width,height:mode.height});
     await page.locator('#appSeg button[data-app="community"]').click();
@@ -19,12 +19,15 @@ try{
     const geometry=await c.evaluate(()=>{
       const box=s=>{const r=document.querySelector(s).getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
       const q=document.getElementById('commSearch'),st=getComputedStyle(q);
-      return {vw:innerWidth,doc:document.documentElement.scrollWidth,grid:box('#grid'),card:box('.pl-row'),tabs:box('#prSeg'),title:box('#clTitle'),font:st.fontSize,columns:getComputedStyle(document.getElementById('grid')).gridTemplateColumns.split(' ').length};
+      return {vw:innerWidth,doc:document.documentElement.scrollWidth,grid:box('#grid'),card:box('.pl-row'),tabs:box('#prSeg'),search:box('#commSearch'),sourceButtons:[...document.querySelectorAll('#prSeg button')].map(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,height:r.height,width:r.width,overflow:e.scrollWidth>e.clientWidth+1};}),title:box('#clTitle'),font:st.fontSize,columns:getComputedStyle(document.querySelector('.pl-list')).gridTemplateColumns.split(' ').length};
     });
     assert.equal(geometry.doc,geometry.vw,'no horizontal document overflow');
     assert.ok(geometry.tabs.left>=0&&geometry.tabs.right<=geometry.vw+1,'source tabs fit');
-    assert.ok(geometry.card.width>=280,'native training diagram remains readable');
-    assert.equal(geometry.columns,1,'letters stay in a single reading list at every size');
+    assert.ok(geometry.search.bottom<=geometry.tabs.top,'search precedes the five sources');
+    assert.equal(geometry.sourceButtons.length,5);
+    for(const button of geometry.sourceButtons)assert.ok(button.left>=0&&button.right<=geometry.vw&&button.width>=44&&button.height>=44&&!button.overflow,'every source remains readable and tappable: '+JSON.stringify(button));
+    assert.ok(geometry.card.width>=260,'letter cards retain enough width for natural titles');
+    assert.equal(geometry.columns,mode.width<=767?1:geometry.vw<=1100?2:3,'letters form responsive cards');
     if(mode.size==='phone')assert.equal(geometry.font,'16px','phone input does not trigger Safari zoom');
     await page.screenshot({path:path.join(out,`${mode.size}-${mode.width}-${mode.dark?'dark':'light'}.png`)});
     await c.locator('#commSearch').fill('__없는_훈련_검증__');
@@ -51,6 +54,20 @@ try{
     const menu=await c.locator('#upMenu').evaluate(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,vw:innerWidth,vh:innerHeight};});
     assert.ok(menu.left>=0&&menu.right<=menu.vw&&menu.top>=0&&menu.bottom<=menu.vh,'sharing menu stays inside the viewport: '+JSON.stringify({mode,menu}));
     await c.locator('#upBtn').click();
+    if(mode.size==='phone'){
+      await c.locator('#prTabFifa').click();await c.locator('.fi-card').first().waitFor();
+      assert.equal(await c.locator('#commTopics').evaluate(e=>e.open),false,'phone topic filters start collapsed');
+      await c.locator('#commTopics summary').click();
+      assert.equal(await c.locator('#txBar').isVisible(),true,'topic filters remain available');
+      await c.locator('#commTopics summary').click();
+      await c.locator('#prTabCoach').click();
+      await c.locator('#commFiltBtn').click();await c.locator('#commFiltSheet:not([hidden])').waitFor();
+      await c.locator('#commFiltSheet .ps-fsheet-x').click();
+      await page.setViewportSize({width:1100,height:mode.height});
+      await c.waitForFunction(()=>document.getElementById('commTopics').open);
+      assert.equal(await c.locator('#commSearch').evaluate(e=>e.parentElement.classList.contains('top')),true,'search remains above sources after widening');
+      assert.equal(await c.locator('#commTopics').evaluate(e=>e.open),true,'desktop topic controls reopen');
+    }
     const errors=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
     assert.deepEqual(errors,[],'no page errors');
     report.push({...mode,...geometry,menu});
