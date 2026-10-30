@@ -18,7 +18,7 @@
 `645a6ae67a66808c57dd58f7c46370e69ca5cb4633184cbb1786add8db08d59c`입니다.
 두 원문과 실행 파일 지문은 별도 보존하며 이 결과의 passed는 결함 재현 성공을 뜻합니다.
 
-## 3.214의 변경
+## 3.217의 변경
 
 - `sync-items-stale.js`는 작성 내용·예상 원문·CAS 계보·현재 기기사본과 정확한
   roster intent를 기존 journal에 불변 보관하고 readback합니다. 보관 실패는 계속 차단합니다.
@@ -45,7 +45,7 @@
 `storage-conditional.mjs`가 새 경계를 검사합니다. 기존 partial-core 시험에는
 실제 새 모듈과 누락된 journal/storage capability를 연결했으며 기존 CAS·ACK·
 삭제·소유자·history 단정은 유지합니다. CI storage 묶음에서 양 엔진을 실행합니다.
-로컬 최종 회귀는 5,327/5,327, SQL 전체 검사는 합성 DB에서 통과했습니다.
+로컬 최종 회귀는 5,331/5,331, SQL 전체 검사는 합성 DB에서 통과했습니다.
 실제 Chromium·WebKit fixture는 각각 보류 UI·열린 scout 재시도·reload·B 자동 반영·
 새 C 저장·입력 중 D 수신 지연·blur 후 자동 반영·원문 보존을 통과했습니다.
 이 최종 실행의 source drift와 page error는 모두 0이며 이전 실패 원시는 별도 보존합니다.
