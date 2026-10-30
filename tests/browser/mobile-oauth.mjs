@@ -66,10 +66,15 @@ try{
       try{
         await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
         await page.waitForFunction(()=>window.PSSync&&document.querySelector('#psAcctWrap .acct-btn'));
+        await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
         assert.equal(await page.evaluate(()=>PSSync.session()),null,'fixture remains signed out');
         let button;
         if(scenario.surface==='lock'){
-          await touch(page,page.locator('#appSeg button[data-app="idp"]'));
+          // On phones IDP now lives in More; use the same visible route as a user.
+          if(spec.device==='phone'){
+            await touch(page,page.locator('#psMoreBtn'));
+            await touch(page,page.locator('#appMoreSheet [data-am-nav="idp"]'));
+          }else await touch(page,page.locator('#appSeg button[data-app="idp"]'));
           button=page.locator('#psDataLock [data-ps-login="'+scenario.provider+'"]');
         }else{
           await touch(page,page.locator('#psAcctWrap .acct-btn'));

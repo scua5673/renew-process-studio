@@ -250,12 +250,15 @@ try{
         }
       }
       if(spec.mobile){
-        // Exercise the second real fixed navigation, whose height differs
-        // from the normal application menu, without loading unrelated tools.
+        // Team destinations sit above content; the app bar still owns the
+        // footer boundary. Keep all overlap, hit-target and save-state checks.
         await page.evaluate(()=>{document.body.classList.add('ps-team-open');document.getElementById('teamBottom').hidden=false;dispatchEvent(new Event('resize'));});
         await page.locator('#teamBottom').waitFor({state:'visible'});await page.waitForTimeout(250);
         await state({kind:'busy',n:1});const before=await footerGeometry();assertFooter(before,{kind:'busy',n:1});
-        assert.ok(before.navs.some(n=>n.selector==='#teamBottom'),'Team navigation participates in the actual footer boundary');
+        assert.deepEqual(before.navs.map(n=>n.selector),['#appSeg'],'Persistent app navigation owns the team footer boundary');
+        const teamRow=await page.locator('#teamBottom').evaluate(e=>({position:getComputedStyle(e).position,bottom:e.getBoundingClientRect().bottom}));
+        assert.equal(teamRow.position,'static','Team navigation remains in normal layout flow');
+        assert.ok(teamRow.bottom<=before.main.top+.5,'Team navigation stays above the actual content');
         await state({kind:'bad',reason:'sync_storage',n:1});const after=await footerGeometry();assertFooter(after,{kind:'bad',reason:'sync_storage',n:1});
         assert.deepEqual(after.frame,before.frame,'Team navigation + save status changes do not move the board');
         report.teamNavigation={before,after};
