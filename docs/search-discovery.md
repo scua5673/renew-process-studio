@@ -13,9 +13,9 @@
 
 2026-10-30: 단위 검사 5,345개 통과. 로컬 소개 페이지 PC/390px 확인, 가로 넘침 없음. 1,923개 배포 파일 안에 robots.txt·sitemap.xml·확인 HTML 2개 포함. 소유확인 파일의 원문과 사본 일치. 앱·인증·저장·DB 동작 변경 없음. 실제 모바일 기기 검증은 수행하지 않았다.
 
-## 도메인 전환 준비
+## 도메인 연결
 
-- 홈페이지 processfootball.com, 앱 studio.processfootball.com을 선택했다. 결제는 승인받아 한 번 시도했으나 카드 3-D Secure 인증 화면이 비어 있어 등록 완료를 확인하지 못했다.
-- 새 canonical·OG·사이트맵 주소를 준비했지만 도메인 소유·DNS·TLS 확인 전에는 배포하지 않는다.
+- 홈페이지 processfootball.com, 앱 studio.processfootball.com의 등록·DNS 연결·유효 HTTPS를 확인했다.
+- Google은 processfootball.com 도메인 속성을 DNS TXT로 소유확인했다. Supabase 로그인 복귀 주소에 새 앱의 /studio/app.html을 추가하고 기존 4개 주소를 보존했다.
 - 기존 processstudio.netlify.app 주소는 유지하고 호스트 강제 리다이렉트를 추가하지 않는다. 소개 하단에 기존 주소 링크도 둔다. 기기 전용 자료는 원래 origin에 남는다.
-- Google/Naver 파일은 기존 netlify.app 등록 과정에서 받은 값이다. 새 도메인의 실제 소유확인 요구사항을 확인한 뒤 재사용 여부를 결정한다.
+- 기존 Google/Naver 확인 파일은 보존한다. 새 앱의 실제 네이버 확인 파일 naver242deacd387076c4870d5f458f5c70cd.html을 추가했다. 운영 배포 뒤 소유확인·사이트맵 제출을 진행한다.
