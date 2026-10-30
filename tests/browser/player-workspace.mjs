@@ -28,6 +28,7 @@ try{
   await frame.getByRole('tab',{name:'요약',exact:true}).press('ArrowRight');
   assert.equal(await frame.getByRole('tab',{name:'평가',exact:true}).getAttribute('aria-selected'),'true');
   await frame.getByRole('button',{name:'선수 상세 닫기'}).click();
+  if(await frame.locator('#pwTeam [data-pw-action="tools"]').isVisible())await frame.locator('#pwTeam [data-pw-action="tools"]').click();
   await frame.getByRole('button',{name:'배치·명단 편집',exact:true}).click();
   assert.equal(await frame.locator('#teamList').isVisible(),true,'existing edit controls remain reachable');
   if(phone){await page.locator('#teamBottom [data-tb="more"]').click();await page.locator('#teamMoreSheet [data-tb="scouting"]').click();}
