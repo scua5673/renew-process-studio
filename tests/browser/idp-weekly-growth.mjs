@@ -124,6 +124,13 @@ try{
     assert.deepEqual(await raw(page,privateKey),before,'coach never writes player private IDP');
     await frame.evaluate(()=>document.querySelector('.stage').scrollTop=0);await page.screenshot({path:path.join(out,'coach-desktop.png')});
     await page.setViewportSize({width:375,height:900});assert.equal(await frame.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'coach no horizontal overflow');
+    await frame.locator('#wg-question').fill('휴대폰에서 이어 쓰는 질문');
+    await frame.getByRole('combobox',{name:'성장 카드를 볼 선수'}).selectOption('p-b');
+    assert.equal(await frame.locator('#wg-question').count(),0,'phone selects the player without a scene');
+    await frame.getByRole('combobox',{name:'성장 카드를 볼 선수'}).selectOption('p-a');
+    assert.equal(await frame.locator('#wg-question').inputValue(),'휴대폰에서 이어 쓰는 질문','phone picker preserves each player draft');
+    assert.equal(await frame.getByRole('combobox',{name:'성장 카드를 볼 선수'}).evaluate(e=>e===document.activeElement),true,'selection keeps keyboard focus');
+    await frame.evaluate(()=>document.querySelector('.stage').scrollTop=0);
     await page.screenshot({path:path.join(out,'coach-mobile.png'),fullPage:true});
     await page.setViewportSize({width:1280,height:1000});
     // A concurrent coach changes this reply while the composer is focused.
