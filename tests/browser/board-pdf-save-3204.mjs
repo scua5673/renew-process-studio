@@ -88,20 +88,36 @@ try{
   assert.equal(await f.evaluate(()=>window.__frameCalls),0,'iframe 의 저장 창은 부르지 않는다');
   assert.equal(downloads,dl5,'맨 위 창의 손잡이에 썼으니 내려받기 없음');
   await page.waitForTimeout(600);
-  // 6) 3.206 — 창이 안 뜨면(초점 그대로) 감시 시간 뒤 다운로드 폴더로 받고 알리며 silent 를 기록, 같은 창에서는 다시 묻지 않는다
-  await page.evaluate(()=>{window.__topCalls=0;window.showSaveFilePicker=()=>{window.__topCalls++;return new Promise(()=>{});};});
+  // 6) 3.219 — 창이 안 뜬 것 같아도(초점 그대로) 감시 시간 뒤 저절로 받지 않는다: «저장 창이 보이지 않나요?» 카드를 띄운 채 기다리고, 늦게 답한 창의 손잡이에 쓴다(내려받기 없음)
+  await page.evaluate(()=>{window.__topCalls=0;window.__topWritten=[];window.showSaveFilePicker=()=>{window.__topCalls++;return new Promise(r=>{window.__lateResolve=r;});};});
   await f.evaluate(()=>{window.__psPdfSilentMs=700;});
-  const dl6=page.waitForEvent('download',{timeout:20000});
+  const dl6=downloads;
   await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');
-  await dl6;
-  assert.equal(await page.evaluate(()=>window.__topCalls),1);
-  assert.match(await hint(),/저장 창이 열리지 않아 다운로드 폴더에 받았어요|PDF 저장됨/);
-  const silent=await f.evaluate(()=>window.__ev.filter(x=>x[0]==='pdf_picker_failed'));
-  assert.deepEqual(silent.map(x=>x[1]),['SecurityError','silent']);
-  assert.equal(await f.evaluate(()=>window.__psPdfPickerSilent),true);
+  await f.waitForSelector('#psPdfFallback',{timeout:10000});
+  assert.equal(await f.evaluate(()=>[...document.querySelectorAll('#psPdfFallback button')].map(b=>b.textContent.trim()).join('|')),'취소|다운로드 폴더로 받기');
+  await page.waitForTimeout(500);
+  assert.equal(downloads,dl6,'카드가 떠 있는 동안 내려받지 않는다');assert.equal(await f.evaluate(()=>window.__psPdfPicking),true,'창은 계속 기다린다');
+  await page.evaluate(()=>{window.__lateResolve({name:'늦게.pdf',createWritable:async()=>({write:async b=>{window.__topWritten.push(b.size);},close:async()=>{}})});});
+  await page.waitForFunction(()=>window.__topWritten.length===1,null,{timeout:20000});
+  await f.waitForFunction(()=>!document.getElementById('psPdfFallback'),null,{timeout:5000});
+  await page.waitForTimeout(400);
+  assert.equal(downloads,dl6,'늦게 답한 창의 손잡이에 썼으니 내려받기 없음');assert.equal(await f.evaluate(()=>window.__psPdfPickerSilent),undefined,'다음에도 창을 연다');
+  assert.deepEqual((await f.evaluate(()=>window.__ev.filter(x=>x[0]==='pdf_picker_failed'))).map(x=>x[1]),['SecurityError','late']);
+  // 7) 3.219 — 카드의 «다운로드 폴더로 받기»를 누르면 그때 다운로드 폴더로 받고 silent 를 기록, 같은 창에서는 다시 묻지 않는다
+  await page.evaluate(()=>{window.__topCalls=0;window.showSaveFilePicker=()=>{window.__topCalls++;return new Promise(()=>{});};});
+  await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');
+  await f.waitForSelector('#psPdfFallback',{timeout:10000});
   const dl7=page.waitForEvent('download',{timeout:20000});
-  await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');
+  await f.click('#psPdfFallback [data-pf="dl"]');
   await dl7;
+  assert.equal(await page.evaluate(()=>window.__topCalls),1);
+  assert.match(await hint(),/다운로드 폴더에 받았어요|PDF 저장됨/);
+  const silent=await f.evaluate(()=>window.__ev.filter(x=>x[0]==='pdf_picker_failed'));
+  assert.deepEqual(silent.map(x=>x[1]),['SecurityError','late','silent']);
+  assert.equal(await f.evaluate(()=>window.__psPdfPickerSilent),true);assert.equal(await f.evaluate(()=>!!document.getElementById('psPdfFallback')),false,'카드는 닫힌다');
+  const dl8=page.waitForEvent('download',{timeout:20000});
+  await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');
+  await dl8;
   assert.equal(await page.evaluate(()=>window.__topCalls),1,'다음부터는 창을 부르지 않고 바로 받는다');
   console.log(JSON.stringify({ok:true,engine}));
 }finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close();}

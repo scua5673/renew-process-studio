@@ -80,12 +80,37 @@ test('창이 떠서 초점을 잃었으면(blur · hasFocus 거짓) 사용자가
   const p=mod.pick(w2,'훈련.pdf');onBlur();
   assert.equal(await p,handle,'blur 가 왔으면 초점이 참이어도 기다린다');
 });
-test('초점을 잃지 않은 채 감시 시간이 지나면 «창이 안 뜸»: 내려받기(null) · 알림 · 기록 silent · 다음부터는 묻지 않는다',async()=>{
+test('3.219 — 초점을 잃지 않은 채 감시 시간이 지나면 저절로 받지 않는다: 카드 손잡이(__psPdfFallback)를 띄운 채 기다리고, 늦게 답한 창은 그대로 쓰며 late 를 ok 로 기록',async()=>{
+  const handle={name:'훈련.pdf'};let calls=0;const toasts=[];
+  const w=win({document:{hasFocus(){return true;},createElement(){return {click(){},remove(){}};},body:{appendChild(){}}},showSaveFilePicker:()=>{calls++;return new Promise(r=>setTimeout(()=>r(handle),140));},toast(m){toasts.push(m);}});
+  const p=mod.pick(w,'훈련.pdf');
+  await new Promise(r=>setTimeout(r,80));
+  assert.equal(typeof w.__psPdfFallback,'function','감시 시간 뒤 카드 손잡이가 선다');assert.equal(w.__psPdfPicking,true,'창은 계속 기다린다');assert.equal(w.PSSync.log,undefined,'기다리는 동안은 기록하지 않는다');
+  assert.equal(await p,handle,'늦게 답한 창의 손잡이를 그대로 쓴다');
+  assert.equal(w.__psPdfFallback,null);assert.equal(w.__psPdfPickerSilent,undefined,'다음에도 창을 연다');
+  assert.deepEqual(w.PSSync.log.map(x=>[x[0],x[1].status,x[1].error_code,x[1].meta.top]),[['pdf_picker_failed','ok','late',false]]);
+  assert.equal(await mod.pick(w,'훈련.pdf'),handle);assert.equal(calls,2);
+});
+test('3.219 — 카드의 «다운로드 폴더로 받기»를 누르면 그때 내려받기(null) · 알림 · silent 기록 · 다음부터는 묻지 않는다',async()=>{
   const toasts=[];let calls=0;
   const w=win({document:{hasFocus(){return true;},createElement(){return {click(){},remove(){}};},body:{appendChild(){}}},showSaveFilePicker:()=>{calls++;return new Promise(()=>{});},toast(m){toasts.push(m);},matchMedia(){return {matches:true};}});
-  assert.equal(await mod.pick(w,'훈련.pdf'),null);
-  assert.equal(w.__psPdfPicking,false,'단추 잠금은 풀린다');assert.equal(w.__psPdfPickerSilent,true);
-  assert.match(toasts[0],/저장 창이 열리지 않아.*저장 위치 확인/);
-  assert.deepEqual(w.PSSync.log.map(x=>[x[0],x[1].error_code,x[1].meta.top,x[1].meta.standalone]),[['pdf_picker_failed','silent',false,true]]);
+  const p=mod.pick(w,'훈련.pdf');
+  await new Promise(r=>setTimeout(r,80));
+  assert.equal(toasts.length,0,'기다리는 동안 다운로드 알림은 없다');w.__psPdfFallback();
+  assert.equal(await p,null);
+  assert.equal(w.__psPdfPicking,false,'단추 잠금은 풀린다');assert.equal(w.__psPdfPickerSilent,true);assert.equal(w.__psPdfPickerWaited,true);
+  assert.match(toasts[0],/다운로드 폴더에 받았어요.*저장 위치 확인/);
+  assert.deepEqual(w.PSSync.log.map(x=>[x[0],x[1].status,x[1].error_code,x[1].meta.top,x[1].meta.standalone,x[1].meta.focus]),[['pdf_picker_failed','error','silent',false,true,true]]);
   assert.equal(await mod.pick(w,'훈련.pdf'),null,'다음 호출은 창을 다시 부르지 않고 바로 받는다');assert.equal(calls,1);assert.equal(toasts.length,2);
+});
+test('3.219 — 카드의 «취소»는 아무것도 받지 않고(false) 다음엔 다시 창을 연다; 카드가 떴던 창에서 크롬이 «이미 열림»으로 거절하면 다운로드로',async()=>{
+  let calls=0;const toasts=[];
+  const w=win({document:{hasFocus(){return true;},createElement(){return {click(){},remove(){}};},body:{appendChild(){}}},showSaveFilePicker:()=>{calls++;if(calls===1)return new Promise(()=>{});const e=new Error("Failed to execute 'showSaveFilePicker' on 'Window': File picker already active.");e.name='NotAllowedError';return Promise.reject(e);},toast(m){toasts.push(m);}});
+  const p=mod.pick(w,'훈련.pdf');
+  await new Promise(r=>setTimeout(r,80));
+  // 카드가 떠 있을 때 «취소»는 prompt 의 두 번째 인자 — DOM 이 없는 단위 시험에서는 손잡이로 흉내 내지 못하므로 창이 걸린 뒤의 «이미 열림»만 본다
+  assert.equal(typeof w.__psPdfFallback,'function');w.__psPdfFallback();assert.equal(await p,null);
+  w.__psPdfPickerSilent=undefined;   // 같은 창에서 다시 묻게 해 본다(3.205 의 «이미 열림» 거절이 걸린 창 때문이면)
+  assert.equal(await mod.pick(w,'훈련.pdf'),null,'카드가 떴던 창의 «이미 열림» 거절은 내려받기');assert.equal(w.__psPdfPickerSilent,true);
+  assert.deepEqual(w.PSSync.log.map(x=>x[1].error_code),['silent','silent']);
 });

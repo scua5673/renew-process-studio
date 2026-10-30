@@ -88,7 +88,7 @@
     win.__psPdfExportOn = 1;
     var ov = null, cfg = null, fontData = {}, facesP = null;
     var picking = false, PICK_BUSY = '저장 창이 이미 열려 있어요 — 그 창에서 폴더를 고르세요';   // 3.205 — 저장 창은 한 번에 하나
-    var pickSilent = false, PICK_SILENT_MS = 2500, PICK_SILENT = '저장 창이 열리지 않아 다운로드 폴더에 받았어요 — 크롬 설정 › 다운로드 › «다운로드 전에 각 파일의 저장 위치 확인»을 켜면 폴더를 고를 수 있어요';   // 3.206
+    var pickSilent = false, pickWaited = false, PICK_SILENT_MS = 2500, PICK_SILENT = '다운로드 폴더에 받았어요 — 크롬 설정 › 다운로드 › «다운로드 전에 각 파일의 저장 위치 확인»을 켜면 폴더를 고를 수 있어요';   // 3.206 · 3.219
 
     function b64(buf) { var u = new Uint8Array(buf), s = '', CH = 0x8000; for (var i = 0; i < u.length; i += CH) s += String.fromCharCode.apply(null, u.subarray(i, i + CH)); return win.btoa(s); }
     function faces() {
@@ -217,29 +217,53 @@
     // 3.206 — 이 창은 iframe 안이다: 같은 출처의 맨 위 창에서 연다. 창이 떴으면 페이지가 초점을 잃는다(blur · hasFocus 거짓) — 그 신호가 없으면
     // «창이 안 뜸»(맥 크롬이 호출을 받고도 창을 안 보임)으로 보고 다운로드 폴더로 받되 알리고, 같은 창에서는 다시 묻지 않는다(board-pdf-save.js 와 같은 규칙)
     function pickHost() { try { var t = win.top; if (t && t !== win && typeof t.showSaveFilePicker === 'function' && t.document) return t; } catch (_) {} return win; }
+    // 3.219 — 맥의 저장 창은 창에 붙는 시트라 초점을 안 잃을 수 있다(사용자 설치 앱 창에서 silent 둘): 감시 시간이 지나도 저절로 받지 않고
+    // «저장 창이 보이지 않나요?» 카드(#psPdfFallback)를 띄운 채 창을 계속 기다린다 — 늦게 답하면 그대로, 사람이 «다운로드 폴더로 받기»를 누르면 그때 받는다(board-pdf-save.js 와 같은 규칙)
+    function fallbackCard(onPick, onCancel) {
+      var el = null;
+      try {
+        el = doc.createElement('div'); el.id = 'psPdfFallback'; el.setAttribute('role', 'dialog');
+        el.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2147483647;box-sizing:border-box;width:min(92vw,420px);padding:14px 16px;border-radius:14px;background:#fff;color:#17181c;border:1px solid rgba(0,0,0,.08);box-shadow:0 10px 32px rgba(0,0,0,.28);font:14px/1.45 Pretendard,system-ui,sans-serif';
+        var t = doc.createElement('div'); t.textContent = '저장 창이 보이지 않나요?'; t.style.cssText = 'font-weight:700;font-size:15px;margin-bottom:4px';
+        var sub = doc.createElement('div'); sub.textContent = '창이 떴으면 그 창에서 폴더를 고르세요. 크롬이 창을 열지 않으면 다운로드 폴더로 받을 수 있어요.'; sub.style.cssText = 'opacity:.78;font-size:13px;margin-bottom:10px';
+        var row = doc.createElement('div'); row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+        var x = doc.createElement('button'); x.type = 'button'; x.setAttribute('data-pf', 'x'); x.textContent = '취소'; x.style.cssText = 'font:inherit;padding:8px 12px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:transparent;color:inherit;cursor:pointer';
+        var dl = doc.createElement('button'); dl.type = 'button'; dl.setAttribute('data-pf', 'dl'); dl.textContent = '다운로드 폴더로 받기'; dl.style.cssText = 'font:inherit;font-weight:700;padding:8px 12px;border-radius:10px;border:0;background:#2563eb;color:#fff;cursor:pointer';
+        x.addEventListener('click', function (ev) { ev.preventDefault(); onCancel(); }); dl.addEventListener('click', function (ev) { ev.preventDefault(); onPick(); });
+        row.appendChild(x); row.appendChild(dl); el.appendChild(t); el.appendChild(sub); el.appendChild(row); doc.body.appendChild(el);
+      } catch (_) { el = null; }
+      return { close: function () { try { if (el && el.remove) el.remove(); } catch (_) {} el = null; } };
+    }
     function pickTarget(name) {
       if (typeof win.showSaveFilePicker !== 'function') return Promise.resolve(null);
       if (pickSilent) { toast(PICK_SILENT); return Promise.resolve(null); }
       if (picking) { toast(PICK_BUSY); return Promise.resolve(false); }
       picking = true;
-      var host = pickHost(), blurred = false, done = false, timer = null;
+      var host = pickHost(), blurred = false, done = false, timer = null, ui = null;
       function onBlur() { blurred = true; }
       function listen(on) { try { win[on ? 'addEventListener' : 'removeEventListener']('blur', onBlur); if (host !== win) host[on ? 'addEventListener' : 'removeEventListener']('blur', onBlur); } catch (_) {} }
-      function finish() { done = true; picking = false; win.clearTimeout(timer); listen(false); }
+      function finish() { done = true; picking = false; win.clearTimeout(timer); listen(false); if (ui) ui.close(); ui = null; win.__psPdfFallback = null; }
       listen(true);
       return new Promise(function (resolve) {
         var p; try { p = host.showSaveFilePicker({ suggestedName: name, types: [{ description: 'PDF 문서', accept: { 'application/pdf': ['.pdf'] } }] }); } catch (e) { p = Promise.reject(e); }
         Promise.resolve(p).then(function (h) { if (done) return; finish(); resolve(h); }, function (e) {
           if (done) return; finish();
           if (e && e.name === 'AbortError') return resolve(false);
-          if (e && e.name === 'NotAllowedError' && /activ/i.test(String(e.message || ''))) { toast(PICK_BUSY); return resolve(false); }
+          if (e && e.name === 'NotAllowedError' && /activ/i.test(String(e.message || ''))) {
+            if (pickWaited) { pickSilent = true; toast(PICK_SILENT); return resolve(null); }   // 걸린 창 때문 — 다운로드로
+            toast(PICK_BUSY); return resolve(false);
+          }
           resolve(null);
         });
         timer = win.setTimeout(function () {
           if (done) return;
           var focused = true; try { focused = !!(host.document && host.document.hasFocus()); } catch (_) {}
           if (blurred || !focused) return;   // 창이 떠서 초점을 가져갔다 — 사용자가 고를 때까지 기다린다
-          finish(); pickSilent = true; toast(PICK_SILENT); resolve(null);
+          pickWaited = true;
+          var fallback = function () { if (done) return; finish(); pickSilent = true; toast(PICK_SILENT); resolve(null); };
+          var cancel = function () { if (done) return; finish(); resolve(false); };
+          win.__psPdfFallback = fallback;
+          ui = fallbackCard(fallback, cancel);   // 창은 계속 기다린다
         }, win.__psPdfSilentMs || PICK_SILENT_MS);
       });
     }
