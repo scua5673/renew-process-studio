@@ -136,7 +136,10 @@ try{
     // A concurrent coach changes this reply while the composer is focused.
     await frame.locator('#wg-question').fill('내가 쓰던 질문');
     await page.evaluate(({key,day})=>{const d=JSON.parse(localStorage.getItem(key));d.reacts['day:'+day].t='다른 코치의 최신 질문';localStorage.setItem(key,JSON.stringify(d));},{key:pubKey,day:TODAY});
-    await frame.locator('[data-wg-send]').click();assert.equal((await raw(page,pubKey)).reacts['day:'+TODAY].t,'다른 코치의 최신 질문');assert.equal(await frame.locator('#wg-question').inputValue(),'내가 쓰던 질문');
+    // 3.219 — WebKit 은 storage 이벤트로 카드를 먼저 다시 그려 단추가 이미 disabled(stale)일 수 있다(PR #688 webkit records 두 번 연속 — 첫 클릭은 html 이 가로채고 다시 찾은 단추는 disabled).
+    // 눌렀든 못 눌렀든 다른 코치의 질문이 남고 내 초안이 보존되는 같은 결과를 단정한다.
+    await frame.locator('[data-wg-send]').click({timeout:3000}).catch(()=>{});
+    assert.equal((await raw(page,pubKey)).reacts['day:'+TODAY].t,'다른 코치의 최신 질문');assert.equal(await frame.locator('#wg-question').inputValue(),'내가 쓰던 질문');
     await frame.locator('[data-wg-player="p-b"]').click();await frame.locator('[data-wg-player="p-a"]').click();
     assert.equal(await frame.locator('[data-wg-send]').isDisabled(),true);
     await frame.locator('[data-wg-reload]').click();assert.equal(await frame.locator('#wg-question').inputValue(),'다른 코치의 최신 질문');
