@@ -30,7 +30,7 @@
     }
     function drawControls(){
       controls.textContent='';var head=el('div','pt-intro');
-      head.appendChild(el('p','','프로세스 트레이닝 314개. 상황을 읽고, 선택하고, 실행한 뒤 다시 확인합니다. 목적과 경기 국면으로 찾아 재생하거나 보관함에서 수정하세요.'));controls.appendChild(head);
+      head.appendChild(el('p','','프로세스 트레이닝 · 훈련 목적과 형태로 찾아보세요.'));controls.appendChild(head);
       var fields=el('div','pt-fields'),lb=el('label','','훈련 목적'),sel=el('select');sel.setAttribute('aria-label','훈련 목적 선택');var all=el('option','','전체 목적');all.value='';sel.appendChild(all);
       C.purposes.forEach(function(b){var op=el('option','',b.name+' · '+b.n+'개');op.value=b.id;sel.appendChild(op);});sel.value=purpose;sel.onchange=function(){purpose=sel.value;changed();};lb.appendChild(sel);fields.appendChild(lb);
       var kl=el('label','','훈련 형태'),ks=el('select');ks.setAttribute('aria-label','훈련 형태');var ka=el('option','','전체 형태');ka.value='';ks.appendChild(ka);Object.keys(KINDS).forEach(function(k){var op=el('option','',KINDS[k]);op.value=k;ks.appendChild(op);});ks.value=kind;ks.onchange=function(){kind=ks.value;changed();};kl.appendChild(ks);fields.appendChild(kl);

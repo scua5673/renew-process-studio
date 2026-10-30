@@ -106,7 +106,8 @@ try{
   assert.equal(await c.locator('body').evaluate(e=>e.classList.contains('pr-letters')),false);
   await c.click('#prTabProc');await c.waitForSelector('[data-letter-reader="42"]');
   await c.click('#prTabFifa');await c.waitForSelector('.fi-card');assert.equal(await c.locator('.pl-reader').count(),0);
-  assert.equal(await c.locator('#txBar').isVisible(),true,'FIFA keeps its existing filters');
+  if(!await c.locator('#txBar').isVisible())await c.locator('#commTopics summary').click();
+  assert.equal(await c.locator('#txBar').isVisible(),true,'FIFA keeps its existing filters within the topic disclosure');
   assert.deepEqual(writes,[],'reading and importing letter packs never creates public community posts or counters');
   const errors=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));assert.deepEqual(errors,[]);
   console.log(JSON.stringify({engine,size,passed:true,letters:46,completeArticles:138,trainingSessions:45,imported:saved}));

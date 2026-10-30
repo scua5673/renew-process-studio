@@ -356,15 +356,14 @@
 <div id="wrap">
   <section class="cl-heading" aria-labelledby="clTitle">
     <div class="cl-heading-copy">
-      <span class="cl-eyebrow">PROCESS STUDIO COMMUNITY</span>
-      <h1 id="clTitle">함께 쌓는 코칭의 과정<span>.</span></h1>
-      <p>훈련 아이디어를 발견하고, 내 현장에 맞게 이어가세요.</p>
+      <h1 id="clTitle">커뮤니티<span>.</span></h1>
+      <p>자료를 찾아, 내 현장으로.</p>
     </div>
     <button class="fab" id="upBtn" title="작전판 · 훈련 올리기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>자료 공유하기</button>
   </section>
   <div class="top">
     <!-- 2.999 — 커뮤니티 안의 두 칸: 코치들이 올린 자료 | 프로세스가 만든 훈련 세션 · 3.018 — 셋째 칸: 엘미하(유튜브 «엘미하의 전술노트»)가 올린 전술 애니메이션 -->
-    <div class="pr-seg" id="prSeg" role="group" aria-label="커뮤니티 칸"><button type="button" id="prTabCoach" data-pr-tab="coach" aria-pressed="true">코치 자료<span id="prCoachN"></span></button><button type="button" id="prTabProc" data-pr-tab="proc" aria-pressed="false">프로세스 레터<span id="prProcN"></span></button><button type="button" id="prTabTraining" data-pr-tab="training" aria-pressed="false">프로세스 트레이닝<span id="prTrainingN"></span></button><button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">전술노트<span id="prElmN"></span></button><button type="button" id="prTabFifa" data-pr-tab="fifa" aria-pressed="false">FIFA<span id="prFifaN"></span></button></div>
+    <div class="pr-seg" id="prSeg" role="group" aria-label="커뮤니티 칸"><button type="button" id="prTabCoach" data-pr-tab="coach" aria-pressed="true" aria-label="코치 자료">코치자료<span id="prCoachN"></span></button><button type="button" id="prTabProc" data-pr-tab="proc" aria-pressed="false" aria-label="프로세스 레터">레터<span id="prProcN"></span></button><button type="button" id="prTabTraining" data-pr-tab="training" aria-pressed="false" aria-label="프로세스 트레이닝">트레이닝<span id="prTrainingN"></span></button><button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">전술노트<span id="prElmN"></span></button><button type="button" id="prTabFifa" data-pr-tab="fifa" aria-pressed="false">FIFA<span id="prFifaN"></span></button></div>
     <span class="sub" id="prSub">작전판·훈련·경기 분석 탐색</span>
   </div>
   <div class="comm-shell">
@@ -413,10 +412,10 @@
       </div>
       <!-- 3.018 — 엘미하 칸의 머리: 유튜브 채널로 가는 길 하나 -->
       <div class="el-hero" id="elHero" hidden>
-        <div class="el-hero-tx"><b>엘미하의 전술노트</b><span>프로세스 스튜디오로 만든 전술 애니메이션이에요. 눌러서 움직임을 보고, 내 보관함에 담아 고쳐 쓸 수 있어요.</span></div>
+        <div class="el-hero-tx"><b>엘미하의 전술노트</b><span>영상과 작전판으로 살펴보는 경기 장면</span></div>
         <a class="el-yt" id="elYt" href="https://www.youtube.com/@ELMIHA_TacticalNote" target="_blank" rel="noopener noreferrer" aria-label="엘미하의 전술노트 유튜브 채널 — 새 탭에서 열기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>유튜브 채널</a>
       </div>
-      <div class="tx-bar" id="txBar" hidden></div>
+      <details class="cl-topics" id="commTopics" open><summary>주제·대상 필터</summary><div class="tx-bar" id="txBar" hidden></div></details>
       <div class="comm-count" id="commCount"></div>
       <div class="grid" id="grid"></div>
     </main>
@@ -2136,7 +2135,7 @@ fetchPosts();
 <script>
 /* 2.594 — 커뮤니티 폰 머리줄 한 줄 */
 (function(){
-  var mq=window.matchMedia('(max-width:560px)');
+  var mq=window.matchMedia('(max-width:767px)');
   var top=document.querySelector('.top'), bar=document.querySelector('.comm-list .bar'), q=document.getElementById('commSearch'), filters=document.querySelector('.comm-list .filters');
   var age=document.getElementById('ageSel'), pl=document.getElementById('plSel');
   if(!top||!bar||!q||!filters)return;
@@ -2161,7 +2160,7 @@ fetchPosts();
   }
   function sync(){ mirror(cfsSort,'data-sort-nav'); mirror(cfsType,'data-type-nav'); badge(); }
   function count(){ var n=0, elm=document.body.classList.contains('pr-elm'); try{ if(typeof sort!=='undefined'&&sort!=='new')n++; if(!elm&&typeof typeF!=='undefined'&&typeF!=='all')n++; }catch(_){} if(!elm&&age&&age.value)n++; if(!elm&&pl&&pl.value)n++; return n; }   /* 3.042 — 엘미하 칸은 탐색만 센다 */
-  function badge(){ var n=count(), s=btn.querySelector('.n'); s.textContent=String(n); s.hidden=!n; }
+  function badge(){ var n=count(), s=btn.querySelector('.n'),label=document.body.classList.contains('pr-elm')?'정렬':'필터'; btn.firstChild.nodeValue=label;btn.setAttribute('aria-label',label);s.textContent=String(n);s.hidden=!n; }
   function open(){ sync(); sheet.hidden=false; }
   function close(){ sheet.hidden=true; badge(); }
   btn.onclick=open;
@@ -2174,11 +2173,13 @@ fetchPosts();
   if(age)age.addEventListener('change',badge); if(pl)pl.addEventListener('change',badge);
   document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('[data-sort-nav],[data-type-nav],#prSeg button'))setTimeout(badge,0); },true);
   function place(){
+    if(q.parentNode!==top)top.insertBefore(q,top.firstChild);
+    var topics=document.getElementById('commTopics');if(topics)topics.open=!mq.matches;
     if(mq.matches){
-      if(q.parentNode!==top){ top.appendChild(q); top.appendChild(btn); }
+      if(btn.parentNode!==top)top.insertBefore(btn,q.nextSibling);
       if(age&&age.parentNode!==cfsSel){ cfsSel.appendChild(age); if(pl)cfsSel.appendChild(pl); }
     }else{
-      if(q.parentNode===top){ bar.insertBefore(q,bar.firstChild); btn.remove(); }
+      btn.remove();
       if(age&&age.parentNode===cfsSel){ filters.insertBefore(age,filters.firstChild); if(pl)filters.insertBefore(pl,age.nextSibling); }
       close();
     }
@@ -2289,8 +2290,8 @@ html body.pr-elm:not(.pr-elm-own) .fab:not(#_):not(#__),html body.pr-elm:not(.pr
 }
 </style>
 <link rel="stylesheet" href="community-fifa.css"><!-- 3.071 — «FIFA» 칸 --><link rel="stylesheet" href="community-tax.css">
-<link rel="stylesheet" href="community-library.css?v=3.162">
-<link rel="stylesheet" href="community-detail.css?v=3.169">
+<link rel="stylesheet" href="community-library.css?v=3.222">
+<link rel="stylesheet" href="community-detail.css?v=3.222">
 <link rel="stylesheet" href="community-youtube.css">
 <link rel="stylesheet" href="community-letters.css"><link rel="stylesheet" href="letter-social.css">
 </body>
