@@ -88,7 +88,7 @@
     win.__psPdfExportOn = 1;
     var ov = null, cfg = null, fontData = {}, facesP = null;
     var picking = false, PICK_BUSY = '저장 창이 이미 열려 있어요 — 그 창에서 폴더를 고르세요';   // 3.205 — 저장 창은 한 번에 하나
-    var pickSilent = false, pickWaited = false, PICK_SILENT_MS = 2500, PICK_SILENT = '다운로드 폴더에 받았어요 — 크롬 설정 › 다운로드 › «다운로드 전에 각 파일의 저장 위치 확인»을 켜면 폴더를 고를 수 있어요';   // 3.206 · 3.208
+    var pickSilent = false, pickWaited = false, PICK_SILENT_MS = 2500, PICK_SILENT = '다운로드 폴더에 받았어요 — 크롬 설정 › 다운로드 › «다운로드 전에 각 파일의 저장 위치 확인»을 켜면 폴더를 고를 수 있어요';   // 3.206 · 3.219
 
     function b64(buf) { var u = new Uint8Array(buf), s = '', CH = 0x8000; for (var i = 0; i < u.length; i += CH) s += String.fromCharCode.apply(null, u.subarray(i, i + CH)); return win.btoa(s); }
     function faces() {
@@ -217,7 +217,7 @@
     // 3.206 — 이 창은 iframe 안이다: 같은 출처의 맨 위 창에서 연다. 창이 떴으면 페이지가 초점을 잃는다(blur · hasFocus 거짓) — 그 신호가 없으면
     // «창이 안 뜸»(맥 크롬이 호출을 받고도 창을 안 보임)으로 보고 다운로드 폴더로 받되 알리고, 같은 창에서는 다시 묻지 않는다(board-pdf-save.js 와 같은 규칙)
     function pickHost() { try { var t = win.top; if (t && t !== win && typeof t.showSaveFilePicker === 'function' && t.document) return t; } catch (_) {} return win; }
-    // 3.208 — 맥의 저장 창은 창에 붙는 시트라 초점을 안 잃을 수 있다(사용자 설치 앱 창에서 silent 둘): 감시 시간이 지나도 저절로 받지 않고
+    // 3.219 — 맥의 저장 창은 창에 붙는 시트라 초점을 안 잃을 수 있다(사용자 설치 앱 창에서 silent 둘): 감시 시간이 지나도 저절로 받지 않고
     // «저장 창이 보이지 않나요?» 카드(#psPdfFallback)를 띄운 채 창을 계속 기다린다 — 늦게 답하면 그대로, 사람이 «다운로드 폴더로 받기»를 누르면 그때 받는다(board-pdf-save.js 와 같은 규칙)
     function fallbackCard(onPick, onCancel) {
       var el = null;

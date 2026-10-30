@@ -7071,7 +7071,7 @@ function rosterSaveRows(players,options,receipt){
       touched=ids.concat(deleted);
     }
     var bases=receipt?receipt.rows.filter(function(r){return r.base;}).map(function(r){return r.base;}):options.basePlayers||[];
-    request={players:JSON.parse(JSON.stringify(players)),options:{changedIds:ids.slice(),deletedIds:deleted.slice(),basePlayers:JSON.parse(JSON.stringify(bases)),baseHistory:receipt?receipt.rows.map(function(r){return {id:r.id,players:r.history||[]};}):[]}};
+    request={players:JSON.parse(JSON.stringify(players)),options:{changedIds:ids.slice(),deletedIds:deleted.slice(),basePlayers:JSON.parse(JSON.stringify(bases)),baseHistory:receipt?receipt.rows.map(function(r){return {id:r.id,players:r.history||[]};}):[],intent:receipt?JSON.parse(JSON.stringify(receipt)):null}};
     work=PI.writeReady(request.players,request.options);
     work=Promise.resolve(work).then(function(result){
       if(owner!==teamSaveOwner())throw new Error("선수 저장 중 계정이나 팀이 바뀌었습니다");
@@ -12673,14 +12673,17 @@ function openFormEditor(id){
   feRender();
   $("feName").focus();}
 function ensureMetaForms(){data.meta=data.meta||{};data.meta.forms=data.meta.forms||[];}
+function itemsRefresh(reloadMain){
+  const a=document.activeElement,typing=a&&(/INPUT|TEXTAREA|SELECT/.test(a.tagName)||a.isContentEditable);
+  if(typing){window.__teamStale=1;}
+  else{try{if(reloadMain)load();itemsRerender();itemsApply("sync").then(function(ch){if(ch)itemsRerender();});}catch(_){}}
+}
 window.addEventListener("storage",e=>{
   /* 1.486 다중 기기: 선수단 본체(scout_tool_v1)가 다른 기기에서 바뀌어 동기화로 도착하면
      메모리 data를 재로드한다 — 전에는 리스너가 없어 옛 메모리가 다음 save()에서 새 데이터를 통째로 덮었다.
      2.612 — 삭제 묘비(cs_player_del_v1)가 도착해도 같은 길로(다른 기기가 지운 선수를 바로 감춘다). */
   if(e.key===KEY||e.key===PDKEY||e.key==="ps_items_rev"){   /* 2.730 — 선수 행이 도착해도 같은 길 */
-    const a=document.activeElement,typing=a&&(/INPUT|TEXTAREA|SELECT/.test(a.tagName)||a.isContentEditable);
-    if(typing){window.__teamStale=1;}
-    else{try{if(e.key!=="ps_items_rev")load();itemsRerender();itemsApply("sync").then(function(ch){ if(ch)itemsRerender(); });}catch(_){}}
+    itemsRefresh(e.key!=="ps_items_rev");
   }
   if(e.key===TM_KEY){const tv=document.getElementById("teamView");
     /* 1.732 — 입력 중(이름·번호 등) 재렌더는 포커스를 날려 '몇 글자 뒤 안 써짐'을 만든다.
@@ -13022,7 +13025,7 @@ function mmCreateSheet(m,opts){
   if(!mmCanLib()){ toast("보관함 편집 권한이 있어야 미팅을 만들 수 있어요"); return; }
   var parts=matchMeetParts(m), team=mmIsTeamWs(), opp=String(m.opponent||"").trim()||"상대";
   /* 2.965 — «기본 9장»: 보관함 › 만들기 › 미팅과 같은 판(BEST 11 · 하이·미드·로우블록 · 빌드업 · 전진·전개 · 침투·마무리 · 코너킥). 판은 보관함이 만든다 */
-  parts.push({key:"tpl",label:"기본 9장",ok:true,detail:"BEST 11 · 하이·미드·로우블록 · 빌드업 · 전진·전개 · 침투·마무리 · 코너킥",slides:[]});
+  parts.push({key:"tpl",label:"기본 10장",ok:true,detail:"BEST 11 · RESERVE · 하이·미드·로우블록 · 빌드업 · 전진·전개 · 침투·마무리 · 코너킥",slides:[]});
   var only=Array.isArray(opts.only)?opts.only:null;
   var rows=parts.map(function(p){ var on=p.ok&&(!only||only.indexOf(p.key)>=0); return '<label class="'+(p.ok?"":"off")+'"><input type="checkbox" data-mm-part="'+p.key+'"'+(p.ok?(on?" checked":""):" disabled")+'><b>'+esc(p.label)+'</b><span title="'+esc(p.detail)+'">'+esc(p.detail)+'</span></label>'; }).join("");
   var nm0=only?(opp+"전 경기 준비 보드"):(opp+"전 미팅");
@@ -20750,6 +20753,7 @@ function init(){
   try{ if(migrateAttrWording()){ /* 옛 문구 → 선수 말 (1.520). 팀이 고친 항목은 그대로 둔다 */ } }catch(_){}
   if(scoutAutomaticWriteAllowed())save({skipTargets:true}); /* 보기 전용 진입은 자동 저장하지 않는다. */
   try{ itemsApply("boot").then(function(ch){ if(ch)itemsRerender(); }); }catch(_){}   /* 2.730 — 선수 행이 있으면 명단을 행에서 */
+  try{parent.PSItemsStale.watchProjection(window,function(){return scoutDataLoaded&&!scoutBootPending&&rosterEditBase&&rosterEditBase.owner===teamSaveOwner()?rosterEditBase.owner:null;},function(){itemsRefresh(false);});}catch(_){}
   matchWire();
   if($("teamIdpOpen")){
     var canIdp=true;try{var ss=JSON.parse(localStorage.getItem("ps_sync_session")||"null"),wid=localStorage.getItem("ps_active_ws")||"",wl=JSON.parse(localStorage.getItem("ps_ws_list")||"[]"),wo=(wl||[]).filter(function(w){return w.id===wid;})[0],pm=JSON.parse(localStorage.getItem("cs_perms_v1")||"null");if(wo&&wo.kind==="team"&&wo.role!=="owner"&&ss&&pm){var me=pm.members&&pm.members[ss.uid];canIdp=((me&&me.role)||pm.defaultRole||"player")!=="player";}}catch(_){}
@@ -21983,5 +21987,6 @@ html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srg
 </style>
 <link rel="stylesheet" href="team-criteria.css">
 <link rel="stylesheet" href="player-workspace.css"><script src="player-workspace.js"></script><script src="player-bulk-add.js"></script>
+<link rel="stylesheet" href="team-mobile.css">
 </body>
 </html>

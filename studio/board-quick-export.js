@@ -84,7 +84,7 @@
     // PDF 한 장 — 판 그림(boardImageXML)을 A4 종이에. 저장 창은 누른 그 순간에 먼저 연다(만든 뒤엔 브라우저가 막는다)
     async function pdf() {
       if (busy || !unlocked()) return;
-      var name = base(), fname = safe(name) + '.pdf', target = null;
+      var name = base(), fname = win.PSExportName ? win.PSExportName.name(safe(name), 'pdf') : safe(name) + '.pdf', target = null;
       if (typeof win._ppbPickSaveTarget === 'function') target = await win._ppbPickSaveTarget(fname);
       if (target === false) return;   // 저장 창에서 취소
       busy = true;

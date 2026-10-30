@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import {startFixture,openApp,SIZES,WT,A} from '../fixtures/team-app.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import {startFixture,openApp,SIZES,WT,A,OUT} from '../fixtures/team-app.mjs';
+import {pageErrorEntry,trackNavigationAborts} from '../fixtures/navigation-abort.mjs';
 /* 3.104 — 닫을 때 지운 코치 피드백(cs_idp_pub_v1_<uid>)을 다시 받기 전에 쓰면 서버본이 한 항목짜리로 덮이던 길(가상 팀 재현 9 → 1).
    진짜 앱 · 진짜 동기화(sync.js) · 진짜 닫기 정리(PSSync.cache.wipe = pagehide 가 부르는 wipeTeamCacheSoft)로 본다.
    ① 열기 → 받기 ② 닫으며 지우기 ③ 다시 열되 받기를 붙잡는다(fx.holdKvPull) ④ 그 틈에 코치가 한 줄 — 페이지 저장 함수
@@ -10,6 +13,7 @@ const engine=process.env.PS_BROWSER_ENGINE||'chromium';
 SIZES.ipad.engine=engine;
 const P='22222222-2222-4222-8222-222222222222',PUB='cs_idp_pub_v1_'+P,DOC='cs_idp_v1_'+P;
 const fx=await startFixture(),browsers={};
+let reopenedPage=null,reopenedNav=null;const reopenedEntries=[];
 let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}};
 const put=(k,v,cupd=1000)=>fx.db.set(WT+'|'+k,{workspace_id:WT,k,v:JSON.stringify(v),cupd,updated_by:A});
 put('cs_perms_v1',{members:{[A]:{role:'executive'},[P]:{role:'player',playerId:'vp01'}},defaultRole:'player'});
@@ -41,8 +45,11 @@ try{
   step('reopen-gap');
   const release=fx.holdKvPull();
   await page.close();
-  const p2=await context.newPage();p2.setDefaultTimeout(45000);
-  p2.on('pageerror',e=>logs.push({step:cur,type:'pageerror',text:String(e.message)}));
+  const p2=await context.newPage();p2.setDefaultTimeout(45000);reopenedPage=p2;
+  // A new document needs its own request/navigation evidence. Never classify
+  // its errors against the first page's teardown or discard an unknown error.
+  reopenedNav=trackNavigationAborts(p2,reopenedEntries,{apiOrigins:[fx.base]});
+  p2.on('pageerror',e=>{reopenedEntries.push(pageErrorEntry(e.message,{step:cur}));reopenedNav.reclassify();});
   await p2.goto(fx.base+'/studio/app.html',{waitUntil:'domcontentloaded'});
   await p2.waitForFunction(()=>window.PSSync&&PSSync.dataUnlocked()&&PSSync.activeWs(),null,{timeout:30000});
   await p2.waitForTimeout(1500);
@@ -67,7 +74,14 @@ try{
   await settle(p2,()=>!ids(srv()).goals.includes('g1'),'지운 목표가 서버에서 빠진다');
   assert.deepEqual(ids(srv()).goals,['g2','g-other'],'지운 목표는 되살아나지 않는다');
   assert.equal(await p2.evaluate(k=>{var m=JSON.parse(localStorage.getItem('ps_sync_meta')||'{}');return !!(m.w&&m.w[k]);},PUB),false,'닫기 표가 걷혔다');
-  const pe=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));assert.deepEqual(pe,[],JSON.stringify(pe.slice(0,3)));
+  reopenedNav.reclassify();
+  const pe=logs.concat(reopenedEntries).filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));assert.deepEqual(pe,[],JSON.stringify(pe.slice(0,3)));
   console.log(JSON.stringify({engine,test:'idp-pub-wipe',ok:true,wiped,gap:{pub:'missing',playerDoc:gap.doc===null?'missing':'present'}}));
 }catch(e){console.error('[idp-pub-wipe] step='+cur);throw e;}
-finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close?.();}
+finally{
+  try{if(reopenedNav){
+    reopenedNav.reclassify();
+    const evidence={engine,page:'reopened',origin:fx.base,url:reopenedPage?.url(),errors:reopenedEntries.map(e=>({...e,raw:e.raw,verdict:reopenedNav.judge(e.raw||e.text,e.at)})),requests:reopenedNav.reqs,failedRequests:reopenedNav.fails,navigations:reopenedNav.navs,windows:reopenedNav.windows.map(w=>({start:w.start,end:w.end,detach:w.detach}))};
+    fs.writeFileSync(path.join(OUT,'reopened-navigation.json'),JSON.stringify(evidence,null,2)+'\n',{flag:'wx',mode:0o600});
+  }}finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close?.();}
+}

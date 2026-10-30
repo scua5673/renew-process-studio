@@ -1,23 +1,23 @@
 /* PROCESS STUDIO — 새 미팅의 포메이션 고르기(3.122). 사용자 «시작할때 모달이 떠서 우리팀 포메이션, 상대 팀 포메이션 적용해서 페이지 마다 제대로 적용시켜줘».
-   새 미팅의 기본 9장(board.html MEET_TPL — 우리 4-3-3 · 상대 4-4-2, 8인제는 board-meet-8.js — 2-3-2 · 3-3-1)을 만들 때 창을 띄워
-   우리 팀 · 상대 팀 포메이션을 고르게 하고, 9장 모두에 그 포메이션을 넣는다.
+   새 미팅의 기본 10장(board.html MEET_TPL — 우리 4-3-3 · 상대 4-4-2, 8인제는 board-meet-8.js — 2-3-2 · 3-3-1)을 만들 때 창을 띄워
+   우리 팀 · 상대 팀 포메이션을 고르게 하고, 10장 모두에 그 포메이션을 넣는다.
    · 장마다 손으로 놓은 기본 배치(하이블록 · 로우블록 · 빌드업 …)를 버리지 않는다: 기본 포메이션의 자리(FORM 의 u 깊이 · v 너비)와 그 장의 자리로
      «이 장에서 이 팀은 얼마나 높고 넓게 섰나»(u → x, v → y 직선)를 재고, 기본 배치가 그 직선에서 벗어난 만큼(풀백이 올라감 · 공 쪽으로 쏠림)을
      가까운 자리끼리 나눠 준다. 고른 포메이션의 선수는 자기 FORM 자리에 그 직선 + 가까운 자리의 벗어남을 받는다.
    · BEST 11 은 선발 명단이라 직선만(운동장 전체에 고르게). 코너킥 두 장은 정해진 자리(니어 포스트 · 대인 · 역습 대기)를 그대로 두고
      번호 · 포지션만 가까운 역할끼리 짝짓는다. 골키퍼 · 공을 가진 선수는 그 자리 그대로.
    · 기본 포메이션을 고르면 그 팀은 예전 판과 똑같다.
-   길은 둘: 보관함 «미팅 만들기»(__meetSeed — 9장을 채운 뒤 창을 띄우고 고르면 9장을 다시 그린다 · 8 대 8 도 여기서 고른다),
-   경기 «＋ 새 미팅»(__meetingFromMatch — 만들기 전에 창을 띄우고, 고른 값으로 __meetTplSlides 가 낸 9장을 고친다 · 인원은 경기의 것).
+   길은 둘: 보관함 «미팅 만들기»(__meetSeed — 10장을 채운 뒤 창을 띄우고 고르면 10장을 다시 그린다 · 8 대 8 도 여기서 고른다),
+   경기 «＋ 새 미팅»(__meetingFromMatch — 만들기 전에 창을 띄우고, 고른 값으로 __meetTplSlides 가 낸 10장을 고친다 · 인원은 경기의 것).
    ⚠ board.html 의 FORM · MPP · CX · CY · anim 은 let/const 라 이름으로 읽는다(CLAUDE.md). 감싸기는 DOMContentLoaded 뒤 — board-meet-8.js 보다 바깥.
    3.132 — 사용자 «미팅자료 만들때 처음에 운동장을 고르게 하자 피치와 전술구역 운동장 가로 세로 · 미팅 자료 토큰은 지금보다 1단계 크게».
-   · 같은 창 맨 위에 «운동장»(피치 다섯 · 전술 구역 여섯 · 가로/세로). 9장 모두(경기 길은 경기 장면까지 — board.html 바탕이 window.__meetLook 을 받는다)에 넣는다.
+   · 같은 창 맨 위에 «운동장»(피치 다섯 · 전술 구역 여섯 · 가로/세로). 10장 모두(경기 길은 경기 장면까지 — board.html 바탕이 window.__meetLook 을 받는다)에 넣는다.
      방향은 미팅 방향(가로형 · 세로형 — ps_meet_orient_v2, 2.932)과 같은 값이다. 고른 피치 · 구역은 이 기기에 기억한다(KEY 의 look).
    · 새 미팅의 토큰은 작전판 «＋» 한 번(tokScaleLevels 한 칸) 크게 — 창에서 무엇을 고르든(닫아도). tokV:2 를 붙여 옛 기본 크기로 읽히지 않게(2.977).
    3.133 — 사용자 «보관함에서 미팅 자료 만들기 들어가면 상대분석과 경기준비 페이지를 따로 따로 만들어서 팀운영 경기 페이지에 붙힐수 있게».
-   · 자료 종류(KINDS) — «경기 준비»(기본 9장 그대로) · «상대 분석»(OPP_TPL 6장: 상대 BEST + 팀 운영 › 경기 › 상대 분석의 국면 다섯 차례).
+   · 자료 종류(KINDS) — «경기 준비»(기본 10장 그대로) · «상대 분석»(OPP_TPL 6장: 상대 BEST + 팀 운영 › 경기 › 상대 분석의 국면 다섯 차례).
      종류는 보관함 태그(«상대 분석» · «경기 준비» — 새 저장 칸 없음, 보관함 «태그»로 바꿀 수 있다). 경기 화면(match-meet-parts.js)이 태그로 01 · 02 칸에 나눠 붙인다.
-   · 상대 분석 장은 기본 9장의 같은 상황 판(미드블록 = 상대 공격 시 …)에 고른 포메이션을 넣고, 상대 BEST 는 우리 BEST 를 상대 포메이션으로 바꿔 뒤집는다.
+   · 상대 분석 장은 기본 10장의 같은 상황 판(미드블록 = 상대 공격 시 …)에 고른 포메이션을 넣고, 상대 BEST 는 우리 BEST 를 상대 포메이션으로 바꿔 뒤집는다.
      경기에서 만들면 그 경기 상대 분석의 국면 메모(p.oppNotes)가 그 장의 메모(points)로 들어간다(board.html tpl 장의 points · 자료 tags 를 받는다). */
 (function (root, factory) {
   var api = factory();
@@ -101,7 +101,7 @@
   }
   function label(k) { return String(k || '').split('').join('-'); }
   function fmtOf(sn) { return sn && sn.pitchSpec === 'u12' ? '8' : '11'; }
-  function kindOf(title) { var t = String(title || ''); return /^BEST/i.test(t) ? 'best' : (/코너/.test(t) ? 'corner' : 'play'); }
+  function kindOf(title) { var t = String(title || ''); return /^(BEST|RESERVE)/i.test(t) ? 'best' : (/코너/.test(t) ? 'corner' : 'play'); }
   function okKey(forms, fmt, k) { return LIST[fmt].indexOf(String(k)) >= 0 && !!(forms && forms[k]) && forms[k].length === forms[DEF[fmt].us].length; }
   function norm(forms, fmt, c) {
     c = c || {}; var d = DEF[fmt];
@@ -110,7 +110,7 @@
   function isGK(e) { return e && (e[3] === 'GK' || +e[0] < 0.1); }
   function bd(a, b) { var du = (a[0] - b[0]) * 2, dv = a[1] - b[1]; return Math.sqrt(du * du + dv * dv); }
 
-  // 기본 9장의 선수(팀 안 순서) → 기본 FORM 의 몇 번째 자리. 포지션 이름으로 짝짓고, 같은 이름(ST 둘)은 판에서 위쪽부터.
+  // 기본 10장의 선수(팀 안 순서) → 기본 FORM 의 몇 번째 자리. 포지션 이름으로 짝짓고, 같은 이름(ST 둘)은 판에서 위쪽부터.
   // 상대는 왼쪽으로 공격해 FORM 너비(v)가 뒤집힌다(mirror).
   function baseIdx(players, form, mirror) {
     var used = {}, byLab = {}, out = [];
@@ -179,7 +179,7 @@
     }
   }
   function rnd(v) { return Math.round(v * 10) / 10; }
-  // 기본 9장의 한 장(snap) → 고른 포메이션의 판(새 객체). 바꿀 것이 없으면 null.
+  // 기본 10장의 한 장(snap) → 고른 포메이션의 판(새 객체). 바꿀 것이 없으면 null.
   // geo = {mpp, cx, cy} (판 단위) · forms = 작전판 FORM · choice = {us, op}
   function remapSnap(snap, title, choice, geo, forms) {
     if (!snap || !Array.isArray(snap.players) || !forms) return null;
@@ -214,7 +214,7 @@
       var k = done[p.team] = (done[p.team] || 0), q = o.pts[k], e = o.F[k]; done[p.team]++;
       var np = JSON.parse(JSON.stringify(o.list[k]));
       np.num = String(e[2]); np.pos = e[3] || ''; np.x = rnd(l + q.x * g.mpp); np.y = rnd(t + q.y * g.mpp);
-      delete np.name;   // 기본 9장은 이름이 없다 — 자리가 바뀐 선수에 남은 이름이 따라가지 않게
+      delete np.name;   // 기본 10장은 이름이 없다 — 자리가 바뀐 선수에 남은 이름이 따라가지 않게
       return np;
     });
     return sn;
@@ -366,7 +366,7 @@
     function floor() { try { return Math.min(0.4, win.defaultTokenScale()); } catch (_) { return 0.4; } }
     var ls = (function () { try { return win.localStorage; } catch (_) { return null; } })();
     var tplCache = {};
-    // 기본 9장(고치기 전) — 미리보기와 8 대 8 바꾸기에 쓴다. 판을 건드리지 않는 함수만 부른다
+    // 기본 10장(고치기 전) — 미리보기와 8 대 8 바꾸기에 쓴다. 판을 건드리지 않는 함수만 부른다
     function tpl(fmt, base, oh) {
       if (!base && tplCache[fmt]) return tplCache[fmt];
       var out = []; oh = oh === 'v' ? 'v' : 'h';
@@ -477,7 +477,7 @@
       if (c && go && go !== 'def') writeMem(ls, o.fmt, c);
       try { o.done(c, o.fmt); } catch (_) {}
     }
-    // o = {path:'vault'|'match', fmt, canFmt, oh('h'|'v' — 지금 미팅 방향), lookOnly(포메이션 없이 운동장만 — 기본 9장을 넣지 않는 경기 미팅), done(choice|null, fmt)}
+    // o = {path:'vault'|'match', fmt, canFmt, oh('h'|'v' — 지금 미팅 방향), lookOnly(포메이션 없이 운동장만 — 기본 10장을 넣지 않는 경기 미팅), done(choice|null, fmt)}
     function show(o) {
       if (!forms() && !o.lookOnly) { try { o.done(null, o.fmt); } catch (_) {} return false; }
       if (open) finish(false);
@@ -498,7 +498,7 @@
       var hd = el('div', 'mf-hd'); hd.appendChild(el('b', '', ttl));
       var x = el('button', 'mf-x', '×'); x.type = 'button'; x.setAttribute('aria-label', o.path === 'match' ? '만들지 않고 닫기' : '카테고리만 두고 닫기'); hd.appendChild(x); box.appendChild(hd);
       var sub = el('div', 'mf-sub'); box.appendChild(sub);
-      function subText() { if(o.path==='vault')return o.start==='categories'?'카테고리 이름과 빈 운동장으로 시작해요. 필요한 장만 고르고, 보관함 자료는 나중에 복사해 더할 수 있어요.':o.start==='empty'?'빈 운동장 한 장에서 시작해요. 제목과 내용을 직접 넣거나 보관함 자료를 더하세요.':(o.kind==='opp'?'상대 분석 6장 — ':'경기 준비 9장 — ')+'기본 배치가 들어 있는 자료에서 필요한 장만 골라 시작해요.'; return o.lookOnly ? '고른 운동장을 모든 장에 넣어요.' : (o.kind === 'opp' ? '상대 분석 6장 — 상대 BEST와 상대 분석의 국면(공격 시 · 수비 시 · 두 전환 · 세트피스) 차례로 채워요. 팀 운영 › 경기 › 상대 분석에 붙여요.' : '운동장과 우리 팀 · 상대 팀 포메이션으로 9장을 채워요. 장마다(블록 · 빌드업 · 코너킥) 자리를 맞춰 놓아요.'); }
+      function subText() { if(o.path==='vault')return o.start==='categories'?'카테고리 이름과 빈 운동장으로 시작해요. 필요한 장만 고르고, 보관함 자료는 나중에 복사해 더할 수 있어요.':o.start==='empty'?'빈 운동장 한 장에서 시작해요. 제목과 내용을 직접 넣거나 보관함 자료를 더하세요.':(o.kind==='opp'?'상대 분석 6장 — ':'경기 준비 10장 — ')+'기본 배치가 들어 있는 자료에서 필요한 장만 골라 시작해요.'; return o.lookOnly ? '고른 운동장을 모든 장에 넣어요.' : (o.kind === 'opp' ? '상대 분석 6장 — 상대 BEST와 상대 분석의 국면(공격 시 · 수비 시 · 두 전환 · 세트피스) 차례로 채워요. 팀 운영 › 경기 › 상대 분석에 붙여요.' : '운동장과 우리 팀 · 상대 팀 포메이션으로 10장을 채워요. 장마다(블록 · 빌드업 · 코너킥) 자리를 맞춰 놓아요.'); }
       var kseg = null;
       if (o.canKind) {   // 3.133 — 자료 종류(팀 운영 › 경기의 어느 칸에 붙일 자료인가)
         kseg = el('div', 'mf-kind'); kseg.setAttribute('role', 'group'); kseg.setAttribute('aria-label', '자료 종류');
@@ -592,7 +592,7 @@
         if (!b) return;
         if(b.hasAttribute('data-start')){o.start=b.dataset.start;o.pv=0;paint();return;}
         if (b === x) { finish(false); return; }
-        if (b === skip) { finish(open.path === 'match' ? 'def' : false); return; }   // 3.132 — 경기 길의 «기본 그대로»는 기본으로 만든다(예전엔 닫기와 같아 만들지 않았다). 보관함 길은 채운 기본 9장 그대로
+        if (b === skip) { finish(open.path === 'match' ? 'def' : false); return; }   // 3.132 — 경기 길의 «기본 그대로»는 기본으로 만든다(예전엔 닫기와 같아 만들지 않았다). 보관함 길은 채운 기본 10장 그대로
         if (b === go) { finish(true); return; }
         if (b === prev) { o.pv--; paint(); return; }
         if (b === next) { o.pv++; paint(); return; }
@@ -610,7 +610,7 @@
       return true;
     }
 
-    // ── 길 1: 보관함 «미팅 만들기» — 기본 9장을 채운 뒤 창. 고르면 9장을 다시 그린다 ──
+    // ── 길 1: 보관함 «미팅 만들기» — 기본 10장을 채운 뒤 창. 고르면 10장을 다시 그린다 ──
     function ohOf(it) { return it && it.pdfOrientation === 'landscape' ? 'h' : (it && it.pdfOrientation === 'portrait' ? 'v' : (it && it.snap && it.snap.orientation === 'h' ? 'h' : 'v')); }
     function applySeeded(items, base, c, fmt) {
       var a = A(); if (!a || !Array.isArray(a.slides) || !doc.body.classList.contains('meet-mode')) return 0;
@@ -626,7 +626,8 @@
           var sn=JSON.parse(JSON.stringify(sl.snap));Object.assign(sn,put,{orientation:lk.oh,spFlip:false});
           // Keep the original filled-template load/capture normalization (ball identity, token defaults).
           if(c.start==='filled'){win.loadSnap(sn);sn=win.captureSnap();sn.orientation=lk.oh;sn.spFlip=false;}
-          return {pdfOrientation:po,title:sl.title||'',points:[],snap:sn,thumb:(function(){try{return win.__snapToThumb?win.__snapToThumb(sn):'';}catch(_){return '';}})()};
+          var next={pdfOrientation:po,title:sl.title||'',points:[],snap:sn,thumb:(function(){try{return win.__snapToThumb?win.__snapToThumb(sn):'';}catch(_){return '';}})()};
+          if(win.PSMeetReserve&&win.PSMeetReserve.isReserve(sl)){next.reserve=true;next.reserveV=2;}return next;
         });
         win.__meetLoad(replacements);win.__meetingPdfOrientation=po;
         if(ls)try{ls.setItem('ps_meet_orient_v2',po);}catch(_){}
@@ -677,7 +678,7 @@
     function wrapSeed() {
       var f = win.__meetSeed; if (typeof f !== 'function') return false; if (f.__psForm) return true;
       var g = function (base) {
-        if (base && typeof base === 'object') { base.tokenScale = bigTok(base.tokenScale); base.tokV = 2; }   // 9장 모두(8 대 8 로 바꿔도 이 바탕을 쓴다)
+        if (base && typeof base === 'object') { base.tokenScale = bigTok(base.tokenScale); base.tokV = 2; }   // 10장 모두(8 대 8 로 바꿔도 이 바탕을 쓴다)
         var r = f.apply(this, arguments);
         if (r === true) {
           var a = A(), items = a && Array.isArray(a.slides) ? a.slides.slice() : [];
@@ -695,7 +696,7 @@
       g.__psForm = 1; win.__meetSeed = g; return true;
     }
 
-    // ── 길 2: 경기 «＋ 새 미팅» — 만들기 전에 창. 고른 값으로 기본 9장을 고친다(인원은 경기의 것) ──
+    // ── 길 2: 경기 «＋ 새 미팅» — 만들기 전에 창. 고른 값으로 기본 10장을 고친다(인원은 경기의 것) ──
     function wrapTpl() {
       var t = win.__meetTplSlides; if (typeof t !== 'function') return false; if (t.__psForm) return true;
       var g = function () {
@@ -706,8 +707,8 @@
           var nt = cur.notes && cur.notes[e.note];
           return { title: e.title, snap: e.snap, points: (Array.isArray(nt) ? nt : []).map(function (x) { return String(x == null ? '' : x).trim().slice(0, 160); }).filter(Boolean).slice(0, 10) };
         });
-        list.forEach(function (s) { if (cur.look) Object.assign(s.snap, lookSnap(cur.look)); });   // 기본 9장은 meetTplSnap 이 네이비 · 15존을 박는다 — 고른 운동장으로
-        return list.map(function (s) { return { title: s.title, snap: s.snap, points: s.points || [] }; });
+        list.forEach(function (s) { if (cur.look) Object.assign(s.snap, lookSnap(cur.look)); });   // 기본 10장은 meetTplSnap 이 네이비 · 15존을 박는다 — 고른 운동장으로
+        return list.map(function (s) { var next={ title: s.title, snap: s.snap, points: s.points || [] };if(win.PSMeetReserve&&win.PSMeetReserve.isReserve(s)){next.reserve=true;next.reserveV=2;}return next; });
       };
       g.__psForm = 1; g.__psFormRaw = t; win.__meetTplSlides = g; return true;
     }
@@ -716,7 +717,7 @@
       var g = function (p) {
         var self = this, args = arguments;
         var unlocked = true; try { if (typeof win.psVaultUnlocked === 'function') unlocked = !!win.psVaultUnlocked(); } catch (_) {}
-        var only = !p || !p.template || !forms();   // 기본 9장 없이(경기 장면만) — 운동장만 고른다
+        var only = !p || !p.template || !forms();   // 기본 10장 없이(경기 장면만) — 운동장만 고른다
         if (!p || !unlocked || (only && !(Array.isArray(p.slides) && p.slides.length))) return f.apply(self, args);
         var fmt = String(p.fmt || '') === '8' ? '8' : '11', oh = 'v';
         try { oh = typeof win.__meetDefaultOrient === 'function' && win.__meetDefaultOrient() === 'landscape' ? 'h' : 'v'; } catch (_) {}
@@ -730,7 +731,7 @@
             var r, lk = normLook(c.look, oh); cur = c; cur.kind = kind;
             cur.notes = p.oppNotes && typeof p.oppNotes === 'object' ? p.oppNotes : null;
             p.tags = [KIND_TAG[kind]];   // 경기 화면이 이 태그로 01 · 02 칸에 붙인다
-            // 경기 장면 · 기본 9장의 바탕(board.html meetBaseSnap 뒤 window.__meetLook) — 운동장 · 토큰 한 칸 크게. 방향은 미팅 방향(2.932)이 정한다
+            // 경기 장면 · 기본 10장의 바탕(board.html meetBaseSnap 뒤 window.__meetLook) — 운동장 · 토큰 한 칸 크게. 방향은 미팅 방향(2.932)이 정한다
             try { if (ls) ls.setItem('ps_meet_orient_v2', lk.oh === 'h' ? 'landscape' : 'portrait'); } catch (_) {}
             win.__meetLook = Object.assign(lookSnap(lk), { tokenScale: bigTok(curTok()), tokV: 2 });
             try { r = f.apply(self, args); } catch (_) { r = false; } finally { cur = null; win.__meetLook = null; }

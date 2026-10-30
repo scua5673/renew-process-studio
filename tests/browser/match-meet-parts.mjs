@@ -1,16 +1,19 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import path from 'node:path';
-import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,SHOTS,OUT} from '../fixtures/team-app.mjs';
 // 3.133 — 사용자 «보관함에서 미팅 자료 만들기 들어가면 상대분석과 경기준비 페이지를 따로 따로 만들어서 팀운영 경기 페이지에 붙힐수 있게».
 // ① 보관함 «미팅 만들기» 창에서 «상대 분석»을 고르면 상대 분석 6장 + 태그 #상대 분석(저장 창에 미리).
 // ② 팀 운영 › 경기 › 상대 분석(01)에 «상대 분석 자료» 카드 — #상대 분석 자료만, 가져오기도 #상대 분석만. 경기 준비(02)의 «경기 보드»는 나머지.
 // ③ 상대 분석 칸의 «＋ 새 상대 분석» — 그 경기 상대 분석의 메모가 장마다. 합성 팀 fixture 에서만 돈다(실제 서버는 건드리지 않는다).
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'ipad':'desktop');
 const fx=await startFixture(),browsers={};
-let cur='';
+let cur='',failurePage=null,failureMid=null;
 const OPP_T=['상대 BEST 11','상대 공격 시','상대 수비 시','상대 수비→공격','상대 공격→수비','상대 세트피스'];
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
+  failurePage=page;
   await page.waitForTimeout(2000);
   const board=async()=>{const f=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();await f.waitForFunction(()=>typeof window.__meetingSetMatch==='function'&&typeof window.__snapToThumb==='function'&&typeof boardStore==='object'&&window.PSMeetForm&&window.__meetSeed&&window.__meetSeed.__psForm&&window.__meetingFromMatch&&window.__meetingFromMatch.__psForm,null,{timeout:30000});return f;};
 
@@ -23,7 +26,7 @@ try{
   await bf.evaluate(()=>document.getElementById('dfNew').click());
   await bf.waitForSelector('.vcc-item');
   await bf.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());
-  await bf.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===9,null,{timeout:15000});
+  await bf.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===10,null,{timeout:15000});
   await bf.waitForFunction(()=>{const o=document.getElementById('psMeetForm');return o&&o.classList.contains('on')&&o.getBoundingClientRect().width>0;},null,{timeout:10000});
   await bf.click('#psMeetForm [data-start=filled]'); // 상대 분석의 기본 배치 경로도 계속 검증
 
@@ -66,6 +69,7 @@ try{
   const sf=await (await page.waitForSelector('#fScout')).contentFrame();
   await sf.waitForFunction(()=>typeof matchLoad==='function'&&window.PSMatchMeetParts&&window.mmPaint&&window.mmPaint.__psParts&&(matchLoad().matches||[]).some(m=>/가상 상대 FC/.test(m.opponent||'')),null,{timeout:30000});
   const mid=await sf.evaluate(()=>{const m=matchLoad().matches.find(x=>/가상 상대 FC/.test(x.opponent||''));setView('match');matchOpen(m.id);matchTab='prep';matchStage='prep';renderMatch();return m.id;});
+  failureMid=mid;
   await sf.waitForSelector('#matchMeetCard:not([hidden]) .mmv-empty',{timeout:15000});
   const cardSt=()=>sf.evaluate(()=>{const c=document.getElementById('matchMeetCard');return {panel:c.closest('.match-panel').id,head:c.querySelector('.match-card-head b').textContent,
     shown:[...c.querySelectorAll('.mmv[data-mmv]')].map(e=>e.getAttribute('data-mmv')),tabs:[...c.querySelectorAll('.mmv-tabs button[data-mmv-lib]')].map(e=>e.getAttribute('data-mmv-lib')),
@@ -110,7 +114,13 @@ try{
   // 실제 입력·저장 경로를 거친 메모로 검사한다. 메모리만 바꾸면 정상 새로고침에서 사라진다.
   const notes={oppAttack:'가상 공격 메모 1\n가상 공격 메모 2',oppConclusion:'가상 결론',oppSetPlay:'가상 세트피스 메모'};
   for(const [key,value] of Object.entries(notes))await sf.locator(`[data-match-field="${key}"]`).fill(value);
-  await sf.waitForFunction(()=>!matchSaveTimer&&!scoutStore.hasPending()&&!_mprT);
+  // Input held while the match document is loading may outlive the ordinary save timers.
+  // Wait for every entered field in the stored document; do not refresh an older document into the form.
+  await sf.waitForFunction(([id,notes])=>{
+    if(matchSaveTimer||scoutStore.hasPending()||_mprT)return false;
+    const m=(scoutStore.get(MATCH_KEY)?.matches||[]).find(m=>m.id===id);
+    return m&&Object.entries(notes).every(([k,v])=>m[k]===v);
+  },[mid,notes],{timeout:15000});
   assert.deepEqual(await sf.evaluate(()=>{
     __matchRefresh();const m=matchGet();
     return {oppAttack:m.oppAttack,oppConclusion:m.oppConclusion,oppSetPlay:m.oppSetPlay};
@@ -128,5 +138,57 @@ try{
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],JSON.stringify(errs));
   console.log(JSON.stringify({engine,size,test:'match-meet-parts',passed:true}));
-}catch(e){console.error('[match-meet-parts] step='+cur);throw e;}
+}catch(e){
+  console.error('[match-meet-parts] step='+cur);
+  // Failure-only reads: keep the original input, wait predicate, timeout and error.
+  try{
+    const sf=failurePage?.frames().find(f=>/\/studio\/scout\.html(?:[?#]|$)/.test(f.url()));
+    const actual=sf?await sf.evaluate(async expectedMid=>{
+      const read=fn=>{try{return fn();}catch(e){return {error:String(e.message||e),code:e.psCode||null};}};
+      const keys=['oppAttack','oppConclusion','oppSetPlay'],fields=row=>Object.fromEntries(keys.map(k=>[k,row?.[k]??null]));
+      const currentMid=typeof matchCurrent==='undefined'?null:matchCurrent;
+      const memory=typeof matchState==='undefined'?null:matchState;
+      const row=doc=>doc?.matches?.find(m=>m.id===expectedMid);
+      const stores=Object.fromEntries(['cs_team_matches_v1','process_coach_v1'].map(k=>[k,{localRaw:read(()=>localStorage.getItem(k))}]));
+      const parse=raw=>typeof raw==='string'?read(()=>JSON.parse(raw)):null;
+      const active=document.activeElement,saved=document.getElementById('matchSavedState');
+      // Copy every synchronous value before the first asynchronous IDB read.
+      const snapshot=JSON.parse(JSON.stringify({
+        capturedAt:{wall:Date.now(),performance:performance.now()},
+        expectedMid,currentMid,sameMatch:currentMid===expectedMid,
+        owner:read(()=>teamSaveOwner()),storeOwner:read(()=>scoutStore.owner()),
+        activeWorkspace:read(()=>localStorage.getItem('ps_active_ws')),
+        timer:read(()=>!!matchSaveTimer),mpr:read(()=>!!_mprT),revision:read(()=>matchSaveRevision),
+        pending:read(()=>scoutStore.hasPending()),hasPending:read(()=>window.psHasPending()),
+        failed:Object.fromEntries(['cs_team_matches_v1','process_coach_v1','scout_tool_v1','cs_squad_v1'].map(k=>[k,read(()=>scoutStore.hasFailed(k))])),
+        docPending:read(()=>matchDocPending()),canEdit:read(()=>matchCanEdit()),
+        canEditOne:read(()=>matchCanEditOne(expectedMid)),typed:read(()=>window.__psMatchLockApi?.typed?.()),
+        lockReady:read(()=>window.__psMatchLockApi?.readyInfo?.()),scopes:read(()=>window.PSSaveState?.snapshot?.()),
+        stale:{team:window.__teamStale||0,match:window.__matchStale||0},
+        view:document.querySelector('.view.on')?.id,tab:read(()=>matchTab),stage:read(()=>matchStage),
+        sync:read(()=>parent.PSSync?.state?.()),
+        active:{tag:active?.tagName,field:active?.getAttribute?.('data-match-field'),value:active&&'value'in active?active.value:null},
+        savedState:{text:saved?.textContent,color:saved?.style.color},
+        fields:{memory:fields(row(memory)),local:fields(row(parse(stores.cs_team_matches_v1.localRaw))),dom:Object.fromEntries(keys.map(k=>[k,document.querySelector('[data-match-field="'+k+'"]')?.value??null]))},
+        stores
+      }));
+      for(const [key,entry] of Object.entries(snapshot.stores)){
+        try{entry.idbRaw=await Promise.race([window.storage?.peek?.(key),new Promise(resolve=>setTimeout(()=>resolve({error:'diagnostic IDB read timeout'}),2000))]);}
+        catch(e){entry.idbRaw={error:String(e.message||e),code:e.psCode||null};}
+        entry.idbCompletedAt={wall:Date.now(),performance:performance.now()};
+      }
+      snapshot.fields.idb=fields(row(parse(snapshot.stores.cs_team_matches_v1.idbRaw)));
+      return snapshot;
+    },failureMid):{unavailable:true};
+    const hash=raw=>typeof raw==='string'?{bytes:Buffer.byteLength(raw),sha256:createHash('sha256').update(raw).digest('hex')}:raw??null;
+    if(actual.stores)for(const entry of Object.values(actual.stores)){
+      entry.equal=typeof entry.localRaw==='string'&&entry.localRaw===entry.idbRaw;
+      entry.local=hash(entry.localRaw);entry.idb=hash(entry.idbRaw);delete entry.localRaw;delete entry.idbRaw;
+    }
+    const server=fx.db.get(actual.activeWorkspace+'|cs_team_matches_v1');
+    const serverDoc=server&&JSON.parse(server.v),serverRow=serverDoc?.matches?.find(m=>m.id===failureMid);
+    fs.writeFileSync(path.join(OUT,`match-meet-parts-${engine}-${size}-failure.json`),JSON.stringify({v:1,syntheticOnly:true,engine,size,step:cur,error:{name:e.name,message:e.message},actual,server:{capturedAt:Date.now(),body:hash(server?.v),fields:Object.fromEntries(['oppAttack','oppConclusion','oppSetPlay'].map(k=>[k,serverRow?.[k]??null]))}},null,2)+'\n',{flag:'wx',mode:0o600});
+  }catch(diagnosticError){console.error('[match-meet-parts] failure diagnostic unavailable: '+String(diagnosticError.message||diagnosticError));}
+  throw e;
+}
 finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close?.();}

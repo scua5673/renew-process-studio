@@ -13,6 +13,7 @@ try{
   const f=await (await page.waitForSelector('#fScout')).contentFrame();
   await f.waitForFunction(()=>document.querySelectorAll('#teamList .tm-row').length>0);
   // The roster now opens as a read-only list; this suite verifies the retained editor.
+  if(await f.locator('#pwTeam [data-pw-action="tools"]').isVisible())await f.locator('#pwTeam [data-pw-action="tools"]').click();
   await f.getByRole('button',{name:'배치·명단 편집',exact:true}).click();
   await f.evaluate(()=>{const p=data.players.find(p=>p.name==='가상 선수 5');p.status='injury';renderTeam();});
   await page.waitForTimeout(300);

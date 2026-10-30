@@ -1,0 +1,7 @@
+/* Preserve the complete 16:9 YouTube artwork in both card sizes. */
+html body.pr-elm #wrap#wrap#wrap .comm-list.view-cards .card .th.el-video-art,
+html body.pr-elm #wrap#wrap#wrap .comm-list.view-large .card .th.el-video-art{aspect-ratio:16/9;height:auto;background:var(--c-surface-2)}
+html body.pr-elm #wrap#wrap#wrap .card .el-video-link{display:flex;align-items:center;justify-content:flex-end;min-height:44px;gap:var(--sp-2);margin-top:var(--sp-2);color:var(--c-act);font-size:var(--t-3);font-weight:600;text-decoration:none}
+html body.pr-elm #wrap#wrap#wrap .card .el-video-link:hover{text-decoration:underline}
+html body.pr-elm #wrap#wrap#wrap .card .el-video-link:focus-visible{outline:2px solid var(--c-act);outline-offset:2px;border-radius:var(--r-1)}
+.el-video-field input[aria-invalid=true]{border-color:var(--c-bad)}

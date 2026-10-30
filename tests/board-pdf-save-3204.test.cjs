@@ -80,7 +80,7 @@ test('창이 떠서 초점을 잃었으면(blur · hasFocus 거짓) 사용자가
   const p=mod.pick(w2,'훈련.pdf');onBlur();
   assert.equal(await p,handle,'blur 가 왔으면 초점이 참이어도 기다린다');
 });
-test('3.208 — 초점을 잃지 않은 채 감시 시간이 지나면 저절로 받지 않는다: 카드 손잡이(__psPdfFallback)를 띄운 채 기다리고, 늦게 답한 창은 그대로 쓰며 late 를 ok 로 기록',async()=>{
+test('3.219 — 초점을 잃지 않은 채 감시 시간이 지나면 저절로 받지 않는다: 카드 손잡이(__psPdfFallback)를 띄운 채 기다리고, 늦게 답한 창은 그대로 쓰며 late 를 ok 로 기록',async()=>{
   const handle={name:'훈련.pdf'};let calls=0;const toasts=[];
   const w=win({document:{hasFocus(){return true;},createElement(){return {click(){},remove(){}};},body:{appendChild(){}}},showSaveFilePicker:()=>{calls++;return new Promise(r=>setTimeout(()=>r(handle),140));},toast(m){toasts.push(m);}});
   const p=mod.pick(w,'훈련.pdf');
@@ -91,7 +91,7 @@ test('3.208 — 초점을 잃지 않은 채 감시 시간이 지나면 저절로
   assert.deepEqual(w.PSSync.log.map(x=>[x[0],x[1].status,x[1].error_code,x[1].meta.top]),[['pdf_picker_failed','ok','late',false]]);
   assert.equal(await mod.pick(w,'훈련.pdf'),handle);assert.equal(calls,2);
 });
-test('3.208 — 카드의 «다운로드 폴더로 받기»를 누르면 그때 내려받기(null) · 알림 · silent 기록 · 다음부터는 묻지 않는다',async()=>{
+test('3.219 — 카드의 «다운로드 폴더로 받기»를 누르면 그때 내려받기(null) · 알림 · silent 기록 · 다음부터는 묻지 않는다',async()=>{
   const toasts=[];let calls=0;
   const w=win({document:{hasFocus(){return true;},createElement(){return {click(){},remove(){}};},body:{appendChild(){}}},showSaveFilePicker:()=>{calls++;return new Promise(()=>{});},toast(m){toasts.push(m);},matchMedia(){return {matches:true};}});
   const p=mod.pick(w,'훈련.pdf');
@@ -103,7 +103,7 @@ test('3.208 — 카드의 «다운로드 폴더로 받기»를 누르면 그때 
   assert.deepEqual(w.PSSync.log.map(x=>[x[0],x[1].status,x[1].error_code,x[1].meta.top,x[1].meta.standalone,x[1].meta.focus]),[['pdf_picker_failed','error','silent',false,true,true]]);
   assert.equal(await mod.pick(w,'훈련.pdf'),null,'다음 호출은 창을 다시 부르지 않고 바로 받는다');assert.equal(calls,1);assert.equal(toasts.length,2);
 });
-test('3.208 — 카드의 «취소»는 아무것도 받지 않고(false) 다음엔 다시 창을 연다; 카드가 떴던 창에서 크롬이 «이미 열림»으로 거절하면 다운로드로',async()=>{
+test('3.219 — 카드의 «취소»는 아무것도 받지 않고(false) 다음엔 다시 창을 연다; 카드가 떴던 창에서 크롬이 «이미 열림»으로 거절하면 다운로드로',async()=>{
   let calls=0;const toasts=[];
   const w=win({document:{hasFocus(){return true;},createElement(){return {click(){},remove(){}};},body:{appendChild(){}}},showSaveFilePicker:()=>{calls++;if(calls===1)return new Promise(()=>{});const e=new Error("Failed to execute 'showSaveFilePicker' on 'Window': File picker already active.");e.name='NotAllowedError';return Promise.reject(e);},toast(m){toasts.push(m);}});
   const p=mod.pick(w,'훈련.pdf');

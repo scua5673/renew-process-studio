@@ -1,24 +1,26 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.208';
+const CACHE = 'process-3.219';
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
+  '/studio/team-mobile.css', '/studio/team-mobile.js',
   '/studio/board-selection-menu.js', '/studio/board-selection-menu.css', '/studio/board-training-edit.js', '/studio/board-training-edit.css',
   '/studio/learning-focus.css',
   '/studio/player-workspace.js', '/studio/player-workspace.css', '/studio/player-bulk-add.js', '/studio/scouting-position.js',
   '/studio/community-training-catalog.js', '/studio/community-training.js', '/studio/community-training.css', '/studio/community-letters.js', '/studio/community-letters.css', '/studio/letter-social.js', '/studio/letter-social.css',
   '/studio/board-practice.js', '/studio/board-draft.js', '/studio/textbook-pack.js', '/studio/textbook-native.js', '/studio/board-stadium-ground.js',
-  '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-settings-skin.js', '/studio/board-token-depth.js', '/studio/board-pitch-photo.js', '/studio/board-shortcuts.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-comm-look.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-page-history.js', '/studio/board-player-panel-drag.js', '/studio/board-actions.js', '/studio/board-vault-lazy.js', '/studio/board-guest.js', '/studio/board-save-ask.js', '/studio/board-vault-browse.js', '/studio/board-vault-import.js', '/studio/board-quick-export.js', '/studio/board-pdf-save.js', '/studio/board-meet-8.js', '/studio/board-import-safe.js', '/studio/board-meet-look.js', '/studio/board-jersey.js', '/studio/board-edit-view.js', '/studio/board-meet-form.js', '/studio/board-shape-menu.js', '/studio/board-popups.js', '/studio/board-text-polish.js', '/studio/vault-folder-move.js',
+  '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-settings-skin.js', '/studio/board-token-depth.js', '/studio/board-pitch-photo.js', '/studio/board-shortcuts.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-comm-look.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-page-history.js', '/studio/board-player-panel-drag.js', '/studio/board-actions.js', '/studio/board-vault-lazy.js', '/studio/board-guest.js', '/studio/board-save-ask.js', '/studio/board-vault-browse.js', '/studio/board-vault-import.js', '/studio/board-quick-export.js', '/studio/board-pdf-save.js', '/studio/board-meet-8.js', '/studio/board-import-safe.js', '/studio/board-meet-look.js', '/studio/board-export-name.js', '/studio/board-meet-cover.js', '/studio/board-meet-cover.css', '/studio/board-jersey.js', '/studio/board-edit-view.js', '/studio/board-meet-form.js', '/studio/board-meet-reserve.js', '/studio/board-meet-reserve.css', '/studio/board-shape-menu.js', '/studio/board-popups.js', '/studio/board-text-polish.js', '/studio/vault-folder-move.js',
   '/studio/process.html',
   '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/pdf-export.js', '/studio/schedule-poster.js', '/studio/review-training.css', '/studio/year-plan.js',
   '/studio/first-work.js', '/studio/first-work.css',
   '/studio/daily-effort.js', '/studio/daily-effort.css', '/studio/session-focus.js',
+  '/studio/idp-weekly-growth.js', '/studio/idp-weekly-growth.css',
   '/studio/idp-recovery.js', '/studio/idp-recovery.css', '/studio/idp-roster-refresh.js',
   '/studio/idp-evidence.js', '/studio/idp-evidence.css', '/studio/idp-start.css', '/studio/idp-daily.css',
   '/studio/team-audience.css', '/studio/team-audience.js', '/studio/schedule-audience.js', '/studio/roster-audience.js',
   '/studio/storage-keys.js', '/studio/storage.js', '/studio/team-library.js', '/studio/team-load.js', '/studio/photo-crop.js', '/studio/team-photos.js', '/studio/profile-sheet.js', '/studio/player-card.js',
-  '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/participation.js', '/studio/avail-edit-guard.js', '/studio/match-board-tools.js', '/studio/match-formats.js', '/studio/match-meet-parts.js', '/studio/match-goals-quick.js', '/studio/match-lock.js', '/studio/sync-mirror.js', '/studio/sync-roster-copies.js', '/studio/sync-size.js', '/studio/sync-observability.js', '/studio/idp-pub-wipe.js', '/studio/sync.js',
+  '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/participation.js', '/studio/avail-edit-guard.js', '/studio/match-board-tools.js', '/studio/match-formats.js', '/studio/match-meet-parts.js', '/studio/match-goals-quick.js', '/studio/match-lock.js', '/studio/sync-mirror.js', '/studio/sync-roster-copies.js', '/studio/sync-size.js', '/studio/sync-observability.js', '/studio/idp-pub-wipe.js', '/studio/sync-items-stale.js', '/studio/sync.js',
   '/studio/sync-diagnosis.js', '/studio/sync-diagnosis-ui.js', '/studio/sync-diagnosis.css',
   '/studio/autosave-status.js', '/studio/sync-confirmation.js', '/studio/update-progress.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
   '/studio/shared-view-observation.js',
@@ -51,7 +53,7 @@ const OPTIONAL = [
   '/studio/gamemodel.html', '/studio/scout.html', '/studio/terms.html', '/studio/idp.html', '/studio/note.html', '/studio/scouting.html', '/studio/community.html', '/studio/analysis.html', '/studio/learning.html', '/studio/playbook.html',
   '/studio/balls.js', '/studio/pitches.js', '/studio/rpt-i18n.js',
   '/studio/vault-examples.js',   /* 3.001 — 빈 보관함 첫 화면의 예시. 없으면 첫 화면은 옛 모양 그대로 */
-  '/studio/community-fifa.js', '/studio/community-fifa.css', '/studio/community-tax.js', '/studio/community-tax.css', '/studio/community-library.css', '/studio/community-detail.js', '/studio/community-detail.css',
+  '/studio/community-fifa.js', '/studio/community-fifa.css', '/studio/community-tax.js', '/studio/community-tax.css', '/studio/community-library.css', '/studio/community-detail.js', '/studio/community-detail.css', '/studio/community-youtube.js', '/studio/community-youtube.css',
   /* 3.076 — PPT 모듈(pptxgen 0.46MB)은 미리 받지 않는다. 내보낼 때 받고, 못 받으면 board · gamemodel 이 jsdelivr 로 다시 받는다. */
   /* 2.552 — 통짜 폰트(2,009KB)를 **미리 받지 않는다.** 여기 목록에 있으면 첫 방문에
      화면과 상관없이 2MB 를 끌어온다 — 코치는 운동장에서 셀룰러로 앱을 연다.

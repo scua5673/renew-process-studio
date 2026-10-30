@@ -12,6 +12,8 @@
   var STORAGE_STAGES=('aux-migration aux-read-conflict idb-set migration stash-migration stash-migration-all stash-migration-conflict').split(' ');
   STORAGE_STAGES=STORAGE_STAGES.concat('schedule match roster library idp base outbox journal other'.split(' ').map(function(k){return 'idb-set-'+k;}));
   STAGES=STAGES.concat(['idp-base-history-recovered','idp-base-history-read']);
+  CODES=CODES.concat(['sync_local_changed','sync_workspace_changed']);
+  STAGES=STAGES.concat(['items_stale_review','items_stale_changed','items_stale_owner','items_stale_shape','items_stale_archive','items_stale_module']);
   // 3.104 — 자동 저장 실패(sync.js autosaveRunner.fail)가 제보에 단계 '' 로 찍히던 것 · 닫기 뒤 다시 쓴 공개 IDP 대기
   STAGES=STAGES.concat(['autosave','autosave-archive-list','idp-public-rebuilt-wait','rt-stale']);   // 3.108 rt-stale — 답이 끊긴 실시간 소켓을 갈아 끼움
   // 2.890 — fixed reasons only (no keys or content): why a frame save signal skipped the IDB mirror.
@@ -24,6 +26,7 @@
   STAGES=STAGES.concat(('kv_meta kv_pull kv_push kv_push_verify kv_push_cas kv_push_cas_verify personal_meta personal_pull personal_push personal_push_verify personal_push_cas personal_push_cas_verify library_probe library_pull library_push library_insert library_body').split(' '));
   var FILES=('daily-effort.js learn-book-coach.js learn-mikl.js learn-book-at.js roster-recovery.js idp.html shared-view-observation.js idp-evidence.js community.html balls.js index.html rpt-i18n.js learn-book-physical.js learn-book-player.js process.html req-baseline.js perms.js analysis.html learn-concepts.js football-language.js scout.html learning.html first-work.js learn-books.js terms.html sync.js playbook.html review-training-schedule.js archetypes.js team-files.js profile-sheet.js admin-user-detail.js learn-principles.js eval-standard.js learn-model.js note.html admin-operations.js scouting.html learn-toc.js board.html sync-observability.js scouting-store.js learn-futsal.js review-training.js app.html idp-recovery.js learn-curriculum-pro.js gamemodel.html learn-book-analysis.js pitches.js learn-curriculum.js session-focus.js eval-anchors.js storage.js learn-gamemodel.js support-diagnostics.js').split(' ');
   FILES=FILES.concat(['support.js','release-notes.js','support.css','autosave-journal.js','autosave-merge.js','autosave-runtime.js','autosave-status.js','autosave-recovery.js','participation.js']);
+  FILES=FILES.concat(['sync-items-stale.js']);
   var CATEGORIES=('javascript network storage permission authentication conflict timeout unknown').split(' ');
   var OS=('Windows macOS iOS Android Linux ChromeOS unknown').split(' ');
   var KINDS=('error unhandledrejection sync storage').split(' ');
@@ -53,7 +56,7 @@
     if(name==='QuotaExceededError'||name.indexOf('Storage')===0||code==='sync_storage')return 'storage';
     if(name==='SecurityError'||code==='sync_permission'||code==='403'||code==='42501')return 'permission';
     if(name==='PSDataLockedError'||code==='sync_auth'||code==='401')return 'authentication';
-    if(code==='sync_conflict'||code==='409')return 'conflict';
+    if(code==='sync_conflict'||code==='sync_local_changed'||code==='409')return 'conflict';
     if(code==='sync_timeout'||code==='408'||/\b(?:timed out|timeout)\b/i.test(message))return 'timeout';
     if(name==='NetworkError'||code==='sync_network'||code==='sync_offline'||/failed to fetch|network ?error|load failed/i.test(message))return 'network';
     if(['TypeError','ReferenceError','SyntaxError','RangeError','URIError','EvalError'].indexOf(name)>=0)return 'javascript';

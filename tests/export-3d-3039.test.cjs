@@ -164,7 +164,7 @@ test('원문 — 3D 보기의 MP4 만 3D 로, 평면 · GIF 는 그대로',()=>{
   const gifAt=src.indexOf('async function exportGif'); assert.ok(gifAt>0);
   const gif=src.slice(gifAt,src.indexOf('\n}\n',gifAt)); assert.doesNotMatch(gif,/__animExport3d|_t3/,'GIF 는 평면 그대로');
   const run=src.slice(src.indexOf('async function _exportVideoRun(opts)'),src.indexOf('function exportVideoSheet(mode)'));
-  assert.match(run,/function produce\(k\)\{ if\(_t3x\)return _t3Produce\(k\);/); assert.match(run,/if\(_t3x\)\{ _t3Paint\(img,meta\); return; \}/);
+  assert.match(run,/function produce\(k\)\{if\(plan\[k\]\.cover&&window\.PSMeetCover\)return null; if\(_t3x\)return _t3Produce\(k\);/); assert.match(run,/if\(_t3x\)\{ _t3Paint\(img,meta\); return; \}/);
   assert.match(run,/const _t3x=window\.__animExport3d\?/);
   const xml=src.slice(src.indexOf('function _boardImageXMLRaw(vbFix)'),src.indexOf('function appendBoardExportWatermarks'));
   assert.match(xml,/if\(window\.PSBoardDepth&&!t3x\)PSBoardDepth\.flattenAll\(clone\);/,'평면 내보내기는 칩을 그대로 펴서');

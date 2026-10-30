@@ -1,0 +1,94 @@
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
+const fx=await startFixture(),browsers={};
+try{
+ const {page,logs}=await openApp(fx,size,{browsers});console.log('reserve: app ready');
+ await page.evaluate(()=>document.querySelector('#appSeg button[data-app="design"]:not([data-train])').click());
+ const f=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
+ await f.waitForFunction(()=>window.__psMeetReserve&&window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&boardPrivateCurrent(_boardPrivateOwner)&&document.getElementById('dfNew'));
+ await f.click('#dfNew');await f.locator('.vcc-item').filter({hasText:'미팅 자료'}).click();
+ await f.waitForSelector('#psMeetForm.on');await f.click('#psMeetForm [data-start=filled]');
+ await f.click('#psMeetForm [data-team="us"] [data-k="4231"]');await f.click('#psMeetForm .mf-go');
+ await f.waitForFunction(()=>anim.slides.length===10&&!window.__ksNav);
+ console.log('reserve: meeting ready');let st=await f.evaluate(()=>({titles:anim.slides.map(s=>s.title),best:anim.slides[0].snap.players,reserve:anim.slides[1].snap.players}));
+ assert.deepEqual(st.titles.slice(0,3),['BEST 11','RESERVE','하이블록']);
+ assert.equal(st.reserve.length,11);assert.ok(st.reserve.every(p=>p.team==='blue'&&p.meetingRole==='reserve'));
+ assert.deepEqual(st.reserve.map(p=>[p.pos,p.x,p.y]),st.best.map(p=>[p.pos,p.x,p.y]),'reserve uses selected formation and evenly spread lineup');
+ assert.deepEqual(st.reserve.map(p=>p.num),st.best.map(p=>p.num),'the same tactical position has the same 1–11 number');
+ assert.equal(await f.evaluate(()=>anim.slides[1].reserveV),2,'new meeting keeps its reserve size version through the form');
+ const work=await f.evaluate(()=>JSON.stringify(window.__psPages.pg(),(k,v)=>k==='thumb'?undefined:v));
+ // Even after using the same shirt number, reserve names stay separate, including on reopen upgrade.
+ await f.evaluate(()=>{window.__ksTransition='none';window.__meet.go(1);});
+ await f.waitForFunction(()=>window.__meet.idx()===1&&!window.__ksNav);
+ await f.evaluate(()=>{const p=state.players[0];p.num='1';p.name='리저브 선수';syncNameToScenes(p);renderTokens();window.__meet.saveCur();});
+ await f.evaluate(()=>window.__meet.go(0));await f.waitForFunction(()=>!window.__ksNav);
+ await f.evaluate(()=>{const p=state.players.find(p=>p.num==='1');p.name='선발 선수';syncNameToScenes(p);renderTokens();window.__meet.saveCur();window.__meetUpgrade();});
+ assert.deepEqual(await f.evaluate(()=>[anim.slides[0].snap.players.find(p=>p.num==='1').name,anim.slides[1].snap.players.find(p=>p.num==='1').name]),['선발 선수','리저브 선수']);
+ await f.evaluate(()=>window.__meet.go(1));await f.waitForFunction(()=>!window.__ksNav);
+ for(const [oh,label] of [['portrait','세로형'],['landscape','가로형']]){
+   await f.getByRole('button',{name:label,exact:true}).click();
+   await f.waitForFunction(o=>meetingPdfOrientation(anim.slides)===o,oh);
+   assert.equal(await f.evaluate(()=>anim.slides[1].snap.orientation),oh==='portrait'?'v':'h');
+   await f.evaluate(()=>{const t=document.getElementById('cs-ftoast');if(t)t.style.opacity='0';});
+   await page.screenshot({path:path.join(SHOTS,'meeting-reserve-'+oh+'-'+size+'.png')});
+ }
+ console.log('reserve: names and both orientations checked');
+ // The normal save path persists the role and page order.
+ await f.evaluate(()=>new Promise((resolve,reject)=>{window.__vaultPending.name='리저브 검증';window.__vaultSave({skipSheet:true,after:resolve,onerror:()=>reject(Error('save failed'))});}));
+ const saved=await f.evaluate(async()=>{const it=(await libGet()).find(x=>x.name==='리저브 검증');return it;});
+ console.log('reserve: saved');assert.equal(saved.slides[1].title,'RESERVE');assert.equal(saved.slides[1].snap.players[0].meetingRole,'reserve');
+ await f.evaluate(id=>window.__vaultOpenMeeting(id),saved.libId);await f.waitForFunction(id=>window.__curVaultId===id&&document.body.classList.contains('meet-mode')&&!window.__ksNav,saved.libId);
+ assert.equal(await f.evaluate(()=>anim.slides[1].snap.players[0].name),'리저브 선수');
+ assert.equal(await f.evaluate(()=>meetingPdfSlides().length),10);
+ // Opening a pre-fix reserve repairs sizes and old generated 12–22 numbers in all scenes.
+ const oldReserve=structuredClone(saved);oldReserve.libId='VRESERVETOKENS';
+ const best=oldReserve.slides[0],reserve=oldReserve.slides[1];
+ best.snap.tokenScale=.85;best.snap.tokV=2;best.snap.players.forEach(p=>p.scale=1.25);
+ delete reserve.reserveV;reserve.snap.tokenScale=.35;reserve.snap.players.forEach((p,i)=>{p.num=String(12+i);p.scale=.8;});
+ reserve.frames=[{snap:structuredClone(reserve.snap)},{snap:structuredClone(reserve.snap)}];reserve.frames[1].snap.players[3].x+=40;
+ await f.evaluate(async s=>{const lib=await libGet();lib.unshift(s);await libWrite(lib);await window.__vaultOpenMeeting(s.libId);},oldReserve);
+ await f.waitForFunction(id=>window.__curVaultId===id&&document.body.classList.contains('meet-mode')&&!window.__ksNav,oldReserve.libId);
+ const upgraded=await f.evaluate(()=>anim.slides[1]);
+ assert.equal(upgraded.reserveV,2);assert.equal(upgraded.snap.players[0].name,'리저브 선수');
+ for(const sn of [upgraded.snap,...upgraded.frames.map(fr=>fr.snap)]){
+   assert.equal(sn.tokenScale,.85);assert.deepEqual(sn.players.map(p=>p.num),best.snap.players.map(p=>p.num));assert.ok(sn.players.every(p=>p.scale===1.25));
+ }
+ assert.equal(upgraded.frames[1].snap.players[3].x,reserve.frames[1].snap.players[3].x,'animation movement survives');
+ const scales=[];
+ for(const i of [0,1]){
+   await f.evaluate(i=>window.__meet.go(i,'first'),i);await f.waitForFunction(()=>!window.__ksNav);
+   scales.push(await f.evaluate(()=>state.players.map(p=>_normTokS(p))));
+   await f.evaluate(()=>{const t=document.getElementById('cs-ftoast');if(t){t.style.opacity='0';t.setAttribute('aria-hidden','true');}});
+   await page.screenshot({path:path.join(SHOTS,(i?'reserve-matched-':'best-matched-')+engine+'.png')});
+ }
+ assert.deepEqual(scales[1],scales[0],'rendered token scale is identical on BEST and RESERVE');
+ await f.evaluate(()=>new Promise((resolve,reject)=>window.__vaultSave({skipSheet:true,after:resolve,onerror:()=>reject(Error('upgrade save failed'))})));
+ await f.evaluate(id=>window.__vaultOpenMeeting(id),oldReserve.libId);
+ await f.waitForFunction(id=>window.__curVaultId===id&&document.body.classList.contains('meet-mode')&&!window.__ksNav,oldReserve.libId);
+ assert.equal(await f.evaluate(()=>anim.slides[1].reserveV),2,'correction persists on reopen');
+ // Legacy meetings keep their original pages until explicit insertion. Insert from another page too.
+ const legacy={...saved,libId:'VRESERVELEGACY',slides:saved.slides.filter(s=>s.title!=='RESERVE')};
+ await f.evaluate(async s=>{const lib=await libGet();lib.unshift(s);await libWrite(lib);await window.__vaultOpenMeeting(s.libId);},legacy);await f.waitForFunction(id=>window.__curVaultId===id&&document.body.classList.contains('meet-mode')&&!window.__ksNav,legacy.libId);
+ assert.equal(await f.evaluate(()=>anim.slides.length),9);
+ await f.evaluate(()=>window.__meet.go(4));await f.waitForFunction(()=>!window.__ksNav);
+ const before=await f.evaluate(()=>{window.__meet.saveCur();return JSON.stringify(anim.slides,(k,v)=>k==='thumb'?undefined:v);});
+ await f.click('#psMeetReserveAdd');await f.waitForFunction(()=>anim.slides.length===10&&!window.__ksNav);
+ assert.equal(await f.evaluate(()=>window.__meet.idx()),1);
+ assert.equal(await f.evaluate(()=>JSON.stringify(anim.slides.filter(s=>!PSMeetReserve.isReserve(s)),(k,v)=>k==='thumb'?undefined:v)),before,'inserting preserves all existing pages');
+ assert.equal(await f.evaluate(()=>window.__meetAddReserve()),false,'no duplicate insertion');
+ await f.evaluate(()=>{window.__meet.del(1);PSMeetCover.add();});await f.waitForFunction(()=>!window.__ksNav);
+ await f.click('#psMeetReserveAdd');await f.waitForFunction(()=>!window.__ksNav);
+ assert.deepEqual(await f.evaluate(()=>anim.slides.slice(0,3).map(s=>s.title)),['표지','BEST 11','RESERVE'],'insertion while cover is selected still follows BEST');
+ assert.equal(await f.evaluate(()=>JSON.stringify(window.__psPages.pg(),(k,v)=>k==='thumb'?undefined:v)),work,'private work board unchanged');
+ await f.evaluate(()=>document.getElementById('vCreateCancel').click());
+ // Closing and opening are asynchronous; !__ksNav alone also matches the closed previous meeting.
+ await f.waitForFunction(()=>window.__csView==='session'&&!document.body.classList.contains('meet-mode'));
+ const roId=await f.evaluate(async s=>{const lib=await libGet();s.createdBy='99999999-9999-4999-8999-999999999999';s.libId+='RO';lib.unshift(s);await libWrite(lib);window.__vaultOpenMeeting(s.libId);return s.libId;},legacy);
+ await f.waitForFunction(id=>window.__vvMeetLib===id&&window.__vaultReadOnly===true&&document.body.classList.contains('meet-mode')&&!window.__ksNav,roId);
+ assert.equal(await f.locator('#psMeetReserveAdd').count(),0);assert.equal(await f.evaluate(()=>window.__meetAddReserve()),false);
+ assert.equal(await f.evaluate(()=>anim.slides.length),9);
+ assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[]);
+ console.log('meeting-reserve ok',engine,size);
+}finally{for(const b of Object.values(browsers))await b.close();await fx.close();}

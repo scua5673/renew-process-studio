@@ -1,0 +1,135 @@
+/* Shared phone rhythm. Desktop and tablet layouts keep their original controls. */
+.pw-edit-tools,.pw-select-hit{display:contents}
+.pw-tools-toggle,.wg-phone-picker,.tm-phase-picker{display:none}
+@media(max-width:600px){
+  /* The shell owns the safe area; child pages use one 16px content gutter. */
+  html.ps-page-app body.ps-team-open #gearBtn{min-width:44px!important;min-height:44px!important}
+  html.ps-page-app #teamBottom button{min-height:44px;font-size:var(--t-2)}
+  html.ps-page-app #teamSub{padding-inline:var(--sp-4)!important}
+  html.ps-page-app #teamSub button{min-height:44px!important}
+  html.ps-page-app #teamMoreSheet{max-height:calc(100dvh - 140px);overflow-y:auto;overscroll-behavior:contain;padding:var(--sp-4)!important}
+  html.ps-page-app #teamMoreSheet .tms-h{margin-bottom:var(--sp-3)}
+  html.ps-page-app #teamMoreSheet .tms-h button{width:44px;height:44px;min-height:44px}
+  html.ps-page-app #teamMoreSheet .tms-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-2);margin:var(--sp-3) 0}
+  html.ps-page-app #teamMoreSheet .tms-g>i{grid-column:1/-1;width:auto;padding:0;font-size:var(--t-3);white-space:nowrap}
+  html.ps-page-app #teamMoreSheet .tms-g>button{min-height:44px;width:100%;border-radius:var(--r-control);font-size:var(--t-4);text-align:left;justify-content:flex-start}
+
+  /* Primary actions, filters and dates share a comfortable touch size. */
+  html.ps-page-scout body :is(#ckHome,#teamView,#sbPaneCands,#matchView,#availView,#attrsView) :is(button,select):not(#_):not(#__):not(#___),
+  html.ps-page-scout body :is(#pwDrawer,#pwBulkDialog) :is(button,select):not(#_):not(#__):not(#___){min-height:44px!important;min-width:44px}
+  html.ps-page-scout body #ckHome :is(.nav button,.wk-md,.ntc-add):not(#_):not(#__):not(#___){height:auto!important}
+  html.ps-page-scout body :is(#teamView,#sbPaneCands,#matchView,#availView,#attrsView,#pwDrawer) :is(input:not([type=checkbox]):not([type=radio]),select,textarea):not(#_):not(#__){font-size:var(--t-6)!important}
+  html.ps-page-scout body #attrsView :is(summary,a){min-height:44px;display:inline-flex;align-items:center}
+  html.ps-page-scout #attrsView .tc-criteria-head{margin-top:var(--sp-4);gap:var(--sp-3)}
+  html.ps-page-scout #attrsView .tc-categories{gap:var(--sp-1);margin-bottom:var(--sp-4)}
+  html.ps-page-scout #attrsView .tc-categories button{padding-inline:var(--sp-2)}
+  html.ps-page-scout #attrsView #attrEditor .eval-ro-row{padding-block:var(--sp-4)}
+
+  /* Player tools: search, filters, view; editing is one deliberate expansion. */
+  html.ps-page-scout #teamView>.card{padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+  html.ps-page-scout #teamView .tm-head{margin:0;padding:0!important;gap:var(--sp-2)!important}
+  html.ps-page-scout #teamView .tm-head-top{align-items:center;gap:var(--sp-2);margin:0!important}
+  html.ps-page-scout #teamView .tm-head-actions{gap:var(--sp-1)!important}
+  html.ps-page-scout #teamView .tm-hero:not(#_):not(#__){display:flex!important;flex-wrap:wrap;align-items:center;gap:var(--sp-1) var(--sp-3)!important;padding:0!important;margin:0!important;border:0!important}
+  html.ps-page-scout #teamView .tm-hero-big:not(#_):not(#__){display:flex;align-items:baseline;gap:var(--sp-1);font-size:var(--t-3)!important}
+  html.ps-page-scout #teamView .tm-hero-big b:not(#_):not(#__){font-size:var(--t-7)!important}
+  html.ps-page-scout #teamView .tm-hero-sub:not(#_):not(#__){font-size:var(--t-3)!important;white-space:nowrap}
+  html.ps-page-scout #teamView .tm-hero-todo{flex-basis:100%;font-size:var(--t-3)!important}
+  html.ps-page-scout #teamView .tm-workbar{display:flex!important;align-items:center;flex-wrap:wrap;gap:var(--sp-1) var(--sp-2)!important;margin:0!important;padding:0!important}
+  html.ps-page-scout #teamView #grpChips{flex:1 1 auto;gap:var(--sp-1)!important;margin:0!important}
+  html.ps-page-scout #teamView #grpChips button{padding-inline:var(--sp-2)!important;font-size:var(--t-3)!important}
+  html.ps-page-scout #teamView #tmSchoolYears{margin:0!important}
+  html.ps-page-scout #teamView #tmSchoolYears button{font-size:var(--t-3)!important;padding-inline:var(--sp-2)!important}
+  html.ps-page-scout #teamView #tmShareLine{margin:0!important;font-size:var(--t-2)!important}
+  html.ps-page-scout .pw-workspace{padding:var(--sp-3) 0!important}
+  html.ps-page-scout .pw-toolbar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 80px;gap:var(--sp-2);padding-bottom:var(--sp-2)}
+  html.ps-page-scout .pw-search{grid-column:1/-1;width:100%;height:44px;min-width:0}
+  html.ps-page-scout .pw-toolbar>select{width:100%;min-width:0;max-width:none;padding-inline:var(--sp-2)}
+  html.ps-page-scout .pw-toolbar>.pw-button[data-pw-action=unevaluated]{padding-inline:var(--sp-2)}
+  html.ps-page-scout .pw-view{grid-column:span 2;margin-left:0;gap:var(--sp-1)}
+  html.ps-page-scout .pw-view button{flex:1}
+  html.ps-page-scout .pw-tools-toggle{padding-inline:var(--sp-2);display:inline-flex;align-items:center;justify-content:center}
+  html.ps-page-scout .pw-tools-toggle[aria-expanded=true]{border-color:var(--c-act);color:var(--c-act);background:var(--c-surface-2)}
+  html.ps-page-scout .pw-edit-tools{display:none}
+  html.ps-page-scout .pw-tools-open .pw-edit-tools{display:flex;grid-column:1/-1;flex-wrap:wrap;gap:var(--sp-2);padding:var(--sp-2);background:var(--c-surface-2);border-radius:var(--r-control)}
+  html.ps-page-scout .pw-edit-tools>button{flex:1 1 auto}
+  html.ps-page-scout :is(.pw-toolbar>select,.pw-bulk-row select){appearance:none;-webkit-appearance:none;height:44px!important;padding-right:var(--sp-5)!important;background-image:linear-gradient(45deg,transparent 50%,var(--c-muted) 50%),linear-gradient(135deg,var(--c-muted) 50%,transparent 50%);background-size:5px 5px;background-repeat:no-repeat;background-position:right 13px center,right 8px center}
+  html.ps-page-scout .pw-select-hit{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;cursor:pointer}
+  html.ps-page-scout .pw-select-hit input[type=checkbox]{width:17px!important;height:17px!important;min-height:17px!important;margin:0}
+  html.ps-page-scout .pw-table td:first-child{width:44px;padding:0}
+  html.ps-page-scout .pw-result{min-height:28px;padding:0;font-size:var(--t-3)}
+  html.ps-page-scout .pw-depth-heading{margin:var(--sp-2) 0}
+  html.ps-page-scout .pw-depth-heading h3{margin-bottom:var(--sp-1)}
+  html.ps-page-scout .pw-stats{padding:var(--sp-3);margin-bottom:var(--sp-3);gap:var(--sp-2)}
+  html.ps-page-scout .pw-scouthead{margin-bottom:var(--sp-3)}
+  html.ps-page-scout .pw-bulk-overlay :is(button,select,input){min-height:44px!important;font-size:var(--t-6)!important}
+  html.ps-page-scout .pw-bulk-card{display:flex;flex-direction:column;max-height:calc(100dvh - 24px);overflow:hidden;padding:var(--sp-4);background:var(--c-surface);color:var(--c-ink)}
+  html.ps-page-scout .pw-bulk-rows{overflow-y:auto;min-height:0;overscroll-behavior:contain;padding-right:var(--sp-1)}
+  html.ps-page-scout .pw-bulk-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:var(--sp-2);padding:var(--sp-3) 0;border-bottom:1px solid var(--c-line)}
+  html.ps-page-scout .pw-bulk-n{display:none}
+  html.ps-page-scout .pw-bulk-row input[data-f=name]{grid-column:1/3;grid-row:1}
+  html.ps-page-scout .pw-bulk-row button{grid-column:3;grid-row:1;min-width:44px}
+  html.ps-page-scout .pw-bulk-row select[data-f=posId]{grid-column:1;grid-row:2}
+  html.ps-page-scout .pw-bulk-row select[data-f=grpKey],html.ps-page-scout .pw-bulk-row input[data-f=club]{grid-column:2/4;grid-row:2}
+  html.ps-page-scout .pw-bulk-row input[data-f=num]{grid-column:1/4}
+  html.ps-page-scout .pw-bulk-title,html.ps-page-scout .pw-bulk-sub,html.ps-page-scout .pw-bulk-tools,html.ps-page-scout .pw-bulk-foot{flex-shrink:0}
+  html.ps-page-scout .pw-bulk-foot{border-top:1px solid var(--c-line);padding-top:var(--sp-3);margin-top:var(--sp-3)}
+  html.ps-page-scout .pw-dialoghead{position:sticky;top:0;z-index:2;background:var(--c-surface);gap:var(--sp-2)}
+
+  /* Remove the second gutter from match and schedule surfaces. */
+  html.ps-page-scout #matchView .match-shell{padding-inline:0!important}
+  html.ps-page-scout #matchView .match-head{padding-inline:0!important}
+  html.ps-page-scout #matchView .tm-head{gap:var(--sp-3)!important;padding:0!important;margin-bottom:var(--sp-4)!important}
+  html.ps-page-scout #matchView .tm-head-top{flex-wrap:wrap!important;gap:var(--sp-3)!important}
+  html.ps-page-scout #matchView .tm-titlebox{flex:1 0 100%!important}
+  html.ps-page-scout #matchView .tm-titleline{white-space:nowrap}
+  html.ps-page-scout #matchView .tm-head-actions{display:flex!important;flex-direction:row!important;gap:var(--sp-2)!important;flex:1 1 100%!important}
+  html.ps-page-scout #matchView .tm-head-actions>button{flex:1;width:auto!important}
+  html.ps-page-scout #matchView .tm-workbar{gap:var(--sp-2)!important;margin:0!important}
+  html.ps-page-scout #matchView .mr-act .mr-more:not(#_):not(#__):not(#___){height:44px;width:44px}
+  html.ps-page-scout #availRoot .av-subnav{gap:var(--sp-4);margin-bottom:var(--sp-3)}
+  html.ps-page-scout #availRoot .av-pl{padding-block:var(--sp-1)}
+  html.ps-page-scout #availRoot .av-chip{border-radius:var(--r-control)}
+  html.ps-page-process body:not(.ps-player-schedule) #schedule{padding-inline:0!important}
+  html.ps-page-process body:not(.ps-player-schedule) #schedule>#psPhBar:not(#_):not(#__){margin-inline:0!important;padding-inline:0!important}
+  html.ps-page-process body:not(.ps-player-schedule) #schedule :is(button,select):not(#_):not(#__):not(#___){min-height:44px!important;min-width:44px}
+  html.ps-page-process body:not(.ps-player-schedule) #psPhBar .nv:not(#_):not(#__){width:44px!important}
+  html.ps-page-process body:not(.ps-player-schedule) #schedule :is(input,select,textarea):not(#_):not(#__){font-size:var(--t-6)!important}
+
+  /* Native selection keeps the chosen IDP / phase and its content together. */
+  html.ps-page-idp body.idp-squad .wg-heading{margin:var(--sp-2) 0 var(--sp-4)}
+  html.ps-page-idp body.idp-squad .wg-heading .wg-eyebrow{display:none}
+  html.ps-page-idp body.idp-squad .wg-roster>h3,
+  html.ps-page-idp body.idp-squad .wg-roster>.wg-hint,
+  html.ps-page-idp body.idp-squad .wg-roster-list{display:none}
+  html.ps-page-idp body.idp-squad .sq-ph{gap:var(--sp-2);margin-bottom:var(--sp-4)}
+  html.ps-page-idp body.idp-squad .sq-ph>b{flex:1}
+  html.ps-page-idp body.idp-squad .sq-ph>.ps-sp{display:none}
+  html.ps-page-idp body.idp-squad .sq-ph>.sq-pdfbtn{order:1;margin-left:0;background:var(--c-surface);color:var(--c-muted);border:1px solid var(--c-line);font-size:var(--t-3);font-weight:600}
+  html.ps-page-idp body.idp-squad .sq-ph>.sq-scope{order:2;flex:1 0 100%;margin-left:0}
+  html.ps-page-idp body.idp-squad .sq-scope>button{flex:1}
+  html.ps-page-idp body.idp-squad .sq-ph>small{order:3;flex-basis:100%;line-height:1.6}
+  .wg-phone-picker{display:block;font-size:var(--t-3);font-weight:650;color:var(--c-muted)}
+  .wg-phone-picker,.tm-phase-picker{position:relative}
+  .wg-phone-picker::after,.tm-phase-picker::after{content:'⌄';position:absolute;right:var(--sp-3);bottom:var(--sp-3);pointer-events:none;line-height:20px;font-size:var(--t-6)}
+  .wg-phone-picker select,.tm-phase-picker select{appearance:none;-webkit-appearance:none;height:44px;display:block;width:100%;min-width:0;min-height:44px;margin-top:var(--sp-2);padding:var(--sp-2);padding-right:var(--sp-6);border:1px solid var(--c-line);border-radius:var(--r-control);background:var(--c-surface);color:var(--c-ink);font:inherit;font-size:var(--t-6)}
+  html.ps-page-idp body.idp-squad :is(button,select,summary){min-height:44px}
+  html.ps-page-idp body.idp-squad :is(input:not([type=checkbox]):not([type=radio]),textarea){font-size:var(--t-6)!important}
+  html.ps-page-playbook .wrap{padding:var(--sp-4)!important}
+  html.ps-page-playbook .cols{gap:var(--sp-4)!important}
+  html.ps-page-playbook .pn.list{padding:var(--sp-3) 0 0!important}
+  html.ps-page-playbook .pn.dt{padding-top:0!important}
+  html.ps-page-playbook .pn.list:has(.tm-has-picker)>.ph{display:none}
+  html.ps-page-playbook .tm-phase-picker:not([hidden]){display:block;font-size:var(--t-3);font-weight:650;color:var(--c-muted)}
+  html.ps-page-playbook #list.tm-has-picker{display:none}
+  html.ps-page-playbook body:has(#list.tm-has-picker) .pn{display:block}
+  html.ps-page-playbook body:has(#list.tm-has-picker) .back{display:none}
+  html.ps-page-playbook body :is(button,summary){min-height:44px!important;min-width:44px}
+  html.ps-page-playbook summary{align-content:center}
+  html.ps-page-playbook .tc-field :is(input,textarea){font-size:var(--t-6)}
+  html.ps-page-playbook #pbEdit{padding:var(--sp-4);max-height:calc(100dvh - 32px)}
+  html.ps-page-playbook .tc-structure{padding:0}
+  html.ps-page-playbook .sec{padding-block:var(--sp-4)}
+  html.ps-page-playbook .tc-structure-row{flex-wrap:wrap}
+  html.ps-page-playbook .tc-structure-row :is(strong,span){flex-basis:calc(100% - 164px)}
+}

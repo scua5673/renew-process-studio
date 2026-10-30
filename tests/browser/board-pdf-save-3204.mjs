@@ -88,7 +88,7 @@ try{
   assert.equal(await f.evaluate(()=>window.__frameCalls),0,'iframe 의 저장 창은 부르지 않는다');
   assert.equal(downloads,dl5,'맨 위 창의 손잡이에 썼으니 내려받기 없음');
   await page.waitForTimeout(600);
-  // 6) 3.208 — 창이 안 뜬 것 같아도(초점 그대로) 감시 시간 뒤 저절로 받지 않는다: «저장 창이 보이지 않나요?» 카드를 띄운 채 기다리고, 늦게 답한 창의 손잡이에 쓴다(내려받기 없음)
+  // 6) 3.219 — 창이 안 뜬 것 같아도(초점 그대로) 감시 시간 뒤 저절로 받지 않는다: «저장 창이 보이지 않나요?» 카드를 띄운 채 기다리고, 늦게 답한 창의 손잡이에 쓴다(내려받기 없음)
   await page.evaluate(()=>{window.__topCalls=0;window.__topWritten=[];window.showSaveFilePicker=()=>{window.__topCalls++;return new Promise(r=>{window.__lateResolve=r;});};});
   await f.evaluate(()=>{window.__psPdfSilentMs=700;});
   const dl6=downloads;
@@ -103,7 +103,7 @@ try{
   await page.waitForTimeout(400);
   assert.equal(downloads,dl6,'늦게 답한 창의 손잡이에 썼으니 내려받기 없음');assert.equal(await f.evaluate(()=>window.__psPdfPickerSilent),undefined,'다음에도 창을 연다');
   assert.deepEqual((await f.evaluate(()=>window.__ev.filter(x=>x[0]==='pdf_picker_failed'))).map(x=>x[1]),['SecurityError','late']);
-  // 7) 3.208 — 카드의 «다운로드 폴더로 받기»를 누르면 그때 다운로드 폴더로 받고 silent 를 기록, 같은 창에서는 다시 묻지 않는다
+  // 7) 3.219 — 카드의 «다운로드 폴더로 받기»를 누르면 그때 다운로드 폴더로 받고 silent 를 기록, 같은 창에서는 다시 묻지 않는다
   await page.evaluate(()=>{window.__topCalls=0;window.showSaveFilePicker=()=>{window.__topCalls++;return new Promise(()=>{});};});
   await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');
   await f.waitForSelector('#psPdfFallback',{timeout:10000});

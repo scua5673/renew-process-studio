@@ -67,7 +67,7 @@ try{
  console.log('criteria persistence passed');
  if(engine==='webkit')for(const dark of [false,true]){
   const mobile=await openApp(fx,'phone',{browsers,dark});const mp=mobile.page;await mp.locator('#appSeg [data-team-hub]').click();await mp.locator('#teamBottom [data-tb="more"]').click();await mp.locator('#teamMoreSheet [data-tb="playbook"]').click();
-  const mf=await frame(mp,'#fPlaybook');await mf.locator('[data-ph="build"]').click();await mf.locator('[data-pedit="0"]').waitFor();
+  const mf=await frame(mp,'#fPlaybook');await mf.getByRole('combobox',{name:'플레이북 국면'}).selectOption('build');await mf.locator('[data-pedit="0"]').waitFor();
   assert.equal(await mf.evaluate(()=>innerWidth),375);assert.equal(await mf.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   const shot=path.join(SHOTS,'criteria-phone-'+(dark?'dark':'light')+'.png');await mp.screenshot({path:shot});shots.push(shot);
   await mp.locator('#teamSub [data-team-key="attrs"]').click();const sf=await frame(mp,'#fScout');await sf.locator('.tc-criteria-head').waitFor();assert.equal(await sf.evaluate(()=>innerWidth),375);assert.equal(await sf.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);

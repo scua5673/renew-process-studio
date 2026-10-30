@@ -14,11 +14,11 @@ function seed(h,players){h.basePlayers=JSON.parse(raw(players));const idx={};for
 const options=(h,...changedIds)=>({changedIds,basePlayers:h.basePlayers});
 
 /* 회차 입구 — sync.js 의 실제 문장을 그대로 떼어 쓴다 */
-const START='return itemsWriteFlush().catch(',END='});}).then(function(){return syncBasePrimeAll(';
+const START='return itemsWriteFlush(true).catch(',END='});}).then(function(){return syncBasePrimeAll(';
 function roundGate(flush,diag){
   const i=sync.indexOf(START),j=sync.indexOf(END,i);assert.ok(i>0&&j>i,'round gate snippet');
   const body=sync.slice(i+START.length,j+1);
-  return new Function('itemsWriteFlush','syncDiagnostic','return itemsWriteFlush().catch('+body+');')(flush,diag);
+  return new Function('itemsWriteFlush','syncDiagnostic','return itemsWriteFlush(true).catch('+body+');')(flush,diag);
 }
 
 test('held player patch no longer stops the sync round, but stays queued and busy',async()=>{

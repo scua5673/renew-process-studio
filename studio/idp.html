@@ -8,6 +8,8 @@
 <script src="storage.js"></script><script src="team-audience.js"></script>
 <script src="idp-evidence.js"></script>
 <script src="idp-recovery.js"></script>
+<script src="idp-weekly-growth.js"></script>
+<link rel="stylesheet" href="idp-weekly-growth.css">
 <script src="idp-roster-refresh.js"></script>
 <script src="shared-view-observation.js"></script>
 <link rel="stylesheet" href="idp-recovery.css">
@@ -4932,9 +4934,9 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
       <div class="idp-title"><h1 class="ps-pagetitle">IDP</h1><small class="ps-pagedesc">나의 성장 계획</small></div>
     </div>
     <nav class="layers" id="layers" aria-label="IDP 주요 메뉴">
+      <button type="button" data-l="home"><svg class="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 18l5-5 4 3 7-10M14 6h6v6"/></svg><b>이번 주</b></button>
       <button type="button" data-l="profile" class="on" aria-current="page"><svg class="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><b><span class="tab-full">내 프로필</span><span class="tab-short">프로필</span></b></button>
       <!-- 2.195 — 순서(사용자): 내 프로필(첫 화면) → 오늘(옛 홈, data-l 은 home 그대로) → 경기(신설) → 일정 … -->
-      <!-- 2.198 — "오늘" 탭 제거: 일정 탭이 오늘(일간)로 열리고 오늘 카드가 그 안에 있다 -->
       <button type="button" data-l="match"><svg class="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v3.2l3.2 2.3-1.2 3.8H10l-1.2-3.8L12 6.2M3.4 9.6l3.5 1.4M20.6 9.6l-3.5 1.4M6.2 19.2l2.6-2.4M17.8 19.2l-2.6-2.4"/></svg><b>경기</b></button>
       <!-- 2.766 — 이야기: 코치와 주고받은 말을 한 스레드로(사용자 «이야기 탭 — 메신저처럼»). 스무 채널을 모아 읽기만, 답은 다음 판 -->
       <button type="button" data-l="story"><svg class="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-1-1z"/></svg><b>이야기</b></button>
@@ -5918,12 +5920,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   var arcOpen=false;   /* 2.408 — 유형 카드도 접힌 요약이 기본(사용자 "유형카드도 접히게") */
   var visionEdit=false, visionEditBase=null, visionEditHadKey=false;   /* 2.741 — 명시 저장 + 편집 시작 판본 */
   var _idpVisionBaseDoc=null;
-  var curL='profile';   /* 2.195 — 첫 화면 = 내 프로필(사용자). 2.510 — 'learn' 은 더 이상 유효한 화면이 아니다 */
-  /* 2.778 — 셸 안에서는 부팅 화면을 셸의 «개인 IDP» 문(openPersonal: home→'cal', personalOnly) 과 똑같이 맞춘다.
-     그래야 신호가 왔을 때 같은 상태라 다시 그리지 않고 ack 만 보낸다(실측: 프레임이 «프로필» 로 미리 그려져 있다가
-     신호를 받고 ~0.9초 다시 그리는 사이 프로필이 보였다). 팀에서 여는 선수단(openSquad)은 그 신호가 personalOnly 를 끈다. 단독 실행은 그대로 */
-  try{ if(!isCoach()&&matchMedia('(max-width:767px)').matches){ curL='cal'; } }catch(_){}   /* 2.260 — 선수 폰은 첫 화면 = 오늘(일정 일간, 오늘 카드) — "들어가자마자 기록"(사용자). 코치·데스크톱은 프로필 유지 */    /* 1.918 — 첫 화면 = 홈 대시보드(사용자). 1.836 — 첫 화면 = 일정(사용자 지시). 홈 탭은 숨김(design-v2). 코치 선수단 목록(idp-squad)은 여전히 'home' 을 쓴다 */
-  try{ if(document.documentElement.getAttribute('data-shell')==='1'){ curL='home'; personalOnly=true; } }catch(_){}   /* 2.779 — 2.778 의 'cal' 은 틀렸다: openPersonal 은 layer 'home' → nextLayer 'home' 이라 상태가 달라 매번 ~1초 다시 그렸다(실계정 실측). 문과 같은 'home' 으로, 2.260 뒤에 둔다 */
+  var curL='home';   /* 개인 IDP 첫 화면은 이번 주 성장 카드. 일지는 cal 경로를 유지한다. */
+  try{if(document.documentElement.getAttribute('data-shell')==='1')personalOnly=true;}catch(_){}
   /* ⚠ 2.408 — 기본을 **전체(-1)** 로 바꿨다(사용자 "전체가 먼저 쫙 열리게 쭉쭉 평가 작성할 수 있게").
      한 영역씩 열면 다 채우려고 다섯 번을 눌러야 했다 — 평가는 앉은 자리에서 끝내는 일이다. */
   var evArea=-1;   /* 2.113 — 선수 셀프평가에서 보고 있는 영역. -1 = 전체 */
@@ -5965,6 +5963,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   var _lastViewSig='';
   function render(){
     if(_idpRecoverySuspended){wrap.innerHTML='';return;}
+    var weeklyLegacy=wrap.querySelector('.wg-legacy');if(weeklyLegacy)_idpWeeklyLegacyOpen=weeklyLegacy.open;
     try{var recovery=idpRecoveryController();if(recovery)recovery.refresh();}catch(_){}
     /* 2.740 — 선수 상세 안에서 이야기·평가·면담을 오가거나 내용을 다시 그려도 왼쪽 목록의
        독립 스크롤을 유지한다. 검색·오늘·공통질문·기준은 새 목록이므로 위치를 넘기지 않는다. */
@@ -5975,7 +5974,6 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     sqEvalListReset=false;
     if(curL==='role'){ curL='goal'; window.__idpScrollRole=true; try{ [].forEach.call(document.getElementById('layers').children,function(x){ x.classList.toggle('on',x.dataset.l==='goal'); }); }catch(_){} }   /* 1.976 — 역할 탭 → 목표 탭 역할 카드 */
     if(ro()&&curL==='img')curL='goal';
-    if(curL==='home'&&!squadView){ curL='cal'; calView='day'; calAnchor=new Date(); calAnchor.setHours(0,0,0,0); }   /* 2.198 — '오늘' 탭은 일정 일간(오늘)에 합쳤다(사용자). 딥링크·옛 상태는 여기서 돌린다 */
     var _viewSig=(squadView?'squad':curL)+'|'+viewing;
     var _viewChanged=(_viewSig!==_lastViewSig); _lastViewSig=_viewSig;
     if(_viewChanged&&curL!=='goal'&&visionEdit)visionEndEdit();
@@ -6048,8 +6046,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       html+='<div class="share-line">'+ic('eye')+' 팀과 공유: 프로필·평가·훈련·학습 기록 — 코치만 볼 수 있어요 · 이미지노트는 나만 봅니다</div>';
     }
     html+=rRisk();
-    html+=rMobileHead();
-    if(curL==='match') html+=(function(){ try{ return rMatchTab(); }catch(e){ return '<section class="card"><b>경기를 그리지 못했어요</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.195 */
+    if(curL!=='home')html+=rMobileHead();
+    if(curL==='home')html+=idpWeekly().renderPlayer();
+    else if(curL==='match') html+=(function(){ try{ return rMatchTab(); }catch(e){ return '<section class="card"><b>경기를 그리지 못했어요</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.195 */
     /* ⚠ 2.361 — 여기에 try/catch 가 **반드시** 있어야 한다(사용자 "목표 들어가도 오늘이 나와").
        rGoal() 안에서 오류가 나면 예외가 render() 밖으로 빠져나가 아래 `wrap.innerHTML=html` 에
        닿지 못한다. 그런데 탭 하이라이트는 클릭 핸들러가 render() **전에** 이미 바꿔 놓는다 →
@@ -6079,6 +6078,63 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       /* 세그 전환 페이드 — 셸 탭과 같은 결 */
       try{ wrap.style.animation='none'; void wrap.offsetWidth; wrap.style.animation='idpFade .16s ease'; }catch(_){}
     }
+  }
+
+  /* Weekly growth reuses the diary write/recovery path and coach scene reactions. */
+  var _idpWeeklyGrowth=null,_idpWeeklyLegacyOpen=false;
+  function idpWeeklyOwner(){
+    var owner=idpSaveOwner();if(!owner||_idpRecoveryAuthLocked)return '';
+    try{return JSON.stringify([owner.uid,owner.wid,localStorage.getItem('ps_cache_owner_v1')]);}catch(_){return '';}
+  }
+  function idpWeeklyPublic(key){try{return PSIDPWeeklyGrowth.publicDoc(localStorage.getItem(coachFeedbackKey(key)));}catch(_){return null;}}
+  function idpWeeklyModel(d,key,name){
+    var now=new Date(),today=ymd(now),oldDoc=doc,oldViewing=viewing,action,statement,sessions=[],rest=false;
+    /* These existing selectors are synchronous and read-only; scope their view to the selected player. */
+    try{doc=d;viewing=key;action=idpDailyAction(now);statement=visionOf(d).statement;rest=dayAtt(dlog(now)||{})==='off';
+      for(var i=0;i<7;i++){var dt=addDays(mondayOf(now),i),info=teamScheduleInfo(teamScheduleDay(dt));if(!info)continue;
+        if(info.match)sessions.push({day:ymd(dt),text:'경기 · '+String(info.match.opp||'')});
+        else if(!info.off)info.trainings.forEach(function(tr){sessions.push({day:ymd(dt),text:teamTrainingText(tr)});});
+      }
+    }finally{doc=oldDoc;viewing=oldViewing;}
+    var pub=idpWeeklyPublic(key),reviews=pub&&Array.isArray(pub.reviews)?pub.reviews:[],review=reviews[reviews.length-1];
+    return {state:'ready',owner:idpWeeklyOwner(),key:key,sourceDoc:d,name:name||'',today:today,action:action,statement:statement,sessions:sessions,rest:rest,
+      personal:(Array.isArray(d.trainings)?d.trainings:[]).filter(function(t){return t&&t.title;}).map(function(t){return {title:String(t.title),when:(Array.isArray(t.days)?t.days.join(' · '):'')+(t.time?' · '+String(t.time):'')};}),reviewNext:review&&review.nextAt?rvFmt(review.nextAt):'',
+      week:PSIDPWeeklyGrowth.weekData(d,pub,today),writable:key===viewing&&idpOwnActionAllowed(key)};
+  }
+  function idpWeekly(){
+    if(_idpWeeklyGrowth)return _idpWeeklyGrowth;
+    _idpWeeklyGrowth=PSIDPWeeklyGrowth.create({
+      player:function(){return idpWeeklyModel(doc,viewing,(doc.profile||{}).name);},
+      coach:function(selected){
+        var messages={unlinked:'계정 연결이 필요해요',ambiguous:'계정 연결을 확인해 주세요',pending:'IDP 자료를 기다리고 있어요',invalid:'IDP 자료를 확인해 주세요',unavailable:'열람 권한을 확인해 주세요'};
+        var rows=sqEvalPlayers().map(function(p){var ctx=sqStoryContext(p),w=ctx.state==='ready'?PSIDPWeeklyGrowth.weekData(ctx.doc,null,ymd(new Date())):null;
+          return {id:String(p.id),name:p.name||'선수',num:p.num||'',position:sqEvalPosName(p.posId),state:ctx.state,message:messages[ctx.state]||'',count:w?w.scenes.length:0,ctx:ctx};});
+        var row=rows.find(function(r){return r.id===selected;})||rows[0],m=null;
+        if(row){m=row.state==='ready'?idpWeeklyModel(row.ctx.doc,PREFIX+row.ctx.uid,row.name):{state:row.state,message:row.message,name:row.name};m.id=row.id;}
+        var waiting=false;try{waiting=!rows.length&&!!localStorage.getItem('ps_cache_wiped_v1');}catch(_){}
+        return {owner:idpWeeklyOwner(),rows:rows,model:m,waiting:waiting};
+      },
+      writePlayer:function(m,patch,flush){
+        if(!m.owner||m.owner!==idpWeeklyOwner()||m.today!==ymd(new Date())||m.sourceDoc!==doc||!idpOwnActionAllowed(m.key))return false;
+        if(doc.log!=null&&!sqMatchObject(doc.log))return false;
+        var dt=new Date(m.today+'T12:00:00');
+        if(Object.prototype.hasOwnProperty.call(patch,'try')&&(dayAtt(dlog(dt)||{})==='off'||JSON.stringify(idpDailyAction(dt))!==JSON.stringify(m.action)))return false;
+        setLog(dt,patch);return flush?persistMyIdpNow():true;
+      },
+      writeCoach:function(m,draft){
+        if(!squadView||!m.owner||m.owner!==idpWeeklyOwner()||m.today!==ymd(new Date())||!isCoach())return false;
+        var p=sqEvalPlayers().find(function(p){return String(p.id)===m.id;}),ctx=p&&sqStoryContext(p),s=m.week.scenes[0];
+        if(!ctx||ctx.state!=='ready'||PREFIX+ctx.uid!==m.key||!storyCoachTarget(m.key)||!s||JSON.stringify((ctx.doc.log||{})[s.day])!==draft.sceneRaw)return false;
+        var kk=coachFeedbackKey(m.key);
+        var pub=idpWeeklyPublic(m.key),reaction=pub&&pub.reacts&&pub.reacts['day:'+s.day];
+        if(!pub||reaction!=null&&!sqMatchObject(reaction)||JSON.stringify(reaction||{})!==draft.reactionRaw)return false;
+        if(draft.nextAt&&!/^\d{4}-\d{2}-\d{2}$/.test(draft.nextAt))return false;
+        return reactSetAt(kk,'day:'+s.day,{t:draft.t,nextAt:draft.nextAt||''});
+      },
+      go:function(layer){if(layer==='cal'){calView='day';calAnchor=new Date();calAnchor.setHours(0,0,0,0);}curL=layer;render();},render:render
+    });
+    window.addEventListener('beforeunload',function(e){if(_idpWeeklyGrowth.hasDraft()){e.preventDefault();e.returnValue='';}});
+    return _idpWeeklyGrowth;
   }
 
   /* ---------- 경기 읽기 / Match learning ----------
@@ -8433,7 +8489,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<button type="button" class="sq-pdfbtn" data-sq-pdf title="리포트·평가지·목표를 PDF로 저장">PDF 내보내기</button>'
       +'</div>';
     if(sqPanel==='today')
-      return h+(function(){ try{ return rSqToday(); }catch(e){ return '<div class="card sqe-msg"><b>오늘을 그리지 못했어요</b>'+esc(String(e&&e.message||e))+'</div>'; } })();
+      return h+(function(){ try{ return idpWeekly().renderCoach()+'<details class="wg-legacy"'+(_idpWeeklyLegacyOpen?' open':'')+'><summary>일간·주간 기록과 6주 리뷰</summary>'+rSqToday()+'</details>'; }catch(e){ return '<div class="card sqe-msg"><b>오늘을 그리지 못했어요</b>'+esc(String(e&&e.message||e))+'</div>'; } })();
     /* 2.409 — 공통질문: 팀 전체에 한 가지를 묻고 돌아온 글을 읽는 자리 */
     if(sqPanel==='qa')
       return h+(function(){ try{ return rSqQA(); }catch(e){ return '<div class="card sqe-msg"><b>공통질문을 그리지 못했어요</b>'+esc(String(e&&e.message||e))+'</div>'; } })();
@@ -9552,6 +9608,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }catch(_){}
   }
   function bindSquadEval(){
+    idpWeekly().bind(wrap);
     sqSharedViewObserve();
     var rt=wrap.querySelector('[data-sqe-retry]'); if(rt)rt.onclick=function(){ sqEvalLoad(true); };
     /* 2.769 — 선수 상세 이야기 탭의 스레드: 보내기는 그 선수의 코치 문서로, 말풍선을 누르면 그 선수 앱의 그 자리로 */
@@ -12663,7 +12720,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
        빠뜨리면 루틴만 적은 날의 기록이 통째로 지워진다. */
     if(o.hours&&!Object.keys(o.hours).length)delete o.hours;   /* 2.024 — 빈 시간표는 지운다 */
     if(o.tags&&!o.tags.length)delete o.tags; if(o.pain&&!o.pain.length)delete o.pain;   /* 2.031 */
-    if(!o.t&&!o.solo&&!o.memo&&!o.rpe&&o.w==null&&o.sleep==null&&!o.focus&&!o.good&&!o.bad&&!o.next&&!(o.plan&&o.plan.length)&&!o.hours&&o.try==null&&!o.body&&!o.sleepq&&!o.mood&&!o.pain&&!o.tags&&!o.visionEvidence&&!o.visionBehaviorId)delete doc.log[k]; else doc.log[k]=o; save(); }
+    if(!o.t&&!o.solo&&!o.memo&&!o.rpe&&o.w==null&&o.sleep==null&&!o.focus&&!o.good&&!o.bad&&!o.next&&!(o.plan&&o.plan.length)&&!o.hours&&o.try==null&&o.tryOpportunity!==false&&!o.body&&!o.sleepq&&!o.mood&&!o.pain&&!o.tags&&!o.visionEvidence&&!o.visionBehaviorId)delete doc.log[k]; else doc.log[k]=o; save(); }
   function setType(dt,t){ var o=dlog(dt)||{}; setLog(dt,{t:(o.t===t?null:t)}); }
   /* 훈련 강도(session-RPE 1~10) — 구간과 라벨 */
   function rpeZone(n){ return n<=3?'z1':n<=6?'z2':n<=8?'z3':'z4'; }
@@ -14059,7 +14116,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   }
   function idpRecordTry(dt,value){
     if(ro()||[0,1,2].indexOf(value)<0)return false;
-    var lg=dlog(dt)||{},action=idpDailyAction(dt),patch={try:lg.try===value?null:value};
+    var lg=dlog(dt)||{},action=idpDailyAction(dt),patch={try:lg.try===value?null:value,tryOpportunity:null};
     if(!action.text||dayAtt(lg)==='off')return false;
     /* 기존 장면은 독립 기록이다. 시도 횟수를 바꿔도 이전 근거를 지우거나 새 문장으로 바꾸지 않는다. */
     if(patch.try>0&&action.behavior&&!lg.visionEvidence&&!lg.visionBehaviorId){
@@ -14473,6 +14530,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       render(); }; });
   }
   function bind(){
+    idpWeekly().bind(wrap);
     bindRisk();
     /* 2.475 — [data-hd-go] 내비게이션 위임(옛 홈 bindHomeDash 에서 이식). 목표 탭 '셀프 vs 코치 대조 ›'(qg-foot)·
        프로필 스레드 '읽고 답하기 ›' 등 살아있는 버튼들의 유일한 엔진인데, 옛 바인더는 일지에서만 돌아
@@ -16224,5 +16282,6 @@ html.ps-page-idp .dcols,html.ps-page-idp .dcol{display:contents}
   html.ps-page-idp body.ps-player-role .dcol{display:block;min-width:0}
 }
 </style>
+<link rel="stylesheet" href="team-mobile.css">
 </body>
 </html>

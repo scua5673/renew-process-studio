@@ -7,6 +7,7 @@ const path=require('node:path');
 const vm=require('node:vm');
 const sync=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
 const S=require('../studio/scouting-store.js');
+const ItemsStale=require('../studio/sync-items-stale.js');
 const KEY='cs_scout_targets_v1',SCHEDULE='process_coach_v1',MATCH='cs_team_matches_v1',META='ps_sync_meta',OWNER='ps_cache_owner_v1';
 const MAXLEN=1500000;
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -104,6 +105,21 @@ function harness(opt={}){
     PSPerms:{role:()=>state.role,canEdit:()=>state.role==='admin'||state.role==='executive'},
   });
   c.window=c;c.parent={postMessage(){}};vm.runInContext(code,c,{filename:'actual scouting sync contract'});
+  // These legacy fixtures have no queued PSItems jobs. Still run the real
+  // review loader/fences; automatic-sync installs the actual journal/context
+  // after constructing this VM, so resolve those dependencies at call time.
+  const emptyJournal={async list(){return [];},async read(){throw Error('No player archive in this fixture');},async archive(){throw Error('No player write job in this fixture');}};
+  const staleContext=()=>typeof c.autosaveContext==='function'?c.autosaveContext():c.holdConflictContext();
+  let itemsStale;
+  c.itemsStaleAPI=()=>itemsStale||(itemsStale=ItemsStale.create({
+    context:staleContext,
+    journal:wid=>typeof c.autosaveJournal==='function'?c.autosaveJournal(wid):emptyJournal,
+    current:owner=>typeof c.itemsWriteCurrent==='function'?c.itemsWriteCurrent(owner):!!owner&&JSON.stringify(owner)===JSON.stringify(staleContext()),
+    permission:()=>typeof c.itemsPatchPermission==='function'?c.itemsPatchPermission():c.permsRaw(),
+    storage:c.storage,hash:c.hash,
+  }));
+  c.itemsWriteFlush=background=>background===true?
+    c.itemsStaleAPI().background(async()=>{}):c.itemsStaleAPI().foreground(async()=>{});
   return {c,local,idb,server,base,requests,errors,acks,hooks,notices,state,
     run:()=>c.syncNowCore('test'),ready:()=>c.keyReady(KEY,active),
     baseline(value,cupd=1){const m=c.meta();m.h[KEY]=c.hash(value);m.c[KEY]=cupd;c.setMeta(m);base.set(KEY,value);},

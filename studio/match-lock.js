@@ -201,7 +201,15 @@
         d.rows.forEach(function (e) { if (typed[e.key] === e) delete typed[e.key]; });
         if (inputPending()) throw fail();
         return v;
-      }).catch(function (e) { d.rows.forEach(function (r) { r.covered = false; if (typed[r.key] === r && (!e || e.psCode !== 'match_input_pending')) r.autoPaused = true; }); throw e; });
+      }).catch(function (e) {
+        // A native pending barrier may come from input added during this flight,
+        // after its own write committed. Only that same-author/match input may
+        // continue automatically; real I/O failures retain their retry pause.
+        var mid = cur(), newer = !!(e && e.psCode === 'match_pending_left' && expected !== null && owner() === expected
+          && d.rows.some(function (r) { return r.owner === expected && r.mid === mid; })
+          && active().some(function (r) { return r.owner === expected && r.mid === mid && d.rows.indexOf(r) < 0; }) && owner() === expected);
+        d.rows.forEach(function (r) { r.covered = false; if (typed[r.key] === r && !newer && (!e || e.psCode !== 'match_input_pending')) r.autoPaused = true; }); throw e;
+      });
       flight = result; flightOwner = expected;
       result.then(function () { if (flight === result) flight = null; schedule(); }, function () { if (flight === result) flight = null; schedule(); });
       return result;
