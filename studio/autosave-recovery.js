@@ -1,8 +1,9 @@
-/* Manually opened, read-only access to exact device-local autosave originals. */
+/* Exact device-local originals remain immutable. Player holds require a separate
+   explicit choice of the freshly read device copy; this UI never writes players. */
 (function(root,factory){var api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSAutosaveRecoveryUI=api;})(typeof window!=='undefined'?window:null,function(root){
   'use strict';
   var CSS='.psar{width:min(760px,calc(100vw - 28px));max-height:85dvh;padding:0;border:1px solid var(--line,#ddd);border-radius:16px;background:var(--surface,#fff);color:var(--txt,#16191f);font:14px/1.6 Pretendard,system-ui,sans-serif;box-sizing:border-box}.psar::backdrop{background:#0006}.psar *{box-sizing:border-box}.psar-head{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:15px;padding:18px 20px;background:var(--surface,#fff);border-bottom:1px solid var(--line,#ddd)}.psar h2{font-size:18px;margin:0}.psar-body{padding:18px 20px}.psar p{margin:0 0 12px;overflow-wrap:anywhere}.psar button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line,#ddd);border-radius:8px;background:var(--bar2,#f4f5f7);padding:7px 11px;min-height:40px}.psar button:focus-visible,.psar textarea:focus-visible{outline:2px solid var(--blue,var(--ps-navy,#14213D));outline-offset:2px}.psar button:disabled{opacity:.5;cursor:default}.psar-list{display:flex;flex-direction:column;gap:8px}.psar-list button{text-align:left;white-space:normal;overflow-wrap:anywhere}.psar small{display:block;font-size:12px;color:var(--dim,#626976)}.psar-raw{display:block;width:100%;min-height:130px;resize:vertical;font:12px/1.6 Pretendard,ui-monospace,SFMono-Regular,Consolas,monospace;padding:10px;border:1px solid var(--line,#ddd);border-radius:8px;background:var(--bar2,#f4f5f7);color:inherit;white-space:pre;overflow:auto}.psar label{display:block;font-weight:700;margin:16px 0 6px}.psar-actions{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.psar-detail{margin-top:20px;padding-top:16px;border-top:1px solid var(--line,#ddd)}.psar-status{color:var(--dim,#626976);font-size:12px}@media(max-width:600px){.psar-head,.psar-body{padding:14px}.psar button{min-height:44px}.psar-raw{font-size:16px}}';
-  function reason(value){return value==='reviewed-local'||value==='reviewed-server'?'직접 선택하기 전의 원문':value==='conflict'||value==='concurrent-edit'?'동시에 바뀐 내용':'자동으로 합치지 못한 내용';}
+  function reason(value){return value==='items-stale-device'?'선수 입력과 기기 사본 확인':value==='reviewed-local'||value==='reviewed-server'?'직접 선택하기 전의 원문':value==='conflict'||value==='concurrent-edit'?'동시에 바뀐 내용':'자동으로 합치지 못한 내용';}
   function validRow(row){return !!row&&typeof row.id==='string'&&!!row.id&&typeof row.k==='string'&&!!row.k&&typeof row.at==='number'&&Number.isFinite(row.at)&&row.at>=0;}
   function exact(row,value){var m=value&&value.metadata;return validRow(m)&&['id','k','at','cupd','reason','localHash','remoteHash'].every(function(k){return m[k]===row[k];})&&typeof value.localRaw==='string'&&typeof value.remoteRaw==='string';}
   function artifact(row,value){
@@ -47,16 +48,40 @@
       if(!w.navigator.clipboard||!w.navigator.clipboard.writeText){fallback();return;}
       try{Promise.resolve(w.navigator.clipboard.writeText(text)).then(function(){if(selectedCurrent(gen,ticket))message('두 원문을 복사했습니다.',gen);},fallback);}catch(_){fallback();}
     }
+    function reviewItems(row,value,actions,gen,ticket){
+      if(typeof o.prepareItemsReview!=='function'||typeof o.resolveItemsReview!=='function')return;
+      var begin=node('button','현재 기기 사본 확인 후 보류 해제…');begin.type='button';begin.setAttribute('data-psar-action','prepare-items');actions.appendChild(begin);
+      begin.addEventListener('click',function(){
+        if(!selectedCurrent(gen,ticket)||begin.disabled)return;begin.disabled=true;message('현재 기기 사본을 확인하는 중…',gen);
+        Promise.resolve().then(function(){if(!selectedCurrent(gen,ticket))throw new Error('selection_changed');return o.prepareItemsReview(row,value,function(){return selectedCurrent(gen,ticket);});}).then(function(prepared){
+          if(!selectedCurrent(gen,ticket))return;
+          if(prepared&&prepared.resolved){message('이 입력은 이미 보류를 해제했습니다. 보관된 원문은 그대로 남아 있습니다.',gen);return;}
+          if(!prepared||typeof prepared.currentRaw!=='string')throw new Error('items_review_invalid');
+          var review=node('section',undefined,'psar-detail'),label=node('label','지금 유지할 기기 사본'),area=node('textarea',undefined,'psar-raw');area.readOnly=true;area.setAttribute('aria-label','지금 유지할 기기 사본');area.value=prepared.currentRaw;label.appendChild(area);review.appendChild(label);
+          review.appendChild(node('p','위의 현재 기기 사본을 유지합니다. 이전 입력을 자동으로 합치거나 덮어쓰지 않습니다. 이전 입력과 비교 사본은 계속 보관되며, 이 입력의 보류만 해제합니다.'));
+          var controls=node('div',undefined,'psar-actions'),confirm=node('button','현재 기기 사본 유지 · 이 보류 해제'),cancel=node('button','취소');confirm.type=cancel.type='button';confirm.setAttribute('data-psar-action','resolve-items');controls.appendChild(confirm);controls.appendChild(cancel);review.appendChild(controls);detail.appendChild(review);message('',gen);
+          cancel.addEventListener('click',function(){if(!selectedCurrent(gen,ticket))return;review.remove();begin.disabled=false;message('보류를 유지했습니다.',gen);});
+          confirm.addEventListener('click',function(){
+            if(!selectedCurrent(gen,ticket)||confirm.disabled)return;confirm.disabled=cancel.disabled=true;message('선택한 사본이 그대로인지 확인하는 중…',gen);
+            Promise.resolve().then(function(){if(!selectedCurrent(gen,ticket))throw new Error('selection_changed');return o.resolveItemsReview(row,value,prepared,function(){return selectedCurrent(gen,ticket);});}).then(function(result){
+              if(!result||result.resolved!==true)throw new Error('items_review_unconfirmed');
+              if(!selectedCurrent(gen,ticket))return;review.remove();message('현재 기기 사본을 유지하고 이 입력의 보류를 해제했습니다. 보관된 원문은 그대로 남아 있습니다.',gen);
+            }).catch(function(){if(!selectedCurrent(gen,ticket))return;review.remove();begin.disabled=false;message('사본이나 권한이 바뀌었거나 해제 완료를 확인하지 못했습니다. 현재 사본과 보류 상태를 다시 확인해 주세요.',gen);});
+          });
+        }).catch(function(){if(selectedCurrent(gen,ticket)){begin.disabled=false;message('현재 사본을 확인하지 못했습니다. 같은 계정과 팀에서 다시 확인해 주세요. 보류는 유지됩니다.',gen);}});
+      });
+    }
     function read(row,gen){
       if(!current(gen))return Promise.resolve();var ticket=++readTicket;selected=null;originals=null;detail.replaceChildren();message('선택한 원문을 읽는 중…',gen);
       return Promise.resolve().then(function(){if(!current(gen)||ticket!==readTicket)return null;return o.read(row);}).then(function(value){
         if(!current(gen)||ticket!==readTicket)return;
         if(!exact(row,value))throw new Error('autosave_original_mismatch');
         selected=row;originals=value;detail.appendChild(node('h3',named(row)));
-        detail.appendChild(node('p','보관 당시의 원문입니다. 지금 사용 중인 자료는 바뀌지 않습니다.','psar-status'));
-        [['이 기기의 변경 원문',value.localRaw],['당시 서버 원문',value.remoteRaw]].forEach(function(pair){var label=node('label',pair[0]),area=node('textarea',undefined,'psar-raw');area.readOnly=true;area.setAttribute('aria-label',pair[0]);area.value=pair[1];label.appendChild(area);detail.appendChild(label);});
+        var deviceComparison=row.reason==='items-stale-device';
+        detail.appendChild(node('p',deviceComparison?'보관된 입력과 당시 기기의 비교 사본입니다. 서버 확인본이나 자동 복원 파일이 아니며, 지금 자료를 바꾸지 않습니다.':'보관 당시의 원문입니다. 지금 사용 중인 자료는 바뀌지 않습니다.','psar-status'));
+        [[deviceComparison?'보관된 선수 입력':'이 기기의 변경 원문',value.localRaw],[deviceComparison?'당시 기기의 다른 사본':'당시 서버 원문',value.remoteRaw]].forEach(function(pair){var label=node('label',pair[0]),area=node('textarea',undefined,'psar-raw');area.readOnly=true;area.setAttribute('aria-label',pair[0]);area.value=pair[1];label.appendChild(area);detail.appendChild(label);});
         var actions=node('div',undefined,'psar-actions'),copyButton=node('button','두 원문 복사'),downloadButton=node('button','백업 파일 저장');copyButton.type=downloadButton.type='button';copyButton.setAttribute('data-psar-action','copy');downloadButton.setAttribute('data-psar-action','download');
-        copyButton.addEventListener('click',function(){copy(gen,ticket);});downloadButton.addEventListener('click',function(){download(gen,ticket);});actions.appendChild(copyButton);actions.appendChild(downloadButton);detail.appendChild(actions);message('',gen);
+        copyButton.addEventListener('click',function(){copy(gen,ticket);});downloadButton.addEventListener('click',function(){download(gen,ticket);});actions.appendChild(copyButton);actions.appendChild(downloadButton);detail.appendChild(actions);if(deviceComparison)reviewItems(row,value,actions,gen,ticket);message('',gen);
       }).catch(function(){if(current(gen)&&ticket===readTicket){selected=null;originals=null;detail.replaceChildren();message('원문을 읽지 못했습니다. 보관 목록에서 다시 선택해 주세요.',gen);}});
     }
     function open(){
@@ -72,6 +97,7 @@
       events.forEach(function(name){w.addEventListener(name,check);});timer=w.setInterval(check,250);
       return Promise.resolve().then(function(){if(!current(gen))return null;return o.list();}).then(function(rows){
         if(!current(gen))return;if(!Array.isArray(rows)||rows.some(function(row){return !validRow(row);}))throw new Error('autosave_list_invalid');
+        rows=rows.filter(function(row){return row.reason!=='items-stale-resolved';});
         message(rows.length?'':'보관된 변경이 없습니다.',gen);
         rows.forEach(function(row){var button=node('button');button.type='button';button.setAttribute('data-psar-id',row.id);button.appendChild(node('strong',named(row)));button.appendChild(node('small',new Date(row.at).toLocaleString('ko-KR')+' · '+reason(row.reason)));button.addEventListener('click',function(){read(row,gen);});list.appendChild(button);});
       }).catch(function(){message('보관 목록을 읽지 못했습니다. 창을 닫고 다시 열어 주세요.',gen);});
