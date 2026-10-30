@@ -252,8 +252,11 @@ test('a legacy bulk review validates private and public IDP server bodies before
   }
 });
 
-test('a legacy bulk review cannot install another player ID or a nonobject item body', () => {
+test('a legacy bulk review cannot install another player ID or a nonobject item body', async () => {
   const h = harness({items: true}), key = 'sq:player-a', local = raw({id: 'player-a', name: 'Local'});
+  assert.equal(h.c.itemsStaleAPI().fenced(key), true, 'unread player archives keep the real review guard closed');
+  await h.c.itemsStaleAPI().load();
+  assert.equal(h.c.itemsStaleAPI().fenced(key), false, 'the actual empty journal must be read before validating a player choice');
   for (const remote of ['{}', '[]', 'null', '{"id":"player-b"}']) {
     const prepared = h.c.autosavePrepare({channel: 'team', kind: 'bulk', k: key}, {raw: remote, needsArchive: true, reason: 'base-missing'}, null, local, {v: remote, cupd: 2});
     assert.equal(prepared, null, remote);

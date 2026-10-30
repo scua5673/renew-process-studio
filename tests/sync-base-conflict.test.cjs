@@ -30,6 +30,7 @@ async function setup({withHistory=true,withMeta=true,legacy='LEGACY-COPY',disk='
     throw conflict();
   };
   h.c.PSStorage.auxSet=async(k,v)=>{disks.set(k,v);h.local.delete(k);return true;};
+  h.c.storage.keys=async prefix=>[...h.idb.keys()].filter(k=>!prefix||k.startsWith(prefix));
   const journal=J.create({storage:h.c.storage,context:ctx,hash:h.c.hash});h.c.autosaveJournal=()=>journal;
   if(withHistory)await journal.capture(ctx(),key,original,h.c.hash(original),1);
   return {h,key,original,local,remote,auxKey,disks,auxCalls,journal};

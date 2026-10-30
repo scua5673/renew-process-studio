@@ -28,6 +28,18 @@ function error(message='private row: PLAYER_SECRET',source='https://studio.examp
   return {message,filename:source,lineno:123,colno:9,error:{name,message,stack:'TypeError: '+message+'\n at PRIVATE_FUNCTION (https://studio.example.invalid/studio/scout.html?token=STACK_SECRET:123:9)\n at https://evil.invalid/studio/sync.js?uid=PRIVATE_UID:1:2\n at https://studio.example.invalid/users/PRIVATE_NAME.js:2:3'}};
 }
 
+test('stale player review diagnostics retain fixed classifications and discard player bodies and suffixes',()=>{
+  const s=surface(),c=collector(s);
+  for(const stage of ['items_stale_review','items_stale_changed','items_stale_owner','items_stale_shape','items_stale_archive','items_stale_module']){
+    s.w.emit('ps-sync-diagnostic',{detail:{stage,code:stage==='items_stale_owner'?'sync_workspace_changed':stage==='items_stale_review'||stage==='items_stale_changed'?'sync_local_changed':'sync_storage',message:'PLAYER_SECRET',players:[{id:'PRIVATE_ID'}],expected:'PRIVATE_BODY'}});
+  }
+  const fixed=c.snapshot();assert.equal(fixed.logs.length,6);assert.ok(fixed.logs.every(log=>log.stage.startsWith('items_stale_')&&log.code));
+  assert.equal(fixed.logs[0].category,'conflict');
+  s.w.emit('ps-sync-diagnostic',{detail:{stage:'items_stale_review:PRIVATE_ID',code:'sync_local_changed:PRIVATE_ID',message:'PLAYER_SECRET'}});
+  const latest=c.snapshot().logs.at(-1);assert.equal(latest.stage,'');assert.equal(latest.code,'');
+  const report=D.format(c.snapshot());for(const secret of ['PLAYER_SECRET','PRIVATE_ID','PRIVATE_BODY'])assert.ok(!report.includes(secret));
+});
+
 test('browser UMD exports install API without automatically changing handlers',()=>{
   const w={};vm.runInNewContext(fs.readFileSync(require.resolve('../studio/support-diagnostics.js'),'utf8'),{window:w,URL,Intl,Date,WeakMap});
   assert.equal(typeof w.PSSupportDiagnostics.install,'function');assert.equal(typeof w.PSSupportDiagnostics.snapshot,'function');
