@@ -793,6 +793,7 @@ function render(){ cmStage('cmR'+String(tabF||'').slice(0,4));
       +'<button class="likebtn'+(_liked?' on':'')+'" type="button" title="좋아요">'+IC_HEART+'<span class="lc">'+(+p.likes||0)+'</span></button>'
       +'</span></div><button class="open-cue" type="button"><small>'+(catKeys(p.cat)[0]==='match'?'장면과 함께 읽는 경기 리뷰':'큰 작전판·훈련 내용 확인')+'</small><span>자세히 보기 →</span></button></div>';
     var _lb=c.querySelector('.likebtn'); if(_lb)_lb.onclick=function(e){ e.stopPropagation(); toggleLike(p,_lb); };
+    if(!elmTab){c.classList.add('cc-coach');var foot=c.querySelector('.foot'),stats=foot.querySelector('.n'),cue=c.querySelector('.open-cue');stats.classList.add('cc-stats');foot.before(stats);cue.textContent='자료 보기 →';cue.setAttribute('aria-label',(p.title||'코치 자료')+' — 자료 보기');foot.appendChild(cue);}
     c.onclick=function(){selectedPostId=p.id;renderPreview(p);[].forEach.call(grid.querySelectorAll('.card'),function(x){x.classList.toggle('on',x===c);});
       /* 1.945 — 미리보기 열이 없는 화면(데스크톱)에서는 카드를 누르면 바로 큰 화면으로(사용자: 미리보기 삭제) */
       try{ var _pv=document.getElementById('commPreview'); if(_pv&&getComputedStyle(_pv).display==='none'){ openPost(p); } }catch(_){}   /* 3.091 — 미리보기 창 없이 바로 크게 재생(사용자) */
@@ -2290,9 +2291,10 @@ html body.pr-elm:not(.pr-elm-own) .fab:not(#_):not(#__),html body.pr-elm:not(.pr
 }
 </style>
 <link rel="stylesheet" href="community-fifa.css"><!-- 3.071 — «FIFA» 칸 --><link rel="stylesheet" href="community-tax.css">
-<link rel="stylesheet" href="community-library.css?v=3.222">
+<link rel="stylesheet" href="community-library.css?v=3.223">
 <link rel="stylesheet" href="community-detail.css?v=3.222">
 <link rel="stylesheet" href="community-youtube.css">
 <link rel="stylesheet" href="community-letters.css"><link rel="stylesheet" href="letter-social.css">
+<link rel="stylesheet" href="community-cards.css">
 </body>
 </html>

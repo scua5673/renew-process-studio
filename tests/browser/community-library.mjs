@@ -19,15 +19,15 @@ try{
     const geometry=await c.evaluate(()=>{
       const box=s=>{const r=document.querySelector(s).getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
       const q=document.getElementById('commSearch'),st=getComputedStyle(q);
-      return {vw:innerWidth,doc:document.documentElement.scrollWidth,grid:box('#grid'),card:box('.pl-row'),tabs:box('#prSeg'),search:box('#commSearch'),sourceButtons:[...document.querySelectorAll('#prSeg button')].map(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,height:r.height,width:r.width,overflow:e.scrollWidth>e.clientWidth+1};}),title:box('#clTitle'),font:st.fontSize,columns:getComputedStyle(document.getElementById('grid')).gridTemplateColumns.split(' ').length};
+      return {vw:innerWidth,doc:document.documentElement.scrollWidth,grid:box('#grid'),card:box('.pl-row'),tabs:box('#prSeg'),search:box('#commSearch'),sourceButtons:[...document.querySelectorAll('#prSeg button')].map(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,height:r.height,width:r.width,overflow:e.scrollWidth>e.clientWidth+1};}),title:box('#clTitle'),font:st.fontSize,columns:getComputedStyle(document.querySelector('.pl-list')).gridTemplateColumns.split(' ').length};
     });
     assert.equal(geometry.doc,geometry.vw,'no horizontal document overflow');
     assert.ok(geometry.tabs.left>=0&&geometry.tabs.right<=geometry.vw+1,'source tabs fit');
     assert.ok(geometry.search.bottom<=geometry.tabs.top,'search precedes the five sources');
     assert.equal(geometry.sourceButtons.length,5);
     for(const button of geometry.sourceButtons)assert.ok(button.left>=0&&button.right<=geometry.vw&&button.width>=44&&button.height>=44&&!button.overflow,'every source remains readable and tappable: '+JSON.stringify(button));
-    assert.ok(geometry.card.width>=280,'native training diagram remains readable');
-    assert.equal(geometry.columns,1,'letters stay in a single reading list at every size');
+    assert.ok(geometry.card.width>=260,'letter cards retain enough width for natural titles');
+    assert.equal(geometry.columns,mode.width<=767?1:geometry.vw<=1100?2:3,'letters form responsive cards');
     if(mode.size==='phone')assert.equal(geometry.font,'16px','phone input does not trigger Safari zoom');
     await page.screenshot({path:path.join(out,`${mode.size}-${mode.width}-${mode.dark?'dark':'light'}.png`)});
     await c.locator('#commSearch').fill('__없는_훈련_검증__');

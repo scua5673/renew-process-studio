@@ -229,7 +229,7 @@ html body #upMenu .umt b{font-weight:600}
 
 
 /* Source-specific legacy rules and shared card grammar use important declarations. */
-html body #wrap#wrap#wrap #grid .pr-card,html body #wrap#wrap#wrap #grid .fi-card,html body #wrap#wrap#wrap .comm-list.view-cards .card,html body #wrap#wrap#wrap .comm-list.view-large .card{border-radius:var(--r-2)!important;border:1px solid var(--c-line)!important;background:var(--c-surface)!important}
+html body #wrap#wrap#wrap #grid .pr-card,html body #wrap#wrap#wrap #grid .fi-card,html body #wrap#wrap#wrap .comm-list.view-cards .card,html body #wrap#wrap#wrap .comm-list.view-large .card{border-radius:var(--r-card)!important;border:1px solid var(--c-line)!important;background:var(--c-surface)!important}
 html body.pr-proc #wrap#wrap#wrap #grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:20px!important}
 html body #wrap#wrap#wrap .top{height:auto!important;min-height:0!important;padding:0!important}
 @media(max-width:1100px){html body.pr-proc #wrap#wrap#wrap #grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}}
