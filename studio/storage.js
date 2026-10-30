@@ -318,6 +318,49 @@
       t.oncomplete=function(){res(changed);};t.onerror=function(ev){rej((ev&&ev.target&&ev.target.error)||t.error||Object.assign(new Error('IndexedDB request failed'),{name:'UnknownError'}));};t.onabort=function(){rej(t.error||Object.assign(new Error('IndexedDB transaction aborted'),{name:'AbortError'}));};   /* 2.916 */
     });});
   }
+  /* Insert one resolution marker only while every pinned body still matches.
+     All reads, the marker write and its exact readback share one transaction;
+     no checked body is rewritten and a queued request is never a receipt. */
+  function idbSetIfValues(k,expected,replacement,checks,current){
+    var pairs;
+    try{
+      function validKey(key){return typeof key==='string'&&key.length>0&&['__proto__','constructor','prototype'].indexOf(key)<0;}
+      function raw(value){return value===null||typeof value==='string';}
+      if(!validKey(k)||!raw(expected)||typeof replacement!=='string'||typeof current!=='function'||!checks||typeof checks!=='object'||
+         (Object.getPrototypeOf(checks)!==Object.prototype&&Object.getPrototypeOf(checks)!==null))throw new TypeError('invalid conditional storage input');
+      pairs=[[k,expected]];
+      Reflect.ownKeys(checks).forEach(function(key){
+        var descriptor=Object.getOwnPropertyDescriptor(checks,key);
+        if(!validKey(key)||key===k||!descriptor||!descriptor.enumerable||!Object.prototype.hasOwnProperty.call(descriptor,'value')||!raw(descriptor.value))throw new TypeError('invalid conditional storage check');
+        pairs.push([key,descriptor.value]);
+      });
+    }catch(e){return Promise.reject(e);}
+    function guard(){if(current()===false){var e=new Error('conditional storage owner changed');e.name='StorageOwnerChangedError';throw e;}}
+    return afterMigrate(function(){return open().then(function(db){
+      guard();return new Promise(function(res,rej){
+        var t,s,remaining=pairs.length,match=true,written=false,verified=false,failure=null;
+        try{t=db.transaction(STORE,'readwrite');s=t.objectStore(STORE);}catch(e){rej(e);return;}
+        function abort(e){failure=failure||e;try{t.abort();}catch(_){}rej(failure);}
+        t.onerror=function(ev){failure=failure||idbErr(ev,t);rej(failure);};
+        t.onabort=function(ev){rej(failure||idbErr(ev,t,'abort'));};
+        t.oncomplete=function(){
+          try{guard();if(written&&!verified){var e=new Error('conditional storage verification failed');e.name='StorageVerificationError';throw e;}res(written&&verified);}catch(e){rej(e);}
+        };
+        try{pairs.forEach(function(pair){
+          var request=s.get(pair[0]);
+          request.onsuccess=function(){try{
+            guard();var value=request.result==null?null:request.result;
+            if(value!==pair[1])match=false;
+            if(--remaining||!match)return;
+            guard();s.put(replacement,k);written=true;
+            var readback=s.get(k);readback.onsuccess=function(){try{
+              guard();if(readback.result!==replacement){var e=new Error('conditional storage verification failed');e.name='StorageVerificationError';throw e;}verified=true;
+            }catch(e){abort(e);}};
+          }catch(e){abort(e);}};
+        });}catch(e){abort(e);}
+      });
+    });});
+  }
   function idbKeys(prefix){
     prefix=String(prefix||'');
     return readRetry(function(){return tx('readonly',function(s){ return s.getAllKeys(); });}).then(function(keys){
@@ -730,6 +773,7 @@
     del:function(k,current){ return afterMigrate(function(){ if(current)current();return idbDel(k,current); }); },
     delIfValue:function(k,v,current){ return afterMigrate(function(){ if(current)current();return idbDelIfValue(k,v,current); }); },
     replaceIfValue:function(k,expected,replacement,current){ return afterMigrate(function(){ return idbReplaceIfValue(k,expected,replacement,current); }); },
+    setIfValues:function(k,expected,replacement,checks,current){ return idbSetIfValues(k,expected,replacement,checks,current); },
     keys:function(prefix){ return afterMigrate(function(){ return idbKeys(prefix); }); }
   };
 

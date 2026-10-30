@@ -3,7 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const source=fs.readFileSync(require.resolve('../studio/scout.html'),'utf8');
 function part(from,to){const start=source.indexOf(from),end=source.indexOf(to,start+from.length);assert.ok(start>=0&&end>start,from);return source.slice(start,end);}
 const refreshCode=part('function itemsRerender(){','var scoutReadOnlyLoad=')+'\n'+
-  part('window.addEventListener("storage",e=>{','var matchPendingOpen=')+'\n'+
+  part('function itemsRefresh(reloadMain){','var matchPendingOpen=')+'\n'+
   part('function __matchRefresh(){','/* 2.022 — 핵심 행동 핑');
 function fixture(view='availView'){
   const handlers={},timers=[],calls=[],state={view,raw:'old',row:null,schedule:'old',data:'old',pending:false,failed:false};

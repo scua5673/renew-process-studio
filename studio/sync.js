@@ -1314,6 +1314,7 @@ function rosterReady(wid){
   }catch(_){return false;}
 }
 function keyReady(k,wid){
+  if(typeof itemsStaleAPI==='function'&&itemsStaleAPI().fenced(k))return false;
   if(k===MATCH_KEY&&matchReadyPending)return false;
   var m=meta(),r=m.r&&m.r[k];if(!wid||!r)return false;
   if(typeof r!=='object'||String(r.w||'')!==String(wid))return false;
@@ -2281,7 +2282,7 @@ function outboxTxn(fn){
 }
 function pendingInfo(wid){
   var sc=outboxScope(outboxOwner(),wid),b=(pendingSummary.by||{})[sc]||{};
-  return {count:+b.count||0,oldest:+b.oldest||0};
+  return {count:(+b.count||0)+(typeof itemsStaleAPI==='function'&&wid===activeWs()?itemsStaleAPI().count():0),oldest:+b.oldest||0};
 }
 /* 2.744 — 개인 자료는 팀 화면에서도 저장된다. 전환 장벽의 팀 전용 집계는 그대로
    두고, 사용자에게 보이는 상태만 개인 대기까지 합쳐 “팀과 같아요” 오판을 막는다. */
@@ -2589,7 +2590,7 @@ function syncState(){
     var c=autosaveContext();state.archivedCount=c&&autosaveArchiveState.owner===c.uid+':'+c.seal?autosaveArchiveState.count:0;
     if(autosaveRunner&&autosaveRunner.busy()&&state.kind!=='off'&&state.kind!=='bad'){state.kind='busy';state.text='저장 중…';}
   }
-  return state;
+  return typeof itemsStaleAPI==='function'?itemsStaleAPI().state(state):state;
 }
 function classifySyncError(e){
   var msg=String((e&&e.message)||e||'').toLowerCase(),status=+(e&&e.psStatus)||0;
@@ -4897,24 +4898,8 @@ function itemsAudit(){
     });
   }).catch(function(e){ syncDiagnostic('items-audit',e); return {err:String(e&&e.message||e)}; });
 }
-/* ══ 1.631 · 항목 쓰기 ═══════════════════════════════════════════════════════
-   선수 한 명을 키 하나(sq:<선수id>)로 IndexedDB 에 남긴다. 동기화가 그걸 서버로 나른다.
-   **읽기는 아직 통짜다** — 이 코드가 만드는 자료는 아직 아무도 읽지 않는다.
-
-   ── 서버가 준비됐는지 앱이 직접 확인한다 ───────────────────────────────────
-   supabase-item-keys.sql 을 안 깔고 이 판을 올리면 sq:* 가 권한 표 밖으로 떨어져
-   **선수 전원이 남의 평가를 읽는다.** "SQL 을 먼저 실행하세요"라고 적어 두는 것으로는
-   다음 번을 못 막는다(1.590 에서 배운 그대로 — 사람이 지켜야 하는 규칙은 미끄러진다).
-   그래서 올리기 전에 서버에 물어본다: ps_key_scope('sq:…') 가 'team' 을 주는가.
-   못 물어봤거나 답이 다르면 **올리지 않는다**(fail-closed). 자료는 기기에 그대로 쌓이고,
-   SQL 을 깐 다음 회차에 한꺼번에 올라간다 — 잃는 것은 없다. */
+/* Player writes require server key-scope verification before any upload. */
 var ITEMS_IDX='ps_items_idx_v1', ITEMS_SRV='ps_items_srv_v1', ITEMS_HOLD='ps_items_hold_v1';
-/* 1.644 — sq:*는 아직 화면에서 읽지 않는 이행용 그림자다. 워크스페이스별 색인·전환을
-   원자적으로 만들기 전에는 팀 사이에 섞일 수 있으므로 쓰기·전송을 잠시 닫는다.
-   정본 scout_tool_v1/cs_squad_v1은 그대로 저장·동기화된다. */
-/* 2.730 — 켠다(백엔드 계획 1단계 «선수단을 항목으로», 사용자 "갑시다" 2026-09-09). 서버 이행 SQL(supabase-2730-items-migrate.sql)이 각 팀의
-   scout_tool_v1.players 를 sq:<id> 행으로 만들어 두고, scout.html 은 행이 하나라도 있으면 행을 모아 명단을 만든다(itemsApply). 되돌리기: localStorage ps_items_write='0'.
-   1.644 의 «팀 사이에 섞임» 은 색인을 워크스페이스별로 두어(itemsIdxKey) 풀었다 — IDB 의 sq: 키 자체는 전환 때 지워지고 다시 받는다(idbSwitchKeys). */
 var ITEMS_ACTIVE=true;
 function itemsIdxKey(){ var w=''; try{ w=activeWs()||''; }catch(_){} return ITEMS_IDX+':'+w; }
 var ITEMS_SRV_TTL=864e5,itemsServerPromise=null;
@@ -4948,10 +4933,17 @@ function itemsIdx(){ try{ return JSON.parse(localStorage.getItem(itemsIdxKey())|
 function itemsHoldList(){ try{ return JSON.parse(localStorage.getItem(ITEMS_HOLD)||'[]')||[]; }catch(_){ return []; } }
 /* 선수 한 명이 지금 어떤 모습인지 — 이 값이 그대로 서버 행이 된다 */
 function itemVal(p){ try{ return JSON.stringify(p); }catch(_){ return null; } }
+var _itemsStale=null;
+function itemsStaleAPI(){
+  if(!_itemsStale){
+    if(!window.PSItemsStale)throw syncIssue('sync_storage','items_stale_module','선수 보관 확인 기능을 다시 불러와 주세요');
+    _itemsStale=PSItemsStale.create({context:autosaveContext,journal:autosaveJournal,current:itemsWriteCurrent,permission:itemsPatchPermission,storage:window.storage,hash:hash,notify:function(){window.dispatchEvent(new CustomEvent('ps-sync-state'));}});
+  }return _itemsStale;
+}
 var _itemsT=null, _itemsPending=null, _itemsWaiters=[], _itemsWriteTail=Promise.resolve(), _itemsFailedJob=null;
 var _itemsWritingN=0,_itemsActiveJobs=[],_itemsObserved=null,_itemsExplicitFailures=[],_itemsPatchFailures=[],_itemsJobSequence=0;
-function itemsWriteBusy(){return !!(_itemsPending||_itemsWritingN||_itemsExplicitFailures.some(itemsWriteRetryable)||_itemsPatchFailures.some(itemsWriteRetryable)||itemsWriteRetryable(_itemsFailedJob));}
-function itemsWriteRetryable(job){return !!job&&(job.patch?job.changedIds.length+job.deletedIds.length>0:(!job.explicit||job.deletedIds.length>0))&&itemsWriteCurrent(job.owner)&&(!job.patch||itemsPatchPermission()===job.permission)&&(!job.reviewContext||histRosterCurrent(job.reviewContext))&&(!job.intent||itemsDeleteCurrent(job.intent));}
+function itemsWriteBusy(){return !!(_itemsPending||_itemsWritingN||_itemsExplicitFailures.some(itemsWriteRetryable)||_itemsPatchFailures.some(itemsWriteRetryable)||itemsWriteRetryable(_itemsFailedJob)||(typeof itemsStaleAPI==='function'&&itemsStaleAPI().count()));}
+function itemsWriteRetryable(job){return !!job&&!(typeof itemsStaleAPI==='function'&&itemsStaleAPI().retired(job))&&(job.patch?job.changedIds.length+job.deletedIds.length>0:(!job.explicit||job.deletedIds.length>0))&&itemsWriteCurrent(job.owner)&&(!job.patch||itemsPatchPermission()===job.permission)&&(!job.reviewContext||histRosterCurrent(job.reviewContext))&&(!job.intent||itemsDeleteCurrent(job.intent));}
 function itemsReviewKeys(){
   var keys={};if(typeof holdList==='function')holdList().forEach(function(x){if(x&&x.kind==='item-delete'&&x.itemKey)keys[x.itemKey]=1;else if(x&&x.kind==='conflict'&&x.k&&x.k.indexOf(ITEMP)===0)keys[x.k]=1;});return keys;
 }
@@ -5098,6 +5090,7 @@ function itemsWriteJob(players,owner,options){
       });
     }
   }
+  job.pendingIntent=options&&options.intent?JSON.parse(JSON.stringify(options.intent)):null;
   job.explicit=job.deletedIds.length>0;
   var ids=Object.create(null),seen={},idx=itemsIdx();
   if(job.patch)job.changedIds.forEach(function(id){ids[id]=1;});
@@ -5168,8 +5161,8 @@ function itemsWriteEnqueue(job){
     if(job.patch&&(!value||value.skipped))throw syncIssue('sync_confirm_missing','items_patch_unconfirmed','변경한 선수의 저장을 확인하지 못했습니다');
     if(job.patch&&value&&value.held)throw syncIssue('sync_storage','items_patch_unconfirmed','변경한 선수의 저장 확인이 남아 있습니다');
     if(value&&job.reviewedDeletes&&job.reviewedDeletes.length)value.reviewedDeletes=job.reviewedDeletes.slice();
-    if(value&&!value.held&&!value.skipped){itemsDeleteComplete(job);itemsPatchComplete(job);}return value;
-  }).then(function(value){finished();return value;},function(e){finished();throw e;});
+    if(value&&!value.held&&!value.skipped&&!value.reviewResolved){itemsDeleteComplete(job);itemsPatchComplete(job);}return value;
+  }).then(function(value){finished();return value;},function(e){if(e&&e.psStage==='items_write_stale_job')e.psItemsJob=job;finished();throw e;});
   _itemsWriteTail=run.then(function(value){if(!job.patch||_itemsFailedJob===job)_itemsFailedJob=null;_itemsExplicitFailures=_itemsExplicitFailures.filter(function(x){return x!==job;});_itemsPatchFailures=_itemsPatchFailures.filter(function(x){return x!==job;});return value;},function(e){
     if(itemsWriteRetryable(job)){
       if(job.patch){if(_itemsPatchFailures.indexOf(job)<0)_itemsPatchFailures.push(job);}
@@ -5214,17 +5207,20 @@ function itemsWriteReady(players,options){
     return result;
   });
 }
-function itemsWriteFlush(){
+function itemsWriteFlush(background){
+  if(background===true)return itemsStaleAPI().background(function(){return itemsWriteFlush(1);});
+  if(background===undefined&&typeof itemsStaleAPI==='function')return itemsStaleAPI().foreground(function(){return itemsWriteFlush(2);});
+  function retry(job){return itemsWriteRetryable(job)&&!(background===1&&itemsStaleAPI().skip(job));}
   var tail=_itemsPending?itemsWriteDrain():_itemsWriteTail;
   return tail.then(function(){
     _itemsExplicitFailures=_itemsExplicitFailures.filter(itemsWriteRetryable);
-    return _itemsExplicitFailures.slice().reduce(function(p,job){return p.then(function(){return _itemsExplicitFailures.indexOf(job)>=0&&itemsWriteRetryable(job)?itemsWriteEnqueue(job):true;});},Promise.resolve());
+    return _itemsExplicitFailures.slice().reduce(function(p,job){return p.then(function(){return _itemsExplicitFailures.indexOf(job)>=0&&retry(job)?itemsWriteEnqueue(job):true;});},Promise.resolve());
   }).then(function(){
     _itemsPatchFailures=_itemsPatchFailures.filter(itemsWriteRetryable);
-    return _itemsPatchFailures.slice().reduce(function(p,job){return p.then(function(){return _itemsPatchFailures.indexOf(job)>=0&&itemsWriteRetryable(job)?itemsWriteEnqueue(job):true;});},Promise.resolve());
+    return _itemsPatchFailures.slice().reduce(function(p,job){return p.then(function(){return _itemsPatchFailures.indexOf(job)>=0&&retry(job)?itemsWriteEnqueue(job):true;});},Promise.resolve());
   }).then(function(){
     var job=_itemsFailedJob;
-    if(itemsWriteRetryable(job))return itemsWriteEnqueue(job);
+    if(retry(job))return itemsWriteEnqueue(job);
     if(job&&job.intent&&_itemsFailedJob===job)_itemsFailedJob=null;
     return true;
   });
@@ -5255,8 +5251,8 @@ function itemsWriteNow(players,owner,job){
   if(!job){try{job=itemsWriteJob(players,owner);}catch(e){return Promise.reject(e);}return itemsWriteEnqueue(job);}
   function requireOwner(){if(!itemsWriteCurrent(owner)||(job.patch&&itemsPatchPermission()!==job.permission)||(job.reviewContext&&(!histRosterCurrent(job.reviewContext)||!scoutWriteAllowed())))throw syncIssue('sync_workspace_changed','items_write_owner','선수 저장 중 계정·팀 또는 권한이 바뀌었습니다');}
   function rowChanged(stage,message,row){var e=syncIssue('sync_local_changed',stage,message);e.psItemId=row.k.slice(ITEMP.length);e.psItemDeleted=!!row.explicit;return e;}
-  return Promise.resolve().then(function(){requireOwner();return itemsServerCheck();}).then(function(ready){
-    requireOwner();if(!ready)return {skipped:'server'};
+  return Promise.resolve().then(function(){requireOwner();return typeof itemsStaleAPI==='function'?itemsStaleAPI().before(job):null;}).then(function(retired){return retired?{reviewResolved:true,superseded:true}:itemsServerCheck();}).then(function(ready){
+    requireOwner();if(ready&&ready.reviewResolved)return ready;if(!ready)return {skipped:'server'};
     var idx=itemsIdx(),now=job.at,seen={},next={},rows=[],wrote=0,review=itemsReviewKeys(),reviewHeld={},deleted={},explicit=!!(job.deletedIds&&job.deletedIds.length),changed=Object.create(null);
     if(explicit||job.patch)next=Object.assign({},idx);
     job.changedIds.forEach(function(id){changed[id]=1;});
@@ -5428,7 +5424,7 @@ function itemsHoldOpen(){
 function itemsReadAll(){
   if(!ITEMS_ACTIVE||!window.storage||!window.storage.keys||!window.storage.get)return Promise.resolve(null);
   var owner=itemsWriteOwner();if(!owner||!itemsWriteCurrent(owner))return Promise.resolve(null);
-  return Promise.resolve(window.storage.keys()).then(function(ks){
+  return Promise.resolve(typeof itemsStaleAPI==='function'?itemsStaleAPI().load():null).then(function(){return window.storage.keys();}).then(function(ks){
     var keys=(ks||[]).filter(isItemKey);
     return Promise.all(keys.map(function(k){ return window.storage.get(k).then(function(r){ return [k,(r&&typeof r.value==='string')?r.value:null]; }).catch(function(){ return [k,null]; }); }));
   }).then(function(pairs){
@@ -6526,6 +6522,7 @@ function autosavePending(){
 }
 function autosaveReviewCurrent(review){return autosavePending().some(function(r){return r.channel===review.channel&&r.wid===review.wid&&r.k===review.k&&r.token===review.token;});}
 function autosavePrepare(review,plan,base,local,row){
+  if(itemsStaleAPI().fenced(review.k))return null;
   if(/^remote-/.test(plan.reason||''))return null;
   // Unapproved bulk-emptying is not an ordinary user edit. Preserve both
   // originals and keep the confirmed document, rather than guessing a delete.
@@ -6607,7 +6604,7 @@ function autosaveRecoveryContext(){var c=autosaveContext();return c?JSON.stringi
 function autosaveArchiveList(){
   var c=autosaveContext();if(!c)return Promise.resolve([]);var owner=autosaveRecoveryContext();
   var scopes=[c.wid],p=personalWid();if(p&&p!==c.wid)scopes.push(p);
-  return Promise.all(scopes.map(function(wid){var ctx=autosaveContext(wid);return autosaveJournal(wid).list(ctx).then(function(rows){return rows.map(function(r){return Object.assign({},r,{wid:wid});});});})).then(function(lists){
+  return Promise.all(scopes.map(function(wid){var ctx=autosaveContext(wid);return autosaveJournal(wid).list(ctx).then(function(rows){return rows.filter(function(r){return r.reason!=='items-stale-resolved';}).map(function(r){return Object.assign({},r,{wid:wid});});});})).then(function(lists){
     if(autosaveRecoveryContext()!==owner)throw new Error('autosave_owner_changed');
     return [].concat.apply([],lists).sort(function(a,b){return b.at-a.at;});
   });
@@ -6621,6 +6618,7 @@ window.PSAutosaveRecovery={open:function(){
   if(!autosaveEnabled()||!window.PSAutosaveRecoveryUI)return;
   if(!autosaveRecoveryUI)autosaveRecoveryUI=PSAutosaveRecoveryUI.create({
     context:autosaveRecoveryContext,list:autosaveArchiveList,label:keyLabel,
+    prepareItemsReview:function(r,v,g){return itemsStaleAPI().prepare(r,v,g);},resolveItemsReview:function(r,v,p,g){return itemsStaleAPI().resolve(r,v,p,g);},
     read:function(row){var ctx=autosaveContext(row.wid);if(!ctx||!autosaveCanRead(row.wid,row.k))return Promise.reject(new Error('autosave_owner_changed'));return autosaveJournal(row.wid).read(ctx,row.id);}
   });
   return autosaveRecoveryUI.open();
@@ -6689,7 +6687,7 @@ function syncNowCore(reason){
      예전엔 이 실패가 회차 입구에서 그대로 던져져 일정·경기·보관함까지 모든 주고받기가 멈췄다 — 운영자 아이패드(풋볼A)가
      선수 확인 5건을 남긴 채 3.047 내내 회차를 한 번도 못 끝내 보관함이 비어 보였다. 그 수정은 계속 재시도 목록에 남고
      (itemsWriteBusy 참 — 대기 확인 칸은 그대로 «대기»), 확인을 마치면 다음 회차의 flush 가 다시 올린다. 다른 실패는 예전처럼 회차를 멈춘다. */
-  return Promise.resolve(sharedReady).then(function(){return itemsWriteFlush().catch(function(e){
+  return Promise.resolve(sharedReady).then(function(){return itemsWriteFlush(true).catch(function(e){
     if(e&&e.psCode==='sync_storage'&&e.psStage==='items_patch_unconfirmed'){syncDiagnostic('items-held-round',e);return true;}
     throw e;
   });}).then(function(){return syncBasePrimeAll(wid,syncBaseMetaSnapshot);}).then(function(){return ensureToken();}).then(function(at){
@@ -6827,7 +6825,7 @@ function syncNowCore(reason){
       var scoutFullRequested=!!pair[4];
       var srv={}; (rows||[]).forEach(function(r0){ srv[r0.k]=r0; });
       var libraryRoundStarted=false;   /* 3.056 — 이 회차가 보관함 단계에 들어갔나(실패 뒤 보관함만 따로 돌릴지 판정) */
-      var m=meta(), pushRows=[], teamPushCandidates={},confirmedPushKeys={}, idpBaseNext={},idpPushCandidate={},idpPushConfirmed={},idpLocalStage={},idpCommitDone=false, applied=0, skippedBig=0, skippedKeys=[], heldKeys=[], dependencyDeferredKeys=[], permDeniedKeys=[], now=Date.now(), writes=[], itemsApplied=0,itemsObservedChanged=false,matchReadyBlocked=false;
+      var m=meta(), pushRows=[], teamPushCandidates={},confirmedPushKeys={}, idpBaseNext={},idpPushCandidate={},idpPushConfirmed={},idpLocalStage={},idpCommitDone=false, applied=0, skippedBig=0, skippedKeys=[], heldKeys=itemsStaleAPI().keys(), dependencyDeferredKeys=[], permDeniedKeys=[], now=Date.now(), writes=[], itemsApplied=0,itemsObservedChanged=false,matchReadyBlocked=false;
       var idpMetaBefore={h:{},c:{},n:{}};Object.keys(m.h||{}).forEach(function(k){idpMetaBefore.h[k]=m.h[k];});Object.keys(m.c||{}).forEach(function(k){idpMetaBefore.c[k]=m.c[k];});Object.keys(m.n||{}).forEach(function(k){idpMetaBefore.n[k]=m.n[k];});
       function roundWorkspaceCurrent(){
         var own=cacheOwner(),ss=getSess(),seal='',liveSwitch=workspaceSwitchGuardRead();try{seal=String(localStorage.getItem(OWNERKEY)||'');}catch(_){}
@@ -7078,6 +7076,7 @@ function syncNowCore(reason){
       }
       var teamWs=isTeamWs();
       KEYS.forEach(function(k){
+        if(itemsStaleAPI().hold(k,heldKeys))return;
         /* 2.744 — 개인 공간에서도 공통 개인 채널이 CAS·충돌 선택을 담당한다. */
         if(PERSONAL[k]) return;
         if(k===SCOUT_KEY&&!scoutWriteAllowed())return;
@@ -7653,6 +7652,7 @@ function syncNowCore(reason){
         var pushable=itemsPushAllowed();   /* 서버 규칙이 아직이면 받기만 한다(올리지 않는다) */
         var deleteReview={};itemsDeleteReviews().forEach(function(x){deleteReview[x.itemKey]=1;});
         keys.forEach(function(k){
+          if(itemsStaleAPI().hold(k,heldKeys))return;
           if(deleteReview[k]){if(heldKeys.indexOf(k)<0)heldKeys.push(k);return;}
           var loc=(idbVals[k]===undefined?null:idbVals[k]);
           var row=srv[k], lh=hash(loc);

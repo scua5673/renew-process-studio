@@ -9,6 +9,7 @@ const sync=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
 const scout=fs.readFileSync(path.join(__dirname,'../studio/scout.html'),'utf8');
 const wrapper=fs.readFileSync(path.join(__dirname,'../studio/review-training-schedule.js'),'utf8');
 const R=require('../studio/review-training.js');
+const ItemsStale=require('../studio/sync-items-stale.js');
 const KEY='process_coach_v1',MATCH='cs_team_matches_v1',META='ps_sync_meta',OWNER='ps_cache_owner_v1';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const doc=(label='server')=>JSON.stringify({anchorMonday:'2026-09-07',weeks:{0:Array.from({length:7},(_,i)=>({trainings:i===1?[{id:label,title:label}]:[]}))}});
@@ -59,7 +60,7 @@ function harness(opt={}){
     lastIssue:null,busy:false,busyDog:0,signOutEpoch:0,dataReady:true,localSwitchToken:'',kvWho:true,KV_PULL_CHUNK:20,
     getSess:()=>session,activeWs:()=>active,activeWsObj:()=>({role:opt.teamRole||'owner'}),isTeamWs:()=>true,
     workspaceSwitchGuardRead:()=>null,workspaceSwitchGuardRaw:()=>'',workspaceSwitchEpochRaw:()=>'',
-    itemsWriteFlush:async()=>{},syncBasePrimeAll:async()=>{},syncBaseGet:k=>base.get(k)||null,syncBaseSet(k,v){if(v==null)base.delete(k);else base.set(k,v);},syncBaseReady:async()=>{},
+    syncBasePrimeAll:async()=>{},syncBaseGet:k=>base.get(k)||null,syncBaseSet(k,v){if(v==null)base.delete(k);else base.set(k,v);},syncBaseReady:async()=>{},
     ensureToken:async()=>'synthetic',permsPrime:async()=>{},permsRaw:()=>JSON.stringify({defaultRole:opt.role||'admin'}),
     kvPreload:async()=>Object.fromEntries(idb),idbBacked:k=>k===KEY,
     scheduleHeld:()=>held,scheduleWriteAllowed:()=>state.write,scheduleStructureRepair(){},
@@ -104,6 +105,20 @@ function harness(opt={}){
   });
   c.window=c;c.parent={PSSync:null,postMessage(){}};
   vm.runInContext(code,c,{filename:'actual sync readiness contract'});
+  // No player jobs are queued here, but load the real stale-review module.
+  // Dependent fixtures may install an actual autosave journal/context later.
+  const emptyJournal={async list(){return [];},async read(){throw Error('No player archive in this fixture');},async archive(){throw Error('No player write job in this fixture');}};
+  const staleContext=()=>typeof c.autosaveContext==='function'?c.autosaveContext():c.holdConflictContext();
+  let itemsStale;
+  c.itemsStaleAPI=()=>itemsStale||(itemsStale=ItemsStale.create({
+    context:staleContext,
+    journal:wid=>typeof c.autosaveJournal==='function'?c.autosaveJournal(wid):emptyJournal,
+    current:owner=>typeof c.itemsWriteCurrent==='function'?c.itemsWriteCurrent(owner):!!owner&&JSON.stringify(owner)===JSON.stringify(staleContext()),
+    permission:()=>typeof c.itemsPatchPermission==='function'?c.itemsPatchPermission():c.permsRaw(),
+    storage:c.storage,hash:c.hash,
+  }));
+  c.itemsWriteFlush=background=>background===true?
+    c.itemsStaleAPI().background(async()=>{}):c.itemsStaleAPI().foreground(async()=>{});
   c.parent.PSSync={session:c.getSess,dataUnlocked:c.dataUnlocked,keyReady:c.keyReady};
   c.scoutStore={owner:()=>local.get(OWNER),get:k=>local.has(k)?JSON.parse(local.get(k)):null};
   c.matchSession=c.getSess;c.matchCurrent='match-a';
