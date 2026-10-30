@@ -213,7 +213,7 @@
       var o = p && outBy[p.team]; if (!o || p.coach) return JSON.parse(JSON.stringify(p));
       var k = done[p.team] = (done[p.team] || 0), q = o.pts[k], e = o.F[k]; done[p.team]++;
       var np = JSON.parse(JSON.stringify(o.list[k]));
-      np.num = String(p.meetingRole==='reserve' ? (fmt==='8'?9:12)+k : e[2]); np.pos = e[3] || ''; np.x = rnd(l + q.x * g.mpp); np.y = rnd(t + q.y * g.mpp);
+      np.num = String(e[2]); np.pos = e[3] || ''; np.x = rnd(l + q.x * g.mpp); np.y = rnd(t + q.y * g.mpp);
       delete np.name;   // 기본 10장은 이름이 없다 — 자리가 바뀐 선수에 남은 이름이 따라가지 않게
       return np;
     });
@@ -626,7 +626,8 @@
           var sn=JSON.parse(JSON.stringify(sl.snap));Object.assign(sn,put,{orientation:lk.oh,spFlip:false});
           // Keep the original filled-template load/capture normalization (ball identity, token defaults).
           if(c.start==='filled'){win.loadSnap(sn);sn=win.captureSnap();sn.orientation=lk.oh;sn.spFlip=false;}
-          return {pdfOrientation:po,title:sl.title||'',points:[],snap:sn,thumb:(function(){try{return win.__snapToThumb?win.__snapToThumb(sn):'';}catch(_){return '';}})()};
+          var next={pdfOrientation:po,title:sl.title||'',points:[],snap:sn,thumb:(function(){try{return win.__snapToThumb?win.__snapToThumb(sn):'';}catch(_){return '';}})()};
+          if(win.PSMeetReserve&&win.PSMeetReserve.isReserve(sl)){next.reserve=true;next.reserveV=2;}return next;
         });
         win.__meetLoad(replacements);win.__meetingPdfOrientation=po;
         if(ls)try{ls.setItem('ps_meet_orient_v2',po);}catch(_){}
@@ -707,7 +708,7 @@
           return { title: e.title, snap: e.snap, points: (Array.isArray(nt) ? nt : []).map(function (x) { return String(x == null ? '' : x).trim().slice(0, 160); }).filter(Boolean).slice(0, 10) };
         });
         list.forEach(function (s) { if (cur.look) Object.assign(s.snap, lookSnap(cur.look)); });   // 기본 10장은 meetTplSnap 이 네이비 · 15존을 박는다 — 고른 운동장으로
-        return list.map(function (s) { return { title: s.title, snap: s.snap, points: s.points || [] }; });
+        return list.map(function (s) { var next={ title: s.title, snap: s.snap, points: s.points || [] };if(win.PSMeetReserve&&win.PSMeetReserve.isReserve(s)){next.reserve=true;next.reserveV=2;}return next; });
       };
       g.__psForm = 1; g.__psFormRaw = t; win.__meetTplSlides = g; return true;
     }

@@ -15,6 +15,15 @@ function snap11(tp){let id=1001;const pl=[],pt=m=>({x:Math.round((30+m[0]*10)*10
   tp.op.forEach((m,i)=>{const q=pt(m),r=T.OP[i];pl.push({id:id++,team:'red',num:String(r[0]),pos:r[1],x:q.x,y:q.y});});
   return {pitchSpec:'fifa',players:pl,ball:tp.ball?pt(tp.ball):null,orientation:'v',teamColors:{blue:'#1e5bc6'}};}
 const S11=T.TPL.map(tp=>({title:tp.t,snap:snap11(tp)})),S8=M8.slides({},false,'h',G,0.4);
+test('reserve tactical numbers match BEST in every 11- and 8-player formation',()=>{
+  const R=require('../studio/board-meet-reserve.js');
+  for(const fmt of ['11','8'])for(const us of MF.LIST[fmt]){
+    const b=(fmt==='11'?S11:S8)[0],r=R.create(b),c={us,op:MF.DEF[fmt].op};
+    const best=MF.remapSnap(b.snap,b.title,c,G,FORM)||b.snap,reserve=MF.remapSnap(r.snap,r.title,c,G,FORM)||r.snap;
+    assert.deepEqual(reserve.players.map(p=>[p.num,p.pos,p.x,p.y]),best.players.map(p=>[p.num,p.pos,p.x,p.y]),us);
+    assert.deepEqual(reserve.players.map(p=>+p.num).sort((a,b)=>a-b),Array.from({length:+fmt},(_,i)=>i+1),us);
+  }
+});
 const meters=(sn)=>{const P=MF.PITCH[MF.fmtOf(sn)],l=G.cx-P.len*G.mpp/2,t=G.cy-P.wid*G.mpp/2;return sn.players.map(p=>({team:p.team,num:p.num,pos:p.pos,id:p.id,x:(p.x-l)/G.mpp,y:(p.y-t)/G.mpp}));};
 const lab=(sn,tm)=>sn.players.filter(p=>p.team===tm).map(p=>p.num+p.pos);
 

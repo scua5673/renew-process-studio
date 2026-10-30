@@ -27,10 +27,48 @@ test('reserve follows BEST in both formats and orientations, with independent id
     assert.deepEqual(list.slice(0,3).map(s=>s.title),['BEST 8','RESERVE','하이블록']);
     assert.equal(list.length,10);assert.equal(r.snap.players.length,8);assert.equal(r.snap.orientation,oh);
     assert.deepEqual(r.snap.players.map(p=>[p.pos,p.x,p.y]),old[0].snap.players.map(p=>[p.pos,p.x,p.y]));
+    assert.deepEqual(r.snap.players.map(p=>p.num),old[0].snap.players.map(p=>p.num));
     assert.ok(r.snap.players.every(p=>p.meetingRole==='reserve'&&!p.name&&!p.pid));
     assert.equal(new Set(r.snap.players.map(p=>p.num)).size,8);assert.equal(r.snap.ball,null);assert.equal(r.frames,undefined);
     assert.equal(JSON.stringify(old),before);assert.equal(R.withReserve(list),list);
     r.snap.teamColors.blue.color='#ffffff';assert.equal(old[0].snap.teamColors.blue.color,'#123456');
+  }
+});
+test('new reserves keep BEST token sizes and tactical numbers without copying player identity',()=>{
+  const best=eight.slides({tokenScale:.69,tokV:2},false,'v')[0];
+  best.snap.players[3].scale=1.7;best.snap.players[3].name='선발';
+  const r=R.create(best);
+  assert.equal(r.reserveV,2);assert.equal(r.snap.tokenScale,.69);assert.equal(r.snap.tokV,2);
+  assert.equal(r.snap.players[3].scale,1.7);assert.equal(r.snap.players[3].name,undefined);
+  best.snap.players.forEach((p,i)=>p.num=String(30+i));
+  assert.deepEqual(R.create(best).snap.players.map(p=>p.num),['1','2','3','4','5','6','7','8'],'roster shirt numbers do not become tactical reserve numbers');
+});
+test('legacy reserve upgrade corrects every scene once, preserving names, movement and extra players',()=>{
+  const best=eight.slides({tokenScale:.69,tokV:2},false,'v')[0],r=R.create(best);
+  delete r.reserveV;r.snap.tokenScale=.35;best.snap.players[2].scale=1.6;
+  r.snap.players.forEach((p,i)=>{p.num=String(9+i);p.name='리저브 '+i;});
+  r.snap.players.push({id:3000,team:'blue',num:'17',name:'추가 선수',x:77,y:88,scale:1.2});
+  r.frames=[{snap:structuredClone(r.snap),thumb:'old1'},{snap:structuredClone(r.snap),thumb:'old2'}];
+  r.frames[1].snap.players[2].x+=44;r.thumb='old';
+  const list=[best,r,{title:'하이블록',snap:{players:[{num:'9',name:'선발'}]}}],before=structuredClone(list),bestRaw=JSON.stringify(best);
+  assert.deepEqual(R.upgrade(list),[r]);
+  for(const sn of [r.snap,...r.frames.map(f=>f.snap)]){
+    assert.equal(sn.tokenScale,.69);assert.equal(sn.tokV,2);assert.equal(sn.players[2].scale,1.6);
+    assert.deepEqual(sn.players.slice(0,8).map(p=>p.num),best.snap.players.map(p=>p.num));
+    assert.equal(sn.players[2].name,'리저브 2');assert.deepEqual(sn.players[8],before[1].snap.players[8]);
+  }
+  assert.equal(r.frames[1].snap.players[2].x,before[1].frames[1].snap.players[2].x);
+  assert.equal(r.thumb,undefined);assert.ok(r.frames.every(f=>!f.thumb));
+  assert.equal(JSON.stringify(best),bestRaw);assert.deepEqual(list[2],before[2]);
+  r.snap.tokenScale=.85;r.snap.players[0].num='90';assert.deepEqual(R.upgrade(list),[]);
+  assert.equal(r.snap.tokenScale,.85);assert.equal(r.snap.players[0].num,'90');
+});
+test('legacy custom numbers and number collisions are not silently rewritten',()=>{
+  for(const collision of [false,true]){
+    const best=eight.slides({tokenScale:.69,tokV:2},false,'v')[0],r=R.create(best);delete r.reserveV;
+    r.snap.players.forEach((p,i)=>p.num=String(9+i));
+    if(collision)r.snap.players.push({id:3000,team:'blue',num:'1'});else r.snap.players[2].num='99';
+    const nums=r.snap.players.map(p=>p.num);R.upgrade([best,r]);assert.deepEqual(r.snap.players.map(p=>p.num),nums);
   }
 });
 test('no reserve is silently added to a custom or opponent-analysis meeting',()=>{
