@@ -125,7 +125,7 @@ html.ps-page-scout:has(#pwDrawer[open]){overflow:hidden}
 .pw-depth-heading h3{font-size:var(--t-5);margin:0 0 var(--sp-2)}
 .pw-depth-heading p,.pw-depth-heading>span{font-size:var(--t-3);color:var(--c-muted);margin:0;line-height:1.5}
 .pw-depth-heading>span{white-space:nowrap}
-.pw-depth-pitch{position:relative;isolation:isolate;display:grid;gap:var(--sp-5);padding:var(--sp-5) var(--sp-3);border:1px solid color-mix(in srgb,var(--c-ok) 35%,var(--c-line));border-radius:var(--r-2);background:repeating-linear-gradient(0deg,color-mix(in srgb,var(--c-ok) 9%,var(--c-surface)) 0 12.5%,color-mix(in srgb,var(--c-ok) 14%,var(--c-surface)) 12.5% 25%)}
+.pw-depth-pitch{position:relative;isolation:isolate;display:grid;gap:var(--sp-4);padding:var(--sp-4) var(--sp-2);border:1px solid color-mix(in srgb,var(--c-ok) 35%,var(--c-line));border-radius:var(--r-2);background:color-mix(in srgb,var(--c-ok) 8%,var(--c-surface))}
 .pw-depth-markings{position:absolute;inset:var(--sp-3);border:1px solid color-mix(in srgb,var(--c-ok) 30%,transparent);z-index:-1;pointer-events:none}
 .pw-depth-markings::before,.pw-depth-markings::after{content:'';position:absolute;width:42%;height:12%;left:29%;border:1px solid color-mix(in srgb,var(--c-ok) 30%,transparent)}
 .pw-depth-markings::before{top:-1px}.pw-depth-markings::after{bottom:-1px}
@@ -135,7 +135,8 @@ html.ps-page-scout:has(#pwDrawer[open]){overflow:hidden}
 /* 3.205 — 줄마다 자리 넷(사용자 «슬롯을 행마다 4개로 · 골키퍼는 중앙으로»): 카드 폭은 늘 줄의 1/4, 카드가 적은 줄은 가운데로 모은다(혼자인 GK 가 가운데).
    «＋ 포지션» 칸은 반 폭이라 가운데 맞춤을 크게 흔들지 않는다. 폰은 셋씩 접는다. */
 .pw-depth-pitch{--pw-max:4}
-.pw-depth-slots{--pw-gap:var(--sp-2);display:flex;flex-wrap:nowrap;justify-content:center;align-items:stretch;gap:var(--pw-gap);max-width:100%;margin:auto}
+.pw-depth-slots{--pw-gap:var(--sp-2);display:flex;flex-wrap:nowrap;justify-content:flex-start;align-items:stretch;gap:var(--pw-gap);max-width:100%;margin:auto}
+.pw-depth-keeper .pw-depth-slots{justify-content:center}
 .pw-depth-slots>*{flex:0 0 calc((100% - (var(--pw-max) - 1)*var(--pw-gap))/var(--pw-max));min-width:0}
 .pw-depth-slot{min-width:0;border:1px solid var(--c-line);border-radius:var(--r-2);background:var(--c-surface);overflow:hidden;box-shadow:var(--sh-1)}
 .pw-depth-slot.is-active{border-color:var(--c-act);box-shadow:0 0 0 1px var(--c-act)}
@@ -146,6 +147,10 @@ html.ps-page-scout:has(#pwDrawer[open]){overflow:hidden}
 .pw-stage-rep{background:var(--c-muted)}.pw-stage-go{background:var(--c-warn)}.pw-stage-done{background:var(--c-ok)}.pw-stage-mixed{background:var(--c-act)}
 .pw-workspace .pw-depth-name{display:flex;align-items:center;gap:var(--sp-1);width:100%;min-height:40px;border:0;border-radius:0;border-bottom:1px solid var(--c-line-3);padding:var(--sp-2);text-align:left}
 .pw-depth-name strong{font-size:var(--t-3);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.pw-depth-person{display:block;flex:1;min-width:0}
+.pw-depth-person strong{display:block;white-space:normal;overflow-wrap:anywhere}
+.pw-depth-person small{display:block;margin-top:var(--sp-1);font-size:var(--t-2);line-height:1.35;font-weight:400;color:var(--c-muted);white-space:normal;overflow-wrap:anywhere}
+#pwScout .pw-depth-name{align-items:flex-start;padding-block:var(--sp-2)}
 .pw-depth-rank{font-size:var(--t-2);font-variant-numeric:tabular-nums;color:var(--c-muted);flex:0 0 15px;text-align:center}
 .pw-depth-dot{width:5px;height:5px;flex:0 0 5px;border-radius:50%;background:currentColor;font-style:normal}
 .pw-depth-dot.pw-stage-rep{background:var(--c-muted)}.pw-depth-dot.pw-stage-go{background:var(--c-warn)}.pw-depth-dot.pw-stage-done{background:var(--c-ok)}.pw-depth-dot.pw-stage-mixed{background:var(--c-act)}
@@ -188,7 +193,7 @@ html.ps-page-scout:has(#pwDrawer[open]){overflow:hidden}
 }
 @media(max-width:1100px){.pw-depth-layout{grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr)}.pw-depth-slots{--pw-gap:var(--sp-1)}}
 @media(max-width:900px){.pw-depth-layout{grid-template-columns:minmax(0,1fr)}.pw-workspace .pw-depth-back{display:block}.pw-depth-panel>header{padding:var(--sp-4)}.pw-depth-candidate-name{grid-template-columns:1fr 1fr}.pw-depth-slots{--pw-gap:var(--sp-2)}}
-@media(max-width:500px){.pw-depth-pitch{padding:var(--sp-4) var(--sp-2);gap:var(--sp-4)}.pw-depth-pitch{--pw-max:3}.pw-depth-slots{--pw-gap:var(--sp-1);flex-wrap:wrap}.pw-depth-name .pw-depth-rank{display:none}.pw-depth-heading>span{display:none}.pw-depth-slothead{flex-wrap:wrap}.pw-depth-unplaced>span{max-width:60%}.pw-workspace .pw-depth-name{min-height:44px}.pw-workspace .pw-depth-slotfoot{min-height:44px}}
+@media(max-width:500px){.pw-depth-pitch{padding:var(--sp-3) var(--sp-1);gap:var(--sp-3);--pw-max:4}.pw-depth-slots{--pw-gap:var(--sp-1);flex-wrap:nowrap}.pw-depth-name .pw-depth-rank,.pw-depth-name .pw-depth-dot{display:none}.pw-depth-heading>span{display:none}.pw-workspace .pw-depth-slothead{flex-direction:column;align-items:flex-start;gap:0;padding:var(--sp-1)}.pw-depth-slothead b{font-size:var(--t-3)}.pw-depth-unplaced>span{max-width:60%}.pw-workspace .pw-depth-name{min-height:44px;padding:var(--sp-2) var(--sp-1)}.pw-workspace .pw-depth-slotfoot{min-height:44px;padding:var(--sp-1)}.pw-depth-person small{margin-top:0}}
 
 /* 3.203 — 뎁스 판 끌기 · 판 편집(포지션 카드 줄 배치 · ＋ 포지션) · «여러 명 한 번에 추가» 시트 */
 .pw-depth-slot{position:relative}
@@ -209,6 +214,7 @@ html.ps-page-scout:has(#pwDrawer[open]){overflow:hidden}
 .pw-workspace .pw-depth-addpos:hover{border-color:var(--c-act);color:var(--c-act)}
 .pw-depth-slots>.pw-depth-addpos{flex-basis:calc((100% - (var(--pw-max) - 1)*var(--pw-gap))/var(--pw-max)/2)}
 .pw-depth-newrow .pw-depth-slots>.pw-depth-addpos{flex-basis:calc((100% - (var(--pw-max) - 1)*var(--pw-gap))/var(--pw-max))}
+@media(max-width:500px){.pw-depth-slot.is-editing .pw-depth-slothead{padding:28px var(--sp-1) var(--sp-1)}.pw-depth-grip{left:var(--sp-1)}.pw-depth-slots>.pw-depth-addpos{flex-basis:calc((100% - (var(--pw-max) - 1)*var(--pw-gap))/var(--pw-max))}}
 .pw-undo{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2147483001;display:flex;align-items:center;gap:var(--sp-3);max-width:calc(100vw - 32px);padding:10px 14px;border-radius:12px;background:#14161A;color:#fff;font-size:var(--t-4);line-height:1.4;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .pw-undo button{font:inherit;font-size:var(--t-3);font-weight:700;color:#fff;background:rgba(255,255,255,.14);border:0;border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap}
 .pw-bulk-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:rgba(10,14,20,.45);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);padding:12px}
