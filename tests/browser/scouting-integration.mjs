@@ -107,6 +107,12 @@ try{
   await frame.locator('[data-sc-import]').click();await frame.locator('[data-legacy-id="qa-db"]').check();await frame.locator('#scImportPoints').check();await frame.locator('[data-import]').click();
   await frame.evaluate(()=>scoutStore.ready());
   assert.equal(await frame.evaluate(()=>scStore().state.doc.scoutRegistry.candidates['db:unselected-local']),undefined);
+  if(width<600){
+    const tools=frame.locator('#pwScout [data-pw-action="tools"]');
+    assert.equal(await tools.getAttribute('aria-expanded'),'false','phone editing tools start collapsed');
+    await tools.click();
+    assert.equal(await tools.getAttribute('aria-expanded'),'true','phone editing tools remain reachable');
+  }
   await frame.getByRole('button',{name:'배치·명단 편집',exact:true}).click();
   await frame.locator('[data-sccard="qa-candidate"]').click();
   await frame.locator('#plName').fill('원본 하나로 바꾼 이름');
