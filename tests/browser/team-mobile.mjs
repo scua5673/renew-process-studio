@@ -70,7 +70,7 @@ try{
  await tapSize(scout.locator('.pw-select-hit'),'compare checkbox label');
  await scout.locator('.pw-select-hit').click();assert.equal(await scout.getByRole('checkbox').isChecked(),true,'full label toggles comparison');
  await snap('players-search',390);await scout.getByRole('searchbox',{name:'선수 검색'}).fill('');
- await scout.getByRole('button',{name:'작전판',exact:true}).click();
+ await scout.getByRole('button',{name:'포지션',exact:true}).click();
  await go('match');await scout.locator('#matchView .mr-hit').last().click();await scout.locator('#matchWorkspace').waitFor();await snap('match-detail',390);
  await go('playbook');const pb=await frame('#fPlaybook');await pb.locator('[data-pedit="0"]').click();await pb.locator('#pbEdit[open]').waitFor();
  await tapSize(pb.locator('#pbEditSave'),'phase save');await snap('playbook-edit',390);await pb.locator('#pbEditCancel').click();
