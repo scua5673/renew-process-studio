@@ -69,7 +69,12 @@ try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').ma
  const saved=await f.evaluate(async width=>{const d=(await libGet()).find(d=>d.name==='합성 미팅 '+width);return d&&{id:d.libId,n:d.slides.length,t:d.slides[3].title,p:d.slides[3].points};},width);assert.equal(saved.n,4);assert.equal(saved.t,'사본 제목');assert.deepEqual(saved.p,['원본 메모','사본에서 추가']);
  await page.reload();await ready(page);f=await board();assert.equal(await f.evaluate(()=>__psToolKeys().resetLaterSelection),'shift+r');await f.evaluate(id=>__vaultOpenMeeting(id),saved.id);await f.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides.length===4);assert.deepEqual(await f.evaluate(()=>anim.slides[3].points),saved.p);
  if(width===1280){
-  await f.evaluate(()=>{window.psConfirm=(m,ok)=>ok();document.getElementById('dfNew').click();});await f.waitForSelector('.vcc-item');await f.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());await f.waitForSelector('#psMeetForm.on');
+  step='empty-meeting-library';
+  // The chooser belongs to Library. A hidden dfNew clicked during meeting
+  // editing is closed by the shell's normal non-Library refresh.
+  await f.evaluate(()=>{window.psConfirm=(m,ok)=>ok();});
+  await page.locator('#psTrainBtn').click();await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='design');await f.locator('#sessionView').waitFor({state:'visible'});
+  await f.locator('#dfNew').click();await f.waitForSelector('.vcc-item');await f.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());await f.waitForSelector('#psMeetForm.on');
   await f.locator('#psMeetForm [data-start=empty]').click();assert.equal(await f.locator('#psMeetForm .mf-categories').isVisible(),false);await f.locator('#psMeetForm .mf-go').click();assert.equal(await f.evaluate(()=>anim.slides.length===1&&!anim.slides[0].title&&!anim.slides[0].snap.players.length&&!anim.slides[0].snap.drawings.length),true);
   await openImport();const source=f.getByRole('button',{name:'합성 가져올 작전판 · 작전판',exact:true});await source.waitFor({state:'visible'});
   await f.evaluate(()=>window.__curVaultId='different-fixture-meeting');await source.click();await f.waitForFunction(()=>!document.getElementById('psMeetImport'));assert.equal(await f.evaluate(()=>anim.slides.length),1,'stale meeting cannot receive imported data');

@@ -36,21 +36,40 @@ const runtimeSnapshot=()=>bf.evaluate(()=>{const e=window.__photoExport;return {
 // The identical saved bytes and pixel probes are used by the native and isolated cross decoder.
 async function decodeVideoPixels({base64,indexes,fps,colors,type}){
   const bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),v=document.createElement('video'),url=URL.createObjectURL(new Blob([bytes],{type}));
-  const rgb=h=>h.match(/[a-f0-9]{2}/gi).map(v=>parseInt(v,16)),palettes=colors.map(p=>p.map(rgb));
+  const rgb=h=>h.match(/[a-f0-9]{2}/gi).map(v=>parseInt(v,16)),palettes=colors.map(p=>p.map(rgb)),presentationCancels=[];
   const wait=name=>new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('video '+name+' timeout')),10000);v.addEventListener(name,()=>{clearTimeout(timer);resolve();},{once:true});v.addEventListener('error',()=>{clearTimeout(timer);reject(Error('video decode '+v.error?.code));},{once:true});});
   try{
-    v.muted=true;v.preload='auto';v.src=url;await wait('loadeddata');
+    if(typeof v.requestVideoFrameCallback!=='function')throw Error('video presentation callback unavailable');
+    // seeked confirms timeline movement, not which frame drawImage will read.
+    // Keep the real video in the compositor and observe its presented timestamp.
+    v.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none';document.body.appendChild(v);
+    let presented=null;
+    const nextPresented=expected=>new Promise((resolve,reject)=>{
+      let callback=null;const timer=setTimeout(()=>{if(callback!==null)v.cancelVideoFrameCallback(callback);reject(Error('video presented frame '+expected+' timeout; last mediaTime '+presented?.mediaTime));},10000);
+      presentationCancels.push(()=>{clearTimeout(timer);if(callback!==null)v.cancelVideoFrameCallback(callback);});
+      const observe=()=>{callback=v.requestVideoFrameCallback((now,metadata)=>{
+        presented=metadata;
+        if(expected===null||Math.abs(metadata.mediaTime-expected)<=.0001){clearTimeout(timer);resolve(metadata);}else observe();
+      });};observe();
+    });
+    const initial=nextPresented(null);initial.catch(()=>{});v.muted=true;v.preload='auto';const loaded=wait('loadeddata');v.src=url;await loaded;await initial;
     const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;const ctx=c.getContext('2d'),samples=[];
-    for(const frame of indexes){const time=(frame+.35)/fps;if(Math.abs(v.currentTime-time)>.001){const done=wait('seeked');v.currentTime=time;await done;}ctx.drawImage(v,0,0,c.width,c.height);const d=ctx.getImageData(0,0,c.width,c.height).data;
+    for(const frame of indexes){const time=(frame+.35)/fps,expectedMediaTime=frame/fps;
+      if(!presented||Math.abs(presented.mediaTime-expectedMediaTime)>.0001){
+        // Register before seeking so even an immediate frame presentation is seen.
+        const shown=nextPresented(expectedMediaTime),done=wait('seeked');v.currentTime=time;await Promise.all([done,shown]);
+      }
+      if(Math.abs(presented.mediaTime-expectedMediaTime)>.0001)throw Error('video presented timestamp mismatch');
+      ctx.drawImage(v,0,0,c.width,c.height);const d=ctx.getImageData(0,0,c.width,c.height).data;
       const at=(x,y)=>{const i=(Math.floor(y*c.height)*c.width+Math.floor(x*c.width))*4;return Array.from(d.slice(i,i+4));};
       const edge=[[.01,.05],[.25,.015],[.99,.05],[.01,.3],[.99,.3],[.01,.5],[.99,.5],[.01,.7],[.99,.7],[.01,.84],[.25,.84],[.99,.84]].map(p=>at(...p));
       const match=(v,p)=>p.some(a=>a.every((n,k)=>Math.abs(n-v[k])<=35));
       const grid=[];for(const y of [.02,.12,.3,.5,.7,.84])for(const x of [.01,.15,.35,.5,.65,.85,.99])grid.push(at(x,y));
-      samples.push({frame,time,decoded:true,width:c.width,height:c.height,edge,edgeCounts:palettes.map(p=>edge.filter(v=>match(v,p)).length),edgeColorCounts:palettes.map(p=>p.map(a=>edge.filter(v=>match(v,[a])).length)),gridCounts:palettes.map(p=>grid.filter(v=>match(v,p)).length),gridSize:grid.length});
+      samples.push({frame,time,expectedMediaTime,mediaTime:presented.mediaTime,presentedFrames:presented.presentedFrames,decoded:true,width:c.width,height:c.height,edge,edgeCounts:palettes.map(p=>edge.filter(v=>match(v,p)).length),edgeColorCounts:palettes.map(p=>p.map(a=>edge.filter(v=>match(v,[a])).length)),gridCounts:palettes.map(p=>grid.filter(v=>match(v,p)).length),gridSize:grid.length});
     }
     return {ok:true,width:c.width,height:c.height,duration:v.duration,samples};
   }catch(error){return {ok:false,error:String(error),errorCode:v.error?.code??null,width:v.videoWidth,height:v.videoHeight,duration:v.duration};}
-  finally{v.removeAttribute('src');v.load();URL.revokeObjectURL(url);}
+  finally{presentationCancels.forEach(cancel=>cancel());v.removeAttribute('src');v.load();v.remove();URL.revokeObjectURL(url);}
 }
 try{
   ({page,logs}=await openApp(fx,size,{browsers}));
