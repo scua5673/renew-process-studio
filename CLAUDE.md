@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 모바일 6칸 메뉴 — `mobile-navigation.js/css`가 ≤767px에서 기존 appSeg 단추를 보드·보관함·커뮤니티·팀 운영·학습·더보기 순서로 옮긴다. 클릭·저장 장벽·역할 판정은 원래 핸들러를 유지하고, 팀 메뉴는 teamBottom을 고정 하단에서 내용 위의 일반 행으로 표시한다. 개인 IDP는 더보기, 코치 IDP는 같은 원래 단추에 위임해 팀 경로를 유지한다. 넓은 화면과 선수 전용 IDP는 원래 DOM 순서/셸로 복원한다. 새 저장 키 없음. `tests/browser/mobile-navigation`은 두 엔진 320·390·430·767px, 메뉴 이동·개인/팀 IDP·메뉴 닫기·반응형 복귀·비로그인 커뮤니티를 검사한다.
+
 - 3.218 통합 작업 — 휴대폰 팀운영 공통 화면은 team-mobile.css의 ≤600px에서만 조정한다. 선수단·스카우팅 pw-edit-tools는 메모리의 tools로 접고 기존 편집·저장 경로를 유지한다. 팀 IDP의 선수 고르개는 기존 selected/draft 경로를 쓰며 캐시 수신 중을 0명으로 말하지 않는다. 플레이북 team-mobile.js는 기존 국면 단추를 읽어 고르개를 만들고 원래 클릭에 위임한다(저장 없음). process.html에는 실제 닫는 body가 없으므로 CSS 링크는 파일 끝에 둔다(주석 속 닫는 body 앞에 넣지 않기). team-mobile 브라우저 시험은 합성 팀으로 360·390·430px, 두 엔진, 조회·취소 불변성, 편집창, 별도 태블릿/PC 문맥을 확인한다.
 
 - 3.217 경기 입력 — `match-lock.js`에서 native 저장 중 같은 owner·현재 경기의 새 typed 행이 생겨 최종 장벽이 정확히 `match_pending_left`를 반환한 경우는 I/O 실패 pause와 구별한다. 원 오류와 미완료 장벽을 유지하고 다음 tick의 실제 저장·검증 뒤에만 해제한다. 새 입력 없는 pending·실제 I/O·owner/권한/경기 변경은 기존 pause를 유지한다. 실제 모듈 단위에서 A commit 중 readiness로 보류된 B/C가 영구 대기하는 결함을 재현했다. H808 WebKit 메모 대기 실패와 같은 원인인지는 미확정이며 원 15초 predicate·값 단정은 유지하고 실패 순간 상태만 추가 기록한다.

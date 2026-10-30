@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.219"></script>
+<script src="autosave-status.js?v=3.220"></script>
 <script src="sync-confirmation.js"></script>
 <script src="sync-diagnosis.js"></script>
 <script src="sync-diagnosis-ui.js"></script>
@@ -527,7 +527,7 @@
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
 <script src="playbook-data.js"></script><script src="playbook-shell.js"></script>
-<script>window.PS_BUILD='3.219';</script>
+<script>window.PS_BUILD='3.220';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1655,7 +1655,7 @@ window.psFailAlert=function(lead,e,stage){
     <div class="ps-upd-row" data-upd-row hidden><span class="pur-t"><span data-upd-rowtext></span><small data-upd-msg hidden></small></span><button type="button" data-upd="row" data-upd-now>적용</button></div><!-- 2.947 -->
     <!-- 2.940 — 폰 작전판엔 저장 띠가 없다(2.939). 계정에 올리는 길을 여기 하나 둔다 — 작전판을 보고 있을 때만 보인다 -->
     <div class="tms-g" data-am-row="board" hidden><i>보드</i><button type="button" data-am="boardsave" title="작업 보드를 계정에 저장">보드 저장</button></div>
-    <div class="tms-g"><i>앱</i><button type="button" data-am-app="design">보관함</button><button type="button" data-am="install" data-install-door hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v6.5"/><path d="M9.3 11.4 12 14l2.7-2.6"/><path d="M10.5 18.3h3"/></svg><span data-install-label>홈 화면에 추가</span></button></div><!-- 3.110 — 설치 문(install-door.js 가 보이기 · 이름) -->
+    <div class="tms-g"><i>앱</i><button type="button" data-am-app="design">보관함</button><button type="button" data-am-nav="idp">IDP</button><button type="button" data-am="install" data-install-door hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v6.5"/><path d="M9.3 11.4 12 14l2.7-2.6"/><path d="M10.5 18.3h3"/></svg><span data-install-label>홈 화면에 추가</span></button></div><!-- 3.110 — 설치 문(install-door.js 가 보이기 · 이름) -->
     <div class="tms-g"><i>도움</i><button type="button" data-am="settings">앱 설정</button><button type="button" data-am="support">오류 제보</button><button type="button" data-am="guide">사용법</button></div>
   </div>
   <div class="ps-updpop" id="psUpdPop" role="dialog" aria-labelledby="psUpdPopT" hidden>
@@ -2597,7 +2597,7 @@ window.psFailAlert=function(lead,e,stage){
         var on=currentTeamKey?!!x.dataset.teamHub
           :(x.dataset.app===navApp||((app==='print'||app==='analysis'||app==='gamemodel')&&x.dataset.app==='design'));   /* 1.856 — 분석은 다시 보관함 버튼을 켠다 */
         if(x.dataset.train)on=!currentTeamKey&&(navApp==='design'||app==='print'||app==='analysis'||app==='gamemodel');
-        if(x.id==='psMoreBtn')on=!currentTeamKey&&(navApp==='design'||app==='print'||app==='analysis'||app==='gamemodel');   /* 2.938 — 폰은 보관함이 더보기 안에 있다 */   /* 2.180 — 보관함 버튼을 숨기고 '훈련'이 보관함의 자리를 맡는다(사용자: 둘이 겹침) */
+        if(x.id==='psMoreBtn')on=!currentTeamKey&&navApp==='idp';   /* 개인 IDP는 폰 더보기에서, 보관함은 전용 버튼에서 연다. */
         x.classList.toggle('on',!!on);
         if(on)x.setAttribute('aria-current','page');else x.removeAttribute('aria-current');
       });
@@ -2830,6 +2830,7 @@ window.psFailAlert=function(lead,e,stage){
       sheet.addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b)return; e.stopPropagation(); var k=b.dataset.am;
         if(k==='close'){ set(false); return; }
         set(false);
+        if(b.dataset.amNav==='idp'){ var nb=seg.querySelector('button[data-app="idp"]'); if(nb)nb.click(); return; }
         if(b.dataset.amApp){ currentTeamKey=''; showApp(b.dataset.amApp); return; }
         if(k==='boardsave'){ try{ var w=fbWin(), o=w&&w.document.getElementById('boardManualSave'); if(o&&!o.disabled)o.click(); else if(w&&w.__boardSaveExplicit)w.__boardSaveExplicit(); }catch(_){} return; }   /* 2.940 — 원래 버튼을 대신 누른다(저장 경로·알림 그대로) */
         if(k==='settings'){ openGear(); return; }
@@ -8178,16 +8179,16 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="sync-size.js"></script>
 <script src="sync-observability.js"></script>
 <script src="idp-pub-wipe.js"></script>
-<script src="autosave-journal.js?v=3.219"></script>
-<script src="autosave-merge.js?v=3.219"></script>
-<script src="autosave-runtime.js?v=3.219"></script>
-<script src="autosave-recovery.js?v=3.219"></script>
+<script src="autosave-journal.js?v=3.220"></script>
+<script src="autosave-merge.js?v=3.220"></script>
+<script src="autosave-runtime.js?v=3.220"></script>
+<script src="autosave-recovery.js?v=3.220"></script>
 <script src="roster-outbox.js"></script>
 <script src="sync-items-stale.js"></script>
 <script src="permissions-filter.js"></script>
-<script src="sync.js?v=3.219"></script>
+<script src="sync.js?v=3.220"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.219">
+<link rel="stylesheet" href="support.css?v=3.220">
 <link rel="stylesheet" href="support-image.css?v=20261023">
 <script src="support-image.js?v=20261023"></script>
 <script src="support.js?v=20261023"></script>
@@ -8454,5 +8455,7 @@ html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button:not(#_):not(#__):n
 }
 </style>
 <link rel="stylesheet" href="team-mobile.css">
+<link rel="stylesheet" href="mobile-navigation.css">
+<script src="mobile-navigation.js"></script>
 </body>
 </html>

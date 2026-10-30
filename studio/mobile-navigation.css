@@ -1,0 +1,51 @@
+/* Six persistent app destinations. Team destinations occupy their own row above
+   the content; native controls, permissions and pending-edit barriers are reused. */
+@media(max-width:767px){
+  /* Let the account name shrink before it pushes Settings beyond a narrow phone. */
+  html.ps-page-app body.ps-mobile-six:not(.ps-team-open) .appbar>#psAcctWrap{flex:0 1 auto;min-width:0}
+  html.ps-page-app body.ps-mobile-six:not(.ps-team-open) .appbar>#psAcctWrap .acct-btn{max-width:100%;min-width:0}
+  html.ps-page-app body.ps-mobile-six:not(.ps-team-open) .appbar>#psAcctWrap .lbl{min-width:0}
+  html.ps-page-app body.ps-mobile-six #appSeg#appSeg:not(#_){
+    display:grid!important;position:fixed;left:0;right:0;bottom:0;top:auto;
+    width:auto;height:auto;margin:0;grid-template-columns:repeat(6,minmax(0,1fr));
+    grid-auto-flow:row;gap:0;overflow:visible;z-index:170;
+    padding:var(--sp-1) var(--sp-1) max(var(--sp-2),env(safe-area-inset-bottom));
+    border:0;border-top:1px solid var(--line);border-radius:0;background:var(--surface);box-shadow:none;
+  }
+  html.ps-page-app body.ps-mobile-six #appSeg#appSeg button:not(#_):not(#__):not(#___){
+    display:flex!important;flex-direction:column;align-items:center;justify-content:center;
+    gap:var(--sp-1);margin:0;min-width:0;width:100%;min-height:54px!important;height:auto;
+    padding:var(--sp-1) 0;border:0;background:transparent;box-shadow:none;
+    color:var(--dim);border-radius:var(--r-control)!important;
+  }
+  html.ps-page-app body.ps-mobile-six #appSeg#appSeg button span:not(#_):not(#__){
+    display:block;font-size:var(--t-2)!important;line-height:1.25;font-weight:600;letter-spacing:0;white-space:nowrap;
+  }
+  html.ps-page-app body.ps-mobile-six #appSeg#appSeg button svg:not(#_):not(#__):not(#___){
+    display:block;box-sizing:content-box;width:20px!important;height:20px!important;padding:var(--sp-1) var(--sp-2);
+    border-radius:var(--r-control)!important;stroke-width:1.7!important;flex:0 0 auto;
+  }
+  html.ps-page-app body.ps-mobile-six #appSeg#appSeg button.on:not(#_):not(#__):not(#___),
+  html.ps-page-app body.ps-mobile-six #appSeg#appSeg #psMoreBtn[aria-expanded="true"]:not(#_):not(#__){color:var(--txt)!important}
+  html.ps-page-app body.ps-mobile-six #appSeg#appSeg button.on svg:not(#_):not(#__):not(#___),
+  html.ps-page-app body.ps-mobile-six #appSeg#appSeg #psMoreBtn[aria-expanded="true"] svg:not(#_):not(#__){background:var(--dv2-accent-soft);stroke-width:2}
+  html.ps-page-app body.ps-mobile-six #appSeg#appSeg button.on span:not(#_):not(#__){font-weight:800}
+  html.ps-page-app body.ps-mobile-six #appSeg#appSeg button[data-app="idp"]:not(#_):not(#__):not(#___),
+  html.ps-page-app body.ps-mobile-six #appSeg#appSeg button[data-app="design"]:not(#_):not(#__):not(#___){display:none!important}
+  html.ps-page-app body.ps-mobile-six.ps-team-open:not(.ps-match-edit):not(.mfull) #teamBottom:not(#_):not(#__){
+    display:grid;position:static;flex:0 0 auto;grid-template-columns:repeat(6,minmax(0,1fr));
+    padding:var(--sp-1) var(--sp-2);gap:var(--sp-1);min-width:0;width:100%;
+    background:var(--surface);border:0;border-bottom:1px solid var(--line);backdrop-filter:none;
+  }
+  html.ps-page-app body.ps-mobile-six #teamBottom button:not(#_):not(#__){
+    display:flex;align-items:center;justify-content:center;min-height:44px;min-width:0;
+    padding:var(--sp-1) 0;font-size:var(--t-3);color:var(--dim);border-radius:var(--r-control);
+  }
+  html.ps-page-app body.ps-mobile-six #teamBottom button svg{display:none!important}
+  html.ps-page-app body.ps-mobile-six #teamBottom button.on:not(#_):not(#__){background:var(--dv2-accent-soft);color:var(--txt)}
+  html.ps-page-app body.ps-mobile-six #teamNav .tn-seg{display:none!important}
+  html.ps-page-app body.ps-mobile-six .app-more:not([hidden]){display:block}
+  html.ps-page-app body.ps-mobile-six #appMoreSheet,
+  html.ps-page-app body.ps-mobile-six #teamMoreSheet{bottom:calc(var(--ps-seg-h,68px) + var(--sp-2));max-height:calc(100dvh - var(--ps-seg-h,68px) - 80px);overflow-y:auto;overscroll-behavior:contain}
+  html.ps-page-app body.ps-mobile-six #appMoreSheet button:not(#_):not(#__){min-height:44px}
+}

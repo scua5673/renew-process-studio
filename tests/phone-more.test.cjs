@@ -34,6 +34,8 @@ test('bar click opens the sheet before any app switch, and other bar items close
   assert.match(body,/__psAppMoreClose\(\)/);
 });
 
-test('opening the archive from the sheet lights the more button',()=>{
-  assert.match(html,/if\(x\.id==='psMoreBtn'\)on=!currentTeamKey&&\(navApp==='design'/);
+test('personal IDP lives in more and uses the existing role-aware navigation button',()=>{
+  assert.match(html,/if\(x\.id==='psMoreBtn'\)on=!currentTeamKey&&navApp==='idp'/);
+  assert.match(html,/data-am-nav="idp">IDP</);
+  assert.match(html,/if\(b\.dataset\.amNav==='idp'\).*if\(nb\)nb\.click\(\)/);
 });
