@@ -1,6 +1,6 @@
 # 검색 노출 설정
 
-- 검색 대표 문서: https://processstudio.netlify.app/landing.html
+- 검색 대표 문서(도메인 등록 후): https://studio.processfootball.com/landing.html
 - 기존 `/` → `/studio/` → 앱 이동은 유지한다. 검색 방문자는 소개에서 앱 열기로 이동한다.
 - 소개와 공개 안내 3개에 운영 canonical을 지정했다. sitemap.xml은 이 4개 공개 문서만 포함한다.
 - robots.txt는 사이트맵을 알리고 관리자·공유 링크 경로의 수집을 제한한다. 접근권한 설정을 대체하지 않는다.
@@ -12,3 +12,10 @@
 ## 확인
 
 2026-10-30: 단위 검사 5,345개 통과. 로컬 소개 페이지 PC/390px 확인, 가로 넘침 없음. 1,923개 배포 파일 안에 robots.txt·sitemap.xml·확인 HTML 2개 포함. 소유확인 파일의 원문과 사본 일치. 앱·인증·저장·DB 동작 변경 없음. 실제 모바일 기기 검증은 수행하지 않았다.
+
+## 도메인 전환 준비
+
+- 홈페이지 processfootball.com, 앱 studio.processfootball.com을 선택했다. 결제는 승인받아 한 번 시도했으나 카드 3-D Secure 인증 화면이 비어 있어 등록 완료를 확인하지 못했다.
+- 새 canonical·OG·사이트맵 주소를 준비했지만 도메인 소유·DNS·TLS 확인 전에는 배포하지 않는다.
+- 기존 processstudio.netlify.app 주소는 유지하고 호스트 강제 리다이렉트를 추가하지 않는다. 소개 하단에 기존 주소 링크도 둔다. 기기 전용 자료는 원래 origin에 남는다.
+- Google/Naver 파일은 기존 netlify.app 등록 과정에서 받은 값이다. 새 도메인의 실제 소유확인 요구사항을 확인한 뒤 재사용 여부를 결정한다.

@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /s/
 
-Sitemap: https://processstudio.netlify.app/sitemap.xml
+Sitemap: https://studio.processfootball.com/sitemap.xml
