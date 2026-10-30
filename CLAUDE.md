@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.218 통합 작업 — 휴대폰 팀운영 공통 화면은 team-mobile.css의 ≤600px에서만 조정한다. 선수단·스카우팅 pw-edit-tools는 메모리의 tools로 접고 기존 편집·저장 경로를 유지한다. 팀 IDP의 선수 고르개는 기존 selected/draft 경로를 쓰며 캐시 수신 중을 0명으로 말하지 않는다. 플레이북 team-mobile.js는 기존 국면 단추를 읽어 고르개를 만들고 원래 클릭에 위임한다(저장 없음). process.html에는 실제 닫는 body가 없으므로 CSS 링크는 파일 끝에 둔다(주석 속 닫는 body 앞에 넣지 않기). team-mobile 브라우저 시험은 합성 팀으로 360·390·430px, 두 엔진, 조회·취소 불변성, 편집창, 별도 태블릿/PC 문맥을 확인한다.
+
 - 3.217 경기 입력 — `match-lock.js`에서 native 저장 중 같은 owner·현재 경기의 새 typed 행이 생겨 최종 장벽이 정확히 `match_pending_left`를 반환한 경우는 I/O 실패 pause와 구별한다. 원 오류와 미완료 장벽을 유지하고 다음 tick의 실제 저장·검증 뒤에만 해제한다. 새 입력 없는 pending·실제 I/O·owner/권한/경기 변경은 기존 pause를 유지한다. 실제 모듈 단위에서 A commit 중 readiness로 보류된 B/C가 영구 대기하는 결함을 재현했다. H808 WebKit 메모 대기 실패와 같은 원인인지는 미확정이며 원 15초 predicate·값 단정은 유지하고 실패 순간 상태만 추가 기록한다.
 
 - 3.217 검사 — 저장 영상 샘플은 seeked 직후가 아니라 rVFC의 정확한 mediaTime 뒤 읽는다. 만들기 카드는 실제 보관함 진입 후 보이는 dfNew로 연다. 다시 만든 IDP 시험 page는 별도 navigation tracker로 추적하며 실제 CORS·미분류 오류는 실패로 둔다.

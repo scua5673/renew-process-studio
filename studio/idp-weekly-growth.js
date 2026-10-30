@@ -60,7 +60,7 @@
     function renderCoach(){
       coachView=true;var data=api.coach(selected);if(data.owner!==selectionOwner){selected='';selectionOwner=data.owner;data=api.coach(selected);}model=data.model;
       if(model)selected=model.id;
-      var h='<div class="wg-root" data-wg-root><header class="wg-heading"><div><span class="wg-eyebrow">WEEKLY DEVELOPMENT</span><h1>오늘 한 장, 다음 한 걸음.</h1><p>선수의 장면을 읽고, 다음 시도로 이어질 질문 하나를 남겨요.</p></div></header><div class="wg-coach-grid"><aside class="wg-panel wg-roster"><h3>선수의 이번 주</h3><p class="wg-hint">'+(data.waiting?'자료 받는 중':data.rows.length+'명 · 선수를 골라 장면 읽기')+'</p><div class="wg-roster-list">';
+      var h='<div class="wg-root" data-wg-root><header class="wg-heading"><div><span class="wg-eyebrow">WEEKLY DEVELOPMENT</span><h1>오늘 한 장, 다음 한 걸음.</h1><p>선수의 장면을 읽고, 다음 시도로 이어질 질문 하나를 남겨요.</p></div></header><div class="wg-coach-grid"><aside class="wg-panel wg-roster"><h3>선수의 이번 주</h3><p class="wg-hint">'+(data.waiting?'자료 받는 중':data.rows.length+'명 · 선수를 골라 장면 읽기')+'</p><label class="wg-phone-picker">선수 선택 · '+(data.waiting?'자료 받는 중':data.rows.length+'명')+'<select data-wg-player-select aria-label="성장 카드를 볼 선수"'+(!data.rows.length?' disabled':'')+'>'+(data.rows.length?data.rows.map(function(r){return '<option value="'+esc(r.id)+'"'+(r.id===selected?' selected':'')+'>'+esc([r.num,r.name,r.position,r.state==='ready'?'장면 '+r.count+'개':r.message].filter(Boolean).join(' · '))+'</option>';}).join(''):'<option>'+(data.waiting?'자료 받는 중':'등록된 선수 없음')+'</option>')+'</select></label><div class="wg-roster-list">';
       h+=data.rows.map(function(r){return '<button type="button" data-wg-player="'+esc(r.id)+'" aria-pressed="'+(r.id===selected)+'"><span class="wg-avatar">'+esc(r.num||'—')+'</span><span><b>'+esc(r.name)+'</b><small>'+esc(r.position||'')+' · '+(r.state==='ready'?(r.count?'장면 '+r.count+'개':'이번 주 장면 없음'):esc(r.message))+'</small></span><span class="wg-arrow" aria-hidden="true">›</span></button>';}).join('');
       h+='</div></aside><div class="wg-coach-detail">';
       if(!model)h+=data.waiting?'<section class="wg-panel" role="status"><h2>팀 자료를 받는 중이에요</h2><p class="wg-hint">받는 대로 선수 명단과 피드백이 나타나요.</p></section>':'<section class="wg-panel">'+empty('선수 명단이 준비되면 성장 카드를 볼 수 있어요.')+'</section>';
@@ -85,6 +85,7 @@
       function status(s){notice=s;var el=host.querySelector('.wg-status');if(el)el.textContent=s;}
       function all(sel,fn){Array.prototype.forEach.call(host.querySelectorAll(sel),fn);}
       all('[data-wg-go]',function(b){b.onclick=function(){notice='';api.go(b.dataset.wgGo);};});
+      all('[data-wg-player-select]',function(b){b.onchange=function(){selected=b.value;notice='';api.render();var next=root.querySelector('[data-wg-player-select]');if(next)next.focus({preventScroll:true});};});
       all('[data-wg-player]',function(b){b.onclick=function(){selected=b.dataset.wgPlayer;notice='';api.render();};});
       if(!m)return;
       if(!isCoachView){
