@@ -4,7 +4,7 @@ const turn=()=>new Promise(r=>setImmediate(r));
 function gate(){let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};}
 function fixture(){
   const ls=new Map(),handlers={},windowHandlers={},timers=new Map(),calls={queue:0,ready:0,flush:0,status:[],statusCalls:[]},models={a:{id:'a',reviewGood:'old'},b:{id:'b',reviewGood:'other'}},durable={};
-  let mid='a',cloudPending=true,can=true,assigned=true,timer=0,queued=false,writing=false,hold=null,nativeError=null,nativeValue={verified:true},statusError=null,statusValue='native status return';
+  let mid='a',cloudPending=true,can=true,assigned=true,timer=0,queued=false,writing=false,unrelatedPending=false,hold=null,nativeError=null,nativeValue={verified:true},statusError=null,statusValue='native status return';
   const shell={classList:{contains:()=>false}},field={tagName:'TEXTAREA',type:'textarea',isConnected:true,value:'old',selectionStart:1,selectionEnd:1,matches:s=>s.includes('[data-match-field]'),closest:s=>s==='.match-shell'?shell:null,getAttribute(){return this.fieldName||'reviewGood';},focus(){doc.activeElement=this;},setSelectionRange(){}};
   const doc={body:{},activeElement:field,visibilityState:'visible',addEventListener:(kind,fn)=>(handlers[kind]||(handlers[kind]=[])).push(fn),querySelector:selector=>selector==='.match-shell'?shell:field};
   function setOwner(uid='coach-a',wid='team-a',perms='executive',epoch='epoch-1'){
@@ -14,15 +14,15 @@ function fixture(){
   const w={document:doc,localStorage:{getItem:k=>ls.get(k)??null},addEventListener:(kind,fn)=>(windowHandlers[kind]||(windowHandlers[kind]=[])).push(fn),setTimeout(fn,ms){timers.set(++timer,{fn,ms});return timer;},clearTimeout:id=>timers.delete(id),
     teamSaveOwner:()=>JSON.stringify([ls.get('ps_active_ws')||'',JSON.parse(ls.get('ps_sync_session')||'null')?.uid||'',ls.get('ps_cache_owner_v1')||'',ls.get('ps_ws_switch_epoch_v1')||'',ls.get('cs_perms_v1')||'']),
     matchGet:()=>models[mid]||null,matchLoad:()=>({matches:Object.values(models)}),matchDocPending:()=>cloudPending,matchCanEdit:()=>can&&!cloudPending,matchCanEditOne:id=>assigned&&can&&!cloudPending&&!!models[id],
-    matchSayState:function(text,bad){calls.status.push({text,bad});calls.statusCalls.push({receiver:this,args:[...arguments]});if(statusError)throw statusError;return statusValue;},matchQueueSave(){calls.queue++;queued=true;w.matchSayState('native queued',false);},psHasPending:()=>queued||writing,
+    matchSayState:function(text,bad){calls.status.push({text,bad});calls.statusCalls.push({receiver:this,args:[...arguments]});if(statusError)throw statusError;return statusValue;},matchQueueSave(){calls.queue++;queued=true;w.matchSayState('native queued',false);},psHasPending:()=>queued||writing||unrelatedPending,
     psFlushPending(){calls.flush++;return queued;},
     psFlushPendingReady(...args){calls.ready++;calls.receiver=this;calls.args=args;const next=JSON.parse(JSON.stringify(models)),had=queued;queued=false;writing=had;
-      return Promise.resolve(hold&&hold.promise).then(()=>{if(nativeError){if(had)queued=true;writing=false;w.matchSayState('native failed',true);throw nativeError;}if(had)Object.assign(durable,next);writing=false;if(w.psHasPending())throw Error('native pending remains');return nativeValue;});},
+      return Promise.resolve(hold&&hold.promise).then(()=>{if(nativeError){if(had)queued=true;writing=false;w.matchSayState('native failed',true);throw nativeError;}if(had)Object.assign(durable,next);writing=false;if(w.psHasPending()){const e=Error('native pending remains');e.psCode='match_pending_left';throw e;}return nativeValue;});},
     renderMatch(){field.value=models[mid]?.reviewGood||'';}
   };
   const api=L.install(w);
   const fire=(kind,target=field)=>{for(const fn of handlers[kind]||[])fn({target,cancelable:true,preventDefault(){}});};
-  return {w,api,field,doc,models,durable,calls,ls,timers,setOwner,fire,nativeFinish(){Object.assign(durable,JSON.parse(JSON.stringify(models)));queued=false;writing=false;w.matchSayState('native saved',false);},hold(v){hold=v;},error(v){nativeError=v;},statusError(v){statusError=v;},pending(v){cloudPending=v;},permission(v){can=v;},assigned(v){assigned=v;},match(v){mid=v;field.value=models[v]?.reviewGood||'';},
+  return {w,api,field,doc,models,durable,calls,ls,timers,setOwner,fire,nativeFinish(){Object.assign(durable,JSON.parse(JSON.stringify(models)));queued=false;writing=false;w.matchSayState('native saved',false);},otherPending(v){unrelatedPending=v;},hold(v){hold=v;},error(v){nativeError=v;},statusError(v){statusError=v;},pending(v){cloudPending=v;},permission(v){can=v;},assigned(v){assigned=v;},match(v){mid=v;field.value=models[v]?.reviewGood||'';},
     input(v,native=true,name='reviewGood'){field.fieldName=name;field.value=v;fire('input');if(native&&w.matchCanEdit()){models[mid][name]=v;w.matchQueueSave();}},async timersOnce(){for(const [id,t]of [...timers]){timers.delete(id);t.fn();}await turn();},lifecycle(kind){if(kind==='visibilitychange'){doc.visibilityState='hidden';fire(kind,doc);}else for(const fn of windowHandlers[kind]||[])fn();}};
 }
 test('actual pending input blocks exit before native save, then joins native verified storage',async()=>{
@@ -142,4 +142,54 @@ test('a different owner semantic input cannot resume the old owner paused retry'
 });
 test('unknown-author input cannot resume a known owner paused retry',async()=>{
   const h=fixture(),failure=Error('known owner native I/O failure');h.pending(false);h.input('known retained');await turn();h.error(failure);await assert.rejects(h.w.psFlushPendingReady(),e=>e===failure);h.error(null);h.ls.set('ps_ws_switch_guard_v1','active guard');h.input('unknown other input',false,'reviewBad');await turn();h.ls.delete('ps_ws_switch_guard_v1');h.nativeFinish();const before={queue:h.calls.queue,ready:h.calls.ready};await h.timersOnce();assert.equal(h.calls.queue,before.queue);assert.equal(h.calls.ready,before.ready);assert.equal(h.w.psHasPending(),true);assert.deepEqual(h.api.typed().sort(),['reviewBad','reviewGood']);
+});
+
+test('same-owner held fields arriving during a native flight resume when match readiness returns',async t=>{
+  const h=fixture(),g=gate();h.pending(false);h.input('accepted A');await turn();h.hold(g);
+  const first=h.w.psFlushPendingReady();first.catch(()=>{});
+  assert.equal(h.calls.ready,1);assert.equal(h.calls.queue,1);
+  h.pending(true);h.input('held B',true,'reviewBad');h.input('held C',true,'oppAttack');await turn();
+  assert.equal(h.models.a.reviewBad,undefined);assert.equal(h.models.a.oppAttack,undefined,'native input handlers did not accept B/C while the match document was pending');
+  g.resolve();let firstCode='';await assert.rejects(first,e=>{firstCode=e.psCode;return firstCode==='match_pending_left';});
+  assert.deepEqual(h.durable.a,{id:'a',reviewGood:'accepted A'},'the older native flight committed only A');
+  h.hold(null);h.pending(false);const before={queue:h.calls.queue,ready:h.calls.ready};
+  for(let i=0;i<4;i++)await h.timersOnce();
+  t.diagnostic(JSON.stringify({firstCode,before,after:{queue:h.calls.queue,ready:h.calls.ready},model:h.models.a,durable:h.durable.a,typed:h.api.typed().sort(),pending:h.w.psHasPending()}));
+  assert.deepEqual(h.durable.a,{id:'a',reviewGood:'accepted A',reviewBad:'held B',oppAttack:'held C'},'new held input must resume automatically after the older non-I/O pending result');
+  assert.equal(h.w.psHasPending(),false);
+});
+
+test('same-field replacement during a native flight resumes alongside its other captured field',async()=>{
+  const h=fixture(),g=gate();h.pending(false);h.input('first A');h.input('captured B',true,'reviewBad');await turn();h.hold(g);
+  const first=h.w.psFlushPendingReady();first.catch(()=>{});h.pending(true);h.input('newer A');await turn();
+  g.resolve();await assert.rejects(first,e=>e.psCode==='match_pending_left');
+  assert.deepEqual(h.durable.a,{id:'a',reviewGood:'first A',reviewBad:'captured B'});assert.equal(h.w.psHasPending(),true);
+  h.hold(null);h.pending(false);for(let i=0;i<4;i++)await h.timersOnce();
+  assert.deepEqual(h.durable.a,{id:'a',reviewGood:'newer A',reviewBad:'captured B'});assert.equal(h.w.psHasPending(),false);assert.deepEqual(h.api.typed(),[]);
+});
+
+test('match_pending_left without newer typed input keeps the automatic retry paused',async()=>{
+  const h=fixture(),g=gate();h.pending(false);h.input('captured A');await turn();h.hold(g);
+  const first=h.w.psFlushPendingReady();first.catch(()=>{});h.otherPending(true);g.resolve();await assert.rejects(first,e=>e.psCode==='match_pending_left');
+  h.otherPending(false);h.hold(null);const before={queue:h.calls.queue,ready:h.calls.ready};
+  for(let i=0;i<4;i++)await h.timersOnce();
+  assert.deepEqual({queue:h.calls.queue,ready:h.calls.ready},before);assert.deepEqual(h.api.typed(),['reviewGood']);assert.equal(h.w.psHasPending(),true);
+});
+
+for(const code of ['storage_readback_failed','store_ready.match_pending_left'])test(code+' keeps its exact failure and retry pause despite newer held input',async()=>{
+  const h=fixture(),g=gate(),failure=Object.assign(Error('native verification failure'),{psCode:code});h.pending(false);h.input('captured A');await turn();h.hold(g);
+  const first=h.w.psFlushPendingReady();first.catch(()=>{});h.pending(true);h.input('held B',true,'reviewBad');await turn();h.error(failure);g.resolve();await assert.rejects(first,e=>e===failure);
+  h.error(null);h.hold(null);h.pending(false);const before={queue:h.calls.queue,ready:h.calls.ready};
+  for(let i=0;i<4;i++)await h.timersOnce();
+  assert.deepEqual({queue:h.calls.queue,ready:h.calls.ready},before);assert.equal(h.models.a.reviewBad,undefined);assert.equal(h.w.psHasPending(),true);assert.deepEqual(h.api.typed().sort(),['reviewBad','reviewGood']);
+});
+
+for(const change of ['owner','permissions','other-match'])test(change+' changes cannot resume an older flight from newer held input',async()=>{
+  const h=fixture(),g=gate();h.pending(false);h.input('captured A');await turn();h.hold(g);
+  const first=h.w.psFlushPendingReady();first.catch(()=>{});h.pending(true);
+  if(change==='owner')h.setOwner('coach-b','team-b');else if(change==='permissions')h.setOwner('coach-a','team-a','staff');else h.match('b');
+  h.input('foreign-context B',true,'reviewBad');await turn();g.resolve();await assert.rejects(first,e=>e.psCode==='match_pending_left');
+  h.setOwner();h.match('a');h.hold(null);h.pending(false);const before={queue:h.calls.queue,ready:h.calls.ready};
+  for(let i=0;i<4;i++)await h.timersOnce();
+  assert.deepEqual({queue:h.calls.queue,ready:h.calls.ready},before);assert.equal(h.models.a.reviewBad,undefined);assert.equal(h.models.b.reviewBad,undefined);assert.equal(h.w.psHasPending(),true);
 });
