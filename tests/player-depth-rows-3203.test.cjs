@@ -31,3 +31,17 @@ test('카드 옮기기: 다른 줄 가운데로, 가득 찬 줄은 거부, 새 �
   assert.equal(workspace.moveCard(rows,'p-없음',0,0,4),null);
   assert.deepEqual(ids(rows)[0],['p-LW','p-CF','p-RW'],'원본은 바뀌지 않는다');
 });
+test('골키퍼는 저장된 혼합 줄에서도 하나씩 분리하고 기존 저장값은 바꾸지 않는다',()=>{
+  const saved=[['p-GK','p-LW','p-CF','p-RW'],['p-AM','p-CM','p-DM']],before=JSON.stringify(saved);
+  const rows=workspace.layoutRows(cards.concat([card('gk-two','GK')]),saved,4);
+  assert.deepEqual(ids(rows).slice(-2),[['p-GK'],['gk-two']]);
+  assert.deepEqual(ids(rows)[0],['p-LW','p-CF','p-RW']);
+  assert.equal(JSON.stringify(saved),before);
+  assert.equal(workspace.moveCard(rows,'p-GK',0,0,4),null);
+  assert.equal(workspace.moveCard(rows,'p-AM',rows.length-1,0,4),null);
+});
+test('네 칸 공격수의 좌우 중앙 역할을 미지정으로 버리지 않는다',()=>{
+  const four=['LW','LCF','RCF','RW'].map(a=>card(a,a));
+  assert.ok(four.every(c=>c.family==='FW'));
+  assert.deepEqual(ids(workspace.layoutRows(four,null,4)),[['LW','LCF','RCF','RW']]);
+});

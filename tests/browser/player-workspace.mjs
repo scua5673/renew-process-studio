@@ -35,6 +35,20 @@ try{
   else await page.locator('#teamNav [data-team-key="scouting"]').click();
   await frame.locator('#pwScout .pw-depth-pitch').waitFor();
   const original=fx.db.get(WT+'|cs_scout_targets_v1').v;
+  const viewport=page.viewportSize();
+  for(const width of [320,390,1100]){
+    await page.setViewportSize({width,height:viewport.height});
+    const layout=await frame.locator('#pwScout').evaluate(host=>{
+      const lines=[...host.querySelectorAll('.pw-depth-line')],slots=lines.flatMap(l=>[...l.querySelectorAll('.pw-depth-slot')]);
+      const gk=host.querySelector('.pw-depth-keeper .pw-depth-slot').getBoundingClientRect(),row=host.querySelector('.pw-depth-keeper .pw-depth-slots').getBoundingClientRect();
+      return {overflow:document.documentElement.scrollWidth>innerWidth+1,wrapped:lines.some(l=>new Set([...l.querySelectorAll('.pw-depth-slot')].map(e=>Math.round(e.getBoundingClientRect().top))).size>1),columns:getComputedStyle(host.querySelector('.pw-depth-pitch')).getPropertyValue('--pw-max').trim(),keeperCentered:Math.abs(gk.x+gk.width/2-row.x-row.width/2)<1,minWidth:Math.min(...slots.map(e=>e.getBoundingClientRect().width))};
+    });
+    assert.equal(layout.overflow,false,JSON.stringify({width,layout}));assert.equal(layout.wrapped,false);assert.equal(layout.columns,'4');assert.equal(layout.keeperCentered,true);assert.ok(layout.minWidth>=44,JSON.stringify({width,layout}));
+    const meta=frame.locator('#pwScout [data-pw-slot="pos_GK"] .pw-depth-name').first();
+    assert.match(await meta.innerText(),/가상 GK 후보[\s\S]*가상 유나이티드[\s\S]*#1/);
+    assert.ok(await meta.evaluate(el=>{const name=el.querySelector('strong').getBoundingClientRect(),club=el.querySelector('small').getBoundingClientRect();return club.top>=name.bottom-1&&el.scrollWidth<=el.clientWidth;}));
+  }
+  await page.setViewportSize(viewport);
   await frame.getByRole('button',{name:'LCB 24명 전체 보기',exact:true}).click();
   assert.equal(await frame.locator('#pwScout .pw-depth-candidate').count(),6);
   await frame.getByRole('button',{name:'6명 더 보기 · 18명 남음',exact:true}).click();
