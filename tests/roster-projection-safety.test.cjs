@@ -97,8 +97,9 @@ for(const origin of ['profile','team row'])test(origin+' confirmed deletion remo
   h.c.save();await h.round();await h.round();assert.equal(h.main().players.length,68);assert.equal(JSON.parse(h.server.get(MAIN).v).players.length,68);assert.ok(JSON.parse(h.idb.get(key))._del);assert.ok(JSON.parse(h.server.get(key).v)._del);
   const remaining=[...h.server.values()].filter(x=>x.k.startsWith('sq:')&&!JSON.parse(x.v)._del);assert.equal(remaining.length,68);assert.equal(h.c.holdList().length,0);
 });
-test('failed deletion-record save leaves the profile and roster intact before any item request',()=>{
+test('failed deletion-record save leaves the profile and roster intact before any item request',async()=>{
   const h=fixture([p('a')]),button={};let confirmed;Object.assign(h.c,{$:()=>button,psConfirm:(_text,fn)=>confirmed=fn,pl:h.c.data.players[0]});
+  await h.c.itemsStaleAPI().load();
   vm.runInContext(section(scout,'  if($("plDelete"))$("plDelete").onclick=()=>{','  $("plName").value'),h.c);h.c.scoutStore.set=(k)=>k!==PD;button.onclick();confirmed();
   assert.equal(h.c.data.players.length,1);assert.equal(h.c._itemsActiveJobs.length,0);assert.equal(h.c.itemsWriteBusy(),false);
 });
@@ -131,8 +132,9 @@ test('candidate list deletion still saves the changed candidate document and req
   deletionButton(h,'player list','private')();await h.c.itemsWriteFlush();
   assert.equal(h.saves.filter(x=>x.k===h.c.TKEY).length,1);assert.deepEqual(JSON.parse(h.local.get(h.c.TKEY)).players,[]);assert.deepEqual(calls,[],'candidate-only edits do not enqueue unchanged roster rows');assert.equal(JSON.parse(h.idb.get('sq:a'))._del,undefined);
 });
-test('candidate profile removal still uses candidate archiving without the roster save handler',()=>{
+test('candidate profile removal still uses candidate archiving without the roster save handler',async()=>{
   const h=fixture([p('a')]),candidate={...p('private'),type:'target'},archived=[];h.c.data.players.push(candidate);h.c.scArchiveCandidate=id=>archived.push(id);
+  await h.c.itemsStaleAPI().load();
   deletionButton(h,'profile','private');assert.deepEqual(archived,['private']);assert.equal(h.saves.length,0);assert.equal(h.c.itemsWriteBusy(),false);
 });
 test('ordinary candidate editing still saves its candidate fields through the actual save function',async()=>{

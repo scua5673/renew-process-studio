@@ -15,6 +15,7 @@ async function setup(key,withHistory=true,options={}){
  const aux=new Map(),ctx=()=>({uid:h.c.getSess().uid,wid:h.c.activeWs(),seal:h.local.get('ps_cache_owner_v1'),epoch:0});
  Object.assign(h.c,{autosaveEnabled:()=>true,autosaveContext:ctx,isMergeBaseKey:k=>k===key});
  h.c.PSStorage.auxGet=async k=>aux.get(k)||null;h.c.PSStorage.auxSet=async(k,v)=>{aux.set(k,v);return true;};
+ h.c.storage.keys=async prefix=>[...h.idb.keys()].filter(k=>!prefix||k.startsWith(prefix));
  const journal=J.create({storage:h.c.storage,context:ctx,hash:h.c.hash});h.c.autosaveJournal=()=>journal;
  const auxKey=h.c.syncBaseKey(key,'team-a');aux.set(auxKey,h.c.IDP_BASE_TAG+raw({v:1,c:{r:remote,h:h.c.hash(remote),u:3}}));
  if(withHistory)await journal.capture(ctx(),key,original,h.c.hash(original),1);

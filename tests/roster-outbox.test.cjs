@@ -32,3 +32,53 @@ test('a later batch carries intermediate originals after earlier ACK cleanup and
 test('every same-ID intermediate is copied and deduplicated in later durable batches',()=>{const f=fixture(),a=p('p1','A'),b=p('p1','B'),c=p('p1','C'),d=p('p1','D');const r1=stage(f.box,[b],[a],['p1']);const r2=stage(f.box,[c],[b],['p1']);stage(f.box,[b],[c],['p1']);const last=stage(f.box,[d],[b],['p1']);b.name='external mutation';assert.deepEqual(last.rows[0].history,[p('p1','B'),p('p1','C')]);f.box.ack(r1);f.box.ack(r2);assert.deepEqual(f.clone().read().rows[0].history,[p('p1','B'),p('p1','C')]);});
 test('legacy batches without history remain readable and become proof for the next edit',()=>{const f=fixture(),r=stage(f.box,[p('p1','B')],[p('p1','A')],['p1']);const doc=JSON.parse(f.ls.map.get(r.keys[0]));delete doc.rows[0].history;f.ls.map.set(r.keys[0],JSON.stringify(doc));assert.deepEqual(f.clone().read().rows[0].history,[]);const next=stage(f.clone(),[p('p1','C')],[p('p1','B')],['p1']);assert.deepEqual(next.rows[0].history,[p('p1','B')]);});
 test('history cannot introduce a different player or a tombstone as an authorized preimage',()=>{for(const bad of [[p('other','private')],[{id:'p1',_del:1}],null]){const f=fixture(),r=stage(f.box,[p('p1','B')],[p('p1','A')],['p1']);const doc=JSON.parse(f.ls.map.get(r.keys[0]));doc.rows[0].history=bad;f.ls.map.set(r.keys[0],JSON.stringify(doc));const before=values(f.ls);assert.throws(()=>f.clone().read(),/변경 행/);assert.throws(()=>stage(f.box,[p('p1','C')],[p('p1','B')],['p1']),/변경 행/);assert.deepEqual(values(f.ls),before);}});
+test('explicit settlement retains exact original batches and its ACK across reload and later cleanup',()=>{
+ const f=fixture(),r=stage(f.box,[p('p1','A')],[p('p1','base')],['p1']),before=values(f.ls),proof=f.box.settle(r,()=>true);
+ for(const [key,raw]of before)assert.equal(f.ls.map.get(key),raw);
+ assert.equal(f.box.pending(),false);assert.equal(f.clone().settled(proof,()=>true),true);assert.equal(JSON.parse(proof.raw).retain,true);
+ assert.deepEqual(f.clone().overlay([p('p1','B')]),[p('p1','B')]);
+ const later=stage(f.clone(),[p('p1','C')],[p('p1','B')],['p1']);assert.equal(later.rows[0].base.name,'B');f.box.ack(later);
+ assert.equal(f.ls.map.get(proof.key),proof.raw);for(const [key,raw]of before)assert.equal(f.ls.map.get(key),raw);
+ assert.equal(f.clone().settled(proof,()=>true),true);assert.equal(f.box.pending(),false);
+ const writes=f.ls.writes.length;assert.deepEqual(f.box.settle(r,()=>true),proof);assert.equal(f.ls.writes.length,writes,'settlement is idempotent while exact sources remain');
+});
+test('settling captured A leaves a later C and other IDs pending without acknowledging their sources',()=>{
+ const f=fixture(),first=stage(f.box,[p('p1','A'),p('p2','other')],[p('p1','base'),p('p2','old')],['p1','p2']);
+ const onlyA={...first,rows:[first.rows[0]]},newer=stage(f.clone(),[p('p1','C')],[p('p1','A')],['p1']),before=values(f.ls);
+ const newestKey=newer.rows[0].sources.at(-1).key,proof=f.box.settle(onlyA,()=>true),pending=f.clone().read();
+ assert.deepEqual(pending.rows.map(r=>[r.id,r.player.name]),[['p2','other'],['p1','C']]);
+ assert.ok(pending.rows.find(r=>r.id==='p1').sources.some(s=>s.key===newestKey));
+ assert.ok(JSON.parse(proof.raw).sources.every(s=>s.key!==newestKey));
+ for(const [key,raw]of before)assert.equal(f.ls.map.get(key),raw);
+});
+test('a new batch staged while the retained ACK is written cannot join the captured settlement',()=>{
+ const f=fixture(),r=stage(f.box,[p('p1','A')],[p('p1','base')],['p1']),set=f.ls.setItem.bind(f.ls);let newer;
+ f.ls.setItem=function(k,v){if(!newer&&JSON.parse(v).kind==='ack'){newer=true;newer=stage(f.clone(),[p('p1','C')],[p('p1','A')],['p1']);}return set(k,v);};
+ const proof=f.box.settle(r,()=>true);assert.equal(f.clone().read().rows[0].player.name,'C');
+ assert.ok(JSON.parse(proof.raw).sources.every(s=>s.key!==newer.rows[0].sources.at(-1).key));assert.equal(f.box.settled(proof,()=>true),true);
+});
+test('settlement rejects a changed captured source and retains all originals on quota failure',()=>{
+ for(const mode of ['receipt','source','quota']){
+  const f=fixture(),r=stage(f.box,[p('p1','A')],[p('p1','base')],['p1']);
+  if(mode==='receipt')r.rows[0].sources[0].raw+=' ';
+  if(mode==='source'){const doc=JSON.parse(f.ls.map.get(r.keys[0]));doc.rows[0].player.name='different';f.ls.map.set(r.keys[0],JSON.stringify(doc));}
+  if(mode==='quota')f.ls.failSet=true;
+  const before=values(f.ls);assert.throws(()=>f.box.settle(r,()=>true));assert.deepEqual(values(f.ls),before);assert.equal(f.box.pending(),true);
+ }
+});
+test('settlement and proof checks reject foreign owners and a changed selection or permission guard',()=>{
+ const f=fixture(),r=stage(f.box,[p('p1','A')],[p('p1','base')],['p1']),before=values(f.ls);
+ assert.throws(()=>f.box.settle(r,()=>false));assert.throws(()=>f.box.settle(r));assert.deepEqual(values(f.ls),before);
+ const proof=f.box.settle(r,()=>true);assert.equal(f.box.settled(proof,()=>false),false);assert.equal(f.box.settled(proof),false);
+ f.setOwner({uid:'foreign',wid:'team:b'});assert.equal(f.box.settled(proof,()=>true),false);assert.throws(()=>f.box.settle(r,()=>true));
+ f.setOwner(f.owner);assert.equal(f.clone().settled(proof,()=>true),true);
+});
+test('settlement proof binds full source bytes and its exact durable retained ACK',()=>{
+ for(const mode of ['source','marker','proof']){
+  const f=fixture(),r=stage(f.box,[p('p1','A')],[p('p1','base')],['p1']),proof=f.box.settle(r,()=>true);
+  if(mode==='source')f.ls.map.set(r.keys[0],f.ls.map.get(r.keys[0])+' ');
+  if(mode==='marker')f.ls.map.delete(proof.key);
+  if(mode==='proof')proof.sources[0].token+='wrong';
+  assert.equal(f.clone().settled(proof,()=>true),false);
+ }
+});

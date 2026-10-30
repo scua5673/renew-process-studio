@@ -7,6 +7,7 @@ const path=require('node:path');
 const vm=require('node:vm');
 const sync=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
 const S=require('../studio/scouting-store.js');
+const ItemsStale=require('../studio/sync-items-stale.js');
 const DEFAULT_KEY='cs_team_match_private_v1',SCHEDULE='process_coach_v1',MATCH='cs_team_matches_v1',META='ps_sync_meta',OWNER='ps_cache_owner_v1';
 const MAXLEN=1500000;
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -59,7 +60,7 @@ function harness(opt={}){
     lastIssue:null,busy:false,busyDog:0,signOutEpoch:0,dataReady:true,localSwitchToken:'',kvWho:true,KV_PULL_CHUNK:20,
     getSess:()=>session,activeWs:()=>active,activeWsObj:()=>({kind:state.team?'team':'personal',role:state.teamRole}),isTeamWs:()=>state.team,
     workspaceSwitchGuardRead:()=>null,workspaceSwitchGuardRaw:()=>'',workspaceSwitchEpochRaw:()=>'',
-    itemsWriteFlush:async()=>{},syncBasePrimeAll:async()=>{},syncBaseGet:k=>base.get(k)||null,syncBaseSet(k,v){if(v==null)base.delete(k);else base.set(k,v);},syncBaseReady:async()=>{},
+    syncBasePrimeAll:async()=>{},syncBaseGet:k=>base.get(k)||null,syncBaseSet(k,v){if(v==null)base.delete(k);else base.set(k,v);},syncBaseReady:async()=>{},
     ensureToken:async()=>'synthetic',permsPrime:async()=>{},permsRaw:()=>state.role==='missing'?null:raw({defaultRole:state.role,members:{[session.uid]:{role:state.role,scopes:opt.scopes||['team']}}}),
     kvPreload:async()=>Object.fromEntries(idb),idbBacked:k=>k===KEY&&!opt.localOnly,
     scheduleHeld:()=>false,scheduleWriteAllowed:()=>true,scheduleStructureRepair(){},
@@ -102,6 +103,21 @@ function harness(opt={}){
     personalWid:()=>'',writeVersion(){},scheduleTokenValid:()=>true,
   });
   c.window=c;c.parent={postMessage(){}};vm.runInContext(code,c,{filename:'actual team data consistency contract'});
+  // These legacy fixtures have no queued PSItems jobs. Still run the real
+  // review loader/fences; automatic-sync installs the actual journal/context
+  // after constructing this VM, so resolve those dependencies at call time.
+  const emptyJournal={async list(){return [];},async read(){throw Error('No player archive in this fixture');},async archive(){throw Error('No player write job in this fixture');}};
+  const staleContext=()=>typeof c.autosaveContext==='function'?c.autosaveContext():c.holdConflictContext();
+  let itemsStale;
+  c.itemsStaleAPI=()=>itemsStale||(itemsStale=ItemsStale.create({
+    context:staleContext,
+    journal:wid=>typeof c.autosaveJournal==='function'?c.autosaveJournal(wid):emptyJournal,
+    current:owner=>typeof c.itemsWriteCurrent==='function'?c.itemsWriteCurrent(owner):!!owner&&JSON.stringify(owner)===JSON.stringify(staleContext()),
+    permission:()=>typeof c.itemsPatchPermission==='function'?c.itemsPatchPermission():c.permsRaw(),
+    storage:c.storage,hash:c.hash,
+  }));
+  c.itemsWriteFlush=background=>background===true?
+    c.itemsStaleAPI().background(async()=>{}):c.itemsStaleAPI().foreground(async()=>{});
   return {c,local,idb,server,base,requests,errors,acks,hooks,notices,state,
     get queue(){return clone(queue);},mark:()=>c.outboxMark(active,KEY,c.hash(opt.localOnly?local.get(KEY):idb.get(KEY)),'fixture'),
     run:()=>c.syncNowCore('test'),ready:()=>c.keyReady(KEY,active),

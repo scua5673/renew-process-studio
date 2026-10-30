@@ -36,7 +36,7 @@
         if(!Number.isSafeInteger(d.seq)||d.seq<1||!Array.isArray(d.rows)||!d.rows.length)fail('보관된 선수 변경 묶음이 올바르지 않습니다');
         var seen=Object.create(null);d.rows.forEach(function(r,i){if(!object(r)||!id(r.id)||own(seen,r.id)||r.token!==d.token+':'+i||typeof r.deleted!=='boolean'||(r.base!==null&&!player(r.base,r.id))||(r.deleted?r.player!==null:!player(r.player,r.id))||(r.history!==undefined&&(!Array.isArray(r.history)||r.history.some(function(p){return !player(p,r.id);}))))fail('보관된 선수 변경 행이 올바르지 않습니다');seen[r.id]=1;});
       }else{
-        if(!Array.isArray(d.sources)||!d.sources.length)fail('선수 변경 확인 기록이 올바르지 않습니다');
+        if(!Array.isArray(d.sources)||!d.sources.length||(d.retain!==undefined&&d.retain!==true))fail('선수 변경 확인 기록이 올바르지 않습니다');
         d.sources.forEach(function(s){if(!object(s)||!validKey(c,s.key,'b')||!id(s.id)||typeof s.token!=='string'||!s.token)fail('선수 변경 확인 대상이 올바르지 않습니다');});
       }
       return d;
@@ -83,9 +83,10 @@
       return receipt(c,batch.doc.rows.map(function(r){var sources=pending[r.id]?copy(pending[r.id].sources):[];sources.push({key:batch.key,id:r.id,token:r.token,raw:JSON.stringify(r)});return {id:r.id,base:copy(r.base),player:copy(r.player),deleted:r.deleted,token:r.token,history:copy(r.history),sources:sources};}));
     }
     function cleanup(c){
-      var current=state(c);
-      current.docs.forEach(function(x){if(x.doc.kind==='batch'&&x.doc.rows.every(function(r){return current.acked[mark({key:x.key,id:r.id,token:r.token})];})){guard(c);if(storage.getItem(x.key)===x.raw)storage.removeItem(x.key);}});
-      current.docs.forEach(function(x){if(x.doc.kind==='ack'&&x.doc.sources.every(function(s){return storage.getItem(s.key)===null;})){guard(c);if(storage.getItem(x.key)===x.raw)storage.removeItem(x.key);}});
+      var current=state(c),retained=Object.create(null);
+      current.docs.forEach(function(x){if(x.doc.kind==='ack'&&x.doc.retain)x.doc.sources.forEach(function(s){retained[s.key]=true;});});
+      current.docs.forEach(function(x){if(x.doc.kind==='batch'&&!retained[x.key]&&x.doc.rows.every(function(r){return current.acked[mark({key:x.key,id:r.id,token:r.token})];})){guard(c);if(storage.getItem(x.key)===x.raw)storage.removeItem(x.key);}});
+      current.docs.forEach(function(x){if(x.doc.kind==='ack'&&!x.doc.retain&&x.doc.sources.every(function(s){return storage.getItem(s.key)===null;})){guard(c);if(storage.getItem(x.key)===x.raw)storage.removeItem(x.key);}});
     }
     function ack(captured){
       var c=context();if(!c||!object(captured)||!object(captured.owner)||captured.owner.uid!==c.uid||captured.owner.wid!==c.wid||captured.key!==c.prefix||!Array.isArray(captured.rows))fail('다른 계정이나 팀의 선수 변경은 확인 처리하지 않습니다');
@@ -102,13 +103,56 @@
       // space reclamation; its failure cannot turn a completed row into a draft.
       try{cleanup(c);}catch(_){}guard(c);return Object.keys(ids).length;
     }
+    /* An explicit device-review choice settles only captured immutable sources.
+       Keep their bytes and this ACK even when later normal saves run cleanup. */
+    function settle(captured,currentGuard){
+      var c=context();
+      function current(){guard(c);if(typeof currentGuard!=='function'||currentGuard()===false)fail('선수 변경 선택의 권한이나 원문이 바뀌었습니다');guard(c);}
+      current();captured=copy(captured);
+      if(!object(captured)||!object(captured.owner)||captured.owner.uid!==c.uid||captured.owner.wid!==c.wid||captured.key!==c.prefix||!Array.isArray(captured.rows)||!captured.rows.length)fail('다른 계정이나 팀의 선수 변경은 확인 처리하지 않습니다');
+      var snapshot=state(c),docs=Object.create(null),seen=Object.create(null),ids=Object.create(null),sources=[],batches=[],batchSeen=Object.create(null);
+      snapshot.docs.forEach(function(x){docs[x.key]=x;});
+      captured.rows.forEach(function(r){
+        if(!object(r)||!id(r.id)||ids[r.id]||!Array.isArray(r.sources)||!r.sources.length)fail('확인할 선수 변경 원문이 없습니다');ids[r.id]=true;
+        r.sources.forEach(function(s){
+          if(!object(s)||s.id!==r.id||!validKey(c,s.key,'b')||!textSource(s))fail('확인할 선수 변경 대상이 다릅니다');
+          var x=docs[s.key],row=x&&x.doc.kind==='batch'&&x.doc.rows.find(function(v){return v.id===s.id&&v.token===s.token;});
+          if(!row||JSON.stringify(row)!==s.raw||seen[mark(s)])fail('확인할 선수 변경 원문이 바뀌었습니다');
+          seen[mark(s)]=true;sources.push({key:s.key,id:s.id,token:s.token,raw:s.raw});
+          if(!batchSeen[s.key]){batchSeen[s.key]=true;batches.push({key:s.key,raw:x.raw});}
+        });
+      });
+      var pointers=sources.map(function(s){return {key:s.key,id:s.id,token:s.token};}),encoded=JSON.stringify(pointers);
+      var marker=snapshot.docs.find(function(x){return x.doc.kind==='ack'&&x.doc.retain&&JSON.stringify(x.doc.sources)===encoded;});
+      current();if(!marker){var saved=write(c,'a',function(t){return {v:1,kind:'ack',uid:c.uid,wid:c.wid,token:t,retain:true,sources:pointers};});marker={key:saved.key,raw:JSON.stringify(saved.doc)};}
+      var proof={v:1,owner:{uid:c.uid,wid:c.wid},key:marker.key,raw:marker.raw,batches:batches,sources:sources};
+      if(!settled(proof,currentGuard))fail('선수 변경 선택의 보관을 확인하지 못했습니다');return copy(proof);
+    }
+    function textSource(s){return typeof s.token==='string'&&s.token.length>0&&typeof s.raw==='string';}
+    function settled(proof,currentGuard){
+      try{
+        var c=context();function current(){guard(c);if(typeof currentGuard!=='function'||currentGuard()===false)fail('선수 변경 선택이 바뀌었습니다');guard(c);}
+        current();if(!object(proof)||proof.v!==1||!object(proof.owner)||proof.owner.uid!==c.uid||proof.owner.wid!==c.wid||!validKey(c,proof.key,'a')||typeof proof.raw!=='string'||!Array.isArray(proof.batches)||!proof.batches.length||!Array.isArray(proof.sources)||!proof.sources.length)return false;
+        if(storage.getItem(proof.key)!==proof.raw)return false;
+        var marker=parse(c,proof.key,proof.raw),docs=Object.create(null),seen=Object.create(null);
+        if(marker.kind!=='ack'||marker.retain!==true)return false;
+        for(var batch of proof.batches){current();if(!object(batch)||!validKey(c,batch.key,'b')||typeof batch.raw!=='string'||own(docs,batch.key)||storage.getItem(batch.key)!==batch.raw)return false;docs[batch.key]=parse(c,batch.key,batch.raw);if(docs[batch.key].kind!=='batch')return false;}
+        for(var source of proof.sources){
+          current();if(!object(source)||!validKey(c,source.key,'b')||!id(source.id)||!textSource(source)||seen[mark(source)])return false;
+          var doc=docs[source.key],row=doc&&doc.rows.find(function(r){return r.id===source.id&&r.token===source.token;});if(!row||JSON.stringify(row)!==source.raw)return false;seen[mark(source)]=true;
+        }
+        if(JSON.stringify(marker.sources)!==JSON.stringify(proof.sources.map(function(s){return {key:s.key,id:s.id,token:s.token};})))return false;
+        current();if(storage.getItem(proof.key)!==proof.raw||proof.batches.some(function(batch){return storage.getItem(batch.key)!==batch.raw;}))return false;
+        current();return true;
+      }catch(_){return false;}
+    }
     function overlay(players){
       var copied=copy(players),map=roster(copied),c=context();if(!c)return copied;
       var pending=state(c).rows,changes=Object.create(null),used=Object.create(null),out=[];pending.forEach(function(r){changes[r.id]=r;});
       copied.forEach(function(p){if(p.type==='target'){out.push(p);return;}var r=changes[p.id];used[p.id]=1;if(!r)out.push(p);else if(!r.deleted)out.push(copy(r.player));});
       pending.forEach(function(r){if(!used[r.id]&&!r.deleted)out.push(copy(r.player));});guard(c);return out;
     }
-    return {stage:stage,read:read,ack:ack,overlay:overlay,pending:function(){return read().rows.length>0;}};
+    return {stage:stage,read:read,ack:ack,settle:settle,settled:settled,overlay:overlay,pending:function(){return read().rows.length>0;}};
   }
   return {create:create,prefix:PREFIX};
 });

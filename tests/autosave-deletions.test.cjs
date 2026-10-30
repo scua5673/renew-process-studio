@@ -6,6 +6,7 @@ const vm=require('node:vm');
 const M=require('../studio/autosave-merge.js');
 const J=require('../studio/autosave-journal.js');
 const R=require('../studio/autosave-runtime.js');
+const ItemsStale=require('../studio/sync-items-stale.js');
 const sync=fs.readFileSync(require.resolve('../studio/sync.js'),'utf8');
 const scout=fs.readFileSync(require.resolve('../studio/scout.html'),'utf8');
 const PD='cs_player_del_v1',MD='cs_match_del_v1';
@@ -16,6 +17,10 @@ function fixture(initial='{}'){
     isItemKey:k=>k.startsWith('sq:'),isIdpPrivateKey:()=>false,isIdpPubKey:()=>false,
     localStorage:{getItem:k=>k===PD?tombRaw:null},scoutStore:{get:k=>k===PD?JSON.parse(tombRaw):null}
   });
+  const owner={uid:'synthetic-owner',wid:'synthetic-team',seal:'same-owner',epoch:1};
+  const reviews=ItemsStale.create({context:()=>owner,permission:()=>'',current:()=>true,hash:J.hash,
+    journal:()=>({async list(){return [];}}),storage:{async get(){return null;}}});
+  c.itemsStaleAPI=()=>reviews;
   vm.runInContext(['autosavePrepare','itemsDeletedLive'].map(n=>fn(sync,n)).concat(['plTombs','plTombApply'].map(n=>fn(scout,n))).join('\n'),c);
   return {c,set:raw=>{tombRaw=raw;},prepare(key,local,remote,base=null,kind='conflict'){
     const plan=M.plan({key,local,remote,base});return c.autosavePrepare({k:key,channel:'team',kind},plan,base,local,{k:key,v:remote,cupd:2});
