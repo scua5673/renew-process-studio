@@ -8,7 +8,7 @@ const runtimeRoots=new Set(['studio','vendor','guide','start','social','assets']
 export function isRuntimeFile(file){
  if(!file||file.split('/').some(p=>p.startsWith('.')||p==='..'))return false;
  if(file.includes('/'))return runtimeRoots.has(file.split('/')[0]);
- return ['_headers','_redirects'].includes(file)||/\.(?:html|js|css|json|webmanifest|svg|png|jpe?g|webp|avif|gif|ico|woff2?|ttf|otf|mp[34]|webm|wav|pdf|txt|wasm)$/i.test(file)&&!file.startsWith('package');
+ return ['_headers','_redirects','sitemap.xml'].includes(file)||/\.(?:html|js|css|json|webmanifest|svg|png|jpe?g|webp|avif|gif|ico|woff2?|ttf|otf|mp[34]|webm|wav|pdf|txt|wasm)$/i.test(file)&&!file.startsWith('package');
 }
 export function packageSite(root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..')){
  const files=execFileSync(process.env.PS_GIT_BIN||'git',['ls-files','-z'],{cwd:root,encoding:'utf8'}).split('\0').filter(isRuntimeFile);
