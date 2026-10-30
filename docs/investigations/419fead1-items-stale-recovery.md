@@ -45,10 +45,14 @@
 `storage-conditional.mjs`가 새 경계를 검사합니다. 기존 partial-core 시험에는
 실제 새 모듈과 누락된 journal/storage capability를 연결했으며 기존 CAS·ACK·
 삭제·소유자·history 단정은 유지합니다. CI storage 묶음에서 양 엔진을 실행합니다.
-로컬 최종 회귀는 5,320/5,320, SQL 전체 검사는 합성 DB에서 통과했습니다.
+로컬 최종 회귀는 5,327/5,327, SQL 전체 검사는 합성 DB에서 통과했습니다.
 실제 Chromium·WebKit fixture는 각각 보류 UI·열린 scout 재시도·reload·B 자동 반영·
 새 C 저장·입력 중 D 수신 지연·blur 후 자동 반영·원문 보존을 통과했습니다.
 이 최종 실행의 source drift와 page error는 모두 0이며 이전 실패 원시는 별도 보존합니다.
+동일 owner·권한에서 이미 검증한 journal의 순수 재조회는 기존 확인을 유지합니다.
+최초 조회·owner/권한 변경·보관 진행·최신 I/O 실패의 차단은 유지하며,
+`items-stale-readiness.test.cjs`가 실제 확인 모듈과 함께 검사합니다.
+실패했던 기존 저장 표시 fixture도 원문 변경 없이 양 엔진에서 통과했습니다.
 최종 CI·staging·production의 정확한 SHA와 공개 파일 검증은 PR 및 배포 기록에 남깁니다.
 
 운영 DB·실계정 저장소·제보 쓰기는 없습니다. 서버 설치나 스키마 변경은 필요하지 않습니다.

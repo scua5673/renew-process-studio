@@ -45,7 +45,7 @@
     projectionWatches.set(w,stop);parent.addEventListener('ps-sync-state',pulse);w.addEventListener('pagehide',hide);w.addEventListener('pageshow',show);w.addEventListener('unload',stop);pulse();return stop;
   }
   function create(d){
-    var loaded=null,records=[],resolved=new Set(),certificates=new WeakMap(),prepared=new WeakMap(),tail=Promise.resolve(),loadTicket=0,latestLoad=null,captures=new Map(),notice=null,noticeContext=null;
+    var loaded=null,loadedPermission,records=[],resolved=new Set(),certificates=new WeakMap(),prepared=new WeakMap(),tail=Promise.resolve(),loadTicket=0,latestLoad=null,captures=new Map(),notice=null,noticeContext=null;
     function readyNotice(c){
       if(typeof d.notify!=='function')return;noticeContext=c;if(notice!==null)return;
       notice=setTimeout(function(){notice=null;if(same(noticeContext,context())&&ready()&&!capturing())try{d.notify(noticeContext);}catch(_){}},0);
@@ -53,7 +53,7 @@
     function context(){var c=d.context();return c&&text(c.uid)&&text(c.wid)&&text(c.seal)?c:null;}
     function outboxFor(){return d.outbox?d.outbox():root&&root.PSRosterOutbox&&root.PSRosterOutbox.create({storage:root.localStorage,owner:function(){var c=context();return c?{uid:c.uid,wid:c.wid}:null;}});}
     function guard(c){if(!same(c,context()))throw issue('items_stale_owner');}
-    function ready(){var c=context();return !!c&&same(c,loaded);}
+    function ready(){var c=context();return !!c&&same(c,loaded)&&d.permission()===loadedPermission;}
     function active(){return records.filter(function(r){return !resolved.has(r.id);});}
     function capturing(){var c=context();return c?(captures.get(JSON.stringify(c))||0):0;}
     function count(){return context()?Math.max(capturing(),ready()?active().length:1):0;}
@@ -83,15 +83,17 @@
       return p;
     }
     function load(){
-      var c=context(),ticket=++loadTicket;
+      var c=context(),permission=d.permission(),ticket=++loadTicket;
       var work=(async function(){
-      if(!c)throw issue('items_stale_owner');loaded=null;
-      var journal=d.journal(c.wid),list=await journal.list(c);guard(c);
+      if(!c)throw issue('items_stale_owner');
+      if(!same(c,loaded)||permission!==loadedPermission)loaded=null;
+      function loadCurrent(){guard(c);if(d.permission()!==permission)throw issue('items_stale_owner');}
+      var journal=d.journal(c.wid),list=await journal.list(c);loadCurrent();
       var next=[],choices=[];
       for(var row of list){
         if(row.reason!==REASON&&row.reason!=='items-stale-resolved')continue;
         if(row.k!=='scout_tool_v1')throw issue('items_stale_archive');
-        var value=await journal.read(c,row.id);guard(c);
+        var value=await journal.read(c,row.id);loadCurrent();
         if(!value||value.metadata.id!==row.id||value.metadata.reason!==row.reason)throw issue('items_stale_archive');
         if(row.reason==='items-stale-resolved'){
           var choice;try{choice=JSON.parse(value.localRaw);}catch(_){throw issue('items_stale_archive');}
@@ -103,16 +105,16 @@
       var retired=new Set();choices.forEach(function(choice){
         var r=next.find(function(r){return r.id===choice.archiveId;});
         if(!r||r.localRaw!==choice.originalLocalRaw||r.remoteRaw!==choice.originalRemoteRaw)throw issue('items_stale_archive');
-        if(r.payload.intent){var outbox=outboxFor();if(!outbox||!outbox.settled||outbox.settled(choice.settlement,function(){guard(c);return true;})!==true)throw issue('items_stale_archive');}
+        if(r.payload.intent){var outbox=outboxFor();if(!outbox||!outbox.settled||outbox.settled(choice.settlement,function(){loadCurrent();return true;})!==true)throw issue('items_stale_archive');}
         retired.add(r.id);
       });
-      guard(c);
+      loadCurrent();
       if(ticket!==loadTicket){
-        var joined;do{joined=latestLoad;await joined;guard(c);}while(joined!==latestLoad);
+        var joined;do{joined=latestLoad;await joined;loadCurrent();}while(joined!==latestLoad);
         if(!ready())throw issue('items_stale_changed');return active().length;
       }
-      records=next;resolved=retired;loaded=c;readyNotice(c);return active().length;
-      })();latestLoad=work;return work;
+      records=next;resolved=retired;loadedPermission=permission;loaded=c;readyNotice(c);return active().length;
+      })().catch(function(e){if(ticket===loadTicket&&same(c,context()))loaded=null;throw e;});latestLoad=work;return work;
     }
     function signature(job){return JSON.stringify(payload(job));}
     function skip(job){
