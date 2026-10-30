@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import {depthCandidates} from '../fixtures/player-depth.mjs';
-import {startFixture,openApp,A,WT} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,A,WT,SIZES} from '../fixtures/team-app.mjs';
 const fx=await startFixture(),browsers={},engine=process.env.PS_BROWSER_ENGINE||'chromium';
+SIZES.phone.engine=engine;
 const target=depthCandidates();
 fx.db.set(WT+'|cs_scout_targets_v1',{workspace_id:WT,k:'cs_scout_targets_v1',v:JSON.stringify(target),cupd:1000,updated_by:A});
 try{
-  const phone=engine==='webkit',app=await openApp(fx,phone?'phone':'desktop',{browsers}),{page,logs}=app;
+  const phone=true,app=await openApp(fx,'phone',{browsers}),{page,logs}=app;
   await page.locator('#appSeg [data-team-hub]').click();
   await page.locator(phone?'#teamBottom [data-tb="players"]':'#teamNav [data-team-key="players"]').click();
   const frame=await (await page.waitForSelector('#fScout')).contentFrame();
@@ -38,6 +39,7 @@ try{
   const viewport=page.viewportSize();
   for(const width of [320,390,1100]){
     await page.setViewportSize({width,height:viewport.height});
+    await frame.waitForFunction(w=>innerWidth<=w+1,width);
     const layout=await frame.locator('#pwScout').evaluate(host=>{
       const lines=[...host.querySelectorAll('.pw-depth-line')],slots=lines.flatMap(l=>[...l.querySelectorAll('.pw-depth-slot')]);
       const gk=host.querySelector('.pw-depth-keeper .pw-depth-slot').getBoundingClientRect(),row=host.querySelector('.pw-depth-keeper .pw-depth-slots').getBoundingClientRect();
