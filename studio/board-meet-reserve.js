@@ -26,14 +26,39 @@
     return out;
   }
   function create(best){
-    var s={title:'RESERVE',reserve:true,snap:clone(best.snap||{}),points:[]},sn=s.snap,first=sn.pitchSpec==='u12'?9:12;
+    var s={title:'RESERVE',reserve:true,reserveV:2,snap:clone(best.snap||{}),points:[]},sn=s.snap;
     ['pdfOrientation','pageBrand','textStyles'].forEach(function(k){if(best[k]!=null)s[k]=clone(best[k]);});
-    sn.players=(sn.players||[]).filter(function(p){return p.team==='blue'&&!p.coach;}).map(function(p,i){
-      // Keep positions/kit, not starter identity or individual annotations. IDs and numbers are separate too.
-      return {id:2001+i,team:'blue',num:String(first+i),pos:p.pos||'',x:p.x,y:p.y,meetingRole:'reserve'};
+    var players=lineup(sn),nums=lineupNumbers(players);
+    sn.players=players.map(function(p,i){
+      // Match tactical numbers and size; reserve identity and names remain independent.
+      var q={id:2001+i,team:'blue',num:nums[i],pos:p.pos||'',x:p.x,y:p.y,meetingRole:'reserve'};
+      if(p.scale!=null)q.scale=p.scale;return q;
     });
     sn.equipment=[];sn.drawings=[];sn.ball=null;
     return s;
+  }
+  function lineup(sn){return (sn&&sn.players||[]).filter(function(p){return p&&p.team==='blue'&&!p.coach;});}
+  function lineupNumbers(players){
+    var nums=players.map(function(p){return String(p.num);}),n=players.length;
+    return nums.every(function(v){return /^[1-9]\d*$/.test(v)&&+v<=n;})&&new Set(nums).size===n?nums:players.map(function(p,i){return String(i+1);});
+  }
+  // Correct the original generated reserve once, including its animation scenes.
+  // Custom numbers, names, positions and additional players are retained.
+  function upgrade(slides){
+    var best=(slides||[]).find(isBest),base=best&&best.snap,players=lineup(base),nums=lineupNumbers(players),changed=[];
+    if(!base||!players.length)return changed;
+    (slides||[]).forEach(function(s){
+      if(!isReserve(s)||s.reserveV>=2||!s.snap)return;
+      var snaps=[s.snap],first=s.snap.pitchSpec==='u12'?9:12;
+      (s.frames||[]).forEach(function(f){if(f&&f.snap&&snaps.indexOf(f.snap)<0)snaps.push(f.snap);});
+      var renumber=snaps.every(function(sn){var ps=lineup(sn);return players.every(function(p,i){return ps.some(function(q){return q.id===2001+i&&String(q.num)===String(first+i);});})&&ps.every(function(q){return q.id>=2001&&q.id<2001+players.length||nums.indexOf(String(q.num))<0;});});
+      snaps.forEach(function(sn){
+        ['tokenScale','tokV'].forEach(function(k){if(base[k]!=null)sn[k]=base[k];else delete sn[k];});
+        lineup(sn).forEach(function(p){var i=p.id-2001,q=players[i];if(!q)return;if(renumber)p.num=nums[i];if(q.scale!=null)p.scale=q.scale;else delete p.scale;});
+      });
+      s.reserveV=2;delete s.thumb;(s.frames||[]).forEach(function(f){if(f)delete f.thumb;});changed.push(s);
+    });
+    return changed;
   }
   function withReserve(list){
     if(!Array.isArray(list)||list.some(isReserve))return list;
@@ -43,6 +68,9 @@
   function install(win){
     if(win.__psMeetReserve)return;win.__psMeetReserve=true;
     var doc=win.document,M=win.__meet;
+    var upgradeMeeting=win.__meetUpgrade,upgradeText=win.__meetUpgradeText;
+    win.__meetUpgrade=function(){var r=upgradeMeeting.apply(this,arguments)||{},changed=upgrade(M.frames());changed.forEach(thumb);if(changed.length){r.reserve=changed.length;r.changed=true;}return r;};
+    win.__meetUpgradeText=function(r){var text=upgradeText.apply(this,arguments);return r&&r.reserve?((r.best||r.names||r.brand)?text+' · ':'예전에 만든 미팅을 새 규칙으로 맞췄어요 — ')+'리저브 번호·크기 '+r.reserve+'장':text;};
     function editable(){return M&&doc.body.classList.contains('meet-mode')&&!win.__vaultReadOnly&&!(win.communityBoardReadOnly&&win.communityBoardReadOnly())&&!win.__meetVideoBusy&&!win.__animExport;}
     function current(){return M&&M.frames()[M.idx()];}
     function canAddPlayers(){return editable()&&isReserve(current())&&!doc.body.classList.contains('focus-board')&&!win.__ksNav&&!win.__psThumbCapturing;}
@@ -109,5 +137,5 @@
     var sitNames=win.__sitApplyNames;
     if(sitNames)win.__sitApplyNames=function(){return doc.body.classList.contains('meet-mode')&&isReserve(current())?null:sitNames.apply(this,arguments);};
   }
-  return {isBest:isBest,isReserve:isReserve,create:create,withReserve:withReserve,spreadTargets:spreadTargets,additions:additions,install:install};
+  return {isBest:isBest,isReserve:isReserve,create:create,upgrade:upgrade,withReserve:withReserve,spreadTargets:spreadTargets,additions:additions,install:install};
 });
