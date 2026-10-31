@@ -14,7 +14,7 @@ fs.mkdirSync(out,{recursive:true});
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
 const results=[];
 try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landscape',width:1100,height:729,touch:true},{name:'phone',width:393,height:852,touch:true},{name:'phone-dock',width:393,height:852,touch:true,shellDock:true}]){
- const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},isMobile:!!spec.touch&&spec.width<600,hasTouch:!!spec.touch,serviceWorkers:'block'});let page,frame;
+ const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},...(spec.name.startsWith('phone')?{userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'}:{}),isMobile:!!spec.touch&&spec.width<600,hasTouch:!!spec.touch,serviceWorkers:'block'});let page,frame;
  const errors=[];const result={viewport:spec.name};results.push(result);
  try{
   await context.route('**/*',async route=>{const u=new URL(route.request().url());if(u.origin!==base)return route.abort();if(u.pathname==='/fixture.html')return route.fulfill({contentType:'text/html',body:fixture});const file=path.resolve(root,'.'+u.pathname);if(!file.startsWith(root+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});return route.fulfill({contentType:mime[path.extname(file)]||'application/octet-stream',body:fs.readFileSync(file)});});

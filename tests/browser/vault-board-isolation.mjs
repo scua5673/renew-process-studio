@@ -23,7 +23,7 @@ const server=http.createServer((req,res)=>{
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const base=`http://127.0.0.1:${server.address().port}`;
 async function newFixture(browser,spec){
-  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,isMobile:!!spec.mobile,serviceWorkers:'block'});
+  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},...(spec.mobile?{userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'}:{}),hasTouch:!!spec.touch,isMobile:!!spec.mobile,serviceWorkers:'block'});
   await context.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
   await context.addInitScript(({uid,wid})=>{
     if(!localStorage.getItem('fixture-seeded')){

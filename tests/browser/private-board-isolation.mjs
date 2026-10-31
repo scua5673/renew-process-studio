@@ -20,7 +20,7 @@ const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=u
 fs.mkdirSync(out,{recursive:true});
 
 async function fixture(browser,spec){
-  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,isMobile:!!spec.touch,serviceWorkers:'block'});
+  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},...(spec.name==='phone'?{userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'}:{}),hasTouch:!!spec.touch,isMobile:!!spec.touch,serviceWorkers:'block'});
   const blocked=[];
   await context.route('**/*',route=>{
     const u=new URL(route.request().url());
