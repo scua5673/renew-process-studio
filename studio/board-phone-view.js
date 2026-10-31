@@ -43,7 +43,7 @@
         if(!edit&&!canvas&&closest(t,'input,textarea,select,[contenteditable="true"]'))return;
         if(!edit&&!canvas&&closest(t,'button,a,summary')&&(k==='enter'||k===' '))return;
         // Board shortcuts run on the document even when no token has focus.
-        if(edit||canvas||win.__csView!=='session'){stop(e);return;}
+        if(edit||canvas||win.__csView!=='session'||doc.body.classList.contains('editing')){stop(e);return;}
       }
       if(edit||canvas){
         var touch=canvas&&(e.type==='touchstart'||e.type==='touchmove'||((e.type==='pointerdown'||e.type==='pointermove')&&e.pointerType==='touch'));

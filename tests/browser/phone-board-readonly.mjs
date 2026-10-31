@@ -59,6 +59,9 @@ try{for(const size of ['phone','ipad','desktop']){
   assert.equal(await f.locator('#editorDone').isVisible(),false,'training save action hidden');
   assert.equal(await f.locator('#epRoBanner button').count(),0,'no editing entry inside the read-only training');
   const trainingBefore=JSON.stringify([...fx.lib.values()]);
+  const trainingPlayers=await f.evaluate(()=>{sel={type:'player',ref:state.players[0]};multiSel=[];document.body.tabIndex=-1;document.body.focus();return JSON.stringify(state.players);});
+  await page.keyboard.press('h');await page.keyboard.press('Delete');
+  assert.equal(await f.evaluate(()=>JSON.stringify(state.players)),trainingPlayers,'training viewer blocks document-level editing shortcuts');
   await f.evaluate(()=>closeEditor(true));
   await f.waitForFunction(()=>!document.body.classList.contains('editing'));
   assert.equal(JSON.stringify([...fx.lib.values()]),trainingBefore,'even a stale save callback cannot modify phone training');
