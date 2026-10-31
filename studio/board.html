@@ -4844,7 +4844,7 @@ buildGrid();
   drawCatch=el("rect",{id:"drawCatch",x:-1500,y:-1500,width:W+3000,height:H+3000,fill:"transparent"});world.appendChild(drawCatch);
   tokenLayer=el("g",{id:"tokenLayer"});world.appendChild(tokenLayer);
   world.appendChild(el("g",{id:"snapGuideLayer","pointer-events":"none"}));   /* 2.469 — 끌기 자석 안내선(2.377이 강등한 이유가 '안내선이 없다'였다) */
-  attachDraw();applyView();try{window.__applyPitchN?.(state.pitchN||1);}catch(_){}requestAnimationFrame(function(){try{applyView();}catch(_){}});if(document.body.classList.contains("bc-cam")||document.body.classList.contains("bc-tilt3d")){try{bcAddLight();}catch(_){}}
+  attachDraw();applyView();try{if(state.pitchN>1)window.__applyPitchN?.(state.pitchN);}catch(_){}requestAnimationFrame(function(){try{applyView();}catch(_){}});if(document.body.classList.contains("bc-cam")||document.body.classList.contains("bc-tilt3d")){try{bcAddLight();}catch(_){}}
 }
 let _lastVB="";
 function applyView(){
