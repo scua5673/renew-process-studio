@@ -71,6 +71,7 @@
     function boot(){
       var style=doc.createElement('style');style.id='psPhoneBoardStyle';
       style.textContent=EDITORS.map(function(s){return 'html.ps-page-board body.ps-phone-board-readonly '+s;}).join(',')+'{display:none!important}'+
+        'html.ps-page-board body.ps-phone-board-readonly .vc-act.edit{display:none!important}'+
         '#psPhoneBoardNotice{box-sizing:border-box;flex:none;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:var(--c-surface);color:var(--c-ink);border-bottom:1px solid var(--c-line);font:inherit;z-index:150;position:relative;text-align:left;word-break:keep-all}'+
         '#psPhoneBoardNotice[hidden],#psPhoneBoardNotice button[hidden],body.ps-vv-phone #psPhoneBoardNotice button{display:none!important}'+
         '#psPhoneBoardNotice strong{display:block;font-size:var(--t-5);font-weight:var(--fw-head);line-height:1.5}'+

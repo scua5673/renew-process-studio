@@ -19134,7 +19134,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     function mi(l,fn){var b=document.createElement("button");b.textContent=l;b.onclick=function(e){e.stopPropagation();closeVMenu();fn();};m.appendChild(b);}
     var canEdit=canEditItem(d);
     mi("보기",function(){openItemView(d);});
-    if(canEdit)mi("편집",function(){openItemEdit(d);});
+    if(canEdit&&!psPhoneBoardReadOnly())mi("편집",function(){openItemEdit(d);});
     if(canEdit)mi("제목 변경",function(){vaultRenameItem(d);});
     mi("복사",function(){vaultDupItem(d);});
     mi("PDF 내보내기",function(){psPrompt("PDF 파일 이름",(d.name||"훈련"),function(v){var nm=(v||"").trim()||d.name||"훈련";try{printDrill(d,nm);}catch(_){}});});
