@@ -8918,15 +8918,19 @@ function sbUnmountCrit(){
 /* ══ 2.963 · «스카우팅 포인트 ›» 를 카드 도구 줄 끝으로(데스크톱 셸) ══
    셸 안에서는 제목·설명이 감춰져(premium-ui 1.635) 탭 줄에 이 버튼 하나만 남아 한 줄(≈50px)을 먹었다(디자인 점검 2026-10-07).
    ⚠ 후보 DB 화면에서만 옮긴다 — 포인트 화면(crit)에서는 후보 카드가 숨으므로, 탭 줄로 돌아와야 «‹ 후보 DB» 로 되돌아갈 길이 남는다.
-   폰(≤600)은 지금 자리 그대로(보드 카드가 접혀 있다, 1.815). */
+   3.229 — 새 작업 공간에서는 폰·데스크톱 모두 질문 기준 옆으로 옮긴다. 포인트 화면에서는 돌아가기 버튼을 탭 줄에 남긴다. */
 function sbPtsPlace(t){
   var b=$("sbPtsToggle"),tabs=document.querySelector(".sb-tabs"),row=document.querySelector("#sbBoardCard .sb-cardrow-tools");
   if(!b||!tabs||!row)return;
   var shell=document.documentElement.getAttribute("data-shell")==="1";
   var wide=!(window.matchMedia&&matchMedia("(max-width:600px)").matches);
-  var inRow=shell&&wide&&(t||sbTab)!=="crit";
-  if(inRow){ if(b.parentNode!==row)row.appendChild(b); }
+  var actions=document.querySelector("#pwScout .pw-scoutactions"),inHead=!!actions&&(t||sbTab)!=="crit";
+  var inRow=!inHead&&shell&&wide&&(t||sbTab)!=="crit";
+  if(inHead){ if(b.parentNode!==actions)actions.insertBefore(b,actions.firstChild); }
+  else if(inRow){ if(b.parentNode!==row)row.appendChild(b); }
   else if(b.parentNode!==tabs)tabs.appendChild(b);
+  b.classList.toggle("pw-button",inHead);
+  document.body.classList.toggle("sb-pts-inhead",inHead);
   document.body.classList.toggle("sb-pts-inrow",inRow);
 }
 try{ (function(){ var mq=matchMedia("(max-width:600px)"),f=function(){ try{ sbPtsPlace(); }catch(_){} }; if(mq.addEventListener)mq.addEventListener("change",f); else if(mq.addListener)mq.addListener(f); })(); }catch(_){}

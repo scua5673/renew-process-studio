@@ -11,7 +11,8 @@ test('scouting is a top-row team tab (B안): between 선수단 and IDP, not in t
   const squad=A.slice(A.indexOf('data-sub-grp="squad"'),A.indexOf('data-sub-grp="setup"'));
   assert.ok(!/data-team-key="scouting"/.test(squad),'선수단 서브 줄엔 스카우팅이 없다');
   assert.ok(/var TEAM_GRP=\{squad:\{players:1,avail:1\},/.test(A));
-  assert.ok(/<i>팀<\/i><button type="button" data-tb="scouting">스카우팅<\/button>/.test(A),'폰은 더보기 › 팀');
+  const phone=A.slice(A.indexOf('<nav class="team-bottom"'),A.indexOf('<div class="team-more"'));
+  assert.deepEqual([...phone.matchAll(/data-tb="([a-z]+)"/g)].map(m=>m[1]),['today','match','training','players','scouting','idp','more'],'폰도 선수단 옆 스카우팅 바로가기');
 });
 
 test('scouting inner tab row is gone; one toggle goes to points and back',()=>{

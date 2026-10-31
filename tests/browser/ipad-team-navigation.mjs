@@ -69,7 +69,7 @@ try{
       await page.locator('body.ps-team-open').waitFor();
       const width=await page.evaluate(()=>innerWidth);result.logicalWidth=width;
       assert.equal(await page.locator('html').getAttribute('data-ps-device'),spec.ipad?'ipad':'phone');
-      /* 2.908 — IDP 는 모든 기기에서 하단 탭 자리(오늘·경기·일정·선수단·IDP·더보기) */
+      /* IDP remains directly available beside the squad/scouting shortcuts. */
       const direct=page.locator(width>600?'#teamNav [data-team-key="idp"]':'#teamBottom [data-tb="idp"]');
       if(spec.ipad){
         await direct.waitFor({state:'visible'});
@@ -81,8 +81,8 @@ try{
           assert.equal(await page.locator('#teamBottom [data-tb="more"].on').count(),0);
         }
       }else{
-        assert.equal(await page.locator('#teamBottom button:visible').count(),6,'phone keeps six tabs');
-        assert.deepEqual(await page.locator('#teamBottom button:visible').allTextContents(),['오늘','경기','일정','선수단','IDP','더보기'],'2.908 order');
+        assert.equal(await page.locator('#teamBottom button:visible').count(),7,'phone includes the scouting shortcut');
+        assert.deepEqual(await page.locator('#teamBottom button:visible').allTextContents(),['오늘','경기','일정','선수단','스카우팅','IDP','더보기'],'scouting follows the squad');
         await page.locator('#teamBottom [data-tb="idp"]').tap();
         result.cases.push('phone-idp-direct');
       }
