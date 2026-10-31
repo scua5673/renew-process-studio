@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const app=fs.readFileSync(require.resolve('../studio/app.html'),'utf8'),board=fs.readFileSync(require.resolve('../studio/board.html'),'utf8');
+const app=fs.readFileSync(require.resolve('../studio/board-multipitch.js'),'utf8'),board=fs.readFileSync(require.resolve('../studio/board.html'),'utf8');
 function E(tag,attrs){return {tag,attrs,children:[],appendChild(n){this.children.push(n);}};}
 for(const futsal of [false,true])test('multi-pitch flat goal rectangles and no-goal cards '+futsal,()=>{
  const start=app.indexOf('      function pitch(x0,y0,w,h,goalDepthCap,showGoals){'),end=app.indexOf('      var grp=E(',start);
