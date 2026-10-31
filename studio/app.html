@@ -2822,7 +2822,7 @@ window.psFailAlert=function(lead,e,stage){
          바뀐 것이 있으면 보드와 같은 표시(«보드 저장 ●», 2.907). */
       function fbWin(){ try{ var f=document.getElementById('fBoard'); return f&&f.contentWindow; }catch(_){ return null; } }
       function boardSaveRow(){ var row=sheet.querySelector('[data-am-row="board"]'); if(!row)return; var show=false,chg=false;
-        try{ if(document.body.getAttribute('data-ps-app')==='board'){ var w=fbWin(), d=w&&w.document, bb=d&&d.body, mb=d&&d.getElementById('boardManualSave');
+        try{ if(document.documentElement.getAttribute('data-ps-device')!=='phone'&&document.body.getAttribute('data-ps-app')==='board'){ var w=fbWin(), d=w&&w.document, bb=d&&d.body, mb=d&&d.getElementById('boardManualSave');
           if(mb&&bb&&!d.getElementById('psRoHide')&&!w.__vaultEdit&&!/(^|\s)(editing|meet-mode|ps-capturing)(\s|$)/.test(bb.className)){ show=true; try{ chg=!!(w.boardManualChanged&&w.boardManualChanged()); }catch(_){} } } }catch(_){}
         row.hidden=!show; var b=row.querySelector('button'); if(b){ b.textContent=chg?'보드 저장 ●':'보드 저장'; b.setAttribute('aria-label',chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장'); } }
       function set(open){ if(open)boardSaveRow(); sheet.hidden=!open; btn.setAttribute('aria-expanded',open?'true':'false'); }

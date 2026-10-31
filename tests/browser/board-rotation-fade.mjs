@@ -4,8 +4,10 @@ import {startFixture,openApp,ready,SHOTS,SIZES} from '../fixtures/team-app.mjs';
 // d154e50b: old duplicate scenes acquire independent drawing identities on load/rotation.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',fx=await startFixture(),browsers={};
 for(const s of Object.values(SIZES))s.engine=engine;
+// Editing at narrow widths now represents a narrow computer window; phones are viewers.
+SIZES.compactDesktop={engine,ctx:{viewport:{width:375,height:900},deviceScaleFactor:1,hasTouch:false}};
 try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').map(Number)){
- const size=width<700?'phone':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:900};SIZES[size].ctx.screen={width,height:900};
+ const size=width<700?'compactDesktop':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:900};SIZES[size].ctx.screen={width,height:900};
  const {page,context}=await openApp(fx,size,{browsers,tilt3d:false});
  async function board(){
   await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());

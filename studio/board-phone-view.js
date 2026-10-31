@@ -36,6 +36,8 @@
       var t=e.target;
       if(closest(t,'#psPhoneBoardNotice,#psVvPlay,#psEyeDialog'))return;
       var canvas=closest(t,'#boardStage'),edit=closest(t,EDIT_TARGET);
+      // Blocking the canvas default also prevents iframe focus/parent blur.
+      if(canvas&&['pointerdown','touchstart','mousedown'].indexOf(e.type)>=0){try{if(win.parent.__psAppMoreClose)win.parent.__psAppMoreClose();}catch(_){}}
       if(closest(t,'#boardPageStrip .bp-tab')&&['dragstart','drop','dblclick'].indexOf(e.type)>=0){stop(e);return;}
       if(e.type==='keydown'){
         var k=String(e.key||'').toLowerCase();
@@ -64,7 +66,7 @@
         note.querySelector('button').onclick=function(){try{if(playback().playing)win.stopAnim();else win.playAnim();}catch(_){}sync();};
       }
       if(note.parentNode!==stage.parentNode)stage.parentNode.insertBefore(note,stage);
-      note.hidden=win.__csView==='session'&&!doc.body.classList.contains('editing');
+      note.hidden=doc.body.classList.contains('comm-viewing')||(win.__csView==='session'&&!doc.body.classList.contains('editing'));
       var p=playback(),b=note.querySelector('button');b.hidden=p.count<2||doc.body.classList.contains('ps-vv-phone');b.textContent=p.playing?'정지':'재생';b.setAttribute('aria-label',p.playing?'애니메이션 정지':'애니메이션 재생');
     }
     function schedule(){if(!queued){queued=true;win.requestAnimationFrame(sync);}}
