@@ -64,7 +64,10 @@ try{for(const size of (process.env.PS_SIZES||'desktop,ipad,phone').split(',')){
   assert.equal(await f.locator('.pw-depth-ghost').count(),0,'a plain tap still opens details and leaves no drag behind');
   for(const width of size==='phone'?[375,393]:size==='ipad'?[768]:[1280]){
    await page.setViewportSize({width,height:size==='desktop'?900:1024});
-   await f.waitForFunction(w=>innerWidth<=w+1,width);
+   // iPad deliberately renders a 1100px layout viewport on the narrower screen.
+   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+   const shell=await page.evaluate(()=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth}));
+   assert.ok(shell.scroll<=shell.viewport+1,JSON.stringify({engine,size,width,shell}));
    const layout=await f.locator('#pwTeam').evaluate(host=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth,board:host.querySelector('.pw-depth-board').getBoundingClientRect().width}));
    assert.ok(layout.scroll<=layout.viewport+1,JSON.stringify({engine,size,width,layout}));
    await f.evaluate(()=>document.querySelector('#pwTeam').scrollIntoView({block:'start'}));
