@@ -9397,7 +9397,7 @@ function renderMotionPaths(){
     }
   });
   world.appendChild(g);
-  if(shown&&!csHintSeen("cs_hint_curve_v3")){csHintMark("cs_hint_curve_v3");try{toast("선수·볼 동선의 가운데 점을 끌면 곡선 · 더블탭하면 직선");}catch(_){}}
+  if(shown&&!(window.psPhoneBoardReadOnly&&window.psPhoneBoardReadOnly())&&!csHintSeen("cs_hint_curve_v3")){csHintMark("cs_hint_curve_v3");try{toast("선수·볼 동선의 가운데 점을 끌면 곡선 · 더블탭하면 직선");}catch(_){}}
 }
 function _wireMpHandle(hg,fr,it,smx,smy){
   var moved=false, lastTap=0;
