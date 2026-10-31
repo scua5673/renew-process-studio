@@ -37,3 +37,8 @@ Chromium/WebKit 각각 320·390·767·1280px 한 줄·글씨 잘림/가로 넘�
 실제 수정 앱을 로컬 가상 API에 연결한 체험 화면 http://127.0.0.1:54487/ 을 제공한다. 서버 outputs/2026-10-31-scout-drag-order/serve.mjs, 실행 세션74653. 후보 자료는 메모리/해당 로컬 출처에만 저장. CSP connect-src self·worker-src none으로 운영/외부 연결을 차단하고 운영DB쓰기0. 재시작 방법과 현재주소는 같은 폴더 server.json. 운영 앱 배포는 아님.
 
 Chromium/WebKit 실제 앱에서 마우스 재정렬·되돌리기·상세창 미개방 통과. Chromium 네이티브 터치 이벤트(280ms 길게 누르기 이후 이동), 새로 열기 후 순서 유지·선수 속성 불변 확인. 관련 단위/예산/토큰23개 통과. 실기기 터치는 미확인. evidence STATUS.json, preview-check-*.json, probe.log, unit.log.
+
+
+## 3.229 배포 준비
+
+사용자가 2026-10-31 배포를 요청했다. 선행 3.228(staging bd3a26a5)을 병합해 다중 운동장 회전 수정을 보존했다. 기존 스카우팅 버튼 위치 테스트의 DOM 모형을 실제 classList/insertBefore 동작에 맞추고, 모바일·데스크톱 공통 헤더 및 포인트 화면 왕복을 함께 검사한다. 배포 증거는 outputs/2026-10-31-mobile-scout-release/에 기록한다.
