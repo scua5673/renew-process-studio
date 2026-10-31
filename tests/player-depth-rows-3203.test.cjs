@@ -17,7 +17,7 @@ test('저장된 줄을 그대로 쓰되 없는 카드는 빼고 빠진 카드는
   const saved=[['p-AM','p-LW','p-CF','p-RW'],['p-CM','p-DM','p-없음'],['p-LB','p-LCB','p-RCB','p-RB','p-GK']];
   const rows=workspace.layoutRows(cards,saved,4);
   assert.deepEqual(ids(rows),[['p-AM','p-LW','p-CF','p-RW'],['p-CM','p-DM'],['p-LB','p-LCB','p-RCB','p-RB'],['p-GK']]);
-  assert.equal(workspace.rowLabel(rows[0]),'FW');
+  assert.equal(workspace.rowLabel(rows[0]),'FW · MF','혼합 줄의 실제 역할군을 모두 표시한다');
 });
 test('카드 옮기기: 다른 줄 가운데로, 가득 찬 줄은 거부, 새 줄은 뒤에, 빈 줄은 없앤다',()=>{
   const rows=workspace.layoutRows(cards,null,4);
