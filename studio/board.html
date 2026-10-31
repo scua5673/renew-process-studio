@@ -4844,7 +4844,7 @@ buildGrid();
   drawCatch=el("rect",{id:"drawCatch",x:-1500,y:-1500,width:W+3000,height:H+3000,fill:"transparent"});world.appendChild(drawCatch);
   tokenLayer=el("g",{id:"tokenLayer"});world.appendChild(tokenLayer);
   world.appendChild(el("g",{id:"snapGuideLayer","pointer-events":"none"}));   /* 2.469 — 끌기 자석 안내선(2.377이 강등한 이유가 '안내선이 없다'였다) */
-  attachDraw();applyView();requestAnimationFrame(function(){try{applyView();}catch(_){}});if(document.body.classList.contains("bc-cam")||document.body.classList.contains("bc-tilt3d")){try{bcAddLight();}catch(_){}}
+  attachDraw();applyView();try{if(state.pitchN>1)window.__applyPitchN?.(state.pitchN);}catch(_){}requestAnimationFrame(function(){try{applyView();}catch(_){}});if(document.body.classList.contains("bc-cam")||document.body.classList.contains("bc-tilt3d")){try{bcAddLight();}catch(_){}}
 }
 let _lastVB="";
 function applyView(){
@@ -4880,10 +4880,7 @@ function applyView(){
     if(a!=="full"){bx=pvWorldRight()?(W-hh):0;by=0;bw=hh;bh=H;}   /* 2.975 */else if(_spSmall){bx=_pr.L-M;by=_pr.T-M;bw=_pr.PW+2*M;bh=_pr.PH+2*M;}else{bx=0;by=0;bw=W;bh=H;}}
   else{world.setAttribute("transform",state.spFlip?`matrix(0 1 -1 0 ${H} 0)`:`matrix(0 -1 1 0 0 ${W})`);
     if(a!=="full"){var _far=pvWorldRight();if(state.spFlip){bx=0;by=_far?(W-hh):0;bw=H;bh=hh;}else{bx=0;by=_far?0:(W-hh);bw=H;bh=hh;}}   /* 2.975 — 상대 쪽 */else if(_spSmall){if(state.spFlip){bx=H-_pr.B-M;by=_pr.L-M;}else{bx=_pr.T-M;by=W-_pr.R-M;}bw=_pr.PH+2*M;bh=_pr.PW+2*M;}else{bx=0;by=0;bw=H;bh=W;}}
-  /* 멀티피치: 기준 프레임을 가로로 넓혀 카드가 화면을 채우게 한다.
-     운동장 1개 기준(1.5:1)을 그대로 쓰면 가로로 넓은 데스크톱에서 좌우 여백이 과하게 남는다.
-     넓히되 '고정 비율'이라 창 크기가 변해도 카드·토큰은 그대로 → 드리프트 없음. 남는 여백은 토큰 한 줄 정도. */
-  if((state.pitchN||1)>1){ var _mpW=bh*2.2; if(_mpW>bw){ bx-=(_mpW-bw)/2; bw=_mpW; } }
+  /* Multiple pitches use the same fixed world frame in every orientation. */
   BASEVB=[bx,by,bw,bh];
   try{window.__baseVB=BASEVB.slice();}catch(_){}
   /* 2.800 — 폰(사용자 «운동장이 최대한 커졌으면»): 세로 폰은 폭이 한계라 터치라인 쪽 카드 여백(M=30 단위 ≈ 15px)이 그대로 크기를 깎는다.

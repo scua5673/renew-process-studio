@@ -38,16 +38,18 @@ try{
   const five=await f.evaluate(async()=>{
     const wait=ms=>new Promise(r=>setTimeout(r,ms));
     window.__setPitchN(5);window.__applyPitchN&&window.__applyPitchN(5);await wait(600);
-    try{applyView();}catch(_){} window.__applyPitchN&&window.__applyPitchN(5);await wait(600);   /* 5개로 저장된 보드를 다시 연 것과 같이 — 배치가 가로로 넓다 */
+    try{applyView();}catch(_){} window.__applyPitchN&&window.__applyPitchN(5);await wait(600);   /* 5개로 저장된 보드를 다시 연 것과 같이 */
     const rs=[...document.querySelectorAll('#ps-multipitch [data-pitch-rect]')].map(g=>g.getAttribute('data-pitch-rect').split(',').map(Number));
     const sig=((document.querySelector('#tiltSurface .tilt-stadium')||{}).__sig||'').split('|');
     const u={L:Math.min(...rs.map(r=>r[0])),R:Math.max(...rs.map(r=>r[0]+r[2])),T:Math.min(...rs.map(r=>r[1])),B:Math.max(...rs.map(r=>r[1]+r[3]))};
-    const out={cards:rs.length,u,L:+sig[1],R:+sig[2],T:+sig[3],B:+sig[4],W};
+    const spec=window.__getPitchSpec();
+    const out={cards:rs.length,rects:rs,ratio:spec.wid/spec.len,u,L:+sig[1],R:+sig[2],T:+sig[3],B:+sig[4],W};
     window.__setPitchN(1);window.__applyPitchN&&window.__applyPitchN(1);await wait(400);
     return out;
   });
   assert.equal(five.cards,5);
-  assert.ok(five.u.L<0||five.u.R>five.W,'the wide five-pitch layout reaches past one pitch '+JSON.stringify(five));
+  assert.ok(five.u.L>=0&&five.u.R<=five.W,'fitted pitches stay within the stable world frame '+JSON.stringify(five));
+  assert.ok(five.rects.every(r=>Math.abs(r[2]/r[3]-five.ratio)<1e-6),'every 3D pitch uses the selected regulation aspect ratio');
   assert.ok(five.L<=five.u.L&&five.R>=five.u.R&&five.T<=five.u.T&&five.B>=five.u.B,'the stadium encloses every card '+JSON.stringify(five));
   assert.ok(five.L>five.u.L-40&&five.R<five.u.R+40,'and hugs the layout (no one-pitch box) '+JSON.stringify(five));
 
