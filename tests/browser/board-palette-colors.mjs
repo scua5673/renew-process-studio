@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';import path from 'node:path';
 import {startFixture,openApp,ready,SIZES,SHOTS} from '../fixtures/team-app.mjs';
 // 9af3a112: content swatches must retain their colors inside the shared sizebox container.
 const fx=await startFixture(),browsers={},engine=process.env.PS_BROWSER_ENGINE||'chromium';for(const s of Object.values(SIZES))s.engine=engine;
+SIZES.compactDesktop={engine,ctx:{viewport:{width:375,height:900},deviceScaleFactor:1,hasTouch:false}};
 try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').map(Number)){
- const size=width<700?'phone':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:900};SIZES[size].ctx.screen={width,height:900};
+ const size=width<700?'compactDesktop':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:900};SIZES[size].ctx.screen={width,height:900};
  const {page,context}=await openApp(fx,size,{browsers,tilt3d:false});
  async function board(){await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());const f=await(await page.waitForSelector('#fBoard')).contentFrame();await f.waitForFunction(()=>window.__boardReady&&_boardPrivateLoaded&&boardPrivateCurrent(_boardPrivateOwner)&&!!(_boardPrivateRecord?_boardPrivateRecord.base:_boardPrivateBase));return f;}
  let f=await board();

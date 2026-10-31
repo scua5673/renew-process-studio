@@ -3,7 +3,7 @@ import path from 'node:path';
 import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 // 3.125 — 오류 제보 70307dd9 «팀 등록에서 선수 사진을 넣을 때도 보드 토큰처럼 사진 영역(확대 · 좌우 · 위아래)을 편집».
 // 사진을 고르면 영역 편집 창이 뜨고, 끌기 · 막대로 정한 정사각형이 그 선수 사진이 된다. 취소하면 아무것도 바뀌지 않는다.
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});

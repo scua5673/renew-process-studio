@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';import path from 'node:path';
 import {startFixture,openApp,ready,SIZES,SHOTS} from '../fixtures/team-app.mjs';
 const fx=await startFixture(),browsers={},engine=process.env.PS_BROWSER_ENGINE||'chromium';for(const s of Object.values(SIZES))s.engine=engine;
 let step='',lastPage,lastWidth;
+// Editing at narrow widths now represents a narrow computer window; phones are viewers.
+SIZES.compactDesktop={engine,ctx:{viewport:{width:375,height:900},deviceScaleFactor:1,hasTouch:false}};
 try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').map(Number)){
- const size=width<700?'phone':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:900};SIZES[size].ctx.screen={width,height:900};
+ const size=width<700?'compactDesktop':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:900};SIZES[size].ctx.screen={width,height:900};
  const {page,context,logs}=await openApp(fx,size,{browsers,tilt3d:false});
  lastPage=page;lastWidth=width;
  async function board(){await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());const f=await(await page.waitForSelector('#fBoard')).contentFrame();await f.waitForFunction(()=>window.__boardReady&&_boardPrivateLoaded&&boardPrivateCurrent(_boardPrivateOwner)&&!!(_boardPrivateRecord?_boardPrivateRecord.base:_boardPrivateBase)&&window.__psShapeMenu&&window.PSMeetForm);return f;}
@@ -56,7 +58,7 @@ try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').ma
   const b={libId:'Vfeedback-board',type:'board',name:'합성 가져올 작전판',createdBy:psMyUid(),pages:[{name:'훈련 원본',snap:structuredClone(sn),anim:{frames:[{snap:structuredClone(sn),dur:1},{snap:{...structuredClone(sn),players:[{...sn.players[0],x:700}]},dur:2}]}}]},m={libId:'Vfeedback-meeting',type:'meeting',name:'합성 가져올 미팅',createdBy:psMyUid(),slides:[{title:'원본 제목',points:['원본 메모'],snap:structuredClone(sn),pdfOrientation:'landscape'}]};
   await boardStore.set('cs_drill_lib_v1',[b,m]);return JSON.stringify([b,m]);
  });
- async function openImport(){if(await f.locator('#ksImportLibrary').isVisible())await f.locator('#ksImportLibrary').click();else{await f.locator('#ksBot .kb-more').tap();await f.locator('#ksPop').getByRole('button',{name:'보관함에서 가져오기',exact:true}).tap();}await f.locator('#psMeetImport').waitFor({state:'visible'});}
+ async function openImport(){if(await f.locator('#ksImportLibrary').isVisible())await f.locator('#ksImportLibrary').click();else{await f.locator('#ksBot .kb-more').click();await f.locator('#ksPop').getByRole('button',{name:'보관함에서 가져오기',exact:true}).click();}await f.locator('#psMeetImport').waitFor({state:'visible'});}
  async function importItem(name){step='library-copy '+name;await openImport();await f.getByRole('button',{name,exact:true}).click();await f.locator('#psMeetImport .mi-go').click();await f.waitForFunction(()=>!document.getElementById('psMeetImport'));}
  await importItem('합성 가져올 작전판 · 작전판');assert.equal(await f.evaluate(()=>anim.slides.length),3);assert.deepEqual(await f.evaluate(()=>anim.slides[2].frames.map(fr=>fr.snap.players[0].x)),[500,700]);assert.equal(await f.locator('#animBar').isVisible(),false,'page preview leaves meeting tools available');
  await importItem('합성 가져올 미팅 · 미팅');assert.equal(await f.evaluate(()=>anim.slides.length),4);assert.deepEqual(await f.evaluate(()=>anim.slides[3].points),['원본 메모']);

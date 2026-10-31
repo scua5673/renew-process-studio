@@ -11,7 +11,7 @@ function line(start){const a=src.indexOf(start);assert.ok(a>=0,start);return src
 test('choosing an orientation turns every slide pitch the same way and keeps the choice per slide',()=>{
   const code=line('  window.__meetingPageChoose=function(orientation){')+'\n'+src.slice(src.indexOf('\n',src.indexOf('  window.__meetingPageChoose=function(orientation){'))+1,src.indexOf('  };',src.indexOf('  window.__meetingPageChoose=function(orientation){'))+4);
   let renders=0;
-  const c=vm.createContext({window:{__ksRender(){renders++;}},communityBoardReadOnly:()=>false,
+  const c=vm.createContext({psPhoneBoardReadOnly:()=>false,window:{__ksRender(){renders++;}},communityBoardReadOnly:()=>false,
     anim:{slides:[{snap:{orientation:'h',spFlip:true}},{snap:{orientation:'h'}},{title:'그림 없음'}]}});
   c.window.__vaultReadOnly=false;
   vm.runInContext(code,c);
@@ -91,7 +91,7 @@ test('ksPop can open above its button and clamps to the screen',()=>{
   const code=src.slice(a,src.indexOf('\n',src.indexOf('\n',a)+1));
   const made=[];let clickCb=null;
   const doc={getElementById:()=>null,createElement:()=>{const el={className:'',id:'',style:{},children:[],textContent:'',offsetWidth:160,offsetHeight:100,appendChild(c){this.children.push(c);},remove(){}};return el;},body:{appendChild(m){made.push(m);}},addEventListener:(t,cb)=>{clickCb=cb;},removeEventListener(){}};
-  const c=vm.createContext({document:doc,window:{innerWidth:375,innerHeight:812},setTimeout:f=>f()});
+  const c=vm.createContext({psPhoneBoardReadOnly:()=>false,document:doc,window:{innerWidth:375,innerHeight:812},setTimeout:f=>f()});
   vm.runInContext(code,c);
   c.ksPop(300,759,[['a',()=>{}]],true);
   assert.equal(made[0].style.top,(759-100-4)+'px','above: the menu ends 4px above the button top');
@@ -106,7 +106,7 @@ test('choosing an orientation also turns the live board, redraws thumbnails and 
   const a=src.indexOf('  window.__meetingPageChoose=function(orientation){');
   const code=src.slice(a,src.indexOf('  };',a)+4);
   const store={};let applied=0;
-  const c=vm.createContext({window:{__ksRender(){},__snapToThumb:s=>'<svg o="'+s.orientation+'"/>'},communityBoardReadOnly:()=>false,
+  const c=vm.createContext({psPhoneBoardReadOnly:()=>false,window:{__ksRender(){},__snapToThumb:s=>'<svg o="'+s.orientation+'"/>'},communityBoardReadOnly:()=>false,
     anim:{slides:[{snap:{orientation:'h'},thumb:'old'},{snap:{orientation:'h'},thumb:'old'},{title:'그림 없음'}]},
     state:{orientation:'h',spFlip:true},autoOrient:true,applyView(){applied++;},renderTokens(){},renderDrawings(){},
     localStorage:{setItem(k,v){store[k]=v;},getItem(k){return k in store?store[k]:null;}}});
@@ -141,7 +141,7 @@ test('a new meeting starts in the direction last chosen on this device, portrait
   const a=src.indexOf('  window.__meetDefaultOrient=function(){');
   const code=src.slice(a,src.indexOf('};\n',src.indexOf('  window.__meetReset=function(){'))+3);
   for(const [saved,want] of [[null,'portrait'],['portrait','portrait'],['landscape','landscape'],['sideways','portrait']]){
-    const c=vm.createContext({window:{},anim:{slides:[1]},meetIdx:0,meetUnbindNew(){},localStorage:{getItem:()=>saved}});
+    const c=vm.createContext({psPhoneBoardReadOnly:()=>false,window:{},anim:{slides:[1]},meetIdx:0,meetUnbindNew(){},localStorage:{getItem:()=>saved}});
     vm.runInContext(code,c);c.window.__meetReset();
     assert.equal(c.window.__meetingPdfOrientation,want,String(saved));
     assert.equal(c.anim.slides.length,0);assert.equal(c.window.__meetBlank,true);

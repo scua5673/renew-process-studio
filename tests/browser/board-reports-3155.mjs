@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp,SIZES,OUT} from '../fixtures/team-app.mjs';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',fx=await startFixture(),browsers={};for(const s of Object.values(SIZES))s.engine=engine;
-try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').map(Number)){
- const size=width<700?'phone':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:900};
+// Text editing is available on iPad and computers; phone denial is covered by phone-board-readonly.
+try{for(const width of (process.env.PS_WIDTHS||'768,1280').split(',').map(Number)){
+ const size=width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:900};
  const {page,context}=await openApp(fx,size,{browsers});await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());const f=await(await page.waitForSelector('#fBoard')).contentFrame();
  await f.waitForFunction(()=>window.__boardReady&&_boardPrivateLoaded&&boardPrivateCurrent(_boardPrivateOwner)&&!!(_boardPrivateRecord?_boardPrivateRecord.base:_boardPrivateBase));
  await f.evaluate(()=>{__setTilt(false);boardShowDefault();state.tool='move';state.drawings=[{type:'rect',color:'#fff',pts:[{x:200,y:200},{x:300,y:300}]}];anim.frames=[];animActive=-1;document.getElementById('animAdd').click();document.getElementById('animAdd').click();document.getElementById('animAdd').click();selectAnimFrame(1);state.drawings[0].pts[0].x=240;renderDrawings();});
@@ -24,7 +25,7 @@ try{for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').ma
  await f.evaluate(()=>{selectAnimFrame(1);state.orientation='h';applyView();__setTilt(true);state.drawings=[];document.querySelector('#toolSeg [data-tool=text]').click();renderDrawings();});await page.waitForTimeout(250);
  const pos=await f.evaluate(()=>{const p={x:CX-65,y:H+20},m=document.createElementNS('http://www.w3.org/2000/svg','circle');m.setAttribute('cx',p.x);m.setAttribute('cy',p.y);m.setAttribute('r',1);world.appendChild(m);const r=m.getBoundingClientRect();m.remove();return {x:r.x+r.width/2,y:r.y+r.height/2};});
  const box=await page.locator('#fBoard').boundingBox(),scale=engine==='webkit'&&width<1000?await page.evaluate(()=>visualViewport.scale):1;
- if(width<1000)await page.touchscreen.tap((box.x+pos.x)*scale,(box.y+pos.y)*scale);else await page.mouse.click(box.x+pos.x,box.y+pos.y);
+ if(size==='ipad')await page.touchscreen.tap((box.x+pos.x)*scale,(box.y+pos.y)*scale);else await page.mouse.click(box.x+pos.x,box.y+pos.y);
  await f.locator('.ps-text-inline-editor').fill('벤치 위 합성 글',{timeout:5000});await page.keyboard.press('Home');assert.equal(await f.evaluate(()=>animActive),1,'typing keeps Home in the editor');await f.getByRole('button',{name:'완료',exact:true}).click();
  // Close the editing card before checking whether the bench text itself receives a pointer.
  if(await f.locator('.ps-in-x').isVisible())await f.locator('.ps-in-x').click();

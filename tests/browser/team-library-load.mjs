@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 2.903 — 제보 «팀명단 설정에서 만든 팀을 불러올시 11명만 불러오게 되어있음»: 저장 팀 불러오기는 인원 제한이 없다.
 // 11명은 4-3-3 자리, 나머지는 아래 대기 줄. 기본은 전원 선택. 합성 팀 fixture 에서만 돈다.
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});

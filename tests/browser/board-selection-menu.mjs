@@ -7,6 +7,7 @@ try{for(const size of ['desktop','ipad','phone']){
  const {page,context,logs}=await openApp(fx,size,{browsers,tilt3d:false});
  async function board(){await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());const f=await(await page.waitForSelector('#fBoard')).contentFrame();await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&boardPrivateCurrent(_boardPrivateOwner)&&window.__psSelectionMenu);return f;}
  let f=await board();
+ if(size==='phone'){assert.equal(await f.evaluate(()=>psPhoneBoardReadOnly()),true);assert.equal(await f.locator('.sel-ctl').isVisible(),false);await context.close();continue;}
  for(const name of ['board-training-checks','board-selection-checks'])await f.addScriptTag({path:fileURLToPath(new URL('../fixtures/'+name+'.js',import.meta.url))});
  const results=await f.evaluate(()=>PSSelectionChecks.run());console.log(JSON.stringify({engine,size,results}));assert.deepEqual(results.filter(r=>!r.pass),[]);
  await f.evaluate(()=>{selectItem('player',state.players[0]);__selPanelOpen(true);});

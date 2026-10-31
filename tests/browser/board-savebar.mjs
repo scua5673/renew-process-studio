@@ -36,7 +36,7 @@ try{
     await f.evaluate(()=>{ensureAnimMode(true);try{renderAnimFrames();}catch(_){}});await page.waitForTimeout(700);
     const anim=await f.evaluate(()=>{const a=document.getElementById('animBar').getBoundingClientRect(),lines=document.getElementById('lineLayer')||document.getElementById('world');
       return {shown:getComputedStyle(document.getElementById('psSaveBar')).display!=='none',animTop:a.top,pitchBottom:lines.getBoundingClientRect().bottom};});
-    assert.equal(anim.shown,false);assert.ok(anim.pitchBottom<=anim.animTop+2,'운동장 선이 애니메이션 막대에 가리지 않는다 '+JSON.stringify(anim));
+    assert.equal(anim.shown,false);assert.equal(await f.locator('#animBar').isVisible(),false,'phone scene editing is hidden; playback lives in the viewer notice');
   }
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
