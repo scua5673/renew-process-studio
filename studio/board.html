@@ -4,6 +4,7 @@
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script src="board-phone-view.js"></script>
 <script src="storage.js"></script>
 <script src="team-library.js"></script>
 <script src="team-load.js"></script>
@@ -5265,7 +5266,7 @@ function equipSVGInner(t){
   return '';
 }
 function openTokenPhotoCrop(img,targets){
-  if(window.__vaultReadOnly||communityBoardReadOnly())return;
+  if(psPhoneBoardReadOnly()||window.__vaultReadOnly||communityBoardReadOnly())return;
   const ov=document.createElement('div');ov.id='tokenPhotoCrop';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','사진 영역 편집');
   ov.style.cssText='position:fixed;inset:0;z-index:10000;background:#0009;display:grid;place-items:center;padding:16px';
   ov.innerHTML='<div style="background:var(--panel,#fff);color:var(--ink,#14161a);padding:20px;border-radius:16px;width:min(360px,100%);box-sizing:border-box"><h3 style="margin:0 0 8px">사진 영역 편집</h3><p style="font-size:13px">사진을 끌어서 위치를 맞추고 확대하세요.</p><canvas width="280" height="280" style="display:block;width:100%;max-width:280px;margin:auto;border-radius:50%;touch-action:none;cursor:grab" aria-label="토큰 사진 미리보기"></canvas><label style="display:block;margin-top:16px">확대 <input type="range" min="0.5" max="4" step="0.01" value="1" aria-label="사진 확대" style="width:100%"></label><label>좌우 <input type="range" min="0" max="100" value="50" aria-label="사진 좌우 위치" style="width:100%"></label><label>위아래 <input type="range" min="0" max="100" value="50" aria-label="사진 위아래 위치" style="width:100%"></label><div style="margin-top:12px"><div style="font-size:12px;font-weight:700;margin-bottom:6px">배경색 <span style="font-weight:500;color:var(--txt-dim,#646A73)">— 얼굴을 원보다 작게 줄이거나 투명 PNG 면 이 색이 둘레에 깔려요</span></div><div data-bgs style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn" data-cancel>취소</button><button class="btn primary" data-save>적용</button></div></div>';
@@ -8340,10 +8341,10 @@ function _undoEntry(e){ if(e&&e.board){ loadSnap(e.board); _animApplyUndo(e.anim
 function _boardHistoryEntry(){var e={board:captureSnap(),anim:_animSnapForUndo()};return window.PSBoardPageHistory?PSBoardPageHistory.tag(e):e;}
 function pushUndo(){try{undoStack.push(_boardHistoryEntry());if(undoStack.length>50)undoStack.shift();redoStack.length=0;}catch(_){} try{_boardUserTouched=true;}catch(_){}}   /* 2.903 — 사용자가 손댐 */
 try{document.addEventListener("input",function(e){ try{ var t=e.target; if(t&&e.isTrusted!==false&&t.closest&&t.closest(".sel-ctl,#lsPop"))_boardUserTouched=true; }catch(_){} },true);}catch(_){}
-function undoLast(){try{if(typeof animPlaying!=="undefined"&&animPlaying){animRestore=null;stopAnim();}}catch(_){}if(!undoStack.length){toast("되돌릴 작업이 없어요");return;}var _ue=null;try{redoStack.push(_boardHistoryEntry());if(redoStack.length>50)redoStack.shift();_ue=undoStack.pop();_undoEntry(_ue);}catch(_){}toast("되돌렸습니다 ↩");  /* 2.927 — «보드 가져오기»를 되돌리면 그 연결도 끊는다(안 그러면 «보드 저장» 때 예전 보드가 보관함 자료를 덮는다) */
+function undoLast(){if(psPhoneBoardReadOnly())return psPhoneBoardNotice();try{if(typeof animPlaying!=="undefined"&&animPlaying){animRestore=null;stopAnim();}}catch(_){}if(!undoStack.length){toast("되돌릴 작업이 없어요");return;}var _ue=null;try{redoStack.push(_boardHistoryEntry());if(redoStack.length>50)redoStack.shift();_ue=undoStack.pop();_undoEntry(_ue);}catch(_){}toast("되돌렸습니다 ↩");  /* 2.927 — «보드 가져오기»를 되돌리면 그 연결도 끊는다(안 그러면 «보드 저장» 때 예전 보드가 보관함 자료를 덮는다) */
   try{ if(_ue&&_ue.__linkMark&&window.__psPages&&window.__psPages.linkClear){ window.__psPages.linkClear(_ue.__linkMark); toast("가져오기를 되돌렸어요 · 보관함 연결도 끊었어요"); } }catch(_){}
 }
-function redoLast(){try{if(typeof animPlaying!=="undefined"&&animPlaying){animRestore=null;stopAnim();}}catch(_){}if(!redoStack.length){toast("다시 실행할 작업이 없어요");return;}try{undoStack.push(_boardHistoryEntry());if(undoStack.length>50)undoStack.shift();_undoEntry(redoStack.pop());}catch(_){}toast("다시 실행 ↪");}
+function redoLast(){if(psPhoneBoardReadOnly())return psPhoneBoardNotice();try{if(typeof animPlaying!=="undefined"&&animPlaying){animRestore=null;stopAnim();}}catch(_){}if(!redoStack.length){toast("다시 실행할 작업이 없어요");return;}try{undoStack.push(_boardHistoryEntry());if(undoStack.length>50)undoStack.shift();_undoEntry(redoStack.pop());}catch(_){}toast("다시 실행 ↪");}
 function clearBoardHistory(){undoStack.length=0;redoStack.length=0;}
 try{window.__clearBoardHistory=clearBoardHistory;}catch(_){}
 
@@ -8829,7 +8830,8 @@ function boardLinkSaveText(r){
   return (ok.length?(" · 보관함 "+ok.join("·")+"에도 저장됨"):"")+(no.length?(" · "+no.join(" · ")):"");
 }
 window.__boardLinkWriteBack=boardLinkWriteBack;
-async function boardSaveExplicit(o){   /* 3.014 — o.noLink: 보관함 연결 되쓰기 없이 · o.quiet: 성공 알림 없이(«새 보드»·«이전 보드»가 제 알림을 띄운다) */
+async function boardSaveExplicit(o){
+  if(psPhoneBoardReadOnly())return psPhoneBoardNotice();   /* 3.014 — o.noLink: 보관함 연결 되쓰기 없이 · o.quiet: 성공 알림 없이(«새 보드»·«이전 보드»가 제 알림을 띄운다) */
   o=(o&&typeof o==="object"&&!o.type)?o:{};
   if((_boardManualSaving&&boardPrivateCurrent(_boardManualSaving))||_vaultBoardContext||window.__vaultEdit)return false;
   if(!_boardPrivateLoaded||!boardPrivateCurrent(_boardPrivateOwner)){toast("보드를 아직 불러오는 중이에요 — 잠시 뒤 «저장»을 다시 눌러 주세요. 계속되면 다시 로그인해 주세요");   /* 3.039 — «보드 연결»은 확인할 방법이 없는 말이었다(피드백 CP-17) */return false;}
@@ -8871,6 +8873,7 @@ window.__boardSaveOne=boardSaveOne;
 /* 2.975 — «저장» 단축키(기본 ⌘S · 단축키 표 «보드» 탭에서 바꾼다). 지금 화면의 저장을 누른 것과 같다 — 나가지 않는다.
    훈련 편집기는 «저장하기»가 저장과 닫기를 함께 하므로 ⌘S 는 임시 저장(초안)만 한다. */
 window.__psSaveShortcut=function(){ try{
+  if(psPhoneBoardReadOnly())return psPhoneBoardNotice();
   if(document.body.classList.contains("editing")){ try{saveEditorDraft();}catch(_){} toast("작업 중인 훈련을 임시 저장했어요 · 보관함에 넣기는 «저장하기»"); return; }
   if(window.__vaultViewMode&&window.__vaultEdit){ if(window.__vaultReadOnly){ toast("보기 전용이라 저장하지 않아요"); return; } if(window.__vaultSaveOnly&&window.__vaultSaveOnly())return; }
   if(window.__vaultEdit){ var cs=document.getElementById("vCreateSave"); if(cs&&cs.offsetParent!==null){ cs.click(); return; } }
@@ -9239,7 +9242,7 @@ function applyTokensToLaterFrames(frames,index,snap){
   if(frames[index])delete frames[index].curves;
 }
 function resetLaterAnimTokens(){
-  if(window.__vaultReadOnly||communityBoardReadOnly())return;
+  if(psPhoneBoardReadOnly()||window.__vaultReadOnly||communityBoardReadOnly())return;
   if(animPlaying)stopAnim();
   if(animActive<0||!anim.frames[animActive])return;
   pushUndo();const snap=captureSnap();
@@ -12063,10 +12066,10 @@ function squadSpreadAll(opts,uid0,sq){
 function openSquad(){document.querySelectorAll(".popmenu.on").forEach(m=>m.classList.remove("on"));document.getElementById("squadMgr").classList.add("on");renderSquad();}
 function closeSquad(){document.getElementById("squadMgr").classList.remove("on");}
 async function openAnalysisTeamLibrary(){
-  if(window.__vaultReadOnly||communityBoardReadOnly())return;
+  if(psPhoneBoardReadOnly()||window.__vaultReadOnly||communityBoardReadOnly())return;
   var teamStore=PSTeamLibrary.create(window),teamOwner=teamStore.owner(),teams;
   try{teams=await teamStore.read(teamOwner);}catch(_){toast('저장 명단을 확인하지 못했습니다. 기존 자료는 유지됩니다. 잠시 후 다시 열어 주세요.');return;}
-  if(window.__vaultReadOnly||communityBoardReadOnly())return;
+  if(psPhoneBoardReadOnly()||window.__vaultReadOnly||communityBoardReadOnly())return;
   var mask=document.createElement('div');mask.style.cssText='position:fixed;inset:0;z-index:100000;background:#0007;display:grid;place-items:center;padding:16px';
   mask.innerHTML='<section role="dialog" aria-label="저장 팀 불러오기" style="background:var(--panel,#fff);color:var(--txt,#172235);border-radius:14px;padding:20px;width:440px;max-width:100%;max-height:85vh;overflow:auto"><h3>저장 팀 불러오기</h3><p>보관함 › 팀 등록에 저장한 명단입니다. 불러올 선수를 선택하세요. 판에 놓인 선수는 자리 그대로 포지션이 맞는 선수로 바뀌고, 자리보다 많은 선수는 운동장 아래 대기 줄에 놓입니다.</p><select id="alTeam" aria-label="저장 팀" style="width:100%;padding:8px"></select><select id="alSide" aria-label="배치할 팀" style="width:100%;padding:8px;margin:8px 0"><option value="blue">팀 1</option><option value="red">팀 2</option></select><img id="alEmblem" alt="팀 엠블럼" width="56" height="56" style="object-fit:contain" hidden><div id="alPlayers"></div><p id="alError" role="status"></p><div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="alManage">팀·선수 관리</button><button class="btn" id="alCancel">취소</button><button class="btn primary" id="alLoad">불러오기</button></div></section>';
   document.body.appendChild(mask);var select=mask.querySelector('#alTeam');teams.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.textContent=t.name;select.appendChild(o);});
@@ -13683,7 +13686,7 @@ async function openLibDrawEditor(libId, readOnly, opts){
   /* 2.464 — QA #24 같은 증상: 이 문으로 들어와도 닫을 때(공용 closeEditor) 라이브 장면을 되살린다 */
   try{ if(!document.body.classList.contains("editing")){ editorAnimStash=(window.__animFrames?__animFrames():null); editorAnimIdx=(typeof animActive!=="undefined"&&animActive>=0)?animActive:0; editorAnimStashed=true; } }catch(_){}
   try{window.__animReset&&window.__animReset();}catch(_){}
-  editorReadOnly=!!readOnly;
+  editorReadOnly=!!readOnly||psPhoneBoardReadOnly();
   editorLibFromOvl=document.getElementById("drillLib").classList.contains("on");
   closeLib();
   editorStash=captureSnap();
@@ -13756,7 +13759,8 @@ function applyEditorReadOnly(d){
       /* 2.276 — 내 훈련이면 배너에서 바로 편집(사용자 "보기에서 바로 편집") */
       var _own=false; try{_own=canEditItem(d);}catch(_){}
       b.innerHTML="<svg style=\"width:14px;height:14px;vertical-align:-2px\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"2\"/><path d=\"M22 12c-2.67 4.67-6 7-10 7s-7.33-2.33-10-7c2.67-4.67 6-7 10-7s7.33 2.33 10 7\"/></svg> <b>보기 전용</b> — "+(_own?"내 훈련입니다.":(itemCreatorLabel(d)?(esc(itemCreatorLabel(d))+"님이 만든 훈련입니다. "):"")+"편집하려면 보관함에서 <b>복사</b>를 눌러 내 훈련으로 만드세요.");
-      if(_own){ var _eb3=document.createElement("button"); _eb3.type="button"; _eb3.textContent="편집하기";
+      if(psPhoneBoardReadOnly())b.textContent=PSPhoneBoardView.message;
+      if(_own&&!psPhoneBoardReadOnly()){ var _eb3=document.createElement("button"); _eb3.type="button"; _eb3.textContent="편집하기";
         _eb3.style.cssText="margin-left:10px;border:0;border-radius:8px;background:var(--blue,var(--ps-navy,#14213D));color:#fff;font:800 11px Pretendard,system-ui;padding:5px 11px;cursor:pointer;vertical-align:-1px";
         _eb3.onclick=function(ev){ev.stopPropagation();try{openLibDrawEditor(d.libId,false);}catch(_){}};
         b.appendChild(_eb3); }
@@ -13959,6 +13963,8 @@ window.addEventListener("message",function(e){
   }catch(_){}
 });
 function openEditor(id,type){
+  if(psPhoneBoardReadOnly()&&id==null)return psPhoneBoardNotice();
+  editorReadOnly=psPhoneBoardReadOnly();
   var _openFrames=null;
   stopTrainingWizard();
   window.__trainingSessionMeta=null;
@@ -14043,6 +14049,7 @@ function openEditor(id,type){
   const _ep=$("editorPanel");if(_ep)_ep.scrollTop=0;
   /* 일반 '새 훈련'만 새 4단계 흐름을 사용한다.
      기존 자료 편집·세트피스·일정 연결은 검증된 기존 흐름을 유지한다. */
+  if(editorReadOnly)applyEditorReadOnly(editorDraft);
   if(id==null&&type!=="setpiece"&&!window.__editorSchedLink)startTrainingWizard();
 }
 let editorSaveAsCopy=false;
@@ -14076,7 +14083,7 @@ function editorExportPdf(){
   try{ printDrill(d,d.name); }catch(e){ try{toast("PDF를 만들지 못했어요 — 다시 눌러 주세요");}catch(_){} }
 }
 function closeEditor(save){
-  if(editorReadOnly)save=false;   /* 보기 전용 — 저장 차단(남의 훈련은 수정 불가) */
+  if(editorReadOnly||psPhoneBoardReadOnly())save=false;   /* 보기 전용 — 저장 차단(남의 훈련은 수정 불가) */
   try{document.body.classList.remove("ep-sp","ep-sp-more");}catch(_){}   /* 2.278 — 편집기를 닫으면 세트피스 양식 스위치도 내린다 */
   /* 저장/닫기 버튼은 명시적 의사이므로 재생을 먼저 멈춰 편집 전 화면을 복원한 뒤 캡처한다. */
   restoreAnimBeforeCapture();
@@ -17895,7 +17902,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(ty==='board'&&boardGen===null)return;
     function stillOpen(){return ty!=='board'||vaultBoardCurrent(boardGen);}
     window.__vaultBook=!!(ty==='board'&&d.book);   /* 2.985 — 패턴북 */
-    var ro=!!readOnly;
+    var ro=!!readOnly||psPhoneBoardReadOnly();
     try{
       window.__vaultReadOnly=ro;
       if(ro&&window.__vaultAutoSaveCancel)window.__vaultAutoSaveCancel();
@@ -17955,6 +17962,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{parent.postMessage({source:'board',type:'vaultViewTab'},'*');}catch(_){}   // 보관함 탭 유지한 채 캔버스에 표시(작전판 탭·작업 화면은 보존)
   }
   function newBoardItem(type,opt){
+    if(psPhoneBoardReadOnly())return psPhoneBoardNotice();
     if(!psVaultRequireLogin())return;
     if(type==='board'){if(vaultBoardBegin()===null)return;}
     else if(_vaultBoardContext)window.__vaultBoardLeave();
@@ -18412,7 +18420,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       if(document.body.classList.contains("focus-board")){ fm.showSeen=true; return; }
       if(fm.showSeen&&meetMatchInplaceNow()){ fm.showReturn=false; doViewClose(); } }).observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(_){} })();
   function showViewBar(name,readOnly){ window.__vaultManualDirty=false;var bar=ensureCreateBar();   /* 보관함 항목 열기 — 보기와 편집을 분리하고 작업 보드는 보존 */
-    var ro=!!readOnly;
+    var ro=!!readOnly||psPhoneBoardReadOnly();
     try{window.__vaultViewMode=true;window.__vaultReadOnly=ro;var _sb=$id("vCreateSave");if(_sb){_sb.style.display=ro?"none":"";_sb.textContent="저장하고 나가기";}var _so=$id("vCreateSaveOnly");if(_so)_so.style.display=ro?"none":"";var _cb=$id("vCreateCancel");if(_cb)_cb.textContent=ro?"닫기":"나가기";var _fl=$id("vCreateFlow");if(_fl)_fl.style.display="none";}catch(_){}
     $id("vCreateTitle").textContent=(name||"작전판");
     $id("vCreateSub").textContent=ro?"· 보기 전용 · 저장 안 함":"· 저장 버튼을 눌러야 저장됩니다";
@@ -20619,9 +20627,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         try{var _ds=doc.createElement('style');_ds.textContent=deskCss(meetingPdfOrientation(anim.slides)==='landscape');doc.head.appendChild(_ds);}catch(_){}
         fit();
         /* 3.011 — 경기 준비에서 바로 «▶ 슬라이드쇼»: 발표 진입(setFocus)이 지금 장을 -1 로 둔 사이에 이 load 가 오면 anim.slides[-1] 이다(TypeError) — 그때 빈 메모 줄은 넣지 않는다 */
-        if(!window.__vaultReadOnly&&!communityBoardReadOnly()&&anim.slides[index]&&!(anim.slides[index].points||[]).some(function(p){return String(p||'').trim();})){var notes=doc.querySelector('.mp-notes');if(notes){var blank=doc.createElement('div');blank.className='mp-line point';blank.dataset.pointIndex='0';blank.textContent='메모 입력';blank.style.color='#94a3b8';notes.appendChild(blank);}}
+        if(!psPhoneBoardReadOnly()&&!window.__vaultReadOnly&&!communityBoardReadOnly()&&anim.slides[index]&&!(anim.slides[index].points||[]).some(function(p){return String(p||'').trim();})){var notes=doc.querySelector('.mp-notes');if(notes){var blank=doc.createElement('div');blank.className='mp-line point';blank.dataset.pointIndex='0';blank.textContent='메모 입력';blank.style.color='#94a3b8';notes.appendChild(blank);}}
         doc.addEventListener('click',function(e){
-          if(window.__vaultReadOnly||communityBoardReadOnly()||e.target.closest('.mp-inline-editor,.mp-inline-tools'))return;
+          if(psPhoneBoardReadOnly()||window.__vaultReadOnly||communityBoardReadOnly()||e.target.closest('.mp-inline-editor,.mp-inline-tools'))return;
           if(e.target.closest('.mp-pitch')){var _sc=e.target.closest('.mp-scene');window.__meetingPageEdit();if(_sc&&window.__meetSceneGo)window.__meetSceneGo(+_sc.dataset.scene);return;}   /* 2.935 — 장면을 누르면 그 장면을 편집 */
           var line=e.target.closest('.mp-line.title,.mp-line.point,.mp-brand');
           if(!line)return;
@@ -20656,7 +20664,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   }
   window.__meetingPageRefresh=function(){clearTimeout(timer);var _typing=false;try{var _ae=document.activeElement;_typing=!!(_ae&&_ae.closest&&_ae.closest('#ksEd'));}catch(_){}timer=setTimeout(render,_typing?350:100);};   /* 2.930 — 오른쪽 칸에 쓰는 동안은 덜 자주 다시 그린다 */
   window.__meetingPageChoose=function(orientation){
-    if(window.__vaultReadOnly||communityBoardReadOnly())return;
+    if(psPhoneBoardReadOnly()||window.__vaultReadOnly||communityBoardReadOnly())return;
     window.__meetingPdfOrientation=orientation==='landscape'?'landscape':'portrait';
     try{localStorage.setItem('ps_meet_orient_v2',window.__meetingPdfOrientation);}catch(_){}   /* 2.970 — v2 */   /* 2.932 — 다음 새 미팅의 시작 방향(이 기기만) */
     try{if(window.__meetSyncCur)window.__meetSyncCur();}catch(_){}
@@ -20669,7 +20677,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{if(document.body.classList.contains('meet-mode')&&anim.frames[0]&&window.__snapToThumb){anim.frames[0].thumb=window.__snapToThumb(anim.frames[0].snap)||anim.frames[0].thumb;renderAnimFrames();}}catch(_){}
     window.__meetingPageActive=true;window.__ksRender();
   };
-  window.__meetingPageEdit=function(){if(window.__vaultReadOnly||communityBoardReadOnly())return;try{autoOrient=false;}catch(_){}/* 2.930 — 미팅 방향은 사람이 고른 것: 넓은 화면이라고 세로를 가로로 되돌리지 않는다(썸네일도 그래서 가로였다) */loadSnap(Object.assign({},captureSnap(),{orientation:meetingPdfOrientation(anim.slides)==='landscape'?'h':'v',spFlip:false}));window.__meetingPageActive=false;document.body.classList.remove('meeting-page-mode');window.__ksRender();window.dispatchEvent(new Event('resize'));};
+  window.__meetingPageEdit=function(){if(psPhoneBoardReadOnly()||window.__vaultReadOnly||communityBoardReadOnly())return;try{autoOrient=false;}catch(_){}/* 2.930 — 미팅 방향은 사람이 고른 것: 넓은 화면이라고 세로를 가로로 되돌리지 않는다(썸네일도 그래서 가로였다) */loadSnap(Object.assign({},captureSnap(),{orientation:meetingPdfOrientation(anim.slides)==='landscape'?'h':'v',spFlip:false}));window.__meetingPageActive=false;document.body.classList.remove('meeting-page-mode');window.__ksRender();window.dispatchEvent(new Event('resize'));};
   var oldRender=window.__ksRender;window.__ksRender=function(){oldRender();window.__meetingPageRefresh();};
   var oldEnter=window.__ksEnter;window.__ksEnter=function(){window.__meetingPageActive=true;try{if(window.__meetAOprev===undefined)window.__meetAOprev=autoOrient;autoOrient=false;}catch(_){}/* 2.932 — 미팅 방향은 사람이 고른 것: 화면 비율 자동 방향을 미팅 동안 끈다 */oldEnter();window.__meetingPageRefresh();};
   var oldExit=window.__ksExit;window.__ksExit=function(){window.__meetingPageActive=false;document.body.classList.remove('meeting-page-mode');document.body.classList.remove('meet-portrait');if(oldExit)oldExit();try{if(window.__meetAOprev!==undefined){autoOrient=window.__meetAOprev;window.__meetAOprev=undefined;}}catch(_){}};
@@ -20904,7 +20912,7 @@ try{ var _nb=document.getElementById('dfNew');
      위 띠의 «새 보드»: 확인 → 페이지 하나·장면 없음·«새 보드 기본 세팅»(없으면 빈 판) → 바로 «보드 저장»(새로고침해도 새 보드).
      보관함 연결은 끊는다(빈 판이 가져온 자료를 덮지 않게). 1분 동안은 띠의 «↶ 이전 보드»로 그대로 되살린다(되살릴 때도 보관함엔 쓰지 않는다). */
   var _nbUndo=null,_nbT=0,NB_UNDO_MS=60000;
-  function _nbAvailable(){ return !_lent&&!_inVault&&!window.__vaultEdit&&!window.__vaultBook&&!window.__vaultReadOnly&&isBoardView(); }
+  function _nbAvailable(){ return !psPhoneBoardReadOnly()&&!_lent&&!_inVault&&!window.__vaultEdit&&!window.__vaultBook&&!window.__vaultReadOnly&&isBoardView(); }
   function _nbSave(msg){ var s=window.__boardSaveExplicit; Promise.resolve(s?s({noLink:true,quiet:true}):false).then(function(ok){ _toast(ok?msg:(msg+" · «저장»을 눌러 저장해 주세요")); },function(){ _toast(msg+" · «저장»을 눌러 저장해 주세요"); }); }
   function _nbCounts(){ var list=pages||[{snap:_snap(),anim:_animNow()}],sc=0,any=false;
     list.forEach(function(p){ var f=p&&p.anim&&p.anim.frames; if(Array.isArray(f)&&f.length>1)sc+=f.length; try{ if(p&&p.snap&&!(typeof _boardSnapEmpty==="function"&&_boardSnapEmpty(p.snap)))any=true; }catch(_){} });
@@ -21005,10 +21013,8 @@ try{ var _nb=document.getElementById('dfNew');
   }
   function _icon(){ return '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>'; }
   function _penIcon(){ return '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14.5 6.5l3 3"/></svg>'; }
-  /* 2.987 — 세로 폰의 페이지 고르개인가(패턴북은 2.985 가 따로 맡는다). 폰은 편집 도구가 없는 화면(2.086)이라 띠도 고르기만 한다.
-     ⚠ 셸이 ps-phone-work 를 붙이는 때가 첫 렌더보다 늦을 수 있다 — 그릴 때가 아니라 **누를 때** 묻는다. 모양은 CSS 가 body 클래스로 정한다.
-     ⚠ 640 미만만: 그 위 폭에서는 «보드 저장»·«보관함 저장»이 이 띠 안에 산다(render 끝) */
-  function _phoneNav(){ try{ return !window.__vaultBook&&document.body.classList.contains("ps-phone-work")&&(window.innerWidth||0)<640; }catch(_){ return false; } }
+  /* 휴대폰은 화면 방향·패턴북 여부와 관계없이 페이지 고르기만 한다. */
+  function _phoneNav(){ return psPhoneBoardReadOnly(); }
   /* 3.017 — 띠의 «보드 설정»(render 끝): 도크와 같은 창을 여닫고, 열려 있는 동안 눌린 모양(aria-expanded)으로 둔다 */
   function _bsOpen(){ try{ var p=document.getElementById("cmd-board-settings-pop"); return !!(p&&p.getAttribute("aria-hidden")==="false"); }catch(_){ return false; } }
   function _bsToggle(){ try{ if(window.__psToggleBoardSettings)window.__psToggleBoardSettings("toggle"); else { var vb=document.getElementById("viewBtn"); if(vb)vb.click(); } }catch(_){} }

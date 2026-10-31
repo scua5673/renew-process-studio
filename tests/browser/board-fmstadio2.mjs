@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 2.980 — FMStadio 새 기능 대조: 잔상이 영상(GIF 엔진)·모든 장면에, 공이 섞인 다중 선택, 열린 화살·양쪽,
 // 다각형 도구(실제 포인터 경로), «맨 앞»이 모든 장면에. 합성 팀 fixture 에서만 돈다.
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});

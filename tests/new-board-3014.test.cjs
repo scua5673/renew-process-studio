@@ -14,7 +14,7 @@ test('3.014 «새 보드» clears the page canvas to the «새 보드 기본 세
 });
 
 test('3.014 «새 보드» saves at once without writing the empty board into linked vault items',()=>{
-  assert.match(board,/async function boardSaveExplicit\(o\)\{[^\n]*\n  o=\(o&&typeof o==="object"&&!o\.type\)\?o:\{\};/,'click events are not options');
+  assert.match(board,/async function boardSaveExplicit\(o\)\{[\s\S]*?\n  o=\(o&&typeof o==="object"&&!o\.type\)\?o:\{\};/,'click events are not options');
   assert.match(board,/var _wb=\[\]; if\(!o\.noLink\)\{ try\{ _wb=await boardLinkWriteBack\(false\); \}/,'noLink skips the vault write-back');
   assert.match(board,/else if\(!o\.quiet\)toast\(\(?_wbt\?\("보드에 저장됨 ✓"/,'quiet keeps the success toast for the caller');
   const nb=/function newBoard\(\)\{[\s\S]*?\n  \}\n/.exec(board);assert.ok(nb,'newBoard');
@@ -35,7 +35,7 @@ test('3.014 «새 보드» says what goes, skips the question on an empty board 
 });
 
 test('3.014 the page strip shows «새 보드» only on the live work board',()=>{
-  assert.match(board,/function _nbAvailable\(\)\{ return !_lent&&!_inVault&&!window\.__vaultEdit&&!window\.__vaultBook&&!window\.__vaultReadOnly&&isBoardView\(\); \}/);
+  assert.match(board,/function _nbAvailable\(\)\{ return !psPhoneBoardReadOnly\(\)&&!_lent&&!_inVault&&!window\.__vaultEdit&&!window\.__vaultBook&&!window\.__vaultReadOnly&&isBoardView\(\); \}/);
   assert.match(board,/if\(_nbAvailable\(\)\)\{\n      var nb=document\.createElement\("button"\); nb\.type="button"; nb\.className="bp-add"; nb\.id="bpNewBoard";/);
   assert.match(board,/nu\.id="bpNewBoardUndo";\n        nu\.textContent="↶ 이전 보드";/);
 });

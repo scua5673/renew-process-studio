@@ -308,7 +308,7 @@
       };
       W.renderInterp = function (a, b, u, c) { if (phoneViewOn(W)) { a = upright(a); b = upright(b); } return ri.call(this, a, b, u, c); };
       // 0 = 뷰어 아님(편집기 축소 규칙으로) · 커뮤니티 뷰어는 그 값 그대로
-      W.commViewTok = function () { var r = cv.apply(this, arguments); if (r) return r; return (phoneViewOn(W) && !W.__psThumbNoEd) ? (+W.COMM_PHONE_TOK || 1.6) : r; };
+      W.commViewTok = function () { var r = cv.apply(this, arguments); if (r) return r; return (phoneViewOn(W) && !W.__psThumbNoEd) ? Math.max(+W.COMM_PHONE_TOK || 1.6, W.psPhoneBoardReadOnly&&W.psPhoneBoardReadOnly()?1.8:0) : r; };
       hooked = true; return true;
     }
     function start() {

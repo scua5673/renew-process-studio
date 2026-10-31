@@ -99,6 +99,8 @@ try{
       assert.equal(await f.evaluate(()=>!!window.THREE),false,'ordinary board does not load the 3D engine');
       const before=await original(f);
       async function enter(){
+        // Phone token/settings editors are unavailable. Keep testing the read-only POV API independently.
+        if(size==='phone'){await f.evaluate(()=>PSPlayerEye.open());return;}
         const bar=f.locator('#boardPageStrip [data-player-eye-entry]');
         if(await bar.isVisible()){await bar.click();return;}
         const selected=f.locator('#psEyeSelected');

@@ -7,7 +7,7 @@ const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGH
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const suites={
   // Keep the same coverage while exposing selection UI failures in a short job.
-  selection:['board-player-panel-drag','board-color-palette','board-selection-menu'],
+  selection:['phone-board-readonly','board-player-panel-drag','board-color-palette','board-selection-menu'],
   /* 2.991 — board 가 25개로 늘어 WebKit 잡이 14~15분 걸렸고, release-gate 를 12분만 기다리는 Netlify 게시(scripts/verify-release.mjs)가
      staging 마다 멈췄다. 같은 테스트를 시간(WebKit 실측)으로 둘에 나눠 CI 가 나란히 돌린다 — board: 판·보관함 / board2: 애니메이션·내보내기·미팅·패턴북 등. */
   board:['gamemodel-sync','board-depth','board-palette-colors','vault-board-isolation','board-fmstadio','board-fmstadio2','board-jersey','board-edit-view','board-kit-preview','board-kit-more','board-savebar','board-vault-save','vault-folder-delete','vault-folder-visibility','team-library-load','gamemodel-vault-import','board-new-board','board-settings-strip','board-look-per-work','board-3d-default','board-3d-look','board-stadium-ground','board-3d-marquee','board-3d-ipad-safe','board-editor-flat','board-settings-hierarchy','board-full-name','team-load-position','team-photo-crop','shape-menu-3141','board-popups-3141'],

@@ -42,6 +42,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
   // 2.975 — 마우스는 토큰 정보 창을 오른쪽 클릭으로 연다(왼쪽 클릭은 고르기만). 손가락은 탭 그대로.
   const pressTok=locator=>spec.touch?locator.tap():locator.click({button:'right'});
   async function open(id='color-a'){await pressTok(frame.locator('.token[data-id="'+id+'"]'));if(!await frame.locator('.ps-sm-more').evaluate(e=>e.open))await frame.locator('.ps-sm-more summary').click();if(!await frame.locator('#colorCtl.open').count())await press(frame.locator('#colorTrig'));await frame.locator('#colorPop').waitFor({state:'visible'});}
+  if(spec.name.startsWith('phone')){await pressTok(frame.locator('.token[data-id="color-a"]'));assert.equal(await frame.locator('.sel-ctl').isVisible(),false);assert.equal(await frame.evaluate(()=>psPhoneBoardReadOnly()),true);result.readOnly=true;result.passed=true;continue;}
   // Replay browser composition events against the real controls. This does not emulate a native OS IME.
   await pressTok(frame.locator('.token[data-id="color-a"]'));
   for(const [id,value] of [['nameInput','홍길동'],['numInput','김']]){

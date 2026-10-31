@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 2.891 — 보관함 새 항목 INSERT 가 저장은 됐는데 빈 응답을 받아도(응답 유실·프록시) 기기와 서버의
 // 항목이 지워지지 않는다. 옛 코드는 기기에서 지우고 묘비를 남겨 다음 회차에 서버 행까지 삭제했다.
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const results=[];
 for(const emptyLibraryInsert of [true,false]){
   const fx=await startFixture({emptyLibraryInsert}),browsers={};

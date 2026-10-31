@@ -160,6 +160,12 @@ try{
       result.cases.push('close-to-library-and-open-another-item-keeps-live-board');
 
       await library(page,frame);await view(frame,'A',true);await page.waitForTimeout(500);
+      if(spec.name==='phone'){
+        assert.equal(await frame.evaluate(()=>window.__vaultReadOnly),true,'phone edit entry opens a viewer');
+        assert.equal(await frame.locator('#vCreateSave').isVisible(),false);
+        await page.locator('#live').click();await page.waitForTimeout(500);await assertLive(frame,before,'phone view returns without changing the working board');
+        result.cases.push('phone-edit-entry-remains-readonly');
+      }else{
       const libraryBeforeEdit=await frame.evaluate(()=>boardStore.get('cs_drill_lib_v1'));
       await frame.evaluate(()=>{state.players[0].name='가상 편집 저장 검증';renderTokens();boardSaveLive();});
       await page.waitForTimeout(2300);
@@ -175,6 +181,7 @@ try{
       await frame.waitForFunction(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 편집 저장 검증');
       await page.locator('#live').click();await page.waitForTimeout(500);await assertLive(frame,before,'saving edited library item leaves working board intact');
       result.cases.push('library-edit-saves-only-library-item');
+      }
 
       // 2.975 — «저장»(나가지 않고 저장)과 ⌘S. 편집을 이어 가면서 보관함 항목만 바뀐다.
       if(spec.name!=='phone'){   /* 폰은 띠가 좁아 «저장»을 숨긴다(저장하고 나가기만) */

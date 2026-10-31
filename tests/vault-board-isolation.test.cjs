@@ -20,7 +20,7 @@ function harness({empty=false,view='board',withPages=true}={}){
  function node(){return{style:{},classList:{set:new Set(),contains(x){return this.set.has(x);},add(x){this.set.add(x);},remove(x){this.set.delete(x);},toggle(x,on){if(on===undefined)on=!this.set.has(x);if(on)this.set.add(x);else this.set.delete(x);return on;}}};}
  for(const id of ['animBar','hint','vCreateBar','vCreateSave','vCreateSub','vCreateCancel'])nodes[id]=node();nodes.animBar.classList.add('on');
  const original=snap(empty?null:10),frames=[{snap:snap(5)},{snap:copy(original)}];
- const c=vm.createContext({console,JSON,Object,Array,String,Number,Math,Date,Promise,Error,Set,URLSearchParams,location:{search:''},
+ const c=vm.createContext({psPhoneBoardReadOnly:()=>false,console,JSON,Object,Array,String,Number,Math,Date,Promise,Error,Set,URLSearchParams,location:{search:''},
    document:{body:node(),getElementById:id=>nodes[id]||null},localStorage:{getItem:k=>ls.get(k)||null,setItem(k,v){ls.set(k,v);}},
    psCurrentUser:()=>({uid,at:'synthetic-public-token'}),psActiveWs:()=>({id:wid}),psVaultUnlocked:()=>true,psVaultRequireLogin:()=>true,
    setTimeout(fn,ms){const t={fn,ms,canceled:false};timers.push(t);return t;},clearTimeout(t){if(t)t.canceled=true;},
