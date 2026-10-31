@@ -32,7 +32,7 @@ try{
   if(await frame.locator('#pwTeam [data-pw-action="tools"]').isVisible())await frame.locator('#pwTeam [data-pw-action="tools"]').click();
   await frame.getByRole('button',{name:'배치·명단 편집',exact:true}).click();
   assert.equal(await frame.locator('#teamList').isVisible(),true,'existing edit controls remain reachable');
-  if(phone){await page.locator('#teamBottom [data-tb="more"]').click();await page.locator('#teamMoreSheet [data-tb="scouting"]').click();}
+  if(phone)await page.locator('#teamBottom [data-tb="scouting"]').click();
   else await page.locator('#teamNav [data-team-key="scouting"]').click();
   await frame.locator('#pwScout .pw-depth-pitch').waitFor();
   const original=fx.db.get(WT+'|cs_scout_targets_v1').v;

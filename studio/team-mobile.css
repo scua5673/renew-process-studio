@@ -1,6 +1,6 @@
 /* Shared phone rhythm. Desktop and tablet layouts keep their original controls. */
-.pw-edit-tools,.pw-select-hit{display:contents}
-.pw-tools-toggle,.wg-phone-picker,.tm-phase-picker{display:none}
+.pw-edit-tools,.pw-select-hit,.pw-filter-fields{display:contents}
+.pw-tools-toggle,.pw-filter-toggle,.wg-phone-picker,.tm-phase-picker{display:none}
 @media(max-width:600px){
   /* The shell owns the safe area; child pages use one 16px content gutter. */
   html.ps-page-app body.ps-team-open #gearBtn{min-width:44px!important;min-height:44px!important}
@@ -32,7 +32,7 @@
   html.ps-page-scout #teamView .tm-head-actions{gap:var(--sp-1)!important}
   html.ps-page-scout #teamView .tm-hero:not(#_):not(#__){display:flex!important;flex-wrap:wrap;align-items:center;gap:var(--sp-1) var(--sp-3)!important;padding:0!important;margin:0!important;border:0!important}
   html.ps-page-scout #teamView .tm-hero-big:not(#_):not(#__){display:flex;align-items:baseline;gap:var(--sp-1);font-size:var(--t-3)!important}
-  html.ps-page-scout #teamView .tm-hero-big b:not(#_):not(#__){font-size:var(--t-7)!important}
+  html.ps-page-scout #teamView .tm-hero-big b:not(#_):not(#__){font-size:var(--t-6)!important}
   html.ps-page-scout #teamView .tm-hero-sub:not(#_):not(#__){font-size:var(--t-3)!important;white-space:nowrap}
   html.ps-page-scout #teamView .tm-hero-todo{flex-basis:100%;font-size:var(--t-3)!important}
   html.ps-page-scout #teamView .tm-workbar{display:flex!important;align-items:center;flex-wrap:wrap;gap:var(--sp-1) var(--sp-2)!important;margin:0!important;padding:0!important}
@@ -41,11 +41,11 @@
   html.ps-page-scout #teamView #tmSchoolYears{margin:0!important}
   html.ps-page-scout #teamView #tmSchoolYears button{font-size:var(--t-3)!important;padding-inline:var(--sp-2)!important}
   html.ps-page-scout #teamView #tmShareLine{margin:0!important;font-size:var(--t-2)!important}
-  html.ps-page-scout .pw-workspace{padding:var(--sp-3) 0!important}
+  html.ps-page-scout .pw-workspace{padding:var(--sp-2) 0!important}
   html.ps-page-scout .pw-toolbar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 80px;gap:var(--sp-2);padding-bottom:var(--sp-2)}
-  html.ps-page-scout .pw-search{grid-column:1/-1;width:100%;height:44px;min-width:0}
-  html.ps-page-scout .pw-toolbar>select{width:100%;min-width:0;max-width:none;padding-inline:var(--sp-2)}
-  html.ps-page-scout .pw-toolbar>.pw-button[data-pw-action=unevaluated]{padding-inline:var(--sp-2)}
+  html.ps-page-scout .pw-search{grid-column:span 2;width:100%;height:44px;min-width:0}
+  html.ps-page-scout .pw-filter-fields>select{width:100%;min-width:0;max-width:none;padding-inline:var(--sp-2)}
+  html.ps-page-scout .pw-filter-fields>.pw-button[data-pw-action=unevaluated]{padding-inline:var(--sp-2)}
   html.ps-page-scout .pw-view{grid-column:span 2;margin-left:0;gap:var(--sp-1)}
   html.ps-page-scout .pw-view button{flex:1}
   html.ps-page-scout .pw-tools-toggle{padding-inline:var(--sp-2);display:inline-flex;align-items:center;justify-content:center}
@@ -53,15 +53,32 @@
   html.ps-page-scout .pw-edit-tools{display:none}
   html.ps-page-scout .pw-tools-open .pw-edit-tools{display:flex;grid-column:1/-1;flex-wrap:wrap;gap:var(--sp-2);padding:var(--sp-2);background:var(--c-surface-2);border-radius:var(--r-control)}
   html.ps-page-scout .pw-edit-tools>button{flex:1 1 auto}
-  html.ps-page-scout :is(.pw-toolbar>select,.pw-bulk-row select){appearance:none;-webkit-appearance:none;height:44px!important;padding-right:var(--sp-5)!important;background-image:linear-gradient(45deg,transparent 50%,var(--c-muted) 50%),linear-gradient(135deg,var(--c-muted) 50%,transparent 50%);background-size:5px 5px;background-repeat:no-repeat;background-position:right 13px center,right 8px center}
+  html.ps-page-scout :is(.pw-filter-fields>select,.pw-bulk-row select){appearance:none;-webkit-appearance:none;height:44px!important;padding-right:var(--sp-5)!important;background-image:linear-gradient(45deg,transparent 50%,var(--c-muted) 50%),linear-gradient(135deg,var(--c-muted) 50%,transparent 50%);background-size:5px 5px;background-repeat:no-repeat;background-position:right 13px center,right 8px center}
   html.ps-page-scout .pw-select-hit{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;cursor:pointer}
   html.ps-page-scout .pw-select-hit input[type=checkbox]{width:17px!important;height:17px!important;min-height:17px!important;margin:0}
   html.ps-page-scout .pw-table td:first-child{width:44px;padding:0}
   html.ps-page-scout .pw-result{min-height:28px;padding:0;font-size:var(--t-3)}
   html.ps-page-scout .pw-depth-heading{margin:var(--sp-2) 0}
   html.ps-page-scout .pw-depth-heading h3{margin-bottom:var(--sp-1)}
-  html.ps-page-scout .pw-stats{padding:var(--sp-3);margin-bottom:var(--sp-3);gap:var(--sp-2)}
-  html.ps-page-scout .pw-scouthead{margin-bottom:var(--sp-3)}
+  /* 3.229 — compact phone hierarchy; input text keeps the existing 16px editing size. */
+  html.ps-page-scout .pw-scouthead{margin-bottom:var(--sp-2)}
+  html.ps-page-scout .pw-scouthead h2,html.ps-page-scout .pw-stats b{font-size:var(--t-6)}
+  html.ps-page-scout .pw-stats{padding:var(--sp-2) 0;margin-bottom:var(--sp-2);gap:0}
+  html.ps-page-scout .pw-stats>div{min-width:0;padding:0 var(--sp-2);gap:var(--sp-1)}
+  html.ps-page-scout .pw-stats span{font-size:var(--t-2);line-height:1.4;white-space:nowrap}
+  html.ps-page-scout .pw-toolbar .pw-button{font-size:var(--t-3);min-height:44px}
+  html.ps-page-scout .pw-search input::placeholder{font-size:var(--t-4)}
+  html.ps-page-scout .pw-filter-toggle{display:inline-flex;align-items:center;justify-content:center;padding-inline:var(--sp-2)}
+  html.ps-page-scout .pw-filter-toggle:is(.is-filtered,[aria-expanded=true]){color:var(--c-act);border-color:var(--c-act);background:var(--c-surface-2)}
+  html.ps-page-scout .pw-filter-fields{display:none}
+  html.ps-page-scout #sbPaneCands.pw-enabled:not(.pw-edit) #mqFab{display:none!important}
+  html.ps-page-scout .pw-filters-open .pw-filter-fields{display:grid;grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-2);padding:var(--sp-2);border:1px solid var(--c-line);border-radius:var(--r-1);background:var(--c-surface-2)}
+  html.ps-page-scout .pw-filter-fields>[data-pw-action=unevaluated]{justify-self:start}
+  html.ps-page-scout .pw-depth-heading h3{font-size:var(--t-4)}
+  html.ps-page-scout .pw-depth-heading p{font-size:var(--t-2)}
+  html.ps-page-scout .pw-depth-legend{margin-bottom:var(--sp-2)}
+  html.ps-page-scout .pw-depth-panel h3{font-size:var(--t-6)}
+  html.ps-page-scout .pw-depth-candidate-name strong{font-size:var(--t-4)}
   html.ps-page-scout .pw-bulk-overlay :is(button,select,input){min-height:44px!important;font-size:var(--t-6)!important}
   html.ps-page-scout .pw-bulk-card{display:flex;flex-direction:column;max-height:calc(100dvh - 24px);overflow:hidden;padding:var(--sp-4);background:var(--c-surface);color:var(--c-ink)}
   html.ps-page-scout .pw-bulk-rows{overflow-y:auto;min-height:0;overscroll-behavior:contain;padding-right:var(--sp-1)}

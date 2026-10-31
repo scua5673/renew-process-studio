@@ -44,6 +44,18 @@ try{
     assert.ok(row.y<180&&row.height>=44,'team row remains near top '+JSON.stringify(row));
     await page.locator('#teamBottom [data-tb="players"]').click();
     await verifyBar(page,'players-'+width);
+    const teamButtons=await page.locator('#teamBottom>button').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect(),label=e.querySelector('span');return{key:e.dataset.tb,width:r.width,height:r.height,y:r.y,labelFits:label.scrollWidth<=label.clientWidth+1};}));
+    assert.deepEqual(teamButtons.map(b=>b.key),['today','match','training','players','scouting','idp','more']);
+    assert.ok(teamButtons.every(b=>b.width>=43.5&&b.height>=44&&b.labelFits),'seven complete labels and touch targets at '+width+' '+JSON.stringify(teamButtons));
+    assert.equal(new Set(teamButtons.map(b=>Math.round(b.y))).size,1,'all team shortcuts stay on one row');
+    await page.locator('#teamBottom [data-tb="scouting"]').click();
+    const scoutFrame=await (await page.locator('#fScout').elementHandle()).contentFrame();
+    await scoutFrame.locator('#pwScout .pw-depth-pitch').waitFor();
+    assert.equal(await page.locator('#teamBottom [data-tb="scouting"]').evaluate(e=>e.classList.contains('on')),true,'scouting shortcut follows active view');
+    assert.equal(await page.locator('#teamBottom [data-tb="more"]').evaluate(e=>e.classList.contains('on')),false,'More does not select with scouting');
+    assert.equal(await page.locator('#teamMoreSheet').isVisible(),false,'shortcut does not require the More sheet');
+    if(width===320||width===390)await page.screenshot({path:path.join(SHOTS,'team-scout-'+width+'.png')});
+
     await nav('[data-app="community"]').click();
     await page.waitForFunction(()=>document.body.dataset.psApp==='community'&&!document.body.classList.contains('ps-team-open'));
     await verifyBar(page,'community-'+width);

@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.227"></script>
+<script src="autosave-status.js?v=3.229"></script>
 <script src="sync-confirmation.js"></script>
 <script src="sync-diagnosis.js"></script>
 <script src="sync-diagnosis-ui.js"></script>
@@ -530,7 +530,7 @@
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
 <script src="playbook-data.js"></script><script src="playbook-shell.js"></script>
-<script>window.PS_BUILD='3.227';</script>
+<script>window.PS_BUILD='3.229';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1635,20 +1635,20 @@ window.psFailAlert=function(lead,e,stage){
     </span>
   </nav>
   <!-- 2.171 — 서브탭은 팀 운영 메뉴 줄에 안 보이게(사용자). 메뉴 줄엔 '기준'만, 게임모델·평가표는 그 아래 페이지 서브헤더 -->
-  <!-- 2.179 — 폰 하단 탭(콕핏 §05): 팀 안에서는 오늘·경기·일정·선수단·더보기. 더보기 = 스카우팅·IDP·기준 + 다른 앱 -->
+  <!-- 휴대폰 팀 운영 바로가기 -->
   <nav class="team-bottom" id="teamBottom" aria-label="팀 하단 탭" hidden>
-    <!-- 2.908 — 위 줄과 같은 순서: 오늘 · 경기 · 일정 · 선수단 · IDP · 더보기(설정 묶음과 다른 앱). 스카우팅·가용인원은 선수단 서브탭 줄에 -->
+    <!-- 오늘 · 경기 · 일정 · 선수단 · 스카우팅 · IDP · 더보기 -->
     <button type="button" data-tb="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><circle cx="12" cy="14.6" r="1.7"/></svg><span>오늘</span></button>
     <button type="button" data-tb="match"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6l3.3 2.4-1.3 3.9h-4L8.7 10z"/><path d="M12 3.5v4.1M20.1 9.4l-4.8.6M16.9 19.2l-2.9-5.3M7.1 19.2l2.9-5.3M3.9 9.4l4.8.6"/></svg><span>경기</span></button>
     <button type="button" data-tb="training"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4M7.5 13h3M13.5 13h3M7.5 16.5h3"/></svg><span>일정</span></button>
     <button type="button" data-tb="players"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16 14.6a5 5 0 0 1 5 5"/></svg><span>선수단</span></button>
+    <button type="button" data-tb="scouting"><span>스카우팅</span></button>
     <button type="button" data-tb="idp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 19.5v-5"/><path d="M12 19.5v-9"/><path d="M18.5 19.5v-14"/></svg><span>IDP</span></button>
     <button type="button" data-tb="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></svg><span>더보기</span></button>
   </nav>
   <div class="team-more" id="teamMoreSheet" hidden>
     <div class="tms-h"><b>더보기</b><button type="button" data-tb="close" aria-label="닫기">×</button></div>
     <div class="ps-upd-row" data-upd-row hidden><span class="pur-t"><span data-upd-rowtext></span><small data-upd-msg hidden></small></span><button type="button" data-upd="row" data-upd-now>적용</button></div><!-- 2.947 -->
-    <div class="tms-g"><i>팀</i><button type="button" data-tb="scouting">스카우팅</button></div><!-- 2.954 — 위 줄 탭이 됐지만 폰 하단은 여섯 칸 그대로라 여기 -->
     <div class="tms-g"><i>팀 기준</i><button type="button" data-tb="playbook">플레이북</button><button type="button" data-tb="attrs">선수 기준</button></div><!-- 2.908 — 설정 묶음 -->
     <div class="tms-g"><i>앱</i><button type="button" data-tb-app="board">보드</button><button type="button" data-tb-app="design">보관함</button><button type="button" data-tb-app="idp">내 IDP</button><button type="button" data-tb-app="learning">학습</button><button type="button" data-tb-app="community">커뮤니티</button><button type="button" data-tb-install data-install-door hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v6.5"/><path d="M9.3 11.4 12 14l2.7-2.6"/><path d="M10.5 18.3h3"/></svg><span data-install-label>홈 화면에 추가</span></button></div>
   </div>
@@ -2861,7 +2861,7 @@ window.psFailAlert=function(lead,e,stage){
         if(b.dataset.tb){ go(b.dataset.tb); return; }
         if(b.dataset.tbApp){ sheet.hidden=true; currentTeamKey=''; showApp(b.dataset.tbApp); } });
       window.__teamBottomSync=function(){ var k=currentTeamKey||''; var g=teamGrpOf(k);   /* 2.908 — 선수단 묶음은 «선수단», 설정 묶음은 «더보기»가 켜진다 */
-        [].forEach.call(tb.querySelectorAll('button'),function(x){ var on=(x.dataset.tb===k)||(x.dataset.tb==='players'&&g==='squad')||(x.dataset.tb==='more'&&(g==='setup'||k==='scouting')); x.classList.toggle('on',on); }); };
+        [].forEach.call(tb.querySelectorAll('button'),function(x){ var on=(x.dataset.tb===k)||(x.dataset.tb==='players'&&g==='squad')||(x.dataset.tb==='more'&&g==='setup'); x.classList.toggle('on',on); }); };
     })();
     if(teamNav)teamNav.addEventListener('click',function(e){
       var b=e.target.closest('button');if(!b)return;
@@ -8182,16 +8182,16 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="sync-size.js"></script>
 <script src="sync-observability.js"></script>
 <script src="idp-pub-wipe.js"></script>
-<script src="autosave-journal.js?v=3.227"></script>
-<script src="autosave-merge.js?v=3.227"></script>
-<script src="autosave-runtime.js?v=3.227"></script>
-<script src="autosave-recovery.js?v=3.227"></script>
+<script src="autosave-journal.js?v=3.229"></script>
+<script src="autosave-merge.js?v=3.229"></script>
+<script src="autosave-runtime.js?v=3.229"></script>
+<script src="autosave-recovery.js?v=3.229"></script>
 <script src="roster-outbox.js"></script>
 <script src="sync-items-stale.js"></script>
 <script src="permissions-filter.js"></script>
-<script src="sync.js?v=3.227"></script>
+<script src="sync.js?v=3.229"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.227">
+<link rel="stylesheet" href="support.css?v=3.229">
 <link rel="stylesheet" href="support-image.css?v=20261023">
 <script src="support-image.js?v=20261023"></script>
 <script src="support.js?v=20261023"></script>
