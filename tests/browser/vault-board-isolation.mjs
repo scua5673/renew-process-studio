@@ -78,7 +78,10 @@ async function seed(frame,{blank=false}={}){
     undoStack=[{board:clone(other),anim:{frames:clone(liveFrames),active:0}}];redoStack=[{board:clone(live),anim:{frames:clone(liveFrames),active:1}}];
     const items=[{libId:'fixture-a',name:'가상 보관함 A',snap:a},{libId:'fixture-b',name:'가상 보관함 B',snap:b}].map(d=>({...d,type:'board',createdBy:uid,author:'가상 코치',savedAt:1,thumb,frames:frames(d.snap,d.libId),pages:[{name:d.libId+' PAGE 1',snap:clone(d.snap),thumb},{name:d.libId+' PAGE 2',snap:clone(d.snap),thumb}]}));
     await libWrite(items);libTouch();
-    await window.__boardSaveExplicit();
+    if(psPhoneBoardReadOnly()){
+      // A saved board from an editing device, seeded only in this synthetic backend.
+      localStorage.setItem('fixture_personal_board_v2',JSON.stringify({raw:boardLiveCapture('board').raw,cupd:1}));
+    }else await window.__boardSaveExplicit();
     await new Promise(r=>setTimeout(r,100));
     if(blank)delete window.__viewSnaps.board;
     return {library:await boardStore.get('cs_drill_lib_v1'),live:await boardStore.get('cs_board_live_v1')};
@@ -96,8 +99,8 @@ async function library(page,frame){await page.locator('#library').click();await 
 async function view(frame,name='A',edit=false){
   /* 2.963 — 넓은 화면(≥901)은 고른 줄에만 «보기·편집» 이 보인다. 손이 하듯 먼저 그 줄을 고른다(폰은 단추가 늘 보여 바로 누른다) */
   const card=frame.locator('.vcard').filter({hasText:'가상 보관함 '+name}),btn=card.locator(edit?'.vc-act.edit':'.vc-act.view');
-  if(!(await btn.isVisible()))await card.click({position:{x:60,y:12}});
-  await btn.click();
+  if(edit&&await frame.evaluate(()=>psPhoneBoardReadOnly()))await btn.evaluate(el=>el.click());
+  else{if(!(await btn.isVisible()))await card.click({position:{x:60,y:12}});await btn.click();}
   await frame.locator('#vCreateBar.on').waitFor({state:'visible'});
 }
 async function assertLive(frame,before,label){
