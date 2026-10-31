@@ -35,25 +35,31 @@ test('group rename uses a line icon, not the tiny ✎ glyph',()=>{
   assert.ok(/e\.className="btn sm grp-edit"[^\n]*<svg viewBox="0 0 24 24"[^\n]*aria-hidden="true"/.test(s));
 });
 
-test('scouting points button: moves into the card tool row (desktop shell), one listener, and back on the points screen',()=>{
+test('scouting points button: shares the workspace header, retains the legacy fallback and returns from points',()=>{
   const s=read('scout.html');
   const a=s.indexOf('function sbPtsPlace(t){'),e=s.indexOf('\n}\n',a)+2;assert.ok(a>0);
   const fn=s.slice(a,e);
   assert.ok(fn.includes('(t||sbTab)!=="crit"'),'포인트 화면에서는 탭 줄로 돌아간다(«‹ 후보 DB» 로 되돌아갈 길)');
-  assert.ok(fn.includes('matchMedia("(max-width:600px)")'),'폰은 그대로');
+  assert.ok(fn.includes('matchMedia("(max-width:600px)")'),'기존 화면의 모바일 배치도 보존한다');
   assert.ok(/function sbSetTab\(t\)\{[\s\S]*?try\{ sbPtsPlace\(t\); \}catch\(_\)\{\}/.test(s),'탭을 바꿀 때마다 자리를 정한다');
   const init=s.slice(s.indexOf('function sbInit(){'),s.indexOf('var ssg=$("sbShowSeg");'));
   assert.ok(!init.includes('e.target.closest("#sbPtsToggle")'),'탭 줄 위임에서는 뺐다 — 두 번 토글되지 않게');
   assert.ok(init.includes('ptb0.addEventListener("click"'),'버튼에 직접');
   // DOM 흉내로 자리 옮기기 확인
-  const nodes={};const mk=(cls)=>({className:cls,parentNode:null,children:[],appendChild(c){if(c.parentNode)c.parentNode.children=c.parentNode.children.filter(x=>x!==c);c.parentNode=this;this.children.push(c);}});
+  const mk=(cls)=>{const classes=new Set(cls.split(' '));return {className:cls,parentNode:null,children:[],get firstChild(){return this.children[0]||null;},classList:{toggle(c,on){if(on)classes.add(c);else classes.delete(c);},contains:c=>classes.has(c)},appendChild(c){this.insertBefore(c,null);},insertBefore(c,before){if(c.parentNode)c.parentNode.children=c.parentNode.children.filter(x=>x!==c);c.parentNode=this;const i=before?this.children.indexOf(before):this.children.length;this.children.splice(i,0,c);}};};
+  let actions=null,phone=false;
   const tabs=mk('sb-tabs'),row=mk('sb-cardrow sb-cardrow-tools'),btn=mk('sb-ptsbtn');tabs.appendChild(btn);
   const cls=new Set();
-  const ctx=vm.createContext({sbTab:'cands',$:id=>id==='sbPtsToggle'?btn:null,window:{matchMedia:()=>({matches:false})},matchMedia:()=>({matches:false}),
-    document:{querySelector:q=>q==='.sb-tabs'?tabs:(q==='#sbBoardCard .sb-cardrow-tools'?row:null),documentElement:{getAttribute:()=>'1'},body:{classList:{toggle:(c,on)=>on?cls.add(c):cls.delete(c)}}}});
+  const ctx=vm.createContext({sbTab:'cands',$:id=>id==='sbPtsToggle'?btn:null,window:{matchMedia:()=>({matches:phone})},matchMedia:()=>({matches:phone}),
+    document:{querySelector:q=>q==='.sb-tabs'?tabs:(q==='#sbBoardCard .sb-cardrow-tools'?row:q==='#pwScout .pw-scoutactions'?actions:null),documentElement:{getAttribute:()=>'1'},body:{classList:{toggle:(c,on)=>on?cls.add(c):cls.delete(c)}}}});
   vm.runInContext(fn,ctx);
   ctx.sbPtsPlace('cands');assert.equal(btn.parentNode,row,'후보 DB(데스크톱 셸) — 도구 줄 끝');assert.ok(cls.has('sb-pts-inrow'));
   ctx.sbPtsPlace('crit');assert.equal(btn.parentNode,tabs,'포인트 화면 — 탭 줄');assert.ok(!cls.has('sb-pts-inrow'));
+  actions=mk('pw-scoutactions');const question=mk('pw-button');actions.appendChild(question);phone=true;
+  ctx.sbPtsPlace('cands');assert.equal(btn.parentNode,actions);assert.deepEqual(actions.children,[btn,question]);assert.ok(cls.has('sb-pts-inhead'));assert.ok(btn.classList.contains('pw-button'));
+  ctx.sbPtsPlace('cands');assert.equal(actions.children.length,2,'다시 그리기에도 기존 버튼 하나를 재사용');
+  ctx.sbPtsPlace('crit');assert.equal(btn.parentNode,tabs);assert.ok(!cls.has('sb-pts-inhead'));assert.ok(!btn.classList.contains('pw-button'));
+  phone=false;ctx.sbPtsPlace('cands');assert.equal(btn.parentNode,actions,'데스크톱도 질문 기준 옆');assert.deepEqual(actions.children,[btn,question]);
 });
 
 test('vault: list row buttons only on the selected row (wide), one primary in the preview, create button in the header',()=>{

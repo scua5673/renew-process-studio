@@ -16,7 +16,7 @@ try{
  const {page,logs}=await openApp(fx,'phone',{browsers,phoneStart:true,dark:engine==='webkit'});
  async function go(key){
   if(key==='avail'){await go('players');await page.locator('#teamSub [data-team-key="avail"]').click();}
-  else if(['scouting','playbook','attrs'].includes(key)){await page.locator('#teamBottom [data-tb="more"]').click();await page.locator('#teamMoreSheet [data-tb="'+key+'"]').click();}
+  else if(['playbook','attrs'].includes(key)){await page.locator('#teamBottom [data-tb="more"]').click();await page.locator('#teamMoreSheet [data-tb="'+key+'"]').click();}
   else await page.locator('#teamBottom [data-tb="'+key+'"]').click();
   await page.waitForTimeout(400);
  }
@@ -35,8 +35,10 @@ try{
     const f=await frame('#fScout');await f.locator('#pwTeam .pw-depth-pitch').waitFor();
     await tapSize(f.locator('#pwTeam [data-pw-action="tools"]'),'edit tools');
     const pitch=await f.locator('#pwTeam .pw-depth-pitch').boundingBox();assert.ok(pitch.y<680,'phone first pitch reachable without a full screen of tools '+pitch.y);
-    await tapSize(f.locator('#pwTeam .pw-toolbar>select').first(),'position filter');
-    const filters=await f.locator('#pwTeam .pw-toolbar>select').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().width));assert.ok(filters.every(w=>w>=94),'filters can show their labels');
+    await f.locator('#pwTeam [data-pw-action=filters]').click();
+    await tapSize(f.locator('#pwTeam .pw-filter-fields>select').first(),'position filter');
+    const filters=await f.locator('#pwTeam .pw-filter-fields>select').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().width));assert.ok(filters.every(w=>w>=94),'filters can show their labels');
+    await f.locator('#pwTeam [data-pw-action=filters]').click();
    }
    if(key==='idp')await tapSize((await frame('#fIdp')).getByRole('combobox',{name:'성장 카드를 볼 선수'}),'IDP player picker');
    if(key==='playbook'){
