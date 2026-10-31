@@ -126,6 +126,17 @@ try{
       r.cases.push('legacy-live-recovery-snapshots-stay-unowned-and-unchanged');
       await page.screenshot({path:path.join(out,spec.name+'-blank-personal.png')});
 
+      if(spec.name==='phone'){
+        await edit(frame,'A-PRIVATE');
+        await frame.locator('.token[data-id="synthetic-A-PRIVATE"]').click({button:'right'});
+        assert.equal(await frame.locator('.sel-ctl').isVisible(),false);
+        assert.equal(await frame.evaluate(()=>__boardSaveExplicit({quiet:true})),false);
+        assert.equal(await boardRecord(page,A),null,'phone cannot create a saved account board');
+        await switchTo(page,frame,B);
+        assert.deepEqual(await ids(frame),[],'switching phone accounts clears the previous board');
+        const state=await fullPrivateState(frame);assert.deepEqual(state.undo,[]);assert.deepEqual(state.redo,[]);
+        assert.deepEqual(errors,[]);r.cases.push('phone-edit-denied-and-account-isolated');r.ok=true;continue;
+      }
       await edit(frame,'A-PRIVATE');
       await page.waitForTimeout(2300);
       assert.equal(await boardRecord(page,A),null,'edits must not persist before Save');
