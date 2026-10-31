@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import {startFixture,openApp,SIZES,OUT,SHOTS,WP} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,SIZES,OUT,SHOTS,A,WT,WP} from '../fixtures/team-app.mjs';
 
 // Exercise the real shell against synthetic data, with every external request blocked.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium';
@@ -95,11 +95,26 @@ try{
   await page.waitForFunction(()=>document.body.classList.contains('ps-mobile-six'));
   await verifyBar(page,'return-to-phone');
 
-  // Dedicated player IDP keeps its existing shell and can return to the standard one.
-  await page.evaluate(()=>document.body.classList.add('ps-player-idp-only'));
+  // Change the synthetic role, not just the CSS class: the live role refresh
+  // legitimately removes a manually added player class from an executive.
+  const permissions=fx.db.get(WT+'|cs_perms_v1'),originalPermissions=permissions.v;
+  const originalWorkspaces=await page.evaluate(()=>localStorage.getItem('ps_ws_list'));
+  const playerPermissions=JSON.parse(originalPermissions);playerPermissions.members[A].role='player';
+  async function setRole(raw,player=false){
+    permissions.v=raw;
+    await page.evaluate(({raw,player,originalWorkspaces,wid})=>{
+      const workspaces=JSON.parse(originalWorkspaces);
+      if(player)workspaces.find(w=>w.id===wid).role='member';
+      localStorage.setItem('ps_ws_list',JSON.stringify(workspaces));
+      localStorage.setItem('cs_perms_v1',raw);dispatchEvent(new CustomEvent('ps-sync-state'));
+    },{raw,player,originalWorkspaces,wid:WT});
+  }
+  await setRole(JSON.stringify(playerPermissions),true);
+  await page.locator('body.ps-player-idp-only').waitFor();
   await page.waitForFunction(()=>!document.body.classList.contains('ps-mobile-six'));
   assert.equal(await page.locator('#appSeg').isVisible(),false);
-  await page.evaluate(()=>document.body.classList.remove('ps-player-idp-only'));
+  await setRole(originalPermissions);
+  await page.waitForFunction(()=>!document.body.classList.contains('ps-player-idp-only'));
   await page.waitForFunction(()=>document.body.classList.contains('ps-mobile-six'));
   await verifyBar(page,'return-from-player-shell');
 
