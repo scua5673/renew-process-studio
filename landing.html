@@ -103,6 +103,22 @@
   .b-card .to b{color:#fff;font-weight:600}
   @media (max-width:860px){.b-grid{grid-template-columns:1fr}}
 
+  /* ===== ANIMATION ===== */
+  .anim-sec{background:#fff}
+  .a-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:40px}
+  .a-card{border:1px solid var(--line2);border-radius:var(--r);overflow:hidden;background:#fff;box-shadow:0 14px 36px rgba(16,24,40,.08);display:flex;flex-direction:column}
+  .a-vid{background:#0f1115;display:flex;align-items:center;justify-content:center;aspect-ratio:3/2}
+  .a-vid video{display:block;width:100%;height:100%;object-fit:contain}
+  .a-txt{padding:22px 22px 24px}
+  .a-txt .num{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--green)}
+  .a-txt h3{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-top:6px;line-height:1.3}
+  .a-txt p{margin-top:10px;font-size:14px;color:var(--dim)}
+  .a-steps{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px;font-size:12px;font-weight:700}
+  .a-steps span{padding:4px 9px;border-radius:999px;background:var(--paper2);color:var(--dim)}
+  .a-steps i{font-style:normal;color:var(--faint)}
+  .a-note{margin-top:16px;font-size:12px;color:var(--faint)}
+  @media (max-width:860px){.a-grid{grid-template-columns:1fr}}
+
   /* ===== FIVE FLOWS ===== */
   .flows{background:var(--paper)}
   .flow{display:grid;grid-template-columns:1fr 1.45fr;gap:40px;align-items:center;padding:52px 0;border-top:1px solid var(--line2)}
@@ -183,6 +199,7 @@
     <a class="brand" href="#top"><span><b>PRO</b>CESS <b>STUDIO</b></span></a>
     <nav class="links">
       <a href="#board">작전판</a>
+      <a href="#anim">애니메이션</a>
       <a href="#flows">팀 운영</a>
       <a href="#loop">계획·실행·성찰</a>
       <a href="/guide/">사용법</a>
@@ -247,6 +264,36 @@
         <div class="to">어디로 → <b>경기 리뷰 · 다음 주 훈련</b></div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ===== ANIMATION ===== -->
+<section class="anim-sec" id="anim">
+  <div class="wrap">
+    <div class="kicker">장면 애니메이션</div>
+    <h2>장면을 이어 붙이면, 그 사이를 선수가 움직입니다.</h2>
+    <p class="sub">선수와 공을 놓고 다음 장면을 하나 더 만들면 됩니다. 두 장면 사이의 움직임은 작전판이 스스로 그립니다. 곡선 동선, 땅볼·로빙 패스, 장면마다 코칭 포인트까지 그대로 재생됩니다.</p>
+    <div class="a-grid">
+      <article class="a-card">
+        <div class="a-vid"><video autoplay muted loop playsinline preload="metadata" poster="/assets/landing/anim-drill.webp" width="558" height="559" aria-label="훈련 애니메이션 — 6+GK 대 6+GK, 7장면"><source src="/assets/landing/anim-drill.mp4" type="video/mp4"></video></div>
+        <div class="a-txt">
+          <div class="num">훈련 만들기</div>
+          <h3>훈련 하나가 그림 · 방법 · 코칭 포인트 · 움직임으로</h3>
+          <p>6+GK 대 6+GK, 장면 7개. 어디서 시작해 어디로 전진하는지를 말 대신 움직임으로 보여 줍니다. 완성한 훈련은 보관함에 쌓이고, 주간 일정의 한 칸에 올라가고, 선수에게는 영상이나 PDF로 전달됩니다.</p>
+          <div class="a-steps"><span>선수·공 배치</span><i>→</i><span>장면 추가</span><i>→</i><span>동선 그리기</span><i>→</i><span>재생 · 내보내기</span></div>
+        </div>
+      </article>
+      <article class="a-card">
+        <div class="a-vid"><video autoplay muted loop playsinline preload="metadata" poster="/assets/landing/anim-build.webp" width="956" height="629" aria-label="전술 분석 애니메이션 — 빌드업의 지원 관계, 4장면"><source src="/assets/landing/anim-build.mp4" type="video/mp4"></video></div>
+        <div class="a-txt">
+          <div class="num">전술 분석</div>
+          <h3>경기 장면을 움직임으로 돌아봅니다</h3>
+          <p>빌드업의 지원 관계, 장면 4개. 골키퍼의 첫 패스에 맞춰 누가 어디로 지원하는지를 한 장면씩 짚습니다. 상대 분석과 경기 준비 미팅 자료가 되고, 경기 뒤에는 실제 장면을 같은 방법으로 리뷰에 남깁니다.</p>
+          <div class="a-steps"><span>상대 분석</span><i>→</i><span>경기 준비 미팅</span><i>→</i><span>경기 리뷰 장면</span><i>→</i><span>다음 훈련</span></div>
+        </div>
+      </article>
+    </div>
+    <div class="a-note">위 두 영상은 작전판 재생을 그대로 녹화한 것입니다(프로세스 교과서 장면). 영상 · GIF · PDF · PPT로 내보내 미팅과 선수 전달에 씁니다.</div>
   </div>
 </section>
 
