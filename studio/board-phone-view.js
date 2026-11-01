@@ -90,6 +90,7 @@
         '#psPhoneBoardNotice strong{display:block;font-size:var(--t-5);font-weight:var(--fw-head);line-height:1.5}'+
         '#psPhoneBoardNotice span{display:block;font-size:var(--t-3);line-height:1.5;color:var(--c-muted)}'+
         'html.ps-page-board body.ps-phone-board-readonly #boardPageStrip.on.bp-multi:not(#_){position:relative!important;z-index:6!important}'+
+        'html.ps-page-board body.ps-phone-board-readonly #boardPageStrip.on:not(.bp-multi) .bp-tab{pointer-events:none!important}'+
         '#psPhoneBoardNotice button{flex:none;min-height:44px;padding:0 var(--sp-4);font-size:var(--t-5)}';
       doc.head.appendChild(style);sync();
       new win.MutationObserver(schedule).observe(doc.body,{attributes:true,attributeFilter:['class']});

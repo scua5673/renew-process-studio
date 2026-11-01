@@ -5902,6 +5902,11 @@ window.__buildScoutForm=function(k){
       }
     }catch(_){}
   }
+  function syncFoldScale(){
+    try{var f=document.getElementById('fBoard'),w=f&&f.contentWindow;
+      if(w&&w.PSPhoneBoardView&&w.PSPhoneBoardView.expanded(w))syncDeskScale();
+    }catch(_){}
+  }
   sw.addEventListener('click',function(e){var b=e.target.closest('button');if(b){saved=b.dataset.l;apply(saved);}});
   /* 2.732 — 판은 기기가 정한다. 옛 수동 선택은 현재 기기 판으로 이관하고,
      ?layout=mobile 만 저장 없이 데스크톱에서 폰 판을 미리 본다. */
@@ -5911,7 +5916,7 @@ window.__buildScoutForm=function(k){
   else if((savedDevice.phone&&saved!=='mobile')||(!savedDevice.phone&&saved!=='desktop'))saved=savedDevice.phone?'mobile':'desktop';
   var bf=document.getElementById('fBoard');if(bf)bf.addEventListener('load',function(){apply(saved,true);});
   apply(saved,true);
-  if(window.ResizeObserver&&_fr)new ResizeObserver(syncDeskScale).observe(_fr);
+  if(window.ResizeObserver&&_fr)new ResizeObserver(syncFoldScale).observe(_fr);
   /* 2.084 — 부팅 폴백이 공개 직전에 기기 레이아웃을 다시 씌울 수 있게 밖으로 연다 */
   try{ window.__psReapplyLayout=function(){ apply(saved,true); }; }catch(_){}
   function markShellReady(){

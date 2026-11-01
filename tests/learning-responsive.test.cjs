@@ -29,3 +29,13 @@ test('unfolded phone board keeps tools above fixed navigation and resets when fo
  unfolded=false;frames.clientWidth=400;c.syncDeskScale();
  for(const prop of ['width','height','transform','transformOrigin'])assert.equal(board.style[prop],'');
 });
+test('frame resize observation only rescales an expanded phone board',()=>{
+ let unfolded=false,calls=0;
+ const board=frame('fBoard');
+ board.contentWindow={PSPhoneBoardView:{expanded:()=>unfolded}};
+ const c=vm.createContext({document:{getElementById:()=>board}});
+ vm.runInContext(html.slice(start,end),c);c.syncDeskScale=()=>calls++;
+ c.syncFoldScale();assert.equal(calls,0,'desktop frame sizing must not feed back through ResizeObserver');
+ unfolded=true;c.syncFoldScale();assert.equal(calls,1,'expanded phone still follows frame/nav height changes');
+ unfolded=false;c.syncFoldScale();assert.equal(calls,1);
+});

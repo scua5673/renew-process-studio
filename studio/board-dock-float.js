@@ -74,7 +74,8 @@
         return [B + '#ps-command-dock' + X, B + '#ps-df-tray' + X, B + '#ps-df-opts' + X].join(',') + '{display:none!important}'; })(),
       // 3.087 — 커뮤니티 보기(읽기 전용)도 감춘다(사용자 «커뮤니티에 있는 것들 볼 때 도크가 필요 없는데 떠 있고»). 보드의 comm-viewing 감춤(figma-premium.css)을
       //   이 파일의 도크 규칙(id 열셋)이 이겨, 그리기 도구 · 장면 줄이 판 아래에 떠서 «움직임 재생» 단추까지 가렸다
-      (function () { var X = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map(function (i) { return ':not(#dfc' + i + ')'; }).join(''), B = 'html body.ps-dock-float.comm-viewing ';
+      // 3.232 — 좁아져 ps-dock-float가 꺼져도 감춘다. 남은 도크가 무대 여백 계산에 들어가면 padding이 무한히 늘어난다.
+      (function () { var X = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map(function (i) { return ':not(#dfc' + i + ')'; }).join(''), B = 'html body.comm-viewing ';
         return [B + '#ps-command-dock' + X, B + '#ps-df-tray' + X, B + '#ps-df-opts' + X].join(',') + '{display:none!important}'; })(),
       P + '{left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:max-content!important;max-width:calc(100vw - 24px)!important;height:auto!important;min-height:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;bottom:calc(14px + env(safe-area-inset-bottom))!important;grid-template-rows:none!important}',
       P + '>#floatBar{display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;height:auto!important;width:auto!important;background:transparent!important;padding:0!important}',
