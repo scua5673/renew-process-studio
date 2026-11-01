@@ -442,10 +442,12 @@
         <div class="sec-t">안정성 · 확인 필요 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 최근 7일</span></div>
         <div id="hmHealth"><div class="loading">불러오는 중…</div></div>
       </div>
+      <div class="panel" style="margin-top:12px"><div class="sec-t">업데이트 적용 지연</div><div id="hmUpdateDelivery"></div></div>
       <!-- 3.201 — 옛 판으로 도는 기기(studio/admin-stale-clients.js · ps_admin_stale_clients): 제보 전에 먼저 본다 -->
       <div class="panel" style="margin-top:12px">
-        <div class="sec-t">옛 판으로 도는 기기 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 최근 48시간 · 최신보다 20판 넘게 뒤진 기기</span></div>
+        <details><summary class="sec-t">구버전 참고 목록 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 최신보다 20판 넘게 뒤진 기록 · 적용 실패 확정 아님</span></summary>
         <div id="hmStale"><div class="loading">불러오는 중…</div></div>
+        </details>
       </div>
       <div class="panel" style="margin-top:12px">
         <div class="sec-t">운영 조치 목록 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 먼저 확인할 일</span></div>
@@ -617,6 +619,7 @@
 <script src="studio/admin-operations.js?v=3.090"></script>
 <script src="studio/admin-today.js?v=3.090"></script>
 <script src="studio/admin-stale-clients.js?v=3.201"></script>
+<script src="studio/admin-update-delivery.js"></script>
 <script src="studio/admin-actions.js?v=20261014"></script>
 <script src="studio/admin-community.js?v=20261014"></script>
 <script src="studio/support-diagnostics.js?v=2.816"></script>
@@ -1246,6 +1249,8 @@ function errHuman(code,event,stage,msg){
   var detail=errStorageDetail(code,stage,msg),r=detail||map[code]||(event==='idp_docs_missing'?map.idp_docs_missing:null);
   /* 2.925 — 새 판 적용 진단. 코드(error_code)는 막힌 단계라 이름으로 가른다. */
   if(!r&&event==='update_deferred')r=['새 판 적용 미뤄짐','새 판을 받았지만 10분 넘게 새로고침하지 못했습니다(옛 판에 머묾 — 서버가 옛 판 저장을 거부하면 고친 내용이 그 기기에만 남습니다). 코드가 막힌 단계입니다: unsafe:focus_textarea:fScout = 팀 운영 화면에서 입력 중 · overlay = 시트·모달 열림 · flush_timeout:fBoard = 그 화면의 저장 확인이 20초 안에 안 끝남 · flush_fail = 저장 확인 실패 · ws_busy/tx_busy = 팀·계정 전환 중.'];
+  if(!r&&event==='update_check_failed')r=['새 버전 확인 실패','새 버전 확인 요청이 실패했습니다. 연결 복구·앱 복귀 때 다시 확인하며, 작성 중인 화면은 유지합니다.'];
+  if(!r&&event==='update_install_failed')r=['새 판 설치 실패','새 버전의 파일 받기 또는 캐시 저장이 완료되지 않았습니다. 이전의 완전한 버전을 유지합니다.'];
   if(!r&&event==='update_sw_failed')r=['새 판 설치 실패','새 서비스워커 설치가 실패해(redundant) 새 판이 활성화되지 않았습니다. 미리 받을 파일 하나를 못 받았거나 저장 공간이 부족할 때 생깁니다.'];
   if(!r&&/^sync_http_/.test(code))r=['동기화 HTTP 오류','서버가 HTTP '+code.replace('sync_http_','')+' 응답을 반환했습니다. 권한, 요청 형식, 서버 정책을 확인하세요.'];
   if(!r)r=[event==='sync_failed'?'동기화 실패':'앱 오류','아직 사람이 읽는 설명이 없는 오류입니다. stage와 메시지를 보고 분류를 추가하세요.'];
@@ -1259,7 +1264,7 @@ function errResolution(code,event,stage,msg){
   code=String(code||'unknown'); event=String(event||''); stage=String(stage||''); msg=String(msg||'');
   var detail=errStorageDetail(code,stage,msg);if(detail)return detail[2];
   if(code==='sync_conflict')return '자료 확인에서 기기·서버 원문과 병합 기준을 비교하세요. 확인 전에는 덮어쓰거나 브라우저 자료를 지우지 마세요.';
-  if(event==='update_deferred')return '그 사람에게 앱 탭을 완전히 닫았다가 다시 열게(또는 Cmd+Shift+R) 하세요. 같은 단계(코드)가 여러 사람에게서 되풀이되면 그 화면의 지연 저장(psHasPending·psFlushPendingReady)이나 열린 채 남는 시트를 고쳐야 합니다.';
+  if(event==='update_deferred')return '먼저 해당 화면의 미저장 입력과 기기 저장 상태를 확인하세요. 저장이 확인된 뒤 업데이트를 적용합니다. 같은 단계가 반복되면 해당 화면의 저장 장벽을 점검하세요. 브라우저 자료 삭제나 강제 종료를 먼저 안내하지 마세요.';
   if(event==='update_sw_failed')return '앱을 완전히 닫았다가 다시 열게 하세요. 여러 사람에게서 나오면 sw.js 미리 받기 목록에 없는 파일·실패하는 파일이 있는지 배포본에서 확인하세요.';
   if(code==='sync_reject_hold')return '사용자에게 «자료 확인»을 열어 팀 것으로 맞출지, 이 기기 것을 남길지 고르게 하세요. 오래된 앱 판이면 앱을 완전히 닫았다가 다시 열게 합니다.';
   if(code==='sync_server_rejected')return '대기 편집을 보존하고 최신 앱에서 재시도하세요. 반복되면 조건부 저장 응답과 서버 원문, 권한 정책을 확인하세요.';
@@ -1405,8 +1410,13 @@ function loadHealthSummary(){
     });
   }).catch(function(){return null;});
 }
-var adminStale=null;
+var adminStale=null,adminUpdateDelivery=null;
 function loadStaleClients(){
+  var epoch=adminAuthEpoch;
+  if(window.PSAdminUpdateDelivery&&$('hmUpdateDelivery')){
+    if(!adminUpdateDelivery)adminUpdateDelivery=PSAdminUpdateDelivery.create({host:$('hmUpdateDelivery'),request:adminRequest,openUser:openAdminUser});
+    adminUpdateDelivery.load(function(){return !adminSessionLocked&&epoch===adminAuthEpoch;});
+  }
   if(!window.PSAdminStaleClients||!$('hmStale'))return;
   if(!adminStale)adminStale=PSAdminStaleClients.create({host:$('hmStale'),rpc:rpc,openUser:openAdminUser,missing:fnMiss});
   return adminStale.load();

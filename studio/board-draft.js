@@ -353,7 +353,7 @@
       // A deferred thumbnail redraw must not change the exact captured source
       // after its receipt. restoreAnimBeforeCapture preserves the edit itself.
       try{w.clearTimeout(w._boardPreviewTimer);w._boardPreviewTimer=null;}catch(_){}
-      return Promise.resolve().then(function(){return flush?flush():true;}).then(api.ready).then(function(){return w.PSStorage&&w.PSStorage.sharedReady?w.PSStorage.sharedReady():true;});
+      return Promise.resolve().then(function(){return flush?flush():true;}).then(function(){var g=w.__psBoardGuest;return g&&g.ready?g.ready():true;}).then(api.ready).then(function(){return w.PSStorage&&w.PSStorage.sharedReady?w.PSStorage.sharedReady():true;});
     });
     w.psHasPending=function(){return !!((has&&has())||api.pending());};
     var snap=api.snapshot;api.snapshot=function(){

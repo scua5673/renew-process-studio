@@ -5208,6 +5208,9 @@ function itemsWriteReady(players,options){
   });
 }
 function itemsWriteFlush(background){
+  // A never-edited guest has no roster owner or journal to flush. A suspended
+  // account, any prior job, or pending input must still use the strict barrier.
+  if(!_itemsJobSequence&&!_itemsPending&&!_itemsWritingN&&!getSess()&&!localStorage.getItem('ps_active_ws')&&!localStorage.getItem('ps_cache_owner_v1'))return Promise.resolve(true);
   if(background===true)return itemsStaleAPI().background(function(){return itemsWriteFlush(1);});
   if(background===undefined&&typeof itemsStaleAPI==='function')return itemsStaleAPI().foreground(function(){return itemsWriteFlush(2);});
   function retry(job){return itemsWriteRetryable(job)&&!(background===1&&itemsStaleAPI().skip(job));}

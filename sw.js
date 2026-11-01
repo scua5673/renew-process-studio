@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.233';
+const CACHE = 'process-3.234';
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/board-phone-view.js',
@@ -24,7 +24,7 @@ const CORE = [
   '/studio/storage-keys.js', '/studio/storage.js', '/studio/team-library.js', '/studio/team-load.js', '/studio/photo-crop.js', '/studio/team-photos.js', '/studio/profile-sheet.js', '/studio/player-card.js',
   '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/participation.js', '/studio/avail-edit-guard.js', '/studio/match-board-tools.js', '/studio/match-formats.js', '/studio/match-meet-parts.js', '/studio/match-goals-quick.js', '/studio/match-lock.js', '/studio/sync-mirror.js', '/studio/sync-roster-copies.js', '/studio/sync-size.js', '/studio/sync-observability.js', '/studio/idp-pub-wipe.js', '/studio/sync-items-stale.js', '/studio/sync.js',
   '/studio/sync-diagnosis.js', '/studio/sync-diagnosis-ui.js', '/studio/sync-diagnosis.css',
-  '/studio/autosave-status.js', '/studio/sync-confirmation.js', '/studio/update-progress.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
+  '/studio/autosave-status.js', '/studio/sync-confirmation.js', '/studio/update-progress.js', '/studio/update-client.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
   '/studio/shared-view-observation.js',
   '/studio/team-files.js',
   '/studio/support-diagnostics.js', '/studio/support-image.js', '/studio/support-image.css', '/studio/support.js', '/studio/support.css', '/studio/release-notes.js', '/studio/install-door.js',
@@ -189,53 +189,35 @@ async function clientRelease(id) {
 async function bindClient(id, release) {
   if (id) await (await caches.open(CLIENT_CACHE)).put(clientKey(id), new Response(release));
 }
-/* 2.949 — 오래 숨은 옛 판 앱 탭은 서비스워커가 새로 연다(10/1 보류 → 10/6 사용자 «순서대로 해줘»).
-   옛 문서는 자기 안전 새로고침(2.388)에 기대는데, 그 옛 코드의 버그(2.941 이전: 선택 상자 포커스·다른 출처 iframe 등)로
-   하루 넘게 옛 판에 갇힌 컴퓨터가 있었고(2.875·2.885·2.913), 10/5~10/6 에는 옛 판 부팅이 가용인원 기록을 지웠다(2.948).
-   새 서비스워커 코드는 옛 문서에도 돈다 — 그래서 옛 판 기기는 여기서만 고칠 수 있다.
-   셋 다일 때만 새로 연다: ① 이 판보다 앞선 앱 셸 문서(바인딩된 release ≠ CACHE, /studio/app.html)
-   ② 맨 위 창·포커스 없음 ③ 10분 넘게 «숨김»으로만 관찰됨(관찰 사이가 25분을 넘으면 그 사이를 모르므로 다시 잰다).
-   ⚠ 보이는 탭은 절대 건드리지 않는다 — 쓰는 중일 수 있다. 그건 문서 자신의 안전 새로고침 몫이다.
-   숨은 지 10분이면 화면의 지연 저장(최대 수 초)은 오래전에 끝났고, 새로 열 때 pagehide 저장도 돈다.
-   관찰은 그 탭의 요청(동기화·보고 — 다른 출처 요청도 fetch 이벤트는 온다)이 서비스워커를 깨울 때 한다.
-   끄려면 STUCK_RELOAD_ON=false 로 배포(서비스워커는 30분·탭을 볼 때마다 새 판을 확인한다). */
+/* Old clients keep their own release. Notify them, but only the document's
+   verified save barrier may navigate. Hidden duration is not a save receipt. */
 const STUCK_RELOAD_ON = true;
-const STUCK_HIDDEN_MS = 10 * 60 * 1000;
-const STUCK_GAP_MS = 25 * 60 * 1000;
 const STUCK_CHECK_MS = 60 * 1000;
-const STUCK_PATHS = new Set(['/studio/app.html']);
 let stuckLast = 0;
-function hiddenKey(id) { return new URL('/__ps_client_hidden__/' + encodeURIComponent(id), self.location.origin).href; }
-const FORCED_KEY = new URL('/__ps_sw_forced__', self.location.origin).href;
 async function stuckCheck(now = Date.now()) {
   if (!STUCK_RELOAD_ON || now - stuckLast < STUCK_CHECK_MS) return 0;
   stuckLast = now;
-  const meta = await caches.open(CLIENT_CACHE);
-  const list = await self.clients.matchAll({ type: 'window' });
-  let moved = 0;
-  for (const client of list) {
+  let notified = 0;
+  for (const client of await self.clients.matchAll({ type: 'window' })) {
     try {
-      if (client.frameType && client.frameType !== 'top-level') continue;
       const url = new URL(client.url);
-      if (url.origin !== self.location.origin || !STUCK_PATHS.has(url.pathname)) continue;
-      const key = hiddenKey(client.id);
+      if (client.frameType !== 'top-level' || url.origin !== self.location.origin || url.pathname !== '/studio/app.html') continue;
       const release = await clientRelease(client.id);
-      if (!release || release === CACHE || client.visibilityState !== 'hidden' || client.focused) { await meta.delete(key); continue; }
-      const hit = await meta.match(key);
-      let st = null; try { st = hit ? JSON.parse(await hit.text()) : null; } catch (_) { st = null; }
-      if (!st || !(st.seen > 0) || now - st.seen > STUCK_GAP_MS || now < st.since) st = { since: now, seen: now };
-      else st.seen = now;
-      const due = now - st.since >= STUCK_HIDDEN_MS && !(st.tried && now - st.tried < STUCK_GAP_MS);
-      if (due) st.tried = now;
-      await meta.put(key, new Response(JSON.stringify(st)));
-      if (!due || typeof client.navigate !== 'function') continue;
-      await meta.put(FORCED_KEY, new Response(JSON.stringify({ at: now, from: release, to: CACHE, mins: Math.round((now - st.since) / 60000) })));
-      await client.navigate(client.url);
-      moved++;
+      if (!release || release === CACHE) continue;
+      client.postMessage({ type: 'ps-update-available', release: CACHE });
+      // Older documents already understand this ready notification and expose
+      // their own save-before-update button. Never navigate an unresponsive tab.
+      client.postMessage({ type: 'ps-sw-progress', release: CACHE, done: 1, total: 1 });
+      notified++;
     } catch (_) {}
   }
-  return moved;
+  return notified;
 }
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'ps-release-query' && event.ports && event.ports[0]) {
+    event.ports[0].postMessage({ release: CACHE });
+  }
+});
 function htmlRelease(url) {
   const v = url.searchParams.get('v');
   return /\.html$/.test(url.pathname) && v && /^\d+\.\d+(?:\.\d+)?$/.test(v) ? 'process-' + v : null;

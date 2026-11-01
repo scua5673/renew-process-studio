@@ -16,7 +16,7 @@
   var DL_SPAN=0.60,SAVE_SPAN=0.20,OPEN_AT=0.80;   /* 받기 60% · 저장 확인 20% · 다시 열기 20%(새 판이 뜨며 100%) */
   var CD_SEC=5,CONT_KEY='ps_upd_cont_v1';
   var doc=win&&win.document,ov=null,state='',hideT=0,laterUntil=0,quietUntil=0,goAt=0,relName='';
-  var shown=0,target=0,raf=0,lastT=0,cdT=0,cdLeft=0,cdFn=null;
+  var shown=0,target=0,raf=0,lastT=0,cdT=0,cdLeft=0,cdFn=null,waitReason='';
 
   /* 0~1 로 자르고, 단계별 몫을 전체 비율로 바꾼다(시험이 이 둘만 본다) */
   function clamp(x){x=+x;return isFinite(x)?Math.max(0,Math.min(1,x)):0;}
@@ -95,14 +95,14 @@
   function close(){stopCd();clearTimeout(hideT);if(raf&&win&&win.cancelAnimationFrame)win.cancelAnimationFrame(raf);raf=0;if(ov){try{ov.remove();}catch(_){}}ov=null;state='';shown=target=0;}
   function fadeOut(ms){clearTimeout(hideT);hideT=setTimeout(function(){if(ov)ov.classList.add('out');hideT=setTimeout(close,380);},ms);}
   /* 다시 열린 새 판이 이어서 그리도록 판 번호 · 시각만 적는다 */
-  function mark(){try{win.sessionStorage.setItem(CONT_KEY,JSON.stringify({from:String(win.PS_BUILD||''),to:releaseNo(relName),at:now()}));}catch(_){}}
+  function mark(){try{var ctx=win.PSUpdateClient?win.PSUpdateClient.context():{};win.sessionStorage.setItem(CONT_KEY,JSON.stringify({from:String(win.PS_BUILD||''),to:releaseNo(relName)||ctx.to||'',update_id:ctx.update_id||'',at:now()}));}catch(_){}}
   function startUpdate(){stopCd();try{if(!win.__psForceReload&&typeof win.psAutoReloadWhenSafe==='function')win.psAutoReloadWhenSafe(true);if(win.__psForceReload)win.__psForceReload(true);}catch(_){}}
   function later(){stopCd();laterUntil=now()+30*60000;try{win.__psUpdateLater=true;}catch(_){}close();}
   function verText(){var v=releaseNo(relName);return v?(' '+v):'';}
   function paintReady(){
     if(state==='ready'&&cdT&&ov){q('.pup-sub').textContent=cdLeft+'초 뒤 새 버전으로 바꿔요 · 작성 중인 내용은 저장하고 바꿔요';return;}   /* 세는 동안은 글만 — 단추를 다시 만들지 않는다(누르는 중 놓치지 않게) */
     paint('ready','새 버전'+verText()+' 준비됐어요',DL_SPAN,
-      cdT?(cdLeft+'초 뒤 새 버전으로 바꿔요 · 작성 중인 내용은 저장하고 바꿔요'):'저장을 확인한 뒤 바꿔요. 입력을 멈추면 스스로 바뀌어요.',
+      cdT?(cdLeft+'초 뒤 새 버전으로 바꿔요 · 작성 중인 내용은 저장하고 바꿔요'):(waitReason||'저장을 확인한 뒤 바꿔요. 입력을 멈추면 스스로 바뀌어요.'),
       [['지금 업데이트',startUpdate,'pup-go'],['나중에',later]]);
   }
 
@@ -115,8 +115,9 @@
       if(now()<laterUntil)return;
       paint('dl','새 버전'+verText()+' 받는 중',downloadFraction(done,total),'작업은 그대로 계속하셔도 돼요');
     },
-    ready:function(release){
+    ready:function(release,message){
       if(release)relName=release;
+      if(message)waitReason=message;
       if(state==='save'||state==='done'||state==='warn'||state==='boot'||state==='fin'){
         /* 스스로 한 시도가 저장 확인에서 돌아오면(app.html finish) 카드를 «준비됨»으로 — 2분은 다시 세지 않는다(덮개가 되풀이해 깜박이지 않게) */
         if((state==='save'||state==='done')&&now()-goAt<25000){quietUntil=now()+120000;stopCd();paintReady();}
@@ -159,7 +160,7 @@
       if(!doc.body||!win.PS_BUILD){if(now()-t0<8000)setTimeout(wait,16);return;}
       var cur=String(win.PS_BUILD);if(!cur||cur===String(j.from||''))return;
       relName=cur;
-      function finish(){paint('fin','업데이트 완료',1,cur+' 버전으로 바뀌었어요');fadeOut(1800);}
+      function finish(){if(win.PSUpdateClient)win.PSUpdateClient.record('applied','applied',{from:j.from,to:cur,update_id:j.update_id});paint('fin','업데이트 완료',1,cur+' 버전으로 바뀌었어요');fadeOut(1800);}
       function booting(){return doc.body.classList.contains('ps-booting');}
       if(doc.hidden){   /* 숨은 채로 새로 열렸으면 돌아왔을 때 «바뀌었어요»만 */
         var onVis=function(){if(doc.hidden)return;doc.removeEventListener('visibilitychange',onVis);if(!booting())finish();};

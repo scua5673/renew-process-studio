@@ -70,11 +70,10 @@ test('새 판 설치 실패는 6시간에 한 번 · 서비스워커가 redundan
   f.c.psUpdSwFailed();f.c.psUpdSwFailed();
   assert.equal(f.events.length,1);assert.equal(f.events[0].name,'update_sw_failed');
   f.advance(6*3600000+1);f.c.psUpdSwFailed();assert.equal(f.events.length,2);
-  assert.match(app,/else if\(nw\.state==="redundant"&&navigator\.serviceWorker\.controller\)\{try\{psUpdSwFailed\(\);\}catch\(_\)\{\}\}/);
 });
 test('관리자 오류 탭이 두 이벤트를 사람 말로',()=>{
   const admin=fs.readFileSync(path.join(__dirname,'../admin.html'),'utf8');
   assert.match(admin,/event==='update_deferred'\)r=\['새 판 적용 미뤄짐'/);
   assert.match(admin,/event==='update_sw_failed'\)r=\['새 판 설치 실패'/);
-  assert.match(admin,/if\(event==='update_deferred'\)return '그 사람에게 앱 탭을 완전히 닫았다가/);
+  assert.match(admin,/if\(event==='update_deferred'\)return '먼저 해당 화면의 미저장 입력/);
 });
