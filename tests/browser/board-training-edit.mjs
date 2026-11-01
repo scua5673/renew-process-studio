@@ -35,7 +35,7 @@ try{
   }
   assert.equal(await f.evaluate(()=>__boardSaveExplicit({quiet:true,noLink:true})),true);
   await page.reload({waitUntil:'domcontentloaded'});f=await board();
-  assert.deepEqual(await f.evaluate(()=>({bibs:state.players.map(p=>p.bib),grid:window.__editGrid,text:PSBoardEdit.textStyle(state.drawings[1])})),{bibs:['#fb923c','#fb923c','#fb923c'],grid:3,text:{textWeight:400,textItalic:true,textAngle:15}});
+  assert.deepEqual(await f.evaluate(()=>({bibs:state.players.map(p=>p.bib),grid:window.__editGrid,text:PSBoardEdit.textStyle(state.drawings[1])})),{bibs:['#fb923c','#fb923c','#fb923c'],grid:3,text:{textWeight:400,textItalic:true,textAngle:15,textFont:'base'}});
   assert.equal(await f.locator('#tokenLayer .ps-bib').count(),3,'saved bibs are visible immediately after reload');
   assert.deepEqual(logs.filter(l=>l.type==='pageerror'),[]);
 }finally{for(const b of Object.values(browsers))await b.close();await fx.close();}

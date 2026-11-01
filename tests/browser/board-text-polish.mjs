@@ -22,6 +22,16 @@ try {
    anim.frames=[];animActive=-1;sel=null;multiSel=[];renderTokens();renderDrawings();renderAnimFrames();
   });
   await page.waitForTimeout(300);
+  if(width===1280){
+   await f.locator('#ps-df-equip').hover();await f.locator('.tipbox.on').waitFor();
+   assert.match(await f.locator('.tipbox.on').innerText(),/훈련 도구/);
+   assert.equal(await f.locator('#ps-df-equip').innerText(),'');
+   assert.equal(await f.locator('#ps-df-fold').innerText(),'');
+   await page.mouse.move(10,10);
+   await f.locator('#ps-df-team').focus();await page.keyboard.press('Tab');
+   await f.locator('.tipbox.on').waitFor();await page.keyboard.press('Escape');
+   assert.equal(await f.locator('.tipbox.on').count(),0,'Escape dismisses keyboard tooltip');
+  }
   step=width+' front/back';
   const layer=await f.evaluate(()=>{
    const d=state.drawings[0];zOrderItems([d],true);renderTokens();
@@ -45,29 +55,42 @@ try {
   const edit=await f.evaluate(()=>{const ed=document.querySelector('.ps-text-inline-editor'),r=ed.getBoundingClientRect(),d=state.drawings.find(d=>d.type==='text'),b=_textBox(d),m=world.getScreenCTM();return {w:r.width,h:r.height,expected:b.boxW*Math.hypot(m.a,m.b),left:r.left,right:r.right,view:innerWidth,hidden:PSBoardText.node(d).style.visibility};});
   assert.ok(edit.w<=Math.min(edit.expected+6,edit.view-8),'existing width: '+JSON.stringify(edit));
   assert.ok(edit.h<110,'no five-row enlargement: '+JSON.stringify(edit));assert.ok(edit.left>=0&&edit.right<=edit.view+1);assert.equal(edit.hidden,'hidden');
+  for(const font of ['bold','round','serif','base','hand']){
+   await f.getByLabel('텍스트 글꼴',{exact:true}).selectOption(font);
+   await f.evaluate(async()=>{const ed=document.querySelector('.ps-text-inline-editor');await __boardFontLoad(ed.__psTextStyle.textFont,ed.value);});
+   assert.equal(await f.locator('.ps-text-inline-editor').evaluate(ed=>ed.__psTextStyle.textFont),font);
+  }
   await f.locator('.ps-text-inline-editor').fill('압박 유지');
   await f.getByLabel('텍스트 배경 불투명도',{exact:true}).evaluate(el=>{el.value='0.35';el.dispatchEvent(new Event('input',{bubbles:true}));});
   if(shots)await page.screenshot({path:shots+'/'+engine+'-'+width+'-editor.png'});
   await f.getByRole('button',{name:'완료',exact:true}).click();
-  const saved=await f.evaluate(()=>{const d=state.drawings.find(d=>d.type==='text'),g=PSBoardText.node(d);return {text:d.text,op:d.bgOp,locked:d.locked,front:d.front,alpha:g.querySelector('.ps-text-bg').getAttribute('fill-opacity'),visible:g.style.visibility,ink:g.querySelector('text').getAttribute('fill')};});
-  assert.deepEqual(saved,{text:'압박 유지',op:.35,locked:true,front:true,alpha:'0.35',visible:'',ink:'#ffffff'});
+  const saved=await f.evaluate(()=>{const d=state.drawings.find(d=>d.type==='text'),g=PSBoardText.node(d);return {text:d.text,font:d.textFont,op:d.bgOp,locked:d.locked,front:d.front,alpha:g.querySelector('.ps-text-bg').getAttribute('fill-opacity'),visible:g.style.visibility,ink:g.querySelector('text').getAttribute('fill')};});
+  assert.deepEqual(saved,{text:'압박 유지',font:'hand',op:.35,locked:true,front:true,alpha:'0.35',visible:'',ink:'#ffffff'});
   step=width+' cancel/undo/snapshot/export';
   await f.evaluate(()=>{const d=state.drawings.find(d=>d.type==='text');addText(d.pts[0],d);});
+  await f.getByLabel('텍스트 글꼴',{exact:true}).selectOption('serif');
   await f.locator('.ps-text-inline-editor').fill('취소할 내용');
   await f.getByLabel('텍스트 배경 불투명도',{exact:true}).evaluate(el=>{el.value='0';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await f.getByRole('button',{name:'취소',exact:true}).click();
-  assert.deepEqual(await f.evaluate(()=>{const d=state.drawings.find(d=>d.type==='text');return [d.text,d.bgOp];}),['압박 유지',.35]);
+  assert.deepEqual(await f.evaluate(()=>{const d=state.drawings.find(d=>d.type==='text');return [d.text,d.bgOp,d.textFont];}),['압박 유지',.35,'hand']);
   await f.evaluate(()=>undoLast());
   assert.equal(await f.evaluate(()=>state.drawings.find(d=>d.type==='text').text),'압박');
-  const ex=await f.evaluate(()=>{
-   const d=state.drawings.find(d=>d.type==='text');d.text='압박 유지';d.bgOp=.35;d.front=true;
+  assert.equal(await f.evaluate(()=>PSBoardEdit.textStyle(state.drawings.find(d=>d.type==='text')).textFont),'base');
+  const ex=await f.evaluate(async()=>{
+   const d=state.drawings.find(d=>d.type==='text');d.text='압박 유지';d.textFont='hand';d.bgOp=.35;d.front=true;
    const snap=JSON.parse(JSON.stringify(captureSnap()));loadSnap(snap);renderDrawings();
+   await __nameFontWarm();
    const xml=boardImageXML().xml,thumb=boardThumbSVG();
    return {persist:state.drawings.find(d=>d.type==='text').bgOp,xml,thumb};
   });
-  assert.equal(ex.persist,.35);assert.match(ex.xml,/fill-opacity="0.35"/);assert.match(ex.thumb,/압박 유지/);
+  assert.equal(ex.persist,.35);assert.match(ex.xml,/@font-face\{font-family:'PSN Gaegu'/);assert.match(ex.xml,/data:font\/woff2;base64,/);assert.match(ex.xml,/fill-opacity="0.35"/);assert.match(ex.thumb,/압박 유지/);
   assert.ok(ex.xml.indexOf('id="textFrontLayer"')>ex.xml.indexOf('id="tokenLayer"'));
   if(width===1280){
+   step='font PNG export';
+   const downloadPromise=page.waitForEvent('download',{timeout:15000});
+   await f.evaluate(()=>exportPNG());
+   const download=await downloadPromise,bytes=fs.readFileSync(await download.path());
+   assert.deepEqual([...bytes.subarray(0,8)],[137,80,78,71,13,10,26,10]);
    step='foreground group drag';
    const drag=await f.evaluate(()=>{const d=state.drawings.find(d=>d.type==='text');d.locked=false;sel=null;multiSel=state.drawings.slice();renderDrawings();const p=svg.createSVGPoint();p.x=d.pts[0].x;p.y=d.pts[0].y;const q=p.matrixTransform(world.getScreenCTM());return {x:q.x,y:q.y,before:state.drawings.map(d=>d.pts[0].x)};});
    const fb=await page.locator('#fBoard').boundingBox();await page.mouse.move(fb.x+drag.x,fb.y+drag.y);await page.mouse.down();await page.mouse.move(fb.x+drag.x+30,fb.y+drag.y+15,{steps:6});await page.mouse.up();
@@ -94,8 +117,8 @@ try {
    await page.waitForFunction(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])'));
    await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
    f=await (await page.waitForSelector('#fBoard')).contentFrame();await ready();
-   const restored=await f.evaluate(()=>{const d=state.drawings.find(d=>d.type==='text');return d&&{text:d.text,op:d.bgOp,front:d.front,locked:d.locked,above:PSBoardText.node(d).parentNode.id};});
-   assert.deepEqual(restored,{text:'압박 유지',op:.35,front:true,locked:true,above:'textFrontLayer'});
+   const restored=await f.evaluate(()=>{const d=state.drawings.find(d=>d.type==='text');return d&&{text:d.text,font:d.textFont,op:d.bgOp,front:d.front,locked:d.locked,above:PSBoardText.node(d).parentNode.id};});
+   assert.deepEqual(restored,{text:'압박 유지',font:'hand',op:.35,front:true,locked:true,above:'textFrontLayer'});
   }
   assert.deepEqual(logs.filter(l=>l.type==='pageerror'),[]);
   await page.context().close();
