@@ -51,7 +51,10 @@ try{
    };
    const close=async options=>{await click(f.locator('.ps-in-x'),options);await ctl.waitFor({state:'hidden'});};
    if(width<600){
-    mark('phone-view-only');await click(player.locator('.tok-c'),{finger:true});await stable();
+    // Phone layout uses the native viewport. Keep Playwright's actionability
+    // checks here: fitting the pitch may replace the token between separate
+    // hit-test/bounding-box reads in the iPad coordinate adapter above.
+    mark('phone-view-only');await player.locator('.tok-c').tap();await stable();
     assert.equal(await ctl.isVisible(),false,'a phone cannot open a player editing panel');
     assert.equal(await f.locator('#psPhoneBoardNotice').isVisible(),true);
     results.push({width,phoneReadOnly:true});continue;
