@@ -22,7 +22,9 @@ try{
  const read=()=>f.evaluate(()=>JSON.stringify({players:state.players,equipment:state.equipment,drawings:state.drawings,frames:anim.frames.map(x=>x.snap),active:animActive}));
  const before=await read(),doc=await f.evaluateHandle(()=>document);
  await f.locator('#ps-df-equip').click();await f.locator('#ps-df-tray').waitFor({state:'visible'});
- assert.match(await f.locator('#ps-df-tray').innerText(),/콘/);
+ // Equipment names are rendered by ::after from title, so innerText omits them.
+ await f.locator('#ps-df-tray #railEquip .chip[title="콘"]').waitFor({state:'visible'});
+ assert.equal(await f.locator('#ps-df-tray #railEquip .chip[title="빨강 마커"]').isVisible(),true);
  await f.getByRole('button',{name:'선수·훈련 도구 닫기',exact:true}).click();
  assert.equal(await f.locator('#ps-df-equip').getAttribute('aria-expanded'),'false');
  await f.locator('#ps-df-anim').click();assert.equal(await f.locator('#animBar').isVisible(),false);
