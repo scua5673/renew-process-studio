@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.232 펼친 폴드 — `PSPhoneBoardView.phone()`은 기기 정체성, `readOnly()`는 현재 표시의 편집 제한이다. 실제 화면의 짧은 변·최상위 창 너비가 모두 600px 이상일 때만 펼친 폰을 기존 편집기로 연다. iframe 논리 폭만으로 풀지 않는다. 접기·펼치기에 iframe을 reload하지 않고 부모 영역 ResizeObserver로 도구 높이를 맞춘다. 상세 `docs/fold-board-tools-3232.md`.
+
 - 3.223 커뮤니티 카드 — `community-cards.css`에서 레터는 작은 호수·자연 줄바꿈 제목·읽기 푸터의 반응형 카드, 트레이닝·코치는 실제 그림과 정보 위계를 적용한다. FIFA는 `fi-play`가 기존 onOpen을 호출하고 원문 링크는 전파를 막아 별도로 연다. 현재 193개 FIFA에 모두 작전판이 있으므로 외부 카드 검증은 index 일부가 없는 합성 응답으로만 한다. 상세 `docs/community-cards-3223.md`.
 
 - 3.222 커뮤니티 탐색형 — 검색 input은 모든 폭에서 `.top`에 두고 다섯 분류를 같은 폭으로 표시한다. 767px 이하에서는 `commTopics`의 기존 taxonomy를 접어 펼치며 연령·인원과 정렬은 기존 필터 시트 경로다. 레터 소개를 제목·정렬 줄로 줄이고, 유튜브 카드의 native 전술 버튼과 외부 영상 링크를 DOM/화면 동일 순서로 표시한다. `community-library`·`community-youtube`의 폭·필터·원본 연결 검증을 유지한다. 보드 디자인 3.221은 별도 작업이며 이 변경에 포함하지 않았다. 상세: `docs/community-explore-3222.md`.

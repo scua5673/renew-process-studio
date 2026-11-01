@@ -74,7 +74,8 @@
         return [B + '#ps-command-dock' + X, B + '#ps-df-tray' + X, B + '#ps-df-opts' + X].join(',') + '{display:none!important}'; })(),
       // 3.087 — 커뮤니티 보기(읽기 전용)도 감춘다(사용자 «커뮤니티에 있는 것들 볼 때 도크가 필요 없는데 떠 있고»). 보드의 comm-viewing 감춤(figma-premium.css)을
       //   이 파일의 도크 규칙(id 열셋)이 이겨, 그리기 도구 · 장면 줄이 판 아래에 떠서 «움직임 재생» 단추까지 가렸다
-      (function () { var X = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map(function (i) { return ':not(#dfc' + i + ')'; }).join(''), B = 'html body.ps-dock-float.comm-viewing ';
+      // 3.232 — 좁아져 ps-dock-float가 꺼져도 감춘다. 남은 도크가 무대 여백 계산에 들어가면 padding이 무한히 늘어난다.
+      (function () { var X = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map(function (i) { return ':not(#dfc' + i + ')'; }).join(''), B = 'html body.comm-viewing ';
         return [B + '#ps-command-dock' + X, B + '#ps-df-tray' + X, B + '#ps-df-opts' + X].join(',') + '{display:none!important}'; })(),
       P + '{left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:max-content!important;max-width:calc(100vw - 24px)!important;height:auto!important;min-height:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;bottom:calc(14px + env(safe-area-inset-bottom))!important;grid-template-rows:none!important}',
       P + '>#floatBar{display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;height:auto!important;width:auto!important;background:transparent!important;padding:0!important}',
@@ -100,11 +101,20 @@
       P + ' #colorWrap{width:42px!important;height:42px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}',
       P + ' #colorBtn{width:26px!important;height:26px!important;border-radius:50%!important;box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(20,22,26,.18)!important}',
       P + ' #cmd-dock-fold{display:none!important}',
+      P + ' #cmd-tool-row #toolSeg>button.ps-df-panel,' + P + ' #ps-df-toggles>#ps-df-anim{flex-direction:column!important;gap:2px!important;width:60px!important;min-width:60px!important;max-width:60px!important;flex-basis:60px!important}',
+      P + ' #ps-df-toggles>#ps-df-anim{width:76px!important;min-width:76px!important;max-width:76px!important;flex-basis:76px!important}',
+      P + ' .df-label,' + P + ' #ps-df-fold{font-family:inherit!important;font-size:var(--t-3)!important;line-height:1.2!important}',
+      P + ' #ps-df-fold{color:var(--c-ink)!important}',
+      T + ' .df-tray-head{display:flex;align-items:flex-start;gap:var(--sp-2)}' + T + ' .df-tabs{flex:1;min-width:0}' + T + ' .df-close{flex:none;border:0;border-radius:var(--r-2);padding:var(--sp-3);min-height:44px;font:inherit;font-size:var(--t-3);background:var(--c-surface);color:var(--c-ink)}',
+      'html.ps-page-board body.ps-dock-float.cmd-dock-folded #ps-command-dock'+Array(25).join(':not(#psFold)')+'>:not(#cmd-dock-handle){display:none!important}',
+      'html.ps-page-board body.ps-dock-float.cmd-dock-folded #cmd-dock-handle{display:flex!important;min-height:44px;width:100%;padding:0 var(--sp-4);color:var(--c-ink)}',
+      'html.ps-page-board body.cmd-dock-folded'+Array(25).join(':not(#psFold)')+' #ps-df-tray,html.ps-page-board body.cmd-dock-folded'+Array(25).join(':not(#psFold)')+' #ps-df-opts{display:none!important}',
       P + ' #cmd-tool-row>.cmd-separator{display:none!important}',
       'body.ps-dock-float.ps-df-anim-off ' + P.replace('html.ps-page-board body.ps-dock-float ', '') + '>#animBar{display:none!important}',
       P + ' #drawPanel{display:none!important}',   // 3.076 — 선수 · 장비 줄은 «선수» 칸(#ps-df-tray) 안으로 옮겨 카드로 보인다
       TRAY_CSS,
       P + ' #toolSeg>.ps-df-div{flex:0 0 1px;width:1px;height:26px;margin:0 6px;background:rgba(20,22,26,.09)}',
+      '@media(max-width:900px){'+P+' #cmd-tool-row{gap:0!important}'+P+' #toolSeg{gap:0!important}'+P+' #cmd-tool-row .cmd-cluster+.cmd-cluster,'+P+' #ps-df-toggles{margin-left:0!important;padding-left:2px!important;border-left:0!important}'+P+' #toolSeg>.ps-df-div{display:none!important}'+P+' #toolSeg>button,'+P+' #cmd-tool-row .cmd-cluster>button.btn,'+P+' #ps-df-toggles>button{width:40px!important;min-width:40px!important;max-width:40px!important;flex-basis:40px!important}'+P+' #cmd-tool-row #toolSeg>button.ps-df-panel{width:52px!important;min-width:52px!important;max-width:52px!important;flex-basis:52px!important}'+P+' #ps-df-toggles>#ps-df-anim{width:68px!important;min-width:68px!important;max-width:68px!important;flex-basis:68px!important}}',
       P + ' #cmd-tool-row #toolSeg>button.ps-df-panel[aria-pressed="true"],' + P + ' #cmd-tool-row #ps-df-toggles>button.btn[aria-pressed="true"]{background:rgba(20,33,61,.13)!important;color:#14213D!important;box-shadow:inset 0 0 0 1.5px rgba(20,33,61,.35)!important}',
       // ③ 도구 옵션 띠
       '#ps-df-opts{position:fixed;z-index:400;display:none;align-items:center;gap:6px;padding:8px;border-radius:18px;' + glass.replace(/!important/g, '') + 'font-family:inherit}',
@@ -135,7 +145,7 @@
     dock.__psDockFloat = true;
     var st = readOpen(env.storage), win = doc.defaultView;
     var style = doc.createElement('style'); style.id = 'ps-dock-float-css'; style.textContent = css(); doc.head.appendChild(style);
-    function wide() { try { return win.matchMedia('(min-width:768px)').matches && body.classList.contains('rail-full'); } catch (_) { return false; } }
+    function wide() { try { return !(win.psPhoneBoardReadOnly&&win.psPhoneBoardReadOnly())&&win.matchMedia('(min-width:768px)').matches && body.classList.contains('rail-full'); } catch (_) { return false; } }
     function sync() { var on = wide(); if (body.classList.contains('ps-dock-float') !== on) body.classList.toggle('ps-dock-float', on); if (!on && typeof giveBackLater === 'function') giveBackLater(); }
     var giveBackLater = null;
     sync(); try { win.addEventListener('resize', sync); new win.MutationObserver(sync).observe(body, { attributes: true, attributeFilter: ['class'] }); } catch (_) {}
@@ -146,17 +156,23 @@
     function scenes() { try { return env.sceneCount ? env.sceneCount() : doc.querySelectorAll('#animFrames .anim-frame').length; } catch (_) { return 0; } }
     function mk(id, icon, title, cls) { var b = doc.createElement('button'); b.type = 'button'; b.className = cls; b.id = id; b.title = title; b.setAttribute('aria-label', title); b.innerHTML = ICON[icon]; return b; }
     var tTeam = mk('ps-df-team', 'team', '선수 놓기 — 팀 · 골키퍼 · 코치', 'ps-df-panel'), tEquip = mk('ps-df-equip', 'equip', '장비 놓기 — 콘 · 골대 · 공 …', 'ps-df-panel');
+    function label(b,text){var s=doc.createElement('span');s.className='df-label';s.textContent=text;b.appendChild(s);}
+    label(tTeam,'선수');label(tEquip,'훈련 도구');
+    [tTeam,tEquip].forEach(function(b){b.setAttribute('aria-controls','ps-df-tray');});
     [tTeam, tEquip].forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); var k = b.id === 'ps-df-team' ? 'team' : 'equip'; st.panel = st.panel === k ? '' : k; writeOpen(st, env.storage); paint(); }); });
     var moveBtn = seg.querySelector('button[data-tool="move"]'), div1 = doc.createElement('span'), div2 = doc.createElement('span'); div1.className = div2.className = 'ps-df-div';
     var after = moveBtn ? moveBtn.nextSibling : seg.firstChild;
     [div1, tTeam, tEquip, div2].forEach(function (n) { seg.insertBefore(n, after); });
     var tg = doc.createElement('div'); tg.className = 'cmd-cluster'; tg.id = 'ps-df-toggles';
     var tAnim = mk('ps-df-anim', 'anim', '애니메이션 — 장면 줄 열기/닫기', 'btn'); tg.appendChild(tAnim); row.appendChild(tg);
+    label(tAnim,'애니메이션');tAnim.setAttribute('aria-controls','animBar');
+    var tFold=doc.createElement('button');tFold.type='button';tFold.id='ps-df-fold';tFold.className='btn';tFold.textContent='접기';tFold.setAttribute('aria-label','도구 접기');tg.appendChild(tFold);
+    tFold.addEventListener('click',function(){closeTray();hideOpts();if(win.__psDockFold)win.__psDockFold('close');});
     tAnim.addEventListener('click', function () { st.anim = !animOpen(); writeOpen(st, env.storage); paint(); });
     function animOpen() { return st.anim === null ? scenes() > 0 : st.anim; }
     // «선수» 칸
     var tray = doc.createElement('div'); tray.id = 'ps-df-tray'; tray.setAttribute('role', 'dialog'); tray.setAttribute('aria-label', '선수 · 장비 · 포메이션');
-    tray.innerHTML = '<div class="df-tabs" role="tablist"><button type="button" data-tab="team">선수</button><button type="button" data-tab="equip">장비</button><button type="button" data-tab="form">포메이션</button></div>' +
+    tray.innerHTML = '<div class="df-tray-head"><div class="df-tabs" role="tablist"><button type="button" data-tab="team">선수</button><button type="button" data-tab="equip">훈련 도구</button><button type="button" data-tab="form">포메이션</button></div><button type="button" class="df-close" data-close-tray aria-label="선수·훈련 도구 닫기">닫기</button></div>' +
       '<div class="df-pane" data-pane="team"><div class="df-h">팀 — 고르고 운동장을 누르면 한 명씩 (길게 누르면 유니폼 설정)</div><div class="df-slot-team"></div><div class="df-h">역할 · 연속 배치 — 끌어서 놓아도 돼요</div><div class="df-slot-stamp"></div>' +
       '<div class="df-row"><span>한 번에 놓기</span><div class="df-step"><button type="button" data-step="-1" aria-label="한 명 적게">−</button><b class="df-n">11</b>명<button type="button" data-step="1" aria-label="한 명 많이">＋</button></div><button type="button" class="df-cta" data-place="1">운동장에 놓기</button></div></div>' +
       '<div class="df-pane" data-pane="equip"><div class="df-h">장비 — 누르고 운동장을 누르거나, 끌어서 놓아요</div><div class="df-slot-equip"></div></div>' +
@@ -203,6 +219,7 @@
       tray.style.left = left + 'px'; tray.style.top = Math.max(12, dock.getBoundingClientRect().top - tray.offsetHeight - 12) + 'px';
     }
     tray.addEventListener('click', function (e) {
+      if(e.target.closest('[data-close-tray]')){closeTray();return;}
       var t = e.target.closest('[data-tab]'); if (t) { var n = t.getAttribute('data-tab'); st.tab = n; if (n === 'equip') st.panel = 'equip'; else if (st.panel === 'equip') st.panel = 'team'; writeOpen(st, env.storage); paint(); tab(n); return; }
       var s = e.target.closest('[data-step]'); if (s) { count = Math.max(1, Math.min(11, count + +s.getAttribute('data-step'))); tray.querySelector('.df-n').textContent = count; return; }
       if (e.target.closest('[data-place]')) { var on = doc.querySelector('#benchCat .tpill.on'), team = on ? on.getAttribute('data-cat') : 'blue'; try { win.addPlayers(team, count); } catch (_) {} return; }
@@ -216,6 +233,7 @@
     //   눌린 원래 단추가 끌기를 이어 가도록 자리(레이아웃)는 남기고 보이지 않게만 했다가, 손을 떼면 닫는다. 팀 카드는 칸을 그대로 둔다.
     function stepAside() {
       st.panel = ''; writeOpen(st, env.storage); body.classList.remove('ps-df-team', 'ps-df-equip'); tTeam.setAttribute('aria-pressed', 'false'); tEquip.setAttribute('aria-pressed', 'false');
+      tTeam.setAttribute('aria-expanded','false');tEquip.setAttribute('aria-expanded','false');
       tray.style.visibility = 'hidden'; tray.style.pointerEvents = 'none';
       var done = function () { win.removeEventListener('pointerup', done, true); win.removeEventListener('pointercancel', done, true); win.setTimeout(function () { tray.classList.remove('on'); tray.style.visibility = ''; tray.style.pointerEvents = ''; }, 0); };
       win.addEventListener('pointerup', done, true); win.addEventListener('pointercancel', done, true); win.setTimeout(done, 15000);
@@ -226,6 +244,8 @@
       body.classList.toggle('ps-df-team', st.panel === 'team'); body.classList.toggle('ps-df-equip', st.panel === 'equip'); body.classList.toggle('ps-df-anim-off', !a);
       if (st.panel && body.classList.contains('ps-dock-float')) openTray(); else { tray.classList.remove('on'); if (!body.classList.contains('ps-dock-float')) giveBack(); }
       tTeam.setAttribute('aria-pressed', st.panel === 'team' ? 'true' : 'false'); tEquip.setAttribute('aria-pressed', st.panel === 'equip' ? 'true' : 'false'); tAnim.setAttribute('aria-pressed', a ? 'true' : 'false');
+      tTeam.setAttribute('aria-expanded',String(st.panel==='team'));tEquip.setAttribute('aria-expanded',String(st.panel==='equip'));tAnim.setAttribute('aria-expanded',String(a));
+      tAnim.setAttribute('aria-label',a?'애니메이션 접기':'애니메이션 열기');tAnim.title=a?'애니메이션 접기 · 장면 유지':'애니메이션 열기';
     }
     giveBackLater = function () { tray.classList.remove('on'); giveBack(); };
     paint();
@@ -296,7 +316,7 @@
   }
   // 작전판이 명령 도크를 다 세운 뒤에 입힌다(도크는 부팅 중에 원래 버튼들을 옮겨 만든다)
   function auto(win) {
-    var n = 0; (function tryIt() { var d = win.document; if (d.getElementById('cmd-tool-row') && d.getElementById('toolSeg') && d.body.classList.contains('command-dock-v5')) { win.__psDockFloat = install(d, {}); return; } if (++n < 60) win.setTimeout(tryIt, 250); })();
+    var n = 0;function tryIt() {if(win.__psDockFloat)return;var d = win.document; if (d.getElementById('cmd-tool-row') && d.getElementById('toolSeg') && d.body.classList.contains('command-dock-v5')) { win.__psDockFloat = install(d, {}); return; } if (++n < 60) win.setTimeout(tryIt, 250); }tryIt();win.addEventListener('resize',tryIt);
   }
   if (typeof window !== 'undefined' && window.document && !window.__psDockFloatNoAuto) {
     if (window.document.readyState === 'loading') window.document.addEventListener('DOMContentLoaded', function () { auto(window); }); else auto(window);
