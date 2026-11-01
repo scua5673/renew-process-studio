@@ -5210,7 +5210,7 @@ function itemsWriteReady(players,options){
   });
 }
 function itemsWriteFlush(background){
-  // Only a never-edited guest has no roster journal (docs/update-delivery-3234.md).
+  // Only a never-edited guest has no roster journal (docs/update-delivery-3236.md).
   if(!_itemsJobSequence&&!_itemsPending&&!_itemsWritingN&&!getSess()&&!localStorage.getItem('ps_active_ws')&&!localStorage.getItem('ps_cache_owner_v1'))return Promise.resolve(true);
   if(background===true)return itemsStaleAPI().background(function(){return itemsWriteFlush(1);});
   if(background===undefined&&typeof itemsStaleAPI==='function')return itemsStaleAPI().foreground(function(){return itemsWriteFlush(2);});

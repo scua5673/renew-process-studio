@@ -3,242 +3,193 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>프로세스 스튜디오 | 축구 전술판·훈련·팀 운영</title>
+<title>프로세스 스튜디오 | 계획하고, 실행하고, 돌아보는 팀 운영</title>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="프로세스 스튜디오">
 <meta property="og:locale" content="ko_KR">
-<meta property="og:title" content="프로세스 스튜디오">
-<meta property="og:description" content="전술을 그리고, 훈련을 계획하세요.">
+<meta property="og:title" content="프로세스 스튜디오 — 계획하고, 실행하고, 돌아보는 팀 운영">
+<meta property="og:description" content="작전판에서 전술과 훈련을 그리고, 일정·훈련·선수·경기가 한 흐름으로 이어집니다. 무엇을 계획했고, 실제로 무엇을 했으며, 다음엔 무엇을 바꿀지 팀이 함께 돌아봅니다.">
 <meta property="og:url" content="https://studio.processfootball.com/landing.html">
 <meta property="og:image" content="https://studio.processfootball.com/assets/brand/studio-share-v3.png">
 <meta property="og:image:secure_url" content="https://studio.processfootball.com/assets/brand/studio-share-v3.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="600">
-<meta property="og:image:alt" content="프로세스 스튜디오 — 축구 전술·훈련 도구">
+<meta property="og:image:alt" content="프로세스 스튜디오 — 축구 작전판과 팀 운영">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="프로세스 스튜디오">
-<meta name="twitter:description" content="전술을 그리고, 훈련을 계획하세요.">
+<meta name="twitter:title" content="프로세스 스튜디오 — 계획하고, 실행하고, 돌아보는 팀 운영">
+<meta name="twitter:description" content="작전판에서 전술과 훈련을 그리고, 일정·훈련·선수·경기가 한 흐름으로 이어집니다.">
 <meta name="twitter:image" content="https://studio.processfootball.com/assets/brand/studio-share-v3.png">
-<meta name="twitter:image:alt" content="프로세스 스튜디오 — 축구 전술·훈련 도구">
-<meta name="description" content="프로세스 스튜디오(PROCESS STUDIO)는 축구 코치와 팀을 위한 전술·훈련 도구입니다. 작전판, 훈련 계획, 경기 준비, 선수단 관리와 IDP를 한곳에서 연결하고 코칭 스태프와 공유하세요.">
+<meta name="twitter:image:alt" content="프로세스 스튜디오 — 축구 작전판과 팀 운영">
+<meta name="description" content="프로세스 스튜디오(PROCESS STUDIO)는 축구 코칭스태프를 위한 작전판과 팀 운영 도구입니다. 일정과 선수 가동성, 훈련의 누적, 선수별 훈련 강도, 코칭스태프의 계획, 경기와 결과를 한 흐름으로 연결해 팀이 함께 돌아봅니다.">
 <link rel="canonical" href="https://studio.processfootball.com/landing.html">
 <meta name="robots" content="index,follow">
-<meta name="theme-color" content="#0b0c0e">
+<meta name="theme-color" content="#ffffff">
 <link rel="icon" type="image/png" href="/assets/brand/studio-64-v1.png">
 <link rel="apple-touch-icon" href="/assets/brand/studio-180-v1.png">
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.026">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b">
 <style>
+  /* 3.235 — 소개 페이지를 «계획 → 실행 → 성찰» 팀 운영 기준으로 다시 썼다. 작전판이 중심, 팀 운영은 다섯 흐름.
+     판 안의 숫자·이름은 모두 예시(실제 팀 자료 아님) — 각 판에 «예시» 표식을 둔다. */
   *{margin:0;padding:0;box-sizing:border-box}
-  :focus-visible{outline:2px solid #3a6df0;outline-offset:2px}
+  :focus-visible{outline:2px solid #2f6fe4;outline-offset:2px}
   :root{
-    --ink:#0d0e10; --dim:#63666c; --faint:#697079;   /* 3.038 — 키커·푸터 회색 2.7:1 → 5.0:1(피드백 DS-14) */
-    --line:#eceef0; --bg:#ffffff; --paper:#f7f8f9;
-    --dark:#0b0c0e; --dark2:#131519;
+    --ink:#0d0e10; --dim:#4b4f56; --faint:#697079;   /* --faint 는 흰 바탕 · #F7F8F9 에서 4.5:1 넘게(tests/faint-contrast-3038) */
+    --line:#e7e9ec; --line2:#d9dce1; --bg:#ffffff; --paper:#f6f7f8; --paper2:#eef1ee;
+    --green:#1f6b47; --green-bg:#e4f1e9; --red:#b23a3a; --red-bg:#f7e5e5; --amber:#8a5a12; --amber-bg:#f7ecd6; --blue:#2554b8; --blue-bg:#e4ebfa;
+    --dark:#0b0c0e;
+    --r:14px;
   }
   html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-  body{font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
-    background:var(--bg);color:var(--ink);line-height:1.72;-webkit-font-smoothing:antialiased;word-break:keep-all;letter-spacing:-.005em}
+  body{font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--ink);line-height:1.7;-webkit-font-smoothing:antialiased;word-break:keep-all;letter-spacing:-.005em}
   a{color:inherit;text-decoration:none}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  img{display:block;max-width:100%}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  .kicker{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
   .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:15px;border-radius:10px;padding:13px 22px;cursor:pointer;border:1px solid transparent;transition:.16s ease;font-family:inherit;letter-spacing:-.01em}
-  .btn.primary{background:#fff;color:#0b0c0e}
-  .btn.primary:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(0,0,0,.32)}
-  .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.28)}
-  .btn.ghost:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.5)}
   .btn.dark{background:var(--ink);color:#fff}
-  .btn.dark:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(0,0,0,.22)}
-  .kicker{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+  .btn.dark:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(0,0,0,.18)}
+  .btn.line{background:#fff;color:var(--ink);border-color:var(--line2)}
+  .btn.line:hover{border-color:var(--ink)}
+  h2{font-size:clamp(26px,3.4vw,38px);font-weight:800;line-height:1.2;letter-spacing:-.03em;margin-top:12px}
+  .sub{margin-top:14px;max-width:640px;font-size:clamp(15px,1.6vw,17px);color:var(--dim)}
+  section{padding:88px 0}
+  @media (max-width:640px){section{padding:60px 0}}
 
   /* ===== TOPBAR ===== */
-  .topbar{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.86);backdrop-filter:saturate(1.3) blur(14px);border-bottom:1px solid var(--line)}
-  .topbar .inner{max-width:1080px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-  .brand{display:flex;align-items:center;gap:11px;font-size:15px;letter-spacing:.01em;color:var(--ink)}
-  .brand img{width:30px;height:30px;border-radius:7px;flex:0 0 auto;display:block}
-  .brand b{font-weight:800}.brand span{font-weight:300;opacity:.62}
-  .topbar .links{display:flex;gap:26px;align-items:center;font-size:14px;font-weight:600;color:var(--dim)}
+  .topbar{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.88);backdrop-filter:saturate(1.3) blur(14px);border-bottom:1px solid var(--line)}
+  .topbar .inner{max-width:1120px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .brand{display:flex;align-items:center;gap:10px;font-size:15px;letter-spacing:.02em}
+  .brand b{font-weight:800}.brand span{font-weight:300;opacity:.6}
+  .topbar .links{display:flex;gap:24px;align-items:center;font-size:14px;font-weight:600;color:var(--dim)}
   .topbar .links a:hover{color:var(--ink)}
   .topbar .links .go{background:var(--ink);color:#fff;padding:8px 16px;border-radius:8px;font-weight:700}
   .topbar .links .go:hover{color:#fff;opacity:.86}
-  @media (max-width:640px){.topbar .links a:not(.go){display:none}}
+  @media (max-width:720px){.topbar .links a:not(.go){display:none}}
 
   /* ===== HERO ===== */
-  .hero{position:relative;overflow:hidden;background:radial-gradient(130% 120% at 50% -20%, #1c1e23 0%, #101114 48%, #060708 100%);color:#fff}
-  .hero-in{position:relative;z-index:2;padding:74px 0 66px;text-align:center}
-  .hero .kicker{color:rgba(255,255,255,.5);margin-bottom:22px}
-  .hero h1{font-size:clamp(34px,5.6vw,60px);font-weight:800;line-height:1.08;letter-spacing:-.035em}
-  .hero .lead{margin:22px auto 0;max-width:600px;font-size:clamp(15px,1.85vw,18px);color:rgba(255,255,255,.72);font-weight:400;letter-spacing:-.01em}
-  .cta{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;margin-top:32px}
-  .microcta{margin-top:15px;font-size:13px;color:rgba(255,255,255,.42)}
-  .microcta b{color:rgba(255,255,255,.8);font-weight:600}
+  .hero{padding:72px 0 0;overflow:hidden}
+  .hero h1{font-size:clamp(36px,6vw,66px);font-weight:800;line-height:1.08;letter-spacing:-.04em;margin-top:18px}
+  .hero h1 em{font-style:normal;color:var(--green)}
+  .hero .lead{margin-top:22px;max-width:640px;font-size:clamp(16px,1.9vw,19px);color:var(--dim)}
+  .hero .cta{display:flex;gap:11px;flex-wrap:wrap;margin-top:30px}
+  .hero .micro{margin-top:14px;font-size:13px;color:var(--faint)}
+  .hero .micro b{color:var(--dim);font-weight:600}
+  .loop{display:flex;gap:10px;flex-wrap:wrap;margin-top:30px}
+  .loop span{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line2);border-radius:999px;font-size:14px;font-weight:700;background:#fff}
+  .loop span i{font-style:normal;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--faint)}
+  .loop .arr{border:0;background:none;color:var(--faint);padding:8px 2px;font-weight:400}
+  @media (max-width:520px){.loop{gap:6px}.loop span{padding:6px 11px;font-size:13px}.loop .arr{display:none}}
+  .shot{margin:54px auto 0;max-width:1120px;padding:0 24px}
+  .appwin{margin:0;border-radius:16px 16px 0 0;overflow:hidden;background:#fff;border:1px solid var(--line2);border-bottom:0;box-shadow:0 30px 70px rgba(16,24,40,.16)}
+  .appwin .board{width:100%;height:auto;display:block}
+  .shot-cap{text-align:center;font-size:12px;color:var(--faint);padding:10px 0 0}
 
-  /* ===== APP WINDOW ===== */
-  .shot{margin:52px auto 0;max-width:920px}
-  .appwin{border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 30px 70px rgba(0,0,0,.42),0 0 0 1px rgba(255,255,255,.07)}
-  .appwin .bar{display:flex;align-items:center;gap:20px;padding:12px 18px;background:#fff;border-bottom:1px solid #eef0f1}
-  .appwin .bar .wm{font-size:13px;color:#0d0e10;letter-spacing:.01em;white-space:nowrap}
-  .appwin .bar .wm b{font-weight:800}.appwin .bar .wm span{font-weight:300;opacity:.5}
-  .appwin .bar .tabs{display:flex;gap:17px;font-size:12px;color:#a6a8ac;font-weight:600;overflow:hidden}
-  .appwin .bar .tabs .on{color:#0d0e10;position:relative}
-  .appwin .bar .tabs .on::after{content:"";position:absolute;left:0;right:0;bottom:-12px;height:2px;background:#0d0e10;border-radius:2px}
-  .appwin .bar .dots{margin-left:auto;display:flex;gap:7px;flex:0 0 auto}
-  .appwin .bar .dots i{width:9px;height:9px;border-radius:50%;background:#e4e6e8;display:block}
-  .appwin .bar .wspill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:#0d0e10;color:#fff;border-radius:8px;padding:5px 10px 5px 6px;font-size:11px;font-weight:700;white-space:nowrap;flex:0 0 auto}
-  .appwin .bar .wspill .a{width:16px;height:16px;border-radius:5px;background:#3a6df0;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800}
-  @media (max-width:560px){.appwin .bar .wspill b,.appwin .bar .wspill{font-size:10px}.appwin .bar .wspill{padding:5px 8px 5px 5px}}
-  .appwin .board{display:block;width:100%;height:auto;background:#1e8c4c}
-  .shot .cap{margin-top:16px;text-align:center;font-size:12px;color:rgba(255,255,255,.38);letter-spacing:0}
-  @media (max-width:720px){.appwin .bar .tabs{gap:12px;font-size:11px}.appwin .bar .wm{font-size:12px}}
-  @media (max-width:520px){.appwin .bar .tabs span:nth-child(n+4){display:none}}
 
-  /* ===== SECTION ===== */
-  section{padding:88px 0}
-  .sec-head{text-align:center;max-width:640px;margin:0 auto 48px}
-  .sec-head.left{text-align:left;max-width:720px;margin:0 0 44px}   /* 본문 섹션은 좌측 정렬 — hero·final(가운데)와 대비되는 편집형 리듬 */
-  .sec-head .kicker{color:var(--faint)}
-  .sec-head h2{font-size:clamp(25px,3.4vw,36px);font-weight:800;margin-top:12px;letter-spacing:-.03em;line-height:1.15}
-  .sec-head p{color:var(--dim);font-size:16px;margin-top:14px;letter-spacing:-.01em}
+  /* ===== BOARD FIRST ===== */
+  .board-sec{background:var(--dark);color:#fff;padding:80px 0}
+  .board-sec .kicker{color:rgba(255,255,255,.5)}
+  .board-sec .sub{color:rgba(255,255,255,.7)}
+  .b-shot{margin:40px 0 0;border-radius:var(--r);overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 70px rgba(0,0,0,.5);background:#0f1115}
+  .b-shot img{width:100%;height:auto;display:block}
+  .b-shot figcaption{padding:10px 16px;font-size:13px;color:rgba(255,255,255,.6);border-top:1px solid rgba(255,255,255,.08)}
+  .b-shot figcaption b{color:#fff;font-weight:700;margin-right:6px}
+  .b-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+  .b-card{background:#15171b;border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:24px 22px}
+  .b-card .ic{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.08);display:grid;place-items:center;margin-bottom:16px}
+  .b-card h3{font-size:17px;font-weight:800;letter-spacing:-.02em}
+  .b-card p{margin-top:8px;font-size:14px;color:rgba(255,255,255,.66)}
+  .b-card .to{margin-top:14px;font-size:13px;color:rgba(255,255,255,.5)}
+  .b-card .to b{color:#fff;font-weight:600}
+  @media (max-width:860px){.b-grid{grid-template-columns:1fr}}
 
-  /* ===== IMPACT BAND — 밝은 구간(features↔why) 사이의 다크 매니페스토 비트 ===== */
-  .impact{background:#0b0c0e;color:#fff;padding:108px 0;text-align:center;position:relative;overflow:hidden}
-  .impact::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 140% at 50% -30%,rgba(255,255,255,.06),transparent 60%);pointer-events:none}
-  .impact .wrap{position:relative;z-index:1}
-  .impact .q{font-size:clamp(26px,4.1vw,44px);font-weight:800;line-height:1.3;letter-spacing:-.035em;max-width:760px;margin:0 auto}
-  .impact .q .g{color:rgba(255,255,255,.42)}
-  .impact .sub{margin-top:22px;color:rgba(255,255,255,.56);font-size:clamp(14px,1.7vw,17px);font-weight:500;letter-spacing:-.01em}
+  /* ===== ANIMATION ===== */
+  .anim-sec{background:#fff}
+  .a-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:40px}
+  .a-card{border:1px solid var(--line2);border-radius:var(--r);overflow:hidden;background:#fff;box-shadow:0 14px 36px rgba(16,24,40,.08);display:flex;flex-direction:column}
+  .a-vid{background:#0f1115;display:flex;align-items:center;justify-content:center;aspect-ratio:3/2}
+  .a-vid video{display:block;width:100%;height:100%;object-fit:contain}
+  .a-txt{padding:22px 22px 24px}
+  .a-txt .num{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--green)}
+  .a-txt h3{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-top:6px;line-height:1.3}
+  .a-txt p{margin-top:10px;font-size:14px;color:var(--dim)}
+  .a-steps{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px;font-size:12px;font-weight:700}
+  .a-steps span{padding:4px 9px;border-radius:999px;background:var(--paper2);color:var(--dim)}
+  .a-steps i{font-style:normal;color:var(--faint)}
+  .a-note{margin-top:16px;font-size:12px;color:var(--faint)}
+  @media (max-width:860px){.a-grid{grid-template-columns:1fr}}
 
-  /* ===== TEAM WORKSPACE (flagship) ===== */
-  .team{background:radial-gradient(120% 120% at 80% -10%, #1a1c21 0%, #101114 46%, #08090b 100%);color:#fff}
-  .team .sec-head .kicker{color:rgba(255,255,255,.45)}
-  .team .sec-head h2{color:#fff}
-  .team .sec-head p{color:rgba(255,255,255,.62)}
-  .team-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:center;max-width:940px;margin:0 auto}
-  .team-points{display:flex;flex-direction:column;gap:24px}
-  .tp{display:flex;gap:15px;align-items:flex-start}
-  .tp .ic{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);flex:0 0 auto;display:flex;align-items:center;justify-content:center}
-  .tp .ic svg{width:21px;height:21px;stroke:#fff;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-  .tp h3{font-size:16px;font-weight:700;margin-bottom:5px;letter-spacing:-.01em}
-  .tp p{color:rgba(255,255,255,.6);font-size:14px;line-height:1.62}
-  /* visual mockup */
-  .team-visual{display:flex;flex-direction:column;gap:18px;align-items:center}
-  .sync-strip{display:flex;align-items:center;gap:0;justify-content:center;margin-bottom:2px}
-  .sync-strip .dev,.sync-strip .cloud{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);flex:0 0 auto}
-  .sync-strip .cloud{background:#3a6df0;border-color:#3a6df0}
-  .sync-strip svg{width:23px;height:23px;stroke:#fff;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-  .sync-strip .phone svg{width:20px}
-  .sync-strip .wire{width:34px;height:2px;background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(58,109,240,.7));position:relative}
-  .sync-strip .wire::after{content:"";position:absolute;top:-2px;left:0;width:6px;height:6px;border-radius:50%;background:#5b83f5;box-shadow:0 0 8px #3a6df0;animation:flow 2.4s linear infinite}
-  .sync-strip .wire:last-of-type::after{animation-delay:1.2s}
-  @keyframes flow{0%{left:0;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:28px;opacity:0}}
-  .ws-mock{width:100%;max-width:320px;position:relative}
-  .ws-btn{display:inline-flex;align-items:center;gap:8px;background:#0d0e10;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:11px;padding:9px 12px;font-size:13px;font-weight:700;width:100%;box-sizing:border-box}
-  .ws-btn .ava{width:21px;height:21px;border-radius:6px;background:#3a6df0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex:0 0 auto}
-  .ws-btn b{flex:1;text-align:left;font-weight:700}
-  .ws-btn svg{width:15px;height:15px;stroke:rgba(255,255,255,.55);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
-  .ws-pop{margin-top:8px;background:#fff;color:#16181c;border-radius:14px;padding:11px;box-shadow:0 24px 60px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:2px}
-  .ws-pop .ws-hd{font-size:11px;font-weight:800;color:#8a8f98;letter-spacing:.04em;padding:4px 6px 6px}
-  .ws-row{display:flex;align-items:center;gap:9px;padding:9px 8px;border-radius:9px;font-size:13px}
-  .ws-row.on{background:#eef1f6;font-weight:700}
-  .ws-row .wi{width:24px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex:0 0 auto}
-  .ws-row .wi.p{background:#6a7078}
-  .ws-row .wn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .ws-row .wc{font-size:11px;color:#8a8f98;flex:0 0 auto}
-  .ws-row .wck{color:#3a6df0;font-weight:800;flex:0 0 auto}
-  .ws-mini{display:flex;gap:7px;margin-top:6px}
-  .ws-mini span{flex:1;text-align:center;font-size:12px;font-weight:700;color:#16181c;background:#f1f3f5;border-radius:8px;padding:9px 0}
-  .invite-card{width:100%;max-width:320px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.22);border-radius:14px;padding:16px 18px;text-align:center;box-sizing:border-box}
-  .invite-card .ic-hd{font-size:11px;font-weight:800;letter-spacing:.06em;color:rgba(255,255,255,.5)}
-  .invite-card .ic-code{font:800 26px/1 ui-monospace,Menlo,monospace;letter-spacing:.16em;margin:9px 0;color:#fff}
-  .invite-card .ic-sub{font-size:12px;color:rgba(255,255,255,.55)}
-  .invite-card .ic-sub b{color:#fff;font-weight:700}
-  @media (max-width:820px){.team-grid{grid-template-columns:1fr;gap:36px}.team-visual{order:-1}}
+  /* ===== FIVE FLOWS ===== */
+  .flows{background:var(--paper)}
+  .flow{display:grid;grid-template-columns:1fr 1.45fr;gap:40px;align-items:center;padding:52px 0;border-top:1px solid var(--line2)}
+  .flow:first-of-type{border-top:0;padding-top:48px}
+  .flow.rev .txt{order:2}
+  .flow .num{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--green)}
+  .flow h3{font-size:clamp(22px,2.6vw,28px);font-weight:800;letter-spacing:-.03em;line-height:1.25;margin-top:8px}
+  .flow p{margin-top:12px;color:var(--dim);font-size:15px;max-width:460px}
+  .flow .q{margin-top:16px;padding:12px 14px;border-left:3px solid var(--ink);background:#fff;font-size:14px;font-weight:600;border-radius:0 8px 8px 0}
+  .flow .q span{display:block;font-weight:400;color:var(--faint);font-size:12px;margin-top:2px}
+  @media (max-width:860px){.flow{grid-template-columns:1fr;gap:22px;padding:40px 0}.flow.rev .txt{order:0}}
 
-  /* ===== BOARD DEEP-DIVE ===== */
-  .board-sec{background:var(--dark);color:#fff}
-  .board-sec .sec-head .kicker{color:rgba(255,255,255,.45)}
-  .board-sec .sec-head h2{color:#fff}
-  .board-sec .sec-head p{color:rgba(255,255,255,.6)}
-  .bgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;max-width:860px;margin:0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden}
-  .bcard{background:var(--dark);padding:30px 30px;display:flex;gap:16px;align-items:flex-start}
-  .bcard .ic{width:38px;height:38px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
-  .bcard .ic svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.92}
-  .bcard h3{font-size:16px;font-weight:700;margin-bottom:6px;letter-spacing:-.01em}
-  .bcard p{color:rgba(255,255,255,.6);font-size:14px;line-height:1.62}
+  /* 실제 화면 */
+  .shotf{margin:0;background:#fff;border:1px solid var(--line2);border-radius:var(--r);box-shadow:0 14px 36px rgba(16,24,40,.10);overflow:hidden}
+  .shotf img{width:100%;height:auto;display:block}
+  .shotf figcaption{padding:8px 14px;font-size:11px;color:var(--faint);border-top:1px solid var(--line);background:var(--paper)}
+  .chip{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;line-height:1.6}
+  .chip.n{background:var(--paper2);color:var(--dim)}
 
-  /* ===== FEATURES ===== */
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-  .feat{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:28px 26px;transition:.18s ease}
-  .feat:hover{border-color:#d8dade;box-shadow:0 14px 34px rgba(13,14,16,.06)}
-  .feat .ic{width:40px;height:40px;border-radius:11px;background:var(--ink);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
-  .feat .ic svg{width:21px;height:21px;stroke:#fff}
-  .feat h3{font-size:17px;font-weight:800;margin-bottom:8px;letter-spacing:-.015em}
-  .feat p{color:var(--dim);font-size:14px;line-height:1.66}
-  .feat .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
-  .feat .chips b{font-size:11px;font-weight:600;color:var(--dim);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:3px 9px}
+  /* ===== REFLECT LOOP ===== */
+  .loop-sec{text-align:center}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:44px;text-align:left}
+  .three .c{border:1px solid var(--line2);border-radius:var(--r);padding:26px 24px;background:#fff;position:relative}
+  .three .c .n{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--green)}
+  .three .c h3{font-size:22px;font-weight:800;letter-spacing:-.03em;margin-top:8px}
+  .three .c p{margin-top:10px;color:var(--dim);font-size:14px}
+  .three .c ul{list-style:none;margin-top:14px;font-size:13px;color:var(--dim)}
+  .three .c li{padding:6px 0;border-top:1px solid var(--line)}
+  .three .c li b{color:var(--ink);font-weight:700}
+  @media (max-width:860px){.three{grid-template-columns:1fr}}
 
-  /* ===== WHY ===== */
-  .why{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-  .why .grid{grid-template-columns:repeat(2,1fr)}
-  .why .card{text-align:center;padding:14px 20px}
-  .why .card .ic{width:44px;height:44px;border-radius:12px;background:var(--ink);display:flex;align-items:center;justify-content:center;margin:0 auto}
-  .why .card .ic svg{width:22px;height:22px;stroke:#fff}
-  .why .card h3{font-size:16px;font-weight:800;margin:16px 0 7px;letter-spacing:-.01em}
-  .why .card p{color:var(--dim);font-size:14px}
+  /* ===== ROLES ===== */
+  .roles{background:var(--paper)}
+  .r-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:40px}
+  .r-card{background:#fff;border:1px solid var(--line2);border-radius:var(--r);padding:24px 22px}
+  .r-card .who{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--faint)}
+  .r-card h3{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-top:6px}
+  .r-card p{margin-top:8px;font-size:14px;color:var(--dim)}
+  .r-card .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  @media (max-width:860px){.r-grid{grid-template-columns:1fr}}
 
-  /* ===== INSTALL ===== */
-  .install{background:var(--dark);color:#fff}
-  .install .sec-head .kicker{color:rgba(255,255,255,.45)}
-  .install .sec-head h2{color:#fff}
-  .install .sec-head p{color:rgba(255,255,255,.62)}
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px}
-  .step{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.11);border-radius:16px;padding:26px 24px}
-  .step .top{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-  .step .os{width:38px;height:38px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-  .step .os svg{width:21px;height:21px;stroke:#0b0c0e}
-  .step h3{font-size:16px;font-weight:800;letter-spacing:-.01em}
-  .step .osname{font-size:12px;color:rgba(255,255,255,.5);font-weight:600}
-  .step ol{list-style:none;counter-reset:s}
-  .step li{counter-increment:s;position:relative;padding:9px 0 9px 34px;font-size:14px;color:rgba(255,255,255,.86);border-bottom:1px solid rgba(255,255,255,.07)}
-  .step li:last-child{border-bottom:0}
-  .step li::before{content:counter(s);position:absolute;left:0;top:9px;width:22px;height:22px;border-radius:7px;background:rgba(255,255,255,.1);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
-  .step li b{font-weight:700;color:#fff}
-  .step li a{text-decoration:underline;text-decoration-color:rgba(255,255,255,.35)}
-  .step li kbd{background:rgba(255,255,255,.14);border-radius:5px;padding:1px 6px;font-family:inherit;font-weight:700;font-size:12px}
-  .note{margin-top:24px;text-align:center;font-size:13px;color:rgba(255,255,255,.6)}
-  .note b{color:#fff}
+  /* ===== START ===== */
+  .start .s-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:40px}
+  .s-card{border:1px solid var(--line2);border-radius:var(--r);padding:28px 26px}
+  .s-card.dark{background:var(--dark);color:#fff;border-color:transparent}
+  .s-card .k{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--faint)}
+  .s-card.dark .k{color:rgba(255,255,255,.5)}
+  .s-card h3{font-size:24px;font-weight:800;letter-spacing:-.03em;margin-top:6px}
+  .s-card p{margin-top:10px;font-size:14px;color:var(--dim)}
+  .s-card.dark p{color:rgba(255,255,255,.7)}
+  .s-card ul{list-style:none;margin-top:14px;font-size:14px}
+  .s-card li{padding:5px 0;padding-left:18px;position:relative}
+  .s-card li::before{content:'✓';position:absolute;left:0;font-weight:800;color:var(--green)}
+  .s-card.dark li::before{color:#7fd0a4}
+  .s-card .act{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap}
+  .s-card.dark .btn.line{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+  .s-card.dark .btn.dark{background:#fff;color:var(--ink)}
+  .start .s-grid.one{grid-template-columns:minmax(0,720px);justify-content:center}
+  @media (max-width:860px){.start .s-grid{grid-template-columns:1fr}}
 
-  /* ===== FINAL / FOOTER ===== */
-  .final{text-align:center;background:var(--bg)}
-  .final .box{background:radial-gradient(130% 150% at 50% 0%, #1c1e23, #0b0c0e);border-radius:24px;padding:64px 28px;color:#fff}
-  .final h2{font-size:clamp(25px,3.4vw,36px);font-weight:800;letter-spacing:-.03em}
-  .final p{color:rgba(255,255,255,.7);margin:14px auto 0;max-width:460px;font-size:16px}
-  footer{text-align:center;color:var(--faint);font-size:13px;padding:40px 24px 52px;line-height:1.9}
-  footer .brand{justify-content:center;color:var(--ink);opacity:.85;margin-bottom:12px;font-size:14px}
-  footer a{color:var(--dim);font-weight:600;text-decoration:underline;text-underline-offset:2px}
-
-  @media (max-width:820px){
-    .grid,.why .grid,.steps{grid-template-columns:1fr}
-    .bgrid{grid-template-columns:1fr}
-    section{padding:60px 0}
-  }
+  /* ===== FOOTER ===== */
+  footer{border-top:1px solid var(--line);padding:40px 0 48px;font-size:13px;color:var(--dim)}
+  footer .f{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:flex-start}
+  footer .f .brand{font-size:14px}
+  footer .f p{margin-top:8px;max-width:380px;color:var(--faint)}
+  footer .cols{display:flex;gap:40px;flex-wrap:wrap}
+  footer .cols h5{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--faint);margin-bottom:8px}
+  footer .cols a{display:block;padding:3px 0}
+  footer .cols a:hover{color:var(--ink)}
+  footer .legal{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--faint);display:flex;gap:16px;flex-wrap:wrap}
 </style>
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  "name": "프로세스 스튜디오",
-  "alternateName": [
-    "PROCESS STUDIO",
-    "프로세스스튜디오"
-  ],
-  "url": "https://studio.processfootball.com/landing.html",
-  "applicationCategory": "SportsApplication",
-  "operatingSystem": "Web",
-  "inLanguage": "ko",
-  "description": "프로세스 스튜디오(PROCESS STUDIO)는 축구 코치와 팀을 위한 전술·훈련 도구입니다. 작전판, 훈련 계획, 경기 준비, 선수단 관리와 IDP를 한곳에서 연결하고 코칭 스태프와 공유하세요.",
-  "image": "https://studio.processfootball.com/assets/brand/studio-share-v1.png"
-}
-</script>
 </head>
 <body>
 
@@ -247,9 +198,10 @@
   <div class="inner">
     <a class="brand" href="#top"><span><b>PRO</b>CESS <b>STUDIO</b></span></a>
     <nav class="links">
-      <a href="#team">팀 워크스페이스</a>
       <a href="#board">작전판</a>
-      <a href="#features">기능</a>
+      <a href="#anim">애니메이션</a>
+      <a href="#flows">팀 운영</a>
+      <a href="#loop">계획·실행·성찰</a>
       <a href="/guide/">사용법</a>
       <a class="go" href="https://studio.processfootball.com/">앱 열기</a>
     </nav>
@@ -259,275 +211,292 @@
 <!-- ===== HERO ===== -->
 <header class="hero" id="top">
   <div class="wrap">
-    <div class="hero-in">
-      <div class="kicker">프로세스 스튜디오 · PROCESS STUDIO</div>
-      <h1>팀이 함께 쓰는<br>전술 스튜디오.</h1>
-      <p class="lead">프로세스 스튜디오는 축구 코치와 팀을 위한 전술·훈련 공간입니다. 코칭 스태프가 하나의 워크스페이스에서 작전판·훈련·일정을 공유합니다. 로그인 한 번이면 데스크톱과 폰이 이어지고, 초대 코드로 팀원을 부르세요.</p>
-      <div class="cta">
-        <a class="btn primary" href="https://studio.processfootball.com/">웹에서 열기 →</a>
-        <a class="btn ghost" href="#team">팀 워크스페이스 보기</a>
-      </div>
-      <div class="microcta">아이패드 · 데스크탑 최적화 · 카카오·구글 로그인 · <b>설치 없이 링크만 열면 시작</b></div>
-
-      <div class="shot">
-        <div class="appwin">
-          <div class="bar">
-            <div class="wm"><b>PRO</b>CESS <b>STUDIO</b></div>
-            <div class="tabs"><span class="on">작전판</span><span>보관함</span><span>일정</span><span>팀</span><span>노트</span><span>양식</span></div>
-            <div class="wspill"><span class="a">F</span>FC 프로세스 U12</div>
-          </div>
-          <img class="board" src="board-real.webp" alt="PROCESS STUDIO 작전판 — 실사 잔디 피치에 4-4-2 대 4-3-3 배치" width="1110" height="740" loading="eager">
-        </div>
-        <div class="cap">실제 작전판 화면 · 우측 상단에서 워크스페이스를 전환</div>
-      </div>
+    <div class="kicker">프로세스 스튜디오 · 축구 코칭스태프의 작업 공간</div>
+    <h1>계획하고, 실행하고,<br><em>돌아본다.</em></h1>
+    <p class="lead">작전판에서 전술과 훈련을 그리고, 팀 운영에서 일정·훈련·선수·경기가 한 흐름으로 이어집니다. 우리가 무엇을 계획했고, 실제로 무엇을 했으며, 다음에는 무엇을 바꿔야 할지 — 코칭스태프가 함께 돌아보는 도구입니다.</p>
+    <div class="cta">
+      <a class="btn dark" href="https://studio.processfootball.com/">앱 열기 →</a>
+      <a class="btn line" href="#flows">팀 운영 흐름 보기</a>
     </div>
+    <div class="micro">아이패드 · 데스크탑 최적화 · 카카오·구글 로그인 · <b>설치 없이 링크만 열면 시작</b></div>
+    <div class="loop" aria-label="계획 실행 성찰 순환">
+      <span><i>01</i>계획</span><span class="arr">→</span>
+      <span><i>02</i>실행</span><span class="arr">→</span>
+      <span><i>03</i>성찰</span><span class="arr">→</span>
+      <span><i>04</i>다음 계획</span>
+    </div>
+  </div>
+  <div class="shot">
+    <figure class="appwin">
+      <img class="board" src="/assets/landing/board.webp" alt="프로세스 스튜디오 작전판 — 4-3-3 대 4-4-2 유니폼 토큰 배치" width="1600" height="1044" loading="eager" fetchpriority="high">
+    </figure>
+    <div class="shot-cap">실제 작전판 화면 · 팀 이름과 선수는 가상 자료</div>
   </div>
 </header>
 
-<!-- ===== TEAM WORKSPACE (flagship) ===== -->
-<section class="team" id="team">
-  <div class="wrap">
-    <div class="sec-head left">
-      <div class="kicker">TEAM WORKSPACE</div>
-      <h2>팀이 하나의 공간에서</h2>
-      <p>혼자 쓰던 작전판을 이제 코칭 스태프가 함께. 감독·코치·피지컬이 같은 워크스페이스에서 편집하고, 어느 기기에서 열어도 최신입니다.</p>
-    </div>
-
-    <div class="team-grid">
-      <div class="team-points">
-        <div class="tp">
-          <div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="14" height="10" rx="1.5"/><path d="M6 18h6M9 14v4"/><rect x="17.5" y="9" width="5" height="11" rx="1.2"/></svg></div>
-          <div><h3>데스크톱 ↔ 모바일 동기화</h3><p>맥에서 짠 작전판이 폰에서 그대로. 로그인만 하면 훈련·일정·보관함이 모든 기기에서 이어집니다.</p></div>
-        </div>
-        <div class="tp">
-          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 19a5 5 0 0 1 6 0"/></svg></div>
-          <div><h3>팀 워크스페이스</h3><p>팀마다 전용 공간. 작전판·훈련 구성·일정·팀 명단을 스태프 전원이 공유하고 함께 편집합니다.</p></div>
-        </div>
-        <div class="tp">
-          <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h5M7 14h8"/><path d="M16 7l2 2 3-3"/></svg></div>
-          <div><h3>초대 코드로 30초 합류</h3><p>이메일도 승인도 필요 없습니다. 코드를 카톡으로 보내면 팀원이 로그인 후 입력만 하면 바로 멤버가 됩니다.</p></div>
-        </div>
-        <div class="tp">
-          <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M12 11v5M9.5 13.5 12 11l2.5 2.5"/></svg></div>
-          <div><h3>개인 공간은 따로</h3><p>내 개인 워크스페이스와 팀 공간을 상단에서 전환. 개인 작업은 나만, 팀 데이터는 함께 — 섞이지 않습니다.</p></div>
-        </div>
-      </div>
-
-      <div class="team-visual">
-        <div class="sync-strip">
-          <span class="dev"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 20h8M12 17v3"/></svg></span>
-          <span class="wire"></span>
-          <span class="cloud"><svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1 .5-8 5.5 5.5 0 0 1 10.6 1.5A3.5 3.5 0 0 1 17.5 18z"/></svg></span>
-          <span class="wire"></span>
-          <span class="dev phone"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg></span>
-        </div>
-
-        <div class="ws-mock">
-          <div class="ws-btn"><span class="ava">F</span><b>FC 프로세스 U12</b><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
-          <div class="ws-pop">
-            <div class="ws-hd">워크스페이스</div>
-            <div class="ws-row"><span class="wi p">내</span><span class="wn">내 워크스페이스</span></div>
-            <div class="ws-row on"><span class="wi" style="background:#3a6df0">F</span><span class="wn">FC 프로세스 U12</span><span class="wc">3명</span><span class="wck">✓</span></div>
-            <div class="ws-row"><span class="wi" style="background:#e0569f">중</span><span class="wn">중등 대표팀</span><span class="wc">5명</span></div>
-            <div class="ws-mini"><span>＋ 팀 만들기</span><span>코드로 합류</span></div>
-          </div>
-        </div>
-
-        <div class="invite-card">
-          <div class="ic-hd">초대 코드</div>
-          <div class="ic-code">D09B0086</div>
-          <div class="ic-sub">코치에게 코드를 보내면 <b>바로 합류</b> · 30일 유효</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== BOARD DEEP-DIVE ===== -->
+<!-- ===== BOARD FIRST ===== -->
 <section class="board-sec" id="board">
   <div class="wrap">
-    <div class="sec-head left">
-      <div class="kicker">작전판</div>
-      <h2>움직임까지 담는 전술판</h2>
-      <p>선수·공·장비를 올리고, 움직임을 그리고, 그대로 재생합니다. 정지된 화이트보드가 아닙니다.</p>
-    </div>
-    <div class="bgrid">
-      <div class="bcard">
-        <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 12h13"/><path d="M13 7l5 5-5 5"/><path d="M4 18c4-6 8-6 12-6"/></svg></div>
-        <div><h3>세 가지 화살표</h3><p>패스는 실선, 이동은 점선, 드리블은 물결. 선 굵기와 색까지 상황에 맞게.</p></div>
+    <div class="kicker">작전판 — 스튜디오의 중심</div>
+    <h2>생각을 그리는 데서 시작합니다.</h2>
+    <p class="sub">선수·공·장비를 올리고 움직임을 그리면 그대로 재생됩니다. 작전판에서 만든 것이 훈련이 되고, 미팅 자료가 되고, 일정에 올라갑니다.</p>
+    <figure class="b-shot">
+      <img src="/assets/landing/board-3d.webp" alt="작전판 3D 보기 — 경기장 중계 화면처럼 보는 같은 판" width="1600" height="1040" loading="lazy">
+      <figcaption><b>3D 보기</b> 같은 판을 경기장 중계 화면처럼. 평면과 3D를 한 번에 오가며 끌기·그리기는 그대로입니다. · 실제 화면, 가상 팀 자료</figcaption>
+    </figure>
+    <div class="b-grid">
+      <div class="b-card">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M5 12h12M13 6l6 6-6 6"/></svg></div>
+        <h3>움직임까지 담는 전술</h3>
+        <p>패스·이동·드리블 화살표와 장면 애니메이션. 빌드업과 전환을 말 대신 움직임으로 설명합니다.</p>
+        <div class="to">어디로 → <b>미팅 자료 · 커뮤니티 공유</b></div>
       </div>
-      <div class="bcard">
-        <div class="ic"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-        <div><h3>장면 애니메이션</h3><p>장면을 이어 붙이면 선수 움직임이 그대로 재생됩니다. 빌드업과 전환을 눈으로 설명하세요.</p></div>
+      <div class="b-card">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg></div>
+        <h3>훈련 설계와 보관함</h3>
+        <p>그림·방법·코칭 포인트를 한 장의 훈련으로. 보관함에 쌓이고 카테고리·연령·인원으로 다시 찾습니다.</p>
+        <div class="to">어디로 → <b>이번 주 일정의 한 칸</b></div>
       </div>
-      <div class="bcard">
-        <div class="ic"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
-        <div><h3>선수 시야</h3><p>선수가 보는 방향과 각도를 시야로 표시. 압박·간격·마킹을 짚기에 좋습니다.</p></div>
-      </div>
-      <div class="bcard">
-        <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 12h18"/><path d="M12 4v16"/></svg></div>
-        <div><h3>피치와 멀티 운동장</h3><p>잔디·딥그린·화이트·훈련 모눈 중 선택하고 색도 직접. 한 화면에 여러 운동장을 놓고 국면별로 비교합니다.</p></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== FEATURES ===== -->
-<section id="features">
-  <div class="wrap">
-    <div class="sec-head left">
-      <div class="kicker">올인원</div>
-      <h2>작전판은 시작입니다</h2>
-      <p>전술에서 훈련·일정·팀·기록까지. 따로 노는 앱 여러 개 대신, 하나의 흐름으로 이어집니다.</p>
-    </div>
-    <div class="grid">
-
-      <div class="feat">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg></div>
-        <h3>양식</h3>
-        <p>매치데이·경기 분석·경기 후 리뷰·세트피스 시트·시즌 플랜·MD 주간 트레이닝까지, 펜으로 쓰는 인쇄용 A4 양식. 미리보기 후 바로 인쇄하거나 PDF로 배포합니다.</p>
-        <div class="chips"><b>매치데이</b><b>세트피스 시트</b><b>MD 주간</b><b>A4 · PDF</b></div>
-      </div>
-
-      <div class="feat">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg></div>
-        <h3>일정</h3>
-        <p>월간·주간·일간 캘린더에 훈련을 얹고 강도를 기록합니다. 매치데이 기준으로 이번 주 부하를 한눈에.</p>
-        <div class="chips"><b>월·주·일</b><b>훈련 배분</b><b>강도 관리</b></div>
-      </div>
-
-      <div class="feat">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.4"/><path d="M4 20c0-3.3 2.7-6 6-6 1.2 0 2.3.3 3.2 1"/><circle cx="17" cy="16" r="3.2"/><path d="M19.4 18.4 22 21"/></svg></div>
-        <h3>팀</h3>
-        <p>포지션별로 선발·백업을 정리하고 포메이션·유니폼 색을 지정합니다. 게임모델·스카우트까지, 선발 11명을 작전판으로 바로.</p>
-        <div class="chips"><b>뎁스차트</b><b>포메이션</b><b>게임모델</b></div>
-      </div>
-
-      <div class="feat">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
-        <h3>보관함</h3>
-        <p>작전판·훈련·경기·미팅을 폴더와 태그로 정리합니다. 검색해서 바로 꺼내 쓰고, 자주 쓰는 건 첫 화면에 고정.</p>
-        <div class="chips"><b>폴더·태그</b><b>검색</b><b>즐겨찾기</b></div>
-      </div>
-
-      <div class="feat">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.2-4L16.4 4.8a2 2 0 0 1 2.8 0a2 2 0 0 1 0 2.8L8 18.8 4 20z"/><path d="M14 6.5l3.5 3.5"/></svg></div>
-        <h3>노트 · 메모</h3>
-        <p>자유롭게 그리는 화이트보드와 빠른 텍스트 메모. 볼펜·형광펜으로 쓰고 A4로 인쇄, 미팅 자료로도.</p>
-        <div class="chips"><b>화이트보드</b><b>메모</b><b>A4 인쇄</b></div>
-      </div>
-
-      <div class="feat">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v12M8 7l4-4 4 4"/></svg></div>
-        <h3>공유 · 내보내기</h3>
-        <p>작전판을 이미지로 저장하고 공유 링크로 전달합니다. 양식·노트는 PDF로 뽑아 그대로 배포.</p>
-        <div class="chips"><b>이미지 저장</b><b>공유 링크</b><b>PDF</b></div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ===== IMPACT BAND ===== -->
-<section class="impact">
-  <div class="wrap">
-    <p class="q">가장 좋은 전술은,<br><span class="g">같은 그림을 함께 볼 때</span> 나옵니다.</p>
-    <p class="sub">코칭 스태프 전원이 하나의 워크스페이스에서 — 아이패드에서도, 데스크탑에서도.</p>
-  </div>
-</section>
-
-<!-- ===== WHY ===== -->
-<section class="why" id="why">
-  <div class="wrap">
-    <div class="sec-head left">
-      <div class="kicker">왜 PROCESS STUDIO</div>
-      <h2>가볍게, 현장에 맞게</h2>
-    </div>
-    <div class="grid">
-      <div class="card">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="14" height="10" rx="1.5"/><path d="M6 18h6M9 14v4"/><rect x="17.5" y="9" width="5" height="11" rx="1.2"/></svg></div>
-        <h3>아이패드 · 데스크탑 최적화</h3><p>큰 화면 기준으로 설계했습니다. 아이패드에선 애플펜슬로 그리며 미팅하고, 데스크탑에선 넓게 펼쳐 준비합니다. 폰은 확인·공유용으로 가볍게.</p>
-      </div>
-      <div class="card">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M9 6h6M11 18h2"/></svg></div>
-        <h3>설치형 웹앱</h3><p>홈 화면·바탕화면에 설치하면 전체화면 앱처럼 실행됩니다. 스토어 등록 없이, 항상 최신.</p>
-      </div>
-      <div class="card">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 0 1 .5-8 5.5 5.5 0 0 1 10.6 1.5A3.5 3.5 0 0 1 17.5 18z"/><path d="M12 21v-6M9.5 17.5 12 15l2.5 2.5"/></svg></div>
-        <h3>로컬 먼저, 로그인하면 팀과</h3><p>기본은 내 기기에 저장돼 오프라인에서도 열립니다. 로그인하면 그 위에 클라우드 동기화와 팀 공유가 얹힙니다.</p>
-      </div>
-      <div class="card">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.2-4L16.4 4.8a2 2 0 0 1 2.8 0a2 2 0 0 1 0 2.8L8 18.8 4 20z"/><path d="M14 6.5l3.5 3.5"/></svg></div>
-        <h3>현장·종이 친화</h3><p>한 화면에서 끝나는 단순한 흐름과 인쇄 양식. 라커룸·경기장에서 바로 쓰도록 설계했습니다.</p>
+      <div class="b-card">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 19V5M4 19h16M8 15l4-5 4 3 4-6"/></svg></div>
+        <h3>경기 준비와 리뷰</h3>
+        <p>상대 분석·경기 준비 미팅을 작전판으로 만들고, 경기 뒤 장면을 리뷰에 남겨 다음 훈련의 재료로 씁니다.</p>
+        <div class="to">어디로 → <b>경기 리뷰 · 다음 주 훈련</b></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== INSTALL ===== -->
-<section class="install" id="install">
+<!-- ===== ANIMATION ===== -->
+<section class="anim-sec" id="anim">
   <div class="wrap">
-    <div class="sec-head left">
-      <div class="kicker">설치 가이드</div>
-      <h2>앱처럼 설치하기</h2>
-      <p>설치는 선택입니다. 브라우저로 그냥 써도 되고, 설치하면 아이콘 실행·전체화면·오프라인이 편해집니다. 아이패드·데스크탑에 최적화되어 있어 큰 화면에 설치하면 가장 좋습니다.</p>
+    <div class="kicker">장면 애니메이션</div>
+    <h2>장면을 이어 붙이면, 그 사이를 선수가 움직입니다.</h2>
+    <p class="sub">선수와 공을 놓고 다음 장면을 하나 더 만들면 됩니다. 두 장면 사이의 움직임은 작전판이 스스로 그립니다. 곡선 동선, 땅볼·로빙 패스, 장면마다 코칭 포인트까지 그대로 재생됩니다.</p>
+    <div class="a-grid">
+      <article class="a-card">
+        <div class="a-vid"><video autoplay muted loop playsinline preload="metadata" poster="/assets/landing/anim-drill.webp" width="558" height="559" aria-label="훈련 애니메이션 — 6+GK 대 6+GK, 7장면"><source src="/assets/landing/anim-drill.mp4" type="video/mp4"></video></div>
+        <div class="a-txt">
+          <div class="num">훈련 만들기</div>
+          <h3>훈련 하나가 그림 · 방법 · 코칭 포인트 · 움직임으로</h3>
+          <p>6+GK 대 6+GK, 장면 7개. 어디서 시작해 어디로 전진하는지를 말 대신 움직임으로 보여 줍니다. 완성한 훈련은 보관함에 쌓이고, 주간 일정의 한 칸에 올라가고, 선수에게는 영상이나 PDF로 전달됩니다.</p>
+          <div class="a-steps"><span>선수·공 배치</span><i>→</i><span>장면 추가</span><i>→</i><span>동선 그리기</span><i>→</i><span>재생 · 내보내기</span></div>
+        </div>
+      </article>
+      <article class="a-card">
+        <div class="a-vid"><video autoplay muted loop playsinline preload="metadata" poster="/assets/landing/anim-build.webp" width="956" height="629" aria-label="전술 분석 애니메이션 — 빌드업의 지원 관계, 4장면"><source src="/assets/landing/anim-build.mp4" type="video/mp4"></video></div>
+        <div class="a-txt">
+          <div class="num">전술 분석</div>
+          <h3>경기 장면을 움직임으로 돌아봅니다</h3>
+          <p>빌드업의 지원 관계, 장면 4개. 골키퍼의 첫 패스에 맞춰 누가 어디로 지원하는지를 한 장면씩 짚습니다. 상대 분석과 경기 준비 미팅 자료가 되고, 경기 뒤에는 실제 장면을 같은 방법으로 리뷰에 남깁니다.</p>
+          <div class="a-steps"><span>상대 분석</span><i>→</i><span>경기 준비 미팅</span><i>→</i><span>경기 리뷰 장면</span><i>→</i><span>다음 훈련</span></div>
+        </div>
+      </article>
     </div>
-    <div class="steps">
-
-      <div class="step">
-        <div class="top"><span class="os"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 20h8M12 17v3"/></svg></span><div><h3>맥 · 데스크탑</h3><div class="osname">Chrome · Edge · Safari</div></div></div>
-        <ol>
-          <li><a href="https://studio.processfootball.com/">사이트</a>에 접속합니다.</li>
-          <li>주소창 오른쪽 끝의 <b>설치 아이콘</b>을 클릭.</li>
-          <li>없으면 <kbd>⋮</kbd> 메뉴 → <b>앱 설치</b> (Safari는 <b>공유 → Dock에 추가</b>).</li>
-          <li><b>설치</b>하면 독·런치패드에 아이콘이 생깁니다.</li>
-        </ol>
-      </div>
-
-      <div class="step">
-        <div class="top"><span class="os"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></span><div><h3>아이폰 · 아이패드</h3><div class="osname">Safari</div></div></div>
-        <ol>
-          <li><b>Safari</b>로 <a href="https://studio.processfootball.com/">사이트</a>를 엽니다.</li>
-          <li>아래(또는 위) <b>공유</b> 버튼 <kbd>􀈂</kbd> 을 탭.</li>
-          <li>목록에서 <b>홈 화면에 추가</b>를 선택.</li>
-          <li><b>추가</b>하면 홈 화면에 앱 아이콘이 완성됩니다.</li>
-        </ol>
-      </div>
-
-      <div class="step">
-        <div class="top"><span class="os"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4"/></svg></span><div><h3>안드로이드</h3><div class="osname">Chrome</div></div></div>
-        <ol>
-          <li><b>Chrome</b>으로 <a href="https://studio.processfootball.com/">사이트</a>를 엽니다.</li>
-          <li>우측 상단 <kbd>⋮</kbd> 메뉴를 탭.</li>
-          <li><b>앱 설치</b> 또는 <b>홈 화면에 추가</b> 선택.</li>
-          <li>안내에 따라 <b>설치</b>하면 홈 화면에 추가됩니다.</li>
-        </ol>
-      </div>
-
-    </div>
-    <p class="note">설치가 안 보이면 페이지를 <b>새로고침</b>하거나 잠깐 사용한 뒤 다시 시도하세요.</p>
+    <div class="a-note">위 두 영상은 작전판 재생을 그대로 녹화한 것입니다(프로세스 교과서 장면). 영상 · GIF · PDF · PPT로 내보내 미팅과 선수 전달에 씁니다.</div>
   </div>
 </section>
 
-<!-- ===== FINAL ===== -->
-<section class="final">
+<!-- ===== FIVE FLOWS ===== -->
+<section class="flows" id="flows">
   <div class="wrap">
-    <div class="box">
-      <h2>팀을 초대하고, 오늘부터 함께</h2>
-      <p>링크만 열면 바로 작전판. 로그인하고 팀을 만들면, 초대 코드 하나로 코칭 스태프가 같은 공간에 모입니다.</p>
-      <div class="cta" style="margin-top:28px">
-        <a class="btn primary" href="https://studio.processfootball.com/">PROCESS STUDIO 열기 →</a>
+    <div class="kicker">팀 운영 — 한눈에 보이는 다섯 흐름</div>
+    <h2>팀 운영의 핵심은 일정 계획과,<br>그 과정을 돌아보는 것.</h2>
+    <p class="sub">다섯 가지가 따로 놀지 않고 연결됩니다. 아래는 모두 실제 앱 화면이며, 팀·선수·기록은 가상 자료입니다.</p>
+
+    <!-- 1 -->
+    <div class="flow">
+      <div class="txt">
+        <div class="num">01 · 일정과 선수 가동성</div>
+        <h3>언제 훈련·경기가 있고,<br>누가 나올 수 있는지</h3>
+        <p>팀 운영 첫 화면에 오늘 세션, 이번 주의 훈련·경기(MD 기준), 가용 인원이 함께 보입니다. 부상·재활·불참으로 빠지는 선수가 계획 옆에 바로 놓입니다.</p>
+        <div class="q">이번 주 화요일, 수비 조직 훈련을 11명으로 할 수 있나?<span>오늘 · 이번 주 · 가용인원이 한 화면에</span></div>
+      </div>
+      <figure class="shotf">
+        <img src="/assets/landing/team-today.webp" alt="팀 운영 오늘 화면 — 오늘 세션, 이번 주 훈련과 경기, 가용인원, 시즌 누적" width="1600" height="1081" loading="lazy">
+        <figcaption>실제 화면 · 가상 팀 자료</figcaption>
+      </figure>
+    </div>
+
+    <!-- 2 -->
+    <div class="flow rev">
+      <div class="txt">
+        <div class="num">02 · 훈련의 누적</div>
+        <h3>일 년 동안 몇 번 훈련했고,<br>어떤 내용을 다뤘는지</h3>
+        <p>일정에 올린 훈련이 그대로 쌓입니다. 훈련·OFF·경기 횟수와 게임모델 국면별 시간을 이번 주와 시즌으로 돌아보면 «우리는 전환을 거의 안 다뤘다» 같은 사실이 보입니다.</p>
+        <div class="q">올해 세트피스에 쓴 시간은 전체의 얼마였나?<span>훈련 세션 · 게임모델 국면 · 시즌 누적</span></div>
+      </div>
+      <figure class="shotf">
+        <img src="/assets/landing/season-card.webp" alt="지금까지 카드 — 시즌 훈련·OFF·경기 횟수와 국면별 시간" width="1024" height="512" loading="lazy">
+        <figcaption>실제 화면 · 가상 팀 자료</figcaption>
+      </figure>
+    </div>
+
+    <!-- 3 -->
+    <div class="flow">
+      <div class="txt">
+        <div class="num">03 · 선수별 훈련 강도</div>
+        <h3>각 선수가 실제로 얼마나,<br>어느 강도로 훈련했는지</h3>
+        <p>팀 훈련 횟수가 아니라 선수 한 명의 훈련·경기·휴식·재활·부상 일수와 참여율을 봅니다. 부상에서 돌아온 선수의 부하가 팀 평균에 묻히지 않습니다.</p>
+        <div class="q">복귀 2주 차 선수에게 토요일 경기 풀타임이 맞나?<span>선수별 누적 · 참여율 · 지금 상태</span></div>
+      </div>
+      <figure class="shotf">
+        <img src="/assets/landing/avail-players.webp" alt="가용인원 선수별 누적 — 훈련·경기·휴식·재활·부상 일수와 참여율" width="1600" height="1081" loading="lazy">
+        <figcaption>실제 화면 · 가상 팀 자료</figcaption>
+      </figure>
+    </div>
+
+    <!-- 4 -->
+    <div class="flow rev">
+      <div class="txt">
+        <div class="num">04 · 코칭스태프의 계획</div>
+        <h3>어떤 의도로 훈련을 구성했고,<br>실제 진행은 어땠는지</h3>
+        <p>주간 일정에 세션마다 주제·강도(RPE)·훈련 블록·메모를 둡니다. 지난 경기 리뷰에서 정한 «다음 훈련»이 주간 맨 위에 걸려, 왜 이 훈련인지가 계획에 남습니다.</p>
+        <div class="q">압박 트리거를 세 개 잡았는데 실제로는 하나만 다뤘다 — 왜?<span>주제 · 강도 · 블록 · 메모 · 지난 경기 → 다음 훈련</span></div>
+      </div>
+      <figure class="shotf">
+        <img src="/assets/landing/schedule-week.webp" alt="주간 일정 — 요일별 세션의 주제·강도·훈련 블록·메모" width="1600" height="980" loading="lazy">
+        <figcaption>실제 화면 · 가상 팀 자료</figcaption>
+      </figure>
+    </div>
+
+    <!-- 5 -->
+    <div class="flow">
+      <div class="txt">
+        <div class="num">05 · 경기와 결과</div>
+        <h3>준비한 것이 경기에서<br>어떻게 나타났고, 결과는 어땠는지</h3>
+        <p>경기는 상대 분석 → 경기 준비 → 경기 리뷰 세 단계입니다. 리뷰에 득실 장면과 한 줄 요약, 잘된 점·개선할 점, 다음 훈련과 선수 과제를 적으면 다음 주 계획으로 이어집니다.</p>
+        <div class="q">이번 주 훈련한 압박이 경기에서 몇 번 나왔나?<span>상대 분석 · 경기 준비 · 경기 리뷰 · 다음 훈련</span></div>
+      </div>
+      <figure class="shotf">
+        <img src="/assets/landing/match-review.webp" alt="경기 리뷰 — 득점·실점, 한 줄 요약, 득실 장면" width="1600" height="1081" loading="lazy">
+        <figcaption>실제 화면 · 가상 팀 자료</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===== REFLECT LOOP ===== -->
+<section class="loop-sec" id="loop">
+  <div class="wrap">
+    <div class="kicker">왜 연결하는가</div>
+    <h2>«우리가 무엇을 계획했고, 실제로 무엇을 했으며,<br>다음에는 무엇을 바꿔야 할까»</h2>
+    <p class="sub" style="margin-left:auto;margin-right:auto">다섯 흐름이 연결되면 이 질문에 기록으로 답할 수 있습니다. 기억이나 인상이 아니라.</p>
+    <div class="three">
+      <div class="c">
+        <div class="n">01 · 계획</div>
+        <h3>무엇을 계획했나</h3>
+        <p>시즌·월·주 일정에 훈련과 경기를 올리고, 훈련마다 의도를 적습니다.</p>
+        <ul>
+          <li><b>일정</b> 훈련 · 경기 · 휴식 · 강도</li>
+          <li><b>작전판</b> 훈련 설계 · 미팅 자료</li>
+          <li><b>게임모델</b> 국면별 원칙 · 팀 공용어</li>
+        </ul>
+      </div>
+      <div class="c">
+        <div class="n">02 · 실행</div>
+        <h3>실제로 무엇을 했나</h3>
+        <p>가용 인원, 실제 진행, 선수별 참여와 강도가 그날 기록으로 남습니다.</p>
+        <ul>
+          <li><b>가용 인원</b> 부상 · 학업 · 차출</li>
+          <li><b>진행 기록</b> 바뀐 것 · 코치 메모</li>
+          <li><b>선수 IDP</b> 선수가 적는 오늘의 시도</li>
+        </ul>
+      </div>
+      <div class="c">
+        <div class="n">03 · 성찰</div>
+        <h3>다음엔 무엇을 바꿀까</h3>
+        <p>누적과 경기 리뷰를 나란히 놓고 다음 주 계획을 고칩니다. 그래서 다시 01로.</p>
+        <ul>
+          <li><b>훈련 누적</b> 횟수 · 국면 배분</li>
+          <li><b>경기 리뷰</b> 준비한 것 ↔ 나온 것</li>
+          <li><b>다음 훈련</b> 리뷰에서 바로 일정으로</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ROLES ===== -->
+<section class="roles" id="roles">
+  <div class="wrap">
+    <div class="kicker">누가 쓰나</div>
+    <h2>코칭스태프 전원이 같은 흐름 위에서.</h2>
+    <p class="sub">감독·코치·분석·스카우트·선수가 각자의 화면에서 같은 기록을 더합니다. 초대 코드 하나로 합류합니다.</p>
+    <div class="r-grid">
+      <div class="r-card">
+        <div class="who">감독 · 코치</div>
+        <h3>계획하고 돌아보는 사람</h3>
+        <p>일정을 세우고 훈련을 설계하며, 주말마다 누적과 리뷰를 보고 다음 주를 고칩니다.</p>
+        <div class="tags"><span class="chip n">일정</span><span class="chip n">훈련 설계</span><span class="chip n">작전판</span><span class="chip n">경기 리뷰</span></div>
+      </div>
+      <div class="r-card">
+        <div class="who">분석 · 스카우트</div>
+        <h3>경기와 선수를 읽는 사람</h3>
+        <p>상대 분석과 경기 준비 미팅을 만들고, 후보 선수를 관찰해 포지션별로 기록합니다.</p>
+        <div class="tags"><span class="chip n">상대 분석</span><span class="chip n">미팅 자료</span><span class="chip n">스카우팅</span><span class="chip n">뎁스차트</span></div>
+      </div>
+      <div class="r-card">
+        <div class="who">선수</div>
+        <h3>자기 성장을 적는 사람</h3>
+        <p>IDP에 목표와 오늘의 시도를 남기고, 코치의 질문과 피드백을 받습니다. 팀 기록과 개인 기록이 이어집니다.</p>
+        <div class="tags"><span class="chip n">IDP</span><span class="chip n">일지</span><span class="chip n">자기 평가</span><span class="chip n">코치 피드백</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== START ===== -->
+<section class="start" id="start">
+  <div class="wrap">
+    <div class="kicker">시작하기</div>
+    <h2>링크만 열면 바로 시작.</h2>
+    <div class="s-grid one">
+      <div class="s-card">
+        <h3>로그인 없이도 작전판부터</h3>
+        <p>로그인하면 기기 간 동기화, 팀 공간, 선수 IDP가 열립니다. 초대 코드 하나로 코칭스태프와 선수가 같은 팀에 모입니다.</p>
+        <ul>
+          <li>작전판 · 애니메이션 · 이미지/PDF 내보내기</li>
+          <li>훈련 설계 · 보관함 · 노트</li>
+          <li>팀 일정 · 선수단 · 경기 준비 · 리뷰 · 선수 IDP</li>
+        </ul>
+        <div class="act"><a class="btn dark" href="https://studio.processfootball.com/">지금 시작하기 →</a><a class="btn line" href="/guide/">사용법 보기</a></div>
       </div>
     </div>
   </div>
 </section>
 
 <footer>
-  <div class="brand" style="display:flex;align-items:center;justify-content:center;gap:10px"><img src="/assets/brand/studio-192-v1.png" alt="PROCESS STUDIO" style="width:24px;height:24px;border-radius:6px"><span><b>PRO</b>CESS <b>STUDIO</b></span></div>
-  팀이 함께 쓰는 전술 스튜디오 — 작전판 · 훈련 · 일정 · 팀 · 노트 · 양식 · 클라우드 동기화<br>
-  <a href="https://studio.processfootball.com/">studio.processfootball.com</a><br>
-  <a href="https://processstudio.netlify.app/">기존 주소로 열기</a><br>
-  <span style="font-size:12px"><a href="/guide/">사용 설명서</a> · <a href="/privacy.html">개인정보처리방침</a> · <a href="/terms.html">이용약관</a></span>
+  <div class="wrap">
+    <div class="f">
+      <div>
+        <div class="brand"><span><b>PRO</b>CESS <b>STUDIO</b></span></div>
+        <p>계획하고, 실행하고, 돌아보는 팀 운영 — 작전판 · 일정 · 훈련 · 선수 · 경기 · IDP</p>
+      </div>
+      <div class="cols">
+        <div>
+          <h5>스튜디오</h5>
+          <a href="https://studio.processfootball.com/">앱 열기</a>
+          <a href="/guide/">사용 설명서</a>
+          <a href="/guide/team.html">팀 운영 안내</a>
+          <a href="/start/">IDP 시작 가이드</a>
+        </div>
+        <div>
+          <h5>PROCESS</h5>
+          <a href="https://weloveprocess.netlify.app/" target="_blank" rel="noopener">프로세스 홈 ↗</a>
+          <a href="https://weloveprocess.netlify.app/textbook/" target="_blank" rel="noopener">프로세스 교과서 ↗</a>
+          <a href="https://process-letter.netlify.app/" target="_blank" rel="noopener">프로세스 레터 ↗</a>
+          <a href="https://www.instagram.com/process_football/" target="_blank" rel="noopener">인스타그램 ↗</a>
+        </div>
+      </div>
+    </div>
+    <div class="legal">
+      <span>© 2026 PROCESS</span>
+      <a href="/terms.html">이용약관</a>
+      <a href="/privacy.html">개인정보처리방침</a>
+      <a href="https://processstudio.netlify.app/">기존 주소로 열기</a>
+    </div>
+  </div>
 </footer>
 
 </body>

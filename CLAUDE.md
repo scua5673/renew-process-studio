@@ -1,6 +1,6 @@
 # PROCESS STUDIO — 작업 기억
 
-- 3.234 자동 업데이트 — update-client.js가 활성 worker 판을 질의한 뒤 기존 저장 장벽으로만 적용한다. 복귀/pageshow/online 재확인, 확인·설치·저장 지연 단계 기록. SW는 오래 숨은 탭도 강제 navigate하지 않는다. 게스트 무편집 명단의 존재하지 않는 journal 확인을 피하되 이전 입력·계정 흔적은 그대로 검사하며, 게스트 보드는 기존 기기 저장/readback 후에만 종료한다. 관리자 적용 지연은 최근 신호·경과 시간·세션별 완료를 보고 20판 기준은 참고로 접는다. 상세 docs/update-delivery-3234.md.
+- 3.236 자동 업데이트 — update-client.js가 활성 worker 판을 질의한 뒤 기존 저장 장벽으로만 적용한다. 복귀/pageshow/online 재확인, 확인·설치·저장 지연 단계 기록. SW는 오래 숨은 탭도 강제 navigate하지 않는다. 게스트 무편집 명단의 존재하지 않는 journal 확인을 피하되 이전 입력·계정 흔적은 그대로 검사하며, 게스트 보드는 기존 기기 저장/readback 후에만 종료한다. 관리자 적용 지연은 최근 신호·경과 시간·세션별 완료를 보고 20판 기준은 참고로 접는다. 상세 docs/update-delivery-3236.md.
 
 - 3.232 펼친 폴드 — `PSPhoneBoardView.phone()`은 기기 정체성, `readOnly()`는 현재 표시의 편집 제한이다. 실제 화면의 짧은 변·최상위 창 너비가 모두 600px 이상일 때만 펼친 폰을 기존 편집기로 연다. iframe 논리 폭만으로 풀지 않는다. 접기·펼치기에 iframe을 reload하지 않고 부모 영역 ResizeObserver로 도구 높이를 맞춘다. 상세 `docs/fold-board-tools-3232.md`.
 
