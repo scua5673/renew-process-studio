@@ -241,7 +241,6 @@
       if (st.panel && body.classList.contains('ps-dock-float')) openTray(); else { tray.classList.remove('on'); if (!body.classList.contains('ps-dock-float')) giveBack(); }
       tTeam.setAttribute('aria-pressed', st.panel === 'team' ? 'true' : 'false'); tEquip.setAttribute('aria-pressed', st.panel === 'equip' ? 'true' : 'false'); tAnim.setAttribute('aria-pressed', a ? 'true' : 'false');
       tTeam.setAttribute('aria-expanded',String(st.panel==='team'));tEquip.setAttribute('aria-expanded',String(st.panel==='equip'));tAnim.setAttribute('aria-expanded',String(a));
-      tAnim.setAttribute('aria-label',a?'애니메이션 접기':'애니메이션 열기');tAnim.title=a?'애니메이션 접기 · 장면 유지':'애니메이션 열기';
     }
     giveBackLater = function () { tray.classList.remove('on'); giveBack(); };
     paint();
