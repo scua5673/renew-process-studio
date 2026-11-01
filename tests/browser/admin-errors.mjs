@@ -8,7 +8,7 @@ const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGH
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),engine=process.env.PS_BROWSER_ENGINE||'chromium';
 const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results',engine,'admin-errors');fs.mkdirSync(out,{recursive:true});
 const html=fs.readFileSync(path.join(root,'admin.html'),'utf8'),apiOrigin=html.match(/url:"(https:\/\/[^\"]+)"/)[1];
-const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+new URL(req.url,'http://localhost').pathname);if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return;}try{res.writeHead(200,{'Content-Type':({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[path.extname(f)]||'application/octet-stream'});res.end(fs.readFileSync(f));}catch{res.writeHead(404).end();}});
+const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+new URL(req.url,'http://localhost').pathname);if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return;}try{const fixtureBody=fs.readFileSync(f);res.writeHead(200,{'Content-Type':({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[path.extname(f)]||'application/octet-stream'});res.end(fixtureBody);}catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
 const uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',created_at=new Date(Date.now()-60000).toISOString();
 const fixtures=[['sync_storage','storage','legacy and IndexedDB values differ'],['sync_storage','storage',"Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing."],['sync_local_changed','storage_source_changed','shared source or owner changed']];

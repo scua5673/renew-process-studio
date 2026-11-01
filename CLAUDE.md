@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.236 자동 업데이트 — update-client.js가 활성 worker 판을 질의한 뒤 기존 저장 장벽으로만 적용한다. 복귀/pageshow/online 재확인, 확인·설치·저장 지연 단계 기록. SW는 오래 숨은 탭도 강제 navigate하지 않는다. 게스트 무편집 명단의 존재하지 않는 journal 확인을 피하되 이전 입력·계정 흔적은 그대로 검사하며, 게스트 보드는 기존 기기 저장/readback 후에만 종료한다. 관리자 적용 지연은 최근 신호·경과 시간·세션별 완료를 보고 20판 기준은 참고로 접는다. 상세 docs/update-delivery-3236.md.
+
 - 3.232 펼친 폴드 — `PSPhoneBoardView.phone()`은 기기 정체성, `readOnly()`는 현재 표시의 편집 제한이다. 실제 화면의 짧은 변·최상위 창 너비가 모두 600px 이상일 때만 펼친 폰을 기존 편집기로 연다. iframe 논리 폭만으로 풀지 않는다. 접기·펼치기에 iframe을 reload하지 않고 부모 영역 ResizeObserver로 도구 높이를 맞춘다. 상세 `docs/fold-board-tools-3232.md`.
 
 - 3.223 커뮤니티 카드 — `community-cards.css`에서 레터는 작은 호수·자연 줄바꿈 제목·읽기 푸터의 반응형 카드, 트레이닝·코치는 실제 그림과 정보 위계를 적용한다. FIFA는 `fi-play`가 기존 onOpen을 호출하고 원문 링크는 전파를 막아 별도로 연다. 현재 193개 FIFA에 모두 작전판이 있으므로 외부 카드 검증은 index 일부가 없는 합성 응답으로만 한다. 상세 `docs/community-cards-3223.md`.

@@ -259,6 +259,17 @@
 
     var api = {
       active: active,
+      ready: function () {
+        if (!active()) return Promise.resolve(true);
+        var seq=st.seq,gen=st.gen;
+        function fail(){var e=new Error('작전판의 기기 저장을 확인해 주세요');e.psCode='board_guest_pending';throw e;}
+        if (!st.loaded || st.reading || st.saving || saveBusy()) return Promise.resolve().then(fail);
+        if (!win._boardManualDirty && !win.boardManualChanged()) return Promise.resolve(true);
+        return save({quiet:true}).then(function(ok){
+          if(!ok||!active()||seq!==st.seq||gen!==st.gen||win._boardManualDirty||saveBusy())fail();
+          return true;
+        });
+      },
       loaded: function () { return st.loaded; },
       adopted: function () { return !!st.adopted; },
       draftSuppressed: draftSuppressed,

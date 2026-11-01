@@ -12,7 +12,7 @@ const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/admin-operati
 fs.mkdirSync(out,{recursive:true});
 const ADM='99999999-9999-4999-8999-999999999999',U='11111111-1111-4111-8111-111111111111',V='22222222-2222-4222-8222-222222222222',W='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',X='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',I='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2'};
-const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return;}try{res.writeHead(200,{'Content-Type':mime[path.extname(f)]||'application/octet-stream','Cache-Control':'no-store'});res.end(fs.readFileSync(f));}catch{res.writeHead(404).end();}});
+const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return;}try{const fixtureBody=fs.readFileSync(f);res.writeHead(200,{'Content-Type':mime[path.extname(f)]||'application/octet-stream','Cache-Control':'no-store'});res.end(fixtureBody);}catch{res.writeHead(404).end();}});
 await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
 const base='http://127.0.0.1:'+server.address().port;
 const apiOrigin=(fs.readFileSync(path.join(root,'admin.html'),'utf8').match(/url:"(https:\/\/[^\"]+)"/)||[])[1];assert.ok(apiOrigin,'configured API origin found for request interception only');

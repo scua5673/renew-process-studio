@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.235"></script>
+<script src="autosave-status.js?v=3.236"></script>
 <script src="sync-confirmation.js"></script>
 <script src="sync-diagnosis.js"></script>
 <script src="sync-diagnosis-ui.js"></script>
@@ -530,7 +530,7 @@
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
 <script src="playbook-data.js"></script><script src="playbook-shell.js"></script>
-<script>window.PS_BUILD='3.235';</script>
+<script>window.PS_BUILD='3.236';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -661,6 +661,7 @@ function psUpdateStatus(message,busy){
    계속 미뤄진 것으로 보이지만 어느 화면이 막았는지 기록이 없어 알 수 없었다.
    처음 10분 뒤 한 번, 그 뒤엔 한 시간에 한 번. 내용·입력값은 담지 않는다(단계 이름·화면 id·분·횟수뿐). */
 function psUpdNote(reason){
+  try{if(window.PSUpdateClient)PSUpdateClient.record('deferred',reason);}catch(_){}
   try{
     var st=window.__psUpdState||(window.__psUpdState={since:Date.now(),tries:0,reported:0,last:''});
     st.tries++; st.last=String(reason||'unknown').replace(/[^a-zA-Z0-9_.:+-]/g,'').slice(0,80)||'unknown';
@@ -715,6 +716,7 @@ function psAutoReloadWhenSafe(manualOnly){
       return;
     }
     window.__psReloading=1;
+    try{if(window.PSUpdateClient)PSUpdateClient.record('saving');}catch(_){}
     if(manual)psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있어요.',true);
     var active=true,timer,track={};   /* 2.925 — track.pending = 아직 저장 확인이 안 끝난 화면 */
     /* 3.060 — 업데이트 진행 카드(update-progress.js): 저장 확인 70→95% · 다시 여는 중 100%. 숨은 탭은 보일 사람이 없어 그리지 않는다.
@@ -725,8 +727,9 @@ function psAutoReloadWhenSafe(manualOnly){
       progT=setInterval(function(){try{if(!active)return;var seen=Object.keys(track.seen||{}).length,pend=Object.keys(track.pending||{}).length,tot=Math.max(progTotal,seen);prog.saving(tot-(seen-pend),tot);}catch(_){}},150);}
     function finish(message,reason){
       if(!active)return;active=false;clearTimeout(timer);if(progT)clearInterval(progT);window.__psReloading=0;
+      try{if(window.PSUpdateClient)message=PSUpdateClient.reason(reason);}catch(_){}
       psUpdNote(reason);
-      if(prog){try{if(manual)prog.failed(message);else prog.ready();}catch(_){}}
+      if(prog){try{if(manual)prog.failed(message);else prog.ready(null,message);}catch(_){}}
       psUpdateStatus(message,false);psShowUpdBand();
     }
     timer=setTimeout(function(){finish('저장 확인이 지연되어 업데이트를 보류했어요. 작업 내용을 보관한 뒤 다시 시도해 주세요.','flush_timeout:'+(Object.keys(track.pending||{}).join('+')||'none'));},20000);
@@ -777,22 +780,7 @@ function psShowUpdBand(){
   var later=document.getElementById('updLater'); if(later&&!later.__wired){ later.__wired=1; later.addEventListener('click',function(){window.__psUpdateLater=true;b.style.display='none';}); }
 }
 </script>
-<script>var __swT0=Date.now();if("serviceWorker" in navigator){window.addEventListener("load",function(){var hadCtrl=!!navigator.serviceWorker.controller,refreshing=false;function safeSwUpdate(reg){try{var p=reg&&reg.update&&reg.update();if(p&&p.catch)p.catch(function(){});}catch(_){}}navigator.serviceWorker.register("/sw.js").then(function(reg){safeSwUpdate(reg);setInterval(function(){safeSwUpdate(reg);} ,1800000);document.addEventListener("visibilitychange",function(){if(!document.hidden)safeSwUpdate(reg);});window.addEventListener("focus",function(){safeSwUpdate(reg);});reg.addEventListener("updatefound",function(){var nw=reg.installing;if(!nw)return;nw.addEventListener("statechange",function(){if(nw.state==="installed"&&navigator.serviceWorker.controller){try{if(window.toast&&!window.PSUpdProg)toast("\uc0c8 \ubc84\uc804 \uc801\uc6a9 \uc911\u2026");}catch(_){}}else if(nw.state==="redundant"&&navigator.serviceWorker.controller){try{psUpdSwFailed();}catch(_){}}});});}).catch(function(){});navigator.serviceWorker.addEventListener("controllerchange",function(){if(refreshing)return;refreshing=true;
-  /* ══ 2.388 · 업데이트를 **안 눌러도** 적용된다(사용자) ═══════════════════════════════
-     예전엔 새 판이 올라와도 화면 구석의 '업데이트' 버튼을 눌러야 반영됐다. 서비스워커는 이미
-     `skipWaiting`+`clients.claim` 이라 **새 판은 벌써 활성**인데, 지금 열려 있는 문서만 옛것이었다.
-     남은 일은 새로고침 하나뿐 — 그걸 사람에게 시키고 있었다.
-     ⚠ 그렇다고 아무 때나 새로고침하면 **하던 일이 날아간다.** 그래서 '안전한 때'에만 한다:
-        ① 탭이 안 보일 때(가장 좋다 — 돌아오면 이미 새 판이다)
-        ② 입력 중이 아니고, 열린 모달·시트가 없고, 토큰을 끌고 있지 않을 때
-        아직 아니면 기다렸다가(탭이 숨을 때 / 15초마다 다시 확인) 조용히 바꾼다.
-     ⚠ 버튼은 **남긴다** — 기다리는 게 답답한 사람이 지금 당장 바꿀 길이 있어야 한다. */
-  try{ psAutoReloadWhenSafe(); }catch(_){ try{psShowUpdBand();}catch(__){} }
-  if(false&&hadCtrl){
-  /* 실행 직후(3초 이내) 감지된 업데이트는 즉시 조용히 재시작 — 시작하자마자 "로드→배너→리로드" 이중 깜빡임 방지. 사용 중 감지된 경우에만 배너+지연 */
-  /* 시작 직후에도 강제 새로고침하지 않는다. 현재 작업 화면은 유지하고,
-     사용자가 선택할 때만 새 버전으로 다시 시작한다. */
-  try{ if(!document.getElementById("psUpdBtn")){ var b=document.createElement("button");b.id="psUpdBtn";b.type="button";b.title="새 버전으로 업데이트";b.innerHTML="<svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' style='margin-right:5px;flex:0 0 auto'><path d='M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4'/><path d='M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4'/></svg><span>업데이트</span>";b.style.cssText="display:inline-flex;align-items:center;height:34px;padding:0 13px;border:0;border-radius:10px;background:var(--ps-navy,#14213D);color:#fff;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 9px color-mix(in srgb,var(--ps-navy,#14213D) 45%,transparent)";b.onclick=function(){(window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());};var _g=document.getElementById("gearWrap");if(_g&&_g.parentNode){_g.parentNode.insertBefore(b,_g);}else{b.style.position="fixed";b.style.top="calc(9px + env(safe-area-inset-top))";b.style.right="14px";b.style.zIndex="2147483001";document.body.appendChild(b);}} }catch(_){}}});});}</script>
+<script src="update-client.js"></script>
 <script>
 /* PWA 설치 — 안내 시트와 원클릭은 한 곳(window.psInstallGo). 3.110 — 문은 앱 설정 줄 · 폰 더보기 · 왼쪽 메뉴 · 한 번 뜨는 안내(install-door.js, 사용자 «아이패드와 컴퓨터 사용자도»).
    ⚠⚠ 2.437 — 예전에는 `beforeinstallprompt` 가 와야만 버튼을 보였다. 그 이벤트는
@@ -8039,16 +8027,16 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="sync-size.js"></script>
 <script src="sync-observability.js"></script>
 <script src="idp-pub-wipe.js"></script>
-<script src="autosave-journal.js?v=3.235"></script>
-<script src="autosave-merge.js?v=3.235"></script>
-<script src="autosave-runtime.js?v=3.235"></script>
-<script src="autosave-recovery.js?v=3.235"></script>
+<script src="autosave-journal.js?v=3.236"></script>
+<script src="autosave-merge.js?v=3.236"></script>
+<script src="autosave-runtime.js?v=3.236"></script>
+<script src="autosave-recovery.js?v=3.236"></script>
 <script src="roster-outbox.js"></script>
 <script src="sync-items-stale.js"></script>
 <script src="permissions-filter.js"></script>
-<script src="sync.js?v=3.235"></script>
+<script src="sync.js?v=3.236"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.235">
+<link rel="stylesheet" href="support.css?v=3.236">
 <link rel="stylesheet" href="support-image.css?v=20261023">
 <script src="support-image.js?v=20261023"></script>
 <script src="support.js?v=20261023"></script>
