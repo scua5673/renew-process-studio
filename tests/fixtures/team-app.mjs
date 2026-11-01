@@ -4,6 +4,7 @@ import path from 'node:path';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {trackNavigationAborts,pageErrorEntry} from './navigation-abort.mjs';
+import {seoulWeek} from './seoul-week.mjs';
 
 // Synthetic team app fixture for browser regressions (ported from the 2026-09-27 walkthrough). Synthetic team workspace, loopback
 // Supabase-shaped API, every external request and websocket blocked. Never touches production.
@@ -23,9 +24,8 @@ function players(){
   const plan=['GK','GK','LCB','RCB','CB','LB','RB','DM','DM','CM','CM','AM','LW','RW','LW','CF','CF','CM'];
   return plan.map((p,i)=>({id:'vp'+String(i+1).padStart(2,'0'),name:'가상 선수 '+(i+1),num:String(i+1),grp:i%2?'B팀':'A팀',type:'ours',posId:'pos_'+p,levels:{},profile:{}}));
 }
-function ymd(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 function schedule(){
-  const now=new Date(),monday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
+  const {anchorMonday,dayIndex:today}=seoulWeek();
   const mk=()=>['월','화','수','목','금','토','일'].map((d,i)=>({d,n:i+1,rest:true,trainings:[]}));
   const tr=(time,grp,note)=>({slot:'S'+Math.random().toString(36).slice(2,8),time,grp,note,blocks:[]});
   const w0=mk(),w1=mk();
@@ -33,8 +33,8 @@ function schedule(){
   w0[5].rest=false;w0[5].board={sched:'경기',theme:'',opp:'가상 상대 FC',time:'15:00'};
   w1[5].rest=false;w1[5].board={sched:'경기',theme:'',opp:'가상 원정 유나이티드',time:'11:00'};
   // Today always has one session so 오늘 is not empty.
-  const today=(now.getDay()+6)%7;if(!w0[today].trainings.length&&w0[today].board?.sched!=='경기'){w0[today].rest=false;w0[today].trainings.push(tr('18:00',['A팀'],'가상 오늘 훈련'));w0[today].board={sched:'훈련',theme:''};}
-  return {version:1,anchorMonday:ymd(monday),scheduleRev:1,weeks:{0:w0,1:w1}};
+  if(!w0[today].trainings.length&&w0[today].board?.sched!=='경기'){w0[today].rest=false;w0[today].trainings.push(tr('18:00',['A팀'],'가상 오늘 훈련'));w0[today].board={sched:'훈련',theme:''};}
+  return {version:1,anchorMonday,scheduleRev:1,weeks:{0:w0,1:w1}};
 }
 
 let fx_opts={};

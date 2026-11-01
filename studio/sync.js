@@ -481,8 +481,10 @@ function safeEventMeta(meta){
   var out={}; if(!meta||typeof meta!=='object')return out;
   Object.keys(meta).slice(0,12).forEach(function(k){
     var v=meta[k];
+    if((k==='from'||k==='to')&&typeof v==='string'&&/^\d{1,2}\.\d{3}(?:\.\d{1,3})?$/.test(v)){out[k]=v;return;}
+    if(k==='update_id'&&typeof v==='string'&&/^[a-z0-9]{6,12}-[a-z0-9]{1,10}$/.test(v)){out[k]=v;return;}
     if(typeof v==='number'||typeof v==='boolean')out[String(k).slice(0,32)]=v;
-    else if(typeof v==='string'&&/^(code|reason|mode|format|source|stage|name|msg|ua)$/i.test(k))out[String(k).slice(0,32)]=v.slice(0,k==='msg'?120:(k==='ua'?140:80));   /* 짧은 stage/source도 보존. 내용·토큰은 호출부에서 제외한다. 3.036 — ua(기기 UA 앞 140자: 멈춘 뒤 다시 연 기록) */
+    else if(typeof v==='string'&&/^(code|reason|mode|format|source|stage|name|msg|ua)$/i.test(k))out[String(k).slice(0,32)]=v.slice(0,k==='msg'?120:(k==='ua'?140:80));
   });
   return out;
 }
@@ -5208,6 +5210,8 @@ function itemsWriteReady(players,options){
   });
 }
 function itemsWriteFlush(background){
+  // Only a never-edited guest has no roster journal (docs/update-delivery-3236.md).
+  if(!_itemsJobSequence&&!_itemsPending&&!_itemsWritingN&&!getSess()&&!localStorage.getItem('ps_active_ws')&&!localStorage.getItem('ps_cache_owner_v1'))return Promise.resolve(true);
   if(background===true)return itemsStaleAPI().background(function(){return itemsWriteFlush(1);});
   if(background===undefined&&typeof itemsStaleAPI==='function')return itemsStaleAPI().foreground(function(){return itemsWriteFlush(2);});
   function retry(job){return itemsWriteRetryable(job)&&!(background===1&&itemsStaleAPI().skip(job));}

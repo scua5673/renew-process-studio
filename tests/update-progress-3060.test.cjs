@@ -18,10 +18,10 @@ test('service worker reports how many release files it has stored, with no conte
   assert.ok(sw.includes("'/studio/update-progress.js'"),'card script is in the release cache');
 });
 test('the shell loads the card early and drives it from the real update path', ()=>{
-  assert.ok(app.indexOf('src="update-progress.js"')>0&&app.indexOf('src="update-progress.js"')<app.indexOf('<script>var __swT0'),'loaded before service worker messages can arrive');
+  assert.ok(app.indexOf('src="update-progress.js"')>0&&app.indexOf('src="update-progress.js"')<app.indexOf('src="update-client.js"'),'loaded before service worker messages can arrive');
   const go=app.slice(app.indexOf('function psAutoReloadWhenSafe('),app.indexOf('window.__psForceReload=function(m){'));
   assert.match(go,/prog\.saving\(/);assert.match(go,/prog\.reloading\(\)/);
-  assert.match(go,/if\(manual\)prog\.failed\(message\);else prog\.ready\(\);/,'auto attempts fall back quietly; only a press shows why');
+  assert.match(go,/if\(manual\)prog\.failed\(message\);else prog\.ready\(null,message\);/,'auto attempts keep the ready card and explain the wait');
   assert.ok(go.indexOf('prog.reloading()')<go.indexOf('location.reload()'),'100% only after the save check passed');
   assert.match(app,/track\.seen=track\.seen\|\|\{\};track\.seen\[id\]=1;/);
 });
@@ -41,7 +41,7 @@ test('3.098 calm update: one card in one place, a countdown before an automatic 
   const go=app.slice(app.indexOf('function psAutoReloadWhenSafe('),app.indexOf('function psShowUpdBand('));
   assert.match(go,/window\.__psForceReload=function\(m\)\{var P=window\.PSUpdProg;if\(P&&P\.gate\)P\.gate\(m,go,psSafeToReload\);else go\(m\);\};/);
   assert.match(go,/if\(document\.hidden\|\|psSafeToReload\(w0\)\)window\.__psForceReload\(\);/,'the first automatic try also goes through the countdown');
-  assert.match(app,/if\(window\.toast&&!window\.PSUpdProg\)toast\(/,'no extra toast on top of the card');
+  assert.doesNotMatch(R('studio/update-client.js'),/\btoast\(/,'the update client uses only the existing progress card');
   assert.match(R('studio/storage-keys.js'),/\['ps_upd_cont_v1','device','ls','session','update-progress\.js'\]/);
 });
 test('3.098 gate: a press or a hidden tab goes now; a visible automatic update counts down and re-checks safety', ()=>{

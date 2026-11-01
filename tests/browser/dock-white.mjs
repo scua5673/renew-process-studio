@@ -16,7 +16,7 @@ fs.mkdirSync(out,{recursive:true});
 const previous=execFileSync('git',['show',`${process.env.PS_DOCK_BASE_REF||'1843014'}:studio/board.html`],{cwd:root,encoding:'utf8',maxBuffer:5e6});
 const previousStyles=Object.fromEntries(['ps-2614-dock','ps-2288-col'].map(id=>[id,previous.match(new RegExp(`<style id="${id}">([\\s\\S]*?)<\\/style>`))[1]]));
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2'};
-const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!file.startsWith(root+path.sep)){res.writeHead(403).end();return;}try{res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(fs.readFileSync(file));}catch{res.writeHead(404).end();}});
+const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!file.startsWith(root+path.sep)){res.writeHead(403).end();return;}try{const fixtureBody=fs.readFileSync(file);res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(fixtureBody);}catch{res.writeHead(404).end();}});
 await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
 const base=`http://127.0.0.1:${server.address().port}`;
 let browser;
