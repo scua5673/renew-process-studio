@@ -81,17 +81,10 @@
   .loop .arr{border:0;background:none;color:var(--faint);padding:8px 2px;font-weight:400}
   @media (max-width:520px){.loop{gap:6px}.loop span{padding:6px 11px;font-size:13px}.loop .arr{display:none}}
   .shot{margin:54px auto 0;max-width:1120px;padding:0 24px}
-  .appwin{border-radius:16px 16px 0 0;overflow:hidden;background:#fff;border:1px solid var(--line2);border-bottom:0;box-shadow:0 30px 70px rgba(16,24,40,.14)}
-  .appwin .bar{display:flex;align-items:center;gap:18px;padding:11px 18px;border-bottom:1px solid var(--line)}
-  .appwin .bar .wm{font-size:13px;white-space:nowrap}
-  .appwin .bar .wm b{font-weight:800}.appwin .bar .wm span{font-weight:300;opacity:.5}
-  .appwin .bar .tabs{display:flex;gap:4px;margin-left:8px}
-  .appwin .bar .tabs span{font-size:12px;color:var(--dim);padding:4px 9px;border-radius:6px}
-  .appwin .bar .tabs span.on{background:var(--paper2);color:var(--ink);font-weight:700}
-  .appwin .bar .ws{margin-left:auto;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:7px;background:var(--ink);color:#fff}
-  .appwin .bar .ws i{display:inline-block;width:16px;height:16px;border-radius:5px;background:#2f6fe4;font-style:normal;font-size:10px;line-height:16px;text-align:center;font-weight:800}
-  .appwin .board{width:100%;height:auto;aspect-ratio:1776/1184;object-fit:cover}
-  @media (max-width:640px){.appwin .bar .tabs{display:none}}
+  .appwin{margin:0;border-radius:16px 16px 0 0;overflow:hidden;background:#fff;border:1px solid var(--line2);border-bottom:0;box-shadow:0 30px 70px rgba(16,24,40,.16)}
+  .appwin .board{width:100%;height:auto;display:block}
+  .shot-cap{text-align:center;font-size:12px;color:var(--faint);padding:10px 0 0}
+
 
   /* ===== BOARD FIRST ===== */
   .board-sec{background:var(--dark);color:#fff;padding:80px 0}
@@ -108,7 +101,7 @@
 
   /* ===== FIVE FLOWS ===== */
   .flows{background:var(--paper)}
-  .flow{display:grid;grid-template-columns:1fr 1.25fr;gap:40px;align-items:center;padding:52px 0;border-top:1px solid var(--line2)}
+  .flow{display:grid;grid-template-columns:1fr 1.45fr;gap:40px;align-items:center;padding:52px 0;border-top:1px solid var(--line2)}
   .flow:first-of-type{border-top:0;padding-top:48px}
   .flow.rev .txt{order:2}
   .flow .num{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--green)}
@@ -118,85 +111,12 @@
   .flow .q span{display:block;font-weight:400;color:var(--faint);font-size:12px;margin-top:2px}
   @media (max-width:860px){.flow{grid-template-columns:1fr;gap:22px;padding:40px 0}.flow.rev .txt{order:0}}
 
-  /* 판(예시 화면) 공통 */
-  .panel{background:#fff;border:1px solid var(--line2);border-radius:var(--r);box-shadow:0 10px 30px rgba(16,24,40,.08);overflow:hidden;font-size:13px}
-  .panel .ph{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line);font-weight:700;font-size:13px}
-  .panel .ph .tag{margin-left:auto;font-size:11px;font-weight:600;color:var(--faint);border:1px solid var(--line2);border-radius:999px;padding:2px 8px}
-  .panel .pb{padding:16px}
+  /* 실제 화면 */
+  .shotf{margin:0;background:#fff;border:1px solid var(--line2);border-radius:var(--r);box-shadow:0 14px 36px rgba(16,24,40,.10);overflow:hidden}
+  .shotf img{width:100%;height:auto;display:block}
+  .shotf figcaption{padding:8px 14px;font-size:11px;color:var(--faint);border-top:1px solid var(--line);background:var(--paper)}
   .chip{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;line-height:1.6}
-  .chip.g{background:var(--green-bg);color:var(--green)}.chip.r{background:var(--red-bg);color:var(--red)}.chip.a{background:var(--amber-bg);color:var(--amber)}.chip.b{background:var(--blue-bg);color:var(--blue)}.chip.n{background:var(--paper2);color:var(--dim)}
-
-  /* 1 일정·가동성 */
-  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-  .day{border:1px solid var(--line);border-radius:9px;padding:8px 8px 10px;min-height:92px;background:#fff}
-  .day .d{font-size:11px;color:var(--faint);font-weight:600}
-  .day .d b{color:var(--ink);font-size:13px;margin-left:3px}
-  .day .ev{margin-top:6px;border-radius:6px;padding:4px 6px;font-size:11px;font-weight:700;line-height:1.35}
-  .day .ev.t{background:var(--green-bg);color:var(--green)}.day .ev.m{background:var(--red-bg);color:var(--red)}.day .ev.o{background:var(--paper2);color:var(--faint)}
-  .day .ev small{display:block;font-weight:500;opacity:.8}
-  .avail{display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 12px;border-radius:10px;background:var(--paper)}
-  .avail .bar{flex:1;height:8px;border-radius:99px;background:var(--line2);overflow:hidden;display:flex}
-  .avail .bar i{display:block;height:100%}
-  .avail .bar .ok{background:var(--green);width:78%}.avail .bar .inj{background:var(--red);width:9%}.avail .bar .sch{background:#c9a24a;width:9%}
-  .avail .lg{font-size:12px;color:var(--dim);white-space:nowrap}
-  .avail .lg b{color:var(--ink)}
-  @media (max-width:520px){.week{grid-template-columns:repeat(4,1fr)}.day:nth-child(n+5){display:none}.avail{flex-wrap:wrap}}
-
-  /* 2 훈련 누적 */
-  .year{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  .big{font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1}
-  .big small{font-size:14px;font-weight:600;color:var(--faint);letter-spacing:0;margin-left:6px}
-  .months{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:64px;margin-top:14px}
-  .months i{display:block;background:var(--green);border-radius:3px 3px 0 0;opacity:.85}
-  .months i.m{opacity:.35}
-  .mlab{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;font-size:10px;color:var(--faint);text-align:center;margin-top:4px}
-  .topics .row{display:grid;grid-template-columns:76px 1fr 38px;align-items:center;gap:10px;margin-top:8px;font-size:12px}
-  .topics .row:first-child{margin-top:0}
-  .topics .row .bar{height:9px;border-radius:99px;background:var(--paper2);overflow:hidden}
-  .topics .row .bar i{display:block;height:100%;background:var(--ink);border-radius:99px}
-  .topics .row b{text-align:right;color:var(--dim);font-weight:600}
-  @media (max-width:520px){.year{grid-template-columns:1fr}}
-
-  /* 3 선수별 강도 */
-  .pl{display:grid;grid-template-columns:28px 1fr 56px 1fr 64px;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:12px}
-  .pl:first-child{border-top:0;padding-top:0}
-  .pl .no{width:26px;height:26px;border-radius:50%;background:#1d2a4a;color:#fff;font-weight:800;font-size:11px;display:grid;place-items:center}
-  .pl .nm{font-weight:700}.pl .nm small{display:block;font-weight:500;color:var(--faint);font-size:11px}
-  .pl .cnt{color:var(--dim);text-align:right}
-  .pl .ld{display:flex;gap:3px;height:10px}
-  .pl .ld i{flex:1;border-radius:2px;background:var(--paper2)}
-  .pl .ld i.l{background:#9fcbb4}.pl .ld i.m{background:#4f9a76}.pl .ld i.h{background:#1f6b47}
-  .pl .st{text-align:right}
-  .pl.hd{color:var(--faint);font-weight:600;font-size:11px;border-top:0;padding-bottom:4px}
-
-  /* 4 계획 vs 실제 */
-  .pva{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .pva .col{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff}
-  .pva .col.act{background:var(--paper)}
-  .pva h4{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--faint);text-transform:uppercase}
-  .pva .t{font-size:14px;font-weight:800;margin-top:6px;letter-spacing:-.01em}
-  .pva ul{list-style:none;margin-top:8px}
-  .pva li{position:relative;padding-left:14px;margin-top:5px;font-size:12px;color:var(--dim)}
-  .pva li::before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;border-radius:50%;background:var(--line2)}
-  .pva li.ok::before{background:var(--green)}.pva li.no::before{background:var(--red)}.pva li.dif::before{background:#c9a24a}
-  .pva .note{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fff;border:1px dashed var(--line2);font-size:12px;color:var(--dim)}
-  .pva .note b{color:var(--ink)}
-  @media (max-width:520px){.pva{grid-template-columns:1fr}}
-
-  /* 5 경기·결과 */
-  .score{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:10px;background:var(--ink);color:#fff}
-  .score .tm{font-weight:700;font-size:13px;opacity:.85}
-  .score .sc{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-left:auto}
-  .score .sc span{opacity:.5;margin:0 6px}
-  .score .res{font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px;background:var(--green);margin-left:10px}
-  .chain{margin-top:14px}
-  .chain .st{display:grid;grid-template-columns:86px 1fr;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:12px}
-  .chain .st:first-child{border-top:0;padding-top:0}
-  .chain .st .k{font-weight:800;color:var(--faint);font-size:11px;letter-spacing:.06em;padding-top:2px}
-  .chain .st .v{color:var(--dim)}
-  .chain .st .v b{color:var(--ink);font-weight:700}
-  .chain .st.next .v{color:var(--ink)}
-  .chain .st.next .k{color:var(--green)}
+  .chip.n{background:var(--paper2);color:var(--dim)}
 
   /* ===== REFLECT LOOP ===== */
   .loop-sec{text-align:center}
@@ -276,7 +196,7 @@
       <a class="btn dark" href="https://studio.processfootball.com/">앱 열기 →</a>
       <a class="btn line" href="#flows">팀 운영 흐름 보기</a>
     </div>
-    <div class="micro">아이패드 · 데스크탑 최적화 · 카카오·구글 로그인 · <b>설치 없이 링크만 열면 시작</b> · 혼자 쓰면 무료</div>
+    <div class="micro">아이패드 · 데스크탑 최적화 · 카카오·구글 로그인 · <b>설치 없이 링크만 열면 시작</b></div>
     <div class="loop" aria-label="계획 실행 성찰 순환">
       <span><i>01</i>계획</span><span class="arr">→</span>
       <span><i>02</i>실행</span><span class="arr">→</span>
@@ -285,14 +205,10 @@
     </div>
   </div>
   <div class="shot">
-    <div class="appwin" aria-hidden="true">
-      <div class="bar">
-        <span class="wm"><b>PRO</b>CESS <b>STUDIO</b></span>
-        <div class="tabs"><span class="on">작전판</span><span>보관함</span><span>커뮤니티</span><span>팀</span><span>IDP</span><span>노트</span></div>
-        <span class="ws"><i>F</i>FC 프로세스 U15</span>
-      </div>
-      <img class="board" src="board-real.webp" alt="" width="1776" height="1184" loading="eager" fetchpriority="high">
-    </div>
+    <figure class="appwin">
+      <img class="board" src="/assets/landing/board.webp" alt="프로세스 스튜디오 작전판 — 4-3-3 대 4-4-2 유니폼 토큰 배치" width="1600" height="1044" loading="eager" fetchpriority="high">
+    </figure>
+    <div class="shot-cap">실제 작전판 화면 · 팀 이름과 선수는 가상 자료</div>
   </div>
 </header>
 
@@ -330,35 +246,20 @@
   <div class="wrap">
     <div class="kicker">팀 운영 — 한눈에 보이는 다섯 흐름</div>
     <h2>팀 운영의 핵심은 일정 계획과,<br>그 과정을 돌아보는 것.</h2>
-    <p class="sub">다섯 가지가 따로 놀지 않고 연결됩니다. 아래 화면은 모두 예시 자료입니다.</p>
+    <p class="sub">다섯 가지가 따로 놀지 않고 연결됩니다. 아래는 모두 실제 앱 화면이며, 팀·선수·기록은 가상 자료입니다.</p>
 
     <!-- 1 -->
     <div class="flow">
       <div class="txt">
         <div class="num">01 · 일정과 선수 가동성</div>
         <h3>언제 훈련·경기가 있고,<br>누가 나올 수 있는지</h3>
-        <p>월·주·일 일정에 훈련과 경기를 올리고, 부상·학업·대표팀 차출로 빠지는 선수를 함께 봅니다. 계획을 세우는 순간 «그날 실제로 몇 명으로 훈련하는지»가 보입니다.</p>
-        <div class="q">이번 주 화요일, 수비 조직 훈련을 11명으로 할 수 있나?<span>일정 · 선수단 · 가용 인원이 같은 화면에</span></div>
+        <p>팀 운영 첫 화면에 오늘 세션, 이번 주의 훈련·경기(MD 기준), 가용 인원이 함께 보입니다. 부상·재활·불참으로 빠지는 선수가 계획 옆에 바로 놓입니다.</p>
+        <div class="q">이번 주 화요일, 수비 조직 훈련을 11명으로 할 수 있나?<span>오늘 · 이번 주 · 가용인원이 한 화면에</span></div>
       </div>
-      <div class="panel" aria-hidden="true">
-        <div class="ph">주간 일정 · 3월 2주 <span class="tag">예시</span></div>
-        <div class="pb">
-          <div class="week">
-            <div class="day"><div class="d">월<b>9</b></div><div class="ev t">훈련<small>빌드업 · 중</small></div></div>
-            <div class="day"><div class="d">화<b>10</b></div><div class="ev t">훈련<small>수비 조직 · 높음</small></div></div>
-            <div class="day"><div class="d">수<b>11</b></div><div class="ev o">휴식</div></div>
-            <div class="day"><div class="d">목<b>12</b></div><div class="ev t">훈련<small>전환 · 중</small></div></div>
-            <div class="day"><div class="d">금<b>13</b></div><div class="ev t">훈련<small>세트피스 · 낮음</small></div></div>
-            <div class="day"><div class="d">토<b>14</b></div><div class="ev m">경기<small>vs 한강 U15</small></div></div>
-            <div class="day"><div class="d">일<b>15</b></div><div class="ev o">휴식</div></div>
-          </div>
-          <div class="avail">
-            <span class="lg">화요일 가용 <b>18 / 23명</b></span>
-            <div class="bar"><i class="ok"></i><i class="inj"></i><i class="sch"></i></div>
-            <span class="lg"><span class="chip r">부상 2</span> <span class="chip a">학업 2</span> <span class="chip n">차출 1</span></span>
-          </div>
-        </div>
-      </div>
+      <figure class="shotf">
+        <img src="/assets/landing/team-today.webp" alt="팀 운영 오늘 화면 — 오늘 세션, 이번 주 훈련과 경기, 가용인원, 시즌 누적" width="1600" height="1081" loading="lazy">
+        <figcaption>실제 화면 · 가상 팀 자료</figcaption>
+      </figure>
     </div>
 
     <!-- 2 -->
@@ -366,30 +267,13 @@
       <div class="txt">
         <div class="num">02 · 훈련의 누적</div>
         <h3>일 년 동안 몇 번 훈련했고,<br>어떤 내용을 다뤘는지</h3>
-        <p>일정에 올린 훈련이 그대로 쌓입니다. 횟수와 주제 배분을 게임모델 국면 기준으로 돌아보면 «우리는 전환을 거의 안 다뤘다» 같은 사실이 보입니다.</p>
-        <div class="q">올해 세트피스 훈련은 전체의 몇 %였나?<span>훈련 세션 · 게임모델 국면 · 월별 누적</span></div>
+        <p>일정에 올린 훈련이 그대로 쌓입니다. 훈련·OFF·경기 횟수와 게임모델 국면별 시간을 이번 주와 시즌으로 돌아보면 «우리는 전환을 거의 안 다뤘다» 같은 사실이 보입니다.</p>
+        <div class="q">올해 세트피스에 쓴 시간은 전체의 얼마였나?<span>훈련 세션 · 게임모델 국면 · 시즌 누적</span></div>
       </div>
-      <div class="panel" aria-hidden="true">
-        <div class="ph">시즌 훈련 누적 <span class="tag">예시</span></div>
-        <div class="pb">
-          <div class="year">
-            <div>
-              <div class="big">112<small>회 · 1~9월</small></div>
-              <div class="months">
-                <i style="height:40%"></i><i style="height:55%"></i><i style="height:80%"></i><i style="height:90%"></i><i style="height:85%"></i><i style="height:70%"></i><i style="height:35%"></i><i style="height:60%"></i><i style="height:95%"></i><i class="m" style="height:10%"></i><i class="m" style="height:10%"></i><i class="m" style="height:10%"></i>
-              </div>
-              <div class="mlab"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span></div>
-            </div>
-            <div class="topics">
-              <div class="row"><span>빌드업</span><div class="bar"><i style="width:31%"></i></div><b>31%</b></div>
-              <div class="row"><span>압박</span><div class="bar"><i style="width:24%"></i></div><b>24%</b></div>
-              <div class="row"><span>전환</span><div class="bar"><i style="width:12%"></i></div><b>12%</b></div>
-              <div class="row"><span>세트피스</span><div class="bar"><i style="width:9%"></i></div><b>9%</b></div>
-              <div class="row"><span>피지컬</span><div class="bar"><i style="width:24%"></i></div><b>24%</b></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <figure class="shotf">
+        <img src="/assets/landing/season-card.webp" alt="지금까지 카드 — 시즌 훈련·OFF·경기 횟수와 국면별 시간" width="1024" height="512" loading="lazy">
+        <figcaption>실제 화면 · 가상 팀 자료</figcaption>
+      </figure>
     </div>
 
     <!-- 3 -->
@@ -397,20 +281,13 @@
       <div class="txt">
         <div class="num">03 · 선수별 훈련 강도</div>
         <h3>각 선수가 실제로 얼마나,<br>어느 강도로 훈련했는지</h3>
-        <p>팀 훈련 횟수가 아니라 선수 한 명의 참여와 강도를 봅니다. 부상에서 돌아온 선수, 대표팀 다녀온 선수의 부하가 팀 평균에 묻히지 않습니다.</p>
-        <div class="q">복귀 2주 차 선수에게 토요일 경기 풀타임이 맞나?<span>선수별 참여 · 강도 · 부상 상태</span></div>
+        <p>팀 훈련 횟수가 아니라 선수 한 명의 훈련·경기·휴식·재활·부상 일수와 참여율을 봅니다. 부상에서 돌아온 선수의 부하가 팀 평균에 묻히지 않습니다.</p>
+        <div class="q">복귀 2주 차 선수에게 토요일 경기 풀타임이 맞나?<span>선수별 누적 · 참여율 · 지금 상태</span></div>
       </div>
-      <div class="panel" aria-hidden="true">
-        <div class="ph">선수별 훈련 부하 · 최근 4주 <span class="tag">예시</span></div>
-        <div class="pb">
-          <div class="pl hd"><span></span><span>선수</span><span class="cnt">참여</span><span>강도 (주별)</span><span class="st">상태</span></div>
-          <div class="pl"><span class="no">7</span><span class="nm">김민준<small>LW</small></span><span class="cnt">15 / 16</span><span class="ld"><i class="m"></i><i class="h"></i><i class="h"></i><i class="m"></i></span><span class="st"><span class="chip g">정상</span></span></div>
-          <div class="pl"><span class="no">4</span><span class="nm">이서준<small>CB</small></span><span class="cnt">9 / 16</span><span class="ld"><i></i><i></i><i class="l"></i><i class="m"></i></span><span class="st"><span class="chip a">복귀 중</span></span></div>
-          <div class="pl"><span class="no">10</span><span class="nm">박도윤<small>AM</small></span><span class="cnt">12 / 16</span><span class="ld"><i class="h"></i><i class="h"></i><i></i><i class="h"></i></span><span class="st"><span class="chip b">차출 1주</span></span></div>
-          <div class="pl"><span class="no">1</span><span class="nm">최하준<small>GK</small></span><span class="cnt">16 / 16</span><span class="ld"><i class="m"></i><i class="m"></i><i class="l"></i><i class="m"></i></span><span class="st"><span class="chip g">정상</span></span></div>
-          <div class="pl"><span class="no">9</span><span class="nm">정시우<small>ST</small></span><span class="cnt">14 / 16</span><span class="ld"><i class="h"></i><i class="m"></i><i class="h"></i><i class="h"></i></span><span class="st"><span class="chip r">피로 주의</span></span></div>
-        </div>
-      </div>
+      <figure class="shotf">
+        <img src="/assets/landing/avail-players.webp" alt="가용인원 선수별 누적 — 훈련·경기·휴식·재활·부상 일수와 참여율" width="1600" height="1081" loading="lazy">
+        <figcaption>실제 화면 · 가상 팀 자료</figcaption>
+      </figure>
     </div>
 
     <!-- 4 -->
@@ -418,37 +295,13 @@
       <div class="txt">
         <div class="num">04 · 코칭스태프의 계획</div>
         <h3>어떤 의도로 훈련을 구성했고,<br>실제 진행은 어땠는지</h3>
-        <p>훈련마다 «왜 이 훈련인가»를 남기고, 끝난 뒤 실제로 어떻게 됐는지를 한 줄로 적습니다. 의도와 실제의 차이가 쌓이면 다음 계획이 달라집니다.</p>
-        <div class="q">압박 트리거를 세 개 잡았는데 실제로는 하나만 다뤘다 — 왜?<span>훈련 의도 · 진행 기록 · 코치 메모</span></div>
+        <p>주간 일정에 세션마다 주제·강도(RPE)·훈련 블록·메모를 둡니다. 지난 경기 리뷰에서 정한 «다음 훈련»이 주간 맨 위에 걸려, 왜 이 훈련인지가 계획에 남습니다.</p>
+        <div class="q">압박 트리거를 세 개 잡았는데 실제로는 하나만 다뤘다 — 왜?<span>주제 · 강도 · 블록 · 메모 · 지난 경기 → 다음 훈련</span></div>
       </div>
-      <div class="panel" aria-hidden="true">
-        <div class="ph">3/10 화 · 수비 조직 훈련 <span class="tag">예시</span></div>
-        <div class="pb">
-          <div class="pva">
-            <div class="col">
-              <h4>계획 — 의도</h4>
-              <div class="t">전방 압박 트리거 정리</div>
-              <ul>
-                <li>백패스 때 ST 압박 시작</li>
-                <li>측면 터치라인 몰기</li>
-                <li>뺏은 뒤 5초 안에 전진</li>
-                <li>11v11 · 20분 · 강도 높음</li>
-              </ul>
-            </div>
-            <div class="col act">
-              <h4>실제 — 진행</h4>
-              <div class="t">트리거 1개만 다룸</div>
-              <ul>
-                <li class="ok">백패스 트리거 — 반복 잘 됨</li>
-                <li class="no">측면 몰기 — 시간 부족</li>
-                <li class="dif">뺏은 뒤 전진 — 8v8로 축소</li>
-                <li class="dif">비 · 18명 · 강도 중</li>
-              </ul>
-            </div>
-          </div>
-          <div class="note"><b>코치 메모</b> 인원이 적어 11v11이 안 됐다. 측면 몰기는 목요일 전환 훈련 앞에 10분 붙이자.</div>
-        </div>
-      </div>
+      <figure class="shotf">
+        <img src="/assets/landing/schedule-week.webp" alt="주간 일정 — 세션별 주제·강도·훈련 블록·메모와 지난 경기에서 이어진 다음 훈련" width="1600" height="1081" loading="lazy">
+        <figcaption>실제 화면 · 가상 팀 자료</figcaption>
+      </figure>
     </div>
 
     <!-- 5 -->
@@ -456,21 +309,13 @@
       <div class="txt">
         <div class="num">05 · 경기와 결과</div>
         <h3>준비한 것이 경기에서<br>어떻게 나타났고, 결과는 어땠는지</h3>
-        <p>경기 준비 미팅에서 약속한 것과 경기에서 실제로 나온 장면을 리뷰에 나란히 둡니다. 결과는 점수가 아니라 «준비한 것이 나왔는가»로 읽습니다.</p>
-        <div class="q">이번 주 훈련한 압박이 경기에서 몇 번 나왔나?<span>경기 준비 · 득실 장면 · 리뷰 · 다음 훈련</span></div>
+        <p>경기는 상대 분석 → 경기 준비 → 경기 리뷰 세 단계입니다. 리뷰에 득실 장면과 한 줄 요약, 잘된 점·개선할 점, 다음 훈련과 선수 과제를 적으면 다음 주 계획으로 이어집니다.</p>
+        <div class="q">이번 주 훈련한 압박이 경기에서 몇 번 나왔나?<span>상대 분석 · 경기 준비 · 경기 리뷰 · 다음 훈련</span></div>
       </div>
-      <div class="panel" aria-hidden="true">
-        <div class="ph">3/14 토 · 경기 리뷰 <span class="tag">예시</span></div>
-        <div class="pb">
-          <div class="score"><span class="tm">FC 프로세스 U15</span><span class="sc">2<span>:</span>1</span><span class="res">승</span><span class="tm" style="margin-left:10px">한강 U15</span></div>
-          <div class="chain">
-            <div class="st"><span class="k">준비한 것</span><span class="v"><b>백패스 트리거 압박</b> · 뺏은 뒤 5초 전진 · 세트피스 니어포스트</span></div>
-            <div class="st"><span class="k">경기에서</span><span class="v">전반 압박 성공 <b>6회</b>, 그중 1골(23') · 측면 몰기 실패로 실점(61') · 코너킥 니어 득점(70')</span></div>
-            <div class="st"><span class="k">결과 읽기</span><span class="v">준비한 두 가지는 나왔다. <b>측면 몰기</b>는 훈련에서 빠졌던 그대로 경기에서도 빠졌다.</span></div>
-            <div class="st next"><span class="k">다음 훈련</span><span class="v">화요일 수비 조직 — 측면 몰기 20분 · 복귀 선수 이서준 부분 참여</span></div>
-          </div>
-        </div>
-      </div>
+      <figure class="shotf">
+        <img src="/assets/landing/match-review.webp" alt="경기 리뷰 — 득점·실점, 한 줄 요약, 득실 장면" width="1600" height="1081" loading="lazy">
+        <figcaption>실제 화면 · 가상 팀 자료</figcaption>
+      </figure>
     </div>
   </div>
 </section>
@@ -552,7 +397,7 @@
     <h2>혼자서는 지금 바로, 팀은 한 사이클부터.</h2>
     <div class="s-grid">
       <div class="s-card">
-        <div class="k">개인 · 무료</div>
+        <div class="k">개인</div>
         <h3>링크만 열면 작전판</h3>
         <p>로그인 없이도 작전판을 그릴 수 있고, 로그인하면 기기 간 동기화와 IDP가 열립니다.</p>
         <ul>
@@ -560,7 +405,7 @@
           <li>훈련 설계 · 보관함 · 노트</li>
           <li>선수 IDP · 기기 간 동기화</li>
         </ul>
-        <div class="act"><a class="btn dark" href="https://studio.processfootball.com/">무료로 시작하기 →</a><a class="btn line" href="/guide/">사용법 보기</a></div>
+        <div class="act"><a class="btn dark" href="https://studio.processfootball.com/">지금 시작하기 →</a><a class="btn line" href="/guide/">사용법 보기</a></div>
       </div>
       <div class="s-card dark">
         <div class="k">팀 · 도입 상담</div>
