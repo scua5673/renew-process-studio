@@ -16838,7 +16838,7 @@ try{PSBoardGuest.mount(window)}catch(_){}try{Promise.resolve(restoreLiveBoard())
     if(el&&(!e.relatedTarget||!el.contains(e.relatedTarget)))hide();});
   document.addEventListener('focusin',function(e){const el=e.target.closest('#ps-command-dock [title],#ps-command-dock [data-tip]');if(el&&el.matches(':focus-visible')){if(el.title){el.dataset.tip=el.title;el.removeAttribute('title');}cur=el;show(el);}});
   document.addEventListener('focusout',hide);
-  document.addEventListener('keydown',function(e){if(e.key==='Escape')hide();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')hide();},true);
   let _lpShownAt=0;
   document.addEventListener('mousedown',function(){if(Date.now()-_lpShownAt<1200)return;hide();});window.addEventListener('blur',hide);
   /* ── 2.248 · 터치(아이패드·폰) = 길게 누르면 이름(사용자 "아이패드도 컴퓨터와 똑같이") ──

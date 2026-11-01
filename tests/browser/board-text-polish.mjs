@@ -28,6 +28,9 @@ try {
    assert.equal(await f.locator('#ps-df-equip').innerText(),'');
    assert.equal(await f.locator('#ps-df-fold').innerText(),'');
    await page.mouse.move(10,10);
+   await f.locator('#ps-df-team').focus();await page.keyboard.press('Tab');
+   await f.locator('.tipbox.on').waitFor();await page.keyboard.press('Escape');
+   assert.equal(await f.locator('.tipbox.on').count(),0,'Escape dismisses keyboard tooltip');
   }
   step=width+' front/back';
   const layer=await f.evaluate(()=>{
@@ -83,6 +86,11 @@ try {
   assert.equal(ex.persist,.35);assert.match(ex.xml,/@font-face\{font-family:'PSN Gaegu'/);assert.match(ex.xml,/data:font\/woff2;base64,/);assert.match(ex.xml,/fill-opacity="0.35"/);assert.match(ex.thumb,/압박 유지/);
   assert.ok(ex.xml.indexOf('id="textFrontLayer"')>ex.xml.indexOf('id="tokenLayer"'));
   if(width===1280){
+   step='font PNG export';
+   const downloadPromise=page.waitForEvent('download',{timeout:15000});
+   await f.evaluate(()=>exportPNG());
+   const download=await downloadPromise,bytes=fs.readFileSync(await download.path());
+   assert.deepEqual([...bytes.subarray(0,8)],[137,80,78,71,13,10,26,10]);
    step='foreground group drag';
    const drag=await f.evaluate(()=>{const d=state.drawings.find(d=>d.type==='text');d.locked=false;sel=null;multiSel=state.drawings.slice();renderDrawings();const p=svg.createSVGPoint();p.x=d.pts[0].x;p.y=d.pts[0].y;const q=p.matrixTransform(world.getScreenCTM());return {x:q.x,y:q.y,before:state.drawings.map(d=>d.pts[0].x)};});
    const fb=await page.locator('#fBoard').boundingBox();await page.mouse.move(fb.x+drag.x,fb.y+drag.y);await page.mouse.down();await page.mouse.move(fb.x+drag.x+30,fb.y+drag.y+15,{steps:6});await page.mouse.up();
