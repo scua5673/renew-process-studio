@@ -14,3 +14,8 @@ test('query failure and changed administrator never turn into an empty success',
  const host={innerHTML:'',querySelectorAll:()=>[]};await create({host,request:async()=>{throw Error('denied');}}).load();assert.match(host.innerHTML,/확인하지 못했습니다/);
  let valid=true;await create({host,request:async()=>{valid=false;return [];}}).load(()=>valid);assert.doesNotMatch(host.innerHTML,/장기 대기 세션이 확인되지/);
 });
+test('skipping directly to a newer release resolves older targets only in the same session',()=>{
+ const pending=event('deferred',20),done=event('applied',0,{to:'4.003'});assert.equal(group([pending,done],now).length,0);
+ assert.equal(group([pending,event('applied',0,{to:'4.001'})],now).length,1);
+ assert.equal(group([pending,event('applied',0,{to:'4.003',update_id:'another-tab'})],now).length,1);
+});

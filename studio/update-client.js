@@ -17,7 +17,7 @@
     return '연결을 확인한 뒤 자동으로 다시 시도해요. 작성 중인 내용은 유지해요.';
   }
   function create(w){
-    var sw=w.navigator&&w.navigator.serviceWorker,reg=null,flight=null,last=0,started=false,seenWorkers=new WeakSet(),logs={},pending=[],target='',since=0;
+    var sw=w.navigator&&w.navigator.serviceWorker,reg=null,flight=null,last=0,started=false,seenWorkers=new WeakSet(),logs={},pending=[],target='',activeTarget='',seenAt={};
     var id=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10),owner=null;
     function current(){return version(w.PS_BUILD);}
     function session(){try{var s=w.PSSync&&w.PSSync.session&&w.PSSync.session();return s&&s.uid?String(s.uid):'';}catch(_){return '';}}
@@ -30,15 +30,16 @@
       if(!/^(available|downloaded|saving|deferred|check_failed|install_failed|applied)$/.test(stage))return;
       var uid=session();if(!uid)return; // Do not attribute guest observations to a later login.
       drain();code=String(code||stage).replace(/[^a-zA-Z0-9_.:+-]/g,'').slice(0,80);
-      var key=stage+':'+target+':'+code,t=Date.now();if(logs[key]&&t-logs[key]<300000)return;logs[key]=t;
-      var meta={stage:stage,reason:code,from:current(),to:target,update_id:id,mins:since?Math.floor((t-since)/60000):0,hidden:!!w.document.hidden};
+      var to=extra&&version(extra.to)||(/^(saving|deferred|downloaded)$/.test(stage)?activeTarget||target:target);
+      var key=stage+':'+to+':'+code,t=Date.now();if(logs[key]&&t-logs[key]<300000)return;logs[key]=t;
+      var meta={stage:stage,reason:code,from:current(),to:to,update_id:id,mins:seenAt[to]?Math.floor((t-seenAt[to])/60000):0,hidden:!!w.document.hidden};
       if(extra){if(version(extra.from))meta.from=version(extra.from);if(version(extra.to))meta.to=version(extra.to);if(/^[a-z0-9-]{1,60}$/.test(extra.update_id||''))meta.update_id=extra.update_id;}
       pending.push({name:'update_'+stage,opts:{status:/failed|deferred/.test(stage)?'error':'ok',feature:'app',error_code:code,meta:meta}});pending=pending.slice(-16);drain();
     }
-    function targetVersion(v){if(v!==target){target=v;since=Date.now();}}
+    function targetVersion(v){target=v;if(!seenAt[v])seenAt[v]=Date.now();}
     function ready(release){
       var v=version(release);if(!newer(v,current()))return false;
-      targetVersion(v);
+      activeTarget=v;if(!seenAt[v])seenAt[v]=Date.now();if(!target||newer(v,target))targetVersion(v);
       record('downloaded');
       if(w.PSUpdProg)w.PSUpdProg.ready(v);
       if(typeof w.psAutoReloadWhenSafe==='function')w.psAutoReloadWhenSafe();
@@ -90,7 +91,7 @@
       w.addEventListener('online',function(){check(true);});w.setInterval(function(){check();},1800000);
       return check(true);
     }
-    return {start:start,check:check,record:record,reason:reason,ready:ready,reconcile:reconcile,context:function(){return {to:target,update_id:id};}};
+    return {start:start,check:check,record:record,reason:reason,ready:ready,reconcile:reconcile,context:function(){return {to:activeTarget||target,update_id:id};}};
   }
   return {create:create,newer:newer,version:version,reason:reason};
 });

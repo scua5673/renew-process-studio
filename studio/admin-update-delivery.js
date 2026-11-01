@@ -4,16 +4,18 @@
   'use strict';
   var stages={available:'새 버전 발견',downloaded:'다운로드 완료',saving:'저장 확인 중',deferred:'적용 대기',check_failed:'새 버전 확인 실패',install_failed:'다운로드·설치 실패',applied:'적용 완료'};
   function group(rows,now){
-    var map={};rows.forEach(function(r){
+    var map={},applied=[];rows.forEach(function(r){
       var m=r.meta;if(!m||typeof m!=='object'||!stages[m.stage]||!/^[a-z0-9-]{1,60}$/.test(m.update_id||'')||!r.user_id)return;
       var at=Date.parse(r.created_at);if(!Number.isFinite(at)||at>now)return;
+      if(m.stage==='applied')applied.push({user:r.user_id,id:m.update_id,to:m.to,at:at});
       var key=[r.user_id,m.update_id,m.to||'check'].join('|'),g=map[key];
       if(!g)g=map[key]={user:r.user_id,id:m.update_id,device:r.device,from:m.from,to:m.to,first:at,last:at,stage:m.stage,reason:m.reason,applied:false};
       g.first=Math.min(g.first,at-Math.min(43200,Math.max(0,+m.mins||0))*60000);
       if(at>=g.last){g.last=at;g.stage=m.stage;g.reason=m.reason;}
       if(m.stage==='applied')g.applied=true;
     });
-    return Object.values(map).filter(function(g){return !g.applied&&now-g.last<=2*3600000&&(g.last-g.first>=10*60000||/failed/.test(g.stage));}).sort(function(a,b){return (b.last-b.first)-(a.last-a.first);});
+    function reached(a,b){if(!/^\d+\.\d+$/.test(a||'')||!/^\d+\.\d+$/.test(b||''))return a===b;var x=a.split('.').map(Number),y=b.split('.').map(Number);return x[0]>y[0]||x[0]===y[0]&&x[1]>=y[1];}
+    return Object.values(map).filter(function(g){return !g.applied&&!applied.some(function(a){return a.user===g.user&&a.id===g.id&&a.at>=g.last&&reached(a.to,g.to);})&&now-g.last<=2*3600000&&(g.last-g.first>=10*60000||/failed/.test(g.stage));}).sort(function(a,b){return (b.last-b.first)-(a.last-a.first);});
   }
   function esc(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function html(rows,now,capped){
