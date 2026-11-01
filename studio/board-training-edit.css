@@ -13,4 +13,7 @@
 #psEditTools .pe-bibs button::before{content:'';display:inline-block;vertical-align:middle;width:1em;height:1em;margin-right:var(--sp-1);border:1px solid var(--c-line);border-radius:2px;background:var(--bib-color,transparent)}
 #psEditTools hr{border:0;border-top:1px solid var(--pop-border,var(--c-line));margin:var(--sp-3) 0}
 #psEditTools .pe-hint{font-size:var(--t-3)}
+.ps-text-editor-bar{flex-wrap:wrap;width:max-content;max-width:min(760px,calc(100vw - 16px))}
+.ps-text-editor-bar .ps-text-font-pick{grid-column:span 3;gap:var(--sp-2)}
+.ps-text-editor-bar .ps-text-font-pick select{font:inherit;min-width:0;max-width:100%;min-height:44px;border:0;border-radius:var(--r-1);padding:0 var(--sp-2);background:var(--c-surface);color:var(--c-ink)}
 @media(max-width:640px){#psEditToolsToggle{min-height:44px}#psEditTools .pe-row>button{flex:1}.ps-text-editor-bar input[aria-label="텍스트 회전 각도"]{min-height:44px}}

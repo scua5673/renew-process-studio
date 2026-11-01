@@ -90,6 +90,7 @@
       busy = true;
       try {
         try { if (typeof win.deselect === 'function') win.deselect(); } catch (_) {}
+        if (win.__nameFontWarm) await win.__nameFontWarm();
         var o = win.boardImageXML(), t = titleOf(name), L = layout(o.w, o.h, !!t);
         var img = await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(o.xml));
         try { if (doc.fonts && doc.fonts.load) await doc.fonts.load(FONT, t); } catch (_) {}

@@ -11,6 +11,7 @@
   root.document.addEventListener('DOMContentLoaded', function () { api.install(root); });
 })(typeof window === 'undefined' ? null : window, function () {
   'use strict';
+  var NF = typeof module === 'object' && module.exports ? require('./board-name-font.js') : window.PSNameFont;
   var NS = 'http://www.w3.org/2000/svg';
   var BIBS = [['', '없음'], ['#facc15', '노랑'], ['#fb923c', '주황'], ['#4ade80', '초록'], ['#38bdf8', '하늘'], ['#f472b6', '분홍']];
   function hex(v) { return typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : ''; }
@@ -64,8 +65,10 @@
   }
   function textStyle(d) {
     d=d||{};return {textWeight:[400,700,900].includes(+d.textWeight)?+d.textWeight:700,
-      textItalic:d.textItalic===true,textAngle:Number.isFinite(+d.textAngle)?Math.max(-180,Math.min(180,+d.textAngle)):0};
+      textItalic:d.textItalic===true,textAngle:Number.isFinite(+d.textAngle)?Math.max(-180,Math.min(180,+d.textAngle)):0,
+      textFont:NF.ok(d.textFont)?d.textFont:'base'};
   }
+  function textFamily(d){return NF.stack(textStyle(d).textFont)||"Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif";}
   function textPoint(d,p,vertical,flip){var c=d.pts[0],a=(((vertical?(flip?-90:90):0)+textStyle(d).textAngle)*Math.PI/180),x=p.x-c.x,y=p.y-c.y;return {x:x*Math.cos(a)+y*Math.sin(a),y:-x*Math.sin(a)+y*Math.cos(a)};}
   function bibColor(p){return p&&!p.coach?hex(p.bib):'';}
   function bibPath(){return 'M-9 -18L-5 -18Q0 -10 5 -18L9 -18L10 -8L14 -4L12 17Q0 21 -12 17L-14 -4L-10 -8Z';}
@@ -125,7 +128,7 @@
     // Text styles are part of each drawing. Measurement and SVG export use them.
     var measuring=null,box=win._textBox,measure=win._txMeasW,measureContext=doc.createElement('canvas').getContext('2d');
     win._textBox=function(d){var prev=measuring;measuring=textStyle(d);try{return box.apply(this,arguments);}finally{measuring=prev;}};
-    win._txMeasW=function(str,fs,style){var st=style?textStyle(style):measuring;if(!st)return measure.apply(this,arguments);var c=measureContext;c.font=(st.textItalic?'italic ':'')+st.textWeight+' '+fs+'px Pretendard,sans-serif';return c.measureText(str||'').width;};
+    win._txMeasW=function(str,fs,style){var st=style?textStyle(style):measuring;if(!st)return measure.apply(this,arguments);var c=measureContext;c.font=(st.textItalic?'italic ':'')+st.textWeight+' '+fs+'px '+textFamily(st);return c.measureText(str||'').width;};
     var fit=win.PSBoardText.fitEditor;win.PSBoardText.fitEditor=function(ed,d){var prev=measuring;measuring=textStyle(ed.__psTextStyle||d);try{return fit.apply(this,arguments);}finally{measuring=prev;}};
     win.findTextAt=function(u){var s=S();for(var i=s.drawings.length-1;i>=0;i--){var d=s.drawings[i];if(d.type!=='text')continue;var b=win._textBox(d),p=textPoint(d,u,s.orientation==='v',s.spFlip);if(Math.abs(p.x)<=b.boxW/2+6&&Math.abs(p.y)<=b.boxH/2+6)return d;}return null;};
     win.enableTextResize=function(hg,d){hg.style.cursor='ew-resize';hg.style.touchAction='none';hg.addEventListener('pointerdown',function(e){
@@ -173,7 +176,13 @@
       }
     };
     api.editorStyle=function(bar,ed,draft,change){
-      function repaint(){ed.style.setProperty('font-weight',draft.textWeight,'important');ed.style.setProperty('font-style',draft.textItalic?'italic':'normal','important');ed.__psTextStyle=draft;change();}
+      function repaint(){ed.style.setProperty('font-family',textFamily(draft),'important');ed.style.setProperty('font-weight',draft.textWeight,'important');ed.style.setProperty('font-style',draft.textItalic?'italic':'normal','important');ed.__psTextStyle=draft;change();}
+      var fontLabel=doc.createElement('label'),font=doc.createElement('select');fontLabel.className='ps-text-color-pick ps-text-font-pick';fontLabel.append('글꼴 ',font);font.setAttribute('aria-label','텍스트 글꼴');
+      var labels=['기본 · 프리텐다드','제목 · 검은고딕','둥근 · 주아','손글씨 · 개구','명조 · 고운바탕'];
+      NF.ORDER.forEach(function(k,i){var o=doc.createElement('option');o.value=k;o.textContent=labels[i];font.appendChild(o);});font.value=draft.textFont;
+      bar.insertBefore(fontLabel,bar.querySelector('.ps-text-done').nextSibling);
+      function prepare(){var key=draft.textFont;if(win.__boardFontLoad)win.__boardFontLoad(key,ed.value).then(function(){if(ed.isConnected&&draft.textFont===key)repaint();});}
+      font.addEventListener('change',function(){draft.textFont=font.value;repaint();prepare();ed.focus();});ed.addEventListener('input',prepare);prepare();
       function button(label,action){var b=doc.createElement('button');b.type='button';b.textContent=label;b.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();});b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();action(b);repaint();ed.focus();});bar.appendChild(b);return b;}
       var weight=button('굵게',b=>{draft.textWeight=draft.textWeight===700?900:draft.textWeight===900?400:700;syncText();});
       var italic=button('기울임',b=>{draft.textItalic=!draft.textItalic;syncText();});
@@ -226,6 +235,6 @@
     (S().drawings||[]).forEach(function(d){if(d.type!=='text')return;var g=win.PSBoardText.node(d);if(g)g.replaceWith(win.drawingEl(d));});
     mount();paintGrid();sync();
   }
-  var api={center:center,translate:translate,alignPlan:alignPlan,snapPoint:snapPoint,textStyle:textStyle,textPoint:textPoint,bibColor:bibColor,bibPath:bibPath,install:install};
+  var api={center:center,translate:translate,alignPlan:alignPlan,snapPoint:snapPoint,textStyle:textStyle,textFamily:textFamily,textPoint:textPoint,bibColor:bibColor,bibPath:bibPath,install:install};
   return api;
 });

@@ -23,7 +23,8 @@ test('token numbers and names use the app font first',()=>{
   // SVG 글꼴 속성(«"font-family":"…"») · 3D 칩의 FONT — 시스템 글꼴이 맨 앞이면 안 된다
   for(const f of ['studio/board.html','studio/board-token-depth.js'])assert.deepStrictEqual(read(f).match(/["']font-family["']\s*:\s*["'](?:-apple-system|BlinkMacSystemFont|system-ui|Arial(?!,sans-serif'))[^"']*/g)||[],[],f+' has no system-first SVG font stack');
   assert.match(read('studio/board-token-depth.js'),/var FONT = "Pretendard,-apple-system,/);
-  assert.ok((read('studio/board.html').match(/"font-family":(window\.__nameFF\|\|)?"Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif"/g)||[]).length>=4,'board token labels');
+  assert.ok((read('studio/board.html').match(/"font-family":(window\.__nameFF\|\|)?"Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif"/g)||[]).length>=3,'board token labels; free text uses its own chosen font');
+  assert.match(require('../studio/board-training-edit.js').textFamily({}),/^Pretendard,/);
 });
 test('«사람» shows the chip label under the feet; a 3D pill name has no outline',()=>{
   const src=read('studio/board-token-depth.js');
