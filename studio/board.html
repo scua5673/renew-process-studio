@@ -6947,7 +6947,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
        상자(p 중심·boxW)는 그대로 두고 줄의 기준점만 옮긴다 — 왼쪽은 상자 왼 여백선, 오른쪽은 오른 여백선. */
     const al=(d.align==="left"||d.align==="right")?d.align:"center";
     const ax=al==="left"?(x0+B.padX):al==="right"?(x0+B.boxW-B.padX):p.x;
-    const tatt={"text-anchor":(al==="left"?"start":al==="right"?"end":"middle"),"dominant-baseline":"central","font-size":fs,"font-weight":"700","font-family":"Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif",fill:fillC,style:"pointer-events:none"};
+    const tatt={"text-anchor":(al==="left"?"start":al==="right"?"end":"middle"),"dominant-baseline":"central","font-size":fs,"font-weight":"700","font-family":PSBoardEdit.textFamily(d),fill:fillC,style:"pointer-events:none"};
     if(!hasBg){tatt.stroke="rgba(0,0,0,.58)";tatt["stroke-width"]=Math.max(1.5,fs*.08);tatt["paint-order"]="stroke";}
     tatt['font-weight']=PSBoardEdit.textStyle(d).textWeight;tatt['font-style']=PSBoardEdit.textStyle(d).textItalic?'italic':'normal';const tx=el("text",tatt);
     B.lines.forEach(function(ln,i){const ts=el("tspan",{x:ax,y:(p.y+(i-(B.lines.length-1)/2)*B.lh),"dominant-baseline":"central"});ts.textContent=ln;tx.appendChild(ts);});
@@ -7137,7 +7137,7 @@ function addText(u,existing){
     if(closed)return;closed=true;_bTxtEd=null;cleanup();
     if(!commit){if(d){_activateMoveTool();renderDrawings();selectItem("drawing",d);}return;}
     const v=ed.value.replace(/\s+$/,"");
-    try{ if(!_w&&_wDef){ var _lg=v.split("\n").reduce(function(a,b){return _txMeasW(b,_fs)>a?_txMeasW(b,_fs):a;},0); if(_lg>_wDef)_w=_wDef; } }catch(_){}
+    try{ if(!_w&&_wDef){ var _lg=v.split("\n").reduce(function(a,b){return _txMeasW(b,_fs,_ts)>a?_txMeasW(b,_fs,_ts):a;},0); if(_lg>_wDef)_w=_wDef; } }catch(_){}
     if(d){
       if(!v.trim()){_activateMoveTool();renderDrawings();selectItem("drawing",d);toast("빈 내용은 삭제되지 않아요 — 삭제 버튼을 사용하세요");return;}
       var before=JSON.stringify([d.text,d.size||30,d.textColor||null,d.bg||null,d.w||0,d.align||"center",PSBoardText.opacity(d.bgOp),PSBoardEdit.textStyle(d)]);
@@ -9109,7 +9109,7 @@ function appendBoardExportWatermarks(clone,vb){
   });clone.appendChild(group);
 }
 function _wmDraw(){} // Watermarks are embedded in boardImageXML, including video frames.
-function exportPNG(){if(!psVaultRequireLogin())return;if(sel){sel=null;renderTokens();renderDrawings();updateDelUI();}
+async function exportPNG(){if(!psVaultRequireLogin())return;await window.__nameFontWarm();if(sel){sel=null;renderTokens();renderDrawings();updateDelUI();}
   const {xml,w,h,gb}=boardImageXML();
   const img=new Image();img.onload=()=>{const s=2,c=document.createElement("canvas");
     c.width=w*s;c.height=h*s;const ctx=c.getContext("2d");ctx.fillStyle=gb;ctx.fillRect(0,0,c.width,c.height);
@@ -16820,7 +16820,7 @@ try{PSBoardGuest.mount(window)}catch(_){}try{Promise.resolve(restoreLiveBoard())
   try{ window.__autoOrient=apply; }catch(_){}
 })();
 (function(){
-  const tip=document.createElement('div');tip.className='tipbox';document.body.appendChild(tip);let cur=null;
+  const tip=document.createElement('div');tip.className='tipbox';tip.setAttribute('role','tooltip');document.body.appendChild(tip);let cur=null;
   /* 1.896 — 터치 전용 기기(hover:none)에서는 마우스오버 에뮬레이션으로 뜬 툴팁이 지워지지 않고 남는다(보관함 '닫기' 말풍선). hover 경로만 끈다 — 2.248 부터 터치는 '길게 누르기'로 뜬다(아래) */
   const _noHover=(function(){try{return window.matchMedia&&window.matchMedia('(hover:none)').matches;}catch(_){return false;}})();
   function show(el){const t=el.getAttribute('data-tip');if(!t){hide();return;}tip.textContent=t;
@@ -16836,6 +16836,9 @@ try{PSBoardGuest.mount(window)}catch(_){}try{Promise.resolve(restoreLiveBoard())
     if(el!==cur){cur=el;show(el);}});
   document.addEventListener('mouseout',function(e){const el=e.target.closest('[data-tip]');
     if(el&&(!e.relatedTarget||!el.contains(e.relatedTarget)))hide();});
+  document.addEventListener('focusin',function(e){const el=e.target.closest('#ps-command-dock [title],#ps-command-dock [data-tip]');if(el&&el.matches(':focus-visible')){if(el.title){el.dataset.tip=el.title;el.removeAttribute('title');}cur=el;show(el);}});
+  document.addEventListener('focusout',hide);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')hide();},true);
   let _lpShownAt=0;
   document.addEventListener('mousedown',function(){if(Date.now()-_lpShownAt<1200)return;hide();});window.addEventListener('blur',hide);
   /* ── 2.248 · 터치(아이패드·폰) = 길게 누르면 이름(사용자 "아이패드도 컴퓨터와 똑같이") ──

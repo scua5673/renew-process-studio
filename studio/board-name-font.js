@@ -24,6 +24,13 @@
   function ok(v) { return typeof v === 'string' && Object.prototype.hasOwnProperty.call(FONTS, v); }
   // 이름 글자의 font-family — «기본»이면 빈 글자(작전판이 원래 값을 쓴다)
   function stack(v) { var f = ok(v) && FONTS[v].family; return f ? "'" + f + "'," + FALLBACK : ''; }
+  function textFonts(snap) {
+    var out = {};
+    (snap && Array.isArray(snap.drawings) ? snap.drawings : []).forEach(function (d) {
+      if (d && d.type === 'text' && ok(d.textFont) && FONTS[d.textFont].dir && typeof d.text === 'string') out[d.textFont] = (out[d.textFont] || '') + d.text;
+    });
+    return out;
+  }
   // font.css → [{file, ur, ranges:[[lo,hi]…]}]
   function parseCss(css) {
     var out = [], re = /src:url\(([^)]+)\)[^;]*;unicode-range:([^}]+)\}/g, m;
@@ -64,7 +71,7 @@
     var doc = win.document; if (!doc || win.__psNameFontOn) return; win.__psNameFontOn = 1;
     var cur = 'base', cache = {};   // cache[dir] = {faces, data:{file:base64}, css:Promise}
     function fontCss(dir) {
-      var c = cache[dir] || (cache[dir] = { faces: null, data: {}, wait: {} });
+      var c = cache[dir] || (cache[dir] = { faces: null, data: {}, wait: {}, loaded: {} });
       if (!c.css) c.css = win.fetch(BASE_URL + dir + '/font.css').then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) { c.faces = parseCss(t); return c; }, function () { c.faces = []; return c; });
       return c.css;
     }
@@ -159,7 +166,10 @@
 
     // ── 내보내기: 쓰인 이름 글자의 조각을 미리 받아 둔다(내보내기는 SVG 를 바로 그림으로 만든다 — 기다릴 틈이 없다) ──
     function names() {
-      var out = '', add = function (sn) { ((sn && sn.players) || []).forEach(function (p) { if (p && p.name) out += p.name; }); };
+      var out = {}, add = function (sn) {
+        ((sn && sn.players) || []).forEach(function (p) { if (p && p.name) out[cur] = (out[cur] || '') + p.name; });
+        var text = textFonts(sn); Object.keys(text).forEach(function (k) { out[k] = (out[k] || '') + text[k]; });
+      };
       // state · anim 은 작전판의 let 전역 — window 속성이 아니라 이름으로 읽는다
       try { add(typeof state !== 'undefined' ? state : null); } catch (_) {}   /* global state */
       try { (typeof anim !== 'undefined' && anim && anim.frames || []).forEach(function (f) { add(f && f.snap); }); } catch (_) {}   /* global anim */
@@ -169,36 +179,63 @@
       return out;
     }
     function b64(buf) { var s = '', a = new Uint8Array(buf); for (var i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return win.btoa(s); }
-    function warm() {
-      var f = FONTS[cur]; if (!f.dir) return Promise.resolve();
-      var dir = f.dir, text = names();
+    function prepare(key, text) {
+      var f = ok(key) && FONTS[key]; if (!f || !f.dir || !text) return Promise.resolve();
+      var dir = f.dir, changed = false;
       return fontCss(dir).then(function (c) {
         return Promise.all(pick(c.faces || [], text).map(function (fc) {
-          if (c.data[fc.file]) return null;
-          if (!c.wait[fc.file]) c.wait[fc.file] = win.fetch(BASE_URL + dir + '/' + fc.file).then(function (r) { return r.ok ? r.arrayBuffer() : null; }).then(function (buf) { if (buf) c.data[fc.file] = b64(buf); delete c.wait[fc.file]; }, function () { delete c.wait[fc.file]; });
-          return c.wait[fc.file];
+          if (!c.data[fc.file] && !c.wait[fc.file]) c.wait[fc.file] = win.fetch(BASE_URL + dir + '/' + fc.file).then(function (r) { return r.ok ? r.arrayBuffer() : null; }).then(function (buf) { if (buf) c.data[fc.file] = b64(buf); delete c.wait[fc.file]; }, function () { delete c.wait[fc.file]; });
+          return Promise.resolve(c.wait[fc.file]).then(function () {
+            if (!c.data[fc.file] || !win.FontFace || !doc.fonts) return;
+            if (!c.loaded[fc.file]) {
+              var face = new win.FontFace(f.family, 'url(data:font/woff2;base64,' + c.data[fc.file] + ')', {weight:'100 900',unicodeRange:fc.ur});
+              c.loaded[fc.file] = face.load().then(function () { doc.fonts.add(face); changed = true; }, function () { delete c.loaded[fc.file]; });
+            }
+            return c.loaded[fc.file];
+          });
         }));
+      }).then(function () {
+        // Re-measure visible text after a cold font load without saving a board.
+        if (!changed || !win.PSBoardText || typeof state === 'undefined') return;
+        (state.drawings || []).forEach(function (d) {
+          if (d.type !== 'text' || d.textFont !== key) return;
+          var g = win.PSBoardText.node(d);
+          if (g && !g.hasAttribute('data-text-editing')) g.replaceWith(win.drawingEl(d));
+        });
       });
+    }
+    win.__boardFontLoad = prepare;
+    function warm() {
+      var text = names();
+      return Promise.all(Object.keys(text).map(function (key) { return prepare(key, text[key]); }));
     }
     var wt = 0;
     function warmSoon() { win.clearTimeout(wt); wt = win.setTimeout(function () { try { warm(); } catch (_) {} }, 400); }
     win.__nameFontWarm = warm;   // 시험 · 내보내기 시트가 기다릴 수 있게
     function exportCss(xml) {
-      var f = FONTS[cur]; if (!f.dir) return '';
-      var c = cache[f.dir]; if (!c || !c.faces) { warmSoon(); return ''; }
-      var text = String(xml).replace(/<[^>]*>/g, ''), need = pick(c.faces, text);
-      if (need.some(function (fc) { return !c.data[fc.file]; })) warmSoon();   // 다음 내보내기에는 들어간다
-      return faceCss(f.family, need, c.data);
+      return ORDER.map(function (key) {
+        var f = FONTS[key]; if (!f.dir || String(xml).indexOf(f.family) < 0) return '';
+        var c = cache[f.dir]; if (!c || !c.faces) { warmSoon(); return ''; }
+        var text = String(xml).replace(/<[^>]*>/g, ''), need = pick(c.faces, text);
+        if (need.some(function (fc) { return !c.data[fc.file]; })) warmSoon();
+        return faceCss(f.family, need, c.data);
+      }).join('');
     }
     function wrap() {
       var bix = win.boardImageXML;
       if (typeof bix === 'function' && !bix.__psNameFont) {
         win.boardImageXML = function () {
           var o = bix.apply(this, arguments);
-          try { if (o && o.xml && FONTS[cur].dir) o.xml = embed(o.xml, exportCss(o.xml)); } catch (_) {}
+          try { if (o && o.xml) o.xml = embed(o.xml, exportCss(o.xml)); } catch (_) {}
           return o;
         };
         win.boardImageXML.__psNameFont = 1;
+      }
+      var rd = win.renderDrawings;
+      if (typeof rd === 'function' && !rd.__psTextFont) {
+        var textWarm = function () { if (typeof state !== 'undefined' && Object.keys(textFonts(state)).length) warmSoon(); };
+        win.renderDrawings = function () { var r = rd.apply(this, arguments); textWarm(); return r; };
+        win.renderDrawings.__psTextFont = 1; textWarm();
       }
       var rt = win.renderTokens;   // 이름이 바뀌면(선수 불러오기 · 이름 고치기) 새 글자의 조각도
       if (typeof rt === 'function' && !rt.__psNameFont) {
@@ -210,5 +247,5 @@
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', function () { row(); xlButton(); tagRow(); wrap(); syncTag(); }); else { wrap(); syncTag(); }
   }
   if (typeof window !== 'undefined' && window.document && /\/studio\/board\.html/.test(String(window.location && window.location.pathname))) install(window);
-  return { FONTS: FONTS, ORDER: ORDER, TAG_K: TAG_K, ok: ok, stack: stack, parseCss: parseCss, pick: pick, faceCss: faceCss, embed: embed, install: install };
+  return { FONTS: FONTS, ORDER: ORDER, TAG_K: TAG_K, ok: ok, stack: stack, textFonts: textFonts, parseCss: parseCss, pick: pick, faceCss: faceCss, embed: embed, install: install };
 });

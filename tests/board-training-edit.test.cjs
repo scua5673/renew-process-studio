@@ -34,9 +34,15 @@ test('locked geometry cannot be translated and nonfinite values do not corrupt d
   assert.equal(edit.translate({x:1,y:2},Infinity,0),false);assert.equal(edit.center({pts:[{x:NaN,y:2}]}),null);
 });
 test('text defaults preserve legacy appearance; arbitrary weights and invalid angles are normalized',()=>{
-  assert.deepEqual(edit.textStyle({}),{textWeight:700,textItalic:false,textAngle:0});
-  assert.deepEqual(edit.textStyle({textWeight:999,textItalic:'true',textAngle:500}),{textWeight:700,textItalic:false,textAngle:180});
+  assert.deepEqual(edit.textStyle({}),{textWeight:700,textItalic:false,textAngle:0,textFont:'base'});
+  assert.deepEqual(edit.textStyle({textWeight:999,textItalic:'true',textAngle:500}),{textWeight:700,textItalic:false,textAngle:180,textFont:'base'});
   assert.equal(edit.textStyle({textAngle:'NaN'}).textAngle,0);
+});
+test('text font identifiers are allowlisted and cannot inject a font or URL',()=>{
+  for(const key of ['base','bold','round','hand','serif'])assert.equal(edit.textStyle({textFont:key}).textFont,key);
+  for(const key of ['url(https://invalid)','__proto__','constructor',null,{},['hand']])assert.equal(edit.textStyle({textFont:key}).textFont,'base');
+  assert.match(edit.textFamily({textFont:'hand'}),/^'PSN Gaegu',Pretendard,/);
+  assert.match(edit.textFamily({}),/^Pretendard,/);
 });
 test('bib is a separate validated overlay; removing it preserves kit and identity',()=>{
   const p={team:'blue',num:7,color:'#123456',bib:'#FACC15'};assert.equal(edit.bibColor(p),'#facc15');delete p.bib;assert.equal(p.color,'#123456');assert.equal(p.team,'blue');

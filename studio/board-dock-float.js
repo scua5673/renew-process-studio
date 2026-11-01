@@ -101,9 +101,6 @@
       P + ' #colorWrap{width:42px!important;height:42px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}',
       P + ' #colorBtn{width:26px!important;height:26px!important;border-radius:50%!important;box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(20,22,26,.18)!important}',
       P + ' #cmd-dock-fold{display:none!important}',
-      P + ' #cmd-tool-row #toolSeg>button.ps-df-panel,' + P + ' #ps-df-toggles>#ps-df-anim{flex-direction:column!important;gap:2px!important;width:60px!important;min-width:60px!important;max-width:60px!important;flex-basis:60px!important}',
-      P + ' #ps-df-toggles>#ps-df-anim{width:76px!important;min-width:76px!important;max-width:76px!important;flex-basis:76px!important}',
-      P + ' .df-label,' + P + ' #ps-df-fold{font-family:inherit!important;font-size:var(--t-3)!important;line-height:1.2!important}',
       P + ' #ps-df-fold{color:var(--c-ink)!important}',
       T + ' .df-tray-head{display:flex;align-items:flex-start;gap:var(--sp-2)}' + T + ' .df-tabs{flex:1;min-width:0}' + T + ' .df-close{flex:none;border:0;border-radius:var(--r-2);padding:var(--sp-3);min-height:44px;font:inherit;font-size:var(--t-3);background:var(--c-surface);color:var(--c-ink)}',
       'html.ps-page-board body.ps-dock-float.cmd-dock-folded #ps-command-dock'+Array(25).join(':not(#psFold)')+'>:not(#cmd-dock-handle){display:none!important}',
@@ -114,7 +111,7 @@
       P + ' #drawPanel{display:none!important}',   // 3.076 — 선수 · 장비 줄은 «선수» 칸(#ps-df-tray) 안으로 옮겨 카드로 보인다
       TRAY_CSS,
       P + ' #toolSeg>.ps-df-div{flex:0 0 1px;width:1px;height:26px;margin:0 6px;background:rgba(20,22,26,.09)}',
-      '@media(max-width:900px){'+P+' #cmd-tool-row{gap:0!important}'+P+' #toolSeg{gap:0!important}'+P+' #cmd-tool-row .cmd-cluster+.cmd-cluster,'+P+' #ps-df-toggles{margin-left:0!important;padding-left:2px!important;border-left:0!important}'+P+' #toolSeg>.ps-df-div{display:none!important}'+P+' #toolSeg>button,'+P+' #cmd-tool-row .cmd-cluster>button.btn,'+P+' #ps-df-toggles>button{width:40px!important;min-width:40px!important;max-width:40px!important;flex-basis:40px!important}'+P+' #cmd-tool-row #toolSeg>button.ps-df-panel{width:52px!important;min-width:52px!important;max-width:52px!important;flex-basis:52px!important}'+P+' #ps-df-toggles>#ps-df-anim{width:68px!important;min-width:68px!important;max-width:68px!important;flex-basis:68px!important}}',
+      '@media(max-width:900px){'+P+' #cmd-tool-row{gap:0!important}'+P+' #toolSeg{gap:0!important}'+P+' #cmd-tool-row .cmd-cluster+.cmd-cluster,'+P+' #ps-df-toggles{margin-left:0!important;padding-left:2px!important;border-left:0!important}'+P+' #toolSeg>.ps-df-div{display:none!important}'+P+' #toolSeg>button,'+P+' #cmd-tool-row .cmd-cluster>button.btn,'+P+' #ps-df-toggles>button{width:40px!important;min-width:40px!important;max-width:40px!important;flex-basis:40px!important}}',
       P + ' #cmd-tool-row #toolSeg>button.ps-df-panel[aria-pressed="true"],' + P + ' #cmd-tool-row #ps-df-toggles>button.btn[aria-pressed="true"]{background:rgba(20,33,61,.13)!important;color:#14213D!important;box-shadow:inset 0 0 0 1.5px rgba(20,33,61,.35)!important}',
       // ③ 도구 옵션 띠
       '#ps-df-opts{position:fixed;z-index:400;display:none;align-items:center;gap:6px;padding:8px;border-radius:18px;' + glass.replace(/!important/g, '') + 'font-family:inherit}',
@@ -133,6 +130,7 @@
   }
 
   var ICON = {
+    fold: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 8 6 6 6-6M5 19h14"/></svg>',
     equip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l6 15H6z"/><path d="M8.3 12.8h7.4"/><path d="M4 18.5h16"/></svg>',
     team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.3"/><path d="M3 19.5c.6-3.3 3-5.2 6-5.2s5.4 1.9 6 5.2"/><path d="M15.5 4.9a3.2 3.2 0 0 1 0 6.2M17.5 14.6c1.9.6 3.2 2.3 3.5 4.9"/></svg>',
     anim: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M8 5v14M16 5v14M3.5 9.5H8M3.5 14.5H8M16 9.5h4.5M16 14.5h4.5"/></svg>'
@@ -155,9 +153,7 @@
     //   장면 줄은 장면이 있으면 열려 있고(애니메이션을 만드는 중), 필름 버튼으로 여닫는다.
     function scenes() { try { return env.sceneCount ? env.sceneCount() : doc.querySelectorAll('#animFrames .anim-frame').length; } catch (_) { return 0; } }
     function mk(id, icon, title, cls) { var b = doc.createElement('button'); b.type = 'button'; b.className = cls; b.id = id; b.title = title; b.setAttribute('aria-label', title); b.innerHTML = ICON[icon]; return b; }
-    var tTeam = mk('ps-df-team', 'team', '선수 놓기 — 팀 · 골키퍼 · 코치', 'ps-df-panel'), tEquip = mk('ps-df-equip', 'equip', '장비 놓기 — 콘 · 골대 · 공 …', 'ps-df-panel');
-    function label(b,text){var s=doc.createElement('span');s.className='df-label';s.textContent=text;b.appendChild(s);}
-    label(tTeam,'선수');label(tEquip,'훈련 도구');
+    var tTeam = mk('ps-df-team', 'team', '선수 놓기 — 팀 · 골키퍼 · 코치', 'ps-df-panel'), tEquip = mk('ps-df-equip', 'equip', '훈련 도구 — 콘 · 골대 · 공 …', 'ps-df-panel');
     [tTeam,tEquip].forEach(function(b){b.setAttribute('aria-controls','ps-df-tray');});
     [tTeam, tEquip].forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); var k = b.id === 'ps-df-team' ? 'team' : 'equip'; st.panel = st.panel === k ? '' : k; writeOpen(st, env.storage); paint(); }); });
     var moveBtn = seg.querySelector('button[data-tool="move"]'), div1 = doc.createElement('span'), div2 = doc.createElement('span'); div1.className = div2.className = 'ps-df-div';
@@ -165,8 +161,8 @@
     [div1, tTeam, tEquip, div2].forEach(function (n) { seg.insertBefore(n, after); });
     var tg = doc.createElement('div'); tg.className = 'cmd-cluster'; tg.id = 'ps-df-toggles';
     var tAnim = mk('ps-df-anim', 'anim', '애니메이션 — 장면 줄 열기/닫기', 'btn'); tg.appendChild(tAnim); row.appendChild(tg);
-    label(tAnim,'애니메이션');tAnim.setAttribute('aria-controls','animBar');
-    var tFold=doc.createElement('button');tFold.type='button';tFold.id='ps-df-fold';tFold.className='btn';tFold.textContent='접기';tFold.setAttribute('aria-label','도구 접기');tg.appendChild(tFold);
+    tAnim.setAttribute('aria-controls','animBar');
+    var tFold=mk('ps-df-fold','fold','도구 접기','btn');tg.appendChild(tFold);
     tFold.addEventListener('click',function(){closeTray();hideOpts();if(win.__psDockFold)win.__psDockFold('close');});
     tAnim.addEventListener('click', function () { st.anim = !animOpen(); writeOpen(st, env.storage); paint(); });
     function animOpen() { return st.anim === null ? scenes() > 0 : st.anim; }
@@ -245,7 +241,6 @@
       if (st.panel && body.classList.contains('ps-dock-float')) openTray(); else { tray.classList.remove('on'); if (!body.classList.contains('ps-dock-float')) giveBack(); }
       tTeam.setAttribute('aria-pressed', st.panel === 'team' ? 'true' : 'false'); tEquip.setAttribute('aria-pressed', st.panel === 'equip' ? 'true' : 'false'); tAnim.setAttribute('aria-pressed', a ? 'true' : 'false');
       tTeam.setAttribute('aria-expanded',String(st.panel==='team'));tEquip.setAttribute('aria-expanded',String(st.panel==='equip'));tAnim.setAttribute('aria-expanded',String(a));
-      tAnim.setAttribute('aria-label',a?'애니메이션 접기':'애니메이션 열기');tAnim.title=a?'애니메이션 접기 · 장면 유지':'애니메이션 열기';
     }
     giveBackLater = function () { tray.classList.remove('on'); giveBack(); };
     paint();

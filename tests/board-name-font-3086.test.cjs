@@ -3,6 +3,13 @@
 const test=require('node:test'),assert=require('node:assert'),fs=require('fs'),path=require('path');
 const root=path.join(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'utf8');
 const NF=require('../studio/board-name-font.js');
+test('mixed text fonts collect only valid text drawings without changing the snapshot',()=>{
+  const snap={drawings:[{type:'text',textFont:'round',text:'압박'},{type:'text',textFont:'hand',text:'전환'},{type:'text',textFont:'round',text:' 유지'},{type:'rect',textFont:'serif',text:'제외'},{type:'text',textFont:'unknown',text:'제외'},{type:'text',textFont:'hand',text:{bad:true}},null]};
+  const before=JSON.stringify(snap);
+  assert.deepStrictEqual(NF.textFonts(snap),{round:'압박 유지',hand:'전환'});
+  assert.equal(JSON.stringify(snap),before);
+  assert.deepStrictEqual(NF.textFonts({drawings:{}}),{});
+});
 test('five choices; «기본» keeps the board font, the others put their font first',()=>{
   assert.deepStrictEqual(NF.ORDER,['base','bold','round','hand','serif']);
   assert.deepStrictEqual(NF.ORDER.map(k=>NF.FONTS[k].label),['기본','굵게','둥글게','손글씨','명조']);
