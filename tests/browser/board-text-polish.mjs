@@ -7,8 +7,8 @@ const shots=process.env.PS_SHOT_DIR;
 if(shots)fs.mkdirSync(shots,{recursive:true});
 let step='boot';
 try {
- for(const width of (process.env.PS_WIDTHS||'375,393,768,1280').split(',').map(Number)) {
-  const size=width<700?'phone':width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:width<700?852:900};
+ for(const width of (process.env.PS_WIDTHS||'768,1280').split(',').map(Number)) {
+  const size=width<1000?'ipad':'desktop';SIZES[size].ctx.viewport={width,height:width<700?852:900};
   const {page,logs}=await openApp(fx,size,{browsers});
   await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
   let f=await (await page.waitForSelector('#fBoard')).contentFrame();

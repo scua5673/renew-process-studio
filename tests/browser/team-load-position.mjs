@@ -3,7 +3,7 @@ import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 제보 5400cd9e — 저장 팀을 불러오면 판에 놓아 둔 토큰은 그 자리 그대로, 포지션이 맞는 토큰에 이름·번호만 들어간다(예전: 지우고 늘 4-3-3).
 // 판이 빈 쪽은 보드 포메이션 자리에 새로 놓는다. 되돌리기 한 번이면 예전 판. 제보 4116fc54 — 팀 등록에서 선수 순서를 바꿔 저장하면 그 순서가 남는다. 선수 사진은 이 기기에만(PSImg + 기기 표) — 저장 팀 문서에는 없다.
 // 합성 팀 fixture 에서만 돈다.
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});

@@ -20,7 +20,7 @@ const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=u
 fs.mkdirSync(out,{recursive:true});
 
 async function fixture(browser,spec){
-  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,isMobile:!!spec.touch,serviceWorkers:'block'});
+  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},...(spec.name==='phone'?{userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'}:{}),hasTouch:!!spec.touch,isMobile:!!spec.touch,serviceWorkers:'block'});
   const blocked=[];
   await context.route('**/*',route=>{
     const u=new URL(route.request().url());
@@ -126,6 +126,17 @@ try{
       r.cases.push('legacy-live-recovery-snapshots-stay-unowned-and-unchanged');
       await page.screenshot({path:path.join(out,spec.name+'-blank-personal.png')});
 
+      if(spec.name==='phone'){
+        await edit(frame,'A-PRIVATE');
+        await frame.locator('.token[data-id="synthetic-A-PRIVATE"]').click({button:'right'});
+        assert.equal(await frame.locator('.sel-ctl').isVisible(),false);
+        assert.equal(await frame.evaluate(()=>__boardSaveExplicit({quiet:true})),false);
+        assert.equal(await boardRecord(page,A),null,'phone cannot create a saved account board');
+        await switchTo(page,frame,B);
+        assert.deepEqual(await ids(frame),[],'switching phone accounts clears the previous board');
+        const state=await fullPrivateState(frame);assert.deepEqual(state.undo,[]);assert.deepEqual(state.redo,[]);
+        assert.deepEqual(errors,[]);r.cases.push('phone-edit-denied-and-account-isolated');r.ok=true;continue;
+      }
       await edit(frame,'A-PRIVATE');
       await page.waitForTimeout(2300);
       assert.equal(await boardRecord(page,A),null,'edits must not persist before Save');

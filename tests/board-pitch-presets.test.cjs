@@ -42,7 +42,7 @@ function setup({stored={}}={}){
     body:{classList:{contains:()=>false}},getElementById:id=>id==='pitchSeg'?seg:null,
     querySelectorAll:selector=>selector==='#pitchSeg button'?buttons:[]};
   let c;
-  const context={document,localStorage:{getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k)},
+  const context={psPhoneBoardReadOnly:()=>false,document,localStorage:{getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k)},
     $:id=>document.getElementById(id),dc:copy,CX:555,CY:370,PITCH_SPECS:{fifa:{}},world:null,
     sel:null,multiSel:[],uid:2,performance:{now:()=>0},setTimeout(fn){timers.push(fn);},hookBuild(){},tryBuildUI(){},
     normPitchView:v=>v||'full',pitchViewKey:()=>c.state.pitchView||'full',defaultTokenScale:()=>0.46,

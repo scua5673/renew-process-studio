@@ -3,7 +3,7 @@ import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 2.907 — 오류 제보 «보드 → 보관함 저장»: 작업 보드에서 한 번 «보관함 저장»하면 그 항목이 남아,
 // 다음 저장이 확인창 없이 그 항목을 덮어썼다(새 항목은 안 생기고 옛 전술은 사라짐). 이제 작업 보드에서는 매번 확인창,
 // 기본은 새 항목, 덮어쓰기는 고를 때만. 보드의 «저장»은 «보드 저장»(작업 보드만 저장한다는 이름). 합성 팀 fixture 에서만 돈다.
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});

@@ -28,7 +28,8 @@ try{
       bpx:[...ps.querySelectorAll('.bpx')].filter(shown).length,hitTabs:tabs.filter(t=>{ const b=t.getBoundingClientRect(); return b.right>4&&b.left<innerWidth-4; }).map(at),
       onIdx:tabs.indexOf(on),onIn:ob?(ob.left>=-1&&ob.right<=innerWidth+1):null,stage:r(st),docSW:document.documentElement.scrollWidth,vw:innerWidth,
       phoneWork:document.body.classList.contains('ps-phone-work'),tb:ps.classList.contains('ps-tb'),groups:[...ps.querySelectorAll(':scope>.tb-g')].filter(shown).map(g=>g.className.split(' ')[1]),menu:[...document.querySelectorAll('#ps-tb-menu>button')].map(b=>b.id||b.textContent.trim()),addShown:[...ps.querySelectorAll('.bp-add')].filter(shown).length,has901:state.players.some(p=>p.id===901)}; });
-  const addPage=n=>bf.evaluate(k=>{ const a=()=>[...document.querySelectorAll('#boardPageStrip .bp-add')].find(b=>/페이지/.test(b.textContent)); for(let i=0;i<k;i++)a().click(); },n);
+  // Seed saved pages directly: phones no longer expose page creation.
+  const addPage=n=>bf.evaluate(k=>{ const c=__psPages.captureContext(captureSnap(),null),p=c.pages||[{name:'',snap:captureSnap()}];let at=c.idx;for(let i=0;i<k;i++){at++;p.splice(at,0,{name:'',snap:{players:[],equipment:[],drawings:[],ball:null,pitchN:1}});}__psPages.restoreContext({pages:p,idx:at});loadSnap(p[at].snap);renderTokens();renderDrawings(); },n);
   const dbl=()=>bf.evaluate(()=>{ const keep=window.psPrompt; let n=0; window.psPrompt=function(){ n++; };
     document.querySelector('#boardPageStrip .bp-tab.on').dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true})); window.psPrompt=keep; return n; });
   const hold=async()=>{ await bf.evaluate(()=>{ const t=document.querySelector('#boardPageStrip .bp-tab.on'),b=t.getBoundingClientRect();

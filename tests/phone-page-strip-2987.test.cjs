@@ -12,20 +12,20 @@ function cut(from,to){ const a=src.indexOf(from); assert.ok(a>0,'start marker: '
 
 function phoneNav({book=false,phone=true,width=375,broken=false}={}){
   const c=vm.createContext({
-    window:{__vaultBook:book,innerWidth:width},
+    window:{__vaultBook:book,innerWidth:width},psPhoneBoardReadOnly:()=>!broken&&phone,
     document:{body:{classList:{contains:k=>{ if(broken)throw new Error('no body'); return k==='ps-phone-work'&&phone; }}}}
   });
   vm.runInContext(cut('  function _phoneNav(){','\n')+';this.f=_phoneNav;',c);
   return c.f();
 }
 
-test('the picker is only for a portrait phone — the shell marks it, and the width stays under 640',()=>{
+test('the picker uses physical phone identity in portrait and landscape',()=>{
   assert.equal(phoneNav(),true);
   assert.equal(phoneNav({width:430}),true);
   assert.equal(phoneNav({phone:false}),false,'a narrow desktop window is not a phone');
-  assert.equal(phoneNav({width:640}),false,'from 640 the save buttons live in this strip — leave it alone');
-  assert.equal(phoneNav({width:932}),false,'a phone on its side keeps what it has');
-  assert.equal(phoneNav({book:true}),false,'a patternbook has its own phone strip (2.985)');
+  assert.equal(phoneNav({width:640}),true,'landscape remains a viewer');
+  assert.equal(phoneNav({width:932}),true,'a phone on its side remains a viewer');
+  assert.equal(phoneNav({book:true}),true,'patternbooks must also prevent rename and reorder');
   assert.equal(phoneNav({broken:true}),false,'never throws');
 });
 

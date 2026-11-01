@@ -46,7 +46,7 @@ try{
   clearTimeout(timer);release?.();release=null;
   const restored=await f.evaluate(()=>({name:state.players.find(p=>p.id===701).name,shape:tokShape,grid:state.gridType,baseHasPlayer:JSON.parse(_boardPrivateRecord.base.raw).snap.players.some(p=>p.id===701)}));
   assert.deepEqual(restored,{name:'합성 복원 선수',shape:'shirt',grid:'none',baseHasPlayer:true});
-  assert.equal(await f.evaluate(()=>__boardSaveExplicit()),true,'restored server preimage permits an exact save');
-  console.log(JSON.stringify({engine,width,restored:true,lookPreserved:true,save:true}));await context.close();
+  assert.equal(await f.evaluate(()=>__boardSaveExplicit({quiet:true})),size!=='phone','restored phone boards remain read-only; iPad and desktop can save');
+  console.log(JSON.stringify({engine,width,restored:true,lookPreserved:true,save:size!=='phone'}));await context.close();
  }
 }finally{release?.();for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close();}

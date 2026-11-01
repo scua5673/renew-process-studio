@@ -20,7 +20,7 @@ const BOX={x0:370,y0:270,x1:570,y1:450},INSIDE=['mq-a','mq-b','mq-cone'],SAMPLE=
 const results=[],pageErrors=[];
 try{for(const device of ['desktop','phone']){
   const viewport=device==='phone'?{width:393,height:852}:{width:1280,height:900};
-  const context=await browser.newContext({viewport,serviceWorkers:'block',...(device==='phone'?{hasTouch:true,isMobile:engine==='chromium'}:{})}),errors=[];
+  const context=await browser.newContext({viewport,serviceWorkers:'block',...(device==='phone'?{hasTouch:true,isMobile:engine==='chromium',userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'}:{})}),errors=[];
   try{
     await context.route('**/*',route=>{
       const u=new URL(route.request().url());if(u.origin!==base)return route.abort();
@@ -67,6 +67,7 @@ try{for(const device of ['desktop','phone']){
       const clip={x:geo.sample.x-5,y:geo.sample.y-5,width:10,height:10},before=await avg(clip);
       // 끌기 — 데스크톱은 실제 마우스, 폰은 터치 PointerEvent(빈 곳의 요소에 보내 svg 로 올라간다)
       const fire=(type,p)=>page.evaluate(({type,p})=>{const t=document.elementFromPoint(p.x,p.y)||svg;t.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:71,pointerType:'touch',isPrimary:true,buttons:type==='pointerup'?0:1,clientX:p.x,clientY:p.y}));},{type,p});
+      const lockedBefore=device==='phone'?await page.evaluate(()=>JSON.stringify({players:state.players,equipment:state.equipment,drawings:state.drawings})):null;
       const mid={x:(geo.start.x+geo.end.x)/2,y:(geo.start.y+geo.end.y)/2};
       if(device==='desktop'){await page.mouse.move(geo.start.x,geo.start.y);await page.mouse.down();await page.mouse.move(mid.x,mid.y,{steps:4});await page.mouse.move(geo.end.x,geo.end.y,{steps:6});}
       else{await fire('pointerdown',geo.start);for(let i=1;i<=8;i++)await fire('pointermove',{x:geo.start.x+(geo.end.x-geo.start.x)*i/8,y:geo.start.y+(geo.end.y-geo.start.y)*i/8});}
@@ -81,6 +82,12 @@ try{for(const device of ['desktop','phone']){
         return {exists:true,count:document.querySelectorAll('#lassoRect').length,visibility:cs.visibility,shown,inWorld:r.parentNode===world,box:{left:b.left,top:b.top,width:b.width,height:b.height},
           startCorner:near(geo.start),endCorner:near(geo.end),visual};
       },{geo});
+      if(device==='phone'){
+        assert.equal(live.exists,false,'phone viewers cannot start a selection drag');await fire('pointerup',geo.end);
+        assert.equal(await page.evaluate(()=>JSON.stringify({players:state.players,equipment:state.equipment,drawings:state.drawings})),lockedBefore);
+        assert.deepEqual(await page.evaluate(()=>({selected:!!sel,count:multiSel.length})),{selected:false,count:0});
+        results.push({device,view,orientation,readOnly:true});continue;
+      }
       const during=await avg(clip);
       assert.equal(live.exists,true,'the selection box exists while dragging '+label);assert.equal(live.count,1);
       assert.equal(live.visibility,'visible','the selection box is not hidden by the 3D pitch rules '+label);assert.equal(live.shown,true,label);
@@ -101,6 +108,7 @@ try{for(const device of ['desktop','phone']){
       results.push({device,view,orientation,box:live.box,startCorner:live.startCorner,endCorner:live.endCorner,before,during,selected:done.ids});
       await page.evaluate(()=>{deselect();});
     }
+    if(device==='phone'){assert.deepEqual(errors.filter(e=>!e.includes('ResizeObserver loop')),[]);continue;}
     // 끌지 않고 누르기만(짧게) — 상자가 남지 않고 아무것도 골라지지 않는다(3D)
     const tap=await page.evaluate(async()=>{
       state.orientation='h';buildPitch();__setTilt(true);__tiltFit();deselect();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));

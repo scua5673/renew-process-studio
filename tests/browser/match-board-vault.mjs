@@ -5,7 +5,7 @@ import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 // 합성 팀(셸 전체)에서: 경기 준비의 «경기 보드»가 보관함 미팅·작전판을 가져와 그 자리에서 띄우고(넘기기·크게 보기),
 // «편집 ›»은 보관함으로, 보관함의 «‹ 경기 준비로»는 그 경기로 돌아오며, «＋ 새 미팅»은 기본 10장을 붙여 경기에 이은 채 만든다.
 // 옛 경기 준비 보드(운동장)는 접혀 있고 2.971 부터는 명단(우리 팀 · 선발/리저브) 카드도 함께 접힌다. 실제 서버는 건드리지 않는다.
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'phone':'desktop');   // PS_SIZE=ipad 로 아이패드 폭도
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'ipad':'desktop');   // PS_SIZE=ipad 로 아이패드 폭도
 const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});

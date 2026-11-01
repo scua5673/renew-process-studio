@@ -34,20 +34,17 @@ try{
     const bf=await (await page.waitForSelector('#fBoard')).contentFrame();
     await bf.waitForFunction(()=>typeof renderTokens==='function'&&document.body.classList.contains('ps-phone-work'));
     await bf.evaluate(()=>{ state.players=[];state.equipment=[];state.drawings=[];renderTokens(); });
-    await bf.waitForSelector('#psPhoneHint',{timeout:8000});
-    assert.match(await bf.evaluate(()=>document.querySelector('#psPhoneHint b').textContent),/폰에서는 작전판을 보기만 해요/);
+    await bf.waitForSelector('#psPhoneBoardNotice',{timeout:8000});
+    assert.match(await bf.locator('#psPhoneBoardNotice').innerText(),/보드 수정은 아이패드나 컴퓨터에서 가능합니다/);
     await bf.evaluate(()=>{ state.players=[{id:1,team:'blue',num:'7',x:300,y:300}];renderTokens(); });
-    await bf.waitForFunction(()=>!document.getElementById('psPhoneHint'),null,{timeout:8000});
-    await bf.evaluate(()=>{ state.players=[];renderTokens(); });
-    await bf.waitForSelector('#psPhoneHint',{timeout:8000});
-    await bf.evaluate(()=>document.querySelector('#psPhoneHint [data-ph-vault]').click());
-    await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='design',null,{timeout:8000});
-    await page.evaluate(()=>{ const b=document.querySelector('#appSeg [data-app="board"]:not([data-train])'); if(b)b.click(); });
-    await bf.waitForSelector('#psPhoneHint',{timeout:8000});
-    await bf.evaluate(()=>document.querySelector('#psPhoneHint [data-ph-close]').click());
-    assert.equal(await bf.evaluate(()=>localStorage.getItem('ps_phone_board_hint_v1')),'1','닫기는 이 기기에 남는다');
-    await page.waitForTimeout(1800);
-    assert.equal(await bf.evaluate(()=>!!document.getElementById('psPhoneHint')),false,'닫은 뒤 다시 뜨지 않는다');
+    assert.equal(await bf.locator('#psPhoneBoardNotice').isVisible(),true,'the notice also stays on a populated board');
+    await page.evaluate(()=>document.querySelector('#appSeg [data-app="design"]:not([data-train])').click());
+    await bf.waitForFunction(()=>document.getElementById('psPhoneBoardNotice').hidden);
+    await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
+    await bf.waitForSelector('#psPhoneBoardNotice',{timeout:8000});
+    await bf.evaluate(()=>localStorage.setItem('ps_phone_board_hint_v1','1'));
+    await page.waitForTimeout(1100);
+    assert.equal(await bf.locator('#psPhoneBoardNotice').isVisible(),true,'the old dismissed empty-board hint cannot hide the new notice');
     const pe=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)); assert.deepEqual(pe,[],JSON.stringify(pe.slice(0,3))); }   /* 웹킷이 내는 무해한 경고(다른 시험과 같은 거름) */
   console.log(JSON.stringify({engine,test:'coach-idp-entry',ok:true}));
 }catch(e){ console.error('[coach-idp-entry] step='+cur); throw e; }

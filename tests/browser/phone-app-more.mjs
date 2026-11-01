@@ -21,13 +21,14 @@ try{
     assert.equal(await more.getAttribute('aria-expanded'),'true');
     const shown=()=>page.evaluate(()=>[...document.querySelectorAll('#appMoreSheet .tms-g button')].filter(b=>b.offsetParent!==null).map(b=>b.textContent.trim()));
     const items=await shown();
-    // 2.940 — 작전판 화면이면 맨 위에 «보드 저장»(폰엔 저장 띠가 없다, 2.939)
-    assert.deepEqual(items,['보드 저장','보관함','IDP','홈 화면에 추가','앱 설정','오류 제보','사용법'],'시트 = 보드 저장 + 보관함 · 홈 화면에 추가(3.110, 설치 전) + 도움 셋');
+    // 휴대폰은 보드 보기 전용이므로 더보기에도 저장을 노출하지 않는다.
+    assert.deepEqual(items,['보관함','IDP','홈 화면에 추가','앱 설정','오류 제보','사용법'],'폰 더보기에는 보드 저장이 없다');
     const board=await (await page.$('#fBoard')).contentFrame();
     await board.evaluate(()=>{window.__bsClicks=0;document.getElementById('boardManualSave').addEventListener('click',()=>{window.__bsClicks++;});});
-    await sheet.locator('.tms-g button',{hasText:'보드 저장'}).tap();await wait(300);
+    assert.equal(await sheet.locator('[data-am=boardsave]').isVisible(),false);
+    await sheet.locator('[data-am=boardsave]').evaluate(b=>b.click());await wait(300);
     assert.equal(await sheet.isVisible(),false,'보드 저장을 누르면 시트가 닫힌다');
-    assert.equal(await board.evaluate(()=>window.__bsClicks),1,'보드 저장 = 작전판의 원래 저장 버튼을 한 번 누른 것');
+    assert.equal(await board.evaluate(()=>window.__bsClicks),0,'옛 저장 콜백도 폰의 저장 차단을 우회하지 못한다');
     await more.tap();await wait(200);
     const geo=await page.evaluate(()=>{const s=document.getElementById('appMoreSheet').getBoundingClientRect(),b=document.getElementById('appSeg').getBoundingClientRect();return {bottom:s.bottom,barTop:b.top,left:s.left,right:s.right,vw:innerWidth};});
     assert.ok(geo.bottom<=geo.barTop&&geo.left>=0&&geo.right<=geo.vw,'시트는 하단 바 위 · 화면 안 '+JSON.stringify(geo));

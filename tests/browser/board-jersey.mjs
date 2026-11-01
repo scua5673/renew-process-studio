@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 // 3.120 — 유니폼 토큰(board-jersey.js): «원형» · «유니폼» 선수 토큰에 유니폼 앞모습. 사용자 «토큰 유니폼도 이렇게»(FmStadio) ·
 // «원형과 유니폼 전부» · «유니폼을 완전 디테일하게». 판 · 입체 칩 · 내보내기 · 3D 칩 윗면 · 끌기를 본다. 합성 팀 fixture 에서만 돈다.
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});

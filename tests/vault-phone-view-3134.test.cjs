@@ -55,6 +55,7 @@ test('loadSnap · renderInterp 에는 세운 사본, 선수는 커뮤니티 뷰�
   f.W.renderInterp({orientation:'h'},{orientation:'h'},0.5,null);
   assert.deepEqual([f.calls[2][1].orientation,f.calls[2][2].orientation,f.calls[2][3]],['v','v',0.5]);
   assert.equal(f.W.commViewTok(),1.6);
+  f.W.psPhoneBoardReadOnly=()=>true;assert.equal(f.W.commViewTok(),1.8,'the persistent phone notice leaves enough room for readable player numbers');
   f.W.__psThumbNoEd=true;assert.equal(f.W.commViewTok(),0,'썸네일을 뜰 때는 키우지 않는다');f.W.__psThumbNoEd=false;
   f.W.__comm=1;assert.equal(f.W.commViewTok(),1,'커뮤니티 뷰어의 값은 그대로');
 });

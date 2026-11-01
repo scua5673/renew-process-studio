@@ -17,7 +17,7 @@ function harness(options={}){
  let owner={uid:options.uid||'synthetic-user-a',wid:options.wid||'personal-a',active:'team-a',seal:'seal-a',epoch:0,switchSeal:'',switchEpoch:'1'};
  let server=options.serverRaw?{raw:options.serverRaw,cupd:3}:{raw:null,cupd:null};
  const ls=new Map(options.ls||[]),idb=new Map(options.idb||[]),messages=[],timers=[],removed=[];
- const c={PSBoardDraft:require('../studio/board-draft.js'),console,JSON,Math,Date,Object,Array,Number,String,Promise,Error,URLSearchParams,encodeURIComponent,location:{origin:'https://unsaved-draft.invalid',search:''},
+ const c={psPhoneBoardReadOnly:()=>false,PSBoardDraft:require('../studio/board-draft.js'),console,JSON,Math,Date,Object,Array,Number,String,Promise,Error,URLSearchParams,encodeURIComponent,location:{origin:'https://unsaved-draft.invalid',search:''},
   PRIVATE_BOARD_PREFIX:'ps_private_board_draft_v1:',EDRAFT_KEY:'cs_editor_draft_v1',_bliveSaveSeq:0,_bliveDirty:false,_bliveApplying:false,_bliveT:null,
   _vaultBoardContext:null,_vaultBoardRestoring:false,animPlaying:false,matchActive:false,anim:{slides:[],frames:[]},animActive:0,
   state:snap(0),undoStack:[],redoStack:[],autoOrient:true,

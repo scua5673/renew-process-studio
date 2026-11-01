@@ -8,7 +8,7 @@ const fx=await startFixture(),browsers={};
 const name='Process FC Player With A Complete Long Display Name '+ '가나다라마바사아자차카타파하';
 try{
   for(const width of [375,393,768,1280]){
-    const size=engine==='webkit'?(width<768?'phone':'ipad'):'desktop';
+    const size=engine==='webkit'&&width>=768?'ipad':'desktop';
     // Mobile WebKit keeps its original device width on resize: create each screen at its actual width.
     SIZES[size].ctx.viewport={width,height:850};SIZES[size].ctx.screen={width,height:850};
     const {page,context,logs}=await openApp(fx,size,{browsers,tilt3d:false,init:{fn:()=>{
