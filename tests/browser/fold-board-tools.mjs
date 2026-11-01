@@ -16,6 +16,8 @@ try{
  await page.setViewportSize({width:1088,height:759});
  await f.waitForFunction(()=>!psPhoneBoardReadOnly()&&document.getElementById('ps-df-fold')?.offsetWidth>0);
  await f.evaluate(()=>{
+  // Use a user-fixed pitch direction: automatic orientation intentionally adapts on resize.
+  autoOrient=false;
   loadSnap({players:[{id:9901,team:'blue',num:7,x:400,y:300}],equipment:[],drawings:[],orientation:'h',pitchN:1});
   const snap=captureSnap();anim.frames=[0,1,2].map(i=>({snap:structuredClone(snap),dur:1}));animActive=0;renderAnimFrames();renderTokens();
  });
