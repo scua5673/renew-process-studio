@@ -90,7 +90,11 @@
   .board-sec{background:var(--dark);color:#fff;padding:80px 0}
   .board-sec .kicker{color:rgba(255,255,255,.5)}
   .board-sec .sub{color:rgba(255,255,255,.7)}
-  .b-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:40px}
+  .b-shot{margin:40px 0 0;border-radius:var(--r);overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 70px rgba(0,0,0,.5);background:#0f1115}
+  .b-shot img{width:100%;height:auto;display:block}
+  .b-shot figcaption{padding:10px 16px;font-size:13px;color:rgba(255,255,255,.6);border-top:1px solid rgba(255,255,255,.08)}
+  .b-shot figcaption b{color:#fff;font-weight:700;margin-right:6px}
+  .b-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
   .b-card{background:#15171b;border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:24px 22px}
   .b-card .ic{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.08);display:grid;place-items:center;margin-bottom:16px}
   .b-card h3{font-size:17px;font-weight:800;letter-spacing:-.02em}
@@ -219,6 +223,10 @@
     <div class="kicker">작전판 — 스튜디오의 중심</div>
     <h2>생각을 그리는 데서 시작합니다.</h2>
     <p class="sub">선수·공·장비를 올리고 움직임을 그리면 그대로 재생됩니다. 작전판에서 만든 것이 훈련이 되고, 미팅 자료가 되고, 일정에 올라갑니다.</p>
+    <figure class="b-shot">
+      <img src="/assets/landing/board-3d.webp" alt="작전판 3D 보기 — 경기장 중계 화면처럼 보는 같은 판" width="1600" height="1040" loading="lazy">
+      <figcaption><b>3D 보기</b> 같은 판을 경기장 중계 화면처럼. 평면과 3D를 한 번에 오가며 끌기·그리기는 그대로입니다. · 실제 화면, 가상 팀 자료</figcaption>
+    </figure>
     <div class="b-grid">
       <div class="b-card">
         <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M5 12h12M13 6l6 6-6 6"/></svg></div>
