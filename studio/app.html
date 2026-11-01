@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.231"></script>
+<script src="autosave-status.js?v=3.232"></script>
 <script src="sync-confirmation.js"></script>
 <script src="sync-diagnosis.js"></script>
 <script src="sync-diagnosis-ui.js"></script>
@@ -530,7 +530,7 @@
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
 <script src="playbook-data.js"></script><script src="playbook-shell.js"></script>
-<script>window.PS_BUILD='3.231';</script>
+<script>window.PS_BUILD='3.232';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -2822,8 +2822,8 @@ window.psFailAlert=function(lead,e,stage){
          바뀐 것이 있으면 보드와 같은 표시(«보드 저장 ●», 2.907). */
       function fbWin(){ try{ var f=document.getElementById('fBoard'); return f&&f.contentWindow; }catch(_){ return null; } }
       function boardSaveRow(){ var row=sheet.querySelector('[data-am-row="board"]'); if(!row)return; var show=false,chg=false;
-        try{ if(document.documentElement.getAttribute('data-ps-device')!=='phone'&&document.body.getAttribute('data-ps-app')==='board'){ var w=fbWin(), d=w&&w.document, bb=d&&d.body, mb=d&&d.getElementById('boardManualSave');
-          if(mb&&bb&&!d.getElementById('psRoHide')&&!w.__vaultEdit&&!/(^|\s)(editing|meet-mode|ps-capturing)(\s|$)/.test(bb.className)){ show=true; try{ chg=!!(w.boardManualChanged&&w.boardManualChanged()); }catch(_){} } } }catch(_){}
+        try{ if(document.body.getAttribute('data-ps-app')==='board'){ var w=fbWin(), d=w&&w.document, bb=d&&d.body, mb=d&&d.getElementById('boardManualSave');
+          if(mb&&bb&&!(w.psPhoneBoardReadOnly&&w.psPhoneBoardReadOnly())&&!d.getElementById('psRoHide')&&!w.__vaultEdit&&!/(^|\s)(editing|meet-mode|ps-capturing)(\s|$)/.test(bb.className)){ show=true; try{ chg=!!(w.boardManualChanged&&w.boardManualChanged()); }catch(_){} } } }catch(_){}
         row.hidden=!show; var b=row.querySelector('button'); if(b){ b.textContent=chg?'보드 저장 ●':'보드 저장'; b.setAttribute('aria-label',chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장'); } }
       function set(open){ if(open)boardSaveRow(); sheet.hidden=!open; btn.setAttribute('aria-expanded',open?'true':'false'); }
       window.__psAppMore=function(){ set(sheet.hidden); };
@@ -5806,7 +5806,8 @@ window.__buildScoutForm=function(k){
   })();
   function syncBoardMode(mode){
     var f=document.getElementById('fBoard');if(!f)return;
-    try{var b=f.contentDocument&&f.contentDocument.body;if(b){b.classList.toggle('ps-ipad-work',mode==='ipad');b.classList.toggle('ps-desktop-work',mode==='desktop');
+    try{var w=f.contentWindow;if(mode==='mobile'&&w.PSPhoneBoardView&&w.PSPhoneBoardView.expanded(w))mode='ipad';
+      var b=f.contentDocument&&f.contentDocument.body;if(b){b.classList.toggle('ps-ipad-work',mode==='ipad');b.classList.toggle('ps-desktop-work',mode==='desktop');
       b.classList.toggle('ps-phone-work',mode==='mobile');   /* 2.086 — 폰만 가리키는 표시. iframe 폭(폰 375 · 아이패드 672)만으로는 둘을 못 가른다 */
     }}catch(e){}
   }
@@ -5884,16 +5885,26 @@ window.__buildScoutForm=function(k){
       var kids=_fr.children;
       for(var i=0;i<kids.length;i++){
         var f=kids[i]; if(!f||f.tagName!=='IFRAME')continue;
-        if(on&&W>0&&W<768&&f.id!=='fLearning'){
+        var fw=f.contentWindow,unfolded=f.id==='fBoard'&&fw&&fw.PSPhoneBoardView&&fw.PSPhoneBoardView.expanded(fw);
+        if((on||unfolded)&&W>0&&W<768&&f.id!=='fLearning'){
           var sc=W/768;
+          var visibleH=H,nav=unfolded?document.getElementById('appSeg'):null;
+          if(unfolded&&nav&&getComputedStyle(nav).position==='fixed'&&nav.offsetHeight){
+            visibleH=Math.max(1,Math.min(H,nav.getBoundingClientRect().top-_fr.getBoundingClientRect().top));
+          }
           f.style.width='768px';
-          f.style.height=Math.round(H/sc)+'px';
+          f.style.height=Math.round(visibleH/sc)+'px';
           f.style.transform='scale('+sc+')';
           f.style.transformOrigin='0 0';
         }else if(f.style.transform||f.style.width==='768px'){
           f.style.width='';f.style.height='';f.style.transform='';f.style.transformOrigin='';
         }
       }
+    }catch(_){}
+  }
+  function syncFoldScale(){
+    try{var f=document.getElementById('fBoard'),w=f&&f.contentWindow;
+      if(w&&w.PSPhoneBoardView&&w.PSPhoneBoardView.expanded(w))syncDeskScale();
     }catch(_){}
   }
   sw.addEventListener('click',function(e){var b=e.target.closest('button');if(b){saved=b.dataset.l;apply(saved);}});
@@ -5905,6 +5916,7 @@ window.__buildScoutForm=function(k){
   else if((savedDevice.phone&&saved!=='mobile')||(!savedDevice.phone&&saved!=='desktop'))saved=savedDevice.phone?'mobile':'desktop';
   var bf=document.getElementById('fBoard');if(bf)bf.addEventListener('load',function(){apply(saved,true);});
   apply(saved,true);
+  if(window.ResizeObserver&&_fr)new ResizeObserver(syncFoldScale).observe(_fr);
   /* 2.084 — 부팅 폴백이 공개 직전에 기기 레이아웃을 다시 씌울 수 있게 밖으로 연다 */
   try{ window.__psReapplyLayout=function(){ apply(saved,true); }; }catch(_){}
   function markShellReady(){
@@ -7883,6 +7895,7 @@ window.__buildScoutForm=function(k){
   function run(){
     if(applied) return true;
     var doc=boardDoc(); if(!doc) return false;
+    if(doc.defaultView.PSPhoneBoardView)return true; // The board owns fold/unfold; never mount the legacy phone dock.
     /* 1.831 — 데스크톱 명령 도크(command-dock-v5)가 이미 섰거나 iframe 폭이 768 이상이면 모바일 도크를 주입하지 않는다.
        스플래시 중 iframe 폭이 0이라 'dock'으로 오판 → #ps-dock(빈 흰 패널)이 명령 도크 위에 겹쳐 도구가 가려지던 레이스. */
     try{ var _bw=(document.getElementById('fBoard')||{}).clientWidth||0;
@@ -7950,7 +7963,7 @@ window.__buildScoutForm=function(k){
        바깥 창 폭으로 판단하면 넓어진 사이드바를 뺀 실제 작전판은 좁은데 데스크톱 도크만 꺼지는 혼합 상태가 생긴다. */
     try{ var _f=document.getElementById('fBoard');
       var _w=_f?(_f.clientWidth||(_f.getBoundingClientRect&&_f.getBoundingClientRect().width)||0):0;
-      if(psDevKind()!=='phone'||_w>=768){ var _d=_f&&_f.contentDocument;   /* 2.451 — 아이패드·데스크톱은 레일 경로로 바로 */
+      if(psDevKind()!=='phone'||_w>=768||(_f&&_f.contentWindow.PSPhoneBoardView)){ var _d=_f&&_f.contentDocument;   /* Modern phone boards keep the same document when folded. */
         if(_d&&_d.body){ _d.body.classList.add('ps-tb-show'); _d.body.classList.remove('ps-dock');
           /* 레일(데스크톱) 모드도 __applyPitchN을 주입 — 통합 설정의 운동장 개수는 보드 문서에서 이 함수로 그린다.
              run()을 안 타는 레일 조기 리턴 때문에 데스크톱에서 개수 선택이 무반응이던 문제 수정 */
@@ -7970,7 +7983,7 @@ window.__buildScoutForm=function(k){
   var dockFrame=document.getElementById('fBoard');
   function currentDockMode(){
     var w=dockFrame?(dockFrame.clientWidth||(dockFrame.getBoundingClientRect&&dockFrame.getBoundingClientRect().width)||0):0;
-    if(psDevKind()!=='phone')return 'rail';   /* 2.451 — 아이패드·데스크톱은 늘 레일(v5). 폭 경계로 재조립하지 않는다 */
+    if(psDevKind()!=='phone'||(dockFrame&&dockFrame.contentWindow.PSPhoneBoardView))return 'rail';
     var mode=w?(w>=768?'rail':'dock'):null;return mode;
   }
   var dockMode=null,dockModeTimer=null,dockModeReloading=false;
@@ -8026,16 +8039,16 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="sync-size.js"></script>
 <script src="sync-observability.js"></script>
 <script src="idp-pub-wipe.js"></script>
-<script src="autosave-journal.js?v=3.231"></script>
-<script src="autosave-merge.js?v=3.231"></script>
-<script src="autosave-runtime.js?v=3.231"></script>
-<script src="autosave-recovery.js?v=3.231"></script>
+<script src="autosave-journal.js?v=3.232"></script>
+<script src="autosave-merge.js?v=3.232"></script>
+<script src="autosave-runtime.js?v=3.232"></script>
+<script src="autosave-recovery.js?v=3.232"></script>
 <script src="roster-outbox.js"></script>
 <script src="sync-items-stale.js"></script>
 <script src="permissions-filter.js"></script>
-<script src="sync.js?v=3.231"></script>
+<script src="sync.js?v=3.232"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.231">
+<link rel="stylesheet" href="support.css?v=3.232">
 <link rel="stylesheet" href="support-image.css?v=20261023">
 <script src="support-image.js?v=20261023"></script>
 <script src="support.js?v=20261023"></script>

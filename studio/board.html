@@ -21635,6 +21635,7 @@ try{ var _nb=document.getElementById('dfNew');
       UA·screen 을 다시 재지 않는다(두 곳에서 재면 두 답이 나온다).
    ⚠ 순서: ① 셸이 보드 몸에 붙이는 표시(ps-phone-work…) ② 셸의 data-ps-device ③ 단독일 때만 폭. */
 function psBoardDevice(){
+  if(window.PSPhoneBoardView&&PSPhoneBoardView.expanded(window))return "ipad";
   try{ var c=document.body&&document.body.classList;
     if(c){ if(c.contains("ps-phone-work"))return "phone";
            if(c.contains("ps-ipad-work"))return "ipad";
@@ -21737,7 +21738,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     return true;
   }catch(_){return false;}}
   if(!go()){var n=0,iv=setInterval(function(){if(go()||++n>60)clearInterval(iv);},300);
-    window.addEventListener('resize',go);}
+    window.addEventListener('resize',function retryRail(){if(go())window.removeEventListener('resize',retryRail);});}
 })();
 </script>
 <script>/* COMMAND-DOCK-JS:v5 — Studio Light Grid: 원본 기능을 보존한 3행 전문 도크 + 연속 토큰 배치 */
@@ -22373,7 +22374,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
         dockDesktopMode=nextDesktop;
         /* 앱 셸은 부모가 경계 전환 때 iframe을 다시 불러온다. 단독 작전판도 같은 방식으로
            원본 노드를 모바일/데스크톱 호스트에 정확히 다시 장착한다. */
-        if(window.self===window.top){
+        if(window.self===window.top&&!window.PSPhoneBoardView){
           try{if(window.__boardFlushLive)window.__boardFlushLive();}catch(_){}
           location.reload();return;
         }
@@ -23323,6 +23324,7 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
     if(e.key==="."){ e.preventDefault(); window.__psDockFold("toggle"); }
     else if(e.key==="\\"){ e.preventDefault(); try{ parent.postMessage({source:"board",type:"toggleSide"},"*"); }catch(_){} } },true);
   var tries=0; (function tick(){ ensure(); if(tries++<60)setTimeout(tick,300); })();   /* 도크는 셸이 늦게 조립한다(폰 도크 포함) — 18초 동안 지켜본다 */
+  window.addEventListener('resize',ensure);
 })();
 </script>
 

@@ -1,6 +1,5 @@
-/* Phone boards are viewers. Device identity comes from the shell, not the
-   current viewport: rotating a phone must not unlock editing, and a narrow
-   desktop window or iPad split view must stay editable. */
+/* Small phone surfaces are viewers. A phone with an expanded physical display
+   can use the existing editor; rotating an ordinary phone cannot unlock it. */
 (function(root,factory){
   var api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
@@ -22,17 +21,26 @@
     var n=win.navigator||{},s=win.screen||{};
     return isPhone({kind:kind,ua:n.userAgent,touch:n.maxTouchPoints,width:s.width,height:s.height,narrow:!!(win.matchMedia&&win.matchMedia('(max-width:767px)').matches)});
   }
-  var EDITORS=['.sel-ctl','.draw-ctl','#ps-dock','#ps-command-dock','#floatBar','#toolSeg','#cmd-board-settings-pop','#boardManualSave','#vaultSave','#psSaveBar','#emptyHint','#ehDoor','#vCreateSave','#vCreateSaveOnly','#vCreateEdit','#vvEdit','#editorDone','#editorCopy','#bpBoardSettings','#boardPageStrip .bp-head','#boardPageStrip .bpx','#boardPageStrip .bp-add','#bpLinkChip','#animAdd','#animDel','#animDup','#psPhoneHint','#psEditTools','#psEditToolsToggle','#animBar','#ps-tb-menu','#boardPageStrip .tb-mid','#boardPageStrip .tb-right','#boardPageStrip .tb-head'];
+  function expandedInfo(info){
+    return info.phone===true&&Math.min(+info.screenWidth||0,+info.screenHeight||0)>=600&&(+info.windowWidth||0)>=600;
+  }
+  function expanded(win){
+    var host=win;try{if(win.top.document)host=win.top;}catch(_){}
+    var s=host.screen||win.screen||{};
+    return expandedInfo({phone:phone(win),screenWidth:s.width,screenHeight:s.height,windowWidth:host.innerWidth});
+  }
+  function readOnly(win){return phone(win)&&!expanded(win);}
+  var EDITORS=['#hint','#boardToolbar','#bench','#drawPanel','.sel-ctl','.draw-ctl','#ps-dock','#ps-command-dock','#floatBar','#toolSeg','#cmd-board-settings-pop','#boardManualSave','#vaultSave','#psSaveBar','#emptyHint','#ehDoor','#vCreateSave','#vCreateSaveOnly','#vCreateEdit','#vvEdit','#editorDone','#editorCopy','#bpBoardSettings','#boardPageStrip .bp-head','#boardPageStrip .bpx','#boardPageStrip .bp-add','#bpLinkChip','#animAdd','#animDel','#animDup','#psPhoneHint','#psEditTools','#psEditToolsToggle','#animBar','#ps-tb-menu','#boardPageStrip .tb-mid','#boardPageStrip .tb-right','#boardPageStrip .tb-head'];
   var EDIT_TARGET=EDITORS.concat(['#boardPageStrip input','#ksEd input','#ksEd textarea','#editorPanel input','#editorPanel textarea','#editorPanel select','#epNameTop']).join(',');
   function install(win){
     if(win.__psPhoneBoardView)return win.__psPhoneBoardView;
     var doc=win.document,note=null,queued=false;
-    win.psPhoneBoardReadOnly=function(){return phone(win);};
+    win.psPhoneBoardReadOnly=function(){return readOnly(win);};
     win.psPhoneBoardNotice=function(){try{if(win.toast)win.toast(MESSAGE);}catch(_){}return false;};
     function closest(t,s){return t&&t.closest&&t.closest(s);}
     function stop(e,scroll){if(!scroll)e.preventDefault();e.stopImmediatePropagation();}
     function guard(e){
-      if(!phone(win))return;
+      if(!readOnly(win))return;
       var t=e.target;
       if(closest(t,'#psPhoneBoardNotice,#psVvPlay,#psEyeDialog'))return;
       var canvas=closest(t,'#boardStage'),edit=closest(t,EDIT_TARGET);
@@ -57,12 +65,14 @@
     function playback(){try{return {count:anim.frames.length,playing:!!animPlaying};}catch(_){return {count:0,playing:false};}}
     function sync(){
       queued=false;if(!doc.body)return;
-      var on=phone(win);doc.body.classList.toggle('ps-phone-board-readonly',on);
+      var on=readOnly(win);
+      if(doc.body.classList.contains('ps-phone-board-readonly')!==on)doc.body.classList.toggle('ps-phone-board-readonly',on);
+      var wide=expanded(win);if(doc.body.classList.contains('ps-fold-expanded')!==wide)doc.body.classList.toggle('ps-fold-expanded',wide);
       var stage=doc.getElementById('boardStage');
       if(!on||!stage){if(note)note.hidden=true;return;}
       if(!note){
         note=doc.createElement('aside');note.id='psPhoneBoardNotice';note.setAttribute('role','note');
-        note.innerHTML='<div><strong>휴대폰에서는 보기만 가능해요</strong><span>'+MESSAGE+'</span></div><button type="button" class="ps-btn-secondary" hidden>재생</button>';
+        note.innerHTML='<div><strong>작은 휴대폰 화면에서는 보기만 가능해요</strong><span>'+MESSAGE+' 폴더블은 넓게 펼친 화면에서 편집할 수 있어요.</span></div><button type="button" class="ps-btn-secondary" hidden>재생</button>';
         note.querySelector('button').onclick=function(){try{if(playback().playing)win.stopAnim();else win.playAnim();}catch(_){}sync();};
       }
       if(note.parentNode!==stage.parentNode)stage.parentNode.insertBefore(note,stage);
@@ -72,13 +82,15 @@
     function schedule(){if(!queued){queued=true;win.requestAnimationFrame(sync);}}
     function boot(){
       var style=doc.createElement('style');style.id='psPhoneBoardStyle';
-      style.textContent=EDITORS.map(function(s){return 'html.ps-page-board body.ps-phone-board-readonly '+s;}).join(',')+'{display:none!important}'+
+      var priority=Array(25).join(':not(#psPhoneReadOnly)');
+      style.textContent=EDITORS.concat(['#ps-df-tray','#ps-df-opts']).map(function(s){return 'html.ps-page-board body.ps-phone-board-readonly'+priority+' '+s;}).join(',')+'{display:none!important}'+
         'html.ps-page-board body.ps-phone-board-readonly .vc-act.edit{display:none!important}'+
         '#psPhoneBoardNotice{box-sizing:border-box;flex:none;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:var(--c-surface);color:var(--c-ink);border-bottom:1px solid var(--c-line);font:inherit;z-index:150;position:relative;text-align:left;word-break:keep-all}'+
         '#psPhoneBoardNotice[hidden],#psPhoneBoardNotice button[hidden],body.ps-vv-phone #psPhoneBoardNotice button{display:none!important}'+
         '#psPhoneBoardNotice strong{display:block;font-size:var(--t-5);font-weight:var(--fw-head);line-height:1.5}'+
         '#psPhoneBoardNotice span{display:block;font-size:var(--t-3);line-height:1.5;color:var(--c-muted)}'+
         'html.ps-page-board body.ps-phone-board-readonly #boardPageStrip.on.bp-multi:not(#_){position:relative!important;z-index:6!important}'+
+        'html.ps-page-board body.ps-phone-board-readonly #boardPageStrip.on:not(.bp-multi) .bp-tab{pointer-events:none!important}'+
         '#psPhoneBoardNotice button{flex:none;min-height:44px;padding:0 var(--sp-4);font-size:var(--t-5)}';
       doc.head.appendChild(style);sync();
       new win.MutationObserver(schedule).observe(doc.body,{attributes:true,attributeFilter:['class']});
@@ -90,5 +102,5 @@
     if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',boot);else boot();
     return win.__psPhoneBoardView={sync:sync,readOnly:win.psPhoneBoardReadOnly};
   }
-  return {isPhone:isPhone,phone:phone,install:install,message:MESSAGE};
+  return {isPhone:isPhone,phone:phone,expandedInfo:expandedInfo,expanded:expanded,readOnly:readOnly,install:install,message:MESSAGE};
 });

@@ -80,8 +80,8 @@ test('닫으면 걷는다 — 되살리는 보드에 뷰어의 모양이 묻지 
 test('커뮤니티 보기에서는 떠 있는 도크 · 칸 · 훈련 탭을 감춘다',()=>{
   const df=read('studio/board-dock-float.js');
   // 도크 규칙(P: id 열셋)보다 센 감춤 — :not(#dfc0)…(#dfc19) 스물
-  const m=df.match(/B = 'html body\.ps-dock-float\.comm-viewing ';\s*return \[B \+ '#ps-command-dock' \+ X, B \+ '#ps-df-tray' \+ X, B \+ '#ps-df-opts' \+ X\]\.join\(','\) \+ '\{display:none!important\}'/);
-  assert.ok(m,'comm-viewing 감춤');
+  const m=df.match(/B = 'html body\.comm-viewing ';\s*return \[B \+ '#ps-command-dock' \+ X, B \+ '#ps-df-tray' \+ X, B \+ '#ps-df-opts' \+ X\]\.join\(','\) \+ '\{display:none!important\}'/);
+  assert.ok(m,'comm-viewing 감춤은 좁은 화면에서 ps-dock-float가 꺼져도 유지');
   assert.match(df,/\[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19\]\.map\(function \(i\) \{ return ':not\(#dfc' \+ i \+ '\)'; \}\)/);
   const cf=require('../studio/board-create-frame.js').css();
   assert.ok(cf.includes('html.ps-page-board body.editing.comm-viewing'+':not(#cf0)'),'훈련 탭 감춤');

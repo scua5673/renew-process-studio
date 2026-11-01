@@ -73,6 +73,7 @@ try{
   const fits=await v.evaluate(()=>({w:innerWidth,doc:document.documentElement.scrollWidth,bad:[...document.body.querySelectorAll('*')].map(e=>{const r=e.getBoundingClientRect();return {id:e.id,cl:String(e.className).slice(0,60),l:r.left,r:r.right,w:r.width};}).filter(r=>r.w>0&&(r.l<-.5||r.r>innerWidth+.5)).slice(0,15)}));
   await page.screenshot({path:path.join(out,'official-viewer-'+label+'.png')});
   assert.ok(fits.doc<=fits.w,label+' native viewer fits '+JSON.stringify(fits));
+  assert.equal(await v.locator('#ps-command-dock').evaluate(el=>getComputedStyle(el).display),'none',label+' community viewer never reserves editing dock space');
   await page.screenshot({path:path.join(out,'official-viewer-'+label+'.png')});
  }
  await c.locator('#cdCopy').click();
