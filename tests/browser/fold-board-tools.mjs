@@ -39,6 +39,10 @@ try{
  const edited=await read();assert.notEqual(edited,before,'expanded phone permits an actual drag');
  await page.setViewportSize({width:400,height:900});
  await f.waitForFunction(()=>psPhoneBoardReadOnly());
+ // The policy reads the parent size immediately; resize applies the hiding class
+ // on the next animation frame. Wait for that visible transition, with a bound.
+ await f.locator('#ps-command-dock').waitFor({state:'hidden',timeout:2000});
+ await f.locator('#boardToolbar').waitFor({state:'hidden',timeout:2000});
  assert.equal(await f.locator('#ps-command-dock').isVisible(),false);
  assert.equal(await f.locator('#boardToolbar').isVisible(),false);
  assert.equal(await f.evaluate(()=>__boardSaveExplicit({quiet:true,noLink:true})),false);
