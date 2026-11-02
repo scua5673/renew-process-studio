@@ -1,9 +1,9 @@
 /* PROCESS STUDIO — 만들기 화면 한 틀(3.084). 사용자 «보관함에서 훈련만들기는 어떻게 하는게 좋을까?» · «이것들 전부 같은 결로 만들고 싶어».
    보관함 «무엇을 만들까요?»의 종류(훈련 설계 · 작전판 · 패턴북 · 세트피스 · 미팅 자료)를 같은 틀로 맞춘다 — 1단계는 머리줄 + 훈련 만들기.
    - 머리줄(같은 모양): 종류 표시(색 · 글자) · 이름 · 저장 상태 … 나가기 · 저장. 보관함 만들기 띠(#vCreateBar)와 훈련 편집기 머리(#editorModal .modal-head) 둘 다.
-   - 훈련 · 세트피스 편집기(body.editing, 넓은 화면): 운동장이 머리줄 아래를 가득 채우고, 훈련 탭은 작전판의 페이지 탭처럼 위 왼쪽에 떠 있는 덩어리,
+   - 훈련 · 세트피스 편집기(body.editing, 넓은 화면): 훈련 탭과 페이지 도구가 위쪽에 자리를 잡고, 운동장은 그 아래를 채운다.
      오른쪽 입력은 떠 있는 카드(선수 속성 패널과 같은 모양) — 머리줄의 패널 단추로 접으면 운동장이 넓어진다. 하단 도크는 운동장 가운데.
-   노드는 옮기지 않는다(보드가 다시 그리는 자리 그대로) — 모양과 차례(CSS order)만 바꾼다. 폰(좁은 화면)은 그대로 둔다. */
+   편집 도구는 운동장 앞의 흐름에 놓아 훈련 탭과 다시 그려진 페이지 도구가 판을 덮지 않는다. 노드·핸들러는 원래 자리를 유지한다. */
 (function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -37,6 +37,7 @@
   var K = 'html.ps-page-board body.meet-mode:not(.focus-board)' + NN;   // 미팅(슬라이드 편집 · 운동장 편집)
   var P2 = 'html.ps-page-board body.meeting-page-mode' + NN;            // 미팅 슬라이드 편집(종이 미리보기)
   function css() {
+    var tools = E + ':not(.comm-viewing) #editorModal:not(.ep-ro) #editorBoardWrap';
     var card = 'background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(248,249,251,.97))!important;border:1px solid rgba(20,22,26,.07)!important;box-shadow:0 1px 0 #fff inset,0 2px 6px rgba(15,23,42,.06),0 14px 34px rgba(15,23,42,.14)!important;';
     var cardD = 'background:linear-gradient(180deg,#323845,#262B35)!important;border:1px solid rgba(255,255,255,.07)!important;box-shadow:0 14px 34px rgba(0,0,0,.45)!important;color:#E6E9EF!important;';
     var pill = 'background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(244,246,250,.95) 60%,rgba(232,236,243,.95))!important;border:1px solid rgba(20,22,26,.06)!important;box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(15,23,42,.10),0 4px 12px rgba(15,23,42,.12)!important;';
@@ -131,6 +132,14 @@
         'html.ps-page-board body.fmdark.editing' + NN + ' #editorModal #epNameTop,html.ps-page-board body.fmdark.editing' + NN + ' #editorModal #editorPanel>.ep-row[class="ep-row"]:not([id]) input{color:#E6E9EF!important}',
         'html.ps-page-board body.fmdark.editing' + NN + ' #editorModal #epNameTop:focus,html.ps-page-board body.fmdark.editing' + NN + ' #editorModal #editorPanel>.ep-row[class="ep-row"]:not([id]) input:focus{background:rgba(255,255,255,.06)!important}'
       ].join('') + '}',
+
+      // 편집 중 페이지 띠가 다시 그려지면 boardStage 앞으로 이동한다.
+      // 두 줄 모두 정상 흐름에서 높이를 차지해야 탭·도구·운동장이 겹치지 않는다.
+      tools + ' #trainingStrip{position:relative!important;top:auto!important;left:auto!important;right:auto!important;align-self:flex-start!important;flex:0 0 auto!important;margin:8px 12px!important;max-width:calc(100% - 24px)!important}',
+      tools + ' #boardPageStrip.ps-tb{position:relative!important;inset:auto!important;flex:0 0 auto!important;width:100%!important;padding:0 12px 8px!important;flex-wrap:wrap!important;gap:8px!important}',
+      tools + ' #boardPageStrip.ps-tb>.tb-c{position:static!important;transform:none!important;flex:0 0 auto!important}',
+      tools + ' #boardPageStrip.ps-tb>.tb-r{flex:0 0 auto!important}',
+      tools + ' #boardPageStrip.ps-tb>.tb-l{flex:1 1 140px!important;max-width:100%!important}',
 
       // ── 미팅(3.084 2단계): 미팅에는 제 도구줄(#ksTop)과 슬라이드 목록이 있다 ──
       // 작전판 위쪽 막대(페이지 탭 · 보기)는 미팅 도구줄을 덮었다(«경기 연결»이 가려짐) — 미팅 화면에서는 걷는다(보드 설정은 도크 끝 단추)
