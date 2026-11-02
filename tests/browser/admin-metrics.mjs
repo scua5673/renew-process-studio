@@ -46,7 +46,7 @@ try{
    }
    return send([]);
   });
-  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/admin.html');await page.locator('#wsList .wscard').waitFor();
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/admin.html');await page.locator('#wsList .wscard').waitFor({state:'attached'});await page.locator('#adminHub').waitFor();
   const home=await page.locator('#viewHome').evaluate(e=>{const hub=e.querySelector('#adminHub').getBoundingClientRect(),ops=e.querySelector('.admin-ops').getBoundingClientRect();return {width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth,hubHeight:hub.height,opsHeight:ops.height,gap:ops.top-hub.bottom};});
   assert.ok(home.scroll<=home.width+1,JSON.stringify(home));assert.ok(home.hubHeight>80&&home.opsHeight>80&&home.gap>=-1,JSON.stringify(home));
   await page.screenshot({path:path.join(out,'home-'+width+'.png')});
