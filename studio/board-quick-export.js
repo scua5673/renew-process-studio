@@ -129,12 +129,18 @@
     }
     // 장면 막대 «내보내기 ▾»(board.html buildSceneGroups)에 PDF 줄 — PNG 아래
     function dockItem() {
-      var pop = doc.getElementById('cmd-export-pop'); if (!pop || doc.getElementById('pdfBtn')) return;
-      var b = doc.createElement('button'); b.type = 'button'; b.id = 'pdfBtn'; b.className = 'btn ghost anim-ico export-format-btn cmd-export-item';
-      b.title = 'PDF 문서 내보내기 — A4 한 장'; b.setAttribute('aria-label', 'PDF 문서 내보내기'); b.setAttribute('role', 'menuitem');
-      b.innerHTML = '<span class="export-format-icon" aria-hidden="true">PDF</span><span class="cmd-export-item-label">PDF 문서</span>';
-      var png0 = doc.getElementById('pngBtn');
-      if (png0 && png0.parentNode === pop) pop.insertBefore(b, png0.nextSibling); else pop.appendChild(b);
+      var pop = doc.getElementById('cmd-export-pop'); if (!pop) return;
+      var b = doc.getElementById('pdfBtn');
+      if (!b) {
+        b = doc.createElement('button'); b.type = 'button'; b.id = 'pdfBtn'; b.className = 'btn ghost anim-ico export-format-btn cmd-export-item';
+        b.title = 'PDF 문서 내보내기 — A4 한 장'; b.setAttribute('aria-label', 'PDF 문서 내보내기'); b.setAttribute('role', 'menuitem');
+        b.innerHTML = '<span class="export-format-icon" aria-hidden="true">PDF</span><span class="cmd-export-item-label">PDF 문서</span>';
+        var png0 = doc.getElementById('pngBtn');
+        if (png0 && png0.parentNode === pop) pop.insertBefore(b, png0.nextSibling); else pop.appendChild(b);
+      }
+      var label = doc.body.classList.contains('cf-training-tools') ? '현재 판 PDF' : 'PDF 문서';
+      b.querySelector('.cmd-export-item-label').textContent = label;
+      b.setAttribute('aria-label', label + ' 내보내기');
     }
     doc.addEventListener('click', function (e) {
       var t = e.target, c = t && t.closest ? t : null; if (!c) return;
