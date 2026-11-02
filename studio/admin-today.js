@@ -25,11 +25,11 @@
       n('comm','커뮤니티 신고','열린 신고','comm','warn'),
       n('errors','앱 오류','최근 24시간','errors','danger'),
       n('overdue','후속 확인','기한 지남','followups','warn'),
-      cell('incident','무사고',state.incident,'back',function(r){
+      cell('incident','사고 기록 이후',state.incident,'back',function(r){
         var goal=count(r&&r.goal_days)||56,since=r?r.since_days:undefined;
-        if(since==null)return {key:'incident',label:'무사고',go:'back',tone:'ok',value:'—',note:'기록된 사고 없음 · 목표 '+goal+'일'};
-        since=count(since);if(since==null)return {key:'incident',label:'무사고',go:'back',tone:'unknown',value:'—',note:'확인 못 함'};
-        return {key:'incident',label:'무사고',go:'back',tone:since>=goal?'ok':since<7?'warn':'plain',value:since+'일',
+        if(since==null)return {key:'incident',label:'사고 기록 이후',go:'back',tone:'ok',value:'—',note:'기록된 사고 없음 · 목표 '+goal+'일'};
+        since=count(since);if(since==null)return {key:'incident',label:'사고 기록 이후',go:'back',tone:'unknown',value:'—',note:'확인 못 함'};
+        return {key:'incident',label:'사고 기록 이후',go:'back',tone:since>=goal?'ok':since<7?'warn':'plain',value:since+'일',
           note:since>=goal?'목표 '+goal+'일 통과':'목표 '+goal+'일까지 '+(goal-since)+'일'};
       })
     ];

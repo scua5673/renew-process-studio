@@ -6,7 +6,7 @@ const code=section('function errStorageDetail(', 'function errSortRows(')+'\n'+s
 const date='2026-09-01T12:00:00.000Z';
 function fixture(count=1251,serverCap=500){
  const rows=Array.from({length:count},(_,i)=>({id:count-i,created_at:date,event_name:'sync_failed'})),calls=[],nodes={errDays:{value:'7'},errSummary:{},errGroups:{},errRecent:{}};
- const c=vm.createContext({Promise,Date,Math,Number,String,Array,Error,encodeURIComponent,ERR:null,ERR_LIMIT:5000,ERR_TICKET:0,ERR_BUSY:false,adminAuthEpoch:1,adminSessionLocked:false,$:id=>nodes[id],errDaysVal:()=>+nodes.errDays.value,renderErrors:()=>{c.renders++;},renders:0,
+ const c=vm.createContext({Promise,Date,Math,Number,String,Array,Error,encodeURIComponent,ERR:null,ERR_LIMIT:5000,ERR_TICKET:0,ERR_BUSY:false,adminAuthEpoch:1,adminSessionLocked:false,adminSource(){},$:id=>nodes[id],errDaysVal:()=>+nodes.errDays.value,renderErrors:()=>{c.renders++;},renders:0,
   adminRequest:async q=>{calls.push(q);const p=new URL('https://fixture.invalid/'+q).searchParams,match=(p.get('or')||'').match(/id\.lt\.(\d+)/),before=match?+match[1]:Infinity;return rows.filter(r=>r.id<before).slice(0,Math.min(serverCap,+p.get('limit')));}});
  vm.runInContext(code,c);return {c,calls,rows,nodes};
 }

@@ -23,6 +23,7 @@ function harness(){
     adminAuthEpoch:1,adminSessionLocked:false,curTab:'all',curWid:null,HOME:{initial:true},
     adminContent:{deactivate(){}},$(id){assert.ok(nodes[id],'Unknown DOM target '+id);return nodes[id];},
     rpc(name,args){const q=deferred();requests.push({name,args,...q});return q.promise;},
+    adminList(name,args){return c.rpc(name,args);},ADMIN_PEOPLE:[],ADMIN_SOURCES:{},adminHydrateWorkspaces(){},adminSource(key,ok,rows){c.ADMIN_SOURCES[key]={ok,rows};},
     renderStats(){rendered.push({kind:'stats',ws:plain(c.WS),users:plain(c.USERS)});},
     renderWsList(){rendered.push({kind:'workspaces',data:plain(c.WS)});nodes.wsList.innerHTML='workspaces rendered';},
     renderUsers(){rendered.push({kind:'users',data:plain(c.USERS)});nodes.usersTable.innerHTML='users rendered';},
@@ -35,7 +36,7 @@ function harness(){
   function library(){const at=requests.length,promise=c.reloadAllLib();return {requests:requests.slice(at),promise};}
   function answer(group,tag,{ownersFail=false,libraryFail=false}={}){
     group.forEach(q=>{
-      if(q.name==='ps_admin_workspaces')q.resolve([{id:tag+'-space'}]);
+      if(q.name==='ps_admin_activity_ws')q.resolve([{id:tag+'-space'}]);
       else if(q.name==='ps_admin_users_v2'||q.name==='ps_admin_users')q.resolve([{user_id:tag+'-user'}]);
       else if(q.name==='ps_admin_library'){
         if(libraryFail)q.reject(new Error('library failed'));
