@@ -5,7 +5,7 @@
 <!-- PROCESS — IDP (선수 개인 성장: 프로필·셀프 평가·개인 훈련) · 설계: IDP-설계.md v1.1 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="storage.js"></script><script src="team-audience.js"></script>
+<script src="storage.js"></script><script src="training-intensity.js"></script><script src="idp-profile-name.js"></script><script src="team-audience.js"></script>
 <script src="idp-evidence.js"></script>
 <script src="idp-recovery.js"></script>
 <script src="idp-weekly-growth.js"></script>
@@ -8091,7 +8091,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<textarea id="sqQaQ" rows="2" maxlength="200" placeholder="예: 이번 대회에서 배운 점과 다음에 해볼 것을 적어 주세요"></textarea>'
       +'<div class="qa-formbtns"><button type="button" class="btn primary" data-sqqa-send>모두에게 묻기</button></div></div>';
     if(!ps.length)
-      return h+'<div class="card sqe-msg"><b>아직 질문이 없어요</b>위에 한 줄 적어 팀 전체에게 물어보세요. 선수 화면 <b>성장 대화</b>에 카드로 뜹니다.</div></div>';
+      return h+'<div class="card sqe-msg"><b>아직 질문이 없어요</b>위에 한 줄 적어 팀 전체에게 물어보세요. 선수 화면 성장 대화에 카드로 뜹니다.</div></div>';
     var players=[]; try{ players=sqEvalPlayers(); }catch(_){}
     ps.slice(0,10).forEach(function(x){
       var wrote=[], quiet=[], linked=0;
@@ -8176,7 +8176,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var ev=(c==='change'?'분기 목표 자체를 바꾼다 — 면담 안건으로':(c==='step'?'초점은 그대로 · 조건만 올린다':(x.rr?'같은 걸 6주 더':'기본값 · 아무것도 안 하면 계속')));
       o+='<tr><td class="l"><span class="plr"><span class="no">'+esc(x.r.x.p.num||'')+'</span><b>'+esc(x.r.x.p.name||'')+'</b></span>'+(x.late?'<div class="sqw-fc">6주째 지남</div>':'')+'</td>'
         +'<td class="l"><div class="sqm-g">'+(x.g1?esc(x.g1):'<span class="sqg-nulla">12주 문장 없음</span>')+'</div><div class="sqw-fc" style="max-width:260px">초점 '+x.fcs.length+'개'+(x.fcs.length?' · '+esc(x.fcs.join(' → ')):'')+'</div></td>'
-        +'<td class="l"><div class="sqw-cnt">계속 '+x.k+' · 1~2번 '+x.y+' · 아직 '+x.n+(x.bad?' · 몸 나쁨 '+x.bad+'일':'')+'</div></td>'
+        +'<td class="l"><div class="sqw-cnt">계속 '+x.k+' · 해봄 '+x.y+' · 아직 '+x.n+(x.bad?' · 몸 나쁨 '+x.bad+'일':'')+'</div></td>'
         +'<td class="l"><div class="sqm-six">'+chips+'</div><div class="sqw-st'+(x.rr?' ok':'')+'" data-sqm-ev="'+esc(uid)+'">'+ev+(x.rr?' · 결정 ✓':'')+'</div></td>'
         +'<td class="l c-in">'+(can?'<input class="sqd-in" data-sqm-t="'+esc(uid)+'" data-sqm-st="'+esc(x.st)+'" maxlength="300" placeholder="한 줄 (선택) — 예) 6주 동안 «계속»이 7번. 다음 6주는 …" value="'+esc((x.rr&&x.rr.t)||'')+'">':esc((x.rr&&x.rr.t)||''))+'</td></tr>';
     });
@@ -8203,7 +8203,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var ev=qmEvidence(p,d2,rr), dr=sqQmDraft, t0=new Date(); t0.setHours(0,0,0,0);
       h+='<div class="qm-steps">'+['도입','축구 밖','강점 · 개선점 함께','약속','서면'].map(function(sn,i){ return '<span class="qm-step"><i>'+(i+1)+'</i>'+sn+'</span>'; }).join('')+'</div>';
       h+='<div class="qm-grid"><div class="qm-l"><div class="qm-h">1 · 12주가 말하는 것 <small>'+(ev.st?qmSeason(ev.st)+' · '+ev.st+' 시작':'분기 시작 없음')+(ev.g1?' · '+esc(ev.g1):'')+'</small></div>';
-      h+=ev.fcs.length?'<div class="qm-fcs">'+ev.fcs.map(function(f){ return '<div class="qm-fc"><span class="w">'+f.w+'주</span><span class="t">'+(f.t?esc(f.t):'<i>초점 없음</i>')+'</span><span class="sqw-cnt">계속 '+f.k+' · 1~2번 '+f.y+' · 아직 '+f.n+'</span></div>'; }).join('')+'</div>':'<div class="td-q-empty">이 분기의 주간 초점이 아직 없어요</div>';
+      h+=ev.fcs.length?'<div class="qm-fcs">'+ev.fcs.map(function(f){ return '<div class="qm-fc"><span class="w">'+f.w+'주</span><span class="t">'+(f.t?esc(f.t):'<i>초점 없음</i>')+'</span><span class="sqw-cnt">계속 '+f.k+' · 해봄 '+f.y+' · 아직 '+f.n+'</span></div>'; }).join('')+'</div>':'<div class="td-q-empty">이 분기의 주간 초점이 아직 없어요</div>';
       h+='<div class="qm-h" style="margin-top:12px">'+esc(p.name||'선수')+'가 쓴 말 중 코치가 ❤ 한 것 <small>'+ev.hearts.length+'</small></div>'+(ev.hearts.length?'<div class="qm-hearts">'+ev.hearts.slice(-6).map(function(x){ return '<div><span class="d">'+esc(x.d.slice(5).replace('-','/'))+'</span>'+esc(x.t)+'</div>'; }).join('')+'</div>':'<div class="td-q-empty">아직 없어요 — 오늘 표에서 ❤ 를 누르면 여기에 쌓여요</div>');
       h+='<div class="qm-h" style="margin-top:12px">분기 평가 · 셀프 vs 코치 <small>갭 큰 항목 둘</small></div>'+(ev.gaps.length?'<div class="qm-gaps">'+ev.gaps.map(function(g){ return '<div><b>'+esc(g.name)+'</b><span>셀프 '+g.s+' · 코치 '+g.c+'</span></div>'; }).join('')+'</div>':'<div class="td-q-empty">둘 다 매겨진 항목이 없어요</div>');
       if(ev.mid)h+='<div class="qm-h" style="margin-top:12px">6주 점검 <small>'+(MID_LB[ev.mid.c]||'')+(ev.mid.c==='change'?' — 면담 안건':'')+'</small></div>'+(ev.mid.t?'<div class="qm-mid">'+esc(ev.mid.t)+'</div>':'');
@@ -8233,7 +8233,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   }
   function sqWeekTable(linked,wkM,nextM,can){
     _sqwAuto={};
-    var TRY_LB=['아직','1~2번','계속'];
+    var TRY_LB=['아직','해봄','계속'];
     var o='<div class="sqg-scroll"><table class="sqg-t sqg-wk"><thead><tr><th class="l">선수</th><th>이번 주</th>'
       +'<th class="l">다음 주 초점 · 제안 둘 <i class="sqg-rule">첫 제안 = 계속+한 걸음 · 근거 한 줄</i></th>'
       +'<th class="l c-in">이번 주 한 줄 <i class="sqg-rule">선수 «내 이야기»에 말풍선으로</i></th><th></th></tr></thead><tbody>';
@@ -8243,8 +8243,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       _sqwAuto[uid]={a:ap.a,ra:ap.ra,b:ap.b,rb:ap.rb};
       var va=pr?String(pr.a||''):ap.a, vb=pr?String(pr.b||''):ap.b, sa=pr?String(pr.ra||''):ap.ra, sb=pr?String(pr.rb||''):(ap.rbx||ap.rb);   /* 2.908 — 코치 표는 숫자까지(rbx), 저장은 숫자 없이 */
       if(!pr&&ap.a)wait++;
-      var wkCell='<span class="sqg-wk" title="이번 주 · 계속=진파랑 · 1~2번=연파랑 · 아직=회색">'+r.wkCells.map(function(c){ return '<i class="'+(c.v===2?'k':(c.v===1?'y':(c.v===0?'n':'')))+(c.fut?' f':'')+'"></i>'; }).join('')+'</span>'
-        +'<div class="sqw-cnt">계속 '+ap.k+' · 1~2번 '+ap.y+' · 아직 '+ap.n+'</div>';
+      var wkCell='<span class="sqg-wk" title="이번 주 · 계속=진파랑 · 해봄=연파랑 · 아직=회색">'+r.wkCells.map(function(c){ return '<i class="'+(c.v===2?'k':(c.v===1?'y':(c.v===0?'n':'')))+(c.fut?' f':'')+'"></i>'; }).join('')+'</span>'
+        +'<div class="sqw-cnt">계속 '+ap.k+' · 해봄 '+ap.y+' · 아직 '+ap.n+'</div>';
       var st=pr?('보냄 ✓ · '+(function(){ try{ var d=new Date(pr.at); return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }catch(_){ return ''; } })()):(ap.a?'자동 제안 · 승인 전':'초점이 없어요 — 직접 써 주세요');
       if(r.pick&&r.pick.text)st+=' · 선수가 고름 «'+esc(r.pick.text)+'»';
       var cell=can
@@ -8301,7 +8301,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(_wkMode){ day=tk; isToday=true; dayD=t0; wkD=wkM; }
       var nextM=ymd(addDays(new Date(wkM+'T00:00:00'),7));
       var BC={1:'#E24B4A',2:'#EF9F27',3:'#ECC94B',4:'#97C459',5:'#2BAF5E'};
-      var TRY_LB=['아직','1~2번','계속'];
+      var TRY_LB=['아직','해봄','계속'];
       var can=isCoach();
       var rws=rows.map(function(x){
         var d2=(x.ln&&x.ln.d&&x.ln.d.v===1)?x.ln.d:null;   /* 판의 7381 계약 그대로 */
@@ -8412,7 +8412,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         var memoCell=r.memoT?esc(r.memoT):(r.wrote?'':'<span class="sqg-nulla">안 씀</span>');
         /* 2.616 — 그 날 칩 · 이번 주 띠 · 초점 · 주의 신호(노란 바탕) */
         var tryCell=(r.tryV>=0)?('<em class="sqg-try t'+r.tryV+'">'+TRY_LB[r.tryV]+'</em>'):(r.wrote?'<em class="sqg-try tx">칩 없음</em>':'<em class="sqg-try tx">안 적음</em>');
-        var wkCell='<span class="sqg-wk" title="이번 주 · 계속=진파랑 · 1~2번=연파랑 · 아직=회색">'+r.wkCells.map(function(c){ return '<i class="'+(c.v===2?'k':(c.v===1?'y':(c.v===0?'n':'')))+(c.cur?' c':'')+(c.fut?' f':'')+'"></i>'; }).join('')+'</span>';
+        var wkCell='<span class="sqg-wk" title="이번 주 · 계속=진파랑 · 해봄=연파랑 · 아직=회색">'+r.wkCells.map(function(c){ return '<i class="'+(c.v===2?'k':(c.v===1?'y':(c.v===0?'n':'')))+(c.cur?' c':'')+(c.fut?' f':'')+'"></i>'; }).join('')+'</span>';
         var why=[]; if(r.memoT)why.push('한 마디'); if(r.bodyBad)why.push('몸 나쁨'); if(r.ajN>=3)why.push('아직 '+r.ajN+'일째');
         o+='<tr class="'+(r.hot?'sqg-hot ':'')+(r.wrote?'':'sqg-quiet')+'"'+(can?' data-sqd-row="'+esc(uid)+'"':'')+(why.length?' title="먼저 볼 이유 · '+esc(why.join(' · '))+'"':'')+'>'
           +'<td class="l"><span class="plr"><span class="no">'+esc(r.x.p.num||'')+'</span><b>'+esc(r.x.p.name||'')+'</b></span></td>'
@@ -8431,7 +8431,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       o+='</tbody></table></div>';
       /* 2.616 — 요약은 사실만(개수). 재촉 문구 없음 */
       (function(){ var cK=0,cY=0,cN=0,cX=0,bad=0,mm=0; linked.forEach(function(r){ if(r.tryV===2)cK++; else if(r.tryV===1)cY++; else if(r.tryV===0)cN++; else cX++; if(r.bodyBad)bad++; if(r.memoT)mm++; });
-        o+='<div class="sqg-sum"><span>칩 · 계속 <b>'+cK+'</b> · 1~2번 <b>'+cY+'</b> · 아직 <b>'+cN+'</b> · 안 적음 <b>'+cX+'</b></span><span>한 마디 <b>'+mm+'</b></span>'+(sqTdAuto?'<span class="sqg-auto">오늘은 아직 아무도 안 적어 '+esc(dayTag||day)+' 것을 보여요</span>':'')+'</div>'; })();
+        o+='<div class="sqg-sum"><span>칩 · 계속 <b>'+cK+'</b> · 해봄 <b>'+cY+'</b> · 아직 <b>'+cN+'</b> · 안 적음 <b>'+cX+'</b></span><span>한 마디 <b>'+mm+'</b></span>'+(sqTdAuto?'<span class="sqg-auto">오늘은 아직 아무도 안 적어 '+esc(dayTag||day)+' 것을 보여요</span>':'')+'</div>'; })();
       o+=sqUnlinkedNote(rws);   /* 2.798 */
       return o+'</div>';
     }catch(_){ return ''; } })();
@@ -11344,13 +11344,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     if(typeof raw==='string'){
       raw=raw.trim();if(!raw)return '';
-      var legacy={'회복':'리커버리','활성화':'RPE 3 · 저강도','인텐시브':'RPE 8 · 고강도','익스텐시브':'RPE 3 · 저강도'};
+      var legacy={'회복':'리커버리','활성화':'RPE 3 · 회복','인텐시브':'RPE 8 · 고강도','익스텐시브':'RPE 3 · 회복'};
       if(legacy[raw])return legacy[raw];
       if(raw==='낮음'||raw==='중간'||raw==='높음')return '강도 '+raw;
     }
     var n=Number(raw);if(!isFinite(n)||n<1||n>10)return '';
     n=Math.round(n*10)/10;
-    return 'RPE '+n+' · '+(n<=3?'저':n<=6?'중':'고')+'강도';
+    return PSIntensity.text(n);
   }
   function teamTrainingOwnLoadText(tr){
     tr=tr||{};var vals=[tr.load,tr.fitness,tr.rpe];
@@ -11506,7 +11506,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var a='',ra='',b='',rb='';
     if(fcT){ if(k>=3){ a=fcT+' — 이번엔 경기에서도'; ra='계속 '+k+'일 · 조건 올리기'; }
       else if(n>=3){ a=fcT+' — 먼저 작은 조건부터'; ra='아직 '+n+'일 · 조건 낮추기'; }
-      else { a=fcT; ra=(y?'1~2번 '+y+'일 · ':'')+'유지'; }
+      else { a=fcT; ra=(y+k?'시도한 날 '+(y+k)+'일 · ':'')+'유지'; }
       if(memo)ra+=' · «'+memo.slice(0,24)+(memo.length>24?'…':'')+'»'; }
     /* 2.908 — 근거 문구는 선수에게 간다(props → 일요일 카드). 코치 점수를 싣지 않는다(요청 «선수한테는 코치의 평가표가 보이지 않게»).
        숫자는 코치 표에만(rbx — 저장하지 않는다) */
@@ -12434,9 +12434,16 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(rvSave(list,d)){ _rvOpen=false; _rvDraft=null; gToast('리뷰를 저장했어요 — 다음 리뷰 '+rvFmt(nextAt)); render(); } else gToast('저장하지 못했어요');
     };
   }
+  function idpProfileName(){
+    var p=doc.profile||{}, own=String(p.name||'').trim();if(own)return own;
+    try{if(!onTeam()||!idpSaveOwner())return '';
+      var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'),at=JSON.parse(localStorage.getItem('cs_team_attrs_v1')||'null');
+      return PSIDPProfileName.resolve(p,viewedUid(),pm,at&&at.roster);
+    }catch(_){return '';}
+  }
   function rProfileSum(open){
     var p=doc.profile||{}, FT={R:'오른발',L:'왼발',B:'양발'};
-    var nm=(p.name||'').trim(), age=pfAgeOf(p.dob);
+    var nm=idpProfileName(), age=pfAgeOf(p.dob);
     var sub=[ [p.pos].concat(p.subs||[]).filter(Boolean).join(' · '), FT[p.foot]||'', age!=null?age+'세':'', p.team||'' ].filter(Boolean).join(' · ');
     var chips=[]; if(p.height)chips.push('키 '+esc(p.height)+'cm'); if(p.weight)chips.push('몸무게 '+esc(p.weight)+'kg'); /* ⚠ 2.405 — 연령 밴드 칩 제거. 평가가 한 벌이 된 뒤로 뜻이 없고, 애초에 라벨이 아니라 **코드를 그대로** 뱉고 있었다(화면에 'jrB'). */ if(p.agent)chips.push(esc(p.agent));
     var empty=!(nm||p.pos||p.photo);
@@ -13028,7 +13035,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           if(lg.body){ var bo=TD_BODY.filter(function(o){return o[0]===lg.body;})[0]; if(bo)parts.push('몸 '+bo[1]+' '+bo[2]); }
           if(lg.pain&&lg.pain.length)parts.push('아픈 곳 '+lg.pain.join('·'));
           if(lg.sleepq){ var so=TD_SLEEP.filter(function(o){return o[0]===lg.sleepq;})[0]; if(so)parts.push('잠 '+so[1]+' '+so[2]); }
-          if(lg.try!=null){ var f0=focusOf(ymd(mondayOf(calAnchor))); parts.push('초점'+(f0?' "'+esc(f0.text)+'"':'')+' · '+['아직','1~2번','계속'][lg.try]); }
+          if(lg.try!=null){ var f0=focusOf(ymd(mondayOf(calAnchor))); parts.push('초점'+(f0?' "'+esc(f0.text)+'"':'')+' · '+['아직','해봄','계속'][lg.try]); }
           if(lg.tags&&lg.tags.length)parts.push(lg.tags.map(function(t){return '<i class="td-mini on" style="cursor:default">'+esc(t)+'</i>';}).join(' '));
         }catch(_){}
         if(parts.length)h+='<div class="pub-row td-dayline"><b>한 장</b><span>'+parts.join('<em> · </em>')+'</span>'+'</div>';
@@ -13076,7 +13083,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
            ⚠ 접힘 조건(`_l1done`)은 그대로 참여+강도다 — 몸은 선택이라 접힘을 막지 않는다(한 줄과 같은 취급). */
         if(_isTodayDay){ try{ var _bd=rTodayCard(); if(_bd)h+='<div class="dc-sec">'+_bd+'</div>'; }catch(_){} }
         /* ══ 2.489 · 내 성장 문장이 매일 문 앞에(사용자 "선수들은 간편하게") — 이번 주 초점(focusOf),
-           없으면 분기 목표 첫 문장. '오늘 해봤어?'는 기존 log.try(0/1/2 — 아직/1~2번/계속) 그대로.
+           없으면 분기 목표 첫 문장. '오늘 해봤어?'는 기존 log.try(0/1/2 — 아직/해봄/계속) 그대로.
            2.475 에서 옛 홈의 초점 조각이 죽으며 try 의 **입력 경로가 사라져 있었다**(요약 10772는 읽는데 쓰는 곳이 없음). */
         /* 2.615 — 옛 '내 성장 문장' 조각은 rOneLine(카드 첫 층)으로 올라갔다(한 줄 왕복). 다른 날·읽기 전용은 아래 '한 줄' 그대로 */
         /* 한 줄 — 한 칸만 둔다(옛 자유기록 textarea 와 홈 tdMemo 가 같은 log.memo 를 두 번 묻던 것을 하나로) */
@@ -13948,7 +13955,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           :'<div class="mr-empty">'+(pos?esc(pos)+mine(' 자리 요구를 코치가 정하면 여기에',' 자리 요구가 아직 없어요'):mine('내 프로필에서 포지션을 정하면 팀 기준과 견줘요','포지션이 아직 없어요'))+'</div>')+'</div>';
     /* ③ 기록 · 리뷰 — 2.501 위계: 묶음마다 제목을 두고 그리드를 끊는다(빈 칸 order 규칙도 묶음 안에서만 돈다) */
     h+='</div>'; var _done0=h.length;   /* 2.647 */
-    h+='<div class="mr-group">해 온 것 <small>'+(th?'흔들리지 않는 숫자':'이미 쌓인 사실')+'</small></div><div class="mr-grid">';
+    h+='<div class="mr-group">일지에 남긴 기록 <small>일지 작성 기준 · 실제 출전 횟수와 다를 수 있어요</small></div><div class="mr-grid">';
     /* 2.765 — 격자(주 행·요일 열) + 표 하나(이번 달 · 12주) + 몸·잠 막대. 예전 «이번 달» 네 타일·«얼마나 했나» 여덟 타일을 대신한다 */
     (function(){
       var cal=null; try{ cal=mrCal12(); }catch(_){}
@@ -13957,7 +13964,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(!ef.days&&!(mo&&mo.days)){ h+='<div class="mr-empty" style="margin-top:10px">'+mine('일지에 기록을 남기면 여기에 쌓여요','아직 기록이 없어요')+'</div></div>'; return; }
       var mc=(mo&&mo.cnt)||{}, z=function(v){ return '<td class="'+(v?'':'z')+'">'+v+'</td>'; };
       var rowsT=[['팀 훈련',mc.team||0,ef.team],['경기',mc.match||0,ef.match],['개인 운동',mc.solo||0,ef.solo],['휴식',mc.rest||0,ef.rest],['재활 · 부상',(mc.rehab||0)+(mc.injury||0),ef.rehab+ef.injury],['초점 시도',(mo&&mo.tries)||0,ef.tryDays],['한 줄',(mo&&mo.memo)||0,ef.memo]];
-      h+='<div class="mr-k mr-k2">얼마나 했나</div><table class="mr-stat"><tr><th></th><th>'+((mo&&mo.m)||(today.getMonth()+1))+'월</th><th>12주</th></tr>'
+      h+='<div class="mr-k mr-k2">활동별로 기록한 날</div><table class="mr-stat"><tr><th></th><th>'+((mo&&mo.m)||(today.getMonth()+1))+'월</th><th>12주</th></tr>'
         +rowsT.map(function(r){ return '<tr><td>'+r[0]+'</td>'+z(r[1])+z(r[2])+'</tr>'; }).join('')+'</table>';
       if(mo&&(mo.bodyN||mo.sleepN)){ h+='<div class="mr-bars">'
         +(mo.bodyN?('<span class="l">몸</span><span class="bar"><i style="width:'+Math.round(mo.bodyN/5*100)+'%"></i></span><span class="v">'+mo.body+'</span>'):'')
@@ -14093,7 +14100,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
      ② 이번 주 초점(focusOf, 없으면 12주 문장) + 몇 주째(같은 문장이 이어진 주 수).
      ③ 칩 셋(log.try 0/1/2) — 쉰 날은 묻지 않는다(2.489 규칙 그대로).
      ④ 한 마디 = 같은 #dayMemo(log.memo). 비어 있을 때만 질문 칩 둘(누르면 문장 앞에 들어가고 이어 쓴다).
-     ⑤ 이번 주 띠: 월~일 칩 색만(계속=진파랑 · 1~2번=연파랑 · 아직=회색), 숫자 없음, 오늘은 테두리. */
+     ⑤ 이번 주 띠: 월~일 칩 색만(계속=진파랑 · 해봄=연파랑 · 아직=회색), 숫자 없음, 오늘은 테두리. */
   function olRecentReact(kind){ try{
     var all=reactsAll(), now=Date.now(), best=null;
     Object.keys(all).forEach(function(k){ var r=all[k], hasT=!!(r&&String(r.t||'').trim()); if(!r||!/^(day|wk|mid):/.test(k))return;   /* 2.619 — 6주 점검 한 줄도 같은 자리 */
@@ -14172,7 +14179,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<div class="ol-focus"><div class="ol-lb">'+(dailyAction.weekly?'이번 주 초점':'이번에 키울 행동')+(nwk>1?' · '+nwk+'주째':'')+(_fromLb?'<small class="ol-auto">'+_fromLb+'</small>':'')+'</div><div class="ol-sen">'+esc(sen)+'</div>'
       +(dailyAction.linked&&dailyAction.behavior&&dailyAction.behavior.text!==sen?visionLinkBadge({id:dailyAction.behavior.id,text:dailyAction.behavior.text,revision:dailyAction.revision},'내 방향'):'')
       +(g1&&g1.t&&g1.t!==sen?'<div class="ol-sub">내가 키우는 것 · '+esc(g1.t)+'</div>':'')+'</div>';
-    if(!off){ h+='<div class="idp-day-question">오늘 이 행동을 해봤어?</div><div class="td-emo ol-chips">'+[[0,'아직'],[1,'1~2번'],[2,'계속']].map(function(o){ return '<button type="button" class="td-chip'+(tv===o[0]?' on':'')+'" data-td-try="'+o[0]+'"><small>'+o[1]+'</small></button>'; }).join('')+'</div>'; }
+    if(!off){ h+='<div class="idp-day-question">오늘 이 행동을 해봤어?</div><div class="td-emo ol-chips">'+[[0,'아직'],[1,'해봄'],[2,'계속']].map(function(o){ return '<button type="button" class="td-chip'+(tv===o[0]?' on':'')+'" data-td-try="'+o[0]+'"><small>'+o[1]+'</small></button>'; }).join('')+'</div>'; }
     else h+='<div class="td-lb" style="margin:8px 0 0">쉰 날은 초점을 묻지 않아요.</div>';
     h+='<textarea id="dayMemo" class="ol-memo" rows="2" maxlength="300" placeholder="한 마디">'+esc(lg.memo||'')+'</textarea>';
     if(!lg.memo) h+='<div class="ol-prompts">'+['언제 됐어?','뭐가 어려웠어?'].map(function(q){ return '<button type="button" class="ol-pr" data-ol-pr="'+esc(q)+'">'+esc(q)+'</button>'; }).join('')+'</div>';
@@ -14363,10 +14370,11 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function mtSelfLink(id,link){ if(ro()||!id)return; doc.matchSelf=(doc.matchSelf&&typeof doc.matchSelf==='object')?doc.matchSelf:{}; var r=doc.matchSelf[id]||{};
     link=visionLinkCore(link); if(link)r.visionLink=link; else delete r.visionLink; r.at=Date.now(); doc.matchSelf[id]=r; save(); }
   function mtTodayYmd(){ var d=new Date(); d.setHours(0,0,0,0); return ymd(d); }
+  function mtUpcoming(m){ return !mtScore(m)&&!m.reviewPublished&&!String(m.resultSummary||'').trim()&&String(m.date||'')>=mtTodayYmd(); }
   function rMatchTab(){
     var all=mtList().slice().sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
     if(mtCur){ var cur=all.filter(function(m){return m.id===mtCur;})[0]; if(cur)return rMatchDetail(cur); mtCur=''; }
-    var t=mtTodayYmd(), up=all.filter(function(m){return String(m.date||'')>=t;}).reverse(), past=all.filter(function(m){return String(m.date||'')<t;});
+    var up=all.filter(mtUpcoming).reverse(), past=all.filter(function(m){return !mtUpcoming(m);});
     var h='<section class="card mt-head"><div class="mt-title"><h3>경기</h3><span class="mt-cnt">'+all.length+'</span></div><p class="mt-sub">팀 경기 일정 · 들어가서 '+(ro()?'선수의':'내')+' 리뷰를 씁니다. 팀 리뷰는 코치가 공개한 경기에서 보여요.</p></section>';
     if(!all.length)return h+'<section class="card mt-empty"><b>아직 팀 경기가 없어요</b><p>코치가 팀 › 경기에 경기를 만들면 여기에 보여요.</p></section>';
     /* 2.468 — 맡아 본 롤(밀린 일 8/24, 3판): 선수가 경기마다 스스로 적는 포지션·출전·분(matchSelf)을
@@ -14405,7 +14413,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<button type="button" class="gl-pick none" data-mt-vnone'+(cur?'':' hidden')+'>연결 해제</button></div></div>';
   }
   function rMatchDetail(m){
-    var sc=mtScore(m), kind=m.kind==='friendly'?'친선':(m.kind==='cup'?'컵':'리그'), rl=sc?{W:'승',D:'무',L:'패'}[sc.r]:'', who=ro()?'선수':'내', future=String(m.date||'')>=mtTodayYmd();
+    var sc=mtScore(m), kind=m.kind==='friendly'?'친선':(m.kind==='cup'?'컵':'리그'), rl=sc?{W:'승',D:'무',L:'패'}[sc.r]:'', who=ro()?'선수':'내', future=mtUpcoming(m);
     var mm={}; try{ mm=rvRec(viewing).matchMessages||{}; if(!mm||typeof mm!=='object'||Array.isArray(mm))mm={}; }catch(_){ mm={}; }
     var h='<button type="button" class="mt-back" data-mt-back>‹ 경기 목록</button>';
     var r=mtSelf(m.id), sc2=mtSc5(r.score), _apps=String(r.apps||'');   /* 2.782 — 출전은 머리 카드로 올라간다 */
@@ -15086,7 +15094,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
      한 장에 안 들어가면 자른다(항목 상한). 빈 상태는 회색 한 줄. 옛 buildReport/buildResume/buildEvalSheet 는 그대로 두고 doReport 만 여기로 온다 ══ */
   var RP_INK='#111', RP_ACC='#7C4DFF', RP_G1='#666', RP_G2='#9A9A9A', RP_G3='#DDDDDD', RP_G4='#F2F2F4';
   function rpEsc(v){ return esc(v==null?'':String(v)); }
-  function rpName(){ var p=doc.profile||{}, name=p.name||''; if(ro()){ try{ var sel=document.getElementById('viewerSel'); var op=sel&&sel.options[sel.selectedIndex]; if(!name&&op)name=op.textContent.trim(); }catch(_){} } return name||'이름 없음'; }
+  function rpName(){ var p=doc.profile||{}, name=idpProfileName(); if(ro()){ try{ var sel=document.getElementById('viewerSel'); var op=sel&&sel.options[sel.selectedIndex]; if(!name&&op)name=op.textContent.trim(); }catch(_){} } return name||'이름 없음'; }
   function rpDate(){ var t=new Date(); return t.getFullYear()+'.'+String(t.getMonth()+1).padStart(2,'0')+'.'+String(t.getDate()).padStart(2,'0'); }
   function rpTeam(){ var p=doc.profile||{}; if(p.team)return p.team; try{ var w=teamWsObj&&teamWsObj(); if(w&&w.name)return w.name; }catch(_){} return ''; }
   function rpAge(dob){ var a=null; try{ a=pfAgeOf(dob); }catch(_){ a=null; } if(a==null){ var m=String(dob||'').match(/(\d{4})/); if(!m)return ''; a=new Date().getFullYear()-(+m[1]); } return (a>0&&a<60)?a+'세':''; }   /* 2.647 — 프로필과 같은 계산(리포트 40세 vs 프로필 39세였다) */
@@ -15255,7 +15263,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<section class="rp2 rp2-page">'+rpHead(T,'2 · 해 온 것')+'<div class="rp2-one">'
       +rpHeatBlock(12)
       +rpSec('이번 달',(today.getMonth()+1)+'월')+rpMonthKpi()
-      +rpSec('얼마나 했나','최근 12주')+(ef&&ef.days?'<div class="rp2-kpi four"><div><b>'+ef.days+'</b><i>기록한 날</i></div><div><b>'+ef.tryDays+'</b><i>초점 시도</i></div><div><b>'+ef.team+'</b><i>훈련</i></div><div><b>'+ef.match+'</b><i>경기</i></div></div><div class="rp2-kpi four"><div><b>'+ef.solo+'</b><i>개인운동</i></div><div><b>'+ef.rest+'</b><i>휴식</i></div><div><b>'+(ef.rehab+ef.injury)+'</b><i>재활·부상</i></div><div><b>'+ef.memo+'</b><i>한 줄</i></div></div>':rpEmpty('일지에 기록을 남기면 여기에 쌓여요'))
+      +rpSec('일지에 남긴 기록','최근 12주 · 일지 작성 기준')+(ef&&ef.days?'<div class="rp2-kpi four"><div><b>'+ef.days+'</b><i>기록한 날</i></div><div><b>'+ef.tryDays+'</b><i>초점 시도</i></div><div><b>'+ef.team+'</b><i>훈련</i></div><div><b>'+ef.match+'</b><i>경기</i></div></div><div class="rp2-kpi four"><div><b>'+ef.solo+'</b><i>개인운동</i></div><div><b>'+ef.rest+'</b><i>휴식</i></div><div><b>'+(ef.rehab+ef.injury)+'</b><i>재활·부상</i></div><div><b>'+ef.memo+'</b><i>한 줄</i></div></div>':rpEmpty('일지에 기록을 남기면 여기에 쌓여요'))
       +rpSec('컨디션 · 수면','최근 12주 · 주 평균')+((cN.length||sN.length)?'<div class="rp2-3l wide">'
           +(cN.length?'<div><i>컨디션 · 평균 '+CL[Math.round(cN.reduce(function(a,b){return a+b;},0)/cN.length)]+'</i><b>'+rpSpark(cond,1,5,RP_ACC)+'</b></div>':'')
           +(sN.length?'<div><i>수면 · 평균 '+(Math.round(sN.reduce(function(a,b){return a+b;},0)/sN.length*10)/10)+'시간</i><b>'+rpSpark(slp,5,10,'#2E7D63')+'</b></div>':'')+'</div>':rpEmpty('일지에서 컨디션·수면시간을 고르면 흐름이 그려져요'))
