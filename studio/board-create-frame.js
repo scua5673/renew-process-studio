@@ -140,6 +140,14 @@
       tools + ' #boardPageStrip.ps-tb>.tb-c{position:static!important;transform:none!important;flex:0 0 auto!important}',
       tools + ' #boardPageStrip.ps-tb>.tb-r{flex:0 0 auto!important}',
       tools + ' #boardPageStrip.ps-tb>.tb-l{flex:1 1 140px!important;max-width:100%!important}',
+      // 훈련의 설정·내보내기는 하단 한 곳에 둔다. 일반 보드/보기 전용은 그대로.
+      'html.ps-page-board body.cf-training-tools' + NN + ' #boardPageStrip :is(#tbExport,#bpBoardSettings){display:none!important}',
+      'html.ps-page-board body.cf-training-tools' + NN + ' #cmd-export-pop #editorPdf{display:flex!important;width:100%!important;justify-content:flex-start!important;gap:10px!important}',
+      'html.ps-page-board body.cf-training-tools' + NN + ' #cmd-export-pop #editorPdf .ep-pdf-lb{display:inline!important}',
+      'html.ps-page-board body.cf-training-tools' + NN + ' #cmd-tool-row>#cmd-scene-export{order:5!important;width:auto!important;min-width:30px!important;max-width:none!important;flex:0 0 auto!important;margin:0!important;padding:0!important}',
+      'html.ps-page-board body.cf-training-tools' + NN + ' #cmd-tool-row>#cmd-tool-end{order:6!important}',
+      'html.ps-page-board body.cf-training-tools' + NN + ' #cmd-tool-row #cmd-export-btn{width:30px!important;min-width:30px!important;max-width:30px!important;height:30px!important;padding:0!important;justify-content:center!important}',
+      'html.ps-page-board body.cf-training-tools' + NN + ' #cmd-tool-row #cmd-export-btn>span{display:none!important}',
 
       // ── 미팅(3.084 2단계): 미팅에는 제 도구줄(#ksTop)과 슬라이드 목록이 있다 ──
       // 작전판 위쪽 막대(페이지 탭 · 보기)는 미팅 도구줄을 덮었다(«경기 연결»이 가려짐) — 미팅 화면에서는 걷는다(보드 설정은 도크 끝 단추)
@@ -213,7 +221,50 @@
       var h = Math.round(dock.getBoundingClientRect().height) || 58, ms = doc.getElementById('modalStage');
       if (ms && ms.style.getPropertyValue('--cf-dock-h') !== h + 'px') ms.style.setProperty('--cf-dock-h', h + 'px');
     }
-    win.addEventListener('resize', function () { win.setTimeout(function () { stageTone(); dockFit(); }, 0); });
+    win.addEventListener('resize', function () { win.setTimeout(function () { trainingCommands(); stageTone(); dockFit(); }, 0); });
+    // 원래 PDF 단추를 메뉴로 옮긴다. 내보내기 처리기·현재 편집 내용은 그대로 쓴다.
+    // 좁은 화면/보기 전용/편집 종료에서는 정확한 원래 자리와 표시로 복원한다.
+    var pdfHome = null, exportHome = null, commandHosts = [];
+    function trainingCommands() {
+      var modal = doc.getElementById('editorModal'), pdf = doc.getElementById('editorPdf');
+      var pop = doc.getElementById('cmd-export-pop'), exportBtn = doc.getElementById('cmd-export-btn');
+      var output = doc.getElementById('cmd-scene-export'), row = doc.getElementById('cmd-tool-row'), bar = doc.getElementById('animBar');
+      [row, bar].forEach(function (host) {
+        if (!host || commandHosts.indexOf(host) >= 0) return;
+        commandHosts.push(host); new win.MutationObserver(trainingCommands).observe(host, {childList:true});
+      });
+      var on = !!(pdf && pop && exportBtn && output && row && body.classList.contains('editing') && body.classList.contains('ps-dock-float') && !body.classList.contains('comm-viewing') && modal && !modal.classList.contains('ep-ro'));
+      if (body.classList.contains('cf-training-tools') !== on) body.classList.toggle('cf-training-tools', on);
+      if (on) {
+        // 장면 줄을 접어도 내보내기를 쓸 수 있도록 그리기 도구 끝에 둔다.
+        if (!exportHome) { exportHome = doc.createComment('scene export home'); output.parentNode.insertBefore(exportHome, output); }
+        if (output.parentNode !== row) row.insertBefore(output, doc.getElementById('cmd-tool-end'));
+        if (!pdfHome) {
+          var marker = doc.createComment('training PDF home'), label = pdf.querySelector('.ep-pdf-lb');
+          pdf.parentNode.insertBefore(marker, pdf);
+          pdfHome = {marker:marker, label:label && label.textContent, role:pdf.getAttribute('role'), aria:pdf.getAttribute('aria-label')};
+          pdf.classList.add('cmd-export-item'); pdf.setAttribute('role', 'menuitem'); pdf.setAttribute('aria-label', '훈련 전체 PDF');
+          if (label) label.textContent = '훈련 전체 PDF';
+          if (!pdf.__cfCloseExport) {
+            pdf.__cfCloseExport = true;
+            pdf.addEventListener('click', function () {
+              if (body.classList.contains('cf-training-tools') && pop.classList.contains('on')) exportBtn.click();
+            });
+          }
+        }
+        if (pdf.parentNode !== pop) pop.appendChild(pdf);
+      } else if (pdfHome && pdf) {
+        var home = pdfHome; pdfHome = null;
+        if (home.marker.parentNode) home.marker.parentNode.replaceChild(pdf, home.marker);
+        pdf.classList.remove('cmd-export-item');
+        ['role', 'aria-label'].forEach(function (name) { var v = name === 'role' ? home.role : home.aria; if (v === null) pdf.removeAttribute(name); else pdf.setAttribute(name, v); });
+        var text = pdf.querySelector('.ep-pdf-lb'); if (text && home.label !== null) text.textContent = home.label;
+      }
+      if (!on && exportHome && output) {
+        if (exportHome.parentNode) exportHome.parentNode.replaceChild(output, exportHome);
+        exportHome = null;
+      }
+    }
     // 훈련 편집기 머리줄의 «패널» 단추(넓은 화면) — 오른쪽 카드를 접고 펴서 운동장을 넓힌다
     function panelBtn(head) {
       if (!head || head.querySelector('.cf-panel-btn')) return;
@@ -227,6 +278,7 @@
     function paint() {
       var eh = doc.querySelector('#editorModal .modal-head'); if (eh) { badge(eh, doc.getElementById('modalTitle')); panelBtn(eh); }
       var vb = doc.getElementById('vCreateBar'), vt = doc.getElementById('vCreateTitle'); if (vb && vt) badge(vb, vt, barKind(vt.textContent));
+      trainingCommands();
     }
     paint();
     var was = body.classList.contains('editing');
@@ -243,7 +295,9 @@
       var watchTitle = function (el) { if (!el || seen.indexOf(el) >= 0) return; seen.push(el); new win.MutationObserver(paint).observe(el, { childList: true, characterData: true, subtree: true }); };
       watchTitle(doc.getElementById('modalTitle'));
       watchTitle(doc.getElementById('vCreateTitle'));
-      new win.MutationObserver(function () { var t = doc.getElementById('vCreateTitle'); if (t && seen.indexOf(t) < 0) { watchTitle(t); paint(); } }).observe(body, { childList: true });
+      var editor = doc.getElementById('editorModal');
+      if (editor) new win.MutationObserver(trainingCommands).observe(editor, { attributes:true, attributeFilter:['class'] });
+      new win.MutationObserver(function () { var t = doc.getElementById('vCreateTitle'); if (t && seen.indexOf(t) < 0) { watchTitle(t); paint(); } trainingCommands(); }).observe(body, { childList: true });
     } catch (_) {}
   }
 

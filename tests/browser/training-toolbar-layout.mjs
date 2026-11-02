@@ -35,6 +35,16 @@ try{
   for(const b of g.boxes){assert.ok(b.x>=g.wrap.x-1&&b.right<=g.wrap.right+1,JSON.stringify({label,b,wrap:g.wrap}));assert.ok(b.bottom<=g.stage.y+.5,JSON.stringify({label,b,stage:g.stage}));}
   assert.deepEqual(g.hits.filter(h=>!h.ok),[],label+' real hit targets remain reachable');
   assert.ok(g.board.width>100&&g.board.height>100,label+' usable pitch');
+  if(g.body.includes('ps-dock-float')){
+   assert.equal(await f.locator('#tbExport').isVisible(),false,label+' no duplicate top export');
+   assert.equal(await f.locator('#bpBoardSettings').isVisible(),false,label+' no duplicate top settings');
+   assert.ok(await f.locator('#viewBtn').isVisible(),label+' dock settings remain');
+   assert.ok(await f.locator('#cmd-export-btn').isVisible(),label+' one export entry');
+   assert.equal(await f.locator('#editorModal .modal-head #editorPdf').count(),0,label+' PDF moved into export menu');
+   assert.equal(await f.locator('#cmd-export-pop #editorPdf').count(),1,label+' original PDF action exists once');
+   const commands=await f.locator('#cmd-export-btn,#viewBtn').evaluateAll(buttons=>buttons.map(b=>{const r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {id:b.id,ok:!!hit&&(b===hit||b.contains(hit)),inside:r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight};}));
+   assert.ok(commands.every(b=>b.ok&&b.inside),label+' single actions are reachable '+JSON.stringify(commands));
+  }else assert.equal(await f.locator('#editorModal .modal-head #editorPdf').count(),1,label+' compact header PDF restored');
   results.push({label,...g});await page.screenshot({path:output+'/'+label+'.png'});
  }
  for(const width of [1280,1440,1024,768,393,375]){await page.setViewportSize({width,height:900});await check('width-'+width);}
@@ -46,6 +56,23 @@ try{
  await f.locator('#boardPageStrip [data-v="3d"]').click();await f.waitForFunction(()=>document.body.classList.contains('bc-tilt3d'));await check('3d');
  await f.locator('#boardPageStrip [data-v="flat"]').click();await f.waitForFunction(()=>!document.body.classList.contains('bc-tilt3d'));
  await f.evaluate(()=>document.body.classList.remove('fmdark'));
+ await f.locator('#ps-df-anim').click();await check('scenes-open');
+ await f.locator('#ps-df-anim').click();await check('scenes-closed');
+ await f.locator('#viewBtn').click();assert.ok(await f.locator('#cmd-board-settings-pop').isVisible());await f.locator('#cmd-board-settings-close').click();
+ await f.locator('#cmd-export-btn').click();await f.locator('#cmd-export-pop.on').waitFor();
+ for(const id of ['animGif','animExport','pngBtn','pdfBtn','editorPdf'])assert.ok(await f.locator('#cmd-export-pop #'+id).isVisible(),id+' export retained');
+ assert.equal(await f.locator('#pdfBtn .cmd-export-item-label').textContent(),'현재 판 PDF','current board and full training have distinct labels');
+ await page.screenshot({path:output+'/single-export-menu.png'});
+ await f.locator('#editorPdf').click();await f.locator('#ppbClose').waitFor({state:'visible'});
+ assert.equal(await f.locator('#cmd-export-pop').isVisible(),false,'PDF closes export menu');
+ await page.screenshot({path:output+'/training-pdf-preview.png'});await f.locator('#ppbClose').click();
+ // Read-only mode keeps its own PDF action; returning to editing moves that
+ // same node back, without creating another handler or button.
+ await f.evaluate(()=>document.getElementById('editorModal').classList.add('ep-ro'));
+ await f.waitForFunction(()=>document.querySelector('#editorModal .modal-head #editorPdf'));
+ assert.equal(await f.locator('#editorPdf').count(),1);
+ await f.evaluate(()=>document.getElementById('editorModal').classList.remove('ep-ro'));
+ await f.waitForFunction(()=>document.querySelector('#cmd-export-pop #editorPdf'));
  await f.locator('#psEditToolsToggle').click();assert.ok(await f.locator('#psEditTools').isVisible());await f.getByRole('button',{name:'배치 도구 닫기',exact:true}).click();
  await f.locator('#epNameTop').fill('프로세스FC 훈련 도구 검증');
  const snap=await f.evaluate(()=>JSON.parse(JSON.stringify({players:state.players,equipment:state.equipment,drawings:state.drawings})));
@@ -59,6 +86,9 @@ try{
  await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
  await f.waitForFunction(()=>!document.body.classList.contains('editing')&&document.getElementById('boardPageStrip').getBoundingClientRect().width>0);
  assert.equal(await f.locator('#boardPageStrip').evaluate(e=>getComputedStyle(e).position),'absolute','normal board keeps its floating toolbar');
+ assert.ok(await f.locator('#tbExport').isVisible(),'normal board export restored');
+ assert.ok(await f.locator('#bpBoardSettings').isVisible(),'normal board settings restored');
+ assert.equal(await f.locator('#editorModal .modal-head #editorPdf').count(),1,'original PDF restored after editor exit');
  assert.deepEqual(logs.filter(l=>l.type==='pageerror'),[]);
  console.log(JSON.stringify({engine,passed:results.map(r=>r.label)}));
 }finally{fs.writeFileSync(output+'/results.json',JSON.stringify(results,null,2));for(const b of Object.values(browsers))await b.close();await fx.close();}
