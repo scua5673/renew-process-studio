@@ -25,6 +25,12 @@ try{for(const size of (process.env.PS_SIZES||'desktop,phone').split(',')){
   await page.screenshot({path:path.join(SHOTS,'squad-group-picker-'+engine+'-'+size+'.png')});
   await f.getByRole('menuitemradio',{name:'B팀',exact:true}).click();assert.equal(await name().count(),0,'changing group removes player from the active group filter');assert.match(await f.locator('.pw-undo').textContent(),/현재 조 목록에서/);
   await f.evaluate(()=>{tmGrpFilter='';renderTeam();});await pick();await f.locator('#psPickPop button').first().press('Escape');assert.equal(await f.locator('#psPickPop').count(),0);assert.equal(await name().evaluate(el=>document.activeElement===el),true);
+  const refreshFocus=await f.evaluate(()=>{
+   const current=()=>document.querySelector('#pwTeam .pw-depth-name[data-pw-open="vp01"]'),before=current();before.focus();renderTeam();
+   const unchanged=current()===before,kept=document.activeElement===current(),p=data.players.find(p=>p.id==='vp01'),oldName=p.name;let updated;
+   try{p.name=oldName+' 갱신';renderTeam();updated=document.activeElement===current()&&current().textContent.includes('갱신');}finally{p.name=oldName;renderTeam();}
+   return {unchanged,kept,updated,restored:document.activeElement===current()};
+  });assert.deepEqual(refreshFocus,{unchanged:true,kept:true,updated:true,restored:true},'refresh retains unchanged rows and focused player across changed content');
   // A changed source while the picker is open must not overwrite the incoming value.
   await pick();await f.evaluate(()=>{data.players.find(p=>p.id==='vp01').grp='C팀';});await f.getByRole('menuitemradio',{name:'A팀',exact:true}).click();assert.equal(await f.evaluate(()=>data.players[0].grp),'C팀');
   // Exercise a queued click at the authority boundary before the next paint.
