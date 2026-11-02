@@ -10,7 +10,7 @@
 
 검증은 운영 데이터와 분리된 합성 팀 fixture에서 수행한다. `tests/board-scout-import.test.cjs`는 원장 투영·중복·삭제·검색·읽기 실패·원문 변경을 검사한다. `tests/browser/board-scout-import.mjs`는 실제 버튼 클릭, 필터/선택, 검색 Enter, 취소, 14명 배치, 위치 보존, 실행 취소/다시 실행, 두 팀, 다른 장면, 명시적 저장, 권한·원문 변경, 보기 전용을 Chromium과 WebKit에서 검사한다. 브라우저 CI board 묶음에 포함했다.
 
-현재 준비 판은 3.240이며, 병합 전에 최신 staging과 병렬 작업의 판 번호를 다시 확인한다. 아직 원격 push·PR·운영 배포는 하지 않았다.
+배포 판은 3.241이다. 최신 staging/main의 작전판 배치·그리드 3.240을 병합해 보존했다. 사용자 배포 승인에 따라 정식 PR → testprocess → main 경로로 검증·게시한다.
 
 ## 추가 요청: 선수단·훈련 편집기와 조 변경
 

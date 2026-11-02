@@ -5469,7 +5469,7 @@ function enableDrag(g,p,removable,kind){
          그래서 뒤집는다: **기본은 자유 이동**, ⌘/Ctrl 을 누르고 끌면 붙는다.
          ⚠ 예전과 반대다. 되돌리려면 이 삼항의 참·거짓만 바꾸면 된다. */
       /* 2.469 — '끌기 자석' 토글이 켜져 있으면 맨손 끌기도 붙는다(⌘/Ctrl 은 언제나). 붙은 선은 안내선으로 보여준다 */
-      const _snapOn=e.metaKey||e.ctrlKey||_dragSnapOn();
+      const _snapOn=PSBoardEdit.snapEnabled(e);
       const s=_snapOn?snapDrag(p,kind,u):u;
       if(_snapOn&&(s.gx!=null||s.gy!=null))drawSnapGuides(s.gx,s.gy); else drawSnapGuides(null,null);
       if(e.shiftKey&&_mvP0){ if(!_mvAxis&&(Math.abs(s.x-_mvP0.x)>6||Math.abs(s.y-_mvP0.y)>6))_mvAxis=Math.abs(s.x-_mvP0.x)>=Math.abs(s.y-_mvP0.y)?"x":"y"; if(_mvAxis==="x")s.y=_mvP0.y; else if(_mvAxis==="y")s.x=_mvP0.x; } else _mvAxis=null;
@@ -6697,9 +6697,9 @@ function enableEndpointDrag(hg,d,idx){
 	  hg.addEventListener("pointerdown",e=>{if(state.tool!=="move"||state.boardLocked||d.locked)return;e.stopPropagation();
     pushUndo();
     let gRef=hg.parentNode;
-    const move=ev=>{const u=toUnit(ev); d.pts[idx]={x:u.x,y:u.y}; const f2=redrawOne(d,gRef);if(f2)gRef=f2; showMeas(d,d.pts[idx]);};
-    const up=()=>{window.removeEventListener("pointermove",move);hideMeas();
-      window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",up);try{_anchorOne(d,idx);}catch(_){}renderDrawings();};   /* 2.719 — 놓은 자리가 토큰이면 묶고, 빈 곳이면 푼다 */
+    const move=ev=>{if(ev.pointerId!==e.pointerId)return;const u=PSBoardEdit.snapEditPoint(toUnit(ev),ev); d.pts[idx]={x:u.x,y:u.y};if(d.tk)d.tk[idx]=null; const f2=redrawOne(d,gRef);if(f2)gRef=f2; showMeas(d,d.pts[idx]);};
+    const up=ev=>{if(ev.pointerId!==e.pointerId)return;window.removeEventListener("pointermove",move);hideMeas();
+      window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",up);try{if(!PSBoardEdit.pointGridActive(ev))_anchorOne(d,idx);else if(d.tk){d.tk[idx]=null;}}catch(_){}renderDrawings();};   /* 2.719 — 놓은 자리가 토큰이면 묶고, 빈 곳이면 푼다 */
     window.addEventListener("pointermove",move);
     window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);});
 }

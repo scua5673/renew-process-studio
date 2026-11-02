@@ -53,3 +53,35 @@ test('rotated text hit testing and resize use the displayed horizontal axis',()=
   const p=edit.textPoint(d,{x:100,y:240},false,false);assert.ok(Math.abs(p.x-40)<1e-8);assert.ok(Math.abs(p.y)<1e-8);
   const v=edit.textPoint({...d,textAngle:0},{x:100,y:160},true,true);assert.ok(Math.abs(v.x-40)<1e-8);assert.ok(Math.abs(v.y)<1e-8);
 });
+test('diagonal distribution fixes farthest endpoints, orders projections and translates mixed geometry',()=>{
+  const a={id:1,x:0,y:100},b={id:2,x:100,y:0},p={id:3,x:22,y:65},d={id:4,type:'poly',pts:[{x:60,y:15},{x:80,y:25}]},lock={x:900,y:900,locked:true};
+  const input=[d,b,lock,p,a],before=structuredClone(input);
+  const plan=edit.alignPlan(input,'distDiag',false,false);
+  assert.deepEqual(edit.alignPlan(input,'distDiag',true,true),plan);
+  plan.forEach(v=>edit.translate(v.o,v.dx,v.dy));
+  assert.deepEqual(a,before[4]);assert.deepEqual(b,before[1]);assert.deepEqual(lock,before[2]);
+  assert.ok(Math.abs(p.x-100/3)<1e-8);assert.ok(Math.abs(p.y-200/3)<1e-8);
+  assert.ok(Math.abs(edit.center(d).x-200/3)<1e-8);assert.ok(Math.abs(edit.center(d).y-100/3)<1e-8);
+  assert.deepEqual({x:d.pts[1].x-d.pts[0].x,y:d.pts[1].y-d.pts[0].y},{x:20,y:10});
+});
+test('diagonal ties, duplicates, horizontal and vertical cases are finite and repeatable',()=>{
+  for(const points of [[[0,0],[0,0],[0,0]],[[0,0],[0,0],[100,0]],[[0,0],[0,20],[0,100]],[[0,0],[100,0],[100,100],[0,100]]]){
+    const items=points.map(([x,y],id)=>({id,x,y}));
+    const plan=edit.alignPlan(items,'distDiag');
+    assert.deepEqual(edit.alignPlan(items.slice().reverse(),'distDiag'),plan);
+    plan.forEach(v=>{assert.ok(Number.isFinite(v.dx)&&Number.isFinite(v.dy));edit.translate(v.o,v.dx,v.dy);});
+    assert.deepEqual(edit.alignPlan(items,'distDiag'),[]);
+  }
+  assert.deepEqual(edit.alignPlan([{x:0,y:0},{x:50,y:50},{x:100,y:100,locked:true}],'distDiag'),[]);
+});
+
+test('one-shot suppression overrides permanent and explicit snapping without changing Alt duplication',()=>{
+  for(const e of [{},{ctrlKey:true},{metaKey:true},{altKey:true},{shiftKey:true}]){
+    assert.equal(edit.snapAllowed(e,true,true),false);
+    assert.equal(edit.snapAllowed(e,false,true),false);
+    assert.equal(edit.snapAllowed(e,true,false),true);
+  }
+  assert.equal(edit.snapAllowed({altKey:true},false,false),false);
+  assert.equal(edit.snapAllowed({ctrlKey:true},false,false),true);
+  assert.equal(edit.snapAllowed({},false,false),false);
+});
