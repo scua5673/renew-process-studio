@@ -31,6 +31,10 @@ test('metadata RPC lists continue after short pages and use deterministic order'
 test('metadata pagination rejects an endpoint that ignores offsets',async()=>{
  await assert.rejects(D.rpcRows(async()=>[{id:'same'}],'example',{},'id.asc',()=>true),/did not advance/);
 });
+for(const name of ['ps_admin_people','ps_admin_content_owners'])test('JSON-valued metadata is read once without SQL row filters: '+name,async()=>{
+ const calls=[],source=Array.from({length:1251},(_,id)=>({id}));const result=await D.rpcRows(async(q,o)=>{calls.push({q,o});return source;},name,{},'user_id.asc',()=>true);
+ assert.equal(result.length,1251);assert.equal(calls.length,1);assert.equal(calls[0].q,'rpc/'+name);assert.equal(calls[0].o.method,'POST');
+});
 test('independent metric states distinguish zero from unavailable',()=>{
  const s=D.summary({users:{ok:true,rows:[]},workspaces:{ok:false,rows:[{kind:'team'}]},library:{ok:true,rows:[{deleted_at:at},{deleted_at:null}]}});
  assert.deepEqual(s,{accounts:0,spaces:null,teams:null,content:1});assert.equal(D.unknown(s.teams),'확인 못 함');assert.equal(D.unknown(s.accounts),'0');

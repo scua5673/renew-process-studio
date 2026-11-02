@@ -36,7 +36,7 @@ try{
   if(req.method()==='OPTIONS')return route.fulfill({status:204,headers,body:''});
   const name=url.pathname.startsWith('/rest/v1/rpc/')?url.pathname.split('/').pop():null,args=req.postDataJSON()||{};
   if(name)calls.push({name,args});
-  const send=(v,status=200)=>route.fulfill({status,headers,body:JSON.stringify(v)});
+  const send=(v,status=200)=>{if(Array.isArray(v)&&url.searchParams.has('offset')){const offset=+url.searchParams.get('offset'),limit=+url.searchParams.get('limit');v=v.slice(offset,offset+limit);}return route.fulfill({status,headers,body:JSON.stringify(v)});};
   switch(name){
    case 'ps_whoami':return send([{uid:ADM,email:'admin@example.test',is_admin:true}]);
    case 'ps_admin_users':return send([{user_id:U,email:MAIL,created_at:iso(9000),last_sign_in_at:iso(60)}]);

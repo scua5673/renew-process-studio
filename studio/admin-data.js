@@ -2,6 +2,12 @@
   'use strict';
   function current(check){if(check&&!check())throw Error('administrator view changed');}
   async function rpcRows(request,name,args,order,check){
+    // These functions return one JSON array value, rather than a SQL row set.
+    // PostgREST range/order parameters cannot paginate inside that scalar.
+    if(name==='ps_admin_people'||name==='ps_admin_content_owners'){
+      current(check);var value=await request('rpc/'+name,{method:'POST',body:JSON.stringify(args||{})});
+      current(check);if(!Array.isArray(value))throw Error('invalid '+name+' response');return value;
+    }
     var rows=[],offset=0,seen=new Set();
     for(;;){
       current(check);
