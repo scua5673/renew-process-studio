@@ -164,6 +164,7 @@ const statusCode = section('function matchPhaseReviewRowHas(r){','/* ══ 2.62
   section('/* 2.746 — 체크리스트와 같은 완료 기준.','function renderCkHome(){');
 function reviewHarness(patch) {
   const h=harness();h.state.matches[0]={id:'match-a',date:'2026-09-11',opponent:'상대',scoreUs:'',scoreThem:'',reviewGood:'',reviewImprove:'',resultSummary:'',phaseReview:{},...patch};
+  h.c.matchYmd=d=>d.toISOString().slice(0,10);
   h.c.mprMoments=()=>[{key:'attack'}];h.c.ckEsc=review.esc;
   vm.runInContext(statusCode,h.c);return h;
 }
