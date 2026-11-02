@@ -27,8 +27,23 @@ try{for(const size of (process.env.PS_SIZES||'desktop,phone').split(',')){
   await f.evaluate(()=>{tmGrpFilter='';renderTeam();});await pick();await f.locator('#psPickPop button').first().press('Escape');assert.equal(await f.locator('#psPickPop').count(),0);assert.equal(await name().evaluate(el=>document.activeElement===el),true);
   // A changed source while the picker is open must not overwrite the incoming value.
   await pick();await f.evaluate(()=>{data.players.find(p=>p.id==='vp01').grp='C팀';});await f.getByRole('menuitemradio',{name:'A팀',exact:true}).click();assert.equal(await f.evaluate(()=>data.players[0].grp),'C팀');
-  // Losing roster authority after opening cannot write.
-  await pick();await f.evaluate(()=>document.body.classList.add('ps-roster-locked'));const denied=await snapshot();await f.getByRole('menuitemradio',{name:'A팀',exact:true}).click();assert.equal(await snapshot(),denied);await f.evaluate(()=>{document.body.classList.remove('ps-roster-locked');renderTeam();});
+  // Exercise a queued click at the authority boundary before the next paint.
+  // A later paint correctly removes the picker, so waiting to click it after
+  // changing authority races that removal instead of testing the write guard.
+  await pick();const denied=await snapshot();await f.evaluate(()=>{
+   const pending=[...document.querySelectorAll('#psPickPop button')].find(b=>b.textContent==='A팀');
+   if(!pending)throw Error('Expected the open group picker');
+   document.body.classList.add('ps-roster-locked');pending.click();
+  });assert.equal(await snapshot(),denied,'a queued click cannot write after authority is lost');
+  await f.evaluate(()=>{document.body.classList.remove('ps-roster-locked');renderTeam();});if(await toggle().getAttribute('aria-pressed')==='false')await toggle().click();
+  // Also verify the rendered locked state closes the picker and rejects a
+  // delayed event that still holds the old button after it was detached.
+  await pick();await f.evaluate(()=>{
+   const pending=[...document.querySelectorAll('#psPickPop button')].find(b=>b.textContent==='A팀');
+   if(!pending)throw Error('Expected the open group picker');
+   document.body.classList.add('ps-roster-locked');renderTeam();pending.click();
+  });assert.equal(await snapshot(),denied,'a detached picker cannot write');assert.equal(await f.locator('#psPickPop').count(),0);assert.equal(await toggle().count(),0);
+  await f.evaluate(()=>{document.body.classList.remove('ps-roster-locked');renderTeam();});assert.equal(await toggle().getAttribute('aria-pressed'),'false');await toggle().click();
   await pick();await f.getByRole('menuitemradio',{name:'B팀',exact:true}).click();
   await f.evaluate(async()=>{if(window.psFlushPending)await psFlushPending();await scoutStore.ready(true);});await page.waitForTimeout(1500);
   await toggle().click();await name().click();await f.locator('#pwDrawer[open]').waitFor();await f.getByRole('button',{name:'선수 상세 닫기'}).click();
