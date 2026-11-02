@@ -9979,7 +9979,7 @@ function uiLeave(wa){
   }});
 }
 
-var _popOpen=false,_accountLogoutHint=false;
+var _popOpen=false,_accountLogoutHint=false,_accountFrameDismiss=null;
 var _providerRefreshKey='';
 function openAccountLogout(){
   if(externalSwitchFrozen||!document.getElementById('psAcctWrap'))return false;
@@ -10132,7 +10132,7 @@ function renderUI(){
           +'<span class="wn">'+esc(w.kind==='personal'?'내 작업':w.name)+'</span>'
           +(w.members>1?'<span class="wc">'+w.members+'명</span>':'')
           +(w.id===cur?'<span class="wk">✓</span>':'');
-        b.onclick=function(e){ e.stopPropagation(); if(w.id!==cur){ closePop(); switchWorkspace(w.id); } };   /* 2.338 — _popOpen 만 끄면 'on' 클래스가 남아 바깥을 눌러도 안 닫히는 유령 팝오버가 됐다 */
+        b.onclick=function(e){ e.stopPropagation(); if(w.id!==cur){ closePop(); switchWorkspace(w.id); } };
         list.appendChild(b);
       });
       pop.appendChild(list);
@@ -10159,14 +10159,15 @@ function renderUI(){
         _popOpen=false;signOut();
       });
       if(_accountLogoutHint&&!dataUnlocked())logoutButton.disabled=true;
-      /* 1.850 — '내 계정·데이터 삭제'는 로그아웃 아래 작은 글자 링크로 (일상 동선에서 붉은 버튼이 눈에 먼저 들어오지 않게) */
+      /* 계정 삭제는 로그아웃 아래 작은 링크로 */
       var er=pb('내 계정·데이터 삭제…','',function(){var b=document.getElementById('bkErase');if(b)b.click();});
       er.style.cssText='border:0;background:transparent;font-size:11px;font-weight:600;color:#a84440;opacity:.8;padding:4px 0 0;';
     }
     wrap.appendChild(pop);
     btn.onclick=function(e){ e.stopPropagation(); _popOpen=!_popOpen; pop.classList.toggle('on',_popOpen);
-      if(_popOpen){ try{ if(window.__psCloseAppSettings)window.__psCloseAppSettings(); }catch(_){} try{ if(window.__psCloseBoardSettings)window.__psCloseBoardSettings(); }catch(_){} } };   /* 1.850 — 계정 열면 앱 설정·작전판 설정 닫기 */
+      if(_popOpen){ if(_accountFrameDismiss)_accountFrameDismiss(); try{ if(window.__psCloseAppSettings)window.__psCloseAppSettings(); }catch(_){} try{ if(window.__psCloseBoardSettings)window.__psCloseBoardSettings(); }catch(_){} } };
     window.__psCloseAcctPop=closePop;
+    if(window.PSPopoverDismiss){if(!_accountFrameDismiss)_accountFrameDismiss=PSPopoverDismiss.watch(document,function(){if(window.__psCloseAcctPop)window.__psCloseAcctPop();});_accountFrameDismiss();}
     if(!wrap.__docClose){ wrap.__docClose=1; document.addEventListener('click',function(e){ if(_popOpen&&!wrap.contains(e.target)){ _popOpen=false; var p=wrap.querySelector('.acct-pop'); if(p)p.classList.remove('on'); } }); }
   }catch(_){}
 }

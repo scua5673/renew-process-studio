@@ -7,7 +7,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <style id="ps-2205-wait">html.ps-wait .wrap>.view{visibility:hidden!important}</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<script src="storage.js"></script>
+<script src="storage.js"></script><script src="training-intensity.js"></script><script src="weather-request.js"></script><script src="match-home.js"></script>
 <link rel="stylesheet" href="team-audience.css"><script src="team-audience.js"></script><script src="roster-audience.js"></script>
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
@@ -13370,7 +13370,7 @@ const MATCH_FIFA_GROUPS=[
   {id:"set",code:"SP",label:"세트피스 · Set play",phases:[
     ["corner","코너킥 · Corner"],["free_kick","프리킥 · Free kick"],["throw_in","스로인 · Throw-in"],["penalty","페널티킥 · Penalty"]]}
 ];
-function matchRole(){try{return window.PSPerms&&PSPerms.role?PSPerms.role():"executive";}catch(_){return"executive";}}
+function matchRole(){try{var p=window.PSPerms||(window.parent&&window.parent.PSPerms);return p&&p.role?p.role():"executive";}catch(_){return"player";}}
 function matchCanEdit(){return !matchDocPending()&&matchRole()!=="player"&&(!window.PSPerms||!PSPerms.canEdit||PSPerms.canEdit("team"));}
 
 /* ══ 1.621 · 경기 담당 ═══════════════════════════════════════════════════════
@@ -13829,6 +13829,7 @@ function matchDocPending(){ try{
 function matchLoad(){
   if(matchState)return matchState;
   var o=scoutStore.get(MATCH_KEY);
+  if(matchRole()==="player")return o&&Array.isArray(o.matches)?o:{version:1,matches:[]};
   if(matchDocPending()){
     /* 서버 확인 전에는 기존 로컬본을 읽기 전용으로 보여 줄 수는 있지만, 일정 병합·자동 정리는
        실행하지 않는다. 로컬본도 없으면 캐시하지 않는 빈 문서만 돌려준다. */
@@ -15041,11 +15042,11 @@ function matchStatusOf(m){
   if(m.reviewPublished||m.reviewGood||m.reviewImprove||m.resultSummary||matchPhaseReviewHas(m)||(m.fifaPlans||[]).some(function(p){return !!p.reviewStatus;})){
     try{var f=matchStepFill(m,"review");return f.t>0&&f.n>=f.t?"review":"reviewing";}catch(_){return"reviewing";}
   }
-  if(m.scoreUs!==""||m.scoreThem!=="")return"played";
-  return"prep";
+  if([m.scoreUs,m.scoreThem].some(function(v){return v!=null&&String(v).trim()!=="";}))return"played";
+  return /^\d{4}-\d{2}-\d{2}$/.test(m.date||"")&&m.date<matchYmd(new Date())?"unrecorded":"prep";
 }
 function matchStatusHTML(m){
-  var st=matchStatusOf(m),ix={prep:0,played:1,reviewing:2,review:2}[st]||0,lab=["준비 중","경기",st==="review"?"리뷰 작성됨":(st==="reviewing"?"리뷰 작성 중":"리뷰")];
+  var st=matchStatusOf(m),ix={prep:0,played:1,reviewing:2,review:2}[st]||0,lab=[st==="unrecorded"?"지난 경기 · 결과 미입력":"준비 중","경기",st==="review"?"리뷰 작성됨":(st==="reviewing"?"리뷰 작성 중":"리뷰")];
   return lab.map(function(x,i){return'<span class="'+(i<ix?"done":i===ix?"on":"")+'"><i></i>'+x+"</span>";}).join("");
 }
 function matchReviewMetaPaint(m){
@@ -16512,7 +16513,7 @@ function teamWxShow(w){
   el.title=(w.loc||"")+" · 최고 "+w.max+"° 최저 "+w.min+"° · 강수 "+(w.rain==null?"—":w.rain+"%")+" — 눌러서 지역 변경";
 }
 function teamWxFetch(name,la,lo){
-  return fetch("https://api.open-meteo.com/v1/forecast?latitude="+la+"&longitude="+lo
+  return PSWeatherRequest.run("current:"+[name,la,lo].join("|"),function(){return fetch("https://api.open-meteo.com/v1/forecast?latitude="+la+"&longitude="+lo
     +"&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=1&timezone=auto")
     .then(function(r){return r.json();})
     .then(function(j){
@@ -16521,7 +16522,7 @@ function teamWxFetch(name,la,lo){
         rain:j.daily.precipitation_probability_max[0]};
       try{localStorage.setItem("cs_wx_v1",JSON.stringify(w));}catch(_){}
       teamWxShow(w); return w;
-    });
+    });});
 }
 /* ══ 1.607 · 날씨가 처음부터 뜨게, 그리고 현재 위치로 ═══════════════════════════
    («날씨는 현재 위치 빠르게 알아서 잡아서 나오게 할 수 있어?» — 사용자)
@@ -16578,16 +16579,17 @@ function teamWxDailyFetch(){
   var loc=null; try{loc=JSON.parse(localStorage.getItem("cs_wx_loc_v1")||"null");}catch(_){}
   if(!loc||window.__wxdBusy)return Promise.resolve(null);
   window.__wxdBusy=1;
-  return fetch("https://api.open-meteo.com/v1/forecast?latitude="+loc[1]+"&longitude="+loc[2]
+  return PSWeatherRequest.run("daily:"+loc.join("|"),function(){return fetch("https://api.open-meteo.com/v1/forecast?latitude="+loc[1]+"&longitude="+loc[2]
       +"&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&past_days=7&forecast_days=16&timezone=auto")
     .then(function(r){return r.json();})
     .then(function(j){
-      var d={},t=(j.daily&&j.daily.time)||[];
+      if(!j.daily||!Array.isArray(j.daily.time))throw new Error("날씨 응답 없음");
+      var d={},t=j.daily.time;
       t.forEach(function(ymd,i){ d[ymd]={c:j.daily.weather_code[i],mx:Math.round(j.daily.temperature_2m_max[i]),
         mn:Math.round(j.daily.temperature_2m_min[i]),p:j.daily.precipitation_probability_max[i]}; });
       try{localStorage.setItem("cs_wxd_v1",JSON.stringify({t:Date.now(),loc:loc[0],d:d}));}catch(_){}
       window.__wxdBusy=0; teamWeekWxPaint(); return d;
-    }).catch(function(){ window.__wxdBusy=0; return null; });
+    });}).catch(function(){ window.__wxdBusy=0; return null; });
 }
 function teamWeekWxPaint(){
   var c=teamWxDailyCache(); if(!c||!c.d)return;
@@ -16690,13 +16692,13 @@ function teamPlannedLoadText(raw){
   }
   if(typeof raw==="string"){
     raw=raw.trim();if(!raw)return "";
-    var legacy={"회복":"리커버리","활성화":"RPE 3 · 저강도","인텐시브":"RPE 8 · 고강도","익스텐시브":"RPE 3 · 저강도"};
+    var legacy={"회복":"리커버리","활성화":"RPE 3 · 회복","인텐시브":"RPE 8 · 고강도","익스텐시브":"RPE 3 · 회복"};
     if(legacy[raw])return legacy[raw];
     if(raw==="낮음"||raw==="중간"||raw==="높음")return "강도 "+raw;
   }
   var n=Number(raw);if(!isFinite(n)||n<1||n>10)return "";
   n=Math.round(n*10)/10;
-  return "RPE "+n+" · "+(n<=3?"저":n<=6?"중":"고")+"강도";
+  return PSIntensity.text(n);
 }
 function teamSessionPlannedLoad(training,b){
   training=training||{};b=b||{};
@@ -17212,8 +17214,8 @@ window.matchApplyGrpAll=function(){
   });
 };
 function matchRowHTML(m,alive){
-  var st=matchStatusOf(m), stl={prep:"준비 중",played:"경기",reviewing:"리뷰 작성 중",review:"리뷰 작성됨"}[st]||"준비 중";
-  var col={prep:"#3a6df0",played:"#2E7D63",reviewing:"#B5762B",review:"#8A9099"}[st];
+  var st=matchStatusOf(m), stl={prep:"준비 중",unrecorded:"지난 경기 · 결과 미입력",played:"경기",reviewing:"리뷰 작성 중",review:"리뷰 작성됨"}[st]||"준비 중";
+  var col={prep:"#3a6df0",unrecorded:"#8A9099",played:"#2E7D63",reviewing:"#B5762B",review:"#8A9099"}[st];
   var d=String(m.date||""), md=d?d.slice(5).replace("-","/"):"–", wd="";
   if(d){ var p=d.split("-"); var dt=new Date(+p[0],(+p[1]||1)-1,+p[2]||1); if(!isNaN(dt))wd=MATCH_WD[dt.getDay()]; }
   var kind=matchKindOf(m), res=matchResultOf(m);
@@ -17353,10 +17355,10 @@ window.matchSetScore=function(id,which,val,rowEl){
     if(res){ if(stb)stb.remove(); }
     else if(!stb){ var top=rowEl.querySelector(".mr-top");
       if(top){ var e2=document.createElement("em"); e2.className="mr-st "+stn;
-        e2.textContent={prep:"준비 중",played:"경기",reviewing:"리뷰 작성 중",review:"리뷰 작성됨"}[stn]||"준비 중";
+        e2.textContent={prep:"준비 중",unrecorded:"지난 경기 · 결과 미입력",played:"경기",reviewing:"리뷰 작성 중",review:"리뷰 작성됨"}[stn]||"준비 중";
         var kd=top.querySelector(".mr-kind"); if(kd&&kd.nextSibling)top.insertBefore(e2,kd.nextSibling); else top.appendChild(e2); } }
-    else { stb.className="mr-st "+stn; stb.textContent={prep:"준비 중",played:"경기",reviewing:"리뷰 작성 중",review:"리뷰 작성됨"}[stn]||"준비 중"; }
-    rowEl.style.setProperty("--mc",{prep:"#3a6df0",played:"#2E7D63",reviewing:"#B5762B",review:"#8A9099"}[stn]||"#8A9099");
+    else { stb.className="mr-st "+stn; stb.textContent={prep:"준비 중",unrecorded:"지난 경기 · 결과 미입력",played:"경기",reviewing:"리뷰 작성 중",review:"리뷰 작성됨"}[stn]||"준비 중"; }
+    rowEl.style.setProperty("--mc",{prep:"#3a6df0",unrecorded:"#8A9099",played:"#2E7D63",reviewing:"#B5762B",review:"#8A9099"}[stn]||"#8A9099");
     var box=rowEl.querySelector(".mr-scin");
     if(box)box.classList.toggle("has",(m.scoreUs!==""&&m.scoreUs!=null)||(m.scoreThem!==""&&m.scoreThem!=null));
   }catch(_){}
@@ -19598,7 +19600,12 @@ function ckSession(o){
   var load=""; try{ load=teamSessionPlannedLoad(training,b)||""; }catch(_){}
   var DOW=["일","월","화","수","목","금","토"], when=(o===0)?"오늘":(DOW[date.getDay()]+" "+date.getDate()+"일");
   var r={when:when,title:"",sub:"",blocks:[],kind:"none",slot:String((training&&training.slot)||""),time:(training&&training.time)||"",place:String((training&&training.place)||"").trim(),note:String((training&&training.note)||"").trim()};   /* 2.908 — 세션 장소·메모(일정 세션 채우기) */
-  if(isMatch){ var tm=(day&&day.match)||{}, opp=tm.opponent||tm.opp||b.opp||ctx.opp||"상대 미정"; r.kind="m"; r.title="경기 · vs "+opp; r.sub="경기 계획과 출전 인원을 최종 확인"; r.time=tm.time||""; }
+  if(isMatch){
+    var tm=(day&&day.match)||{}, record=PSMatchHome.resolve((matchLoad()||{}).matches,{date:matchYmd(date),id:scheduledMatch?"":ctx.id,sourceId:scheduledMatch?scheduleSourceId(scheduleMid(day)):ctx.sourceId});
+    var opp=(record&&record.opponent)||tm.opponent||tm.opp||b.opp||ctx.opp||"상대 미정";
+    r.kind="m"; r.title="경기 · vs "+opp; r.matchId=record?record.id:"";
+    r.matchView=PSMatchHome.describe(record,record?matchStatusOf(record):"prep");r.sub=r.matchView.sub;r.time=(record&&record.time)||tm.time||"";
+  }
   else if(!isOff&&training){ r.kind="tr"; r.title=training.aims||training.title||"팀 훈련"; var mins=0; try{ mins=teamHomeMinutes(training)||0; }catch(_){}
     r.sub=[load?"강도 "+load:"",mins?"총 "+mins+"분":""].filter(Boolean).join(" · "); r.load=load; r.mins=mins;   /* 2.584 — 머리줄 알약용 */   /* 아래에서 블록으로 다시 센다 */
     /* 2.302 — 세션이 있어도 **세션 블록이 비어 있으면 보드에서 채운다**(사용자 "팀 훈련 밑에 추가한 훈련 뜨게").
@@ -19946,6 +19953,12 @@ function ckJournalWait(today){
   var r=count(tcYmd(today)); if(r.wrote)return {label:"오늘",wrote:r.wrote,wait:r.wait};
   r=count(tcYmd(y)); return r.wrote?{label:"어제",wrote:r.wrote,wait:r.wait}:null;
 }
+function ckOpenHomeMatch(id,stage){
+  if(!id){setView("match");matchBackToList();return;}
+  if(!(matchLoad().matches||[]).some(function(m){return m.id===id;}))return;
+  if(matchOpen(id)===false)return;
+  matchStage=stage;matchTab=stage;setView(stage==="review"?"review":"match");
+}
 /* 2.979 — 그 날짜(YYYY-MM-DD)의 경기 기록. 없으면 null(부르는 쪽이 다음 경기로 물러난다) */
 function ckMatchOn(iso){ if(!iso)return null; try{ return ((matchLoad()||{}).matches||[]).filter(function(x){ return String(x.date||"")===String(iso); })[0]||null; }catch(_){ return null; } }
 /* ══ 2.981 · 자료가 오기 전에는 «없다»고 말하지 않는다(디자인 판정 06·08 «빈 화면 대신 뼈대») ══
@@ -20071,7 +20084,7 @@ function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
                 그래서 값을 여기서 바꾸지 않고, 그 시트를 열어 준다(시간·세트 편집기는 2.488/2.535 에 이미 있다). */
           +(bl.t?'<time class="ckt" role="button" tabindex="0" data-ck="edittime" title="눌러서 일정에서 시간·세트 고치기">'+ckEsc(bl.t)+'</time>':'')+(bl.ph?'<span class="ph">'+ckEsc(bl.ph)+'</span>':'')+(bl.libId?'<u class="go">→</u>':'')+'</div>'; }).join("")
       /* 2.201 — OFF 날 '개별 재활·부상' 줄 제거(사용자). 가용 인원 패널이 같은 정보를 보여 준다 */
-      :((ss.kind==="off"||ss.kind==="none")?'':(ss.kind==="m"?('<div class="ck-acts"><button type="button" class="ck-act pri ps-btn-primary" data-ck="match" data-md="'+_selIso+'">경기 준비 열기</button><button type="button" class="ck-act ps-btn-secondary" data-ck="stage" data-step="opp" data-md="'+_selIso+'">상대 분석</button></div>')   /* 2.979 — 문장 대신 그 문 */
+      :((ss.kind==="off"||ss.kind==="none")?'':(ss.kind==="m"?('<div class="ck-acts"><button type="button" class="ck-act pri ps-btn-primary" data-ck="home-match" data-step="'+ss.matchView.stage+'" data-mid="'+ckEsc(ss.matchId)+'">'+ckEsc(ss.matchView.label)+'</button><button type="button" class="ck-act ps-btn-secondary" data-ck="home-match" data-step="opp" data-mid="'+ckEsc(ss.matchId)+'">상대 분석</button></div>')   /* 2.979 — 문장 대신 그 문 */
         :('<div class="empty">훈련 블록이 아직 없어요'+(ss.kind==="tr"?'<button type="button" class="ck-fill" data-ck="fill">세션 채우기 →</button>':'')+'</div>'))))   /* 2.953 — 빈 카드에 문 하나(코치 점검 10/7: 흰 카드에 한 줄뿐이었다) */
     /* 2.570 — 2.299 의 «다음 경기» 줄은 «이번 주» 머리줄의 D-n 칩으로 **옮겼다**(같은 data-ck="match"). 카드에서는 그린다면 두 번이 된다. */
     +'</div></div>';
@@ -20239,6 +20252,7 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
     else if(k==="drill"){ var _lb=b.dataset.lib||""; if(_lb){ try{ parent.postMessage({source:"scout",type:"openDrillEditor",edit:true,libId:_lb},"*"); }catch(_){} } }
     else if(k==="status"){ setView("status"); }
     else if(k==="availtoggle"){ window.__ckAvailOpen=!window.__ckAvailOpen; renderCkHome(); }
+    else if(k==="home-match"){ ckOpenHomeMatch(b.dataset.mid,b.dataset.step); }
     else if(k==="match"){ var _mt=ckMatchOn(b.dataset.md)||m; setView("match"); try{ if(_mt&&_mt.id)matchOpen(_mt.id); }catch(_){} }
     else if(k==="tick"){ try{ if(!m)return; /* teamHomeNextMatch 는 사본을 주므로 실제 기록을 찾아 쓴다 */ var real=((matchLoad()||{}).matches||[]).filter(function(x){return x.id===m.id;})[0]||m; real.ckDone=(real.ckDone&&typeof real.ckDone==="object")?real.ckDone:{}; var _k=b.dataset.step, cur=b.getAttribute("aria-checked")==="true"; real.ckDone[_k]=!cur; m.ckDone=real.ckDone; matchSaveNow(); }catch(_){} renderCkHome(); }
     else if(k==="stage"){ var _st=b.dataset.step, _ms=ckMatchOn(b.dataset.md)||m; setView("match"); try{ if(_ms&&_ms.id)matchOpen(_ms.id); }catch(_){} setTimeout(function(){ try{ var sb=document.querySelector('[data-match-step="'+_st+'"]'); if(sb)sb.click(); }catch(_){} },120); }
@@ -20367,7 +20381,7 @@ function renderTeamHome(){
     if($("teamHomeCycleHint"))$("teamHomeCycleHint").textContent="";
   }
   try{renderTeamWeather();}catch(_){}
-  window.__twCtx={diff:m?diff:null,opp:m?(m.opponent||""):"",ha:m?(m.homeAway||""):"",time:m?(m.time||""):""};   /* 2.636 — 주간 경기 칸의 홈/원정·시간 */
+  window.__twCtx={id:m?(m.id||""):"",sourceId:m?(m.sourceId||""):"",diff:m?diff:null,opp:m?(m.opponent||""):"",ha:m?(m.homeAway||""):"",time:m?(m.time||""):""};   /* 2.636 — 주간 경기 칸의 홈/원정·시간 */
   /* 아이브로 — 매치 위크의 언어는 여기 한 줄만 말한다 */
   try{ var _eb=$("teamHomeEyebrow");
     if(_eb)_eb.textContent=m?("MATCH WEEK · "+(diff===0?"MATCH DAY":(diff>0?"MD-"+diff:"MD+"+Math.abs(diff)))):"TEAM";

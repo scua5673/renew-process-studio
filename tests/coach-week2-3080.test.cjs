@@ -28,7 +28,7 @@ test('team IDP heading is «팀 IDP», not the squad tab name',()=>{
 });
 
 test('intensity: 1~10 with a meaning',()=>{
-  const c={};vm.runInNewContext(fn(P,'rpeWord')+';this.f=rpeWord;',c);
+  const c={PSIntensity:require('../studio/training-intensity.js')};vm.runInNewContext(fn(P,'rpeWord')+';this.f=rpeWord;',c);
   assert.equal([1,3,4,5,6,7,8,9,10].map(c.f).join(','),'회복,회복,저강도,저강도,중강도,중강도,고강도,고강도,최대');assert.equal(c.f(0),'');
   assert.ok(P.includes('[1,2,3,4,5,6,7,8,9,10].map(function(n){'));assert.ok(!P.includes('[2,3,4,5,6,7,8,9].map'));
   assert.ok(P.includes("['1','2','3','4','5','6','7','8','9','10']"));assert.equal((P.match(/class="wf-subph wf-rpe-key"/g)||[]).length,2);
