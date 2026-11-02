@@ -45,9 +45,9 @@ try{
       const headers={'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type,prefer','Access-Control-Allow-Methods':'GET,POST,PATCH,OPTIONS'};
       if(request.method()==='OPTIONS')return route.fulfill({status:204,headers,body:''});
       const name=url.pathname.startsWith('/rest/v1/rpc/')?url.pathname.split('/').at(-1):null,args=request.postDataJSON()||{};calls.push({name,path:url.pathname,args});
-      const send=(v,status=200)=>route.fulfill({status,headers,body:JSON.stringify(v)});
+      const send=(v,status=200)=>{if(Array.isArray(v)&&url.searchParams.has('offset')){const offset=+url.searchParams.get('offset'),limit=+url.searchParams.get('limit');v=v.slice(offset,offset+limit);}return route.fulfill({status,headers,body:JSON.stringify(v)});};
       if(name==='ps_whoami')return send([{uid:ADM,email:'admin@example.test',is_admin:true}]);
-      if(name==='ps_admin_workspaces')return send([{id:WS,name:'프로세스FC',kind:'team',members:3},{id:WS2,name:'프로세스FC U15',kind:'team',members:2}]);
+      if(name==='ps_admin_workspaces'||name==='ps_admin_activity_ws')return send([{id:WS,name:'프로세스FC',kind:'team',members:3},{id:WS2,name:'프로세스FC U15',kind:'team',members:2}]);
       if(name==='ps_admin_users')return send([{user_id:USER,name:'합성 코치',email:'coach@example.test',workspace_ids:[WS,WS2],team_names:'프로세스FC, 프로세스FC U15'},{user_id:OTHER,name:'다른 코치',email:'other@example.test',workspace_ids:[WS]}]);
       if(name==='ps_admin_library')return send(lib);
       if(name==='ps_admin_content_owners')return send(owners);

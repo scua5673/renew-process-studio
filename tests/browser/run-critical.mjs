@@ -28,6 +28,7 @@ suites.identity.push('update-delivery','update-client-lifecycle');
 suites.records.push('multipitch-rotation');
 suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
 suites.entry.push('sync-diagnosis','team-mobile','mobile-navigation');
+suites.entry.push('admin-metrics');
 suites.storage.push('community-youtube');
 const PER_TEST_MS={'board-drag-performance':360000};   /* 3.012 — 한 테스트 한도(기본 240초)의 예외. 위 boardperf 참고 */
 /* 3.012 — 엔진과 상관없이 Chromium 을 직접 띄우는 시험(PS_BROWSER_ENGINE 을 읽지 않는다). WebKit 잡에서는 Chrome 경로가 없어 바로 죽거나

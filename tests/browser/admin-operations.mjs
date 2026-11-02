@@ -34,11 +34,11 @@ try{
    const headers={'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};
    if(req.method()==='OPTIONS')return route.fulfill({status:204,headers,body:''});
    const rpc=url.pathname.startsWith('/rest/v1/rpc/')?url.pathname.split('/').pop():null,args=req.postDataJSON()||{};calls.push({rpc,path:url.pathname,query:url.search,method:req.method(),scope:args.p_user_id||null});
-   const send=(data,status=200)=>route.fulfill({status,headers,body:JSON.stringify(data)});
+   const send=(data,status=200)=>{if(Array.isArray(data)&&url.searchParams.has('offset')){const offset=+url.searchParams.get('offset'),limit=+url.searchParams.get('limit');data=data.slice(offset,offset+limit);}return route.fulfill({status,headers,body:JSON.stringify(data)});};
    if(rpc){
     if(rpc==='ps_whoami')return send([{uid:ADM,email:'admin@example.test',is_admin:true}]);
     if(rpc==='ps_admin_users_v2'||rpc==='ps_admin_users')return send(users);
-    if(rpc==='ps_admin_workspaces')return send(workspaces);
+    if(rpc==='ps_admin_workspaces'||rpc==='ps_admin_activity_ws')return send(workspaces);
     if(rpc==='ps_admin_sync_reports_list'){if(failReports)return send({code:'PGRST202',message:'fixture RPC unavailable'},404);return send(reports.filter(r=>(!args.p_user_id||r.user_id===args.p_user_id)&&(!args.p_workspace_id||r.workspace_id===args.p_workspace_id)));}
     if(rpc==='ps_admin_followups_list')return send(followups.filter(r=>(!args.p_user_id||r.subject_user_id===args.p_user_id)&&(!args.p_workspace_id||r.workspace_id===args.p_workspace_id)));
     if(rpc==='ps_admin_shared_views_list'){if(failViews)return send({code:'PGRST202',message:'fixture report unavailable'},404);return send([{user_id:U,subject_user_id:V,workspace_id:W,view_kind:'player_matches',received_at:iso(3)}].filter(r=>(!args.p_user_id||r.user_id===args.p_user_id||r.subject_user_id===args.p_user_id)&&(!args.p_workspace_id||r.workspace_id===args.p_workspace_id)));}

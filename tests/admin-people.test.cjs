@@ -77,6 +77,6 @@ test('search finds people by player name, login method, account name and team',(
 });
 test('the loader prefers ps_admin_people and falls back to the v1 list',()=>{
   const load=section('function reloadAll(){','function renderStats(){');
-  assert.match(load,/safe\(rpc\('ps_admin_people'\)\)/);
+  assert.match(load,/safe\(adminList\('ps_admin_people',\{\},'user_id.asc'\)\)/);
   assert.match(load,/if\(res\[4\]\.ok&&Array\.isArray\(res\[4\]\.v\)&&res\[4\]\.v\.length\)\{ try\{ USERS=peopleToUsers\(res\[4\]\.v\); \}catch\(_\)\{\} \}/);
 });
