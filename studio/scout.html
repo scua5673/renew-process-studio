@@ -20905,7 +20905,8 @@ function init(){
   if($("rNote"))$("rNote").addEventListener("change",renderReport);
   /* 1.684 — IDP 단독 실행의 '팀 평가표 만들기'가 해시로 평가 항목 화면까지 직행한다 */
   var _vh=/^#view=(attrs)$/.exec(location.hash||"");
-  setView(_vh?_vh[1]:"home");
+  var _requested="";try{_requested=window.frameElement&&window.frameElement.__psTeamViewTarget||"";}catch(_){}
+  setView(_vh?_vh[1]:(_requested||"home"));
 }
 scoutBoot();
 
