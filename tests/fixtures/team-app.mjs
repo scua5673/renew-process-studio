@@ -5,6 +5,7 @@ import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {trackNavigationAborts,pageErrorEntry} from './navigation-abort.mjs';
 import {seoulWeek} from './seoul-week.mjs';
+import {readRequestBody} from './request-body.mjs';
 
 // Synthetic team app fixture for browser regressions (ported from the 2026-09-27 walkthrough). Synthetic team workspace, loopback
 // Supabase-shaped API, every external request and websocket blocked. Never touches production.
@@ -107,7 +108,7 @@ export async function startFixture(opts={}){
     }else if(url.pathname.startsWith('/rest/v1/rpc/')){body=url.pathname.includes('report')?{}:[];}
     return {status:200,headers,body:JSON.stringify(body)};
   }
-  const server=http.createServer(async(req,res)=>{let raw='';try{for await(const c of req)raw+=c;}catch(_){ /* 3.086 CI — 브라우저가 보내던 요청을 끊으면(페이지 닫기 · 이동 중 POST) 여기서 거부된 promise 가 서버 프로세스를 죽였다(invite-link-export ECONNRESET) */ try{res.destroy();}catch(__){} return; }
+  const server=http.createServer(async(req,res)=>{let raw='';try{raw=await readRequestBody(req);}catch(_){ /* 3.086 CI — 브라우저가 보내던 요청을 끊으면(페이지 닫기 · 이동 중 POST) 여기서 거부된 promise 가 서버 프로세스를 죽였다(invite-link-export ECONNRESET) */ try{res.destroy();}catch(__){} return; }
     try{const r=await api({url:base+req.url,method:req.method,headers:req.headers,body:raw?JSON.parse(raw):null});res.writeHead(r.status,r.headers);res.end(r.body);}catch(e){res.writeHead(500);res.end('{}');}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));base='http://127.0.0.1:'+server.address().port;
   /* holdKvPull(wid?,key?) — 지정한 키만 또는 이후 ps_kv GET(wid 를 주면 그 공간 것만)은 돌려준 함수를 부를 때까지 기다린다(쓰기는 그대로) */

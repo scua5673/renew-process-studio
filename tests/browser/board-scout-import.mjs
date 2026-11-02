@@ -64,7 +64,21 @@ try{
  assert.equal(await f.evaluate(()=>state.players.filter(p=>p.team==='red').length),14);
  assert.deepEqual(await f.evaluate(()=>[localStorage.getItem('cs_scout_targets_v1'),localStorage.getItem('scout_tool_v1'),localStorage.getItem('cs_player_del_v1')]),source,'original scouting and team data are never written');
  // Board save remains explicit and persists the imported names in the normal account-owned record.
- assert.equal(await f.evaluate(()=>window.__boardSaveExplicit()),true);
+    const save = await f.evaluate(async () => {
+      const trace=[];
+      const status=()=>({loaded:_boardPrivateLoaded,current:boardPrivateCurrent(_boardPrivateOwner),saving:!!_boardManualSaving,vault:!!_vaultBoardContext,vaultEdit:!!window.__vaultEdit,thumb:!!window.__psThumbCapturing,capLock:!!window.__capLock,applying:_bliveApplying,playing:animPlaying,exporting:!!window.__animExport,view:window.__csView,pending:!!(_boardPrivateRecord&&_boardPrivateRecord.pending),base:!!(_boardPrivateRecord&&_boardPrivateRecord.base),flight:!!_boardPrivateFlight,
+        generation:_boardPrivateGeneration,editSeq:_boardPrivateEditSeq,recordToken:_boardPrivateRecord&&_boardPrivateRecord.token,durableToken:_boardPrivateDurableToken,
+        knownLSLength:typeof _boardPrivateHead==='string'?_boardPrivateHead.length:null,knownIDBLength:typeof _boardPrivateIdbHead==='string'?_boardPrivateIdbHead.length:null,
+        persistence:window.__psBoardPrivatePersistence&&((p)=>({generation:p.generation,seq:p.seq,token:p.token,pending:p.pending,failed:p.failed}))(window.__psBoardPrivatePersistence)});
+      const before=status(),persist=boardPrivatePersist,send=boardPrivateSend;
+      const failure=e=>{let snapshot;try{snapshot=status();}catch(diagnostic){snapshot={diagnosticError:diagnostic.message};}return {stack:e.stack,status:snapshot};};
+      boardPrivatePersist=function(){return persist.apply(this,arguments).catch(e=>{trace.push(['persist',e.message,failure(e)]);throw e;});};
+      boardPrivateSend=function(){return send.apply(this,arguments).catch(e=>{trace.push(['send',e.message,failure(e)]);throw e;});};
+      try {const ok=await __boardSaveExplicit();return {ok,before,after:status(),trace};}
+      finally {boardPrivatePersist=persist;boardPrivateSend=send;}
+    });
+    assert.equal(save.ok,true,JSON.stringify({engine,...save}));
+
  const saved=await f.evaluate(async()=>{const r=await boardPrivateRead(boardPrivateOwner());return JSON.stringify(r);});
  assert.match(saved,/미배치 후보/);assert.match(saved,/김민준/);
  // Owner and permissions are rechecked after opening; loss of authority removes the roster immediately.
