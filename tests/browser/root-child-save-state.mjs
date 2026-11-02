@@ -12,7 +12,7 @@ SIZES.saveStatus={engine,ctx:{viewport:{width:1280,height:900},deviceScaleFactor
 const KEY='process_coach_v1',browsers={},hash=v=>crypto.createHash('sha256').update(String(v)).digest('hex');
 const result={engine,physicalDevice:false,source:Object.fromEntries(['studio/app.html','studio/autosave-status.js','studio/storage.js','studio/sync.js','studio/sync-confirmation.js','studio/process.html','studio/board-draft.js','studio/board.html'].map(f=>[f,hash(fs.readFileSync(path.join(root,f)))])),cases:[],responsive:[],passed:false};
 const write=()=>fs.writeFileSync(path.join(OUT,'results.json'),JSON.stringify(result,null,2)+'\n');
-async function until(fn,label,ms=35000){const end=Date.now()+ms;while(Date.now()<end){if(await fn())return;await new Promise(r=>setTimeout(r,100));}throw Error('Timed out: '+label);}
+async function until(fn,label,ms=35000){const end=Date.now()+ms;while(Date.now()<end){const value=await fn();if(value)return value;await new Promise(r=>setTimeout(r,100));}throw Error('Timed out: '+label);}
 const init={arg:{traceResize:process.env.PS_TRACE_RESIZE==='1'},fn:({traceResize})=>{
  window.__saveStatusViewportAt=Date.now();window.addEventListener('resize',()=>{window.__saveStatusViewportAt=Date.now();});
  window.__saveStatusLayoutErrors=[];
@@ -88,9 +88,14 @@ try{
  // Exercise the normal edit/CAS ACK; never bump the server version or seed a
  // receipt merely to obtain a reassuring label.
  await page.evaluate(()=>PSSync.syncNow('synthetic-normal-cas-confirmation'));
- await until(async()=>await frame.evaluate(key=>{const raw=localStorage.getItem(key);return typeof raw==='string'&&PSSaveState.get('schedule')==='saved'&&!psHasPending()&&parent.PSSync.confirmedValue(key,raw)===true;},KEY),'actual normal-CAS exact schedule ACK');
  await page.evaluate(()=>window.dispatchEvent(new Event('ps-sync-state')));
- const scheduleSaved=await frame.evaluate(async key=>{const local=localStorage.getItem(key),durable=(await storage.peek(key))?.value??null;return {local,durable,state:PSSaveState.get('schedule'),pending:psHasPending(),confirmed:parent.PSSync.confirmedValue(key,local)};},KEY),localRaw=scheduleSaved.local,serverRaw=fx.db.get(WT+'|'+KEY).v;
+ // Capture the exact copies and their receipt together. A new sync round can
+ // legitimately invalidate the receipt between separate wait/read calls.
+ const scheduleSaved=await until(async()=>await frame.evaluate(async key=>{
+  const durable=(await storage.peek(key))?.value??null,local=localStorage.getItem(key);
+  const state=PSSaveState.get('schedule'),pending=psHasPending(),confirmed=parent.PSSync.confirmedValue(key,local);
+  return typeof local==='string'&&local===durable&&state==='saved'&&!pending&&confirmed===true?{local,durable,state,pending,confirmed}:null;
+ },KEY),'actual normal-CAS exact schedule ACK'),localRaw=scheduleSaved.local,serverRaw=fx.db.get(WT+'|'+KEY).v;
  assert.equal(localRaw,scheduleSaved.durable);assert.equal(localRaw,serverRaw);assert.equal(scheduleSaved.state,'saved');assert.equal(scheduleSaved.pending,false);assert.equal(scheduleSaved.confirmed,true);
  const scheduleScope={state:scheduleSaved.state,pending:scheduleSaved.pending,confirmed:scheduleSaved.confirmed,localHash:hash(localRaw),idbHash:hash(scheduleSaved.durable),serverHash:hash(serverRaw)};
  const team=page.frames().find(f=>/\/studio\/scout\.html/.test(f.url()));assert.ok(team,'The real team-navigation frame remains loaded');
