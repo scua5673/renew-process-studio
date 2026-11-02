@@ -133,14 +133,14 @@
   .aud-footer{padding:10px 16px}
 }
 
-/* On a normal laptop, keep both the operational summary and metrics visible.
-   Each long section can scroll; nothing is truncated or removed. */
+/* The issue queue adds a fourth home section. Natural page flow keeps the
+   reports and metrics reachable at any height, without zero-height grid rows. */
 @media (min-width:901px) and (min-height:640px){
-  #app.admin-home-mode{height:100dvh!important;min-height:0!important}
-  #app.admin-home-mode>#viewHome{flex:1;min-height:0;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto minmax(0,1fr);gap:10px;overflow:hidden}
-  #app.admin-home-mode>#viewHome>.col{display:flex;min-height:0;overflow-y:auto}
+  #app.admin-home-mode{height:auto!important;min-height:100dvh!important}
+  #app.admin-home-mode>#viewHome{flex:none;min-height:auto;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;grid-auto-rows:auto;gap:10px;overflow:visible}
+  #app.admin-home-mode>#viewHome>.col{display:block;min-height:auto;overflow:visible}
   .admin-ops{margin-bottom:0}
-  .admin-op-panel{max-height:clamp(160px,26dvh,260px);overflow:auto;scrollbar-width:thin}
+  .admin-op-panel{max-height:none;overflow:visible}
   #viewHome>.col>.panel{margin-top:0!important}
 }
 

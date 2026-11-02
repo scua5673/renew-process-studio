@@ -8,6 +8,7 @@
 <meta name="robots" content="noindex,nofollow">
 <title>PROCESS STUDIO · 관리자</title>
 <link rel="stylesheet" href="/vendor/fonts.css?v=2.552b">
+<link rel="stylesheet" href="studio/admin-hub.css?v=3.238">
 <style>
   :root{
     --bg:#0F141B; --panel:#1A212B; --panel2:#232C38; --line:#2C3744; --line2:#39434F;
@@ -276,8 +277,8 @@
 <link rel="stylesheet" href="studio/admin-support.css?v=20261014">
 <link rel="stylesheet" href="studio/support-image.css?v=3.153">
 <link rel="stylesheet" href="studio/admin-content.css?v=2.890">
-<link rel="stylesheet" href="studio/admin-density.css?v=3.090">
-<link rel="stylesheet" href="studio/admin-today.css?v=3.090">
+<link rel="stylesheet" href="studio/admin-density.css?v=3.238">
+<link rel="stylesheet" href="studio/admin-today.css?v=3.238">
 <link rel="stylesheet" href="studio/admin-stale-clients.css?v=3.201">
 </head>
 <body>
@@ -340,6 +341,7 @@
   </header>
 
   <div class="stats" id="stats"></div>
+  <div class="admin-data-status" id="adminDataStatus" role="status"></div>
 
 
   <section class="wrap hide" id="viewSupport" style="grid-template-columns:1fr" aria-label="오류 제보 접수함"></section>
@@ -615,9 +617,11 @@
 <div id="modalRoot"></div>
 <div class="toast" id="toast"></div>
 
+<script src="studio/admin-data.js?v=3.238"></script>
+<script src="studio/admin-hub.js?v=3.238"></script>
 <script src="studio/admin-user-detail.js?v=2.964"></script>
-<script src="studio/admin-operations.js?v=3.090"></script>
-<script src="studio/admin-today.js?v=3.090"></script>
+<script src="studio/admin-operations.js?v=3.238"></script>
+<script src="studio/admin-today.js?v=3.238"></script>
 <script src="studio/admin-stale-clients.js?v=3.201"></script>
 <script src="studio/admin-update-delivery.js"></script>
 <script src="studio/admin-actions.js?v=20261014"></script>
@@ -645,7 +649,7 @@ function adminLockSession(message){
   try{adminActions=null;if($('admActBody'))$('admActBody').innerHTML='';setSupportCounts(null);}catch(_){}
   try{adminCommunity=null;if($('commBody'))$('commBody').innerHTML='';setCommCounts(null);}catch(_){}
   ['app','modalRoot'].forEach(function(id){var el=document.getElementById(id);if(el){el.classList.add('hide');el.replaceChildren();}});
-  try{WS=[];USERS=[];ALL_LIB=[];HOME=null;WHOLOG=null;IDP_CACHE={};ERR=null;USE=null;}catch(_){}
+  try{WS=[];USERS=[];ALL_LIB=[];HOME=null;WHOLOG=null;IDP_CACHE={};IDP_USERS=null;ERR=null;USE=null;ADMIN_SOURCES={};ADMIN_PEOPLE=[];ADMIN_HUB_STATE={};adminHub=null;}catch(_){}
   ['gateLogin','gateDenied'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add('hide');});
   var gate=document.createElement('div');gate.id='adminSessionLock';gate.className='gate';gate.setAttribute('role','alert');
   var title=document.createElement('h1');title.textContent='관리자 화면을 다시 확인해 주세요';
@@ -795,12 +799,12 @@ function todayFill(){
   if(!('incident' in st))loadTodayIncident();
   if(!('overdue' in st))loadAdminOps();
 }
-function todayReload(){ if(!todayInit())return; adminToday.reset(); refreshSupportBadge(); refreshCommBadge(); loadTodayIncident(); loadAdminOps(); HOME=null; loadHome(); }
+function todayReload(){ if(!todayInit())return; adminToday.reset(); reloadAll(); }
 window.addEventListener('beforeunload',function(e){if(adminSupport&&adminSupport.pendingUnsafe()){e.preventDefault();e.returnValue='';}});
 function loadAdminOps(){
   if(!window.PSAdminOperations)return;
   todaySet('overdue',undefined);
-  if(!adminOps)adminOps=PSAdminOperations.create({rpc:adminRpc,onFollowups:function(rows){todaySet('overdue',window.PSAdminToday?PSAdminToday.overdueCount(rows,Date.now()):null);},users:function(){return USERS;},workspaces:function(){return WS;},openUser:openAdminUser,
+  if(!adminOps)adminOps=PSAdminOperations.create({rpc:adminRpc,onReports:function(rows){ADMIN_HUB_STATE.reports=rows;adminSource('reports',Array.isArray(rows),rows,'저장 보고','home');},onFollowups:function(rows){ADMIN_HUB_STATE.followups=rows;adminSource('followups',Array.isArray(rows),rows,'후속 확인','home');todaySet('overdue',window.PSAdminToday?PSAdminToday.overdueCount(rows,Date.now()):null);},users:function(){return USERS;},workspaces:function(){return WS;},openUser:openAdminUser,
     findUser:function(q){setTab('users');$('uSearch').value=q;renderUsers();$('uSearch').focus();}});
   return adminOps.load();
 }
@@ -912,6 +916,35 @@ function typeName(t){ return TYPES[t]||t||'항목'; }
 
 /* ===== 상태 ===== */
 var WS=[], USERS=[], ALL_LIB=[], curWid=null, curTab='all';
+var ADMIN_SOURCES={},ADMIN_PEOPLE=[],ADMIN_HUB_STATE={},adminHub=null,adminActivityTicket=0,adminHomeTicket=0,adminIdpTicket=0,adminWsTicket=0,adminUseTicket=0;
+function adminList(name,args,order){
+  var epoch=adminAuthEpoch;
+  return PSAdminData.rpcRows(adminRequest,name,args,order,function(){return !adminSessionLocked&&epoch===adminAuthEpoch;});
+}
+function adminSource(key,ok,rows,label,tab){
+  ADMIN_SOURCES[key]={ok:ok,rows:rows,label:label,tab:tab,checkedAt:new Date().toISOString()};
+  adminRenderStatus();adminRenderHub();
+}
+function adminRenderStatus(){
+  var el=$('adminDataStatus');if(!el)return;
+  var rows=Object.keys(ADMIN_SOURCES).map(function(k){return ADMIN_SOURCES[k];});
+  var failed=rows.filter(function(r){return r.ok===false;});
+  var last=rows.map(function(r){return r.checkedAt;}).sort().pop();
+  el.textContent=(failed.length?'확인 못 함: '+failed.map(function(r){return r.label;}).join(' · ')+' — 조회 실패는 0건이 아닙니다. ':'')+(last?'최근 응답 '+fmtDateT(last)+' · 상세 확인 시각은 아래 조회 상태를 확인하세요.':'관리자 자료를 조회하고 있습니다.');
+  if(rows.length){var detail=document.createElement('details'),summary=document.createElement('summary');summary.textContent='자료별 조회 상태';detail.appendChild(summary);rows.forEach(function(r){var line=document.createElement('div');line.textContent=r.label+' · '+(r.ok?'조회됨':'확인 못 함')+' · '+fmtDateT(r.checkedAt);detail.appendChild(line);});el.appendChild(detail);}
+}
+function adminRenderHub(){
+  if(adminSessionLocked||!window.PSAdminHub||!$('viewHome'))return;
+  if(!adminHub){var host=document.createElement('section');host.id='adminHub';host.className='admin-hub';host.setAttribute('aria-label','운영 이슈');
+    var today=$('adminToday');today.parentNode.insertBefore(host,today.nextSibling);
+    adminHub=PSAdminHub.create({host:host,userName:adminPersonName,workspaceName:function(wid){var w=WS.find(function(x){return x.id===wid;});return w?w.name:'공간 이름 미확인';},openUser:openAdminUser,go:setTab,reload:reloadAll});}
+  ADMIN_HUB_STATE.sources=ADMIN_SOURCES;adminHub.render(ADMIN_HUB_STATE);
+}
+function adminHydrateWorkspaces(){
+  if(!ADMIN_SOURCES.workspaces||!ADMIN_SOURCES.workspaces.ok)return;
+  var lib=ADMIN_SOURCES.library&&ADMIN_SOURCES.library.ok?ALL_LIB:null;
+  WS=PSAdminData.workspaces(ADMIN_SOURCES.workspaces.rows,lib,ADMIN_PEOPLE);
+}
 var ADMIN_CONTENT_OWNERS=[],adminOwnersReady=false,adminLibraryTicket=0,adminReloadTicket=0;
 function normalizeLibRows(rows){
   var attributed=window.PSAdminContent?PSAdminContent.joinOwners(rows,ADMIN_CONTENT_OWNERS):(rows||[]).map(function(r){return Object.assign({},r,{owner_id:'',owner_name:'',owner_email:''});});
@@ -957,6 +990,7 @@ function showDenied(uid){
 function reloadAll(){
   if(curTab==='support'){loadAdminSupport();return;}
   if(curTab==='comm'){loadComm();return;}
+  HOME=null;ERR=null;USE=null;IDP_USERS=null;IDP_CACHE={};
   refreshSupportBadge();refreshCommBadge();loadTodayIncident();
   todaySet('overdue',undefined);   /* 3.090 — 아래 loadAdminOps 가 곧 채운다(홈이 먼저 열려 한 번 더 부르지 않게) */
   var libTicket=++adminLibraryTicket,reloadTicket=++adminReloadTicket,epoch=adminAuthEpoch;
@@ -965,29 +999,33 @@ function reloadAll(){
   $('alBody').innerHTML='<div class="loading">불러오는 중…</div>';
   var safe=function(p){return p.then(function(v){return {ok:true,v:v||[]};}).catch(function(e){return {ok:false,v:[],e:e};});};
   Promise.all([
-    safe(rpc('ps_admin_workspaces')),
+    safe(adminList('ps_admin_activity_ws',{},'id.asc')),
     /* 1.636 — 이름·소속 팀·본인이 만든 수까지 주는 v2 를 먼저 쓰고, 아직 SQL 을 안 깐
        프로젝트에서는 예전 함수로 돌아간다(화면은 두 모양을 다 그린다 — renderUsers 의 hasV2). */
     /* 2.914 — ps_admin_users_v2(supabase-admin-who.sql, 1.636)는 운영에 적용된 적이 없어 페이지를 열 때마다 404 를 남겼다.
        적용 전까지는 있는 함수만 부른다. 적용하면 이 줄을 v2 → v1 폴백으로 되돌린다. */
-    safe(rpc('ps_admin_users')),
-    safe(rpc('ps_admin_library',{p_wid:null,p_include_deleted:true})),
-    safe(rpc('ps_admin_content_owners',{p_wid:null,p_include_deleted:true})),
+    safe(adminList('ps_admin_users',{},'user_id.asc')),
+    safe(adminList('ps_admin_library',{p_wid:null,p_include_deleted:true},'workspace_id.asc,lib_id.asc')),
+    safe(adminList('ps_admin_content_owners',{p_wid:null,p_include_deleted:true},'workspace_id.asc,lib_id.asc')),
     /* 2.919 — 사람 알아보기(migrations/20260930_admin_people): 이름·로그인 방식·팀별 역할·연결 선수. 없으면 위 v1 그대로 */
-    safe(rpc('ps_admin_people'))
+    safe(adminList('ps_admin_people',{},'user_id.asc'))
   ]).then(function(res){
     if(adminSessionLocked||epoch!==adminAuthEpoch||reloadTicket!==adminReloadTicket)return;
-    WS=res[0].v; USERS=res[1].v;
+    WS=res[0].ok?res[0].v:WS; USERS=res[1].ok?res[1].v:USERS;
+    if(res[4].ok)ADMIN_PEOPLE=res[4].v;
     if(res[4].ok&&Array.isArray(res[4].v)&&res[4].v.length){ try{ USERS=peopleToUsers(res[4].v); }catch(_){} }
     if(libTicket===adminLibraryTicket){
       ADMIN_CONTENT_OWNERS=res[3].ok&&Array.isArray(res[3].v)?res[3].v:[];adminOwnersReady=res[3].ok&&Array.isArray(res[3].v);
       ALL_LIB=normalizeLibRows(res[2].v);
     }
-    renderStats();
+    adminSource('workspaces',res[0].ok,res[0].v,'팀 목록','ws');
+    adminSource('users',res[1].ok||(res[4].ok&&res[4].v.length>0),USERS,'사용자','users');
+    if(libTicket===adminLibraryTicket)adminSource('library',res[2].ok,ALL_LIB,'콘텐츠','all');
+    adminHydrateWorkspaces();renderStats();
     loadAdminOps();
     if(res[0].ok) renderWsList();
-    else $('wsList').innerHTML='<div class="empty">팀 정보를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_workspaces')+'</div>';
-    if(res[1].ok) renderUsers();
+    else $('wsList').innerHTML='<div class="empty">팀 정보를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_activity_ws')+'</div>';
+    if(res[1].ok||(res[4].ok&&res[4].v.length>0)) renderUsers();
     else $('usersTable').innerHTML='<tr><td colspan="6"><div class="empty">사용자 집계를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_users')+'</div></td></tr>';
     if(res[2].ok||libTicket!==adminLibraryTicket) renderAllLib();
     else $('alBody').innerHTML='<div class="empty">콘텐츠 정보를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_library')+'</div>';
@@ -1000,22 +1038,17 @@ function reloadAll(){
 }
 function reloadAllLib(){
   var ticket=++adminLibraryTicket,epoch=adminAuthEpoch;
-  return Promise.all([rpc('ps_admin_library',{p_wid:null,p_include_deleted:true}),rpc('ps_admin_content_owners',{p_wid:null,p_include_deleted:true}).catch(function(){return null;})]).then(function(res){
+  return Promise.all([adminList('ps_admin_library',{p_wid:null,p_include_deleted:true},'workspace_id.asc,lib_id.asc'),adminList('ps_admin_content_owners',{p_wid:null,p_include_deleted:true},'workspace_id.asc,lib_id.asc').catch(function(){return null;})]).then(function(res){
     if(adminSessionLocked||epoch!==adminAuthEpoch||ticket!==adminLibraryTicket)return;
-    ADMIN_CONTENT_OWNERS=Array.isArray(res[1])?res[1]:[];adminOwnersReady=Array.isArray(res[1]);ALL_LIB=normalizeLibRows(res[0]);renderAllLib();
-  }).catch(function(){if(!adminSessionLocked&&epoch===adminAuthEpoch)toast('콘텐츠 목록을 새로고침하지 못했습니다.');});
+    ADMIN_CONTENT_OWNERS=Array.isArray(res[1])?res[1]:[];adminOwnersReady=Array.isArray(res[1]);ALL_LIB=normalizeLibRows(res[0]);adminSource('library',true,ALL_LIB,'콘텐츠','all');adminHydrateWorkspaces();renderStats();renderAllLib();
+  }).catch(function(){if(!adminSessionLocked&&epoch===adminAuthEpoch){adminSource('library',false,null,'콘텐츠','all');renderStats();toast('콘텐츠 목록을 새로고침하지 못했습니다.');}});
 }
 function renderStats(){
-  var libTotal=WS.reduce(function(a,w){return a+(w.lib_count||0);},0);
-  var teams=WS.filter(function(w){return w.kind==='team';}).length;
-  var act7=ACT_WS?ACT_WS.filter(function(w){ var last=(new Date(w.last_kv||0)>new Date(w.last_lib||0))?w.last_kv:w.last_lib; return isFresh(last); }).length:null;
-  $('stats').innerHTML=
-     stat(USERS.length,'계정')
-    +stat(WS.length,'공간 (팀 + 개인)')
-    +stat(teams,'팀')
-    +stat(libTotal,'콘텐츠')
-    +(act7!=null?stat(act7,'7일 갱신된 공간'):'');
+  var sums=PSAdminData.summary(ADMIN_SOURCES),known=PSAdminData.unknown;
+  var act7=ACT_WS?ACT_WS.filter(function(w){return isFresh(w.last_kv)||isFresh(w.last_lib);}).length:null;
+  $('stats').innerHTML=stat(known(sums.accounts),'계정')+stat(known(sums.spaces),'공간 (팀 + 개인)')+stat(known(sums.teams),'팀')+stat(known(sums.content),'콘텐츠')+(act7!=null?stat(act7,'7일 갱신된 공간'):'');
 }
+
 function stat(n,l){ return '<div class="stat"><div class="n">'+n+'</div><div class="l">'+esc(l)+'</div></div>'; }
 
 /* ===== 탭 ===== */
@@ -1065,7 +1098,7 @@ function renderIncidents(){
   var ok=since!=null&&since>=goal;
   var head='<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0 8px">'
     +'<div style="font-size:30px;font-weight:800;line-height:1">'+(since==null?'—':since)+'<span style="font-size:13px;font-weight:700;color:var(--dim2)"> 일 / '+goal+'일</span></div>'
-    +'<div style="font-size:12px;color:var(--dim)">'+(since==null?'기록된 사고가 없어요':'마지막 사고 '+esc(incWhen(r.last_loss_at))+' 뒤')+(ok?' · <b style="color:#4CC27A">문턱 통과</b>':' · 유료 전환 문턱까지 '+Math.max(0,goal-(since||0))+'일')+'</div></div>'
+    +'<p class="muted">등록된 사고 기록 기준이며 미검토 후보·미수신 기기의 현재 상태는 포함하지 않습니다.</p><div style="font-size:12px;color:var(--dim)">'+(since==null?'기록된 사고가 없어요':'마지막 사고 '+esc(incWhen(r.last_loss_at))+' 뒤')+(ok?' · <b style="color:#4CC27A">문턱 통과</b>':' · 유료 전환 문턱까지 '+Math.max(0,goal-(since||0))+'일')+'</div></div>'
     +'<div style="height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:14px"><div style="height:100%;width:'+pct+'%;background:'+(ok?'#4CC27A':'var(--blue)')+'"></div></div>';
   function tbl(headRow,rows){ if(!rows.length)return '<div style="font-size:11px;color:var(--dim2);padding:6px 0">없음</div>'; return '<div style="overflow:auto"><table><thead><tr>'+headRow.map(function(x){return '<th>'+x+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(c){return '<tr>'+c.map(function(x){return '<td>'+x+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>'; }
   var html=head;
@@ -1138,7 +1171,7 @@ function loadBack(){
     html+='<div class="sec-t" style="margin-top:14px">7일 판 분포</div>'+tbl(['판','사람','이벤트','마지막'],(h.versions||[]).map(function(v){return [v.ver,n(v.users),n(v.events),ko(v.last_at)];}));
     html+='<div class="sec-t" style="margin-top:14px">큰 문서 8</div>'+tbl(['팀','키','길이','고침'],(h.bigdocs||[]).map(function(b){return [b.ws,b.k,mb(b.len),ko(b.upd)];}));
     html+='<div class="sec-t" style="margin-top:14px">7일 서버 거부</div>'+tbl(['사유','키','건'],(h.denied7||[]).map(function(d){return [d.reason,d.k,n(d.n)];}));
-    html+='<div class="sec-t" style="margin-top:14px">야간 작업</div>'+tbl(['작업','일정(UTC)','켜짐'],(h.cron||[]).map(function(c){return [c.job,c.schedule,c.active?'예':'아니오'];}));
+    html+='<p class="muted">작업 활성 여부는 최근 실행 성공·백업 복구 검증을 뜻하지 않습니다. 이 응답에는 실행·복구 검증 결과가 포함되지 않습니다.</p><div class="sec-t" style="margin-top:14px">야간 작업</div>'+tbl(['작업','일정(UTC)','켜짐'],(h.cron||[]).map(function(c){return [c.job,c.schedule,c.active?'예':'아니오'];}));
     var p=h.policy||{}; html+='<div style="font-size:11px;color:var(--dim2);margin-top:12px">앱 판 정책: 최소 '+esc(p.min_build||'—')+' · 판 없는 앱 차단 '+(p.block_unversioned?'켜짐':'꺼짐')+' · 잰 시각 '+esc(ko(h.at))+'</div>';
     el.innerHTML=html;
   }).catch(function(e){ el.innerHTML='<div class="loading">불러오지 못했어요 — '+esc(String(e&&e.message||e))+'</div>'; });
@@ -1164,7 +1197,7 @@ function peopleToUsers(list){
     var name=String(p.member_name||'').trim()||String(p.account_name||'').trim();
     return {user_id:p.user_id,email:p.email||'',name:name,account_name:p.account_name||'',member_name:p.member_name||'',
       provider:p.provider||'',created_at:p.created_at,last_sign_in_at:p.last_sign_in_at,made_count:+p.made_count||0,
-      ws_count:Array.isArray(p.teams)?p.teams.length:0,teams:teams,
+      ws_count:Array.isArray(p.teams)?p.teams.length:0,workspace_ids:(p.teams||[]).map(function(t){return t.workspace_id;}).filter(Boolean),teams:teams,
       players:teams.filter(function(t){return t.player;}).map(function(t){return t.player;}).join(', '),
       team_names:teams.map(function(t){var x=[t.role,t.player].filter(Boolean).join(' · ');return t.name+(x?' ('+x+')':'');}).join(', ')};
   });
@@ -1220,7 +1253,8 @@ function errCode(e){ return e.error_code||e.event_name||'unknown'; }
 function errKindOf(e){ return e.event_name==='sync_failed'||e.feature==='sync'?'sync':'app'; }
 function errStorageDetail(code,stage,msg){
   var s=String(stage||'')+' '+String(msg||'');
-  if(/values differ|versions differ|storage_copies_differ/.test(s))return ['저장 기준 사본 충돌','기기 안의 두 저장 사본이 달라 덮어쓰기를 보류했습니다. 저장공간 부족이라는 뜻은 아닙니다.','두 사본을 보존하세요. 최신 앱에서 확정된 기준본으로 재확인하며, 계속되면 자료 확인에서 원문을 비교하세요. 브라우저 자료를 지우지 마세요.'];
+  if(code==='ls_quota'||code==='storage_full'||/quota|exceeded.*storage/i.test(s))return ['기기 저장 용량 확인','기기 저장 시 용량 제한이 보고되었습니다. 실제 미저장 범위와 정본 저장 상태를 따로 확인해야 합니다.','미저장 원문을 먼저 보존하고 큰 문서·저장소 사용량을 확인하세요. 확인 없이 브라우저 자료를 삭제하거나 앱을 종료하지 마세요.'];
+  if(/values differ|versions differ|storage_copies_differ|roster_copies_differ/.test(s))return ['저장 기준 사본 충돌','기기 안의 두 저장 사본이 달라 덮어쓰기를 보류했습니다. 저장공간 부족이라는 뜻은 아닙니다.','두 사본을 보존하세요. 최신 앱에서 확정된 기준본으로 재확인하며, 계속되면 자료 확인에서 원문을 비교하세요. 브라우저 자료를 지우지 마세요.'];
   if(/owner changed|source changed|source or owner changed/.test(s)||code==='sync_workspace_changed'||code==='sync_local_changed')return ['변경된 작업 재확인','계정·팀 또는 편집 내용이 바뀌어 이전 작업의 적용을 멈췄습니다. 새 자료를 덮지 않기 위한 보호 동작입니다.','현재 계정과 팀에서 다음 동기화 결과를 확인하세요. 같은 화면에서 계속 반복되면 해당 stage의 동시 편집 경로를 점검하세요.'];
   if(/connection is closing|indexed database server/i.test(s))return ['기기 저장소 연결 종료','브라우저가 IndexedDB 연결을 종료했거나 저장소 내부 오류를 반환했습니다.','최신 앱은 닫힌 연결을 다시 엽니다. 반복되면 미저장 작업을 보존한 뒤 앱을 다시 열고 기기 저장소 상태를 확인하세요.'];
   return null;
@@ -1265,7 +1299,7 @@ function errResolution(code,event,stage,msg){
   var detail=errStorageDetail(code,stage,msg);if(detail)return detail[2];
   if(code==='sync_conflict')return '자료 확인에서 기기·서버 원문과 병합 기준을 비교하세요. 확인 전에는 덮어쓰거나 브라우저 자료를 지우지 마세요.';
   if(event==='update_deferred')return '먼저 해당 화면의 미저장 입력과 기기 저장 상태를 확인하세요. 저장이 확인된 뒤 업데이트를 적용합니다. 같은 단계가 반복되면 해당 화면의 저장 장벽을 점검하세요. 브라우저 자료 삭제나 강제 종료를 먼저 안내하지 마세요.';
-  if(event==='update_sw_failed')return '앱을 완전히 닫았다가 다시 열게 하세요. 여러 사람에게서 나오면 sw.js 미리 받기 목록에 없는 파일·실패하는 파일이 있는지 배포본에서 확인하세요.';
+  if(event==='update_sw_failed')return '미저장 자료와 대기를 먼저 확인·보존하세요. 저장 확인 뒤 업데이트를 재시도하며, 반복되면 배포 파일 응답·캐시 용량·설치 단계를 확인하세요. 확인 전 강제 종료나 자료 삭제를 안내하지 마세요.';
   if(code==='sync_reject_hold')return '사용자에게 «자료 확인»을 열어 팀 것으로 맞출지, 이 기기 것을 남길지 고르게 하세요. 오래된 앱 판이면 앱을 완전히 닫았다가 다시 열게 합니다.';
   if(code==='sync_server_rejected')return '대기 편집을 보존하고 최신 앱에서 재시도하세요. 반복되면 조건부 저장 응답과 서버 원문, 권한 정책을 확인하세요.';
   if(code==='sync_confirm_missing'||code==='match_not_ready')return '저장 완료로 간주하지 말고 대기 작업을 유지하세요. 최신 앱에서 다시 확인하고 동일 stage가 반복되는지 확인하세요.';
@@ -1324,10 +1358,10 @@ function loadErrors(force){
   return readErrorPages(days,current).then(function(result){
     if(!current())return;
     ERR={days:days,rows:result.rows.filter(function(e){return e.event_name!=='network_offline'&&e.event_name!=='network_restored';}),capped:result.capped,err:null};
-    ERR_BUSY=false; renderErrors();
+    ERR_BUSY=false; adminSource('errors',true,null,'오류 분석','errors');renderErrors();
   }).catch(function(e){
     if(!current())return;
-    ERR={days:days,rows:[],capped:false,err:String(e&&e.message||e)}; ERR_BUSY=false; renderErrors();
+    ERR={days:days,rows:[],capped:false,err:String(e&&e.message||e)}; ERR_BUSY=false;adminSource('errors',false,null,'오류 분석','errors');renderErrors();
   });
 }
 function renderErrors(){
@@ -1359,7 +1393,7 @@ function renderErrors(){
   $('errSummary').innerHTML=cap+'<div class="err-kpis">'
     +'<div class="err-kpi"><b>'+rows.length.toLocaleString()+'</b><span>'+ERR.days+'일 오류 이벤트</span></div>'
     +'<div class="err-kpi" title="같은 사람·같은 오류·같은 단계는 한 시간에 한 번만 셉니다"><b>'+Object.keys(once).length.toLocaleString()+'</b><span>되풀이 빼면</span></div>'
-    +'<div class="err-kpi" title="같은 오류를 20번 넘게 되풀이한 사람 — 막힌 기기일 가능성이 큽니다"><b>'+Object.keys(stuck).length.toLocaleString()+'</b><span>되풀이 중인 사람</span></div>'
+    +'<div class="err-kpi" title="같은 오류를 20번 넘게 되풀이한 사람 — 막힌 기기일 가능성이 큽니다"><b>'+Object.keys(stuck).length.toLocaleString()+'</b><span>기간 중 20회 이상 반복</span></div>'
     +'<div class="err-kpi"><b>'+Object.keys(users).length.toLocaleString()+'</b><span>영향 사용자</span></div>'
     +'<div class="err-kpi"><b>'+Object.keys(devices).length.toLocaleString()+'</b><span>기기 종류</span></div>'
     +'<div class="err-kpi"><b>'+Object.keys(codes).length.toLocaleString()+'</b><span>오류 코드</span></div></div>';
@@ -1424,12 +1458,13 @@ function loadStaleClients(){
 function loadHome(){
   todayFill();
   if(HOME){ renderHome(); return; }
+  var ticket=++adminHomeTicket,epoch=adminAuthEpoch;
   loadStaleClients();
   Promise.all([
     rpc('ps_admin_idp_funnel').catch(function(){return null;}),
-    rpc('ps_admin_activity_ws').catch(function(){return [];}),
-    rpc('ps_admin_activity_keys',{p_days:14}).catch(function(){return [];}),
-    rpc('ps_admin_activity_users').catch(function(){return null;}),
+    adminList('ps_admin_activity_ws',{},'id.asc').catch(function(){return null;}),
+    adminList('ps_admin_activity_keys',{p_days:14},'feature.asc').catch(function(){return null;}),
+    adminList('ps_admin_activity_users',{},'user_id.asc').catch(function(){return null;}),
     rpc('ps_admin_usage_daily',{p_days:30}).catch(function(){return null;}),
     rpc('ps_admin_usage_summary').catch(function(){return null;}),
     rpc('ps_admin_usage_features',{p_days:14}).catch(function(){return null;}),
@@ -1439,7 +1474,10 @@ function loadHome(){
     loadSyncDetails24h().catch(function(){return null;}),
     rpc('ps_admin_reach').catch(function(){return null;})
   ]).then(function(r){
-    HOME={funnel:(r[0]&&r[0][0])||null, ws:r[1]||[], keys:r[2]||[], users:r[3]||[], usersOk:Array.isArray(r[3]),
+    if(ticket!==adminHomeTicket||epoch!==adminAuthEpoch||adminSessionLocked)return;
+    adminSource('homeTeams',Array.isArray(r[1]),null,'홈 팀 현황','home');adminSource('homeUsers',Array.isArray(r[3]),null,'홈 사용자 현황','home');
+    [['homeFunnel',0,'IDP 보유 현황'],['homeKeys',2,'기능별 저장 활동'],['homeDaily',4,'일별 사용'],['homeSummary',5,'사용 요약'],['homeFeatures',6,'기능 방문'],['homeHealth',7,'안정성'],['homeEvents',8,'이벤트 분류'],['homeReach',11,'가입 현황']].forEach(function(x){adminSource(x[0],r[x[1]]!=null,null,x[2],'home');});
+    HOME={wsOk:Array.isArray(r[1]),funnel:(r[0]&&r[0][0])||null, ws:r[1]||[], keys:r[2]||[], users:r[3]||[], usersOk:Array.isArray(r[3]),
           daily:r[4]||null, usum:(r[5]&&r[5][0])||null, feat:r[6]||null,
           health:(r[7]&&r[7][0])||null, events:r[8]||null, errorDetails:r[9],syncDetails:r[10],
           reach:(r[11]&&r[11][0])||null};
@@ -1500,7 +1538,7 @@ function renderHome(){
     var signupsC=(R.signups!=null)?R.signups:((F&&F.total_users!=null)?F.total_users:(usersOk?users.length:'—'));
     var coachesC=(R.coaches!=null)?R.coaches:'—';
     var playerAccC=(R.player_accounts!=null)?R.player_accounts:'—';
-    var teamsC=(R.teams!=null)?R.teams:teams.length;
+    var teamsC=(R.teams!=null)?R.teams:(HOME.wsOk===false?'확인 못 함':teams.length);
     var stat=function(n,lb,sub){ return '<div style="flex:1;min-width:112px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:15px 18px">'
       +'<div style="font-size:31px;font-weight:800;letter-spacing:-.6px;line-height:1;font-variant-numeric:tabular-nums">'+n+'</div>'
       +'<div style="font-size:12px;font-weight:700;color:var(--dim);margin-top:6px">'+lb+'</div>'
@@ -1518,7 +1556,7 @@ function renderHome(){
   var newU7=usersOk?users.filter(function(u){return _hmDaysAgo(u.created_at,7);}).length:'—';
   var act7=F?F.active_7d:(usersOk?users.filter(function(u){return _hmDaysAgo(u.last_sign_in_at,7);}).length:'—');
   var idpLog7=F?F.log_7d:(usersOk?users.filter(function(u){return _hmDaysAgo(u.idp_last,7);}).length:'—');
-  var team7=teams.filter(function(w){return _hmDaysAgo(w.last_kv,7)||_hmDaysAgo(w.last_lib,7);}).length;
+  var team7=HOME.wsOk===false?'확인 못 함':teams.filter(function(w){return _hmDaysAgo(w.last_kv,7)||_hmDaysAgo(w.last_lib,7);}).length;
   var kpi=function(n,lb,sub,go){ return '<div onclick="'+(go||'')+'" style="flex:1;min-width:118px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;'+(go?'cursor:pointer':'')+'">'
     +'<div style="font-size:22px;font-weight:800;letter-spacing:-.4px">'+n+'</div>'
     +'<div style="font-size:11px;font-weight:700;color:var(--dim);margin-top:2px">'+lb+'</div>'
@@ -1527,7 +1565,7 @@ function renderHome(){
     +kpi(newU7,'신규 가입',usersOk?'총 '+users.length+'명':'사용자 집계 오류',"setTab('users')")
     +kpi(act7,'최근 로그인','최근 7×24시간 · 인증 기록',"setTab('users')")
     +kpi(idpLog7,'IDP 갱신 계정','일지가 있는 문서 · 최근 7일 갱신',"setTab('idp')")
-    +kpi(team7,'갱신된 팀 공간','전체 '+teams.length+'개 공간',"setTab('ws')")
+    +kpi(team7,'갱신된 팀 공간',HOME.wsOk===false?'팀 현황 조회 실패':'전체 '+teams.length+'개 공간',"setTab('ws')")
     +'</div>';
   /* ── 안정성: 실제 앱 오류·동기화 실패·연결 전환을 분리한다. 콘텐츠 본문은 수집하지 않는다 ── */
   var H=HOME.health;
@@ -1570,7 +1608,7 @@ function renderHome(){
   var quietForAction=teams.filter(function(w){return !(_hmDaysAgo(w.last_kv,7)||_hmDaysAgo(w.last_lib,7));}).length;
   if(quietForAction) actionRows.push(['','7일간 갱신 없는 팀 공간 '+quietForAction+'개','같은 팀의 다른 공간과 실제 훈련·경기 일정을 확인하세요. 사용 중단으로 단정하지 않습니다.']);
   var noIdp=usersOk?users.filter(function(u){return !u.idp_last;}).length:0;
-  if(noIdp) actionRows.push(['','IDP 기록이 없는 사용자 '+noIdp+'명','계정–선수 연결과 IDP 시작 여부를 확인하세요.']);
+  if(noIdp) actionRows.push(['','조회된 계정에서 IDP 문서 갱신이 확인되지 않은 사용자 '+noIdp+'명','계정–선수 연결과 IDP 시작 여부를 확인하세요.']);
   if(!actionRows.length) actionRows.push(['ok','현재 집계의 추가 확인 신호 없음','미수집 기기의 상태는 알 수 없습니다. 사용자별 최신 보고와 문의를 함께 확인하세요.']);
   $('hmActions').innerHTML='<div class="action-list">'+actionRows.slice(0,6).map(function(a){
     return '<div class="action-item '+a[0]+'"><i class="dot"></i><div class="body"><b>'+a[1]+'</b><span>'+a[2]+'</span></div></div>';
@@ -1654,7 +1692,7 @@ function renderHome(){
   $('hmKeys').innerHTML=!keys.length?'<div class="empty">14일 내 사용 기록이 없습니다.</div>'
     :keys.slice(0,8).map(function(k){
       return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)">'
-        +'<span class="nm" style="flex:1;font-size:12px">'+esc(FEATURE_LB[k.feature]||k.feature)+'</span>'
+        +'<span class="nm" style="flex:1;font-size:12px">'+esc(FEATURE_LB[k.feature]||PSAdminData.feature(k.feature))+'</span>'
         +'<span class="muted" style="font-size:11px">'+(k.ws_count||0)+'곳</span>'
         +'<span class="muted" style="font-size:11px;flex:0 0 64px;text-align:right">'+fmtAgo(k.last_at)+'</span></div>';
     }).join('');
@@ -1697,7 +1735,7 @@ function renderHome(){
 /* ══ 2.516 · 사용 방식 ══════════════════════════════════════════════════════
    ps_events 를 그대로 읽어 관리자 브라우저에서 집계한다(새 RPC 없음 — 오류 상세가 쓰는 길과 같다).
    ⚠ 핵심 행동 이벤트는 2.516 배포 시점부터 쌓인다. 그 전 기간은 비어 보이는 게 맞다. */
-var USE=null, USE_BUSY=false, USE_LIMIT=8000;
+var USE=null, USE_BUSY=false, USE_LIMIT=30000;
 var USE_ACTMAP=null;
 function useActLabel(n){
   if(!USE_ACTMAP){ USE_ACTMAP={}; ACT_LB.forEach(function(a){ USE_ACTMAP[a[0]]=a[1]; }); }
@@ -1705,25 +1743,15 @@ function useActLabel(n){
 }
 function useDaysVal(){ var e=$('useDays'); return Math.max(1,Math.min(90,+((e&&e.value)||14)||14)); }
 function loadUse(force){
-  if(USE_BUSY)return;
-  if(USE&&!force&&USE.days===useDaysVal()){ renderUse(); return; }
-  USE_BUSY=true;
-  ['useActs','useWhen','useFlow','useDevice','usePeople'].forEach(function(id){
-    if($(id))$(id).innerHTML='<div class="loading">불러오는 중…</div>'; });
-  var days=useDaysVal();
-  ensureToken().then(function(at){ if(!at)throw new Error('no token');
-    var since=new Date(Date.now()-days*86400000).toISOString();
-    var q='?select=event_name,feature,device,app_version,created_at,user_id,status'
-      +'&created_at=gte.'+encodeURIComponent(since)+'&order=created_at.desc&limit='+USE_LIMIT;
-    return fetch(BASE+'/rest/v1/ps_events'+q,{headers:hj(at)}).then(function(r){
-      return r.text().then(function(t){ if(!r.ok)throw new Error('use '+r.status+' '+t); return t?JSON.parse(t):[]; });
-    });
-  }).then(function(rows){
-    USE={days:days,rows:rows||[],capped:(rows||[]).length>=USE_LIMIT,err:null}; USE_BUSY=false; renderUse();
-  }).catch(function(e){
-    USE={days:days,rows:[],capped:false,err:String(e&&e.message||e)}; USE_BUSY=false; renderUse();
-  });
+  if(USE&&!force&&USE.days===useDaysVal()){renderUse();return Promise.resolve();}
+  var ticket=++adminUseTicket,epoch=adminAuthEpoch,days=useDaysVal();USE_BUSY=true;
+  function current(){return ticket===adminUseTicket&&epoch===adminAuthEpoch&&!adminSessionLocked;}
+  ['useActs','useWhen','useFlow','useDevice','usePeople'].forEach(function(id){if($(id))$(id).innerHTML='<div class="loading">불러오는 중…</div>';});
+  return PSAdminData.events(adminRequest,days,USE_LIMIT,current).then(function(result){
+    if(!current())return;USE=Object.assign({days:days,err:null},result);USE_BUSY=false;adminSource('usage',true,null,'사용 방식','use');renderUse();
+  }).catch(function(e){if(!current())return;USE={days:days,rows:[],capped:false,err:String(e.message||e)};USE_BUSY=false;adminSource('usage',false,null,'사용 방식','use');renderUse();});
 }
+
 function useBar(label,n,mx,right,dim){
   return '<div style="display:flex;align-items:center;gap:9px;margin:7px 0'+(dim?';opacity:.55':'')+'">'
     +'<span style="flex:0 0 118px;font-size:11px;font-weight:700;color:var(--dim);text-align:right">'+esc(label)+'</span>'
@@ -1739,6 +1767,7 @@ function renderUse(){
     return;
   }
   var rows=USE.rows, D=USE.days;
+  var coverage=USE.checkedAt?'<div class="muted">조회 '+fmtDateT(USE.checkedAt)+' · '+fmtDateT(USE.since)+' ~ '+fmtDateT(USE.until)+' · '+rows.length.toLocaleString()+'개 이벤트</div>':'';
   var capNote=USE.capped?'<div class="muted" style="font-size:11px;margin-bottom:6px">⚠ 최근 '+USE_LIMIT.toLocaleString()+'건까지만 읽었습니다 — 기간을 줄이면 전체가 보입니다.</div>':'';
 
   /* ① 얼마나 자주 하나 — 핵심 행동(a_*) */
@@ -1760,7 +1789,7 @@ function renderUse(){
       +'<span style="font-size:12px"><b style="font-size:16px">'+tot.toLocaleString()+'</b> <span class="muted">회 · '+D+'일</span></span>'
       +'<span style="font-size:12px"><b style="font-size:16px">'+Object.keys(ppl).length+'</b> <span class="muted">명</span></span>'
       +'<span style="font-size:12px"><b style="font-size:16px">'+(Object.keys(ppl).length?(tot/Object.keys(ppl).length).toFixed(1):'—')+'</b> <span class="muted">1인당</span></span></div>';
-    host.innerHTML=capNote+head+list.map(function(x){
+    host.innerHTML=coverage+capNote+head+list.map(function(x){
       var right=x.n?('<b>'+x.n+'</b>회 <span class="muted" style="font-weight:600">· '+x.u+'명 · '+(x.n/(x.u||1)).toFixed(1)+'/인</span>')
                    :'<span class="muted" style="font-weight:600">아직 없음</span>';
       return useBar(x.lb,x.n,mx,right,!x.n);
@@ -1881,7 +1910,7 @@ var FEATURE_LB={'cs_idp_v1_*':'IDP — 선수 개인 기록','training_sessions_
   'cs_perms_v1':'권한','cs_vault_folders_v1':'보관함 폴더','cs_vault_folder_tags_v1':'보관함 태그','cs_vault_folder_meta_v1':'보관함 메타',
   'cs_themes_v1':'테마 설정','cs_team_v1':'팀 설정','cs_psched_v1':'팀 일정','cs_pmeet_v1':'미팅','cs_pwarm_v1':'웜업',
   'cs_ptrain_v1':'훈련 계획','cs_match_v1':'경기','cs_match_roster_v1':'경기 로스터','cs_meet_sit_v1':'미팅 자리',
-  'cs_notes_v1':'노트','cs_note_papers_v1':'노트 용지','cs_lib_rev':'보관함 갱신 신호'};
+  'cs_team_attrs_v1':'팀 평가 설정','cs_private_board_v1':'개인 작전판','cs_board_live_v1':'작업 중인 작전판','cs_team_matches_v1':'팀 경기','cs_learn_sync_v1':'학습 기록','cs_analysis_team_library_v1':'팀 경기 분석','cs_gamemodel_personal_v1':'개인 게임모델','cs_notes_v1':'노트','cs_note_papers_v1':'노트 용지','cs_lib_rev':'보관함 갱신 신호'};
 /* ══ 1.636 · 최근 활동 — "누가 뭘 만들었나" ═════════════════════════════════
    사용자 지시: "누가 가입했는지 누가 뭘 만들었지가 제일 중요해".
    ps_audit 이 90일치 «누가·어느 팀·무슨 키·만듦/고침/지움·언제» 를 쌓고 있었는데
@@ -1925,7 +1954,7 @@ function renderWhoLog(){
     return;
   }
   el.innerHTML=WHOLOG.slice(0,40).map(function(r){
-    var what=FEATURE_LB[r.k]||(String(r.k||'').indexOf('cs_idp_v1_')===0?'IDP — 선수 개인 기록':r.k);
+    var what=FEATURE_LB[r.k]||PSAdminData.feature(r.k);
     var verb=WHOLOG_VERB[r.action]||r.action||'바꿨습니다';
     var del=(r.action==='delete');
     return '<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)">'
@@ -1944,16 +1973,17 @@ function fmtAgo(ts){ if(!ts)return '—';
   if(s<86400*30)return Math.floor(s/86400)+'일 전'; return fmtDate?fmtDate(ts):new Date(ts).toLocaleDateString(); }
 function isFresh(ts){ return ts && (Date.now()-new Date(ts).getTime()) < 7*86400*1000; }
 function loadActivity(){
-  Promise.all([ rpc('ps_admin_activity_ws'), rpc('ps_admin_activity_keys',{p_days:14}), rpc('ps_admin_activity_users') ])
-    .then(function(res){ ACT_WS=res[0]||[]; ACT_KEYS=res[1]||[]; ACT_USERS=res[2]||[];
+  var ticket=++adminActivityTicket,epoch=adminAuthEpoch;
+  Promise.all([ adminList('ps_admin_activity_ws',{},'id.asc'), adminList('ps_admin_activity_keys',{p_days:14},'feature.asc'), adminList('ps_admin_activity_users',{},'user_id.asc') ])
+    .then(function(res){if(ticket!==adminActivityTicket||epoch!==adminAuthEpoch||adminSessionLocked)return;adminSource('activity',true,null,'활동 분석','act'); ACT_WS=res[0]||[]; ACT_KEYS=res[1]||[]; ACT_USERS=res[2]||[];
       renderActivity(); renderStats(); })
-    .catch(function(e){ var m='<div class="empty">활동 집계를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_activity_ws · ps_admin_activity_keys · ps_admin_activity_users')+'<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
+    .catch(function(e){if(ticket!==adminActivityTicket||epoch!==adminAuthEpoch||adminSessionLocked)return;adminSource('activity',false,null,'활동 분석','act'); var m='<div class="empty">활동 집계를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_activity_ws · ps_admin_activity_keys · ps_admin_activity_users')+'<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
       $('actWs').innerHTML=m; $('actKeys').innerHTML=''; $('actUsers').innerHTML=''; });
 }
 function renderActivity(){
   /* 워크스페이스 — 최근 갱신순, 7일 내 활동엔 초록 점 */
   var kind=($('actWsKind')&&$('actWsKind').value)||'team';
-  var actList=ACT_WS.filter(function(w){return kind==='all'||w.kind===kind;});
+  var actList=PSAdminData.sortWorkspaces(ACT_WS).filter(function(w){return kind==='all'||w.kind===kind;});
   $('actWs').innerHTML = !actList.length ? '<div class="empty">해당 워크스페이스가 없습니다.</div>'
     : actList.map(function(w){ var last=(new Date(w.last_kv||0)>new Date(w.last_lib||0))?w.last_kv:w.last_lib;
         return '<div style="display:flex;align-items:center;gap:9px;padding:9px 2px;border-bottom:1px solid var(--line)">'
@@ -1966,7 +1996,7 @@ function renderActivity(){
   $('actKeys').innerHTML = !ACT_KEYS.length ? '<div class="empty">최근 14일 내 갱신이 없습니다.</div>'
     : ACT_KEYS.map(function(k){
         return '<div style="display:flex;align-items:center;gap:9px;padding:8px 2px;border-bottom:1px solid var(--line)">'
-          +'<div style="flex:1;min-width:0"><div class="nm" style="font-size:12px">'+esc(FEATURE_LB[k.feature]||k.feature)+'</div>'
+          +'<div style="flex:1;min-width:0"><div class="nm" style="font-size:12px">'+esc(FEATURE_LB[k.feature]||PSAdminData.feature(k.feature))+'</div>'
           +'<div class="muted" style="font-size:11px">'+esc(k.feature)+' · 워크스페이스 '+(k.ws_count||0)+'곳'+(k.row_count>k.ws_count?(' · '+k.row_count+'행'):'')+'</div></div>'
           +'<span class="muted" style="font-size:11px;flex:0 0 auto">'+fmtAgo(k.last_at)+'</span></div>'; }).join('');
   /* 유저 */
@@ -2065,7 +2095,7 @@ function renderWsList(){
     b.innerHTML='<div class="top"><span class="nm">'+esc(w.name||'(이름없음)')+'</span>'
       +'<span class="kbadge '+(w.kind==='personal'?'personal':'team')+'">'+(w.kind==='personal'?'개인':'팀')+'</span></div>'
       +'<div class="em">'+esc(adminOwnerInfo(w).label)+'</div>'
-      +'<div class="meta"><span>훈련 '+(w.lib_count||0)+'</span><span>멤버 '+(w.member_count||0)+'</span>'
+      +'<div class="meta"><span>콘텐츠 '+(w.lib_count==null?'미확인':w.lib_count)+'</span><span>멤버 '+(w.member_count||0)+'</span>'
       +'<span>활동 '+fmtDate(w.last_activity)+'</span></div>';
     box.appendChild(b);
   });
@@ -2073,6 +2103,7 @@ function renderWsList(){
 
 /* ===== 워크스페이스 상세 ===== */
 function selectWs(wid){
+  var ticket=++adminWsTicket,epoch=adminAuthEpoch;
   curWid=wid; renderWsList();
   var w=WS.filter(function(x){return x.id===wid;})[0]; if(!w)return;
   var d=$('wsDetail');
@@ -2087,40 +2118,43 @@ function selectWs(wid){
     adminPart(rpc('ps_admin_team_idp',{p_wid:wid}),'평가·IDP')
   ])
   .then(function(res){
+    if(ticket!==adminWsTicket||epoch!==adminAuthEpoch||adminSessionLocked||curWid!==wid)return;
     var failed=res.filter(function(x){return !x.ok;});
-    renderWsDetail(w,res[0].ok?(res[0].data||[]):[],res[1].ok?(res[1].data||[]):[],res[2].ok?res[2].data:null);
+    renderWsDetail(w,res[0].ok?(res[0].data||[]):[],res[1].ok?(res[1].data||[]):[],res[2].ok?res[2].data:null,{members:res[0].ok,library:res[1].ok});
     if(failed.length){
       var msg=failed.map(function(x){return x.label;}).join('·')+' 정보만 불러오지 못했습니다.';
       var panel=d.querySelector('.panel');
       if(panel)panel.insertAdjacentHTML('afterbegin','<div class="ws-alert"><b>'+esc(msg)+'</b><br>'
-        +'기존 평가·IDP 데이터는 안전하며 멤버·콘텐츠 등 다른 정보는 정상적으로 확인할 수 있습니다. '
-        +'<code>supabase-admin-team-idp-v281.sql</code>을 적용한 뒤 '
+        +'조회에 실패한 항목의 현재 상태는 확인되지 않았습니다. 다른 항목은 별도로 확인할 수 있습니다. '
+        +'관리자 권한·연결·조회 기능을 확인한 뒤 '
         +'<button class="rowbtn" style="margin-left:6px;padding:5px 9px" onclick="selectWs(curWid)">다시 불러오기</button></div>');
       toast(msg);
     }
   })
-  .catch(function(e){ d.innerHTML='<div class="panel"><div class="empty">불러오기 실패</div></div>'; toast(e.message); });
+  .catch(function(e){if(ticket!==adminWsTicket||epoch!==adminAuthEpoch||adminSessionLocked||curWid!==wid)return; d.innerHTML='<div class="panel"><div class="empty">불러오기 실패</div></div>'; toast(e.message); });
 }
 var _libCache=[], _memberCache=[], _wsCache=null, _showDeleted=false, _wsDetailTab='members';
-function renderWsDetail(w,members,lib,idpRows){
+function renderWsDetail(w,members,lib,idpRows,parts){
+  parts=parts||{members:true,library:true};
+  var unavailable='<div class="empty">조회하지 못했습니다. 0건으로 판단하지 않습니다.</div>';
   _libCache=lib;_memberCache=members;_wsCache=w;
   var d=$('wsDetail');
   var live=lib.filter(function(l){return !l.deleted_at;}),active7=members.filter(function(m){return m.last_sign_in_at&&(Date.now()-new Date(m.last_sign_in_at).getTime())<7*86400e3;}).length;
   var initials=String(w.name||'PS').replace(/\s/g,'').slice(0,2).toUpperCase();
   var head='<div class="panel">'
     +'<div class="ws-hero"><div class="ws-mark">'+esc(initials)+'</div><div><h2>'+esc(w.name||'(이름없음)')
-    +' <span class="ws-state">운영 중</span></h2><div class="sub" style="margin:0">소유자 '+esc(adminOwnerInfo(w).label)+' · 생성 '+fmtDate(w.created_at)+' · 최근 활동 '+fmtDateT(w.last_activity)+'</div></div></div>'
-    +'<div class="ws-kpis"><div class="ws-kpi"><b>'+members.length+'</b><span>전체 멤버</span></div>'
-    +'<div class="ws-kpi"><b>'+active7+'</b><span>7일 활성 멤버</span></div>'
-    +'<div class="ws-kpi"><b>'+live.length+'</b><span>훈련·항목</span></div>'
-    +'<div class="ws-kpi"><b>'+lib.filter(function(x){return !!x.deleted_at;}).length+'</b><span>삭제 항목</span></div></div>'
+    +' <span class="ws-state">팀 공간</span></h2><div class="sub" style="margin:0">소유자 '+esc(adminOwnerInfo(w).label)+' · 생성 '+fmtDate(w.created_at)+' · 최근 활동 '+fmtDateT(w.last_activity)+'</div></div></div>'
+    +'<div class="ws-kpis"><div class="ws-kpi"><b>'+(parts.members?members.length:'확인 못 함')+'</b><span>전체 멤버</span></div>'
+    +'<div class="ws-kpi"><b>'+(parts.members?active7:'확인 못 함')+'</b><span>7일 인증 로그인</span></div>'
+    +'<div class="ws-kpi"><b>'+(parts.library?live.length:'확인 못 함')+'</b><span>훈련·항목</span></div>'
+    +'<div class="ws-kpi"><b>'+(parts.library?lib.filter(function(x){return !!x.deleted_at;}).length:'확인 못 함')+'</b><span>삭제 항목</span></div></div>'
     +'<div class="ws-tabs">'
     +'<button data-wstab="members">멤버·역할</button><button data-wstab="activity">운영 현황</button><button data-wstab="idp">평가·IDP</button><button data-wstab="content">콘텐츠</button><button data-wstab="settings">팀 설정</button></div>'
-    +'<div class="ws-pane" data-wspane="members"><div class="sec-t">멤버 '+members.length+'명</div>'+membersTable(w,members)+'</div>'
-    +'<div class="ws-pane" data-wspane="activity">'+wsActivityPane(w,members,live)+'</div>'
+    +'<div class="ws-pane" data-wspane="members">'+(parts.members?'<div class="sec-t">멤버 '+members.length+'명</div>'+membersTable(w,members):unavailable)+'</div>'
+    +'<div class="ws-pane" data-wspane="activity">'+(parts.members&&parts.library?wsActivityPane(w,members,live):unavailable)+'</div>'
     +'<div class="ws-pane" data-wspane="idp">'+wsIdpPane(idpRows)+'</div>'
-    +'<div class="ws-pane" data-wspane="content"><div style="display:flex;align-items:center;margin-bottom:11px"><div class="sec-t" style="margin:0">훈련·항목 '+live.length+'개</div>'
-    +'<label style="margin-left:auto;font-size:11px;font-weight:600;color:var(--dim);display:inline-flex;align-items:center;gap:6px"><input type="checkbox" id="showDel" '+(_showDeleted?'checked':'')+' onchange="toggleDeleted()"> 삭제됨 포함</label></div><div id="libBody">'+libTable(lib)+'</div></div>'
+    +'<div class="ws-pane" data-wspane="content">'+(parts.library?'<div style="display:flex;align-items:center;margin-bottom:11px"><div class="sec-t" style="margin:0">훈련·항목 '+live.length+'개</div>'
+    +'<label style="margin-left:auto;font-size:11px;font-weight:600;color:var(--dim);display:inline-flex;align-items:center;gap:6px"><input type="checkbox" id="showDel" '+(_showDeleted?'checked':'')+' onchange="toggleDeleted()"> 삭제됨 포함</label></div><div id="libBody">'+libTable(lib)+'</div>':unavailable)+'</div>'
     +'<div class="ws-pane" data-wspane="settings">'+wsSettingsPane(w)+'</div></div>';
   d.innerHTML=head;bindWsDetailTabs(_wsDetailTab);
 }
@@ -2139,7 +2173,7 @@ function wsActivityPane(w,members,live){
     +'<span class="k">콘텐츠 합계</span><span>'+live.length+'개</span></div>';
 }
 function wsIdpPane(rows){
-  if(rows===null)return '<div class="ws-alert"><b>평가·IDP 통계 준비가 필요합니다</b><br>기존 데이터는 안전합니다. <code>supabase-admin-team-idp-v281.sql</code>을 적용하면 평가표와 IDP 연결 상태가 표시됩니다.</div>';
+  if(rows===null)return '<div class="ws-alert"><b>평가·IDP 통계 준비가 필요합니다</b><br>기존 데이터는 안전합니다. 관리자 권한·연결·현재 조회 함수 상태를 확인하세요. 조회 실패만으로 기존 자료 상태를 단정하지 않습니다.</div>';
   rows=rows||[];
   var first=rows[0]||{}, mode=first.active_mode||'—', attrs=+first.active_attr_count||0;
   var players=rows.filter(function(r){return (r.role||'')==='player';});
@@ -2236,7 +2270,7 @@ function userSubLine(u){
 }
 function renderUsers(){
   var q=($('uSearch')?$('uSearch').value:'').trim().toLowerCase();
-  var list=USERS.slice();
+  var list=USERS.slice().sort(function(a,b){return (Date.parse(b.created_at)||0)-(Date.parse(a.created_at)||0)||String(a.user_id).localeCompare(String(b.user_id));});
   if(q) list=list.filter(function(u){
     return [u.email,u.name,u.account_name,u.member_name,u.team_names,u.players,u.user_id,
       u.provider?(ADMIN_PROVIDER[u.provider]||u.provider):'']
@@ -2274,14 +2308,16 @@ var IDP_PLB={foot:'주발',birth:'생년월일',dob:'생년월일',height:'키',
 function loadIdpList(){
   if(IDP_USERS){ renderIdpList(); return; }
   /* 팀 이름 포함 목록(신규 RPC) — 없으면 활동 RPC로 폴백(평면 목록) */
-  rpc('ps_admin_idp_users').then(function(r){
-    IDP_USERS=(r||[]); renderIdpList();
+  var ticket=++adminIdpTicket,epoch=adminAuthEpoch;
+  function current(){return ticket===adminIdpTicket&&epoch===adminAuthEpoch&&!adminSessionLocked;}
+  adminList('ps_admin_idp_users',{},'user_id.asc').then(function(r){
+    if(!current())return;adminSource('idp',true,null,'IDP 목록','idp');IDP_USERS=(r||[]); renderIdpList();
   }).catch(function(){
-    rpc('ps_admin_activity_users').then(function(r){
-      IDP_USERS=(r||[]).filter(function(u){ return u.idp_last; });
+    if(!current())return;adminSource('idp',false,null,'IDP 목록','idp');adminList('ps_admin_activity_users',{},'user_id.asc').then(function(r){
+      if(!current())return;IDP_USERS=(r||[]).filter(function(u){ return u.idp_last; });
       renderIdpList();
     }).catch(function(e){
-      $('idpList').innerHTML='<div class="empty">IDP 사용자 목록을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_idp_users')+'<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
+      if(!current())return;$('idpList').innerHTML='<div class="empty">IDP 사용자 목록을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_idp_users')+'<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
     });
   });
 }
@@ -2297,12 +2333,13 @@ function renderIdpList(){
   var c7=IDP_USERS.filter(function(u){return within(u.idp_last,7);}).length;
   var c30=IDP_USERS.filter(function(u){return within(u.idp_last,30);}).length;
   var stale=IDP_USERS.filter(function(u){return !within(u.idp_last,30);}).length;
-  $('idpOverview').innerHTML='<div class="eval-kpi"><b>'+IDP_USERS.length+'</b><span>IDP 시작</span></div>'
-    +'<div class="eval-kpi"><b style="color:var(--green)">'+c7+'</b><span>7일 내 기록</span></div>'
-    +'<div class="eval-kpi"><b>'+c30+'</b><span>30일 내 기록</span></div>'
-    +'<div class="eval-kpi"><b style="color:var(--amber)">'+stale+'</b><span>30일+ 중단</span></div>';
+  $('idpOverview').innerHTML='<div class="eval-kpi"><b>'+IDP_USERS.length+'</b><span>IDP 연결 계정</span></div>'
+    +'<div class="eval-kpi"><b style="color:var(--green)">'+c7+'</b><span>7일 내 문서 갱신</span></div>'
+    +'<div class="eval-kpi"><b>'+c30+'</b><span>30일 내 문서 갱신</span></div>'
+    +'<div class="eval-kpi"><b style="color:var(--amber)">'+stale+'</b><span>30일 내 문서 갱신 없음</span></div>';
+  $('idpOverview').insertAdjacentHTML('beforeend','<p class="muted">현재 계정·소속 공간에서 조회되는 IDP 문서 기준입니다. 문서 갱신은 실제 일지 작성과 다릅니다. 홈은 일지 보유 문서의 갱신을 따로 집계합니다.</p>');
   var q=($('idpSearch')?$('idpSearch').value:'').trim().toLowerCase();
-  var list=IDP_USERS.slice();
+  var list=IDP_USERS.slice().sort(function(a,b){return (Date.parse(b.idp_last)||0)-(Date.parse(a.idp_last)||0)||String(a.user_id).localeCompare(String(b.user_id));});
   if(q) list=list.filter(function(u){ return ((u.email||'')+' '+(u.teams||'')).toLowerCase().indexOf(q)>=0; });
   if(!list.length){ $('idpList').innerHTML='<div class="empty">'+(q?'검색 결과가 없습니다.':'IDP 기록이 있는 유저가 아직 없습니다.')+'</div>'; return; }
   /* 팀별 그룹(여러 팀 소속이면 각 팀 아래에 표시) + 개인(팀 무소속) */
@@ -2452,7 +2489,7 @@ function delWorkspace(wid){
   rpc('ps_admin_delete_workspace',{p_wid:wid}).then(function(){ toast('삭제됨'); curWid=null;
     $('wsDetail').innerHTML='<div class="panel"><div class="empty">삭제되었습니다.</div></div>'; reloadAll(); })
     .catch(function(e){ toast('실패: '+e.message); }); }
-function reloadCounts(){ rpc('ps_admin_workspaces').then(function(r){ WS=r||[]; renderStats(); renderWsList(); }).catch(function(){}); }
+function reloadCounts(){adminList('ps_admin_activity_ws',{},'id.asc').then(function(r){adminSource('workspaces',true,r,'팀 목록','ws');adminHydrateWorkspaces();renderStats();renderWsList();}).catch(function(){adminSource('workspaces',false,null,'팀 목록','ws');renderStats();});}
 
 /* ===== 미리보기 모달 ===== */
 /* 예전에 저장된 썸네일 복구 — 2026-07-16 이전 보드는 outerHTML 로 만들어져 xlink: 를 쓰면서 xmlns:xlink 선언이 빠져 있다.

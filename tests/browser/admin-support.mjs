@@ -43,7 +43,7 @@ try{
       if(request.method()==='OPTIONS')return route.fulfill({status:204,headers,body:''});
       const name=url.pathname.startsWith('/rest/v1/rpc/')?url.pathname.split('/').at(-1):null,args=request.postDataJSON()||{};
       const admin=request.headers().authorization==='Bearer fixture-admin-access';calls.push({name,path:url.pathname,method:request.method(),args,admin});
-      const send=(value,status=200)=>route.fulfill({status,headers,body:JSON.stringify(value)});
+      const send=(value,status=200)=>{if(Array.isArray(value)&&url.searchParams.has('offset')){const offset=+url.searchParams.get('offset'),limit=+url.searchParams.get('limit');value=value.slice(offset,offset+limit);}return route.fulfill({status,headers,body:JSON.stringify(value)});};
       if(name==='ps_whoami')return send([{uid:ADM,email:'admin@example.test',is_admin:true}]);
       if(name==='ps_admin_users_v2'||name==='ps_admin_users')return send([{user_id:USER,name:'합성 제보자',email:'reporter@example.test',workspace_ids:[]}]);
       if(name==='ps_support_list'){

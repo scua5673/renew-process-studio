@@ -21,7 +21,7 @@ try{
  await context.route('**/*',async route=>{
   const url=new URL(route.request().url());if(url.origin===base)return route.continue();if(url.origin!==apiOrigin)return route.abort();
   const headers={'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};
-  const send=data=>route.fulfill({status:200,headers,body:JSON.stringify(data)});
+  const send=data=>{if(Array.isArray(data)&&url.searchParams.has('offset'))data=data.slice(+url.searchParams.get('offset'),+url.searchParams.get('offset')+ +url.searchParams.get('limit'));return route.fulfill({status:200,headers,body:JSON.stringify(data)});};
   if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers,body:''});
   if(url.pathname.endsWith('/ps_whoami'))return send([{uid,is_admin:true}]);
   if(/\/ps_admin_users(?:_v2)?$/.test(url.pathname))return send([{user_id:uid,name:'가상 관리자',email:'admin@example.invalid'}]);
