@@ -14,6 +14,7 @@ function build(blank){
   W[0][6]={off:true,board:{sched:'OFF'},trainings:[]};
   W[1][0].trainings=[S1('17:00','수비 조직',6,80)];
   const c=vm.createContext({
+    PSIntensity:require('../studio/training-intensity.js'),
     __pBlank:!!blank,weeksMap:W,monthAnchor:{m:8},monthGridDays:()=>days,
     offsetOfDate:d=>days.findIndex(x=>x.getTime()===d.getTime()),blankWeek:()=>[],recomputeMD:()=>{},schedViewDay:d=>d,
     dayIsMatch:d=>!!(d&&d.match),dayBoard:d=>(d&&d.board)||{},getLoad:t=>t.load||null,loadRpe:L=>+L.rpe||0,trMinutes:t=>t.m||0,
@@ -28,7 +29,7 @@ function build(blank){
 
 test('every session of the day is printed, two lines each, with its RPE band',()=>{
   const h=build();
-  for(const t of ['09:30 개인 기술','실내 체육관 · 45′ · RPE 4','17:00 전환 공격','보조구장 A · 90′ · RPE 7','border-left:3px solid #D9822B','border-left:3px solid #2E9D6A'])assert.ok(h.includes(t),t);
+  for(const t of ['09:30 개인 기술','실내 체육관 · 45′ · RPE 4','17:00 전환 공격','보조구장 A · 90′ · RPE 7','border-left:3px solid #3A6DF0','border-left:3px solid #2E9D6A'])assert.ok(h.includes(t),t);
 });
 
 test('more than four sessions: three shown then «외 n», one line each',()=>{

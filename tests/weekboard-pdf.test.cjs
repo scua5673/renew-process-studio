@@ -21,6 +21,7 @@ function build(opt){
     {d:'일',md:'MD+1',off:true,trainings:[],board:{sched:'OFF'}},
   ];
   const c=vm.createContext({
+    PSIntensity:require('../studio/training-intensity.js'),
     week:W,wk:0,__pBlank:false,__schedGrp:opt.grp||'',LEGACY_LOAD:{},recomputeMD:()=>{},schedViewDay:d=>d,
     teamGet:()=>({name:'FC 예시 U15'}),__psImgSrc:x=>x,
     wkbdEsc:s=>String(s==null?'':s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x])),
@@ -58,7 +59,7 @@ test('one block per drill, height follows minutes×sets, colour follows session 
 test('sessions stack by time with coaching and memo; meeting is a neutral block',()=>{
   const tue=cols(build())[1];
   assert.ok(tue.indexOf('09:30')<tue.indexOf('17:00'),'시각 순');
-  assert.match(tue,/background:#FBEBDA;border-left-color:#D9822B[^"]*"><b>5v5 전환 게임<\/b><i>8′×3<\/i>/);
+  assert.match(tue,/background:#E7EDFD;border-left-color:#3A6DF0[^"]*"><b>5v5 전환 게임<\/b><i>8′×3<\/i>/);
   assert.ok(tue.includes('☞ 잃은 뒤 5초, 가장 가까운 두 명이 조인다.'));assert.ok(tue.includes('메모 · 잃은 뒤 5초'));
   assert.match(tue,/class="pwb-b meet"[^>]*><b>Team Talk<\/b><i>10′<\/i>/);
   assert.ok(tue.includes('<span class="mn">94′</span>'),'요일 머리 = 그 날 총 분');
