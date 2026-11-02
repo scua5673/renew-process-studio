@@ -26,10 +26,9 @@ test('one header for both: vault create bar and the training editor head; phone 
   // 보드가 숨겨 둔 단추(복사본 저장 등)는 그대로 숨김
   assert.match(c,/\.btn\[style\*="display:none"\]/);
 });
-test('training editor (wide): floating tabs, floating card, dock centred on the board, fold button',()=>{
+test('training editor (wide): floating card, dock centred on the board, fold button',()=>{
   const c=cf.css();
   assert.match(c,/@media \(min-width:1000px\)\{/);
-  assert.match(c,/#trainingStrip\{position:absolute!important;top:8px!important;left:12px!important/);
   assert.match(c,/#editorPanel\{position:absolute!important;top:6px!important;right:12px!important;bottom:12px!important;width:340px!important/);
   assert.match(c,/#editorBoardWrap\{position:relative!important;flex:1 1 auto!important;min-width:0!important;margin:0 364px 0 0!important/);
   assert.match(c,/\.cf-panel-off #editorModal #editorPanel\{display:none!important\}/);
