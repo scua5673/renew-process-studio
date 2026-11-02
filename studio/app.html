@@ -2668,11 +2668,13 @@ window.psFailAlert=function(lead,e,stage){
     if(openNoteTool)openNoteTool.addEventListener('click',function(){currentTeamKey='';showApp('note');});
     function sendTeamView(fr,b){
       var view=b.dataset.teamView,mode=b.dataset.processMode;
+      var request=fr.__psTeamViewRequest=(fr.__psTeamViewRequest||0)+1,teamKey=currentTeamKey;
       /* 1.976 — 폰에서 팀 › 일정은 월간이 먼저(사용자). 데스크톱은 주간 시트 그대로
          2.904 — 폰은 «마지막에 본 보기»로 연다(사용자 2026-09-28, 목업 ③). 일정 화면이 보기를 바꿀 때마다 cs_schedule_view 에 적는다(같은 출처라 셸도 읽는다).
          기록이 없으면 예전처럼 월간. 이미 그 보기로 떠 있으면 다시 누르지 않는다 — 주·일 보기 클릭은 오늘로 되돌리므로(보던 주를 잃지 않게). */
       var _phoneLast=(mode==='week'&&psSchedPhone()); mode=psSchedOpenMode(mode);
       var open=function(){try{
+        if(fr.__psTeamViewRequest!==request||currentTeamKey!==teamKey)return;
         if(view)fr.contentWindow.postMessage({type:'setView',view:view},'*');
         if(mode){
           var fd=fr.contentDocument;
