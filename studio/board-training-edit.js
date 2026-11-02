@@ -110,10 +110,10 @@
       for(var y=q.T;y<=q.B+.1;y+=g.sy)d.push('M'+q.L+' '+y+'H'+q.R);
       n=doc.createElementNS(NS,'path');n.id='psEditGrid';n.setAttribute('d',d.join(' '));n.setAttribute('fill','none');n.setAttribute('stroke',doc.documentElement.dataset.pitch==='white'||doc.documentElement.dataset.pitch==='train'?'#64748b':'#ffffff');n.setAttribute('stroke-opacity','.24');n.setAttribute('stroke-width','.8');n.setAttribute('pointer-events','none');layer.prepend(n);
     }
-    var freeOnce=false,freePid=null,freeContext=null,pointEvent=null;
+    var freeOnce=false,freePid=null,freeContext=null,pointEvent=null,freeVersion=0;
     function context(){return [S(),S().tool].concat(selected());}
     function syncFree(){var b=panel&&panel.querySelector('[data-free]');if(b)b.setAttribute('aria-pressed',String(freeOnce));}
-    function resetFree(){freeOnce=false;freePid=null;freeContext=null;syncFree();if(toggle&&!additive)toggle.textContent='배치 도구';}
+    function resetFree(){freeVersion++;freeOnce=false;freePid=null;freeContext=null;syncFree();if(toggle&&!additive)toggle.textContent='배치 도구';}
     api.snapEnabled=function(e){return snapAllowed(e,win._dragSnapOn(),freeOnce);};
     api.pointGridActive=function(e){return !!grid()&&api.snapEnabled(e||pointEvent);};
     api.snapEditPoint=function(u,e){var g=grid();if(!g||!api.snapEnabled(e||pointEvent))return u;var p=snapPoint(u,g,[],null,7);return {x:p.x,y:p.y};};
@@ -125,12 +125,13 @@
         return original.call(this,u);
       };
     });
-    // Event modifiers live for this event only; never retain projection matrices.
-    ['pointerdown','pointermove','pointerup','pointercancel'].forEach(function(type){doc.addEventListener(type,function(e){pointEvent=e;Promise.resolve().then(function(){if(pointEvent===e)pointEvent=null;});},true);});
+    // WebKit may run microtasks between native event listeners. Keep modifiers
+    // and one-shot suppression through the target listener and its final drag flush.
+    ['pointerdown','pointermove','pointerup','pointercancel'].forEach(function(type){doc.addEventListener(type,function(e){pointEvent=e;win.setTimeout(function(){if(pointEvent===e)pointEvent=null;},0);},true);});
     doc.addEventListener('pointerdown',function(e){
       if(freeOnce&&freePid===null&&editable()&&e.target.closest&&e.target.closest('#board'))freePid=e.pointerId;
     },true);
-    ['pointerup','pointercancel'].forEach(function(type){win.addEventListener(type,function(e){if(e.pointerId===freePid)Promise.resolve().then(resetFree);},true);});
+    ['pointerup','pointercancel'].forEach(function(type){win.addEventListener(type,function(e){if(e.pointerId===freePid){var version=freeVersion;win.setTimeout(function(){if(version===freeVersion)resetFree();},0);}},true);});
     win.addEventListener('blur',resetFree);
     win.snapDrag=function(p,kind,u){
       var s=S(),skip=selected();if(!skip.includes(p))skip=[p];
@@ -252,7 +253,7 @@
     }
     panel.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
       if(b.hasAttribute('data-close')){close();return;}if(!editable())return;
-      if(b.hasAttribute('data-free')){freeOnce=!freeOnce;freeContext=context();sync();return;}
+      if(b.hasAttribute('data-free')){freeVersion++;freeOnce=!freeOnce;freeContext=context();sync();return;}
       if(b.dataset.align)win.alignMulti(b.dataset.align);
       else if(b.hasAttribute('data-pick')){additive=!additive;if(additive){win._activateMoveTool();close();}sync();}
       else if(b.hasAttribute('data-lock')){var a=selected();if(!a.length)return;win.pushUndo();var on=!a.every(o=>o.locked);a.forEach(o=>{if(on)o.locked=true;else delete o.locked;});finish();}

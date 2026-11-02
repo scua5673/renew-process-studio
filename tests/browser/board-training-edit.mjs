@@ -26,13 +26,21 @@ try{
   assert.equal(await f.locator('[data-free]').getAttribute('aria-pressed'),'true');
   await f.getByRole('button',{name:'배치 도구 닫기',exact:true}).click();
   await drag([400,300],[463,342]);
-  assert.deepEqual(await f.evaluate(()=>({x:Math.round(state.players[0].x),y:Math.round(state.players[0].y),snap:_dragSnapOn()})),{x:463,y:342,snap:true});
+  const freeMove=await f.evaluate(()=>({x:state.players[0].x,y:state.players[0].y,snap:_dragSnapOn()}));
+  // WebKit quantizes the scaled iframe's mouse coordinates. A snapped point
+  // is over 17 pitch units away; allow only two units for physical pixel rounding.
+  assert.equal(freeMove.snap,true);assert.ok(Math.hypot(freeMove.x-463,freeMove.y-342)<2,JSON.stringify(freeMove));
   await f.waitForFunction(()=>document.querySelector('[data-free]').getAttribute('aria-pressed')==='false');
   await f.evaluate(()=>undoLast());
   await drag([400,300],[463,342],'Alt');
   assert.equal(await f.evaluate(()=>state.players.length),2,'Alt drag still duplicates');
   assert.equal(await f.evaluate(()=>state.players.some(p=>p.x===400&&p.y===300)),true);
   await f.evaluate(()=>{undoLast();sel=null;multiSel=[];state.players=[];state.equipment=[];state.drawings=[];state.tool='line';document.body.dataset.tool='line';document.body.classList.add('drawmode');renderTokens();renderDrawings();updateDelUI();});
+  // Native event modifiers must survive capture listeners even when permanent snapping is off.
+  await f.evaluate(()=>localStorage.setItem('cs_drag_snap_v1','0'));
+  await drag([303,263],[613,423],'Control');
+  assert.equal(await f.evaluate(()=>{const q=PR(),step=M2U(5),d=state.drawings[0];return !!d&&d.pts.every(p=>Math.abs((p.x-q.L)/step-Math.round((p.x-q.L)/step))<.001&&Math.abs((p.y-q.T)/step-Math.round((p.y-q.T)/step))<.001);}),true,'Ctrl snaps new line points with the permanent setting off');
+  await f.evaluate(()=>{undoLast();localStorage.setItem('cs_drag_snap_v1','1');});
   await drag([303,263],[613,423]);
   assert.equal(await f.evaluate(()=>state.drawings.length),1,'line created by real pointer');
   assert.equal(await f.evaluate(()=>{const q=PR(),step=M2U(5);return state.drawings[0].pts.every(p=>Math.abs((p.x-q.L)/step-Math.round((p.x-q.L)/step))<.001&&Math.abs((p.y-q.T)/step-Math.round((p.y-q.T)/step))<.001);}),true);
