@@ -34,9 +34,25 @@
   function alignPlan(items, mode, vertical, flip) {
     var axis = /X$/.test(mode) ? 'x' : 'y';
     if (vertical) axis = axis === 'x' ? 'y' : 'x';
-    if (!/^(rowY|colX|distX|distY|minX|maxX|minY|maxY)$/.test(mode)) return [];
+    if (!/^(rowY|colX|distX|distY|distDiag|minX|maxX|minY|maxY)$/.test(mode)) return [];
     var a=items.filter(o=>o&&!o.locked).map(o=>({o,p:center(o)})).filter(v=>v.p);
     if(a.length<2)return [];
+    if (mode==='distDiag') {
+      if(a.length<3)return [];
+      // Canonical pitch order breaks equal-distance/projection ties independently
+      // of selection order, orientation and screen projection.
+      a.sort((u,v)=>u.p.x-v.p.x||u.p.y-v.p.y||String(u.o.id||'').localeCompare(String(v.o.id||'')));
+      var left=0,right=1,best=-1;
+      for(var i=0;i<a.length;i++)for(var j=i+1;j<a.length;j++){
+        var dist=(a[j].p.x-a[i].p.x)**2+(a[j].p.y-a[i].p.y)**2;
+        if(dist>best){best=dist;left=i;right=j;}
+      }
+      if(best<1e-16)return [];
+      var start=a[left],end=a[right],dx=end.p.x-start.p.x,dy=end.p.y-start.p.y;
+      var middle=a.filter(v=>v!==start&&v!==end);
+      middle.sort((u,v)=>((u.p.x-start.p.x)*dx+(u.p.y-start.p.y)*dy)-((v.p.x-start.p.x)*dx+(v.p.y-start.p.y)*dy));
+      return middle.map((v,i)=>({o:v.o,dx:start.p.x+dx*(i+1)/(a.length-1)-v.p.x,dy:start.p.y+dy*(i+1)/(a.length-1)-v.p.y})).filter(v=>Math.abs(v.dx)+Math.abs(v.dy)>1e-8);
+    }
     if (/^dist/.test(mode)) {
       if(a.length<3)return [];
       a.sort((u,v)=>u.p[axis]-v.p[axis]);
@@ -50,6 +66,7 @@
     }
     return a.map(v=>({o:v.o,dx:axis==='x'?v.target-v.p.x:0,dy:axis==='y'?v.target-v.p.y:0})).filter(v=>Math.abs(v.dx)+Math.abs(v.dy)>1e-8);
   }
+  function snapAllowed(e,enabled,temporary){return !temporary&&(!!(e&&(e.metaKey||e.ctrlKey))||!!enabled);}
   function snapPoint(p, grid, others, pitch, tolerance) {
     var r={x:p.x,y:p.y,gx:null,gy:null};
     if(grid && grid.sx>0 && grid.sy>0) {
@@ -93,13 +110,35 @@
       for(var y=q.T;y<=q.B+.1;y+=g.sy)d.push('M'+q.L+' '+y+'H'+q.R);
       n=doc.createElementNS(NS,'path');n.id='psEditGrid';n.setAttribute('d',d.join(' '));n.setAttribute('fill','none');n.setAttribute('stroke',doc.documentElement.dataset.pitch==='white'||doc.documentElement.dataset.pitch==='train'?'#64748b':'#ffffff');n.setAttribute('stroke-opacity','.24');n.setAttribute('stroke-width','.8');n.setAttribute('pointer-events','none');layer.prepend(n);
     }
+    var freeOnce=false,freePid=null,freeContext=null,pointEvent=null;
+    function context(){return [S(),S().tool].concat(selected());}
+    function syncFree(){var b=panel&&panel.querySelector('[data-free]');if(b)b.setAttribute('aria-pressed',String(freeOnce));}
+    function resetFree(){freeOnce=false;freePid=null;freeContext=null;syncFree();if(toggle&&!additive)toggle.textContent='배치 도구';}
+    api.snapEnabled=function(e){return snapAllowed(e,win._dragSnapOn(),freeOnce);};
+    api.pointGridActive=function(e){return !!grid()&&api.snapEnabled(e||pointEvent);};
+    api.snapEditPoint=function(u,e){var g=grid();if(!g||!api.snapEnabled(e||pointEvent))return u;var p=snapPoint(u,g,[],null,7);return {x:p.x,y:p.y};};
+    var anchorEnds=win._anchorEnds;win._anchorEnds=function(d){return grid()&&api.snapEnabled(pointEvent)?false:anchorEnds(d);};
+    ['beginDraw','moveDraw','polyTap','polyPreview'].forEach(function(name){
+      var original=win[name];win[name]=function(u){
+        var type=name==='moveDraw'&&typeof _draw!=='undefined'&&_draw?_draw.type:S().tool;
+        if(/^(pass|run|dribble|shot|line|dashline|poly)$/.test(type)&&u)u=api.snapEditPoint(u);
+        return original.call(this,u);
+      };
+    });
+    // Event modifiers live for this event only; never retain projection matrices.
+    ['pointerdown','pointermove','pointerup','pointercancel'].forEach(function(type){doc.addEventListener(type,function(e){pointEvent=e;Promise.resolve().then(function(){if(pointEvent===e)pointEvent=null;});},true);});
+    doc.addEventListener('pointerdown',function(e){
+      if(freeOnce&&freePid===null&&editable()&&e.target.closest&&e.target.closest('#board'))freePid=e.pointerId;
+    },true);
+    ['pointerup','pointercancel'].forEach(function(type){win.addEventListener(type,function(e){if(e.pointerId===freePid)Promise.resolve().then(resetFree);},true);});
+    win.addEventListener('blur',resetFree);
     win.snapDrag=function(p,kind,u){
       var s=S(),skip=selected();if(!skip.includes(p))skip=[p];
       var others=[].concat(s.players,s.equipment,s.drawings,s.ball?[s.ball]:[]).filter(o=>!skip.includes(o)).map(center).filter(Boolean),q=win.PR();
       return snapPoint(u,grid(),others,{x:q.CX,y:q.CY},7);
     };
     api.snapDelta=function(group,anchor,dx,dy,e){
-      if(!(e.metaKey||e.ctrlKey||win._dragSnapOn())){win.drawSnapGuides(null,null);return {x:dx,y:dy};}
+      if(!api.snapEnabled(e)){win.drawSnapGuides(null,null);return {x:dx,y:dy};}
       var item=group.find(v=>v.o===anchor)||group.find(v=>!v.locked),c=item&&(item.draw?center({pts:item.pts0}):{x:item.x0,y:item.y0});
       if(!c)return {x:dx,y:dy};var p=win.snapDrag(anchor,'group',{x:c.x+dx,y:c.y+dy});win.drawSnapGuides(p.gx,p.gy);return {x:p.x-c.x,y:p.y-c.y};
     };
@@ -192,14 +231,16 @@
     };
     function mk(tag,text){var n=doc.createElement(tag);if(text)n.textContent=text;return n;}
     panel=mk('section');panel.id='psEditTools';panel.hidden=true;panel.setAttribute('aria-label','배치 도구');
-    panel.innerHTML='<div class="pe-head"><strong>배치 도구</strong><button type="button" data-close aria-label="배치 도구 닫기">×</button></div><p data-count aria-live="polite"></p><div class="pe-row"><button type="button" data-pick aria-pressed="false">여러 개 선택</button><button type="button" data-lock>고정</button></div><div class="pe-grid"><button type="button" data-align="rowY">가로로 정렬</button><button type="button" data-align="colX">세로로 정렬</button><button type="button" data-align="distX">가로 같은 간격</button><button type="button" data-align="distY">세로 같은 간격</button></div><hr><label class="pe-row">격자 간격 <select aria-label="편집 격자 간격"><option value="0">기존 배경</option><option value="1">1 m</option><option value="2">2 m</option><option value="3">3 m</option><option value="5">5 m</option><option value="10">10 m</option></select></label><label class="pe-row"><input type="checkbox" data-snap>격자·안내선에 맞추기</label><hr><strong>훈련 조끼</strong><div class="pe-bibs"></div><p class="pe-hint">여러 개 선택을 켜고 항목을 누르세요. 선택을 마치면 끄고 함께 이동할 수 있어요.</p>';
+    panel.innerHTML='<div class="pe-head"><strong>배치 도구</strong><button type="button" data-close aria-label="배치 도구 닫기">×</button></div><p data-count aria-live="polite"></p><div class="pe-row"><button type="button" data-pick aria-pressed="false">여러 개 선택</button><button type="button" data-lock>고정</button></div><div class="pe-grid"><button type="button" data-align="rowY">가로로 정렬</button><button type="button" data-align="colX">세로로 정렬</button><button type="button" data-align="distX">가로 같은 간격</button><button type="button" data-align="distY">세로 같은 간격</button><button type="button" data-align="distDiag">대각선 균등</button></div><hr><label class="pe-row">격자 간격 <select aria-label="편집 격자 간격"><option value="0">기존 배경</option><option value="1">1 m</option><option value="2">2 m</option><option value="3">3 m</option><option value="5">5 m</option><option value="10">10 m</option></select></label><label class="pe-row"><input type="checkbox" data-snap>격자·안내선에 맞추기</label><button type="button" data-free aria-pressed="false">한 번 자유 이동</button><p class="pe-hint">다음 이동 한 번만 격자·안내선에 맞추지 않아요</p><hr><strong>훈련 조끼</strong><div class="pe-bibs"></div><p class="pe-hint">여러 개 선택을 켜고 항목을 누르세요. 선택을 마치면 끄고 함께 이동할 수 있어요.</p>';
     BIBS.forEach(function(v){var b=mk('button',v[1]);b.type='button';b.dataset.bib=v[0];b.setAttribute('aria-label','훈련 조끼 '+v[1]);if(v[0])b.style.setProperty('--bib-color',v[0]);panel.querySelector('.pe-bibs').append(b);});doc.body.append(panel);
     toggle=mk('button','배치 도구');toggle.type='button';toggle.id='psEditToolsToggle';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls',panel.id);
-    function mount(){var host=doc.querySelector('#boardPageStrip .tb-r')||doc.getElementById('boardStage');if(host&&toggle.parentNode!==host){host.append(toggle);toggle.classList.toggle('pe-fallback',host.id==='boardStage');}toggle.hidden=!editable();if(toggle.hidden)close();}
-    function place(){var r=toggle.getBoundingClientRect();panel.style.left=Math.max(8,Math.min(r.right-320,win.innerWidth-328))+'px';panel.style.top=Math.max(8,Math.min(r.bottom+8,win.innerHeight-panel.offsetHeight-8))+'px';}
+    function mount(){var host=doc.querySelector('#boardPageStrip .tb-r')||doc.getElementById('boardStage');if(host&&toggle.parentNode!==host){host.append(toggle);toggle.classList.toggle('pe-fallback',host.id==='boardStage');}toggle.hidden=!editable();if(toggle.hidden){resetFree();close();}}
+    function place(){var host=win.frameElement,hr=host&&host.getBoundingClientRect(),scale=hr&&hr.width?win.innerWidth/hr.width:1;panel.style.setProperty('--pe-scale',scale);var r=toggle.getBoundingClientRect(),p=panel.getBoundingClientRect();panel.style.left=Math.max(8,Math.min(r.right-p.width,win.innerWidth-p.width-8))+'px';panel.style.top=Math.max(8,Math.min(r.bottom+8,win.innerHeight-p.height-8))+'px';}
     function close(){panel.hidden=true;toggle.setAttribute('aria-expanded','false');}
     toggle.onclick=function(){if(!editable())return;if(additive){additive=false;sync();return;}panel.hidden=!panel.hidden;toggle.setAttribute('aria-expanded',String(!panel.hidden));sync();place();};
     function sync(){
+      if(freeOnce&&!win.__psThumbCapturing){var next=context();if(!freeContext||next.length!==freeContext.length||next.some((v,i)=>v!==freeContext[i]))resetFree();}
+      syncFree();
       var a=selected(),free=a.filter(o=>!o.locked&&center(o)),players=a.filter(p=>S().players.includes(p)&&!p.coach),locked=a.filter(o=>o.locked).length;
       panel.querySelector('[data-count]').textContent=a.length?a.length+'개 선택'+(locked?' · '+locked+'개 고정':''):'선수·도형·장비를 선택하세요';
       panel.querySelectorAll('[data-align]').forEach(b=>b.disabled=free.length<(/^dist/.test(b.dataset.align)?3:2));
@@ -207,10 +248,11 @@
       panel.querySelector('select').value=win.__editGrid||0;panel.querySelector('[data-snap]').checked=win._dragSnapOn();
       panel.querySelector('[data-pick]').setAttribute('aria-pressed',String(additive));
       panel.querySelectorAll('[data-bib]').forEach(b=>{b.disabled=!players.length;b.setAttribute('aria-pressed',String(!!players.length&&players.every(p=>bibColor(p)===b.dataset.bib)));});
-      toggle.textContent=additive?'선택 마침':'배치 도구';mount();
+      toggle.textContent=additive?'선택 마침':freeOnce?'배치 도구 · 자유 이동 대기':'배치 도구';mount();
     }
     panel.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
       if(b.hasAttribute('data-close')){close();return;}if(!editable())return;
+      if(b.hasAttribute('data-free')){freeOnce=!freeOnce;freeContext=context();sync();return;}
       if(b.dataset.align)win.alignMulti(b.dataset.align);
       else if(b.hasAttribute('data-pick')){additive=!additive;if(additive){win._activateMoveTool();close();}sync();}
       else if(b.hasAttribute('data-lock')){var a=selected();if(!a.length)return;win.pushUndo();var on=!a.every(o=>o.locked);a.forEach(o=>{if(on)o.locked=true;else delete o.locked;});finish();}
@@ -220,12 +262,12 @@
     panel.querySelector('[data-snap]').onchange=function(){if(!editable())return;win.localStorage.setItem('cs_drag_snap_v1',this.checked?'1':'0');var b=doc.querySelector('#dragSnapSeg [data-ds="'+(this.checked?'1':'0')+'"]');if(b)b.click();sync();};
     function objectAt(target){var t=target;while(t&&t!==doc){if(t.__psD)return t.__psD;if(t.classList&&t.classList.contains('token')){var id=t.getAttribute('data-id'),s=S();return [].concat(s.players,s.equipment,s.ball?[s.ball]:[]).find(o=>String(o.id)===id||(id==='ball'&&o===s.ball));}t=t.parentNode;}return null;}
     doc.addEventListener('pointerdown',function(e){if(!additive||!editable()||S().tool!=='move')return;var o=objectAt(e.target);if(!o)return;e.preventDefault();e.stopImmediatePropagation();if(typeof sel!=='undefined'&&sel&&sel.ref&&!multiSel.length){multiSel=[sel.ref];sel=null;}win.toggleMulti(o);sync();},true);
-    doc.addEventListener('keydown',function(e){if(e.key==='Escape'){additive=false;close();sync();}});
+    doc.addEventListener('keydown',function(e){if(e.key==='Escape'){resetFree();additive=false;close();sync();}});
     // Pointer cancellation/secondary fingers must not select a different rectangle.
     var marqueePid=null;
     doc.addEventListener('pointerdown',function(e){if(e.target.closest&&e.target.closest('#board')&&S().tool==='move'&&!objectAt(e.target)){if(marqueePid!==null&&marqueePid!==e.pointerId){e.stopImmediatePropagation();return;}marqueePid=e.pointerId;}},true);
     ['pointermove','pointerup','pointercancel'].forEach(function(type){doc.addEventListener(type,function(e){if(marqueePid===null)return;if(e.pointerId!==marqueePid){if(e.target.closest&&e.target.closest('#board'))e.stopImmediatePropagation();return;}if(type==='pointercancel'){win.clearMarquee();marqueePid=null;}else if(type==='pointerup')marqueePid=null;},true);});
-    wrap('updateDelUI',sync);wrap('clearGuides',paintGrid);wrap('buildPitch',paintGrid);wrap('loadSnap',function(){additive=false;paintGrid();sync();});
+    wrap('updateDelUI',sync);wrap('clearGuides',paintGrid);wrap('buildPitch',paintGrid);wrap('loadSnap',function(){if(!win.__psThumbCapturing)resetFree();additive=false;paintGrid();sync();});
     win.addEventListener('resize',()=>{mount();if(!panel.hidden)place();});
     var strip=doc.getElementById('boardPageStrip');if(strip)new win.MutationObserver(mount).observe(strip,{childList:true});
     new win.MutationObserver(mount).observe(body,{attributes:true,attributeFilter:['class']});
@@ -235,6 +277,6 @@
     (S().drawings||[]).forEach(function(d){if(d.type!=='text')return;var g=win.PSBoardText.node(d);if(g)g.replaceWith(win.drawingEl(d));});
     mount();paintGrid();sync();
   }
-  var api={center:center,translate:translate,alignPlan:alignPlan,snapPoint:snapPoint,textStyle:textStyle,textFamily:textFamily,textPoint:textPoint,bibColor:bibColor,bibPath:bibPath,install:install};
+  var api={center:center,translate:translate,alignPlan:alignPlan,snapAllowed:snapAllowed,snapPoint:snapPoint,textStyle:textStyle,textFamily:textFamily,textPoint:textPoint,bibColor:bibColor,bibPath:bibPath,install:install};
   return api;
 });
