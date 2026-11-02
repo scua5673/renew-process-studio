@@ -36,7 +36,7 @@
     label('정렬 · 간격',align);var grid=el('div','ps-sm-align-grid'),dist=el('div','ps-sm-distribute');align.append(grid,dist);
     var paths=['M4 3v18M7 7h12v4H7zM7 15h8v4H7z','M12 3v18M5 7h14v4H5zM8 15h8v4H8z','M20 3v18M5 7h12v4H5zM9 15h8v4H9z','M3 4h18M7 7h4v12H7zM15 7h4v8h-4z','M3 12h18M7 5h4v14H7zM15 8h4v8h-4z','M3 20h18M7 5h4v12H7zM15 9h4v8h-4z'];
     [['minX','왼쪽 정렬'],['colX','가운데 정렬'],['maxX','오른쪽 정렬'],['minY','위쪽 정렬'],['rowY','중간 정렬'],['maxY','아래쪽 정렬']].forEach(function(v,i){var b=button('',v[1],function(){win.alignMulti(v[0]);});b.dataset.align=v[0];b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="'+paths[i]+'"/></svg>';grid.appendChild(b);});
-    [['distX','가로 균등'],['distY','세로 균등']].forEach(function(v){var b=button(v[1],v[1],function(){win.alignMulti(v[0]);});b.dataset.align=v[0];dist.appendChild(b);});
+    [['distX','가로 균등'],['distY','세로 균등'],['distDiag','대각선 균등']].forEach(function(v){var b=button(v[1],v[1],function(){win.alignMulti(v[0]);});b.dataset.align=v[0];dist.appendChild(b);});
     var bibLabel=label('조끼',bib),scope=el('span','ps-sm-scope'),swatches=el('div','ps-sm-swatches'),mixed=el('span','ps-sm-mixed');bibLabel.append(scope);bib.append(swatches,mixed);
     [['','없음'],['#facc15','노랑'],['#fb923c','주황'],['#4ade80','초록'],['#38bdf8','하늘'],['#f472b6','분홍']].forEach(function(v){var b=proxy('#psEditTools [data-bib="'+v[0]+'"]','조끼 '+v[1]);b.textContent='';b.dataset.bib=v[0];b.className='ps-sm-swatch'+(v[0]?'':' ps-sm-off');if(v[0])b.style.setProperty('--bib',v[0]);swatches.appendChild(b);});
     label('크기',size);move('sizeCtl',size);['dupSelBtn','lockSelBtn','labelVisBtn'].forEach(id=>move(id,quick));

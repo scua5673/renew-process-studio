@@ -47,6 +47,29 @@
       pointer(tokenLayer.querySelector('[data-id="8101"]'),'pointerdown',111,350,280);pointer(PSBoardText.node(state.drawings[0]),'pointerdown',112,280,230);eq(multiSel.length,2);document.getElementById('psEditToolsToggle').click();eq(document.getElementById('psEditToolsToggle').textContent,'배치 도구');eq(panel.querySelector('[data-pick]').getAttribute('aria-pressed'),'false');
     });
     await check('읽기 전용 수정 차단',()=>{const before=JSON.stringify(captureSnap());window.__vaultReadOnly=true;try{alignMulti('rowY');document.querySelector('#psEditTools [data-bib="#facc15"]').click();eq(JSON.stringify(captureSnap()),before);}finally{window.__vaultReadOnly=false;updateDelUI();}});
+    await check('대각선 혼합 배치·끝점·단일 Undo',()=>{
+      seed();const a=state.players[0],b=state.equipment[0],d=state.drawings[1],locked=state.drawings[0];
+      a.x=200;a.y=200;b.x=800;b.y=500;d.pts=[{x:430,y:280}];sel=null;multiSel=[a,d,b,locked];const before=JSON.stringify([a,b,d,locked]);
+      alignMulti('distDiag');near(d.pts[0].x,500);near(d.pts[0].y,350);near(a.x,200);near(b.x,800);undoLast();eq(JSON.stringify([state.players[0],state.equipment[0],state.drawings[1],state.drawings[0]]),before);
+    });
+    await check('한 번 자유 이동·터치 그룹·pointercancel·영구 설정 보존',async()=>{
+      seed();window.__editGrid=5;localStorage.setItem('cs_drag_snap_v1','1');const d=state.drawings[1],p=state.players[0],equip=state.equipment[0],equip0={x:equip.x,y:equip.y};multiSel=[d,p,equip];sel=null;updateDelUI();
+      const free=document.querySelector('#psEditTools [data-free]');free.click();eq(free.getAttribute('aria-pressed'),'true');eq(PSBoardEdit.snapEnabled({ctrlKey:true}),false);
+      const d0={...d.pts[0]},p0={x:p.x,y:p.y},g=PSBoardText.node(d);pointer(g,'pointerdown',201,d0.x,d0.y);pointer(window,'pointermove',201,d0.x+63,d0.y+42);
+      near(d.pts[0].x,d0.x+63);near(equip.x,equip0.x+63);near(equip.y,equip0.y+42);near(p.x,p0.x+63);near(p.y,p0.y+42);pointer(window,'pointercancel',201,d0.x+63,d0.y+42);await frame();
+      eq(free.getAttribute('aria-pressed'),'false');eq(_dragSnapOn(),true);eq(PSBoardEdit.snapEnabled({altKey:true}),true);undoLast();near(state.drawings[1].pts[0].x,d0.x);
+      free.click();free.click();eq(free.getAttribute('aria-pressed'),'false');free.click();selectItem('player',state.players[2]);eq(free.getAttribute('aria-pressed'),'false');
+      free.click();_activateMoveTool();state.tool='line';updateDelUI();eq(free.getAttribute('aria-pressed'),'false');_activateMoveTool();
+    });
+    await check('점 스냅 표시와 켜짐 독립·방향·뒤집기·3D',async()=>{
+      seed();window.__editGrid=3;const u={x:413,y:317},q=PR(),step=M2U(3),expected={x:q.L+Math.round((u.x-q.L)/step)*step,y:q.T+Math.round((u.y-q.T)/step)*step};
+      for(const orientation of ['h','v'])for(const flip of [false,true])for(const tilt of [false,true]){
+        state.orientation=orientation;state.spFlip=flip;__setTilt(tilt);applyView();localStorage.setItem('cs_drag_snap_v1','0');eq(PSBoardEdit.snapEditPoint(u),u);
+        localStorage.setItem('cs_drag_snap_v1','1');const r=PSBoardEdit.snapEditPoint(u);near(r.x,expected.x);near(r.y,expected.y);
+      }
+      __setTilt(false);state.orientation='h';state.spFlip=false;applyView();
+    });
+
     return result;
   }
   window.PSBoardEditChecks={run,seed};
