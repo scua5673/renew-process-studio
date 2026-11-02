@@ -4,6 +4,7 @@ const intensity=require('../studio/training-intensity.js');
 const weather=require('../studio/weather-request.js');
 const names=require('../studio/idp-profile-name.js');
 const dismiss=require('../studio/popover-dismiss.js');
+const matchHome=require('../studio/match-home.js');
 function actual(file,name,context){
   const source=fs.readFileSync(path.join(__dirname,'../studio',file),'utf8');
   const start=new RegExp('(?:^|\\n)([ \\t]*)function '+name+'\\(').exec(source);assert.ok(start,name);
@@ -87,4 +88,34 @@ test('popover closes from nested frames and Escape, including reloaded documents
   const scan=dismiss.watch(outer,()=>closed++);scan();child.emit('pointerdown');nested.emit('pointerdown');outer.emit('keydown',{key:'Escape'});assert.equal(closed,3);
   child.emit('keydown',{key:'a'});assert.equal(closed,3);assert.equal(child.listeners.pointerdown.length,1);
   const replacement=target();frame.contentDocument=replacement;frame.emit('load');replacement.emit('pointerdown');assert.equal(closed,4);
+});
+test('coach today reads the exact match result and opens that match review, including 0:0 and partial scores',()=>{
+  const date='2026-11-02',record={id:'today',date,opponent:'결과 입력 상대',scoreUs:2,scoreThem:1};
+  const wrong={id:'other',date,opponent:'다른 상대',scoreUs:0,scoreThem:4},rows=[wrong,record];
+  const status=actual('scout.html','matchStatusOf',{matchYmd:()=>date,matchPhaseReviewHas:()=>false});
+  const session=actual('scout.html','ckSession',{window:{__twCtx:{id:'today',diff:0}},PSMatchHome:matchHome,
+    matchLoad:()=>({matches:rows}),matchYmd:()=>date,matchStatusOf:status,teamHomeDayAt:()=>({date:new Date(date+'T12:00:00')}),
+    teamBoardSession:()=>null,teamSessionPlannedLoad:()=>'',scheduleSourceId:()=>'',scheduleMid:()=>''});
+  const before=JSON.stringify(rows),s=session(0);
+  assert.equal(s.title,'경기 · vs 결과 입력 상대');assert.equal(s.sub,'2 : 1 · 결과 입력됨');assert.equal(s.matchId,'today');
+  assert.equal(s.matchView.label,'경기 리뷰 열기');assert.equal(s.matchView.stage,'review');
+  record.scoreUs=0;record.scoreThem=0;assert.equal(session(0).sub,'0 : 0 · 결과 입력됨');
+  record.scoreThem='';assert.equal(session(0).sub,'0 : — · 결과 입력됨');
+  record.scoreUs='';assert.equal(session(0).matchView.label,'경기 준비 열기');
+  record.scoreUs=2;record.scoreThem=1;assert.equal(JSON.stringify(rows),before);
+  const calls=[];const open=actual('scout.html','ckOpenHomeMatch',{matchLoad:()=>({matches:rows}),matchOpen:id=>{calls.push(id);return true;},setView:v=>calls.push(v)});
+  open(s.matchId,s.matchView.stage);assert.deepEqual(calls,['today','review']);
+  open('deleted','review');assert.deepEqual(calls,['today','review']);
+  const blocked=actual('scout.html','ckOpenHomeMatch',{matchLoad:()=>({matches:rows}),matchOpen:()=>false,setView:v=>calls.push(v)});
+  blocked('today','review');assert.deepEqual(calls,['today','review']);
+});
+test('home match identity never guesses from date or opponent, and reports review states without inventing a score',()=>{
+  const date='2026-11-02',first={id:'a',sourceId:'sched:a',date},second={id:'b',sourceId:'sched:b',date},rows=[first,second];
+  assert.equal(matchHome.resolve(rows,{date,sourceId:'sched:b'}),second);
+  for(const target of [{date},{date,id:'missing',sourceId:'sched:a'},{date:'2026-11-01',id:'a'},{date,sourceId:'missing'}])assert.equal(matchHome.resolve(rows,target),null);
+  assert.equal(matchHome.resolve([first,first],{date,id:'a'}),null);
+  assert.deepEqual(matchHome.describe({},'unrecorded'),{sub:'지난 경기 · 결과 미입력',stage:'review',label:'결과·리뷰 입력'});
+  assert.equal(matchHome.describe({},'reviewing').sub,'리뷰 작성 중');
+  assert.equal(matchHome.describe({},'review').sub,'리뷰 기록됨');
+  assert.equal(matchHome.describe({},'prep').label,'경기 준비 열기');
 });

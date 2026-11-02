@@ -7,7 +7,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <style id="ps-2205-wait">html.ps-wait .wrap>.view{visibility:hidden!important}</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<script src="storage.js"></script><script src="training-intensity.js"></script><script src="weather-request.js"></script>
+<script src="storage.js"></script><script src="training-intensity.js"></script><script src="weather-request.js"></script><script src="match-home.js"></script>
 <link rel="stylesheet" href="team-audience.css"><script src="team-audience.js"></script><script src="roster-audience.js"></script>
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
@@ -19600,7 +19600,12 @@ function ckSession(o){
   var load=""; try{ load=teamSessionPlannedLoad(training,b)||""; }catch(_){}
   var DOW=["일","월","화","수","목","금","토"], when=(o===0)?"오늘":(DOW[date.getDay()]+" "+date.getDate()+"일");
   var r={when:when,title:"",sub:"",blocks:[],kind:"none",slot:String((training&&training.slot)||""),time:(training&&training.time)||"",place:String((training&&training.place)||"").trim(),note:String((training&&training.note)||"").trim()};   /* 2.908 — 세션 장소·메모(일정 세션 채우기) */
-  if(isMatch){ var tm=(day&&day.match)||{}, opp=tm.opponent||tm.opp||b.opp||ctx.opp||"상대 미정"; r.kind="m"; r.title="경기 · vs "+opp; r.sub="경기 계획과 출전 인원을 최종 확인"; r.time=tm.time||""; }
+  if(isMatch){
+    var tm=(day&&day.match)||{}, record=PSMatchHome.resolve((matchLoad()||{}).matches,{date:matchYmd(date),id:scheduledMatch?"":ctx.id,sourceId:scheduledMatch?scheduleSourceId(scheduleMid(day)):ctx.sourceId});
+    var opp=(record&&record.opponent)||tm.opponent||tm.opp||b.opp||ctx.opp||"상대 미정";
+    r.kind="m"; r.title="경기 · vs "+opp; r.matchId=record?record.id:"";
+    r.matchView=PSMatchHome.describe(record,record?matchStatusOf(record):"prep");r.sub=r.matchView.sub;r.time=(record&&record.time)||tm.time||"";
+  }
   else if(!isOff&&training){ r.kind="tr"; r.title=training.aims||training.title||"팀 훈련"; var mins=0; try{ mins=teamHomeMinutes(training)||0; }catch(_){}
     r.sub=[load?"강도 "+load:"",mins?"총 "+mins+"분":""].filter(Boolean).join(" · "); r.load=load; r.mins=mins;   /* 2.584 — 머리줄 알약용 */   /* 아래에서 블록으로 다시 센다 */
     /* 2.302 — 세션이 있어도 **세션 블록이 비어 있으면 보드에서 채운다**(사용자 "팀 훈련 밑에 추가한 훈련 뜨게").
@@ -19948,6 +19953,12 @@ function ckJournalWait(today){
   var r=count(tcYmd(today)); if(r.wrote)return {label:"오늘",wrote:r.wrote,wait:r.wait};
   r=count(tcYmd(y)); return r.wrote?{label:"어제",wrote:r.wrote,wait:r.wait}:null;
 }
+function ckOpenHomeMatch(id,stage){
+  if(!id){setView("match");matchBackToList();return;}
+  if(!(matchLoad().matches||[]).some(function(m){return m.id===id;}))return;
+  if(matchOpen(id)===false)return;
+  matchStage=stage;matchTab=stage;setView(stage==="review"?"review":"match");
+}
 /* 2.979 — 그 날짜(YYYY-MM-DD)의 경기 기록. 없으면 null(부르는 쪽이 다음 경기로 물러난다) */
 function ckMatchOn(iso){ if(!iso)return null; try{ return ((matchLoad()||{}).matches||[]).filter(function(x){ return String(x.date||"")===String(iso); })[0]||null; }catch(_){ return null; } }
 /* ══ 2.981 · 자료가 오기 전에는 «없다»고 말하지 않는다(디자인 판정 06·08 «빈 화면 대신 뼈대») ══
@@ -20073,7 +20084,7 @@ function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
                 그래서 값을 여기서 바꾸지 않고, 그 시트를 열어 준다(시간·세트 편집기는 2.488/2.535 에 이미 있다). */
           +(bl.t?'<time class="ckt" role="button" tabindex="0" data-ck="edittime" title="눌러서 일정에서 시간·세트 고치기">'+ckEsc(bl.t)+'</time>':'')+(bl.ph?'<span class="ph">'+ckEsc(bl.ph)+'</span>':'')+(bl.libId?'<u class="go">→</u>':'')+'</div>'; }).join("")
       /* 2.201 — OFF 날 '개별 재활·부상' 줄 제거(사용자). 가용 인원 패널이 같은 정보를 보여 준다 */
-      :((ss.kind==="off"||ss.kind==="none")?'':(ss.kind==="m"?('<div class="ck-acts"><button type="button" class="ck-act pri ps-btn-primary" data-ck="match" data-md="'+_selIso+'">경기 준비 열기</button><button type="button" class="ck-act ps-btn-secondary" data-ck="stage" data-step="opp" data-md="'+_selIso+'">상대 분석</button></div>')   /* 2.979 — 문장 대신 그 문 */
+      :((ss.kind==="off"||ss.kind==="none")?'':(ss.kind==="m"?('<div class="ck-acts"><button type="button" class="ck-act pri ps-btn-primary" data-ck="home-match" data-step="'+ss.matchView.stage+'" data-mid="'+ckEsc(ss.matchId)+'">'+ckEsc(ss.matchView.label)+'</button><button type="button" class="ck-act ps-btn-secondary" data-ck="home-match" data-step="opp" data-mid="'+ckEsc(ss.matchId)+'">상대 분석</button></div>')   /* 2.979 — 문장 대신 그 문 */
         :('<div class="empty">훈련 블록이 아직 없어요'+(ss.kind==="tr"?'<button type="button" class="ck-fill" data-ck="fill">세션 채우기 →</button>':'')+'</div>'))))   /* 2.953 — 빈 카드에 문 하나(코치 점검 10/7: 흰 카드에 한 줄뿐이었다) */
     /* 2.570 — 2.299 의 «다음 경기» 줄은 «이번 주» 머리줄의 D-n 칩으로 **옮겼다**(같은 data-ck="match"). 카드에서는 그린다면 두 번이 된다. */
     +'</div></div>';
@@ -20241,6 +20252,7 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
     else if(k==="drill"){ var _lb=b.dataset.lib||""; if(_lb){ try{ parent.postMessage({source:"scout",type:"openDrillEditor",edit:true,libId:_lb},"*"); }catch(_){} } }
     else if(k==="status"){ setView("status"); }
     else if(k==="availtoggle"){ window.__ckAvailOpen=!window.__ckAvailOpen; renderCkHome(); }
+    else if(k==="home-match"){ ckOpenHomeMatch(b.dataset.mid,b.dataset.step); }
     else if(k==="match"){ var _mt=ckMatchOn(b.dataset.md)||m; setView("match"); try{ if(_mt&&_mt.id)matchOpen(_mt.id); }catch(_){} }
     else if(k==="tick"){ try{ if(!m)return; /* teamHomeNextMatch 는 사본을 주므로 실제 기록을 찾아 쓴다 */ var real=((matchLoad()||{}).matches||[]).filter(function(x){return x.id===m.id;})[0]||m; real.ckDone=(real.ckDone&&typeof real.ckDone==="object")?real.ckDone:{}; var _k=b.dataset.step, cur=b.getAttribute("aria-checked")==="true"; real.ckDone[_k]=!cur; m.ckDone=real.ckDone; matchSaveNow(); }catch(_){} renderCkHome(); }
     else if(k==="stage"){ var _st=b.dataset.step, _ms=ckMatchOn(b.dataset.md)||m; setView("match"); try{ if(_ms&&_ms.id)matchOpen(_ms.id); }catch(_){} setTimeout(function(){ try{ var sb=document.querySelector('[data-match-step="'+_st+'"]'); if(sb)sb.click(); }catch(_){} },120); }
@@ -20369,7 +20381,7 @@ function renderTeamHome(){
     if($("teamHomeCycleHint"))$("teamHomeCycleHint").textContent="";
   }
   try{renderTeamWeather();}catch(_){}
-  window.__twCtx={diff:m?diff:null,opp:m?(m.opponent||""):"",ha:m?(m.homeAway||""):"",time:m?(m.time||""):""};   /* 2.636 — 주간 경기 칸의 홈/원정·시간 */
+  window.__twCtx={id:m?(m.id||""):"",sourceId:m?(m.sourceId||""):"",diff:m?diff:null,opp:m?(m.opponent||""):"",ha:m?(m.homeAway||""):"",time:m?(m.time||""):""};   /* 2.636 — 주간 경기 칸의 홈/원정·시간 */
   /* 아이브로 — 매치 위크의 언어는 여기 한 줄만 말한다 */
   try{ var _eb=$("teamHomeEyebrow");
     if(_eb)_eb.textContent=m?("MATCH WEEK · "+(diff===0?"MATCH DAY":(diff>0?"MD-"+diff:"MD+"+Math.abs(diff)))):"TEAM";

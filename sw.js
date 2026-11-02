@@ -4,7 +4,7 @@
 const CACHE = 'process-3.237';
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
-  '/studio/training-intensity.js', '/studio/weather-request.js', '/studio/idp-profile-name.js', '/studio/popover-dismiss.js',
+  '/studio/match-home.js', '/studio/training-intensity.js', '/studio/weather-request.js', '/studio/idp-profile-name.js', '/studio/popover-dismiss.js',
   '/studio/board-phone-view.js',
   '/studio/mobile-navigation.js', '/studio/mobile-navigation.css',
   '/studio/team-mobile.css', '/studio/team-mobile.js',
