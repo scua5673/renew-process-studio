@@ -27,3 +27,8 @@
 #boardScoutDialog footer>div{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 #boardScoutDialog [data-error]:not(:empty){color:var(--c-bad);margin-top:8px}
 @media(max-width:480px){#boardScoutDialog header,#boardScoutDialog footer,#boardScoutDialog .bsi-body{padding:12px}#boardScoutDialog h2{font-size:var(--t-6)}#boardScoutDialog .bsi-controls{gap:6px}#boardScoutDialog select{font-size:var(--t-3)}#boardScoutDialog [data-count]{flex-basis:100%}}
+#editorPanel #trainingRosterImport:not([hidden]){display:grid;grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-2);padding:var(--sp-3);border-top:1px solid var(--c-line)}
+#editorPanel #trainingRosterImport .ep-roster-label{grid-column:1/-1}
+#editorPanel #trainingRosterImport .bsi-button{width:100%;min-height:44px;align-items:center;justify-content:center;font:inherit;font-size:var(--t-3);background:var(--c-surface-2);color:var(--c-ink);border:1px solid var(--c-line);border-radius:var(--r-1);cursor:pointer}
+#editorPanel #trainingRosterImport .bsi-button:disabled{opacity:.5;cursor:default}
+#boardScoutRow.bsi-entry>button{min-height:44px}

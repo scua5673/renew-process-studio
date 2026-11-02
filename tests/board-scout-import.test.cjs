@@ -39,3 +39,15 @@ test('durable-read failures and absent-mirror disagreements cannot produce an im
  const f=win();f.w.PSStorage.sharedVerified=async()=>{throw Error('durable mismatch');};await assert.rejects(API.read(f.w),/mismatch/);
  const g=win();delete g.raw.scout_tool_v1;g.w.storage.get=async()=>({value:'{"players":[]}'});await assert.rejects(API.read(g.w),/다시 불러/);
 });
+test('team rows preserve custom groups and zero numbers while excluding candidates and deleted players',()=>{
+ const source={...team,meta:{...team.meta,grpLabels:{academy:'육성반'}},players:[{id:'a',name:'선수',num:0,posId:'cm',grp:'academy',status:'rehab',memo:'비공개 메모'},{id:'b',name:'삭제 선수'},{id:'c',name:'후보',type:'target'}]};
+ const before=JSON.stringify(source),r=API.teamRows(source,{b:123},L.code);
+ assert.equal(r.length,1);assert.equal(r[0].club,'육성반');assert.equal(r[0].no,'0');assert.equal(r[0].pos,'LCM');assert.equal(r[0].memo,undefined);assert.equal(JSON.stringify(source),before);
+});
+test('training counts distinguish availability from scouting stage',()=>{
+ assert.deepEqual(API.trainingCounts([{pos:'GK',status:'go'},{pos:'CM'},{pos:'GK',availability:'rehab'},{pos:'LW',availability:'injury'},{pos:'CF',availability:'rest'}]),{gk:1,field:1,rehab:1,out:2});
+});
+test('team context rejects a changed owner and player role without requiring scouting authority',async()=>{
+ const f=win();Object.assign(f.raw,{ps_sync_session:'{"uid":"u"}',ps_active_ws:'team',ps_cache_owner_v1:'{"uid":"u","wid":"team"}',ps_ws_list:'[{"id":"team","kind":"team"}]'});f.w.PSSync={dataUnlocked:()=>true};f.w.PSPerms={role:()=> 'staff'};
+ const r=await API.read(f.w,'team');r.check();f.w.PSPerms.role=()=> 'player';assert.throws(r.check,/권한/);f.w.PSPerms.role=()=> 'staff';f.raw.ps_active_ws='another';assert.throws(r.check,/권한/);
+});

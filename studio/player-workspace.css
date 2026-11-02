@@ -129,6 +129,13 @@ html.ps-page-scout:has(#pwDrawer[open]){overflow:hidden}
 .pw-depth-heading h3{font-size:var(--t-5);margin:0 0 var(--sp-2)}
 .pw-depth-heading p,.pw-depth-heading>span{font-size:var(--t-3);color:var(--c-muted);margin:0;line-height:1.5}
 .pw-depth-heading>span{white-space:nowrap}
+.pw-depth-actions{display:flex;align-items:center;gap:var(--sp-3);flex-shrink:0}
+.pw-depth-actions>span{font-size:var(--t-3);color:var(--c-muted);white-space:nowrap}
+.pw-depth-actions [data-pw-action="group"]{min-height:44px;white-space:nowrap}
+.pw-workspace .is-group-edit .pw-depth-name{min-height:44px;cursor:pointer}
+.is-group-edit .pw-depth-person small{color:var(--c-ink);font-weight:600}
+.pw-group-picker-title{flex-basis:100%;padding:var(--sp-1);font-size:var(--t-3);color:var(--c-ink)}
+@media(max-width:500px){.pw-depth-actions>span{display:none}.pw-depth-heading{gap:var(--sp-2)}}
 .pw-depth-pitch{position:relative;isolation:isolate;display:grid;gap:var(--sp-4);padding:var(--sp-4) var(--sp-2);border:1px solid color-mix(in srgb,var(--c-ok) 20%,var(--c-line));border-radius:var(--r-2);background:color-mix(in srgb,var(--c-ok) 4%,var(--c-surface))}
 .pw-depth-markings{position:absolute;inset:var(--sp-3);border:1px solid color-mix(in srgb,var(--c-ok) 18%,transparent);z-index:-1;pointer-events:none}
 .pw-depth-markings::before,.pw-depth-markings::after{content:'';position:absolute;width:42%;height:12%;left:29%;border:1px solid color-mix(in srgb,var(--c-ok) 18%,transparent)}

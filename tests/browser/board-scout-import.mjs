@@ -69,7 +69,7 @@ try{
  assert.match(saved,/미배치 후보/);assert.match(saved,/김민준/);
  // Owner and permissions are rechecked after opening; loss of authority removes the roster immediately.
  await open();await f.evaluate(()=>{window.__testCanEdit=PSPerms.canEdit;PSPerms.canEdit=()=>false;});await f.waitForSelector('#boardScoutDialog',{state:'detached'});
- await f.waitForFunction(()=>getComputedStyle(document.getElementById('boardScoutRow')).display==='none');
+ await f.waitForFunction(()=>getComputedStyle(document.getElementById('loadScoutRosterBtn')).display==='none');
  await f.evaluate(()=>{PSPerms.canEdit=window.__testCanEdit;});
  await open();const stable=await f.evaluate(()=>JSON.stringify(state.players));
  await f.evaluate(()=>{localStorage.setItem('cs_player_del_v1','{"deleted":101}');document.querySelector('#boardScoutDialog form').requestSubmit();});
