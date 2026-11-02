@@ -1,0 +1,34 @@
+#boardScoutRow>button{flex:1;justify-content:center}
+#boardScoutDialog{width:min(620px,calc(100% - 32px));max-height:calc(100dvh - 32px);padding:0;border:1px solid var(--c-line);border-radius:var(--r-2);background:var(--c-surface);color:var(--c-ink);overflow:hidden}
+#boardScoutDialog::backdrop{background:var(--c-community-overlay)}
+#boardScoutDialog form{display:flex;flex-direction:column;max-height:calc(100dvh - 34px);margin:0}
+#boardScoutDialog header,#boardScoutDialog footer{padding:16px 20px;flex:none}
+#boardScoutDialog header{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--c-line)}
+#boardScoutDialog h2{font-size:var(--t-7);margin:0 0 6px;font-weight:700}
+#boardScoutDialog p{font-size:var(--t-3);color:var(--c-muted);line-height:1.6;margin:0}
+#boardScoutDialog .bsi-body{padding:16px 20px;overflow:auto;min-height:0}
+#boardScoutDialog .bsi-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#boardScoutDialog .bsi-controls label{font-size:var(--t-3);color:var(--c-muted);display:grid;gap:6px}
+#boardScoutDialog select,#boardScoutDialog .bsi-search{width:100%;min-width:0;min-height:44px;border:1px solid var(--c-line-2);border-radius:var(--r-1);background:var(--c-surface);color:var(--c-ink);padding:8px;font:inherit;font-size:var(--t-5)}
+#boardScoutDialog .bsi-search{margin-top:12px;font-size:var(--t-6)}
+#boardScoutDialog .bsi-selection{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0;font-size:var(--t-3)}
+#boardScoutDialog [data-count]{flex:1;white-space:nowrap}
+#boardScoutDialog .btn{min-height:44px;font-size:var(--t-3)}
+#boardScoutDialog .btn:not(.primary):not(#_){background:var(--c-surface-2);color:var(--c-ink)}
+#boardScoutDialog select:not(#_){appearance:none;-webkit-appearance:none;height:44px;padding-right:28px;background-image:linear-gradient(45deg,transparent 50%,var(--c-muted) 50%),linear-gradient(135deg,var(--c-muted) 50%,transparent 50%);background-position:calc(100% - 14px) 50%,calc(100% - 10px) 50%;background-size:4px 4px;background-repeat:no-repeat}
+#boardScoutDialog .bsi-candidate{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--c-line);cursor:pointer;min-height:64px}
+#boardScoutDialog .bsi-candidate input{width:18px;height:18px;flex:none;accent-color:var(--c-act)}
+#boardScoutDialog .bsi-person{display:grid;gap:5px;flex:1;min-width:0}
+#boardScoutDialog strong{font-size:var(--t-5);font-weight:600;overflow-wrap:anywhere}
+#boardScoutDialog small,#boardScoutDialog .bsi-stage{font-size:var(--t-3);color:var(--c-muted);overflow-wrap:anywhere}
+#boardScoutDialog .bsi-stage{flex:none}
+#boardScoutDialog .bsi-empty{padding:24px 0;text-align:center}
+#boardScoutDialog footer{border-top:1px solid var(--c-line)}
+#boardScoutDialog footer>div{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+#boardScoutDialog [data-error]:not(:empty){color:var(--c-bad);margin-top:8px}
+@media(max-width:480px){#boardScoutDialog header,#boardScoutDialog footer,#boardScoutDialog .bsi-body{padding:12px}#boardScoutDialog h2{font-size:var(--t-6)}#boardScoutDialog .bsi-controls{gap:6px}#boardScoutDialog select{font-size:var(--t-3)}#boardScoutDialog [data-count]{flex-basis:100%}}
+#editorPanel #trainingRosterImport:not([hidden]){display:grid;grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-2);padding:var(--sp-3);border-top:1px solid var(--c-line)}
+#editorPanel #trainingRosterImport .ep-roster-label{grid-column:1/-1}
+#editorPanel #trainingRosterImport .bsi-button{width:100%;min-height:44px;align-items:center;justify-content:center;font:inherit;font-size:var(--t-3);background:var(--c-surface-2);color:var(--c-ink);border:1px solid var(--c-line);border-radius:var(--r-1);cursor:pointer}
+#editorPanel #trainingRosterImport .bsi-button:disabled{opacity:.5;cursor:default}
+#boardScoutRow.bsi-entry>button{min-height:44px}
