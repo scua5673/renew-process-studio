@@ -26,6 +26,8 @@ const suites={
 };
 suites.identity.push('update-delivery','update-client-lifecycle');
 suites.records.push('multipitch-rotation');
+suites.board.push('board-scout-import','board-roster-import');
+suites.idp.push('squad-group-change');
 suites.records.push('training-toolbar-layout');
 suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
 suites.entry.push('sync-diagnosis','team-mobile','mobile-navigation');
