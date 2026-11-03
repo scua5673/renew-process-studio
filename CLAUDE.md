@@ -115,6 +115,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 
 ## 배포
 - 가지 → PR(`staging`) → CI «Storage safety» → 합치면 testprocess.netlify.app. 승격 PR `staging` → `main` → processstudio.netlify.app.
+- 11/3(판 번호 없음) — Netlify 짓기는 약 18분에 끊긴다(3.246 · 3.250 «Command did not finish within the time limit», CI 는 23분). `verify-release.mjs` 는 합친 커밋의 트리가 부모와 같고 다른 부모가 그 부모의 조상이면 그 부모의 `release-gate` 초록으로 바로 통과한다(`sameTreeParents`). PR 은 기준 가지를 품은 채 · 승격은 그 PR CI 가 끝난 뒤 합친다.
 - Netlify 는 그 커밋의 `release-gate` 가 초록이 될 때까지 최대 **20분** 기다린다(`scripts/verify-release.mjs` `GATE_WAIT_MS` — 10/28 까지는 12분이었고, CI 가 실행기 줄서기로 17분 걸린 날 testprocess 3.201 게시가 실패했다). main 합친 뒤 실서버까지 보통 15분 안팎. 승격 전엔 다른 PR 의 CI 가 돌고 있지 않은지 본다 — 문서만 바꾼 PR 의 CI 라도 실행기를 나눠 쓴다.
 - 10/28(3.201) — `release-gate` 가 **빨강으로 끝나면** Netlify 짓기는 기다리지 않고 바로 실패한다(`verify-release.mjs` 의 `fail`). 흔들린 작업만 GitHub 에서 다시 돌려 gate 가 초록이 돼도 Netlify 는 스스로 다시 짓지 않는다 — 그 사이트는 Netlify «Trigger deploy» 또는 그 가지의 **새 실제 커밋**(빈 커밋 금지)으로만 다시 게시된다. 이날 WebKit `idp` 묶음이 세 번 연속 서로 다른 시험(`match-formats-8` · `match-large-schedule` · `review-training` 768 hit-test)에서 한 번씩 떨어졌다 — 같은 커밋이 바로 앞 실행에서 통과했으면 실행기 느림으로 보고 한 번만 재실행, 두 번째도 떨어지면 진짜로 본다.
 - 확인: `curl -s https://processstudio.netlify.app/sw.js | grep -o "process-3\.[0-9]*"` (testprocess 도 같이).

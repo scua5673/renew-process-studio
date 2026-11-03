@@ -32,3 +32,44 @@ test('production gate accepts exact-commit success after a 23-minute runner dela
   assert.equal(clock,23*60*1000);
   assert.ok(calls>1);
 });
+
+// 11/3(판 번호 없음) — Netlify 짓기는 약 18분에 끊긴다(3.246 · 3.250 «Command did not finish within the time limit»). 23분 CI 를 기다리지 못하므로,
+// 합친 커밋의 트리가 이미 CI 를 통과한 부모와 같고 다른 부모가 그 부모의 조상이면 그 결과를 쓴다.
+test('production gate reuses the release-gate of a parent with the identical tree',async()=>{
+  const {verify}=await import('../scripts/verify-release.mjs');
+  const M='c'.repeat(40),P='d'.repeat(40),B='e'.repeat(40),T='f'.repeat(40);
+  const gate=c=>({...base,head_sha:c});
+  const world=({tree=T,status='ahead',runs={[P]:[gate(P)]},parents=[B,P]}={})=>{
+    const seen=[];
+    const fetcher=async url=>{
+      const path=url.replace('https://api.github.com/repos/scua5673/renew-process-studio/','');seen.push(path);
+      const ok=body=>({ok:true,json:async()=>body});
+      let m;
+      if((m=/^commits\/([a-f0-9]{40})\/check-runs/.exec(path)))return ok({check_runs:runs[m[1]]||[]});
+      if((m=/^git\/commits\/([a-f0-9]{40})$/.exec(path))){const c=m[1];return ok(c===M?{tree:{sha:T},parents:parents.map(sha=>({sha}))}:{tree:{sha:c===P?tree:B}});}
+      if((m=/^compare\/([a-f0-9]{40})\.\.\.([a-f0-9]{40})/.exec(path)))return ok({status:m[1]===B&&m[2]===P?status:'diverged'});
+      return {ok:false,status:404};
+    };
+    return {fetcher,seen};
+  };
+  let clock=0;const opts={env:{CONTEXT:'production',COMMIT_REF:M},now:()=>clock,sleep:async ms=>{clock+=ms;},log(){}};
+  // 같은 트리 · 기준이 PR 에 들어 있음 · 그 PR 이 초록 → 기다리지 않고 통과
+  let w=world();await verify({...opts,fetcher:w.fetcher});
+  assert.equal(clock,0);assert.ok(w.seen.includes(`compare/${B}...${P}?per_page=1`));
+  // 트리가 다르면(합치며 내용이 바뀜) 쓰지 않는다 — 이 커밋의 CI 를 기다리다 멈춘다
+  clock=0;await assert.rejects(verify({...opts,fetcher:world({tree:'9'.repeat(40)}).fetcher}),/30 minutes/);
+  // 기준이 PR 의 조상이 아니면(PR CI 가 시험한 것과 다를 수 있음) 쓰지 않는다
+  clock=0;await assert.rejects(verify({...opts,fetcher:world({status:'diverged'}).fetcher}),/30 minutes/);
+  // 부모의 CI 가 아직이거나 빨강이면 쓰지 않는다
+  clock=0;await assert.rejects(verify({...opts,fetcher:world({runs:{[P]:[{...gate(P),status:'in_progress'}]}}).fetcher}),/30 minutes/);
+  clock=0;await assert.rejects(verify({...opts,fetcher:world({runs:{[P]:[{...gate(P),conclusion:'failure'}]}}).fetcher}),/30 minutes/);
+  // 합친 커밋이 아니면(부모 하나) 찾지 않는다
+  clock=0;w=world({parents:[P]});await assert.rejects(verify({...opts,fetcher:w.fetcher}),/30 minutes/);
+  assert.equal(w.seen.some(p=>p.startsWith('compare/')),false);
+  // 이 커밋의 CI 가 빨강이면 같은 트리의 부모가 초록이어도 멈춘다
+  clock=0;await assert.rejects(verify({...opts,fetcher:world({runs:{[P]:[gate(P)],[M]:[{...gate(M),conclusion:'failure'}]}}).fetcher}),/release-gate failed/);
+  // 부모의 CI 가 기다리는 동안 끝나면 그때 통과한다
+  clock=0;w=world({runs:{}});const late=w.fetcher;
+  await verify({...opts,fetcher:async url=>{if(clock>=5*60*1000&&url.includes(`commits/${P}/check-runs`))return {ok:true,json:async()=>({check_runs:[gate(P)]})};return late(url);}});
+  assert.equal(clock,5*60*1000);
+});
