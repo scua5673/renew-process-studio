@@ -35,7 +35,7 @@ try{
   await page.evaluate(()=>{
     window.__navTrace=[];
     window.__navScalar=function(){const f=document.getElementById('fScout'),d=f&&f.contentDocument;return {section:window.__psTeamSection&&__psTeamSection(),app:document.body.dataset.psApp,request:f&&f.__psTeamViewRequest,pending:f&&f.__psTeamViewPending,target:f&&f.__psTeamViewTarget,childViews:d?[...d.querySelectorAll('.view.on')].map(x=>x.id):[],scoutingOn:document.querySelector('#teamBottom [data-tb="scouting"]').classList.contains('on')};};
-    addEventListener('message',e=>{if(!e.data||e.data.source!=='scout'||e.data.type!=='teamViewNow')return;const record=phase=>{__navTrace.push({phase,at:performance.now(),view:e.data.view,...__navScalar()});if(__navTrace.length>64)__navTrace.shift();};record('before-message');queueMicrotask(()=>record('after-message'));},true);
+    addEventListener('message',e=>{if(!e.data||e.data.source!=='scout'||e.data.type!=='teamViewNow')return;const record=phase=>{__navTrace.push({phase,at:performance.now(),view:e.data.view,probe:e.data.fixtureProbe,...__navScalar()});if(__navTrace.length>64)__navTrace.shift();};record('before-message');queueMicrotask(()=>record('after-message'));},true);
   });
   const nav=key=>page.locator('#appSeg '+key);
   const team=page.locator('#appSeg [data-team-hub]'),more=nav('#psMoreBtn');
@@ -61,6 +61,11 @@ try{
     assert.equal(scoutingOn,true,'scouting shortcut follows active view');
     assert.equal(await page.locator('#teamBottom [data-tb="more"]').evaluate(e=>e.classList.contains('on')),false,'More does not select with scouting');
     assert.equal(await page.locator('#teamMoreSheet').isVisible(),false,'shortcut does not require the More sheet');
+    // A notification queued by an older child view must not roll back the
+    // current shortcut, even after the latest parent request has been sent.
+    await scoutFrame.evaluate(probe=>parent.postMessage({source:'scout',type:'teamViewNow',view:'team',fixtureProbe:probe},'*'),width);
+    await page.waitForFunction(probe=>__navTrace.at(-1).phase==='after-message'&&__navTrace.at(-1).probe===probe,width);
+    assert.equal(await page.locator('#teamBottom [data-tb="scouting"]').evaluate(e=>e.classList.contains('on')),true,'late team notification preserves current scouting selection');
     if(width===320||width===390)await page.screenshot({path:path.join(SHOTS,'team-scout-'+width+'.png')});
 
     await nav('[data-app="community"]').click();
