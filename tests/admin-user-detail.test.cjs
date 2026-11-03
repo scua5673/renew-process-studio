@@ -20,8 +20,8 @@ test('team changes ignore old RPC results and retain the entered draft scope',as
 test('invalid account never queries and close rejects late results',async()=>{let calls=0;const c=api.createController();await c.open(options({user:{user_id:'invalid'},request:async()=>{calls++;return[]},rpc:async()=>{calls++;return[]}}));assert.equal(calls,0);assert.equal(c.getState().events.status,'invalid');const wait=deferred();const p=c.open(options({request:()=>wait.promise}));await tick();c.close();wait.resolve([event()]);await p;assert.equal(c.getState(),null);});
 test('followup validation preserves limits, source user and verified UUID scope',()=>{const c=api.createController();c.open(options());const d=c.getState().draft;d.fields.note='note';assert.equal(api.validateDraft(d,U,[W]),'');for(const patch of [{subject_user_id:V},{workspace_id:X},{note:'x'.repeat(2001)},{kind:'unknown'},{status:'unknown'},{assignee_label:'x'.repeat(81)},{release_version:'x'.repeat(41)},{next_check_at:'not date'}])assert.notEqual(api.validateDraft({...d,fields:{...d.fields,...patch}},U,[W]),'');});
 test('save cannot run while followup RPC is unavailable; no fallback storage',async()=>{let writes=0;const c=api.createController();await c.open(options({rpc:async name=>{if(name.includes('save'))writes++;throw Error('missing')}}));c.setDraft({note:'Keep this'});assert.equal(await c.saveDraft(),false);assert.equal(writes,0);assert.equal(c.getState().draft.fields.note,'Keep this');});
-test('explicit save sends expected version and original typed text, suppresses double submit',async()=>{const wait=deferred(),writes=[],c=api.createController();await c.open(options({rpc:async(name,args)=>{if(name.includes('_save')){writes.push(args);return wait.promise}return[]}}));c.setDraft({note:'<img src=x onerror=alert(1)>',workspace_id:W});const saving=c.saveDraft();assert.equal(await c.saveDraft(),false);await tick();assert.equal(writes.length,1);assert.equal(writes[0].p_expected_version,0);assert.equal(writes[0].p_fields.note,'<img src=x onerror=alert(1)>');wait.resolve(followup({note:writes[0].p_fields.note}));assert.equal(await saving,true);assert.equal(c.getState().draft.version,1);});
-test('typing during a save preserves newer input and advances the edit version',async()=>{const wait=deferred(),c=api.createController();await c.open(options({rpc:async name=>name.includes('_save')?wait.promise:[]}));c.setDraft({note:'First'});const p=c.saveDraft();await tick();c.setDraft({note:'Second'});wait.resolve(followup({workspace_id:null,note:'First'}));await p;assert.equal(c.getState().draft.fields.note,'Second');assert.equal(c.getState().draft.version,1);assert.match(c.getState().save.message,/아직 저장하지/);});
+test('explicit save sends expected version and original typed text, suppresses double submit',async()=>{const wait=deferred(),writes=[],c=api.createController();await c.open(options({rpc:async(name,args)=>{if(name.includes('_save')){writes.push(args);return wait.promise}return[]}}));c.setDraft({note:'<img src=x onerror=alert(1)>',workspace_id:W});const saving=c.saveDraft();assert.equal(await c.saveDraft(),false);await tick();assert.equal(writes.length,1);assert.equal(writes[0].p_expected_version,0);assert.equal(writes[0].p_fields.note,'<img src=x onerror=alert(1)>');wait.resolve(followup({...writes[0].p_fields}));assert.equal(await saving,true);assert.equal(c.getState().draft.version,1);});
+test('typing during a save preserves newer input and advances the edit version',async()=>{const wait=deferred(),c=api.createController();await c.open(options({rpc:async name=>name.includes('_save')?wait.promise:[]}));c.setDraft({note:'First'});const p=c.saveDraft();await tick();c.setDraft({note:'Second'});wait.resolve(followup({workspace_id:null,note:'First',assignee_label:''}));await p;assert.equal(c.getState().draft.fields.note,'Second');assert.equal(c.getState().draft.version,1);assert.match(c.getState().save.message,/아직 저장하지/);});
 test('409 version conflict preserves note and expected version for review',async()=>{const c=api.createController();await c.open(options({rpc:async name=>{if(name.includes('_save'))throw Object.assign(Error('changed'),{status:409});return name.includes('followups')?[followup()]:[]}}));c.editFollowup(I);c.setDraft({note:'Local revision'});assert.equal(await c.saveDraft(),false);assert.equal(c.getState().draft.fields.note,'Local revision');assert.equal(c.getState().draft.version,1);assert.equal(c.getState().save.status,'conflict');await c.reload();assert.equal(c.getState().draft.fields.note,'Local revision');});
 test('save response cannot enter another user after close/reopen',async()=>{const wait=deferred(),c=api.createController();await c.open(options({rpc:async name=>name.includes('_save')?wait.promise:[]}));c.setDraft({note:'User A'});const p=c.saveDraft();await tick();await c.open(options({user:{user_id:V}}));wait.resolve(followup({workspace_id:null,note:'User A'}));assert.equal(await p,false);assert.equal(c.getState().uid,V);assert.equal(c.getState().draft.fields.note,'');});
 test('metadata drawer uses text nodes, no automatic document reads or persistent draft fallback',()=>{const code=fs.readFileSync(require.resolve('../studio/admin-user-detail.js'),'utf8');assert.doesNotMatch(code,/\.innerHTML\s*=|insertAdjacentHTML|localStorage|sessionStorage|ps_admin_idp_get|eval\(/);assert.match(code,/aria-modal/);assert.match(code,/returnFocus/);});
@@ -29,6 +29,61 @@ test('uncertain save response blocks repeated create attempts while retaining te
 test('conflict requires a newer fetch; picking same record retains local fields and adopts refreshed version',async()=>{let version=1;const c=api.createController();await c.open(options({rpc:async name=>{if(name.includes('_save')){version=2;throw Object.assign(Error('conflict'),{status:409})}return name.includes('followups')?[followup({version,note:version===2?'Other administrator':'Original'})]:[]}}));c.editFollowup(I);c.setDraft({note:'My revision'});await c.saveDraft();assert.equal(c.editFollowup(I),false);await c.reload();assert.equal(c.editFollowup(I),true);assert.equal(c.getState().draft.fields.note,'My revision');assert.equal(c.getState().draft.version,2);assert.equal(c.getState().save.reviewRequired,undefined);});
 test('shared screen reports show only scoped actor or subject metadata, not unrelated accounts',()=>{const rows=api.normalizeSharedViews([{user_id:U,subject_user_id:V,workspace_id:W,view_kind:'player_matches',received_at:'2026-09-13T10:00:00Z',body:'private'},{user_id:V,subject_user_id:U,workspace_id:W,view_kind:'player_matches'},{user_id:V,subject_user_id:I,workspace_id:W,view_kind:'player_matches'},{user_id:U,subject_user_id:V,workspace_id:X,view_kind:'player_matches'},{user_id:U,subject_user_id:V,workspace_id:W,view_kind:'journal'}],U,W);assert.equal(rows.length,2);assert.equal('body'in rows[0],false);assert.equal(rows[0].subject_user_id,V);assert.equal(rows[1].subject_user_id,U);assert.throws(()=>api.normalizeSharedViews({},U,W));});
 test('missing shared-view RPC remains an independent error without zeroing other sections',async()=>{const c=api.createController();await c.open(options({request:async()=>[event()],rpc:async name=>{if(name==='ps_admin_shared_views_list')throw Error('not installed');return[]}}));assert.equal(c.getState().views.status,'error');assert.equal(c.getState().events.status,'ready');assert.equal(c.getState().reports.status,'ready');assert.equal(c.getState().followups.status,'ready');});
-test('a read begun before save completion cannot replace its acknowledged row',async()=>{const stale=deferred(),save=deferred();let reads=0;const c=api.createController();await c.open(options({rpc:async name=>{if(name.includes('_save'))return save.promise;if(name==='ps_admin_followups_list'&&++reads>1)return stale.promise;return[]}}));c.setDraft({note:'Saved'});const write=c.saveDraft();await tick();const refresh=c.reload();await tick();save.resolve(followup({workspace_id:null,note:'Saved'}));await write;stale.resolve([]);await refresh;assert.equal(c.getState().followups.status,'ready');assert.equal(c.getState().followups.data.length,1);assert.equal(c.getState().followups.data[0].note,'Saved');});
+test('a read begun before save completion cannot replace its acknowledged row',async()=>{const stale=deferred(),save=deferred();let reads=0;const c=api.createController();await c.open(options({rpc:async name=>{if(name.includes('_save'))return save.promise;if(name==='ps_admin_followups_list'&&++reads>1)return stale.promise;return[]}}));c.setDraft({note:'Saved'});const write=c.saveDraft();await tick();const refresh=c.reload();await tick();save.resolve(followup({workspace_id:null,note:'Saved',assignee_label:''}));await write;stale.resolve([]);await refresh;assert.equal(c.getState().followups.status,'ready');assert.equal(c.getState().followups.data.length,1);assert.equal(c.getState().followups.data[0].note,'Saved');});
 test('save acknowledgement for a different workspace is not accepted',async()=>{const c=api.createController();await c.open(options({rpc:async name=>name.includes('_save')?followup({workspace_id:X}):[]}));c.setDraft({note:'For team A',workspace_id:W});assert.equal(await c.saveDraft(),false);assert.equal(c.getState().draft.id,null);assert.equal(c.getState().draft.fields.note,'For team A');assert.equal(c.getState().save.reviewRequired,true);});
 test('reported error stays actionable even when the six reported queues are zero',()=>{const [r]=api.normalizeReports([{user_id:U,error_code:'sync_conflict',pending_team:0,pending_personal:0,held:0,skipped:0,deferred:0,conflicts:0}],U,'');assert.equal(api.reportSummary(r).label,'보고된 원인 확인 필요');});
+
+test('a newer version alone cannot acknowledge different followup fields',async()=>{
+  for(const patch of [{note:'Old memo'},{status:'verified'},{kind:'paid'},{assignee_label:'Other owner'},{release_version:'3.001'},{next_check_at:'2026-11-04T00:01:00Z'},{version:3}]){
+    let writes=0;const c=api.createController();
+    await c.open(options({rpc:async(name,args)=>{
+      if(name!=='ps_admin_followup_save')return[];
+      writes++;return followup({...args.p_fields,version:1,...patch});
+    }}));
+    c.setDraft({note:'Exact evidence',workspace_id:W,assignee_label:'One owner',next_check_at:'2026-11-04T00:00:00.000Z'});
+    const before=JSON.parse(JSON.stringify(c.getState().draft));
+    assert.equal(await c.saveDraft(),false,JSON.stringify(patch));
+    assert.deepEqual(c.getState().draft,before,'no id/version or input is adopted from a mismatched response');
+    assert.equal(c.getState().save.reviewRequired,true);
+    assert.equal(await c.saveDraft(),false);assert.equal(writes,1,'uncertain result never retries automatically');
+    assert.deepEqual(c.getState().followups.data,[]);
+  }
+});
+
+test('an exact followup acknowledgement accepts an equivalent timestamp offset',async()=>{
+  const c=api.createController();await c.open(options({rpc:async(name,args)=>name==='ps_admin_followup_save'?followup({...args.p_fields,next_check_at:'2026-11-04T09:00:00+09:00'}):[]}));
+  c.setDraft({note:'Evidence',next_check_at:'2026-11-04T00:00:00.000Z'});
+  assert.equal(await c.saveDraft(),true);assert.equal(c.getState().draft.version,1);
+});
+
+test('report link starts an unsaved workflow in the existing note without claiming deployment or recovery',async()=>{
+  const calls=[],c=api.createController();await c.open(options({supportReport:{id:I,body:'DO NOT COPY',fixed_in:'3.001'},rpc:async(name)=>{calls.push(name);return[];}}));
+  const d=c.getState().draft;assert.equal(d.id,null);assert.equal(d.fields.release_version,'');assert.equal(d.fields.status,'open');
+  for(const part of ['연결 제보: '+I,'재현','수정·검증 근거','배포 확인','사용자 기기·적용 확인','해결 확인: 미확인','기존 자료 복구: 미확인','무응답은 미확인 종료','다음 행동'])assert.ok(d.fields.note.includes(part));
+  assert.doesNotMatch(d.fields.note,/DO NOT COPY|3\.001/);assert.equal(calls.includes('ps_admin_followup_save'),false);
+});
+
+test('report link reuses an existing record including a closed unverified note without reopening it',async()=>{
+  const note='연결 제보: '+I+'\n종료 사유: 무응답. 解決未確認',row=followup({note,status:'closed'}),c=api.createController();
+  await c.open(options({supportReport:{id:I},rpc:async name=>name==='ps_admin_followups_list'?[row]:[]}));
+  assert.equal(c.getState().draft.id,I);assert.equal(c.getState().draft.fields.note,note);assert.equal(c.getState().draft.fields.status,'closed');
+});
+
+test('late linked-record reads never overwrite typing and unrelated notes never match a report',async()=>{
+  const wait=deferred(),c=api.createController();const loading=c.open(options({supportReport:{id:I},rpc:async name=>name==='ps_admin_followups_list'?wait.promise:[]}));
+  c.setDraft({note:'Still entering evidence'});wait.resolve([followup({note:'연결 제보: '+I})]);await loading;
+  assert.equal(c.getState().draft.fields.note,'Still entering evidence');assert.equal(c.getState().draft.id,null);
+  await c.open(options({supportReport:{id:I},rpc:async name=>name==='ps_admin_followups_list'?[followup({note:'Text mentions 연결 제보: '+I})]:[]}));
+  assert.equal(c.getState().draft.id,null);
+});
+
+test('only exact accepted saves notify the operational home and legacy edits keep the same RPC contract',async()=>{
+  let notifications=0,bad=true;const sent=[],c=api.createController();const legacy=followup({note:'Legacy note',status:'closed'});
+  await c.open(options({onFollowupSaved:()=>notifications++,rpc:async(name,args)=>{
+    if(name==='ps_admin_followup_save'){sent.push(args);return followup({...args.p_fields,id:args.p_id,version:args.p_expected_version+1,...(bad?{note:'wrong'}:{})});}
+    return name==='ps_admin_followups_list'?[legacy]:[];
+  }}));
+  c.editFollowup(I);c.setDraft({note:'Recovery remains unconfirmed'});assert.equal(await c.saveDraft(),false);assert.equal(notifications,0);
+  await c.reload();c.editFollowup(I);bad=false;assert.equal(await c.saveDraft(),true);assert.equal(notifications,1);
+  assert.equal(sent.at(-1).p_fields.status,'closed');assert.deepEqual(Object.keys(sent.at(-1).p_fields).sort(),['subject_user_id','workspace_id','kind','note','status','assignee_label','next_check_at','release_version'].sort());
+});

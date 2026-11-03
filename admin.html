@@ -619,7 +619,7 @@
 
 <script src="studio/admin-data.js?v=3.238"></script>
 <script src="studio/admin-hub.js?v=3.238"></script>
-<script src="studio/admin-user-detail.js?v=2.964"></script>
+<script src="studio/admin-user-detail.js?v=3.249"></script>
 <script src="studio/admin-operations.js?v=3.238"></script>
 <script src="studio/admin-today.js?v=3.238"></script>
 <script src="studio/admin-stale-clients.js?v=3.201"></script>
@@ -629,7 +629,7 @@
 <script src="studio/support-diagnostics.js?v=2.816"></script>
 <script src="studio/support-image.js?v=3.153"></script>
 <script src="studio/support.js?v=3.153"></script>
-<script src="studio/admin-support.js?v=3.201"></script>
+<script src="studio/admin-support.js?v=3.249"></script>
 <script src="studio/admin-content-data.js?v=2.854"></script>
 <script src="studio/admin-content.js?v=2.890"></script>
 <script>
@@ -724,11 +724,12 @@ function adminRequest(path,options,bootstrap){
 function rpc(name,body){return adminRequest('rpc/'+name,{method:'POST',body:JSON.stringify(body||{})},name==='ps_whoami'&&!adminBoundUid);}
 /* 2.792: user-level support without loading private document bodies. */
 function openAdminUser(uid){
+  var supportReport=arguments[1];
   if(!adminBoundUid||!adminCheckSession(getSess()))return;
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid||''))return;
   var user=USERS.find(function(u){return u.user_id===uid;})||{user_id:uid};
   if(!window.PSAdminUserDetail){toast('사용자 상세를 불러오지 못했습니다. 새로고침해 주세요.');return;}
-  PSAdminUserDetail.open({user:user,users:USERS,workspaces:WS,rpc:adminRpc,request:adminRequest,
+  PSAdminUserDetail.open({user:user,users:USERS,workspaces:WS,rpc:adminRpc,request:adminRequest,supportReport:supportReport,onFollowupSaved:function(){if(adminOps)return adminOps.load();},
     onTeam:function(wid){setTab('ws');selectWs(wid);},
     onIdp:function(){setTab('idp');openIdp(uid,user.email||'');},
     /* 2.964 — «만든 것»: 이미 받아 둔 콘텐츠 목록에서 이 사람 것만(본문은 안 연다). 함수로 넘겨 다시 불러온 목록도 읽게 */
@@ -748,7 +749,7 @@ function loadAdminSupport(){
     $('viewSupport').textContent='오류 제보 화면을 불러오지 못했습니다. 페이지를 다시 열어 주세요.';return;
   }
   if(!adminSupport)adminSupport=PSAdminSupport.create({window:window,host:$('viewSupport'),rpc:adminRpc,context:adminSupportContext,
-    format:PSSupportDiagnostics.format,copyText:PSSupport.copyText,onCounts:setSupportCounts});
+    format:PSSupportDiagnostics.format,copyText:PSSupport.copyText,onCounts:setSupportCounts,openFollowup:openAdminUser});
   return adminSupport.load();
 }
 /* 20261014 — 답변이 필요한 제보 수(새 제보 + 재문의). 서버가 counts 를 주지 않으면(옛 SQL) 아무것도 표시하지 않는다. */

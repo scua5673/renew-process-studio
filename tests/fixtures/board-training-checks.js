@@ -69,6 +69,20 @@
       }
       __setTilt(false);state.orientation='h';state.spFlip=false;applyView();
     });
+    await check('빈 곳 선택 사각형 터치 취소 뒤 새 손가락',async()=>{
+      seed();sel=null;multiSel=[];updateDelUI();_activateMoveTool();await frame();
+      const errs=[],onErr=e=>errs.push(String(e.message||e));window.addEventListener('error',onErr);
+      try{
+        const x=120,y=560;
+        pointer(svg,'pointerdown',301,x,y);ok(document.getElementById('lassoRect'),'첫 손가락 사각형 없음');
+        pointer(svg,'pointercancel',301,x,y);ok(!document.getElementById('lassoRect'),'취소 뒤 사각형 남음');
+        pointer(svg,'pointerdown',302,x,y);ok(document.getElementById('lassoRect'),'취소 뒤 새 손가락이 판에 닿지 않음');
+        pointer(svg,'pointerup',302,x+2,y+2);ok(!document.getElementById('lassoRect'),'끝난 사각형 남음');
+        pointer(svg,'pointerdown',303,x,y);pointer(svg,'lostpointercapture',303,x,y);pointer(svg,'pointerup',303,x,y);
+        pointer(svg,'pointerdown',304,x,y);ok(document.getElementById('lassoRect'),'캡처 상실 뒤 새 손가락이 판에 닿지 않음');pointer(svg,'pointerup',304,x,y);
+      }finally{window.removeEventListener('error',onErr);}
+      eq(errs,[]);
+    });
 
     return result;
   }
