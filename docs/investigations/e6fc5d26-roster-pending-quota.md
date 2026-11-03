@@ -38,3 +38,11 @@
 - 최종 합성 원문·스크린샷: `/tmp/ps-roster-e6fc5d26-after-6f78663/`
 
 실제 계정 원문 복구·운영 반영·제보 응답은 이 작업 범위 밖이다. 제보 당시의 quota 실패 키와 `items-write` 경합의 인과관계는 여전히 확인하지 못했다.
+
+## 동일 MAIN 사본의 저장 상태 재확인 통합
+
+별도 일반 저장 회귀 패치 `e6b18e2a`를 `b9cf0da3e44803e98fd5c5444e795d44bbb746a4` 원고에 통합했다. `scoutStore.set`의 동기 실패에 같은 소유자·권한 원문·메모리 초안·LS·IDB 본문을 다시 읽어 확인하는 콜백만 붙인다. 이미 시도한 문서 쓰기를 재실행하지 않고, MAIN 확인이 끝나도 별도 native 변경 batch·SQ·서버 확인을 대신하지 않는다. 일반 코드와 합성 검사만 가져왔으며 다른 작업의 원본은 수정하지 않았다.
+
+관련 unit 140/140이 통과했고 기존 branding 14개와 pending 보존 27개를 포함한다. 이후 실제 `sharedRecovered`의 두 번째 비동기 IDB 읽기 중 owner·권한·LS·IDB·메모리 초안 변경을 거절하는 단정을 추가하여 변경된 MAIN durability 파일만 10/10 재검증했다. Chromium·WebKit 각각 `roster-main-save`와 `roster-pending-quota`가 모두 통과했다. MAIN mirror quota 뒤 native LS batch가 남은 경우에는 MAIN의 두 사본을 확인해도 batch·ACK·SQ 원문이 바뀌지 않고 업데이트 거절이 유지된다. 원래 native 저장을 재개하고 완료 후 재열기의 fresh scan을 거쳐야 합성 서버의 동일 SQ 원문까지 확인한다. 첫 pending quota·양쪽 저장소 실패·완료 후 부활 방지 단정도 유지했다.
+
+새 실행 증거는 `/tmp/ps-roster-e6fc5d26-integrated-recovery-20261103/`에 보존했다. `unit.log`, `unit-second-read.log`, `{chromium,webkit}-{main,pending}.log`가 검사 로그이며, 각 엔진의 `*-main/results.json`과 `*-pending/*-observations.json`에 결과와 합성 원문이 있다. 기존 최초 실패 원문은 덮지 않았다. SQL·마이그레이션 입력에는 변경이 없으며 이 통합에서 SQL을 반복하지 않았다. 전체 unit·독립 검토·소스 CI·릴리스 검증은 이 통합 원고의 새 SHA에서 별도로 필요하다.

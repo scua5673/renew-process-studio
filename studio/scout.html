@@ -6362,9 +6362,21 @@ const scoutStore={
   /* Shared keys await IDB confirmation. Only the schedule may use a verified IDB copy when its optional mirror fails. */
   set(k,v){
     if(k==="cs_scout_targets_v1")return scSaveTargetDoc(v);
+    let confirmRecovered=null;
     try{
       const raw=JSON.stringify(v),owner=scoutStore.owner(),shared=!!(SHARED_IDB[k]&&window.psSaveShared);let ready=true,mirror=raw,fallback=false;
       function verify(){if(owner!==scoutStore.owner()||localStorage.getItem(k)!==mirror)throw new Error("저장 내용이 바뀌어 다시 확인해야 합니다");return true;}
+      /* A rejected roster mirror can later be restored by a guarded sync pull.
+         Confirm only the exact authored body in both stores; never replay the
+         failed write or accept an empty queue as proof of durability. */
+      if(k==="scout_tool_v1"&&shared)confirmRecovered=function(){
+        function exact(){verify();if(JSON.stringify(mem[k])!==raw)throw new Error("저장 내용이 바뀌어 다시 확인해야 합니다");return true;}
+        exact();
+        if(!window.PSStorage||!PSStorage.sharedCommitted)throw new Error("저장 확인을 할 수 없습니다");
+        return PSStorage.sharedCommitted(k,raw).then(function(){
+          exact();return PSStorage.sharedRecovered?PSStorage.sharedRecovered(k,raw,exact):true;
+        }).then(exact);
+      };
       if(shared){
         if(!window.psSaveShared(k,raw)){
           if(k!=="process_coach_v1"||!window.PSStorage||!PSStorage.sharedCommitted)throw new Error("저장 실패");
@@ -6386,7 +6398,7 @@ const scoutStore={
     catch(e){
       mem[k]=v;
       try{const n=Date.now();if(!window.__psQwT||n-window.__psQwT>15000){window.__psQwT=n;toast("⚠︎ 저장 공간 부족 — 변경사항이 저장되지 않아요! 사진·오래된 데이터를 정리해주세요");}}catch(__){}
-      teamSaves.track(k,Promise.reject(e));
+      teamSaves.track(k,Promise.reject(e),confirmRecovered);
       return false;
     }
   },

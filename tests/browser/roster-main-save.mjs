@@ -28,6 +28,8 @@ try{
   localStorage.setItem('cs_perms_v1',JSON.stringify({members:{[uid]:{role:'executive'}}}));localStorage.setItem('cs_scout_targets_v1','{"v":1,"players":[]}');
   window.PSSync={dataUnlocked:()=>true,keyReady:()=>true,rosterReady:()=>true,syncNow:async()=>({pushed:0,applied:0})};
   window.PSItems={active:()=>false,write(){},flush:async()=>true};
+  const nativeSet=Storage.prototype.setItem;
+  Storage.prototype.setItem=function(k,v){if(k==='scout_tool_v1'&&window.fixtureQuota)throw new DOMException('Synthetic roster mirror quota','QuotaExceededError');return nativeSet.call(this,k,v);};
  },{uid,wid});
  page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/parent.html',{waitUntil:'domcontentloaded'});
  const frame=await (await page.locator('#fScout').elementHandle()).contentFrame();assert.ok(frame);await frame.waitForURL(base+'/studio/scout.html');await frame.waitForFunction(()=>window.PSStorage&&typeof scoutStore!=='undefined');
@@ -82,7 +84,31 @@ try{
  await frame.evaluate(async()=>{storage.set=fixtureSet;await scoutStore.ready(true);});await page.evaluate(()=>flushWorkspaceFrames());
  assert.equal(await frame.evaluate(async()=>localStorage.getItem(KEY)===(await storage.get(KEY)).value),true);
  assert.equal(await frame.evaluate(()=>JSON.parse(localStorage.getItem(KEY)).players[0].memo),'latest edit awaiting durable confirmation');
+
+ // A synchronous mirror rejection used to remain in store_ready forever,
+ // even after a guarded pull restored this exact authored body. Recovery is
+ // read-only confirmation, not a retry of the failed document write.
+ await frame.evaluate(()=>{
+  fixtureQuota=true;fixtureRecoveryWrites=0;
+  storage.set=function(...args){fixtureRecoveryWrites++;return fixtureSet(...args);};
+  data.players[0].memo='exact authored roster awaiting mirror recovery';
+  fixtureAccepted=save({skipTargets:true,skipItems:true});
+  fixtureRecoveredRaw=JSON.stringify(mem[KEY]);
+ });
+ assert.equal(await frame.evaluate(()=>fixtureAccepted),false);
+ assert.equal(await page.evaluate(()=>flushWorkspaceFrames().then(()=>false,()=>true)),true);
+ await frame.evaluate(()=>PSStorage.sharedCommitted(KEY,fixtureRecoveredRaw));
+ assert.equal(await frame.evaluate(()=>scoutStore.hasFailed(KEY)),true);
+ assert.equal(await frame.evaluate(()=>psFlushPendingReady().then(()=>false,()=>true)),true,'a durable IDB copy alone does not release the roster barrier');
+ const recoveryWrites=await frame.evaluate(()=>fixtureRecoveryWrites);
+ await frame.evaluate(()=>{fixtureQuota=false;localStorage.setItem(KEY,fixtureRecoveredRaw);});
+ await frame.evaluate(()=>psFlushPendingReady());await page.evaluate(()=>flushWorkspaceFrames());
+ assert.equal(await frame.evaluate(()=>fixtureRecoveryWrites),recoveryWrites,'confirmation performs no document write');
+ assert.equal(await frame.evaluate(()=>scoutStore.hasFailed(KEY)||psHasPending()),false);
+ assert.equal(await frame.evaluate(async()=>localStorage.getItem(KEY)===(await storage.peek(KEY)).value),true);
+ assert.equal(await frame.evaluate(()=>PSSaveState.get('team')),'saved');
+ await frame.evaluate(()=>{storage.set=fixtureSet;});
  assert.deepEqual(errors,[]);
- const result={engine,initialRoster:69,deletedRoster:68,mainAndIdbExact:true,childAndParentQueuesBothAwaited:true,syncReadsLatestDurableRoster:true,failedWriteBlocksParentBarrier:true,sameRawRetryVerified:true};
+ const result={engine,initialRoster:69,deletedRoster:68,mainAndIdbExact:true,childAndParentQueuesBothAwaited:true,syncReadsLatestDurableRoster:true,failedWriteBlocksParentBarrier:true,sameRawRetryVerified:true,rejectedMirrorBlocksUntilBothCopiesExact:true,recoveredMirrorReleasesParentBarrierWithoutRewriting:true};
  fs.writeFileSync(path.join(out,'results.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));await context.close();
 }finally{await browser.close();}
