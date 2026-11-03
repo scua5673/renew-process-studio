@@ -23,6 +23,9 @@ try{
     };
     const put=IDBObjectStore.prototype.put;
     IDBObjectStore.prototype.put=function(v,k){
+      if(String(k)==='sq:'+localStorage.getItem('fixture_native_sq_hold')){
+        throw new DOMException('fixture native SQ completion held','QuotaExceededError');
+      }
       if(String(k).startsWith('ps_roster_pending_v1:')&&localStorage.getItem('fixture_pending_idb_fail')==='1'){
         const top=window.top;top.fixtureRejectedIDB=top.fixtureRejectedIDB||[];top.fixtureRejectedIDB.push({key:k,raw:String(v)});
         throw new DOMException('fixture roster pending IDB quota','QuotaExceededError');
@@ -101,13 +104,21 @@ try{
   assert.ok(mainRejected.pendingBatches.some(x=>x.key.includes(':b:')));assert.equal(mainRejected.durablePending.length,0);
   assert.notEqual(mainRejected.main,mainRejected.idb);assert.ok(JSON.parse(mainRejected.idb).players.some(p=>p.id===mainRejected.player.id));
   const nativeBefore=mainRejected.pendingBatches,serverBefore=mainRejected.serverPlayers;
-  await frame.evaluate(async()=>{
+  const confirmAttempt=await frame.evaluate(async id=>{
     fixtureConfirmSet=storage.set;fixtureConfirmWrites=0;
     storage.set=function(...args){fixtureConfirmWrites++;return fixtureConfirmSet(...args);};
+    // A native background retry can finish between observations. Keep the
+    // separate SQ commit unavailable until its barrier has been inspected,
+    // using a real IDB failure rather than disabling/replacing PSItems.
+    localStorage.setItem('fixture_native_sq_hold',id);
     localStorage.setItem('fixture_main_quota','0');
     localStorage.setItem(KEY,JSON.stringify(mem[KEY]));
-    await scoutStore.ready(true);
-  });
+    try{await scoutStore.ready(true);return {ok:true};}catch(e){
+      if(e.psKey!=='sq:'+id&&!String(e.message).includes('fixture native SQ completion held'))throw e;
+      return {ok:false,key:e.psKey,message:e.message};
+    }
+  },mainRejected.player.id);
+  fs.writeFileSync(path.join(out,engine+'-main-confirmation-attempt.json'),JSON.stringify(confirmAttempt,null,2));
   const mainConfirmed=await snapshot('main-exact-confirmed-native-still-pending',mainName);
   assert.equal(mainConfirmed.main,mainConfirmed.idb);assert.equal(mainConfirmed.failed,false);
   assert.equal(mainConfirmed.barrier.ok,false,'exact main does not release the native outbox barrier');
@@ -119,6 +130,7 @@ try{
   try{
     nativeResume=await frame.evaluate(async expected=>{
       storage.set=fixtureConfirmSet;
+      localStorage.removeItem('fixture_native_sq_hold');
       function current(){
         const ws=psSync().activeWsObj();
         if(fixtureNativeResumeScope!==JSON.stringify([teamSaveOwner(),ws&&ws.role||''])||localStorage.getItem('ps_ws_switch_guard_v1')||!scoutAutomaticWriteAllowed())throw Error('native resume authority changed');
