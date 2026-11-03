@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
-import {startFixture,openApp,SIZES,SHOTS,ready} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,SIZES,OUT,SHOTS,ready} from '../fixtures/team-app.mjs';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',fx=await startFixture(),browsers={};
 for(const s of Object.values(SIZES))s.engine=engine;
 try{for(const size of ['phone','ipad','desktop']){
@@ -8,11 +9,30 @@ try{for(const size of ['phone','ipad','desktop']){
  await ready(page);
  await page.locator('#appSeg [data-app="board"]:not([data-train])').click();
  const f=await(await page.waitForSelector('#fBoard')).contentFrame();
- await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&window.__psPhoneBoardView);
- await f.evaluate(()=>{loadSnap({players:[{id:9901,team:'blue',num:7,x:400,y:300}],equipment:[],drawings:[],orientation:'h',pitchN:1});renderTokens();renderDrawings();});
+ // The local head can load before the same restore's remote read and apply.
+ // Seed only after that current-owner lifecycle and its write tail settle.
+ const restoreScalar=()=>f.evaluate(()=>({generation:typeof _boardPrivateGeneration==='undefined'?null:_boardPrivateGeneration,restoring:window.__boardRestoring||0,flight:!!window._boardPrivateFlight,loaded:!!window._boardPrivateLoaded,ownerCurrent:typeof boardPrivateCurrent==='function'&&boardPrivateCurrent(window._boardPrivateOwner),ids:typeof state==='undefined'?[]:state.players.map(p=>p.id)}));
+ try{
+  await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&window.__psPhoneBoardView&&!window.__boardRestoring&&!window._boardPrivateFlight&&typeof boardPrivateCurrent==='function'&&boardPrivateCurrent(window._boardPrivateOwner));
+  await f.evaluate(()=>{if(!window._boardPrivateLoaded||window.__boardRestoring||window._boardPrivateFlight||!boardPrivateCurrent(window._boardPrivateOwner))throw Error('board restore premise changed before fixture seed');loadSnap({players:[{id:9901,team:'blue',num:7,x:400,y:300}],equipment:[],drawings:[],orientation:'h',pitchN:1});renderTokens();renderDrawings();});
+ }catch(error){const observed=await restoreScalar().catch(e=>({observationError:e.name}));fs.writeFileSync(path.join(OUT,'phone-board-restore-failure-'+size+'.json'),JSON.stringify({engine,size,stage:'before-seed',observed},null,2));throw error;}
  const read=()=>f.evaluate(()=>({players:state.players.map(p=>({id:p.id,x:p.x,y:p.y})),drawings:state.drawings,dirty:boardManualChanged()}));
  const token=f.locator('#tokenLayer [data-id="9901"] .tok-c');await token.waitFor({state:'visible'});
- const start=await read(),box=await token.boundingBox();
+ // Read the live token, board state and both coordinate spaces together.
+ // renderTokens replaces nodes: a handle captured before a render can report
+ // no box even while its replacement is visible. Missing/hidden live content
+ // still fails immediately; do not retry until a desired measurement appears.
+ let input;
+ try{input=await f.evaluate(()=>{
+  const token=document.querySelector('#tokenLayer [data-id="9901"] .tok-c'),frame=window.frameElement;
+  if(!token?.isConnected||!frame?.isConnected)throw Error('current token/frame is missing');
+  const r=token.getBoundingClientRect(),outer=frame.getBoundingClientRect(),style=getComputedStyle(token),frameStyle=parent.getComputedStyle(frame);
+  if(!(r.width>0&&r.height>0&&outer.width>0&&outer.height>0)||style.visibility==='hidden'||frameStyle.visibility==='hidden'||frameStyle.display==='none')throw Error('current token/frame has no visible geometry');
+  const sx=outer.width/innerWidth,sy=outer.height/innerHeight;
+  return {start:{players:state.players.map(p=>({id:p.id,x:p.x,y:p.y})),drawings:state.drawings,dirty:boardManualChanged()},box:{x:outer.x+r.x*sx,y:outer.y+r.y*sy,width:r.width*sx,height:r.height*sy},tokenConnected:token.isConnected,frameConnected:frame.isConnected};
+ });}catch(error){const observed=await restoreScalar().catch(e=>({observationError:e.name}));fs.writeFileSync(path.join(OUT,'phone-board-restore-failure-'+size+'.json'),JSON.stringify({engine,size,stage:'live-geometry',observed,message:error.message},null,2));throw error;}
+ const {start,box}=input;
+ fs.writeFileSync(path.join(OUT,'phone-board-input-'+size+'.json'),JSON.stringify({engine,size,...input},null,2));
  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+35,box.y+box.height/2+20,{steps:6});await page.mouse.up();
  if(size==='phone'){
   assert.deepEqual(await read(),start,'phone pointer drag leaves the board unchanged');

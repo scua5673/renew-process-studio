@@ -32,6 +32,13 @@ try{
   app=await openApp(fx,'phone',{browsers,phoneStart:true,dark:engine==='webkit'});
   const {page,logs}=app;
   assert.equal(app.browser.browserType().name(),engine);
+  // Navigation measurements start after the candidate key's initial read.
+  await page.waitForFunction(()=>PSSync.keyReady('cs_scout_targets_v1',PSSync.activeWs())&&PSSync.state().kind==='ok'&&!PSSync.pending().count,null,{timeout:30000});
+  await page.evaluate(()=>{
+    window.__navTrace=[];
+    window.__navScalar=function(){const f=document.getElementById('fScout'),d=f&&f.contentDocument;return {section:window.__psTeamSection&&__psTeamSection(),app:document.body.dataset.psApp,request:f&&f.__psTeamViewRequest,pending:f&&f.__psTeamViewPending,target:f&&f.__psTeamViewTarget,childViews:d?[...d.querySelectorAll('.view.on')].map(x=>x.id):[],scoutingOn:document.querySelector('#teamBottom [data-tb="scouting"]').classList.contains('on')};};
+    addEventListener('message',e=>{if(!e.data||e.data.source!=='scout'||e.data.type!=='teamViewNow')return;const record=phase=>{__navTrace.push({phase,at:performance.now(),view:e.data.view,probe:e.data.fixtureProbe,...__navScalar()});if(__navTrace.length>64)__navTrace.shift();};record('before-message');queueMicrotask(()=>record('after-message'));},true);
+  });
   const nav=key=>page.locator('#appSeg '+key);
   const team=page.locator('#appSeg [data-team-hub]'),more=nav('#psMoreBtn');
   for(const width of [320,390,430,767]){
@@ -51,9 +58,16 @@ try{
     await page.locator('#teamBottom [data-tb="scouting"]').click();
     const scoutFrame=await (await page.locator('#fScout').elementHandle()).contentFrame();
     await scoutFrame.locator('#pwScout .pw-depth-pitch').waitFor();
-    assert.equal(await page.locator('#teamBottom [data-tb="scouting"]').evaluate(e=>e.classList.contains('on')),true,'scouting shortcut follows active view');
+    const scoutingOn=await page.locator('#teamBottom [data-tb="scouting"]').evaluate(e=>e.classList.contains('on'));
+    if(!scoutingOn){const observed=await page.evaluate(()=>({state:__navScalar(),trace:__navTrace})).catch(e=>({observationError:e.name}));fs.writeFileSync(path.join(OUT,'navigation-failure-'+width+'.json'),JSON.stringify({engine,width,scoutingOn,observed},null,2));}
+    assert.equal(scoutingOn,true,'scouting shortcut follows active view');
     assert.equal(await page.locator('#teamBottom [data-tb="more"]').evaluate(e=>e.classList.contains('on')),false,'More does not select with scouting');
     assert.equal(await page.locator('#teamMoreSheet').isVisible(),false,'shortcut does not require the More sheet');
+    // A notification queued by an older child view must not roll back the
+    // current shortcut, even after the latest parent request has been sent.
+    await scoutFrame.evaluate(probe=>parent.postMessage({source:'scout',type:'teamViewNow',view:'team',fixtureProbe:probe},'*'),width);
+    await page.waitForFunction(probe=>__navTrace.at(-1).phase==='after-message'&&__navTrace.at(-1).probe===probe,width);
+    assert.equal(await page.locator('#teamBottom [data-tb="scouting"]').evaluate(e=>e.classList.contains('on')),true,'late team notification preserves current scouting selection');
     if(width===320||width===390)await page.screenshot({path:path.join(SHOTS,'team-scout-'+width+'.png')});
 
     await nav('[data-app="community"]').click();
@@ -135,6 +149,6 @@ try{
   fs.writeFileSync(path.join(OUT,'mobile-navigation.json'),JSON.stringify({engine,passed:true,results},null,2));
   console.log(JSON.stringify({engine,passed:true,checks:results.length}));
 }catch(error){
-  if(app){await app.page.screenshot({path:path.join(SHOTS,'failure.png')}).catch(()=>{});const geometry=await app.page.evaluate(()=>({innerWidth,innerHeight,viewport:visualViewport&&{width:visualViewport.width,height:visualViewport.height,scale:visualViewport.scale},overflow:[...document.body.querySelectorAll('*')].filter(e=>{const r=e.getBoundingClientRect();return r.width&&r.right>innerWidth}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,width:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right}))}));fs.writeFileSync(path.join(OUT,'failure.json'),JSON.stringify({error:String(error),geometry,logs:app.logs,results},null,2));}
+  if(app){await app.page.screenshot({path:path.join(SHOTS,'failure.png')}).catch(()=>{});const geometry=await app.page.evaluate(()=>({innerWidth,innerHeight,viewport:visualViewport&&{width:visualViewport.width,height:visualViewport.height,scale:visualViewport.scale},overflow:[...document.body.querySelectorAll('*')].filter(e=>{const r=e.getBoundingClientRect();return r.width&&r.right>innerWidth}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,width:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right}))}));const readiness=await app.page.evaluate(()=>{const w=document.getElementById('fScout')?.contentWindow,s=window.PSSync,c=w?.scStore?.();let check;try{c?.check();check={ok:true};}catch(e){check={ok:false,code:e.psCode,message:e.message};}return {timeOrigin:performance.timeOrigin,section:window.__psTeamSection?.(),booting:document.body.classList.contains('ps-booting'),unlocked:s?.dataUnlocked(),sync:s?.state(),pending:s?.pending(),targetReady:s?.keyReady('cs_scout_targets_v1',s?.activeWs()),scoutPreparing:!!w?.scPreparing,client:c?{verified:c.state.verified,hasDoc:!!c.state.doc,rawMatches:c.state.raw===w.localStorage.getItem('cs_scout_targets_v1'),check}:null,trace:window.__navTrace||[]};}).catch(e=>({observationError:e.message}));fs.writeFileSync(path.join(OUT,'failure.json'),JSON.stringify({error:String(error),geometry,readiness,logs:app.logs,results},null,2));}
   throw error;
 }finally{for(const b of Object.values(browsers))await b.close();await fx.close();}

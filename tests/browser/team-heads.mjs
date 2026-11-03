@@ -4,6 +4,7 @@ import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 합성 팀 fixture 에서만 돈다. 크롬 = 데스크톱 1280, 웹킷 = 폰 375.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop',phone=size==='phone';
 const fx=await startFixture(),browsers={};
+let scoreFrame;
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
   const press=async sel=>{const l=page.locator(sel).first();if(phone)await l.tap();else await l.click();};
@@ -41,10 +42,22 @@ try{
   // ── 경기
   await go('match');await shown('matchView');
   await f.waitForFunction(()=>document.querySelectorAll('#matchList .mrow').length>=2);
-  await page.waitForTimeout(1500);   // 일정에서 온 경기 병합·첫 동기화가 자리 잡은 뒤에 적는다
+  // This is the header/layout check: finish the match-open dependency round
+  // before entering its four scores. A fixed 1.5s sleep did not establish that
+  // premise on CI; the native input guard can still be closed during that round.
+  await f.waitForFunction(()=>!matchSyncing&&!matchDocPending()&&!scoutStore.hasPending()&&parent.PSSync.state().kind==='ok'&&!parent.PSSync.pending().count,null,{timeout:30000});
+  scoreFrame=f;
+  await f.evaluate(()=>{
+    window.__headScoreTrace=[];
+    document.getElementById('matchList').addEventListener('input',e=>{
+      const el=e.target.closest('[data-msc]');if(!el)return;
+      const row={id:el.dataset.mscid,side:el.dataset.msc,value:el.value,pending:matchDocPending(),syncing:matchSyncing,allowed:matchCanEdit()};
+      queueMicrotask(()=>{row.scores=(matchLoad().matches||[]).map(m=>({id:m.id,us:m.scoreUs,them:m.scoreThem}));__headScoreTrace.push(row);});
+    },true);
+  });
   const ins=f.locator('#matchList [data-msc]');
   await ins.nth(0).fill('3');await ins.nth(1).fill('1');await ins.nth(2).fill('1');await ins.nth(3).fill('1');
-  await page.waitForTimeout(500);
+  await f.waitForFunction(()=>document.querySelector('#matchRecord .mrec-ln')?.textContent.replace(/\s+/g,'')==='공식전1승1무0패승률50%·4득2실·+2',null,{timeout:8000});
   const mt=await f.evaluate(()=>{const q=s=>document.querySelector(s),r=e=>{const b=e.getBoundingClientRect();return {l:b.left,t:b.top,w:b.width,h:b.height,b:b.bottom,r:b.right};};
     const de=document.documentElement,more=q('#matchList .mr-more');
     return {lines:[...document.querySelectorAll('#matchRecord .mrec-ln')].map(e=>({t:e.textContent.replace(/\s+/g,''),r:r(e)})),cards:document.querySelectorAll('#matchRecord .mrec-b').length,
@@ -57,6 +70,24 @@ try{
   assert.ok(Math.min(mt.more.w,mt.more.h)>=(phone?40:32),'더보기 누르는 면: '+mt.more.w+'x'+mt.more.h);
   assert.ok(mt.q.r<=mt.head.r+1,'검색칸이 머리 밖으로 나가지 않는다');
   if(!phone)assert.ok(mt.row.h<=28,'전적은 한 줄(카드 두 장 64px → 24px): '+mt.row.h);
+  // A sync round can close MATCH readiness after the list became editable.
+  // Keep four inputs, tied to their row ids, until the native stores verify them.
+  await f.evaluate(()=>{const original=window.matchDocPending;window.__headScoreHold=true;window.matchDocPending=function(){return window.__headScoreHold||original.apply(this,arguments);};});
+  const scoreIds=await ins.evaluateAll(es=>[es[0].dataset.mscid,es[2].dataset.mscid]);
+  await ins.nth(0).fill('4');await ins.nth(1).fill('2');await ins.nth(2).fill('2');await ins.nth(3).fill('2');
+  assert.equal(await f.evaluate(()=>psHasPending()),true,'unapplied list scores block exit');
+  assert.deepEqual(await f.evaluate(async()=>{try{await psFlushPendingReady();return {ok:true};}catch(e){return {ok:false,code:e.psCode};}}),{ok:false,code:'match_input_pending'});
+  await f.evaluate(()=>window.__headScoreHold=false);
+  await f.waitForFunction(()=>document.querySelector('#matchRecord .mrec-ln')?.textContent.replace(/\s+/g,'')==='공식전1승1무0패승률50%·6득4실·+2'&&window.__psMatchLockApi.typed().length===0,null,{timeout:8000});
+  const stored=await f.evaluate(async ids=>{await psFlushPendingReady();const local=JSON.parse(localStorage.getItem(MATCH_KEY)),idb=JSON.parse((await storage.peek(MATCH_KEY)).value);const scores=o=>ids.map(id=>{const m=o.matches.find(m=>m.id===id);return [m.scoreUs,m.scoreThem];});return {local:scores(local),idb:scores(idb),pending:psHasPending()};},scoreIds);
+  assert.deepEqual(stored,{local:[['4','2'],['2','2']],idb:[['4','2'],['2','2']],pending:false});
+  // A natively accepted score must still finish when its row is hidden before
+  // the capture microtask gets a chance to observe that acceptance.
+  await f.waitForFunction(()=>!matchDocPending()&&parent.PSSync.state().kind==='ok'&&!parent.PSSync.pending().count,null,{timeout:30000});
+  assert.equal(await f.evaluate(id=>{const el=[...document.querySelectorAll('#matchList [data-msc="us"]')].find(el=>el.dataset.mscid===id);el.value='6';el.dispatchEvent(new Event('input',{bubbles:true}));const accepted=matchLoad().matches.find(m=>m.id===id).scoreUs==='6';matchOpen(id);return accepted;},scoreIds[0]),true,'native handler accepts before immediate detail navigation');
+  await f.waitForFunction(()=>matchNav==='one'&&window.__psMatchLockApi.typed().length===0&&!psHasPending(),null,{timeout:8000});
+  assert.deepEqual(await f.evaluate(async id=>{await psFlushPendingReady();return [JSON.parse(localStorage.getItem(MATCH_KEY)),JSON.parse((await storage.peek(MATCH_KEY)).value)].map(o=>o.matches.find(m=>m.id===id).scoreUs);},scoreIds[0]),['6','6']);
+  await f.evaluate(()=>matchBackToList());
   // 더보기 → 열기 · 삭제. 삭제는 확인창을 거친다(취소하면 그대로)
   const more=f.locator('#matchList .mr-more').first();if(phone)await more.tap();else await more.click();
   await f.waitForSelector('#psPickPop');
@@ -71,6 +102,9 @@ try{
   const errors=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errors,[],'페이지 오류 없음');
   console.log(JSON.stringify({ok:true,size,squadHead:Math.round(sq.head.h),matchRecordRow:Math.round(mt.row.h)}));
+}catch(error){
+  if(scoreFrame)console.error('team-heads score state',JSON.stringify(await scoreFrame.evaluate(()=>({trace:window.__headScoreTrace,pending:matchDocPending(),syncing:matchSyncing,state:parent.PSSync.state(),record:document.getElementById('matchRecord')?.textContent})).catch(e=>({unavailable:e.name}))));
+  throw error;
 }finally{
   for(const b of Object.values(browsers))await b.close().catch(()=>{});
   await fx.close();

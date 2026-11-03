@@ -237,7 +237,7 @@
     ['ps_upd_cont_v1','device','ls','session','update-progress.js'],
     ['ps_roster_keep_v1','device','ls','recovery','scout.html',{of:'scout_tool_v1'}],
     ['ps_roster_keep_v2:','device','ls','recovery','roster-recovery.js',{of:'scout_tool_v1',prefix:1}],
-    ['ps_roster_pending_v1:','device','ls','queue','roster-outbox.js',{of:'scout_tool_v1',prefix:1}],
+    ['ps_roster_pending_v1:','device','ls','queue','roster-outbox.js',{of:'scout_tool_v1',prefix:1,fallback:'idb'}],
     ['ps_rvreply_seen_v1','device','ls','seen','scout.html'],
     ['ps_sched_grp','device','ls','pref','process.html'],
     ['ps_sched_pdf_style','device','ls','pref','process.html'],   // 3.091 — 일정 PDF 디자인(포스터 · 잉크 절약)

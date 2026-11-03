@@ -102,6 +102,28 @@ test('main rejection stops candidate, item and public mirror mutations',()=>{
   h.c.data.players[0].memo='rejected';assert.equal(h.c.save(),false);assert.equal(h.values.get(MAIN),before);assert.deepEqual(h.rowCalls,[]);assert.deepEqual(h.localWrites.filter(x=>!x.k.startsWith(Outbox.prefix)),[]);assert.equal(h.values.get(TARGET),h.privateRaw);assert.equal(h.c.rosterPendingRows(),true);
 });
 
+test('confirming an exact recovered main cannot acknowledge its unfinished native player batch',async()=>{
+  const h=fixture(),set=h.c.localStorage.setItem;
+  h.c.localStorage.setItem=(k,v)=>{if(k===MAIN)throw Object.assign(Error('synthetic main mirror quota'),{name:'QuotaExceededError'});return set(k,v);};
+  h.c.data.players[0].memo='authored before main mirror quota';
+  assert.equal(h.save(),false);await assert.rejects(h.ready());await tick();
+  const receipt=copy(h.c.rosterOutbox().read()),pending=[...h.values].filter(([k])=>k.startsWith(Outbox.prefix));
+  assert.equal(receipt.rows.length,1);assert.equal(h.c.rosterPendingRows(),true);assert.deepEqual(h.rowCalls,[]);
+  h.c.localStorage.setItem=set;h.values.set(MAIN,h.disk.get(MAIN));
+  const calls=h.calls.length;await h.ready(true);
+  assert.equal(h.calls.length,calls,'confirmation performs no document write');
+  assert.equal(h.scoutStore.hasFailed(MAIN),false);
+  assert.equal(h.c.rosterPendingRows(),true,'confirmed main is not an SQ receipt');
+  assert.deepEqual(copy(h.c.rosterOutbox().read()),receipt);
+  assert.deepEqual([...h.values].filter(([k])=>k.startsWith(Outbox.prefix)),pending,'no batch or ACK changes during confirmation');
+  assert.deepEqual(h.rowCalls,[]);assert.equal(h.disk.has('sq:p1'),false);
+  const gate=deferred();h.rowState.gate=gate;
+  assert.equal(h.c.rosterResumeRows(true),true);let completed=false;const ready=h.ready().then(()=>{completed=true;});await tick();
+  assert.equal(completed,false);assert.equal(h.c.rosterPendingRows(),true);
+  gate.resolve();await ready;
+  assert.equal(h.c.rosterPendingRows(),false);assert.equal(JSON.parse(h.disk.get('sq:p1')).memo,h.c.data.players[0].memo);
+});
+
 test('duplicate player identity is rejected before overwriting the persisted main roster',()=>{
   const h=fixture(),before=h.values.get(MAIN);h.c.data.players.push({...copy(h.initial.players[0]),memo:'conflicting duplicate'});
   let accepted,error;try{accepted=h.save();}catch(e){error=e;}

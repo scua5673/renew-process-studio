@@ -7,7 +7,32 @@ const owner='33a9d4e2-1868-40f4-8f82-3ebb4ecf011e';
 const thumb='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"><rect width="640" height="360" fill="#1e8c4c"/></svg>';
 const sample=[['Cmvrx0ojpstsx','26.10.25.(일) 첼시 0:2 토트넘 | PL'],['Cmvquqwqvag2b','26.10.26.(월) 바르셀로나 1:2 레알 마드리드 | 라리가'],['Cmvjm1wl966iv','26.10.21.(수) PSG 4:2 바르셀로나 | 챔스'],['Cmvat5mje0gnu','26.10.14.(수) ATM 0:3 맨유 | 챔스'],['Cmvat3c6ssazc','26.10.12.(월) 리버풀 0:3 맨시티 | PL']].map(([id,title])=>({id,title,owner,owner_name:'엘미하',thumb,summary:'',cat:'',created_at:'2026-10-20T00:00:00Z'}));
 let rows=process.env.PS_YOUTUBE_PREVIEW_POSTS?JSON.parse(fs.readFileSync(process.env.PS_YOUTUBE_PREVIEW_POSTS,'utf8')):sample;
-const fx=await startFixture(),browsers={};
+const fx=await startFixture(),browsers={},observations={engine,size,images:[]};
+// No element handle crosses the selection/scroll/read boundary. Each callback
+// checks the same five current href identities and returns only plain values.
+function liveVideo({expected,href,scroll,waitForLoaded=false,allowBoard=false}){
+  const cards=[...document.querySelectorAll('#grid .card')];
+  if(cards.length!==expected.length)throw Error('Current video card count changed');
+  const rows=cards.map(card=>{
+    const link=card.querySelector('.el-video-link'),image=card.querySelector(allowBoard?'.th img':'.th.el-video-art img');
+    if(!card.isConnected||!link?.isConnected||!image?.isConnected||!card.contains(link)||!card.contains(image))throw Error('Current video card/link/image is disconnected');
+    return {card,link,image};
+  });
+  const actual=rows.map(r=>r.link.href);
+  if(new Set(actual).size!==expected.length||actual.some(url=>!expected.includes(url))||expected.some(url=>!actual.includes(url)))throw Error('Current video href identities changed');
+  const target=rows.find(r=>r.link.href===href);if(!target)throw Error('Expected current video card is missing: '+href);
+  if(scroll)(scroll==='image'?target.image:target.card).scrollIntoView({block:'center',inline:'nearest'});
+  const snapshot=rows.map(({card,link,image})=>{
+    const box=card.getBoundingClientRect(),imageBox=image.getBoundingClientRect(),linkBox=link.getBoundingClientRect();
+    if(!(box.width>0&&box.height>0&&imageBox.width>0&&imageBox.height>0&&linkBox.width>0&&linkBox.height>0))throw Error('Current video card/image/link has no positive geometry');
+    return {href:link.href,title:card.getAttribute('aria-label'),target:link.target,rel:link.rel,
+      cardConnected:card.isConnected,imageConnected:image.isConnected,linkConnected:link.isConnected,currentImage:card.querySelector('.th img')===image,
+      cardWidth:box.width,cardHeight:box.height,imageWidth:imageBox.width,imageHeight:imageBox.height,linkHeight:linkBox.height,
+      videoArtwork:image.parentElement.classList.contains('el-video-art'),src:image.src,currentSrc:image.currentSrc,complete:image.complete,naturalWidth:image.naturalWidth};
+  });
+  const selected=snapshot.find(r=>r.href===href);
+  return waitForLoaded&&!(selected.complete&&selected.naturalWidth>120)?false:{cards:snapshot,selected};
+}
 try{
   const {page,context,logs}=await openApp(fx,size,{browsers,dark:process.env.PS_DARK==='1'});
   page.setDefaultTimeout(20000);context.setDefaultTimeout(20000);
@@ -35,6 +60,9 @@ try{
   c=await (await page.waitForSelector('#fComm')).contentFrame();
   await c.click('#prTabElm');
   await c.waitForFunction(()=>document.querySelectorAll('.el-video-link').length===5);
+  const firstLinks=await c.evaluate(()=>[...document.querySelectorAll('#grid .el-video-link')].map(a=>a.href));
+  const expected=process.env.PS_YOUTUBE_PREVIEW_POSTS?firstLinks:['c5qzlz7t8hI','zVXyNQeFE5U','DEENs8TVPGY','MMG4OQ8EFgM','1fGEsnvyTdU'].map(id=>'https://www.youtube.com/watch?v='+id);
+  assert.equal(new Set(firstLinks).size,5);assert.deepEqual([...firstLinks].sort(),[...expected].sort(),'all five video URL identities');
   const originalViewport=page.viewportSize();
   for(const width of [320,390,767,1100]){
     await page.setViewportSize({width,height:844});
@@ -46,13 +74,17 @@ try{
     if(width===390||width===1100)await page.screenshot({path:path.join(SHOTS,`explore-${engine}-${width}-${process.env.PS_DARK==='1'?'dark':'light'}.png`)});
   }
   await page.setViewportSize(originalViewport);
-  const images=c.locator('#grid .el-video-art img');
-  for(let i=0;i<5;i++){await images.nth(i).scrollIntoViewIfNeeded();await c.waitForFunction(i=>{const n=document.querySelectorAll('#grid .el-video-art img')[i];return n&&n.complete&&n.naturalWidth>120;},i);}
+  for(const href of expected){
+    await c.evaluate(liveVideo,{expected,href,scroll:'image'});
+    const loaded=await c.waitForFunction(liveVideo,{expected,href,waitForLoaded:true});
+    observations.images.push(await loaded.jsonValue());await loaded.dispose();
+  }
   const check=await c.evaluate(()=>({links:[...document.querySelectorAll('.el-video-link')].map(a=>[a.href,a.target,a.rel,a.getBoundingClientRect().height]),width:innerWidth,scroll:document.documentElement.scrollWidth}));
   assert.equal(check.width,check.scroll);
   assert.equal(new Set(check.links.map(a=>a[0])).size,5);
+  assert.deepEqual(check.links.map(a=>a[0]).sort(),[...expected].sort(),'the same five live video URLs survive image loading');
   for(const a of check.links){assert.equal(a[1],'_blank');assert.equal(a[2],'noopener noreferrer');assert.ok(a[3]>=44);}
-  await c.locator('#grid .card').first().scrollIntoViewIfNeeded();
+  await c.evaluate(liveVideo,{expected,href:check.links[0][0],scroll:'card'});
   await page.screenshot({path:path.join(SHOTS,`youtube-${engine}-${size}.png`)});
   console.log('cards and images verified');
   const [popup]=await Promise.all([context.waitForEvent('page'),c.locator('.el-video-link').first().click()]);
@@ -63,13 +95,16 @@ try{
   console.log('source link verified');
   mode='low';rows[0]={...rows[0],youtubeUrl:'https://youtu.be/Fallback001'};
   await c.evaluate(()=>{sessionStorage.removeItem('ps_comm_elmiha_v1');location.reload();});c=await (await page.waitForSelector('#fComm')).contentFrame();
-  await c.waitForSelector('#grid .card');
-  await c.locator('#grid .card').first().scrollIntoViewIfNeeded();
+  const lowExpected=['https://www.youtube.com/watch?v=Fallback001',...expected.slice(1)];
+  await c.waitForFunction(expected=>{const urls=[...document.querySelectorAll('#grid .el-video-link')].map(a=>a.href);return urls.length===expected.length&&expected.every(url=>urls.includes(url));},lowExpected);
+  await c.evaluate(liveVideo,{expected:lowExpected,href:lowExpected[0],scroll:'card'});
   await c.waitForFunction(()=>document.querySelector('#grid .th img')?.src.endsWith('hqdefault.jpg'));
   console.log('low resolution fallback verified');
   mode='failed';rows[0]={...rows[0],youtubeUrl:'https://youtu.be/Failed00001'};
   await c.evaluate(()=>{sessionStorage.removeItem('ps_comm_elmiha_v1');location.reload();});c=await (await page.waitForSelector('#fComm')).contentFrame();
-  await c.waitForSelector('#grid .card');
+  const failedExpected=['https://www.youtube.com/watch?v=Failed00001',...expected.slice(1)];
+  await c.waitForFunction(expected=>{const urls=[...document.querySelectorAll('#grid .el-video-link')].map(a=>a.href);return urls.length===expected.length&&expected.every(url=>urls.includes(url));},failedExpected);
+  await c.evaluate(liveVideo,{expected:failedExpected,href:failedExpected[0],scroll:'card',allowBoard:true});
   await c.waitForFunction(()=>document.querySelector('#grid .th img')?.src.startsWith('data:image/svg+xml'));
   assert.equal(await c.locator('.el-video-link').count(),5);
   console.log('board fallback verified');
@@ -97,4 +132,4 @@ try{
   assert.equal(await c.locator('.el-video-link').first().getAttribute('href'),'https://www.youtube.com/watch?v=c5qzlz7t8hI');
   assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[]);
   console.log(JSON.stringify({engine,size,passed:true,cards:5,sourceLinks:true,fallback:true,upload:true,reload:true}));
-}finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close();}
+}finally{fs.writeFileSync(path.join(SHOTS,'community-youtube-observations.json'),JSON.stringify(observations,null,2));for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close();}

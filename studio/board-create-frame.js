@@ -150,6 +150,8 @@
       'html.ps-page-board body.cf-training-tools' + NN + ' #cmd-tool-row #cmd-export-btn{width:30px!important;min-width:30px!important;max-width:30px!important;height:30px!important;padding:0!important;justify-content:center!important}',
       'html.ps-page-board body.cf-training-tools' + NN + ' #cmd-tool-row #cmd-export-btn>span{display:none!important}',
 
+      '@media (max-width:1100px){' + M + ' #epNameTop{flex:1 1 60px!important;min-width:60px!important;max-width:150px!important}' + M + ' .modal-head{gap:6px!important}' + M + ' .modal-head .btn{padding:0 9px!important}' + M + ' #editorSaveState,' + M + ' .tw-rtop{display:none!important}}',
+
       // ── 미팅(3.084 2단계): 미팅에는 제 도구줄(#ksTop)과 슬라이드 목록이 있다 ──
       // 작전판 위쪽 막대(페이지 탭 · 보기)는 미팅 도구줄을 덮었다(«경기 연결»이 가려짐) — 미팅 화면에서는 걷는다(보드 설정은 도크 끝 단추)
       'html.ps-page-board body.ps-dock-float.meet-mode:not(.focus-board) #boardPageStrip.ps-tb' + NN + NN + '{display:none!important}',
@@ -223,13 +225,46 @@
       if (ms && ms.style.getPropertyValue('--cf-dock-h') !== h + 'px') ms.style.setProperty('--cf-dock-h', h + 'px');
     }
     win.addEventListener('resize', function () { win.setTimeout(function () { trainingCommands(); stageTone(); dockFit(); }, 0); });
-    // 원래 PDF 단추를 메뉴로 옮긴다. 내보내기 처리기·현재 편집 내용은 그대로 쓴다.
-    // 좁은 화면/보기 전용/편집 종료에서는 정확한 원래 자리와 표시로 복원한다.
-    var pdfHome = null, exportHome = null, commandHosts = [];
+    // 저장 옆에서 현재 편집 중인 훈련을 출력한다. PDF의 기존 처리기를 그대로 쓴다.
+    var exportHome = null, commandHosts = [];
     function trainingCommands() {
       var modal = doc.getElementById('editorModal'), pdf = doc.getElementById('editorPdf');
       var pop = doc.getElementById('cmd-export-pop'), exportBtn = doc.getElementById('cmd-export-btn');
       var output = doc.getElementById('cmd-scene-export'), row = doc.getElementById('cmd-tool-row'), bar = doc.getElementById('animBar');
+      var save = doc.getElementById('editorDone'), head = save && save.parentNode;
+      if (pdf && head) {
+        var print = doc.getElementById('editorPrint');
+        if (!print) {
+          print = doc.createElement('button'); print.id = 'editorPrint'; print.type = 'button'; print.className = 'btn ghost';
+          print.textContent = '인쇄'; print.title = '지금 편집 중인 내용 인쇄';
+          print.addEventListener('click', function () {
+            if (print.disabled || typeof win.editorExportPdf !== 'function') return;
+            pdf.click();
+            var frame = doc.getElementById('ppbFrame'), preview = doc.getElementById('printPrevB');
+            if (!frame || !preview || !preview.classList.contains('on')) return;
+            print.disabled = true;
+            var close = doc.getElementById('ppbClose'), timer = win.setTimeout(done, 15000);
+            if (close) close.addEventListener('click', done, {once:true});
+            function done() { win.clearTimeout(timer); frame.removeEventListener('load', loaded); if (close) close.removeEventListener('click', done); print.disabled = false; }
+            function loaded() {
+              done();
+              if (preview.classList.contains('on')) { var action = doc.getElementById('ppbPrint'); if (action) action.click(); }
+            }
+            frame.addEventListener('load', loaded, {once:true});
+          });
+        }
+        if (print.parentNode !== head || print.nextSibling !== save) head.insertBefore(print, save);
+        if (pdf.parentNode !== head || pdf.nextSibling !== print) head.insertBefore(pdf, print);
+        var label = pdf.querySelector('.ep-pdf-lb'); if (label && label.textContent !== 'PDF 내보내기') label.textContent = 'PDF 내보내기';
+        pdf.setAttribute('aria-label', 'PDF 내보내기');
+        if (!pdf.__cfCloseExport) {
+          pdf.__cfCloseExport = true;
+          pdf.addEventListener('click', function () {
+            var menu = doc.getElementById('cmd-export-pop'), button = doc.getElementById('cmd-export-btn');
+            if (menu && menu.classList.contains('on') && button) button.click();
+          });
+        }
+      }
       [row, bar].forEach(function (host) {
         if (!host || commandHosts.indexOf(host) >= 0) return;
         commandHosts.push(host); new win.MutationObserver(trainingCommands).observe(host, {childList:true});
@@ -237,29 +272,8 @@
       var on = !!(pdf && pop && exportBtn && output && row && body.classList.contains('editing') && body.classList.contains('ps-dock-float') && !body.classList.contains('comm-viewing') && modal && !modal.classList.contains('ep-ro'));
       if (body.classList.contains('cf-training-tools') !== on) body.classList.toggle('cf-training-tools', on);
       if (on) {
-        // 장면 줄을 접어도 내보내기를 쓸 수 있도록 그리기 도구 끝에 둔다.
         if (!exportHome) { exportHome = doc.createComment('scene export home'); output.parentNode.insertBefore(exportHome, output); }
         if (output.parentNode !== row) row.insertBefore(output, doc.getElementById('cmd-tool-end'));
-        if (!pdfHome) {
-          var marker = doc.createComment('training PDF home'), label = pdf.querySelector('.ep-pdf-lb');
-          pdf.parentNode.insertBefore(marker, pdf);
-          pdfHome = {marker:marker, label:label && label.textContent, role:pdf.getAttribute('role'), aria:pdf.getAttribute('aria-label')};
-          pdf.classList.add('cmd-export-item'); pdf.setAttribute('role', 'menuitem'); pdf.setAttribute('aria-label', '훈련 전체 PDF');
-          if (label) label.textContent = '훈련 전체 PDF';
-          if (!pdf.__cfCloseExport) {
-            pdf.__cfCloseExport = true;
-            pdf.addEventListener('click', function () {
-              if (body.classList.contains('cf-training-tools') && pop.classList.contains('on')) exportBtn.click();
-            });
-          }
-        }
-        if (pdf.parentNode !== pop) pop.appendChild(pdf);
-      } else if (pdfHome && pdf) {
-        var home = pdfHome; pdfHome = null;
-        if (home.marker.parentNode) home.marker.parentNode.replaceChild(pdf, home.marker);
-        pdf.classList.remove('cmd-export-item');
-        ['role', 'aria-label'].forEach(function (name) { var v = name === 'role' ? home.role : home.aria; if (v === null) pdf.removeAttribute(name); else pdf.setAttribute(name, v); });
-        var text = pdf.querySelector('.ep-pdf-lb'); if (text && home.label !== null) text.textContent = home.label;
       }
       if (!on && exportHome && output) {
         if (exportHome.parentNode) exportHome.parentNode.replaceChild(output, exportHome);
