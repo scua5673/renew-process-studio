@@ -27,6 +27,7 @@ const code=[
   fn('scheduleRevOf'),fn('scheduleTokenNew'),fn('scheduleTokenValid'),fn('scheduleCommitRaw'),
   fn('kvMetaFetch'),fn('kvPullValues'),fn('blobPrepRows'),
   section(sync,'function kvPushRows(','/* ── 1.568 안전장치'),
+  fn('matchMirrorWriteExact'),
   section(sync,'function kvWrite(','function libLoad('),
   section(sync,'function syncNowCore(','/* 서버 변경을 로컬에 반영한 뒤'),
 ].join('\n');
@@ -53,7 +54,7 @@ function harness(opt={}){
     document:{getElementById:()=>null,querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){}},addEventListener(){},location:{origin:'https://synthetic.test'},
     localStorage:{getItem(k){if(hooks.localRead)hooks.localRead(k);return local.has(k)?local.get(k):null;},setItem(k,v){if(hooks.localWrite)hooks.localWrite(k,String(v));local.set(k,String(v));},removeItem:k=>local.delete(k),key:i=>[...local.keys()][i]||null,get length(){return local.size;}},
     storage:{async get(k){if(hooks.idbRead)await hooks.idbRead(k);return idb.has(k)?{value:idb.get(k)}:null;},async set(k,v){if(hooks.idbWrite)await hooks.idbWrite(k,v);idb.set(k,v);},
-      async replaceIfValue(k,old,value){if(hooks.idbWrite)await hooks.idbWrite(k,value);if(hooks.idbReplace)await hooks.idbReplace(k,old,value);if((idb.has(k)?idb.get(k):null)!==old)return false;if(value==null)idb.delete(k);else idb.set(k,value);return true;}},
+      async replaceIfValue(k,old,value,current){if(current)current();if(hooks.idbWrite)await hooks.idbWrite(k,value);if(hooks.idbReplace)await hooks.idbReplace(k,old,value);if(current)current();if((idb.has(k)?idb.get(k):null)!==old)return false;if(value==null)idb.delete(k);else idb.set(k,value);return true;}},
     PSStorage:{async sharedReady(k){if(hooks.sharedReady)await hooks.sharedReady(k);}},editMirrorCommit:Promise.resolve(),PSScoutStore:S,PSMirrorSync:require('../studio/sync-mirror.js'),
     OWNERKEY:OWNER,MKEY:META,MATCH_KEY:MATCH,SCHEDULE_KEY:SCHEDULE,KEYS:opt.dynamic?[]:[KEY],PERSONAL:{},MERGE_KEYS:{[SCHEDULE]:1},MERGE_LIST:{},
     ITEMS_ACTIVE:false,COPIES_OFF:true,PLAYER_BLIND:[],HOLD_LIST:'ps_hold_list_v1',HOLD_MAX:12,MAXLEN,SKIPKEY:'skip',TOMBKEY:'tomb',IDP_PRIV_PREFIX:'cs_idp_v1_',IDP_PUB_PREFIX:'cs_idp_pub_v1_',rosterSyncMark:null,

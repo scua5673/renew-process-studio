@@ -5527,29 +5527,21 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
        exact 삭제해 다음 pull이 정본을 채우게 한다. */
     return replaceStaleIdbWrite(live);
   }
-  /* ps_kv의 v는 언제나 raw string이다. two-phase pull 사이에 행이 지워져 meta-only
-     row.v===undefined가 들어오면 setItem이 문자열 "undefined"로 바꾸므로 쓰기 전에 막는다. */
+  /* A metadata-only row must not become the literal mirror "undefined". */
   if(typeof v!=='string')return false;
-  /* 팀/계정 전환은 다른 탭에서도 일어난다. sync 회차가 캡처한 소유권이 이미 바뀌었으면
-     공용 IDB나 새 팀 localStorage 거울에 예전 팀 값을 한 글자도 쓰지 않는다. */
+  /* A stale owner cannot write shared storage or the next team's mirror. */
   if(!ownerCurrent())return ownerStale();
-  /* IDB가 먼저 바뀌는 비동기 구간에 예전 ready 표가 남아 있으면
-     scout가 예전 거울을 편집해 다시 올릴 수 있다. 쓰기 자체보다 먼저 표를 닫는다. */
+  /* Close readiness before either storage copy changes. */
   if(k===MATCH_KEY)matchReadyInvalidate();
   if(k===SCHEDULE_KEY)scheduleReadyInvalidate();
   if(k==='cs_scout_targets_v1')scoutReadyInvalidate();
-  /* 덮기 전에 지금 값을 읽어 남긴다. IDB 키(스카우팅 후보·보관함 등)가 오히려 중요하다 —
-     2026-08-05 에 날아간 cs_scout_targets_v1 이 바로 이쪽이었다. */
+  /* Read and rescue the original before overwriting IDB. */
   // IDP uses the same localStorage source as currentValueForKey, even with legacy IDB.
   if(idbBacked(k)&&!isIdpPrivateKey(k)&&!isIdpPubKey(k)){
-    /* 1.644 — 일정 화면은 거울을 먼저 바꾸고 IDB를 뒤따라 저장한다.
-       iOS가 그 사이 앱을 종료하면 거울은 새 값, IDB는 예전 값으로 남는다.
-       이 불일치를 '방금 편집'으로 보고 영구 거부하던 1.642 CAS를 고친다.
-       회차가 선택한 화면 값(expectedLoc)이 쓰기 직전까지 거울(없으면 IDB)에
-       그대로인지만 확인한다. IDB의 느린 예전 본은 rescue로 덮지 않고,
-       사용자가 실제로 보던 expectedLoc을 복구 사본으로 남긴다. */
+    /* Match/schedule writes retain the selected mirror (or missing-mirror IDB)
+       until commit; rescue keeps that selected body rather than a lagging IDB. */
     if((k===SCHEDULE_KEY||k==='cs_team_matches_v1')&&writeGuard){
-      var scheduleGuarded=(k===SCHEDULE_KEY);
+      var scheduleGuarded=(k===SCHEDULE_KEY),matchPermission=k===MATCH_KEY?JSON.stringify([permsRaw(),(activeWsObj()||{}).role]):null;
       var mirror0=null;try{mirror0=localStorage.getItem(k);}catch(_){}
       if((scheduleGuarded&&scheduleHeld())||(mirror0!=null&&mirror0!==expectedLoc)){writeGuard.stale=true;return false;}
       writes.push(window.storage.get(k).then(function(r){
@@ -5581,7 +5573,16 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
             return replaceStaleIdbWrite(afterMirror);
           }
           if(k===MATCH_KEY){
-            try{matchMirrorWriteExact(v);}catch(e){syncDiagnostic('match-mirror-write',e);throw e;}
+            try{matchMirrorWriteExact(v);}catch(e){
+              syncDiagnostic('match-mirror-write',e);
+              /* A quota must not strand this pull's NEW IDB beside the OLD
+                 mirror. Roll back only our exact write, never a newer edit. */
+              if(!e||!(e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||e.code===22||e.code===1014)||(before!==null&&typeof before!=='string')||before===v||afterMirror!==mirror||!window.storage.replaceIfValue)throw e;
+              return window.storage.replaceIfValue(k,v,before,function(){
+                if(!ownerCurrent()||localStorage.getItem(k)!==mirror||JSON.stringify([permsRaw(),(activeWsObj()||{}).role])!==matchPermission)
+                  throw syncIssue('sync_local_changed','match_mirror_rollback_source','경기 원문 복귀 중 새 편집 또는 계정·권한 변경이 생겼습니다');
+              }).then(function(){throw e;},function(rollbackError){syncDiagnostic('match-mirror-rollback',rollbackError);throw e;});
+            }
             return {stale:false};
           }
           /* 2.920 — 거울 쓰기 확인 · 못 쓰면 안전 정리 뒤 한 번 더 · 그래도 안 되면 표시만(던지면 1.1초 재시도 되풀이) — 판정은 scheduleReadyCommit */
