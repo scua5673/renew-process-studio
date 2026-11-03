@@ -18,7 +18,7 @@
     }
     function state(c){
       var s=states.get(c.prefix);
-      if(!s){s={cache:new Map(),jobs:new Set(),tail:Promise.resolve(),loading:null,preparedStamp:null,hydrateError:null,promotionError:null,promoting:null};states.set(c.prefix,s);}
+      if(!s){s={cache:new Map(),jobs:new Set(),tail:Promise.resolve(),loading:null,preparedStamp:null,hydrateError:null,promotionError:null,promoting:null,transitionEmpty:null};states.set(c.prefix,s);}
       return s;
     }
     function scope(c,write){
@@ -91,7 +91,7 @@
     function prepared(){try{var c=context();return !c||state(c).preparedStamp===c.stamp&&!state(c).loading&&!state(c).hydrateError;}catch(_){return false;}}
     function assertPrepared(c){scope(c,false);if(!prepared())throw error('선수 변경 보관함을 불러오는 중입니다','StorageError');}
     function hasRescue(){
-      try{var c=context();if(!c)return false;var s=state(c);return !prepared()||s.cache.size>0||s.jobs.size>0||!!s.loading;}
+      try{var c=context();if(!c)return false;var s=state(c);return !prepared()&&!transitionEmptyCurrent(c,s)||s.cache.size>0||s.jobs.size>0||!!s.loading;}
       catch(_){return true;}
     }
     function failure(){
@@ -100,23 +100,46 @@
         if(!found)s.cache.forEach(function(rec){if(!found)found=rec.sourceError;});return found||null;
       }catch(e){return e;}
     }
-    function snapshot(c,attempt){
-      scope(c,false);
+    function snapshot(c,attempt,check){
+      check=check||function(){scope(c,false);};check();
       if(!disk||typeof disk.keys!=='function'||typeof disk.peek!=='function')return Promise.reject(error('선수 변경 보관함을 불러올 수 없습니다','StorageError'));
       var keys,raws;
-      function names(){return Promise.resolve(disk.keys(c.prefix)).then(function(list){scope(c,false);return list.filter(function(k){return typeof k==='string'&&k.indexOf(c.prefix)===0;}).sort();});}
-      return names().then(function(v){keys=v;return Promise.all(keys.map(peek));}).then(function(v){scope(c,false);raws=v;return names();}).then(function(later){
+      function names(){return Promise.resolve(disk.keys(c.prefix)).then(function(list){check();return list.filter(function(k){return typeof k==='string'&&k.indexOf(c.prefix)===0;}).sort();});}
+      return names().then(function(v){keys=v;return Promise.all(keys.map(peek));}).then(function(v){check();raws=v;return names();}).then(function(later){
         if(JSON.stringify(keys)!==JSON.stringify(later))return false;
-        return Promise.all(keys.map(peek)).then(function(check){scope(c,false);return check.every(function(raw,i){return raw===raws[i];});});
+        return Promise.all(keys.map(peek)).then(function(values){check();return values.every(function(raw,i){return raw===raws[i];});});
       }).then(function(stable){
-        if(!stable){if(attempt<3)return snapshot(c,attempt+1);throw error('다른 창에서 선수 변경 보관함을 바꾸고 있습니다','StorageConflictError');}
+        if(!stable){if(attempt<3)return snapshot(c,attempt+1,check);throw error('다른 창에서 선수 변경 보관함을 바꾸고 있습니다','StorageConflictError');}
         return keys.map(function(k,i){return [k,raws[i]];}).filter(function(pair){return pair[1]!==null;});
+      });
+    }
+    function transitionProof(c,s){
+      var p=typeof options.suspended==='function'?options.suspended():null;
+      if(!p||p.uid!==c.uid||p.wid!==c.wid||!p.proof||p.stamp!==c.stamp||!s.preparedStamp||p.beforeStamp!==s.preparedStamp||!local.getItem('ps_ws_switch_guard_v1'))throw error('전환 전 선수 변경 보관 상태를 확인하지 못했습니다');
+      if(s.cache.size||s.jobs.size||s.loading||s.promoting||s.hydrateError||s.promotionError)throw error('선수 변경 원문 보관 확인이 남아 있습니다');
+      return JSON.stringify(p);
+    }
+    function transitionEmptyCurrent(c,s){
+      var proof=s.transitionEmpty;if(!proof)return false;
+      try{return proof.stamp===c.stamp&&proof.proof===transitionProof(c,s)&&proof.local===JSON.stringify(localNames(c).map(function(k){return [k,local.getItem(k)];}))&&!native.pending();}catch(_){return false;}
+    }
+    function emptyForTransition(){
+      var c,s,proof,localRaw;
+      try{c=context();if(!c)throw error('전환 전 선수 변경의 계정과 팀을 확인하지 못했습니다');s=state(c);s.transitionEmpty=null;proof=transitionProof(c,s);localRaw=JSON.stringify(localNames(c).map(function(k){return [k,local.getItem(k)];}));}
+      catch(e){return Promise.reject(e);}
+      function current(){
+        var now=context();
+        if(!now||now.prefix!==c.prefix||now.stamp!==c.stamp||proof!==transitionProof(now,s)||localRaw!==JSON.stringify(localNames(c).map(function(k){return [k,local.getItem(k)];}))||native.pending())throw error('전환 확인 중 선수 변경의 원문이나 소유자가 바뀌었습니다');
+      }
+      return Promise.resolve().then(function(){current();return snapshot(c,0,current);}).then(function(entries){
+        current();if(entries.length)throw error('큰 저장소에 확인할 선수 변경 원문이 남아 있습니다');
+        s.transitionEmpty={stamp:c.stamp,proof:proof,local:localRaw};return true;
       });
     }
     function prepare(){
       var c;try{c=context();if(!c)return Promise.resolve(true);scope(c,false);}catch(e){return Promise.reject(e);}
       var s=state(c);if(s.loading)return s.loading;
-      s.hydrateError=null;s.preparedStamp=null;
+      s.hydrateError=null;s.preparedStamp=null;s.transitionEmpty=null;
       var work=snapshot(c,0).then(function(entries){
         scope(c,false);var verified=Object.create(null);
         entries.forEach(function(pair){var rec=s.cache.get(pair[0]);
@@ -200,7 +223,7 @@
       var work=Promise.resolve().then(drain).catch(function(e){s.promotionError=e;throw e;});
       s.promoting=work;work.then(function(){if(s.promoting===work)s.promoting=null;},function(){if(s.promoting===work)s.promoting=null;});return work;
     }
-    return {stage:stage,read:read,overlay:overlay,pending:pending,ack:ack,settle:settle,settled:settled,prepare:prepare,prepared:prepared,ready:ready,hasRescue:hasRescue,failure:failure,promote:promote};
+    return {stage:stage,read:read,overlay:overlay,pending:pending,ack:ack,settle:settle,settled:settled,prepare:prepare,prepared:prepared,ready:ready,hasRescue:hasRescue,failure:failure,promote:promote,emptyForTransition:emptyForTransition};
   }
   return {create:create};
 });

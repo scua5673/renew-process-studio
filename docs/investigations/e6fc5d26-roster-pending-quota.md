@@ -46,3 +46,17 @@
 관련 unit 140/140이 통과했고 기존 branding 14개와 pending 보존 27개를 포함한다. 이후 실제 `sharedRecovered`의 두 번째 비동기 IDB 읽기 중 owner·권한·LS·IDB·메모리 초안 변경을 거절하는 단정을 추가하여 변경된 MAIN durability 파일만 10/10 재검증했다. Chromium·WebKit 각각 `roster-main-save`와 `roster-pending-quota`가 모두 통과했다. MAIN mirror quota 뒤 native LS batch가 남은 경우에는 MAIN의 두 사본을 확인해도 batch·ACK·SQ 원문이 바뀌지 않고 업데이트 거절이 유지된다. 원래 native 저장을 재개하고 완료 후 재열기의 fresh scan을 거쳐야 합성 서버의 동일 SQ 원문까지 확인한다. 첫 pending quota·양쪽 저장소 실패·완료 후 부활 방지 단정도 유지했다.
 
 새 실행 증거는 `/tmp/ps-roster-e6fc5d26-integrated-recovery-20261103/`에 보존했다. `unit.log`, `unit-second-read.log`, `{chromium,webkit}-{main,pending}.log`가 검사 로그이며, 각 엔진의 `*-main/results.json`과 `*-pending/*-observations.json`에 결과와 합성 원문이 있다. 기존 최초 실패 원문은 덮지 않았다. SQL·마이그레이션 입력에는 변경이 없으며 이 통합에서 SQL을 반복하지 않았다. 전체 unit·독립 검토·소스 CI·릴리스 검증은 이 통합 원고의 새 SHA에서 별도로 필요하다.
+
+## 정상 source 전환의 빈 보관함 확인
+
+`b9cf0da3` 소스 CI는 실패했다. `0b131ba5908014dc24325f8b111c4307ab4f4f7b`에서 원래 브라우저 검사 10개를 수정 없이 실행해 identity 전환 7개 실패를 재현했다. 정상 전환의 첫 장벽 뒤 guard·epoch·source seal이 회전하고, 두 번째 장벽에서 그 변화만으로 빈 journal까지 writable 복구 대상으로 오인했다. 실제 원문·작업이 없는 상태에서도 `prepare`가 guard를 거절해 전환을 막는 제품 회귀였다.
+
+고침은 실제 전환 closure가 같은 source의 이전·현재 seal/epoch와 owned guard·계정·전환 세대·wipe 전 상태를 매번 검증한 읽기 전용 증거만 제공한다. 이전에 정상 수화한 stamp가 그 증거의 source와 정확히 같고, 실제 cache/job/error가 없을 때만 해당 source의 IDB prefix와 native LS를 새로 확인한다. 둘 다 비고 변하지 않았을 때의 flush 관찰만 허용한다. `preparedStamp`, stage·ACK·promote 권한은 바꾸지 않는다. 초기 unknown·실제 rescue·native pending·외부 owner/seal/epoch/권한 변경·비동기 새 원문은 계속 거절한다. byte 예산을 유지하기 위해 인접 전환 역사 주석만 짧게 정리했고 보호·진단 코드는 제거하지 않았다.
+
+독립 읽기 검토에서 blocker는 없었다. 관련 unit 최초 실행은 180 pass / 2 fail였으며 실패는 새 test loader의 `process` 연결과 byte 예산이었다. loader 연결·cross-realm 배열 비교와 역사 주석을 고친 해당 검사만 재실행해 10/10 통과했다. 기존 27개 보존 검사를 포함한 journal 42개와 coordinator·branding 단정은 최초 실행에서 통과했다. `sync.js`는 851,937 / 851,968 bytes다.
+
+수정 후 원실패 18개 engine-case를 원래 assert·timeout으로 검증했다. 정상 identity 전환 7개, Chromium thumb-diet, 양 엔진 match-wait-schedule-quota가 통과했다. 나머지 UI 원실패도 이 후보에서 통과했으나, 이 결과를 `b9cf0da3`의 원인이 환경 변동이었다는 근거로 쓰지 않는다.
+
+두 가지 검사 준비는 근거를 분리해 고쳤다. isolated `storage-safety` 후보 fixture는 MAIN 부팅을 수행하지 않으므로 실제 journal 수화를 하지 않은 상태였다. 양 엔진의 원 `pending:false` 실패를 보존하고, 실제 owner-scoped `rosterOutbox().prepare()`와 `prepared()` 확인만 연결한 뒤 같은 저장·실패·무관 키·retry·reload 단정을 통과했다. `root-child-save-state`는 exact 확인 성공 뒤 새 자동 회차가 시작되어 별도 읽기의 `confirmed`가 보수적으로 false가 된 trace가 있었다. 같은 실제 readback에서 exact local/IDB·saved·pending false·confirmed true를 함께 capture하도록 바꿨고 서버 원문·원래 confirmed 단정과 timeout을 유지해 통과했다. 제품 ACK나 자동 동기화 조건은 바꾸지 않았다.
+
+새 증거는 `/tmp/ps-roster-e6fc5d26-switch-regression-20261103/`에 있다. `before/`는 수정 전 원검사, `after/`는 runtime 고침 뒤 원검사, `fixture-repaired/`는 두 하네스 연결 수정 후 결과다. 최초 unit 실패와 개별 native 실패 로그를 덮지 않았다. SQL 입력은 이전 후보와 같아서 반복하지 않았다. 최종 원고에서 전체 unit·독립 검토·새 source CI가 필요하며 고객의 실제 원인·자료 복구를 주장하지 않는다.

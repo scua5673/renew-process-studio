@@ -7,7 +7,7 @@ const quota=()=>Object.assign(Error('synthetic localStorage quota'),{name:'Quota
 function gate(){let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};}
 function fixture(){
   const ls=new Map([[MAIN,'{"players":[]}'],[TOMBS,'{}']]),idb=new Map(),calls={peek:[],keys:[],put:[],del:[]};
-  let who={uid:'coach-a',wid:'team-a'},permission='edit',epoch=1,canEdit=true,localFull=false,localError=null;
+  let who={uid:'coach-a',wid:'team-a'},permission='edit',epoch=1,canEdit=true,localFull=false,localError=null,suspension=null;
   const hooks={put:null,del:null,peek:null,keys:null};
   const local={
     get length(){return ls.size;},key:i=>[...ls.keys()][i]??null,getItem:k=>ls.has(k)?ls.get(k):null,
@@ -31,9 +31,11 @@ function fixture(){
   };
   const owner=()=>who;
   const stamp=()=>JSON.stringify([who&&who.uid,who&&who.wid,permission,epoch,local.getItem('ps_ws_switch_guard_v1')]);
-  const options={outbox:Outbox,local,storage,owner,stamp,editable:()=>canEdit};
+  const options={outbox:Outbox,local,storage,owner,stamp,editable:()=>canEdit,suspended:()=>suspension};
   return {ls,idb,calls,hooks,local,storage,options,bridge:Pending.create(options),clone:()=>Pending.create(options),
-    full(v=true){localFull=v;},localError(v){localError=v;},owner(v){who=v;epoch++;},permission(v){permission=v;},editable(v){canEdit=v;},epoch(){epoch++;}};
+    full(v=true){localFull=v;},localError(v){localError=v;},owner(v){who=v;epoch++;},permission(v){permission=v;},editable(v){canEdit=v;},epoch(){epoch++;},
+    suspend(){const beforeStamp=stamp();epoch++;ls.set('ps_ws_switch_guard_v1','owned-source-guard');suspension={uid:who.uid,wid:who.wid,beforeStamp,stamp:stamp(),proof:'exact owned source suspension'};},
+    revoke(){suspension=null;}};
 }
 const stage=(b,player,base=[])=>b.stage({players:[player],basePlayers:base,changedIds:[player.id],deletedIds:[]});
 const batchKeys=f=>[...f.ls.keys()].filter(k=>k.startsWith(Outbox.prefix)&&k.includes(':b:'));
@@ -44,6 +46,49 @@ test('the ordinary native outbox still stages, ACKs and cleans up entirely in lo
   const receipt=stage(b,p('new','native'));assert.equal(b.pending(),true);assert.equal(f.calls.put.length,0);
   assert.equal(b.ack(receipt),1);assert.equal(b.pending(),false);assert.deepEqual(batchKeys(f),[]);assert.equal(f.idb.size,0);
   assert.equal([...f.ls.keys()].some(k=>k.startsWith(Outbox.prefix)),false);
+});
+
+test('a proven owned source transition can read-confirm an already hydrated empty outbox without preparing writers',async()=>{
+  const f=fixture(),b=f.bridge;await b.prepare();f.suspend();
+  assert.equal(b.prepared(),false);assert.equal(b.hasRescue(),true);
+  await b.emptyForTransition();assert.equal(b.prepared(),false);assert.equal(b.hasRescue(),false);assert.equal(b.pending(),false);
+  assert.throws(()=>stage(b,p('new','blocked during transition')));await assert.rejects(b.promote());assert.throws(()=>b.ack({}));
+  assert.equal(f.calls.put.length,0);assert.equal(f.calls.del.length,0);assert.equal(f.idb.size,0);assert.deepEqual(batchKeys(f),[]);
+  f.revoke();assert.equal(b.hasRescue(),true,'a retired source proof cannot authorize an empty current queue');
+});
+
+for(const kind of ['unknown','rescue','native batch','read failure','owner','epoch','permissions'])test('source empty confirmation refuses '+kind,async()=>{
+  const f=fixture(),b=f.bridge;
+  if(kind!=='unknown')await b.prepare();
+  if(kind==='rescue'){f.full();stage(b,p('new','rescue'));await b.ready();}
+  if(kind==='native batch')stage(b,p('new','native pending'));
+  if(kind==='read failure'){f.hooks.keys=()=>{throw Error('synthetic unreadable source');};await assert.rejects(b.prepare());f.hooks.keys=null;}
+  if(kind==='owner')f.owner({uid:'other',wid:'other'});
+  if(kind==='epoch')f.epoch();
+  if(kind==='permissions')f.permission('changed source permission');
+  f.suspend();const before=JSON.stringify([[...f.ls],[...f.idb]]),puts=f.calls.put.length,dels=f.calls.del.length;
+  await assert.rejects(b.emptyForTransition());assert.equal(b.hasRescue(),true);
+  assert.equal(JSON.stringify([[...f.ls],[...f.idb]]),before);assert.equal(f.calls.put.length,puts);assert.equal(f.calls.del.length,dels);
+});
+
+for(const changed of ['IDB batch','LS batch','permission','epoch','guard','proof','read failure'])test('source empty readback rejects a concurrent '+changed+' without an ACK',async()=>{
+  const f=fixture(),b=f.bridge;await b.prepare();
+  const source=Outbox.create({storage:f.local,owner:()=>({uid:'coach-a',wid:'team-a'})}),receipt=stage(source,p('foreign','new concurrent original'));
+  const key=receipt.keys[0],raw=f.ls.get(key);for(const k of [...f.ls.keys()])if(k.startsWith(Outbox.prefix))f.ls.delete(k);
+  f.suspend();let changedOnce=false;
+  f.hooks.keys=()=>{if(changedOnce)return;changedOnce=true;
+    if(changed==='IDB batch')f.idb.set(key,raw);
+    if(changed==='LS batch')f.ls.set(key,raw);
+    if(changed==='permission')f.permission('new permission');
+    if(changed==='epoch')f.epoch();
+    if(changed==='guard')f.ls.set('ps_ws_switch_guard_v1','foreign transition');
+    if(changed==='proof')f.revoke();
+    if(changed==='read failure')throw Error('synthetic source read failure');
+  };
+  await assert.rejects(b.emptyForTransition());assert.equal(b.hasRescue(),true);assert.equal(b.prepared(),false);
+  assert.equal(f.calls.put.length,0);assert.equal(f.calls.del.length,0);
+  if(changed==='IDB batch')assert.equal(f.idb.get(key),raw);
+  if(changed==='LS batch')assert.equal(f.ls.get(key),raw);
 });
 
 test('a first batch quota preserves its exact native receipt without writing MAIN and promotes before ACK',async()=>{

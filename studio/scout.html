@@ -7032,6 +7032,12 @@ function rosterOutbox(){
   if(!window.PSRosterOutbox)throw new Error("선수 변경 보관 기능을 준비하지 못했습니다. 앱을 새로고침해 주세요.");
   if(!rosterOutboxClient)rosterOutboxClient=window.PSRosterPending?PSRosterPending.create({outbox:PSRosterOutbox,local:localStorage,storage:window.storage,owner:rosterOutboxOwner,
     stamp:function(){var api=psSync(),ws=api&&api.activeWsObj&&api.activeWsObj();return JSON.stringify([teamSaveOwner(),localStorage.getItem('ps_ws_switch_guard_v1')||'',ws&&ws.role||'']);},
+    suspended:function(){
+      var api=psSync(),p=api&&api.sourceSuspension&&api.sourceSuspension(),o=rosterOutboxOwner();if(!p||!o||p.uid!==o.uid||p.wid!==o.wid)return null;
+      var ws=api.activeWsObj&&api.activeWsObj(),role=ws&&ws.role||'',perms=localStorage.getItem('cs_perms_v1')||'';
+      return {uid:o.uid,wid:o.wid,beforeStamp:JSON.stringify([JSON.stringify([o.wid,o.uid,p.beforeSeal,p.beforeEpoch,perms]),'',role]),
+        stamp:JSON.stringify([teamSaveOwner(),localStorage.getItem('ps_ws_switch_guard_v1')||'',role]),proof:JSON.stringify(p)};
+    },
     editable:function(){return !localStorage.getItem('ps_ws_switch_guard_v1')&&scoutAutomaticWriteAllowed();}}):PSRosterOutbox.create({storage:localStorage,owner:rosterOutboxOwner});
   return rosterOutboxClient;
 }
@@ -7044,7 +7050,9 @@ function rosterPendingBlock(){
 }
 function rosterPendingRecover(){
   if(!window.PSRosterPending)return true;
-  var box=rosterOutbox();if(!box.promote||(!box.hasRescue()&&!rosterRescueWaiting))return true;
+  var box=rosterOutbox();
+  if(localStorage.getItem('ps_ws_switch_guard_v1')&&box.emptyForTransition)return box.emptyForTransition();
+  if(!box.promote||(!box.hasRescue()&&!rosterRescueWaiting))return true;
   if(rosterRescueRecovery)return rosterRescueRecovery;
   rosterRescueWaiting=true;var owner=teamSaveOwner();
   function current(){if(owner!==teamSaveOwner()||!scoutAutomaticWriteAllowed())throw new Error('선수 변경을 확인하는 동안 계정·팀 또는 권한이 바뀌었습니다');}
