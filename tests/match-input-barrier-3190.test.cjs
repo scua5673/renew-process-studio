@@ -193,3 +193,31 @@ for(const change of ['owner','permissions','other-match'])test(change+' changes 
   for(let i=0;i<4;i++)await h.timersOnce();
   assert.deepEqual({queue:h.calls.queue,ready:h.calls.ready},before);assert.equal(h.models.a.reviewBad,undefined);assert.equal(h.models.b.reviewBad,undefined);assert.equal(h.w.psHasPending(),true);
 });
+
+function scoreFixture(){
+  const h=fixture(),fields=[];
+  h.models.a.scoreUs='';h.models.a.scoreThem='';h.models.b.scoreUs='';h.models.b.scoreThem='';
+  h.doc.querySelectorAll=()=>fields;
+  h.w.matchSetScore=(mid,side,v)=>{if(!h.w.matchCanEdit())return;h.models[mid][side==='them'?'scoreThem':'scoreUs']=v;h.w.matchQueueSave();};
+  h.score=(mid,side,v)=>{let el=fields.find(e=>e.dataset.mscid===mid&&e.dataset.msc===side);if(!el){el={tagName:'INPUT',type:'number',dataset:{mscid:mid,msc:side},isConnected:true,disabled:false,matches:s=>s.includes('[data-msc]'),closest:s=>s==='#matchList'?{}:s==='.mrow'?{}:null,getClientRects:()=>[{}],getAttribute:()=>null};fields.push(el);}el.value=v;h.fire('input',el);h.w.matchSetScore(mid,side,v);return el;};
+  return h;
+}
+test('list scores entered while MATCH is pending retain every row and join native verified storage',async()=>{
+  const h=scoreFixture();h.score('a','us','3');h.score('a','them','1');h.score('b','us','1');h.score('b','them','1');
+  assert.equal(h.w.psHasPending(),true);await assert.rejects(h.w.psFlushPendingReady(),e=>e.psCode==='match_input_pending');assert.equal(h.calls.queue,0);
+  h.pending(false);await h.w.psFlushPendingReady();assert.deepEqual([h.durable.a.scoreUs,h.durable.a.scoreThem,h.durable.b.scoreUs,h.durable.b.scoreThem],['3','1','1','1']);assert.equal(h.w.psHasPending(),false);
+});
+for(const why of ['permission','assignment','conflict','deleted','hidden','owner'])test('list score '+why+' cannot replay into a different or unauthorized target',async()=>{
+  const h=scoreFixture(),el=h.score('b','us','4');h.pending(false);
+  if(why==='permission')h.permission(false);if(why==='assignment')h.assigned(false);if(why==='conflict')h.models.b.scoreUs='7';if(why==='deleted')delete h.models.b;if(why==='hidden')el.getClientRects=()=>[];if(why==='owner')h.setOwner('coach-b','team-b');
+  if(why==='owner')await h.w.psFlushPendingReady();else await assert.rejects(h.w.psFlushPendingReady(),e=>e.psCode==='match_input_pending');assert.equal(h.calls.queue,0);assert.equal(h.models.b?.scoreUs,why==='conflict'?'7':why==='deleted'?undefined:'');
+});
+test('list score native I/O failure remains pending without automatic write retries',async()=>{
+  const h=scoreFixture();h.score('b','them','2');h.pending(false);h.error(Error('real storage failure'));await assert.rejects(h.w.psFlushPendingReady(),/real storage failure/);const before=h.calls.queue;await h.timersOnce();assert.equal(h.calls.queue,before);assert.equal(h.w.psHasPending(),true);h.error(null);await h.w.psFlushPendingReady();assert.equal(h.durable.b.scoreThem,'2');
+});
+
+test('another visible list row entered during a native flight resumes without dropping the earlier receipt',async()=>{
+  const h=scoreFixture(),g=gate();h.pending(false);h.score('a','us','3');await turn();h.hold(g);const first=h.w.psFlushPendingReady();first.catch(()=>{});
+  h.pending(true);h.score('b','them','2');await turn();g.resolve();await assert.rejects(first,e=>e.psCode==='match_pending_left');assert.equal(h.durable.a.scoreUs,'3');assert.equal(h.durable.b.scoreThem,'');
+  h.hold(null);h.pending(false);for(let i=0;i<4;i++)await h.timersOnce();assert.equal(h.durable.a.scoreUs,'3');assert.equal(h.durable.b.scoreThem,'2');assert.equal(h.w.psHasPending(),false);
+});
