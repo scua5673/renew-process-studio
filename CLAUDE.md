@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.252 «행 없는 선수 고쳐 저장»(`rosterHealRows`, 2.944)은 기기 묶음(`rosterOutbox().read().rows`)에 이미 있는 선수를 건너뛴다. 묶음을 못 읽으면 그 회차엔 고치지 않는다(10분 표시도 안 남긴다). 예전엔 동기화 회차가 올라갈 차례인 선수를 다시 저장해 같은 선수의 묶음(seq 2)이 생겼고, 3.250 명단 확인(`scoutStore.ready`)과 겹쳐 `roster-pending-quota` 가 8번 중 3번 떨어졌다(#760 · #761 CI 연속). 시험 `roster-projection-safety` «already queued».
+
 - 3.247 선수 추가 원문 — `roster-pending.js`는 native immutable batch의 첫 LS quota 때 같은 key/token/seq/raw만 IDB에 검증 보존한다. 수화 전·구출 원문이 남은 동안 MAIN/SQ/ACK는 진행하지 않으며 실패/pending을 유지한다. 재열기는 owner별 원문을 먼저 overlay하고, 같은 LS key의 exact 되읽기와 IDB 조건부 제거·부재 확인 뒤 기존 native outbox를 재개한다. async peek 뒤 LS를 다시 읽어 foreign 원문을 지키고, 명시 prepare의 exact 검증 뒤에만 새 epoch/권한을 재확인한다. 상세 docs/investigations/roster-pending-quota-recovery.md. 실제 지원 제보와 진단은 공개 소스에 남기지 않는다.
 - 3.251 — 다중 운동장 라인은 `board-multipitch.js`에서 `__getPitchSpec`의 실제 규격과 `__getPitchLines`·CSS 선색을 따른다. buildLines/buildGrid는 멀티피치도 즉시 갱신하며, 골망의 `data-goal-depth-cap`은 3D 확대 후에도 화면·영상에 동일 적용한다. 관련 검증과 미배포 상태는 docs/board-settings-pitch-lines.md.
 
