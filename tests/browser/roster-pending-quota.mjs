@@ -41,6 +41,7 @@ try{
       const player=data.players.find(p=>p.name===name);
       let barrier;try{await psFlushPendingReady();barrier={ok:true};}catch(e){barrier={ok:false,code:e.psCode,message:String(e.message||e)};}
       return {player:player||null,main:localStorage.getItem(KEY),idb:(await storage.peek(KEY))?.value??null,
+        playerRow:player?(await storage.peek('sq:'+player.id))?.value??null:null,
         pendingBatches:keys.map(key=>({key,raw:localStorage.getItem(key)})),durablePending:await Promise.all(durableKeys.map(async key=>({key,raw:(await storage.peek(key))?.value??null}))),
         pending:psHasPending(),rosterPending:rosterPendingRows(),failed:scoutStore.hasFailed(KEY),barrier};
     },target);
@@ -68,12 +69,20 @@ try{
   assert.equal(snapshotAfter.durablePending.length,1);assert.equal(snapshotReload.rosterPending,true);
   await frame.evaluate(()=>localStorage.setItem('fixture_pending_quota','0'));
   await frame.evaluate(()=>psFlushPendingReady());
-  await page.evaluate(()=>PSSync.syncNow('fixture-roster-pending-recovered'));
+  const rounds=[];
+  for(let round=0;round<4&&!fx.db.has(WT+'|sq:'+snapshotAfter.player.id);round++){
+    await page.waitForFunction(()=>PSSync.state().kind!=='busy');
+    const result=await page.evaluate(()=>PSSync.syncNow('fixture-roster-pending-recovered'));
+    const observation=await snapshot('native-sync-round-'+round);rounds.push({round,result,playerRow:observation.playerRow,serverHasRow:fx.db.has(WT+'|sq:'+snapshotAfter.player.id),writes:observation.writes});
+    fs.writeFileSync(path.join(out,engine+'-native-rounds.json'),JSON.stringify(rounds,null,2));
+    assert.equal(result?.error,undefined,'a native sync failure is not treated as eventual success');
+  }
   const recovered=await snapshot('after-exact-promotion-and-native-save');
   assert.equal(recovered.barrier.ok,true);assert.equal(recovered.pending,false);assert.equal(recovered.durablePending.length,0);
   assert.ok(JSON.parse(recovered.main).players.some(p=>p.id===snapshotAfter.player.id));
   assert.equal(recovered.main,recovered.idb);
-  assert.equal(JSON.parse(fx.db.get(WT+'|sq:'+snapshotAfter.player.id).v).name,name,'only the original native SQ path confirms the row on the synthetic server');
+  assert.ok(fx.db.has(WT+'|sq:'+snapshotAfter.player.id),'only the original native SQ path may confirm the row on the synthetic server');
+  assert.equal(JSON.parse(fx.db.get(WT+'|sq:'+snapshotAfter.player.id).v).name,name);
   await page.reload({waitUntil:'domcontentloaded'});await ready(page);frame=await openPlayers();
   const again=await snapshot('after-completed-reload');assert.equal(again.player.id,snapshotAfter.player.id);assert.equal(again.rosterPending,false,'an IDB rescue cannot resurrect after native ACK cleanup');
 
