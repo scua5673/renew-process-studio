@@ -326,6 +326,9 @@
       },
       prepare:function(){
         w.restoreAnimBeforeCapture();
+        // Stopping playback schedules a draft as well as its preview. That
+        // timer must not supersede this transition's exact receipt readback.
+        try{w.clearTimeout(w._boardDraftT);w._boardDraftT=null;}catch(_){}
         // Restoring playback can schedule a fresh preview after the flush's
         // initial cancellation. Freeze that derived work before the receipt.
         try{w.clearTimeout(w._boardPreviewTimer);w._boardPreviewTimer=null;}catch(_){}

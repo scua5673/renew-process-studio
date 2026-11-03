@@ -25,7 +25,7 @@ async function frame(page,wid){
  return (await page.$('#fBoard')).contentFrame();
 }
 try{
- for(const [width,mode] of [[375,'immediate'],[393,'immediate'],[768,'immediate'],[1280,'immediate'],[1280,'quota-delay'],[1280,'both-fail'],[1280,'late-receipt'],[1280,'playback']]){
+ for(const [width,mode] of [[375,'immediate'],[393,'immediate'],[768,'immediate'],[1280,'immediate'],[1280,'quota-delay'],[1280,'both-fail'],[1280,'late-receipt'],[1280,'playback'],[1280,'playback-slow-read']]){
   if(process.env.PS_DRAFT_CASE&&process.env.PS_DRAFT_CASE!==width+'-'+mode)continue;
   console.log(JSON.stringify({engine,width,mode,stage:'open'}));
   SIZES.draft={engine,ctx:{viewport:{width,height:860},deviceScaleFactor:1}};
@@ -34,6 +34,8 @@ try{
   try{
    await page.evaluate(()=>document.querySelector('#appSeg button[data-app="board"]').click());let f=await frame(page,WT);
    console.log(JSON.stringify({engine,width,mode,stage:'board-ready'}));
+   // Seed the immediate edit only after unrelated initial team writes finish.
+   await page.waitForFunction(()=>PSSync.state().kind==='ok'&&!PSSync.pending().count&&!localStorage.getItem('ps_ws_switch_guard_v1'),null,{timeout:30000});
    await page.evaluate(()=>{
     window.addEventListener('ps-before-workspace-switch',function(){
       const w=document.getElementById('fBoard').contentWindow;
@@ -47,12 +49,17 @@ try{
     Storage.prototype.setItem=function(k,v){if(this===localStorage&&k===key&&window.__qaDraftMode!=='off'&&(mode==='quota-delay'||mode==='both-fail')){window.__qaDraftFaults++;throw Object.assign(new Error('Synthetic draft quota'),{name:'QuotaExceededError'});}return set.call(this,k,v);};
     storage.get=function(k){if(k===key&&window.__qaDraftMode==='both-fail')return Promise.reject(new Error('Synthetic draft IDB failure'));return get(k);};
     storage.replaceIfValue=async function(k,b,v,guard){if(k===key&&window.__qaDraftMode==='quota-delay'){window.__qaDraftWaiting=true;await new Promise(resolve=>window.__qaDraftRelease=resolve);}return cas(k,b,v,guard);};
-    if(mode==='playback'){
+    if(mode.startsWith('playback')){
      const restore=restoreAnimBeforeCapture;
      window.restoreAnimBeforeCapture=function(...args){const playing=animPlaying,result=restore.apply(this,args);if(playing)sessionStorage.setItem('qa-board-playback-prepared',JSON.stringify({playingAfter:animPlaying,previewScheduled:!!window._boardPreviewTimer}));return result;};
     }
+    // A slow exact read exposes a draft timer created while playback stops.
+    if(mode==='playback-slow-read'){
+     const getDraft=storage.get.bind(storage);let reads=0;
+     storage.get=async function(k){const value=await getDraft(k);if(k===key&&++reads===3)await new Promise(resolve=>setTimeout(resolve,850));return value;};
+    }
     const flush=psFlushPendingReady;
-    window.psFlushPendingReady=function(){return flush().then(value=>{if(mode==='playback')sessionStorage.setItem('qa-board-playback-ready',JSON.stringify({previewPending:!!window._boardPreviewTimer}));return value;}).catch(e=>{let local=null;try{local=JSON.parse(localStorage.getItem(key)||'null');}catch(_){}sessionStorage.setItem('qa-board-draft-failure',JSON.stringify({message:e.message,local:local?.raw,current:boardLiveCapture('board')?.raw,loaded:_boardPrivateLoaded,ownerCurrent:boardPrivateCurrent(_boardPrivateOwner)}));throw e;});};
+    window.psFlushPendingReady=function(){return flush().then(value=>{if(mode.startsWith('playback'))sessionStorage.setItem('qa-board-playback-ready',JSON.stringify({previewPending:!!window._boardPreviewTimer}));return value;}).catch(e=>{let local=null;try{local=JSON.parse(localStorage.getItem(key)||'null');}catch(_){}sessionStorage.setItem('qa-board-draft-failure',JSON.stringify({message:e.message,local:local?.raw,current:boardLiveCapture('board')?.raw,loaded:_boardPrivateLoaded,ownerCurrent:boardPrivateCurrent(_boardPrivateOwner)}));throw e;});};
    },mode);
    if(mode==='late-receipt')await page.evaluate(()=>{
     const flush=psFlushAllPendingReady;let calls=0;
@@ -65,7 +72,7 @@ try{
    const expected=await f.evaluate(({WP,mode})=>{
     const sn=captureSnap();sn.players[0].x=521;loadSnap(sn);_boardUserTouched=true;boardSaveLive();
     const raw=boardLiveCapture('board').raw;
-    if(mode==='playback')playAnim();
+    if(mode.startsWith('playback'))playAnim();
     const shell=parent;shell.PSSync.switchWorkspace(WP).then(r=>{try{shell.__qaDraftResult=r;}catch(_){}});
     return raw;
    },{WP,mode});
@@ -93,7 +100,7 @@ try{
    await page.waitForFunction(origin=>performance.timeOrigin!==origin||window.__qaDraftResult?.cancelled,origin,{timeout:45000});
    const cancelled=await page.evaluate(()=>window.__qaDraftResult?.cancelled?window.__qaDraftResult:null);if(cancelled)throw new Error('Unexpected draft barrier cancellation: '+JSON.stringify(cancelled));
    console.log(JSON.stringify({engine,width,mode,stage:'reloaded'}));
-   if(mode==='playback'){
+   if(mode.startsWith('playback')){
     const proof=await page.evaluate(()=>({prepared:JSON.parse(sessionStorage.getItem('qa-board-playback-prepared')||'null'),ready:JSON.parse(sessionStorage.getItem('qa-board-playback-ready')||'null')}));
     assert.deepEqual(proof,{prepared:{playingAfter:false,previewScheduled:true},ready:{previewPending:false}},'playback restoration really queued a new preview, and the completed barrier cancelled it before exact receipt verification');
    }
