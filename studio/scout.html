@@ -12,6 +12,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
 <script src="roster-outbox.js?v=2.826"></script>
+<script src="roster-pending.js"></script>
 <script src="participation.js?v=2.901"></script>
 <script src="match-board-tools.js?v=2.886"></script>
 <script src="review-training.js"></script>
@@ -6361,9 +6362,21 @@ const scoutStore={
   /* Shared keys await IDB confirmation. Only the schedule may use a verified IDB copy when its optional mirror fails. */
   set(k,v){
     if(k==="cs_scout_targets_v1")return scSaveTargetDoc(v);
+    let confirmRecovered=null;
     try{
       const raw=JSON.stringify(v),owner=scoutStore.owner(),shared=!!(SHARED_IDB[k]&&window.psSaveShared);let ready=true,mirror=raw,fallback=false;
       function verify(){if(owner!==scoutStore.owner()||localStorage.getItem(k)!==mirror)throw new Error("저장 내용이 바뀌어 다시 확인해야 합니다");return true;}
+      /* A rejected roster mirror can later be restored by a guarded sync pull.
+         Confirm only the exact authored body in both stores; never replay the
+         failed write or accept an empty queue as proof of durability. */
+      if(k==="scout_tool_v1"&&shared)confirmRecovered=function(){
+        function exact(){verify();if(JSON.stringify(mem[k])!==raw)throw new Error("저장 내용이 바뀌어 다시 확인해야 합니다");return true;}
+        exact();
+        if(!window.PSStorage||!PSStorage.sharedCommitted)throw new Error("저장 확인을 할 수 없습니다");
+        return PSStorage.sharedCommitted(k,raw).then(function(){
+          exact();return PSStorage.sharedRecovered?PSStorage.sharedRecovered(k,raw,exact):true;
+        }).then(exact);
+      };
       if(shared){
         if(!window.psSaveShared(k,raw)){
           if(k!=="process_coach_v1"||!window.PSStorage||!PSStorage.sharedCommitted)throw new Error("저장 실패");
@@ -6385,12 +6398,12 @@ const scoutStore={
     catch(e){
       mem[k]=v;
       try{const n=Date.now();if(!window.__psQwT||n-window.__psQwT>15000){window.__psQwT=n;toast("⚠︎ 저장 공간 부족 — 변경사항이 저장되지 않아요! 사진·오래된 데이터를 정리해주세요");}}catch(__){}
-      teamSaves.track(k,Promise.reject(e));
+      teamSaves.track(k,Promise.reject(e),confirmRecovered);
       return false;
     }
   },
   /* boolean은 접수 결과다. 저장됨 표시·화면 종료는 ready의 검증 완료를 기다린다. */
-  ready(retryFailed){return teamSaves.ready(retryFailed).then(function(){
+  ready(retryFailed){return Promise.resolve(retryFailed&&typeof rosterPendingRecover==='function'?rosterPendingRecover():true).then(function(){return teamSaves.ready(retryFailed);}).then(function(){
     var PI=typeof itemsPI==="function"?itemsPI():null;
     return PI&&PI.flush?PI.flush():true;
   });},
@@ -7008,7 +7021,7 @@ try{window.PSRoster={open:rosterRecoveryOpen,missing:function(){return rosterRec
 /* 2.825 — roster save coordinator. Whole-document compatibility copies remain
    during migration; only explicit edits may write player rows. A projection is
    not a new user edit and must never save candidates or change evaluation state. */
-var rosterEditBase=null,rosterOutboxClient=null,rosterResumeToken='';
+var rosterEditBase=null,rosterOutboxClient=null,rosterResumeToken='',rosterRescueWaiting=false,rosterRescueRecovery=null;
 function rosterOutboxOwner(){
   var ss=JSON.parse(localStorage.getItem('ps_sync_session')||'null'),wid=localStorage.getItem('ps_active_ws'),own=JSON.parse(localStorage.getItem('ps_cache_owner_v1')||'null');
   if(!ss&&!wid&&!own)return null;
@@ -7017,13 +7030,47 @@ function rosterOutboxOwner(){
 }
 function rosterOutbox(){
   if(!window.PSRosterOutbox)throw new Error("선수 변경 보관 기능을 준비하지 못했습니다. 앱을 새로고침해 주세요.");
-  return rosterOutboxClient||(rosterOutboxClient=PSRosterOutbox.create({storage:localStorage,owner:rosterOutboxOwner}));
+  if(!rosterOutboxClient)rosterOutboxClient=window.PSRosterPending?PSRosterPending.create({outbox:PSRosterOutbox,local:localStorage,storage:window.storage,owner:rosterOutboxOwner,
+    stamp:function(){var api=psSync(),ws=api&&api.activeWsObj&&api.activeWsObj();return JSON.stringify([teamSaveOwner(),localStorage.getItem('ps_ws_switch_guard_v1')||'',ws&&ws.role||'']);},
+    suspended:function(){
+      var api=psSync(),p=api&&api.sourceSuspension&&api.sourceSuspension(),o=rosterOutboxOwner();if(!p||!o||p.uid!==o.uid||p.wid!==o.wid)return null;
+      var ws=api.activeWsObj&&api.activeWsObj(),role=ws&&ws.role||'',perms=localStorage.getItem('cs_perms_v1')||'';
+      return {uid:o.uid,wid:o.wid,beforeStamp:JSON.stringify([JSON.stringify([o.wid,o.uid,p.beforeSeal,p.beforeEpoch,perms]),'',role]),
+        stamp:JSON.stringify([teamSaveOwner(),localStorage.getItem('ps_ws_switch_guard_v1')||'',role]),proof:JSON.stringify(p)};
+    },
+    editable:function(){return !localStorage.getItem('ps_ws_switch_guard_v1')&&scoutAutomaticWriteAllowed();}}):PSRosterOutbox.create({storage:localStorage,owner:rosterOutboxOwner});
+  return rosterOutboxClient;
+}
+function rosterPendingBlock(){
+  if(!window.PSRosterPending)return false;
+  var box=rosterOutbox();if(!box.hasRescue||!box.hasRescue())return false;
+  rosterRescueWaiting=true;
+  teamSaves.track(KEY,box.ready().then(function(){throw box.failure()||new Error('선수 변경 원문을 기기에 보관했습니다. 저장 공간을 확인한 뒤 다시 저장해 주세요.');}));
+  return true;
+}
+function rosterPendingRecover(){
+  if(!window.PSRosterPending)return true;
+  var box=rosterOutbox();
+  if(localStorage.getItem('ps_ws_switch_guard_v1')&&box.emptyForTransition)return box.emptyForTransition();
+  if(!box.promote||(!box.hasRescue()&&!rosterRescueWaiting))return true;
+  if(rosterRescueRecovery)return rosterRescueRecovery;
+  rosterRescueWaiting=true;var owner=teamSaveOwner();
+  function current(){if(owner!==teamSaveOwner()||!scoutAutomaticWriteAllowed())throw new Error('선수 변경을 확인하는 동안 계정·팀 또는 권한이 바뀌었습니다');}
+  var work=box.prepare().then(function(){current();return box.promote();}).then(function(){
+    current();if(box.hasRescue())throw box.failure()||new Error('선수 변경 원문 보관 확인이 남아 있습니다');
+    if(rosterPendingRows()&&rosterResumeRows(true)===false)throw new Error('선수 변경 저장을 다시 시작하지 못했습니다');
+    return teamSaves.ready(true);
+  }).then(function(){
+    current();var PI=itemsPI();return PI&&PI.flush?PI.flush():true;
+  }).then(function(){current();if(rosterPendingRows())throw new Error('선수 변경 저장 확인이 남아 있습니다');rosterRescueWaiting=false;return true;});
+  rosterRescueRecovery=work;work.then(function(){if(rosterRescueRecovery===work)rosterRescueRecovery=null;},function(){if(rosterRescueRecovery===work)rosterRescueRecovery=null;});return work;
 }
 function rosterPendingRows(){
   try{return !!rosterOutboxOwner()&&rosterOutbox().pending();}catch(_){return true;}
 }
 function rosterResumeRows(force){
   if(!scoutAutomaticWriteAllowed()||!rosterOutboxOwner())return false;
+  if(rosterPendingBlock())return false;
   var receipt=rosterOutbox().read();if(!receipt.rows.length)return false;
   var token=teamSaveOwner()+JSON.stringify(receipt);
   if(!force&&token===rosterResumeToken)return false;
@@ -7169,6 +7216,7 @@ function rosterPersist(main,options){
       }
     }
   }catch(e){teamSaves.track(KEY,Promise.reject(e));return false;}
+  if(rosterPendingBlock())return false;
   // The durable intent is written before main: a failed row write must survive
   // a reload even when main already contains the newly accepted draft.
   if(!scoutStore.set(KEY,main))return false;
@@ -11683,7 +11731,7 @@ function tbWire(){
    동시 편집이 서로를 덮지 않고, 상태 변경이 '보고'가 되는 흐름. 개인 공간에선 role이 admin이라 그대로 즉시 적용. ── */
 function tmRole(){ try{ if(window.PSPerms&&PSPerms.role)return PSPerms.role(); }catch(_){} return "admin"; }
 /* 2.944 — 추가한 선수를 기기에 저장하지 못했을 때(불러오기 중·보기 전용·후보 정리 중 등 save() 가 false) 예전엔 그래도 «추가됨»이라 말했다 */
-var TM_ADD_FAIL="선수를 저장하지 못했어요 — 잠시 뒤 다시 추가하거나 화면을 새로고침해 주세요";
+var TM_ADD_FAIL="선수 저장 확인이 끝나지 않았어요 — 화면을 닫지 말고 저장 상태를 확인해 주세요";
 function tmCanApprove(){ var r=tmRole(); return r==="admin"||r==="executive"; }
 function tmProposalOf(pid){ return (data.statusProposals||[]).find(function(x){return x.pid===pid;}); }
 function tmMyName(){
@@ -20764,6 +20812,12 @@ function scoutBootAllowed(){
 }
 function scoutBoot(){
   if(!scoutBootAllowed()){setTimeout(scoutBoot,250);return;}
+  if(window.PSRosterPending){
+    var box=rosterOutbox();if(!box.prepared()){
+      if(!window.__rosterPendingBoot)window.__rosterPendingBoot=box.prepare().then(function(){window.__rosterPendingBoot=null;scoutBoot();},function(e){teamSaves.track(KEY,Promise.reject(e));window.__rosterPendingBoot=null;setTimeout(scoutBoot,1000);});
+      return;
+    }
+  }
   scoutBootPending=false;init();
 }
 function init(){

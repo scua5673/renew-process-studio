@@ -16,7 +16,7 @@ function harness(){
     localStorage:{getItem:k=>values.get(k)??null,setItem(k,v){values.set(k,String(v));}},
     storage:{async set(k,v,current){calls.push({k,v});if(hooks.set)await hooks.set(k,v);if(current)current();disk.set(k,v);return true;},async get(k){return disk.has(k)?{value:disk.get(k)}:null;},async keys(){return [...disk.keys()];}},
     idbGet:k=>Promise.resolve(disk.get(k)),afterMigrate:fn=>Promise.resolve().then(fn),itemsPI:()=>null,
-  };c.window=c;vm.createContext(c);vm.runInContext(tracker+'\n'+shared+'\nwindow.PSStorage={sharedReady:sharedReady,sharedVerified:sharedVerified};\n'+scoutStore+'\nwindow.fixtureStore=scoutStore;',c);
+  };c.window=c;vm.createContext(c);vm.runInContext(tracker+'\n'+shared+'\nwindow.PSStorage={sharedReady:sharedReady,sharedVerified:sharedVerified,sharedCommitted:sharedCommitted};\n'+scoutStore+'\nwindow.fixtureStore=scoutStore;',c);
   return {c,values,disk,calls,hooks,scoutStore:c.fixtureStore};
 }
 test('accepted main deletion remains pending until its exact IndexedDB write finishes',async()=>{
@@ -50,4 +50,90 @@ test('a first main save creates its canonical IDB row and sync preloads the dura
   vm.runInContext(idbk+'\nvar IDB_LIVE={},_idbLiveAt=0,KEYS=["scout_tool_v1"],ITEMS_ACTIVE=false;function syncDiagnostic(){}\n'+section(sync,"var ITEMP='sq:';",'/* ── 권한 문서 읽기')+section(sync,'function idbRefreshLive(){','/* ══ 1.630 · kv 전송을'),h.c);
   assert.equal(h.c.idbBacked('scout_tool_v1'),true,'canonical before discovery scan');
   const preload=await h.c.kvPreload();assert.equal(preload.scout_tool_v1,JSON.stringify(doc(68)));assert.equal(h.c.IDBK.scout_tool_v1,1);
+});
+
+test('a rejected roster mirror can be confirmed after both stores recover the exact authored document',async()=>{
+  const h=harness(),draft=doc(70),wanted=JSON.stringify(draft),set=h.c.localStorage.setItem;
+  h.c.localStorage.setItem=(k,v)=>{if(k==='scout_tool_v1')throw Error('synthetic mirror quota');return set(k,v);};
+  assert.equal(h.scoutStore.set('scout_tool_v1',draft),false);
+  await assert.rejects(h.scoutStore.ready(true));await tick();
+  assert.equal(h.disk.get('scout_tool_v1'),wanted,'the attempted IDB write completed despite mirror quota');
+  assert.equal(h.scoutStore.hasFailed('scout_tool_v1'),true);
+  // A normal guarded pull restores the same document after space is available.
+  h.c.localStorage.setItem=set;h.values.set('scout_tool_v1',wanted);
+  const calls=h.calls.length;await h.scoutStore.ready(true);
+  assert.equal(h.calls.length,calls,'confirmation must not replay the old write');
+  assert.equal(h.scoutStore.hasFailed('scout_tool_v1'),false);
+  assert.equal(h.c.PSSaveState.get('team'),'saved');
+});
+
+test('rejected roster confirmation stays closed for a missing, old, or newer mirror or IDB body',async()=>{
+  for(const changed of ['missing mirror','old mirror','newer mirror','missing IDB','old IDB','newer IDB']){
+    const h=harness(),draft=doc(70),wanted=JSON.stringify(draft),before=h.values.get('scout_tool_v1'),set=h.c.localStorage.setItem;
+    h.c.localStorage.setItem=(k,v)=>{if(k==='scout_tool_v1')throw Error('synthetic mirror quota');return set(k,v);};
+    h.scoutStore.set('scout_tool_v1',draft);await assert.rejects(h.scoutStore.ready());await tick();
+    h.c.localStorage.setItem=set;h.values.set('scout_tool_v1',wanted);
+    const store=changed.endsWith('IDB')?h.disk:h.values;
+    if(changed.startsWith('missing'))store.delete('scout_tool_v1');
+    else store.set('scout_tool_v1',changed.startsWith('old')?before:JSON.stringify(doc(71)));
+    const snapshot=JSON.stringify([[...h.values],[...h.disk]]),calls=h.calls.length;
+    await assert.rejects(h.scoutStore.ready(true),undefined,changed);
+    assert.equal(h.scoutStore.hasFailed('scout_tool_v1'),true,changed);
+    assert.equal(h.calls.length,calls,'confirmation never retries a write');
+    assert.equal(JSON.stringify([[...h.values],[...h.disk]]),snapshot,changed);
+  }
+});
+
+test('failed roster confirmation cannot replay an IDB failure even when its mirror is repaired',async()=>{
+  const h=harness(),draft=doc(70),set=h.c.localStorage.setItem;
+  h.c.localStorage.setItem=(k,v)=>{if(k==='scout_tool_v1')throw Error('synthetic mirror quota');return set(k,v);};
+  h.hooks.set=()=>{throw Error('synthetic disk unavailable');};
+  h.scoutStore.set('scout_tool_v1',draft);await assert.rejects(h.scoutStore.ready());await tick();
+  h.c.localStorage.setItem=set;h.values.set('scout_tool_v1',JSON.stringify(draft));delete h.hooks.set;
+  const calls=h.calls.length;await assert.rejects(h.scoutStore.ready(true));
+  assert.equal(h.calls.length,calls);assert.equal(h.scoutStore.hasFailed('scout_tool_v1'),true);
+  assert.equal(JSON.parse(h.disk.get('scout_tool_v1')).players.length,69);
+});
+
+test('late recovered-roster confirmation rejects a changed owner, permission, mirror, or draft',async()=>{
+  for(const changed of ['owner','permission','mirror','draft']){
+    const h=harness(),draft=doc(70),wanted=JSON.stringify(draft),set=h.c.localStorage.setItem;
+    h.c.localStorage.setItem=(k,v)=>{if(k==='scout_tool_v1')throw Error('synthetic mirror quota');return set(k,v);};
+    h.scoutStore.set('scout_tool_v1',draft);await assert.rejects(h.scoutStore.ready());await tick();
+    h.c.localStorage.setItem=set;h.values.set('scout_tool_v1',wanted);
+    h.c.idbGet=async()=>{
+      if(changed==='owner')h.values.set('ps_sync_session','{"uid":"coach-b"}');
+      if(changed==='permission')h.values.set('cs_perms_v1','{"role":"player"}');
+      if(changed==='mirror')h.values.set('scout_tool_v1',JSON.stringify(doc(71)));
+      if(changed==='draft')draft.meta.teamName='New unconfirmed draft';
+      return wanted;
+    };
+    const calls=h.calls.length;await assert.rejects(h.scoutStore.ready(true),undefined,changed);
+    assert.equal(h.calls.length,calls);assert.equal(h.disk.get('scout_tool_v1'),wanted);
+    assert.notEqual(h.c.PSSaveState.get('team'),'saved',changed);
+  }
+});
+
+test('the real optional recovery confirmation rechecks changes during its second durable read',async()=>{
+  for(const changed of ['owner','permission','mirror','durable','draft']){
+    const h=harness(),draft=doc(70),wanted=JSON.stringify(draft),set=h.c.localStorage.setItem;
+    vm.runInContext(section(storage,'  var warned=false,','  /* localStorage.setItem을 감싼다')+'\nPSStorage.sharedRecovered=sharedRecovered;',h.c);
+    h.c.localStorage.setItem=(k,v)=>{if(k==='scout_tool_v1')throw Object.assign(Error('synthetic mirror quota'),{name:'QuotaExceededError'});return set(k,v);};
+    h.scoutStore.set('scout_tool_v1',draft);await assert.rejects(h.scoutStore.ready());await tick();
+    h.c.localStorage.setItem=set;h.values.set('scout_tool_v1',wanted);
+    let reads=0;h.c.idbGet=async k=>{
+      if(++reads===2){
+        if(changed==='owner')h.values.set('ps_sync_session','{"uid":"coach-b"}');
+        if(changed==='permission')h.values.set('cs_perms_v1','{"role":"player"}');
+        if(changed==='mirror')h.values.set(k,JSON.stringify(doc(71)));
+        if(changed==='durable')h.disk.set(k,JSON.stringify(doc(71)));
+        if(changed==='draft')draft.meta.teamName='New draft during second read';
+      }
+      return h.disk.get(k);
+    };
+    const calls=h.calls.length;await assert.rejects(h.scoutStore.ready(true),undefined,changed);
+    assert.equal(reads,2);assert.equal(h.calls.length,calls,'both confirmations are read-only');
+    assert.notEqual(h.c.PSSaveState.get('team'),'saved',changed);
+    assert.equal(h.disk.get('scout_tool_v1'),changed==='durable'?JSON.stringify(doc(71)):wanted);
+  }
 });

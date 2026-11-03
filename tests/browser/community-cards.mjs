@@ -12,7 +12,7 @@ const item=JSON.parse(fs.readFileSync(path.join(root,'studio/packs/03.json'),'ut
 const fifaIndex=JSON.parse(fs.readFileSync(path.join(root,'studio/fifa-packs/index.json'),'utf8'));
 const coach={id:'card-fixture-coach',owner:'22222222-2222-4222-8222-222222222222',owner_name:'테스트 코치',title:'후방 빌드업의 패스 선택',summary:'상대 압박에 따라 달라지는 지원 위치와 전진 패스의 방향을 살펴봅니다.',cat:'bp',age:'U15',players:'8',thumb,views:12,copies:3,likes:2,created_at:'2026-10-30T00:00:00Z'};
 const training=T.catalog.posts.slice(0,3).map((m,i)=>({...coach,id:m.id,owner:T.catalog.owner,owner_name:'프로세스',title:['압박을 벗어나는 지원 각도','패스 후 움직임과 공간 만들기','공을 잃은 순간, 압박으로 전환'][i]}));
-const fx=await startFixture(),browsers={},report=[];
+const fx=await startFixture(),browsers={},report=[],observations=[];
 try{
   for(const mode of [{size:'desktop',width:1280,dark:false},{size:'ipad',width:1100,dark:true},{size:'phone',width:320,dark:false},{size:'phone',width:393,dark:true}]){
     const {page,context,logs}=await openApp(fx,mode.size,{browsers,dark:mode.dark});
@@ -32,12 +32,28 @@ try{
     const c=await(await page.waitForSelector('#fComm')).contentFrame();
     await c.waitForSelector('.pl-row');
     const shot=async name=>{await c.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:path.join(out,`${mode.width}-${mode.dark?'dark':'light'}-${name}.png`)});};
-    const cardShot=async(selector,name)=>{await c.locator(selector).first().evaluate(e=>e.scrollIntoView({block:'start'}));await page.screenshot({path:path.join(out,`${mode.width}-${mode.dark?'dark':'light'}-${name}-card.png`)});};
+    const scrollCard=async selector=>c.evaluate(selector=>{
+      const card=document.querySelector(selector);
+      if(!card?.isConnected)throw Error('Missing live card before scroll: '+selector);
+      const box=card.getBoundingClientRect();if(!(box.width>0&&box.height>0))throw Error('Card has no positive geometry: '+selector);
+      card.scrollIntoView({block:'start'});
+    },selector);
+    const cardShot=async(selector,name)=>{await scrollCard(selector);await page.screenshot({path:path.join(out,`${mode.width}-${mode.dark?'dark':'light'}-${name}-card.png`)});};
     const fit=async selector=>{
-      const geometry=await c.locator(selector).first().evaluate(e=>{
-        const box=e.getBoundingClientRect(),title=e.querySelector('.tt,.fi-tt,strong'),s=title&&getComputedStyle(title);
-        return {width:innerWidth,scroll:document.documentElement.scrollWidth,left:box.left,right:box.right,height:box.height,titleSize:s?.fontSize,titleClamp:s?.webkitLineClamp};
-      });
+      // Select the current card and read its box/title/style in one synchronous
+      // callback. Do not poll until the expected style appears: wrong live CSS
+      // must still fail the original exact-value assertions immediately.
+      const geometry=await c.evaluate(selector=>{
+        const card=document.querySelector(selector),title=card?.querySelector('.tt,.fi-tt,strong');
+        if(!card||!title)throw Error('Missing current card/title: '+selector);
+        const box=card.getBoundingClientRect(),titleBox=title.getBoundingClientRect(),s=getComputedStyle(title);
+        return {identity:card.getAttribute('data-letter')||card.getAttribute('aria-label')||card.getAttribute('href')||title.textContent,
+          cardConnected:card.isConnected,titleConnected:title.isConnected,currentCard:document.querySelector(selector)===card,currentTitle:card.querySelector('.tt,.fi-tt,strong')===title,
+          width:innerWidth,scroll:document.documentElement.scrollWidth,left:box.left,right:box.right,height:box.height,cardWidth:box.width,titleWidth:titleBox.width,titleHeight:titleBox.height,titleSize:s.fontSize,titleClamp:s.webkitLineClamp};
+      },selector);
+      observations.push({mode,kind:'live-measurement',selector,...geometry});
+      assert.ok(geometry.cardConnected&&geometry.titleConnected&&geometry.currentCard&&geometry.currentTitle,'current connected card/title: '+selector);
+      assert.ok(geometry.cardWidth>0&&geometry.height>0&&geometry.titleWidth>0&&geometry.titleHeight>0,'positive card/title geometry: '+selector);
       assert.equal(geometry.width,geometry.scroll,'document fits: '+selector);
       assert.ok(geometry.left>=0&&geometry.right<=geometry.width+1,'card fits: '+selector);
       assert.equal(geometry.titleSize,'20px','title hierarchy: '+selector);
@@ -67,7 +83,7 @@ try{
     const [sourcePopup]=await Promise.all([context.waitForEvent('page'),source.click()]);await sourcePopup.waitForLoadState('domcontentloaded');
     assert.equal(sourcePopup.url(),await source.getAttribute('href'));await sourcePopup.close();
     assert.equal(await c.locator('#cvMask.on').count(),0,'FIFA original does not also open the native viewer');
-    const external=c.locator('.fi-card:not(.fi-anim)').first();await external.scrollIntoViewIfNeeded();
+    const external=c.locator('.fi-card:not(.fi-anim)').first();await scrollCard('.fi-card:not(.fi-anim)');
     const link=await fit('.fi-card:not(.fi-anim)');
     assert.equal(await external.locator('.fi-src').textContent(),'외부 자료');
     assert.equal(await external.locator('.fi-play').count(),0,'external-only cards cannot promise native playback');
@@ -80,4 +96,4 @@ try{
     report.push({...mode,letter,coach:coachCard,drill,fifa,link});console.log('verified',mode.width,mode.dark?'dark':'light');await context.close();
   }
   fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({passed:true,modes:report.map(r=>r.width)}));
-}finally{for(const b of Object.values(browsers))await b.close();await fx.close();}
+}finally{fs.writeFileSync(path.join(out,'observations.json'),JSON.stringify(observations,null,2));for(const b of Object.values(browsers))await b.close();await fx.close();}
