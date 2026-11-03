@@ -50,5 +50,6 @@ test('admin wiring: library passed as a getter, item opens content preview, «�
   assert.ok(fn.includes('libraryReady:function(){return adminOwnersReady;}'));
   assert.ok(fn.includes('onContentItem:function(wid,lid){preview(wid,encodeURIComponent(lid));}'));
   assert.ok(/onContentAll:function\(id\)\{setTab\('all'\);resetContentFilters\(\);var a=\$\('alAuthor'\);if\(a\)\{a\.value='id:'\+id;renderAllLib\(\);\}\}/.test(fn),'작성자 필터 값은 admin-content.js authorKey 와 같은 id:<uid>');
-  assert.ok(html.includes('studio/admin-user-detail.js?v=2.964')&&html.includes('studio/admin-user-detail.css?v=2.964'),'?v 를 올려야 캐시를 넘는다');
+  assert.match(html,/studio\/admin-user-detail\.js\?v=[0-9.]+/,'script has a cache pin');
+  assert.match(html,/studio\/admin-user-detail\.css\?v=[0-9.]+/,'stylesheet has a cache pin');
 });

@@ -23,7 +23,7 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 function click(root, dataset) { root.emit('click', {target: {closest: () => ({dataset, disabled: false})}}); }
 
 function setup(options = {}) {
-  const host = new Element(), store = new Map(), calls = [], copies = [];
+  const host = new Element(), store = new Map(), calls = [], copies = [], followups = [];
   let revoked = false, storedReply = null;
   const window = {
     document: {createElement: () => new Element()},
@@ -32,7 +32,7 @@ function setup(options = {}) {
     crypto: {randomUUID: () => REPLY},
     addEventListener() {}, removeEventListener() {}, setInterval: () => 1, clearInterval() {}
   };
-  const controller = support.create({window, host, context: () => ({uid: UID, epoch: 1, ready: true}), format: () => '', copyText: value => value.body,
+  const controller = support.create({window, host, context: () => ({uid: UID, epoch: 1, ready: true}), format: () => '', copyText: value => value.body,openFollowup:(...args)=>followups.push(args),
     rpc: async (name, args) => {
       calls.push({name, args});
       if (name === 'ps_support_list') return {is_admin: !revoked, reports: options.rows ?? [report], next_cursor: null};
@@ -50,7 +50,7 @@ function setup(options = {}) {
       }
       throw new Error('Unexpected fixture RPC: ' + name);
     }});
-  return {controller, root: host.child, store, calls, copies, revoke: () => { revoked = true; }};
+  return {controller, root: host.child, store, calls, copies, followups, revoke: () => { revoked = true; }};
 }
 
 test('PT404 on reply removes private detail and copy access despite a still-current local session', async t => {
@@ -162,4 +162,25 @@ test('20261017 옛 서버(보낸 사람 없음)는 예전 화면 그대로', asy
   assert.match(f.root.innerHTML, /사용자 제보/);
   click(f.root, {admReport: RID}); await tick();
   assert.doesNotMatch(f.root.innerHTML, /admSupportWho/);
+});
+
+test('support followup navigation uses authorized reporter identity without a write or private body copy',async t=>{
+  const reporter={user_id:REPLY,name:'Synthetic reporter'};
+  const f=setup({rows:[{...report,reporter}],detailReport:{...report,reporter}});t.after(()=>f.controller.destroy());
+  await f.controller.load();click(f.root,{admReport:RID});await tick();
+  assert.match(f.root.innerHTML,/data-adm-support="followup"/);
+  click(f.root,{admSupport:'followup'});
+  assert.deepEqual(f.followups,[[REPLY,{id:RID}]]);
+  assert.equal(f.calls.some(c=>/save|set_status|reply$/.test(c.name)),false);
+  await f.controller.load();click(f.root,{admSupport:'followup'});
+  assert.equal(f.followups.length,1,'no selected authorized detail means no link');
+});
+
+test('missing or malformed reporter identity never guesses a user for followup',async t=>{
+  for(const reporter of [null,{user_id:'invalid',email:'a@example.test'}]){
+    const f=setup({detailReport:{...report,reporter}});t.after(()=>f.controller.destroy());
+    await f.controller.load();click(f.root,{admReport:RID});await tick();
+    assert.doesNotMatch(f.root.innerHTML,/data-adm-support="followup"/);
+    click(f.root,{admSupport:'followup'});assert.deepEqual(f.followups,[]);
+  }
 });
