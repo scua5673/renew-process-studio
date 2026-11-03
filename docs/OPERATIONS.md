@@ -36,6 +36,9 @@
 3. `npm ci` → `npm test` · `npm run test:sql` · 필요하면 `node tests/browser/run-critical.mjs`(`PS_TEST_GROUP=selection|board|board2|boardperf|identity|storage|idp|entry|records`).
 4. PR(`gh pr create --repo scua5673/renew-process-studio --base staging`). CI: 회귀 1 + 브라우저 9묶음(selection·board·board2·boardperf·identity·storage·idp·entry·records)×2엔진 + release-gate + 배포 미리보기. 묶음은 나란히 돌고, 묶음 목록은 `tests/browser/run-critical.mjs` 한 곳이다(3.012 — CI 밖 시험이 조용히 낡지 않게 브라우저 시험은 모두 여기에 둔다. 엔진과 상관없이 Chromium 을 직접 띄우는 시험은 `CHROMIUM_ONLY` 로 WebKit 잡에서 건너뛰고 로그에 `skipped` 로 적는다).
 5. 합치면 testprocess 가 빌드하며 **그 커밋의 `release-gate` CI 가 초록이 될 때까지 최대 30분** 기다린다(`scripts/verify-release.mjs`). 빨강이면 게시를 멈춘다(«Build script returned non-zero exit code: 2»).
+   **11/3 — 합친 커밋은 부모의 CI 를 쓴다.** Netlify 짓기는 약 18분에 끊긴다(«Failed during stage 'building site': Command did not finish within the time limit» — 3.246 · 3.250). CI 가 23분이면 위 30분 대기는 그 전에 잘린다.
+   그래서 합친 커밋의 트리가 부모 하나와 같고 다른 부모가 그 부모의 조상이면(= PR 가지가 기준 가지를 이미 품고 있었으면) 그 부모의 `release-gate` 초록으로 바로 게시한다. 이 커밋의 CI 가 빨강이면 그래도 멈춘다.
+   바로 게시되게 하려면: **PR 은 기준 가지를 품은 채(«Update branch» 뒤 CI 초록) 합친다 · 승격 PR 은 그 PR 의 CI 가 끝난 뒤 합친다.** 아니면 예전처럼 이 커밋의 CI 를 기다리고, 18분을 넘기면 위 «CI 가 흔들려 배포가 멈췄을 때»처럼 다시 짓는다.
    확인은 GitHub API 로 한다 — **Netlify 환경 변수 `GITHUB_TOKEN`**(이 저장소 읽기 전용 fine-grained 토큰, 범위 Builds)을 두면 시간당 5,000번, 없으면 짓기 기계 IP 하나에 시간당 60번이다. 10/21 전엔 그 한도(403 «API rate limit exceeded»)에 걸리면 곧바로 멈췄다(3.137 · 3.141 실서버 게시 실패). 지금은 한도면 30분 안에서 다시 묻고, 30분 내내 한도면 «Add GITHUB_TOKEN» 으로 멈춘다.
    그다음 `scripts/package-site.mjs` 가 `dist/sw-manifest.json`(배포 파일마다 SHA-256)을 만들고, `scripts/release-guard.mjs` 가 지금 사이트의 목록과 견준다 —
    **실행 파일이 바뀌었는데 판 번호가 그대로면 게시를 멈춘다**(«…판 번호는 3.xxx 그대로예요»). 판 번호를 낮춰도 멈춘다. 이 목록으로 서비스워커는 바뀐 파일만 받는다
