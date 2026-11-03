@@ -131,7 +131,7 @@
         h+='<article class="admSupportReport"><h2>'+esc(r.title)+'</h2><small>'+esc(date(r.created_at))+'</small>'
           +(who?'<p class="admSupportWho">보낸 사람 <b>'+esc(reporterLine(who,true))+'</b></p>':'')+devicesHtml()+'<p>'+esc(r.body)+'</p>'
           +(detail.image?'<div class="support-image-view" data-adm-support-image></div>':'')+'<details class="admSupportLogs"><summary>제보 당시 사용 환경 · 오류 로그 '+count+'건</summary><pre>'+esc(diagnosticText(r.diagnostics))+'</pre></details>'
-          +'<button type="button" data-adm-support="copy">제보·대화·사용 환경·로그 전체 복사</button></article>'
+          +'<button type="button" data-adm-support="copy">제보·대화·사용 환경·로그 전체 복사</button>'+followupHtml(who)+'</article>'
           +statusHtml()
           +'<section class="admSupportConversation" aria-label="제보 대화"><h3>대화 '+detail.replies.length+'개</h3>'
           +detail.replies.map(function(q){return '<article class="admSupportReply" data-adm-reply="'+esc(q.id)+'"><header><b>'+(q.author_role==='admin'?'운영자':'제보자')+(q.is_own?' · 나':'')+'</b><time>'+esc(date(q.created_at))+'</time></header><p>'+esc(q.body)+'</p></article>';}).join('')
@@ -145,6 +145,11 @@
       h+='</section></div>';root.dataset.detail=can&&selected?'true':'false';root.innerHTML=h;renderedSelected=selected;
       if(w.PSSupportImage&&can&&detail&&detail.image){var imageId=detail.report.id,imageStamp=stamp();w.PSSupportImage.viewer(w,root.querySelector('[data-adm-support-image]'),function(){return call(imageStamp,'ps_support_image_get',{p_report_id:imageId}).then(function(value){if(!safe(imageStamp))throw fault('support_owner_changed');return value;});});}
       root.querySelector('.admSupportInbox').scrollTop=inboxScroll;root.querySelector('.admSupportDetail').scrollTop=detailScroll;
+    }
+    function followupHtml(who){
+      var available=who&&who.id&&typeof o.openFollowup==='function';
+      return '<p class="admSupportHint">접수 상태·고친 판과 사용자 해결 확인은 별도입니다. 담당자·다음 확인일·검증 근거·복구 결과는 기존 후속관리에 기록하세요.</p>'
+        +(available?'<button type="button" data-adm-support="followup"'+(busy?' disabled':'')+'>후속 확인 열기</button>':'<p class="admSupportHint">제보자 계정 연결이 확인되지 않아 후속 기록을 자동 연결하지 않습니다. 사람 목록에서 계정을 확인해 주세요.</p>');
     }
     function detailReporter(){ if(!detail||!detail.report||detail.report.is_own)return null; return reporterOf(detail.report.reporter)||(rowOf(selected)||{}).reporter||null; }
     /* 3.201 — 제보자의 최근 7일 기기 × 앱 판. 제보 본문을 읽기 전에 «이 사람의 아이패드가 옛 판에 머물러 있나»를 본다.
@@ -283,7 +288,7 @@
       if(b.dataset.admReport){openReport(b.dataset.admReport);return;}
       if(b.dataset.admFilter){if(busy||listLoading)return;var next=b.dataset.admFilter==='all'?'':b.dataset.admFilter;if(STAGES.indexOf(next)<0&&next!=='')return;filter=next;loadList(false);return;}
       if(b.dataset.admStatus){changeStatus(b.dataset.admStatus);return;}
-      var action=b.dataset.admSupport;if(action==='copy'){copy();return;}if(busy)return;
+      var action=b.dataset.admSupport;if(action==='followup'){var who=detailReporter();if(!busy&&adminConfirmed&&detail&&who&&who.id&&typeof o.openFollowup==='function')o.openFollowup(who.id,{id:selected});return;}if(action==='copy'){copy();return;}if(busy)return;
       if(action==='refresh')loadList(false);else if(action==='more'&&!listLoading)loadList(true);else if(action==='retry-detail')openReport(selected);
       else if(action==='back'){detailTicket++;detailLoading=false;selected='';detail=null;currentDraft=null;detailError='';notice='';render();}
     }
