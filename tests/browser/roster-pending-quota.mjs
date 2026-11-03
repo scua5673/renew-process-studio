@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {startFixture,openApp,ready,SIZES,WT} from '../fixtures/team-app.mjs';
 
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',out=process.env.PS_TEST_OUTPUT||'/tmp/ps-roster-e6fc5d26-browser';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',out=process.env.PS_TEST_OUTPUT||'/tmp/ps-roster-pending-quota-browser';
 fs.mkdirSync(out,{recursive:true});SIZES.desktop={...SIZES.desktop,engine};
 const fx=await startFixture(),browsers={},name='합성 quota 신규 선수';
 let app,snapshotBefore,snapshotAfter,snapshotReload;const observations=[];
@@ -91,7 +91,10 @@ try{
   // Main confirmation and immutable native batch acknowledgement are separate.
   // This path keeps real PSItems enabled, unlike the main-only browser fixture.
   const mainName='합성 MAIN 사본 복구 선수';
-  await frame.evaluate(()=>localStorage.setItem('fixture_main_quota','1'));
+  await frame.evaluate(()=>{
+    const ws=psSync().activeWsObj();fixtureNativeResumeScope=JSON.stringify([teamSaveOwner(),ws&&ws.role||'']);
+    localStorage.setItem('fixture_main_quota','1');
+  });
   await addPlayer(mainName,'93');const mainRejected=await snapshot('main-quota-native-batch',mainName);
   assert.ok(mainRejected.rejectedMain.length>0);assert.equal(mainRejected.barrier.ok,false);
   assert.equal(mainRejected.rosterPending,true);assert.equal(mainRejected.playerRow,null);
@@ -112,7 +115,40 @@ try{
   assert.deepEqual(mainConfirmed.pendingBatches,nativeBefore,'confirmation cannot write an ACK or remove the native batch');
   assert.equal(mainConfirmed.playerRow,null);assert.deepEqual(mainConfirmed.serverPlayers,serverBefore);
   assert.equal(await frame.evaluate(()=>fixtureConfirmWrites),0,'recovered main confirmation never replays the document write');
-  await frame.evaluate(async()=>{storage.set=fixtureConfirmSet;if(rosterResumeRows(true)===false)throw Error('native batch did not resume');await psFlushPendingReady();});
+  let nativeResume;
+  try{
+    nativeResume=await frame.evaluate(async expected=>{
+      storage.set=fixtureConfirmSet;
+      function current(){
+        const ws=psSync().activeWsObj();
+        if(fixtureNativeResumeScope!==JSON.stringify([teamSaveOwner(),ws&&ws.role||''])||localStorage.getItem('ps_ws_switch_guard_v1')||!scoutAutomaticWriteAllowed())throw Error('native resume authority changed');
+      }
+      async function completed(){
+        current();const box=rosterOutbox();
+        if(!box.prepared()||box.hasRescue()||box.read().rows.length||psHasPending()||scoutStore.hasFailed(KEY))throw Error('native batch did not resume');
+        const raw=localStorage.getItem(KEY),wanted=JSON.stringify(expected);
+        if(typeof raw!=='string'||JSON.stringify(mem[KEY])!==raw||JSON.stringify(data.players.find(p=>p.id===expected.id))!==wanted||JSON.stringify(JSON.parse(raw).players.find(p=>p.id===expected.id))!==wanted)throw Error('native resume draft is not exact');
+        const [main,sq]=await Promise.all([storage.peek(KEY),storage.peek('sq:'+expected.id)]);
+        current();
+        if(!box.prepared()||box.hasRescue()||box.read().rows.length||psHasPending()||localStorage.getItem(KEY)!==raw||JSON.stringify(mem[KEY])!==raw||main?.value!==raw||sq?.value!==wanted)throw Error('native resume durable confirmation changed');
+      }
+      current();const resumed=rosterResumeRows(true);
+      // A natural heal/ACK may finish between the pending snapshot and this
+      // call. Only an already exact, empty, unchanged scope may accept false.
+      if(resumed===false)await completed();
+      await psFlushPendingReady();
+      if(resumed===false)await completed();
+      return {resumed,alreadyComplete:resumed===false};
+    },mainRejected.player);
+  }catch(error){
+    const scalar=await frame.evaluate(async expected=>{
+      const box=rosterOutbox(),ws=psSync().activeWsObj();let rows=null;try{rows=box.read().rows.length;}catch(_){}
+      const raw=localStorage.getItem(KEY),main=(await storage.peek(KEY))?.value??null,sq=(await storage.peek('sq:'+expected.id))?.value??null;
+      return {ownerSame:fixtureNativeResumeScope===JSON.stringify([teamSaveOwner(),ws&&ws.role||'']),guard:!!localStorage.getItem('ps_ws_switch_guard_v1'),editable:scoutAutomaticWriteAllowed(),prepared:box.prepared(),rescue:box.hasRescue(),rows,pending:psHasPending(),failed:scoutStore.hasFailed(KEY),mainIdbExact:raw===main,sqExact:sq===JSON.stringify(expected)};
+    },mainRejected.player).catch(e=>({observationError:e.name}));
+    fs.writeFileSync(path.join(out,engine+'-resume-failure.json'),JSON.stringify({message:error.message,scalar},null,2));throw error;
+  }
+  fs.writeFileSync(path.join(out,engine+'-native-resume.json'),JSON.stringify(nativeResume,null,2));
   const nativeFinished=await snapshot('main-recovery-native-sq-confirmed',mainName);
   assert.equal(nativeFinished.barrier.ok,true);assert.equal(nativeFinished.rosterPending,false);
   assert.deepEqual(JSON.parse(nativeFinished.playerRow),mainRejected.player);

@@ -113,6 +113,11 @@ try{
         PSSync.undo.list=()=>[{k:'scout_tool_v1',before:44,after:42,at:Date.now()}];
         PSSync.merge.notes=()=>[{id:'fixture-note',by:'가상 코치',ymd:'2026-09-15',path:'w1.1.match',mine:'가상 기록'}];
       });
+      await page.evaluate(()=>{
+        window.__statusClickTrace=[];
+        window.__statusScalar=function(){return {view:window.__psAutosaveView&&__psAutosaveView(),recovery:window.__fixtureRecovery,retries:window.__fixtureRetries,frames:[...document.querySelectorAll('iframe')].map(f=>{try{const w=f.contentWindow,api=w.PSSaveState,s=api&&api.snapshot&&api.snapshot();return {id:f.id,loaded:!/^about:blank/.test(w.location.href),presentationBaseline:!!w.__realPresentationLocalSnapshot,pending:w.psHasPending?w.psHasPending():null,ownerCurrent:!!(s&&api.owner&&s.owner===api.owner()),scopes:s&&s.scopes};}catch(_){return {id:f.id,unavailable:true};}})};};
+        document.addEventListener('click',e=>{if(e.target.closest('#psSyncStripBtn,#psAutosaveRecoveryOpen'))__statusClickTrace.push({at:performance.now(),button:e.target.closest('#psSyncStripBtn')?'strip':'recovery',...__statusScalar()});},true);
+      });
       const cases=[
         ['confirmed',{kind:'ok',at:100,n:0,review:0},'서버 저장 확인'],
         ['saving',{kind:'busy',n:1,review:0},'저장 중…'],
@@ -132,7 +137,9 @@ try{
         assert.equal(overlapsRelease,false,'A compact state never overlays update controls');
         await page.screenshot({path:path.join(out,spec.width+'-'+label+'.png')});
       }
-      await page.locator('#psSyncStripBtn').click();assert.equal(await page.evaluate(()=>window.__fixtureRecovery),1);
+      await page.locator('#psSyncStripBtn').click();const recoveryCount=await page.evaluate(()=>window.__fixtureRecovery);
+      if(recoveryCount!==1){const observed=await page.evaluate(()=>({state:__statusScalar(),trace:__statusClickTrace})).catch(e=>({observationError:e.name}));fs.writeFileSync(path.join(out,label+'-recovery-failure.json'),JSON.stringify({recoveryCount,observed},null,2));}
+      assert.equal(recoveryCount,1);
       assert.equal(await page.evaluate(()=>window.__fixtureChoices),0);
       await page.locator('#gearBtn').click();await page.locator('#gearPop [data-gp-go="data"]').click();
       assert.equal(await page.locator('#psPushState').innerText(),'일부 변경 별도 보관');

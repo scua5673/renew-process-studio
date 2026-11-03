@@ -32,6 +32,11 @@ try{
   app=await openApp(fx,'phone',{browsers,phoneStart:true,dark:engine==='webkit'});
   const {page,logs}=app;
   assert.equal(app.browser.browserType().name(),engine);
+  await page.evaluate(()=>{
+    window.__navTrace=[];
+    window.__navScalar=function(){const f=document.getElementById('fScout'),d=f&&f.contentDocument;return {section:window.__psTeamSection&&__psTeamSection(),app:document.body.dataset.psApp,request:f&&f.__psTeamViewRequest,pending:f&&f.__psTeamViewPending,target:f&&f.__psTeamViewTarget,childViews:d?[...d.querySelectorAll('.view.on')].map(x=>x.id):[],scoutingOn:document.querySelector('#teamBottom [data-tb="scouting"]').classList.contains('on')};};
+    addEventListener('message',e=>{if(!e.data||e.data.source!=='scout'||e.data.type!=='teamViewNow')return;const record=phase=>{__navTrace.push({phase,at:performance.now(),view:e.data.view,...__navScalar()});if(__navTrace.length>64)__navTrace.shift();};record('before-message');queueMicrotask(()=>record('after-message'));},true);
+  });
   const nav=key=>page.locator('#appSeg '+key);
   const team=page.locator('#appSeg [data-team-hub]'),more=nav('#psMoreBtn');
   for(const width of [320,390,430,767]){
@@ -51,7 +56,9 @@ try{
     await page.locator('#teamBottom [data-tb="scouting"]').click();
     const scoutFrame=await (await page.locator('#fScout').elementHandle()).contentFrame();
     await scoutFrame.locator('#pwScout .pw-depth-pitch').waitFor();
-    assert.equal(await page.locator('#teamBottom [data-tb="scouting"]').evaluate(e=>e.classList.contains('on')),true,'scouting shortcut follows active view');
+    const scoutingOn=await page.locator('#teamBottom [data-tb="scouting"]').evaluate(e=>e.classList.contains('on'));
+    if(!scoutingOn){const observed=await page.evaluate(()=>({state:__navScalar(),trace:__navTrace})).catch(e=>({observationError:e.name}));fs.writeFileSync(path.join(OUT,'navigation-failure-'+width+'.json'),JSON.stringify({engine,width,scoutingOn,observed},null,2));}
+    assert.equal(scoutingOn,true,'scouting shortcut follows active view');
     assert.equal(await page.locator('#teamBottom [data-tb="more"]').evaluate(e=>e.classList.contains('on')),false,'More does not select with scouting');
     assert.equal(await page.locator('#teamMoreSheet').isVisible(),false,'shortcut does not require the More sheet');
     if(width===320||width===390)await page.screenshot({path:path.join(SHOTS,'team-scout-'+width+'.png')});
