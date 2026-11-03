@@ -11,7 +11,8 @@ export function verdict(checks,sha){
    Netlify 환경 변수 GITHUB_TOKEN(읽기 전용이면 충분)이 있으면 그것으로 묻고(시간당 5,000번), 한도 403 · 429 는 멈추지 않고 기다리는 동안 다시 묻는다.
    10/28(3.201) — 기다리는 시간 12분 → 20분. CI «Storage safety» 는 실행기가 비어 있을 때 13~14분, PR 둘이 함께 돌면 17~18분이다.
    12분은 그 사이의 운에 걸려 있었다(10/28 staging 3.201 게시가 17분 CI 에 걸려 실패, 3.117 때도 main 이 18분). */
-export const GATE_WAIT_MS=20*60*1000;
+// 11/3 — 운영 CI가 실행기 대기를 포함해 22분 53초 걸렸다. 같은 커밋의 전체 통과 조건을 유지하며 30분까지 기다린다.
+export const GATE_WAIT_MS=30*60*1000;
 export function rateLimited(response){
  if(!response||response.ok)return false;
  if(response.status===429)return true;
@@ -36,7 +37,7 @@ export async function verify({env=process.env,fetcher=fetch,sleep=ms=>new Promis
   if(state==='fail')throw Error('release-gate failed; production deploy stopped.');
   log('Waiting for release-gate on '+sha.slice(0,12));await sleep(30000);
  }
- if(limited)throw Error('GitHub API rate limit kept the release-gate check from answering for 20 minutes; production deploy stopped. Add GITHUB_TOKEN to the Netlify environment (docs/OPERATIONS.md §2).');
- throw Error('release-gate was not confirmed within 20 minutes; production deploy stopped.');
+ if(limited)throw Error('GitHub API rate limit kept the release-gate check from answering for 30 minutes; production deploy stopped. Add GITHUB_TOKEN to the Netlify environment (docs/OPERATIONS.md §2).');
+ throw Error('release-gate was not confirmed within 30 minutes; production deploy stopped.');
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)verify().catch(e=>{console.error(e.message);process.exitCode=1;});
