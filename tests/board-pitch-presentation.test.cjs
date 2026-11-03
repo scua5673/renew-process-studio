@@ -3,7 +3,8 @@ const app=fs.readFileSync(require.resolve('../studio/board-multipitch.js'),'utf8
 function E(tag,attrs){return {tag,attrs,children:[],appendChild(n){this.children.push(n);}};}
 for(const futsal of [false,true])test('multi-pitch flat goal rectangles and no-goal cards '+futsal,()=>{
  const start=app.indexOf('      function pitch(x0,y0,w,h,goalDepthCap,showGoals){'),end=app.indexOf('      var grp=E(',start);
- const c=vm.createContext({E,_goalNetSeq:0,_lc:'#fff',ST:{stroke:'#fff'},doc:{defaultView:{__getPitchSpec:()=>futsal?{futsal:true}:null}}});vm.runInContext(app.slice(start,end),c);
+ const specs=vm.runInNewContext('('+board.match(/const PITCH_SPECS=(\{[\s\S]*?\n\});/)[1]+')');
+ const c=vm.createContext({E,_goalNetSeq:0,_lc:'#fff',ST:{stroke:'#fff'},lines:true,spec:specs[futsal?'futsal':'fifa']});vm.runInContext(app.slice(start,end),c);
  const main=c.pitch(10,20,300,500,15),small=c.pitch(400,20,130,240,10,false);
  const goals=main.children.filter(n=>n.attrs.class==='ps-pitch-goal');assert.equal(goals.length,2);assert.equal(small.children.filter(n=>n.attrs.class==='ps-pitch-goal').length,0);assert.ok(small.children.some(n=>n.tag==='rect'));
  for(const g of goals){const frame=g.children.find(n=>n.attrs.class==='ps-pitch-goal-frame');const a=frame.attrs.d.match(/-?\d+(?:\.\d+)?/g).map(Number);assert.equal(a[0],a[2]);assert.equal(a[4],a[6]);}

@@ -267,7 +267,11 @@
     // Pointer cancellation/secondary fingers must not select a different rectangle.
     var marqueePid=null;
     doc.addEventListener('pointerdown',function(e){if(e.target.closest&&e.target.closest('#board')&&S().tool==='move'&&!objectAt(e.target)){if(marqueePid!==null&&marqueePid!==e.pointerId){e.stopImmediatePropagation();return;}marqueePid=e.pointerId;}},true);
-    ['pointermove','pointerup','pointercancel'].forEach(function(type){doc.addEventListener(type,function(e){if(marqueePid===null)return;if(e.pointerId!==marqueePid){if(e.target.closest&&e.target.closest('#board'))e.stopImmediatePropagation();return;}if(type==='pointercancel'){win.clearMarquee();marqueePid=null;}else if(type==='pointerup')marqueePid=null;},true);});
+    // 3.251 — Release the guard before any cleanup. The board's own pointercancel
+    // handler (mqEnd) removes the rectangle; clearMarquee is private to the board
+    // script, and calling it threw and left this guard holding a dead pointer id,
+    // which then swallowed every later empty-area touch until reload.
+    ['pointermove','pointerup','pointercancel','lostpointercapture'].forEach(function(type){doc.addEventListener(type,function(e){if(marqueePid===null)return;if(e.pointerId!==marqueePid){if(type!=='lostpointercapture'&&e.target.closest&&e.target.closest('#board'))e.stopImmediatePropagation();return;}if(type==='pointercancel'||type==='lostpointercapture'){marqueePid=null;try{if(typeof win.clearMarquee==='function')win.clearMarquee();}catch(_){}}else if(type==='pointerup')marqueePid=null;},true);});
     wrap('updateDelUI',sync);wrap('clearGuides',paintGrid);wrap('buildPitch',paintGrid);wrap('loadSnap',function(){if(!win.__psThumbCapturing)resetFree();additive=false;paintGrid();sync();});
     win.addEventListener('resize',()=>{mount();if(!panel.hidden)place();});
     var strip=doc.getElementById('boardPageStrip');if(strip)new win.MutationObserver(mount).observe(strip,{childList:true});

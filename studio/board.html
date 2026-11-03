@@ -4570,8 +4570,9 @@ try{state.tokenScale=+lookDefault("tokenScale")||state.tokenScale;}catch(e){}   
 let svg,world,drawLayer,tokenLayer,drawCatch,analysisLayer=null;   /* 3.029 — analysisLayer: 분석 그래픽(라인 위 · 그리기 아래) */
 
 function buildGrid(){
+  try{if(state.pitchN>1)window.__applyPitchN?.(state.pitchN);}catch(_){}
   if(!world)return;
-  var __gsig=(state.gridType||"off")+'|'+(state.pitchSpec||"fifa")+'|'+pitchViewKey()+'|'+(document.documentElement.dataset.pitch||"");
+  var __gsig=getCss('--grid')+'|'+(state.gridType||"off")+'|'+(state.pitchSpec||"fifa")+'|'+pitchViewKey()+'|'+(document.documentElement.dataset.pitch||"");
   if(world.querySelector("#gridLayer")&&world.__gridSig===__gsig)return;   /* 동일 상태 재빌드 생략(보드 전환 시 그리드 깜빡임 방지) — 레이어가 없으면(피치 재빌드 후) 다시 그림 */
   world.__gridSig=__gsig;
   var GRD=getCss("--grid")||"#3a6df0";
@@ -4714,8 +4715,9 @@ function spDrag(grp,pt,idx){
 }
 function selectSpBall(i){ try{ if(!state.spMarks||!Array.isArray(state.spMarks.pts)||!state.spMarks.pts[i])return; sel={type:"spball",idx:i,ref:state.spMarks.pts[i]}; multiSel=[]; buildSetPieceLayer(); renderTokens(); renderDrawings(); updateDelUI(); try{positionSelCtl();}catch(_){} try{toast("볼 선택됨 — 삭제 버튼이나 Delete로 지우기");}catch(_){} }catch(_){} }
 function buildLines(){
+  try{if(state.pitchN>1)window.__applyPitchN?.(state.pitchN);}catch(_){}
   if(!world)return;
-  var __lsig=(state.lines===false?"off":"on")+'|'+(state.pitchSpec||"fifa")+'|'+(state.orientation||"h")+'|'+pitchViewKey()+'|'+(state.fieldMode||"standard")+'|'+(state.spFlip?1:0)+'|'+(document.documentElement.dataset.pitch||"");
+  var __lsig=getCss('--pline')+'|'+(state.lines===false?"off":"on")+'|'+(state.pitchSpec||"fifa")+'|'+(state.orientation||"h")+'|'+pitchViewKey()+'|'+(state.fieldMode||"standard")+'|'+(state.spFlip?1:0)+'|'+(document.documentElement.dataset.pitch||"");
   if(world.querySelector("#lineLayer")&&world.__lineSig===__lsig)return;   /* 동일 상태 재빌드 생략(보드 전환 시 라인 깜빡임 방지) */
   world.__lineSig=__lsig;
   var __oldL=world.querySelector("#lineLayer");
@@ -8029,6 +8031,7 @@ window.__syncPitchSeg=function(){try{var sg=document.getElementById("pitchSeg");
   try{window.__syncTrainGridRowUI&&window.__syncTrainGridRowUI();}catch(_){}   /* 3.036 — 훈련 격자 줄도(패널 클릭 · 단축키 · 직접 색 · 복원이 모두 여기를 지난다) */}catch(_){}};
 /* 계정 확인 전에는 기기 공용 cs_pitch_img를 적용하지 않는다. 저장된 배경은 loadSnap이 복원한다. */
 window.__getPitchN=function(){return state.pitchN||1;};
+window.__getPitchLines=function(){return state.lines!==false;};
 window.__getPitchSpec=function(){ try{ return pitchSpec(); }catch(_){ return null; } };   /* 2.658 — 멀티피치 카드(셸 applyPitches)가 규격을 따라 그린다(풋살이면 풋살장) */
 /* 잔디 줄무늬만 현재 운동장 개수에 맞춰 다시 그림(토큰·라인 유지, 원자 교체) */
 function __rescaleGrass(){ try{
@@ -15088,7 +15091,7 @@ function init(){
       svg.querySelectorAll('#ps-multipitch .ps-pitch-goal').forEach(g=>{
         const mouth=g.querySelector('.ps-pitch-goal-mouth');if(!mouth)return;
         const x=+mouth.getAttribute('x1'),y=+mouth.getAttribute('y1'),x2=+mouth.getAttribute('x2'),y2=+mouth.getAttribute('y2'),side=g.getAttribute('data-side')==='top'?-1:1;
-        goals.push({a:map(x,y),b:map(x2,y2),out:map(x,y+side),height:Math.abs(x2-x)*(sp.futsal?2:(sp.goal<6?2.15:2.44))/sp.goal*scale*GOAL_K.height,depth:+g.getAttribute('data-goal-depth')*scale*GOAL_K.depth});
+        goals.push({a:map(x,y),b:map(x2,y2),out:map(x,y+side),height:Math.abs(x2-x)*(sp.futsal?2:(sp.goal<6?2.15:2.44))/sp.goal*scale*GOAL_K.height,depth:Math.min(+g.getAttribute('data-goal-depth')*GOAL_K.depth,+(g.getAttribute('data-goal-depth-cap')||Infinity))*scale});
       });
     }else [[p.L,-1],[p.R,1]].forEach(([x,side])=>{
       if(pitchViewKey()!=='full'&&((pvWorldRight()&&side<0)||(!pvWorldRight()&&side>0)))return;   /* 2.975 */
@@ -15120,7 +15123,7 @@ function init(){
       svg.querySelectorAll('#ps-multipitch .ps-pitch-goal').forEach(g=>{
         const m=g.querySelector('.ps-pitch-goal-mouth');if(!m)return;
         const x=+m.getAttribute('x1'),y=+m.getAttribute('y1'),x2=+m.getAttribute('x2'),y2=+m.getAttribute('y2'),side=g.getAttribute('data-side')==='top'?-1:1,a=map(x,y);
-        goals.push({a:a,b:map(x2,y2),n:dir(a,map(x,y+side)),h:Math.abs(x2-x)*(sp.futsal?2:(sp.goal<6?2.15:2.44))/sp.goal*GOAL_K.height,d:+g.getAttribute('data-goal-depth')*GOAL_K.depth});
+        goals.push({a:a,b:map(x2,y2),n:dir(a,map(x,y+side)),h:Math.abs(x2-x)*(sp.futsal?2:(sp.goal<6?2.15:2.44))/sp.goal*GOAL_K.height,d:Math.min(+g.getAttribute('data-goal-depth')*GOAL_K.depth,+(g.getAttribute('data-goal-depth-cap')||Infinity))});
       });
     }else [[p.L,-1],[p.R,1]].forEach(([x,side])=>{
       if(pitchViewKey()!=='full'&&((pvWorldRight()&&side<0)||(!pvWorldRight()&&side>0)))return;
