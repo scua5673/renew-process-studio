@@ -30,7 +30,8 @@ try{
  async function check(label){
   await refresh();
   await f.waitForFunction(()=>{const stage=document.getElementById('boardStage').getBoundingClientRect();return [...document.querySelectorAll('#trainingStrip,#boardPageStrip>.tb-g')].every(e=>{const r=e.getBoundingClientRect();return !r.width||r.bottom<=stage.top+.5;});});
-  const g=await geometry();assert.ok(g.boxes.length>=3,label+' keeps the toolbar');
+  const g=await geometry();assert.equal(g.boxes.length,1,label+' keeps only training tabs');
+  for(const id of ['boardPageStrip','psEditToolsToggle','psEditTools'])assert.equal(await f.locator('#'+id).isVisible(),false,label+' hides '+id);
   assert.deepEqual(g.collisions,[],label+' controls have separate space');
   for(const b of g.boxes){assert.ok(b.x>=g.wrap.x-1&&b.right<=g.wrap.right+1,JSON.stringify({label,b,wrap:g.wrap}));assert.ok(b.bottom<=g.stage.y+.5,JSON.stringify({label,b,stage:g.stage}));}
   assert.deepEqual(g.hits.filter(h=>!h.ok),[],label+' real hit targets remain reachable');
@@ -53,8 +54,8 @@ try{
  await f.locator('.cf-panel-btn').click();
  await f.evaluate(()=>{state.orientation='v';applyView();});await check('vertical');
  await f.evaluate(()=>{state.orientation='h';applyView();document.body.classList.add('fmdark');});await check('dark');
- await f.locator('#boardPageStrip [data-v="3d"]').click();await f.waitForFunction(()=>document.body.classList.contains('bc-tilt3d'));await check('3d');
- await f.locator('#boardPageStrip [data-v="flat"]').click();await f.waitForFunction(()=>!document.body.classList.contains('bc-tilt3d'));
+ await f.locator('#tiltSeg [data-t="1"]').evaluate(e=>e.click());await f.waitForFunction(()=>document.body.classList.contains('bc-tilt3d'));await check('3d');
+ await f.locator('#tiltSeg [data-t="0"]').evaluate(e=>e.click());await f.waitForFunction(()=>!document.body.classList.contains('bc-tilt3d'));
  await f.evaluate(()=>document.body.classList.remove('fmdark'));
  await f.locator('#ps-df-anim').click();await check('scenes-open');
  await f.locator('#ps-df-anim').click();await check('scenes-closed');
@@ -73,7 +74,7 @@ try{
  assert.equal(await f.locator('#editorPdf').count(),1);
  await f.evaluate(()=>document.getElementById('editorModal').classList.remove('ep-ro'));
  await f.waitForFunction(()=>document.querySelector('#cmd-export-pop #editorPdf'));
- await f.locator('#psEditToolsToggle').click();assert.ok(await f.locator('#psEditTools').isVisible());await f.getByRole('button',{name:'배치 도구 닫기',exact:true}).click();
+ assert.equal(await f.locator('#psEditToolsToggle').isVisible(),false,'placement tools hidden in training');
  await f.locator('#epNameTop').fill('프로세스FC 훈련 도구 검증');
  const snap=await f.evaluate(()=>JSON.parse(JSON.stringify({players:state.players,equipment:state.equipment,drawings:state.drawings})));
  await f.locator('#editorDone').click();
@@ -86,6 +87,8 @@ try{
  await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
  await f.waitForFunction(()=>!document.body.classList.contains('editing')&&document.getElementById('boardPageStrip').getBoundingClientRect().width>0);
  assert.equal(await f.locator('#boardPageStrip').evaluate(e=>getComputedStyle(e).position),'absolute','normal board keeps its floating toolbar');
+ assert.ok(await f.locator('#psEditToolsToggle').isVisible(),'normal board placement tools restored');
+ assert.ok(await f.locator('#boardPageStrip [data-v="flat"]').isVisible(),'normal board view controls restored');
  assert.ok(await f.locator('#tbExport').isVisible(),'normal board export restored');
  assert.ok(await f.locator('#bpBoardSettings').isVisible(),'normal board settings restored');
  assert.equal(await f.locator('#editorModal .modal-head #editorPdf').count(),1,'original PDF restored after editor exit');
