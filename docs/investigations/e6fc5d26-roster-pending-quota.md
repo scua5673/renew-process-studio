@@ -20,4 +20,21 @@
 
 고침은 실패한 immutable batch의 같은 key·token·seq·raw를 IDB에서 검증 보존한다. 보존 중이거나 아직 native LS에 승격하지 못한 동안에는 저장 실패·pending과 MAIN·SQ·ACK 차단을 유지한다. 재열기에서는 해당 계정·팀의 원문을 먼저 수화해 읽기 overlay로 보여 준다. 같은 원문을 같은 LS key에 저장·되읽고 IDB 원문을 조건부 제거·부재 확인한 뒤에만 원래 native 저장·ACK 경로를 재개한다. IDB 사본을 남긴 채 LS ACK만 정리하여 원문이 부활하는 길은 허용하지 않는다.
 
-최종 검사 결과와 검사한 커밋은 검증 뒤 기록한다. 실제 계정 원문 복구·운영 반영·제보 응답은 이 작업 범위 밖이다.
+## 검증
+
+초기 구현 `6ba44fdb9beb715fc04c6f5847955481c274dc2c`에서 관련 unit 175/175가 통과했다. 독립 코드 검토에서 발견한 비동기 peek 뒤 foreign LS 덮어쓰기와 같은 owner의 epoch/권한 갱신 장벽은 `6f786636286cbc397986409cdb868064cfa739a5`에 고쳤다. 변경된 모듈의 관련·음성 unit 27/27을 다시 통과했다. 다른 통과 검사는 반복하지 않았다.
+
+`6f786636286cbc397986409cdb868064cfa739a5`의 실제 Chromium·WebKit 회귀가 모두 통과했다. 실제 추가 UI에서 quota를 주입해 원문 보존·강제 재열기 동일 선수·미완료 장벽을 확인했고, quota 해제 뒤 exact LS 승격·IDB 원문 제거·기존 MAIN/SQ 기기 저장을 검증했다. 실제 재열기의 fresh live-key scan 뒤 합성 서버의 SQ 행도 확인했다. 완료 후 재열기에서 ACK 원문이 부활하지 않았고, 두 저장소가 모두 실패하면 MAIN/SQ/서버는 진행하지 않은 채 실패·pending·업데이트 장벽을 유지했다. 새 선수와 기존 선수 원문을 합성 데이터로만 검사했다.
+
+기기 저장 장벽은 서버 저장 완료가 아니다. 첫 브라우저 검사는 기기 SQ 저장 직후 한 회차로 서버 행까지 단정하여 실패했다. 진단용 `99b19bc`에서 실제 IDB SQ 원문과 오류 없는 네 회차를 기록했고, 기존 `idbRefreshLive`의 1분 live-key 캐시가 새 SQ 키를 아직 조회하지 않는 경계임을 읽어 확인했다. 캐시·시계를 바꾸지 않고 실제 재열기의 fresh scan 뒤 동일 서버 단정을 검증하도록 시험을 고쳤다. 원 실패 로그와 원문은 그대로 보존했다.
+
+증거:
+
+- 최초 관련 unit: `/tmp/ps-roster-e6fc5d26-unit-6ba44fd.log`
+- 독립 검토 보강 unit: `/tmp/ps-roster-e6fc5d26-unit-review-fixes.log`
+- 원 브라우저 실패: `/tmp/ps-roster-e6fc5d26-{chromium,webkit}-6ba44fd.log`
+- 진단 회차: `/tmp/ps-roster-e6fc5d26-after-99b19bc/chromium-native-rounds.json`
+- 통과 브라우저 로그: `/tmp/ps-roster-e6fc5d26-{chromium,webkit}-6f78663.log`
+- 최종 합성 원문·스크린샷: `/tmp/ps-roster-e6fc5d26-after-6f78663/`
+
+실제 계정 원문 복구·운영 반영·제보 응답은 이 작업 범위 밖이다. 제보 당시의 quota 실패 키와 `items-write` 경합의 인과관계는 여전히 확인하지 못했다.

@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.245 선수 추가 원문 — `roster-pending.js`는 native immutable batch의 첫 LS quota 때 같은 key/token/seq/raw만 IDB에 검증 보존한다. 수화 전·구출 원문이 남은 동안 MAIN/SQ/ACK는 진행하지 않으며 실패/pending을 유지한다. 재열기는 owner별 원문을 먼저 overlay하고, 같은 LS key의 exact 되읽기와 IDB 조건부 제거·부재 확인 뒤 기존 native outbox를 재개한다. async peek 뒤 LS를 다시 읽어 foreign 원문을 지키고, 명시 prepare의 exact 검증 뒤에만 새 epoch/권한을 재확인한다. 실제 제보 원인은 미확정. 상세 docs/investigations/e6fc5d26-roster-pending-quota.md.
+
 - 3.244 경기 미러 quota — guarded MATCH pull의 실제 localStorage quota 직후, 이번 회차가 쓴 IDB candidate만 captured before로 replaceIfValue 복귀한다. callback에서 owner·권한·role·미러를 다시 검사하며 실패하면 원 quota를 유지한다. 기존 불명확 split 자동복구/queue ACK/ready 정책은 넓히지 않는다. MATCH는 mergebase 저장을 지원하지 않으므로 합성 base Map을 provenance로 쓰지 않는다. 상세 docs/incidents/match-mirror-quota-20261103.md.
 
 - 3.242 — 포지션 판 조 변경은 `player-workspace.js`의 임시 모드로 기존 grpPickOpen/save를 사용한다. 선수단·스카우팅 공통 불러오기는 `board-scout-import.js`에서 보드와 훈련 인원 카드에 연결한다. 훈련 인원은 선택 명단으로 교체, 원본은 읽기 전용. 상세 `docs/board-scout-import.md`.
