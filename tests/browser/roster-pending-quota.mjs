@@ -69,22 +69,20 @@ try{
   assert.equal(snapshotAfter.durablePending.length,1);assert.equal(snapshotReload.rosterPending,true);
   await frame.evaluate(()=>localStorage.setItem('fixture_pending_quota','0'));
   await frame.evaluate(()=>psFlushPendingReady());
-  const rounds=[];
-  for(let round=0;round<4&&!fx.db.has(WT+'|sq:'+snapshotAfter.player.id);round++){
-    await page.waitForFunction(()=>PSSync.state().kind!=='busy');
-    const result=await page.evaluate(()=>PSSync.syncNow('fixture-roster-pending-recovered'));
-    const observation=await snapshot('native-sync-round-'+round);rounds.push({round,result,playerRow:observation.playerRow,serverHasRow:fx.db.has(WT+'|sq:'+snapshotAfter.player.id),writes:observation.writes});
-    fs.writeFileSync(path.join(out,engine+'-native-rounds.json'),JSON.stringify(rounds,null,2));
-    assert.equal(result?.error,undefined,'a native sync failure is not treated as eventual success');
-  }
+  const syncResult=await page.evaluate(()=>PSSync.syncNow('fixture-roster-pending-recovered'));
+  fs.writeFileSync(path.join(out,engine+'-native-round.json'),JSON.stringify(syncResult,null,2));
+  assert.equal(syncResult?.error,undefined,'a native sync failure is not treated as eventual success');
   const recovered=await snapshot('after-exact-promotion-and-native-save');
   assert.equal(recovered.barrier.ok,true);assert.equal(recovered.pending,false);assert.equal(recovered.durablePending.length,0);
   assert.ok(JSON.parse(recovered.main).players.some(p=>p.id===snapshotAfter.player.id));
   assert.equal(recovered.main,recovered.idb);
-  assert.ok(fx.db.has(WT+'|sq:'+snapshotAfter.player.id),'only the original native SQ path may confirm the row on the synthetic server');
-  assert.equal(JSON.parse(fx.db.get(WT+'|sq:'+snapshotAfter.player.id).v).name,name);
+  assert.deepEqual(JSON.parse(recovered.playerRow),snapshotAfter.player,'the original native SQ writer confirms the exact device row');
+  // New SQ keys enter sync's one-minute live-key inventory on a fresh scan.
+  // Reopening below exercises that real boundary without changing its clock.
   await page.reload({waitUntil:'domcontentloaded'});await ready(page);frame=await openPlayers();
   const again=await snapshot('after-completed-reload');assert.equal(again.player.id,snapshotAfter.player.id);assert.equal(again.rosterPending,false,'an IDB rescue cannot resurrect after native ACK cleanup');
+  assert.ok(fx.db.has(WT+'|sq:'+snapshotAfter.player.id),'the native fresh scan confirms the row on the synthetic server');
+  assert.equal(JSON.parse(fx.db.get(WT+'|sq:'+snapshotAfter.player.id).v).name,name);
 
   const bothName='합성 양쪽 실패 선수';await frame.evaluate(()=>{localStorage.setItem('fixture_pending_quota','1');localStorage.setItem('fixture_pending_idb_fail','1');});
   await addPlayer(bothName,'92');const both=await snapshot('both-stores-failed',bothName);

@@ -148,6 +148,41 @@ test('promotion refuses a conflicting local batch without deleting the IDB origi
   assert.equal(f.calls.del.length,0);assert.equal(f.idb.size,1);assert.equal(f.local.getItem(receipt.keys[0]),'conflicting local original');
 });
 
+test('a foreign LS original arriving during promotion peek is preserved instead of overwritten',async()=>{
+  const f=fixture(),b=f.bridge;await b.prepare();f.full();const receipt=stage(b,p('new','B'));await b.ready();f.full(false);
+  const key=receipt.keys[0],raw=f.idb.get(key),entered=gate(),release=gate();
+  assert.equal(f.local.getItem(key),null);
+  f.hooks.peek=async k=>{if(k===key){entered.resolve();await release.promise;}};
+  const promoting=b.promote();await entered.promise;f.ls.set(key,'foreign LS original written during peek');release.resolve();
+  await assert.rejects(promoting,/다릅니다/);assert.equal(f.local.getItem(key),'foreign LS original written during peek');
+  assert.equal(f.idb.get(key),raw);assert.equal(f.calls.del.length,0);assert.equal(b.hasRescue(),true);assert.throws(()=>b.ack(receipt));
+});
+
+for(const [name,refresh]of Object.entries({epoch:f=>f.epoch(),permissions:f=>f.permission('refreshed edit scope')}))test('explicit prepare refreshes a same-owner '+name+' only after exact IDB verification',async()=>{
+  const f=fixture(),b=f.bridge;await b.prepare();f.full();const receipt=stage(b,p('new','B'));await b.ready();
+  const original=f.idb.get(receipt.keys[0]),puts=f.calls.put.length;refresh(f);assert.equal(b.prepared(),false);
+  await b.prepare();await b.ready();assert.equal(b.prepared(),true);assert.equal(f.idb.get(receipt.keys[0]),original);
+  assert.equal(f.calls.put.length,puts,'scope refresh does not replace an immutable original');
+  f.full(false);await b.promote();assert.equal(b.hasRescue(),false);assert.equal(f.idb.size,0);assert.equal(b.ack(receipt),1);
+});
+
+test('permission downgrade preparation retains rescue originals without starting a write or promotion',async()=>{
+  const f=fixture(),b=f.bridge;await b.prepare();f.full();const receipt=stage(b,p('new','B'));await b.ready();
+  const key=receipt.keys[0],original=f.idb.get(key),puts=f.calls.put.length;
+  f.permission('read only');f.editable(false);await b.prepare();assert.equal(b.prepared(),true);assert.equal(b.overlay([])[0].name,'B');
+  await assert.rejects(b.promote());assert.throws(()=>b.ack(receipt));assert.equal(f.calls.put.length,puts);assert.equal(f.calls.del.length,0);
+  assert.equal(f.local.getItem(key),null);assert.equal(f.idb.get(key),original);assert.equal(b.hasRescue(),true);
+  f.permission('edit again');f.editable(true);await b.prepare();f.full(false);await b.promote();assert.equal(b.ack(receipt),1);
+});
+
+test('permission downgrade does not retry a previously failed IDB preservation write',async()=>{
+  const f=fixture(),b=f.bridge;await b.prepare();f.full();f.hooks.put=()=>{throw Error('IDB unavailable');};
+  stage(b,p('new','B'));await assert.rejects(b.ready(),/unavailable/);const puts=f.calls.put.length;
+  f.permission('read only');f.editable(false);f.hooks.put=null;await b.prepare();
+  assert.equal(b.prepared(),true);assert.equal(b.overlay([])[0].name,'B');assert.equal(f.calls.put.length,puts);assert.equal(f.idb.size,0);
+  await assert.rejects(b.ready(),/unavailable/);assert.equal(b.hasRescue(),true);
+});
+
 test('a later distinct C can be staged while promotion waits without permitting an early ACK',async()=>{
   const f=fixture(),b=f.bridge;await b.prepare();f.full();stage(b,p('new','B'));await b.ready();f.full(false);
   const entered=gate(),release=gate();f.hooks.del=async()=>{entered.resolve();await release.promise;};

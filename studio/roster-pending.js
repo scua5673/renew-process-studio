@@ -118,9 +118,10 @@
       var s=state(c);if(s.loading)return s.loading;
       s.hydrateError=null;s.preparedStamp=null;
       var work=snapshot(c,0).then(function(entries){
-        scope(c,false);
+        scope(c,false);var verified=Object.create(null);
         entries.forEach(function(pair){var rec=s.cache.get(pair[0]);
           if(rec&&rec.raw!==pair[1])throw error('두 저장소의 선수 변경 원문이 다릅니다','StorageConflictError');
+          verified[pair[0]]=true;
           if(!rec)s.cache.set(pair[0],{raw:pair[1],capture:null,durable:true,failure:null,sourceError:null,promotionStarted:false});
           else{rec.durable=true;rec.failure=null;}
         });
@@ -128,8 +129,11 @@
         native.read();scope(c,false);
         s.preparedStamp=c.stamp;
         s.cache.forEach(function(rec,k){
-          if(!rec.capture&&editable()===true)rec.capture=capture(c);
-          if(!rec.durable&&rec.failure){rec.capture=capture(c);persist(c,s,k,rec);}
+          // An explicit prepare verified these same owner-scoped originals
+          // again; a refreshed permission/epoch may authorize promotion now.
+          // Read-only preparation never starts a preservation write.
+          if(rec.durable&&verified[k]&&editable()===true)rec.capture=capture(c);
+          if(!rec.durable&&rec.failure&&editable()===true){rec.capture=capture(c);persist(c,s,k,rec);}
         });
         return true;
       }).catch(function(e){s.hydrateError=e;s.preparedStamp=null;throw e;});
@@ -174,7 +178,11 @@
           sourceCurrent(cap);
           if(raw===null&&rec.promotionStarted&&lv===rec.raw){current();s.cache.delete(k);return true;}
           if(raw!==rec.raw)throw error('보존된 선수 변경 원문을 확인하지 못했습니다','StorageConflictError');
-          if(lv===null)local.setItem(k,rec.raw);
+          // IndexedDB readback is asynchronous. Another tab may have filled
+          // this previously absent LS key while it was awaited.
+          var live=local.getItem(k);
+          if(live!==null&&live!==rec.raw)throw error('두 저장소의 선수 변경 원문이 다릅니다','StorageConflictError');
+          if(live===null)local.setItem(k,rec.raw);
           current();rec.promotionStarted=true;
           if(!disk||typeof disk.delIfValue!=='function')throw error('선수 변경 원문을 안전하게 옮길 수 없습니다','StorageError');
           return disk.delIfValue(k,rec.raw,current).then(function(changed){
