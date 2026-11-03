@@ -1,5 +1,7 @@
 # PROCESS STUDIO — 작업 기억
 
+- 3.252 «행 없는 선수 고쳐 저장»(`rosterHealRows`, 2.944)은 기기 묶음(`rosterOutbox().read().rows`)에 이미 있는 선수를 건너뛴다. 묶음을 못 읽으면 그 회차엔 고치지 않는다(10분 표시도 안 남긴다). 예전엔 동기화 회차가 올라갈 차례인 선수를 다시 저장해 같은 선수의 묶음(seq 2)이 생겼고, 3.250 명단 확인(`scoutStore.ready`)과 겹쳐 `roster-pending-quota` 가 8번 중 3번 떨어졌다(#760 · #761 CI 연속). 시험 `roster-projection-safety` «already queued».
+
 - 3.247 선수 추가 원문 — `roster-pending.js`는 native immutable batch의 첫 LS quota 때 같은 key/token/seq/raw만 IDB에 검증 보존한다. 수화 전·구출 원문이 남은 동안 MAIN/SQ/ACK는 진행하지 않으며 실패/pending을 유지한다. 재열기는 owner별 원문을 먼저 overlay하고, 같은 LS key의 exact 되읽기와 IDB 조건부 제거·부재 확인 뒤 기존 native outbox를 재개한다. async peek 뒤 LS를 다시 읽어 foreign 원문을 지키고, 명시 prepare의 exact 검증 뒤에만 새 epoch/권한을 재확인한다. 상세 docs/investigations/roster-pending-quota-recovery.md. 실제 지원 제보와 진단은 공개 소스에 남기지 않는다.
 - 3.251 — 다중 운동장 라인은 `board-multipitch.js`에서 `__getPitchSpec`의 실제 규격과 `__getPitchLines`·CSS 선색을 따른다. buildLines/buildGrid는 멀티피치도 즉시 갱신하며, 골망의 `data-goal-depth-cap`은 3D 확대 후에도 화면·영상에 동일 적용한다. 관련 검증과 미배포 상태는 docs/board-settings-pitch-lines.md.
 
@@ -116,6 +118,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 
 ## 배포
 - 가지 → PR(`staging`) → CI «Storage safety» → 합치면 testprocess.netlify.app. 승격 PR `staging` → `main` → processstudio.netlify.app.
+- 11/3(판 번호 없음) — Netlify 짓기는 약 18분에 끊긴다(3.246 · 3.250 «Command did not finish within the time limit», CI 는 23분). `verify-release.mjs` 는 합친 커밋의 트리가 부모와 같고 다른 부모가 그 부모의 조상이면 그 부모의 `release-gate` 초록으로 바로 통과한다(`sameTreeParents`). PR 은 기준 가지를 품은 채 · 승격은 그 PR CI 가 끝난 뒤 합친다.
 - Netlify 는 그 커밋의 `release-gate` 가 초록이 될 때까지 최대 **20분** 기다린다(`scripts/verify-release.mjs` `GATE_WAIT_MS` — 10/28 까지는 12분이었고, CI 가 실행기 줄서기로 17분 걸린 날 testprocess 3.201 게시가 실패했다). main 합친 뒤 실서버까지 보통 15분 안팎. 승격 전엔 다른 PR 의 CI 가 돌고 있지 않은지 본다 — 문서만 바꾼 PR 의 CI 라도 실행기를 나눠 쓴다.
 - 10/28(3.201) — `release-gate` 가 **빨강으로 끝나면** Netlify 짓기는 기다리지 않고 바로 실패한다(`verify-release.mjs` 의 `fail`). 흔들린 작업만 GitHub 에서 다시 돌려 gate 가 초록이 돼도 Netlify 는 스스로 다시 짓지 않는다 — 그 사이트는 Netlify «Trigger deploy» 또는 그 가지의 **새 실제 커밋**(빈 커밋 금지)으로만 다시 게시된다. 이날 WebKit `idp` 묶음이 세 번 연속 서로 다른 시험(`match-formats-8` · `match-large-schedule` · `review-training` 768 hit-test)에서 한 번씩 떨어졌다 — 같은 커밋이 바로 앞 실행에서 통과했으면 실행기 느림으로 보고 한 번만 재실행, 두 번째도 떨어지면 진짜로 본다.
 - 확인: `curl -s https://processstudio.netlify.app/sw.js | grep -o "process-3\.[0-9]*"` (testprocess 도 같이).

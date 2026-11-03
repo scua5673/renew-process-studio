@@ -165,6 +165,23 @@ test('a named main-only player without any row gets its server row on the next o
   assert.equal(h.server.get('sq:a').v,raw(p('a','Kept')),'other rows untouched');assert.equal(h.c.holdList().length,0);
   const writes=h.saves.length;assert.equal(await h.c.itemsApply('sync'),false);await new Promise(r=>setTimeout(r,5));assert.equal(h.saves.length,writes,'no repeated heal save once the row exists');
 });
+/* 3.252 — 기기 묶음이 이미 그 선수의 행을 쓸 차례면 다시 저장하지 않는다(같은 선수의 묶음이 하나 더 생겨
+   3.250 명단 확인과 겹쳤다 — 브라우저 roster-pending-quota 가 6번 중 2번 떨어졌다). */
+test('a main-only player already queued in the native roster outbox is not healed again',async()=>{
+  const h=fixture([p('a','Kept')]),orphan=p('orphan','Main only','B');
+  const main=h.main();main.players.push(orphan);main._items={build:'2.942',n:2};h.local.set(MAIN,raw(main));h.server.set(MAIN,{workspace_id:'team-a',k:MAIN,v:raw(main),cupd:12});
+  const m=h.c.meta();m.h[MAIN]=h.c.hash(raw(main));m.c[MAIN]=12;h.c.setMeta(m);
+  h.c.data=JSON.parse(raw(main));h.c.rosterRemember(h.c.data.players);
+  h.c.rosterOutbox().stage({players:h.c.data.players,basePlayers:[p('a','Kept')],changedIds:['orphan'],deletedIds:[]});
+  const queued=h.c.rosterOutbox().read();assert.deepEqual(queued.rows.map(r=>r.id),['orphan']);
+  h.c.rosterHealTried=Object.create(null);if(typeof h.c.setTimeout!=='function')h.c.setTimeout=setTimeout;
+  vm.runInContext(fn(scout,'rosterHealRows'),h.c);
+  const saves=h.saves.length;assert.equal(h.c.rosterHealRows(['orphan']),false,'nothing to heal — the outbox already owns this row');
+  await h.c.itemsApply('boot');await new Promise(r=>setTimeout(r,5));
+  assert.equal(h.saves.length,saves,'no second roster save for the queued player');
+  assert.deepEqual(h.c.rosterOutbox().read().keys,queued.keys,'no second native batch for the same player');
+  assert.equal(h.c.rosterHealTried.orphan,undefined,'the heal stays available once the outbox is done');
+});
 test('a main-only player with a remote row already present is not overwritten by the heal',async()=>{
   const h=fixture([p('a','Kept')]),orphan=p('orphan','Main only','B'),remote=p('orphan','Remote newer','A');
   const main=h.main();main.players.push(orphan);main._items={build:'2.942',n:2};h.local.set(MAIN,raw(main));

@@ -6596,7 +6596,10 @@ function rosterHealRows(ids){
   try{
     if(!ids||!ids.length||!scoutAutomaticWriteAllowed()||!rosterOutboxOwner())return false;
     var PI=itemsPI();if(!PI||!(PI.active&&PI.active()))return false;
-    var now=Date.now(),todo=ids.filter(function(id){var t=rosterHealTried[id];return !t||now-t>600000;});
+    /* 3.252 — 기기 묶음(ps_roster_pending_v1)이 이미 그 선수의 행을 쓸 차례면 다시 저장하지 않는다. 다시 저장하면 같은 선수의 묶음이 하나 더 생기고
+       3.250 의 명단 확인(scoutStore.ready)과 겹쳐 «확인이 문서를 다시 썼다»·«공유 저장 확인 실패»가 났다(roster-pending-quota 6번 중 2번). 묶음을 못 읽으면 이번엔 건너뛴다. */
+    var queued=Object.create(null);try{rosterOutbox().read().rows.forEach(function(r){queued[String(r.id)]=1;});}catch(_){return false;}
+    var now=Date.now(),todo=ids.filter(function(id){var t=rosterHealTried[id];return !queued[id]&&(!t||now-t>600000);});
     if(!todo.length)return false;
     todo.forEach(function(id){rosterHealTried[id]=now;});
     Promise.resolve().then(function(){   /* 반영을 마친 뒤 — 이 회차의 기준 기록(rosterRemember)보다 나중에 */
