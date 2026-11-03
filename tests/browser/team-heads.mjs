@@ -81,6 +81,13 @@ try{
   await f.waitForFunction(()=>document.querySelector('#matchRecord .mrec-ln')?.textContent.replace(/\s+/g,'')==='공식전1승1무0패승률50%·6득4실·+2'&&window.__psMatchLockApi.typed().length===0,null,{timeout:8000});
   const stored=await f.evaluate(async ids=>{await psFlushPendingReady();const local=JSON.parse(localStorage.getItem(MATCH_KEY)),idb=JSON.parse((await storage.peek(MATCH_KEY)).value);const scores=o=>ids.map(id=>{const m=o.matches.find(m=>m.id===id);return [m.scoreUs,m.scoreThem];});return {local:scores(local),idb:scores(idb),pending:psHasPending()};},scoreIds);
   assert.deepEqual(stored,{local:[['4','2'],['2','2']],idb:[['4','2'],['2','2']],pending:false});
+  // A natively accepted score must still finish when its row is hidden before
+  // the capture microtask gets a chance to observe that acceptance.
+  await f.waitForFunction(()=>!matchDocPending()&&parent.PSSync.state().kind==='ok'&&!parent.PSSync.pending().count,null,{timeout:30000});
+  assert.equal(await f.evaluate(id=>{const el=[...document.querySelectorAll('#matchList [data-msc="us"]')].find(el=>el.dataset.mscid===id);el.value='6';el.dispatchEvent(new Event('input',{bubbles:true}));const accepted=matchLoad().matches.find(m=>m.id===id).scoreUs==='6';matchOpen(id);return accepted;},scoreIds[0]),true,'native handler accepts before immediate detail navigation');
+  await f.waitForFunction(()=>matchNav==='one'&&window.__psMatchLockApi.typed().length===0&&!psHasPending(),null,{timeout:8000});
+  assert.deepEqual(await f.evaluate(async id=>{await psFlushPendingReady();return [JSON.parse(localStorage.getItem(MATCH_KEY)),JSON.parse((await storage.peek(MATCH_KEY)).value)].map(o=>o.matches.find(m=>m.id===id).scoreUs);},scoreIds[0]),['6','6']);
+  await f.evaluate(()=>matchBackToList());
   // 더보기 → 열기 · 삭제. 삭제는 확인창을 거친다(취소하면 그대로)
   const more=f.locator('#matchList .mr-more').first();if(phone)await more.tap();else await more.click();
   await f.waitForSelector('#psPickPop');

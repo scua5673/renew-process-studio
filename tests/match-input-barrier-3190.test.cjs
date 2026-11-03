@@ -18,6 +18,7 @@ function fixture(){
     psFlushPending(){calls.flush++;return queued;},
     psFlushPendingReady(...args){calls.ready++;calls.receiver=this;calls.args=args;const next=JSON.parse(JSON.stringify(models)),had=queued;queued=false;writing=had;
       return Promise.resolve(hold&&hold.promise).then(()=>{if(nativeError){if(had)queued=true;writing=false;w.matchSayState('native failed',true);throw nativeError;}if(had)Object.assign(durable,next);writing=false;if(w.psHasPending()){const e=Error('native pending remains');e.psCode='match_pending_left';throw e;}return nativeValue;});},
+    matchSetScore(id,side,v){if(!w.matchCanEdit())return;models[id][side==='them'?'scoreThem':'scoreUs']=v;w.matchQueueSave();},
     renderMatch(){field.value=models[mid]?.reviewGood||'';}
   };
   const api=L.install(w);
@@ -198,7 +199,6 @@ function scoreFixture(){
   const h=fixture(),fields=[];
   h.models.a.scoreUs='';h.models.a.scoreThem='';h.models.b.scoreUs='';h.models.b.scoreThem='';
   h.doc.querySelectorAll=()=>fields;
-  h.w.matchSetScore=(mid,side,v)=>{if(!h.w.matchCanEdit())return;h.models[mid][side==='them'?'scoreThem':'scoreUs']=v;h.w.matchQueueSave();};
   h.score=(mid,side,v)=>{let el=fields.find(e=>e.dataset.mscid===mid&&e.dataset.msc===side);if(!el){el={tagName:'INPUT',type:'number',dataset:{mscid:mid,msc:side},isConnected:true,disabled:false,matches:s=>s.includes('[data-msc]'),closest:s=>s==='#matchList'?{}:s==='.mrow'?{}:null,getClientRects:()=>[{}],getAttribute:()=>null};fields.push(el);}el.value=v;h.fire('input',el);h.w.matchSetScore(mid,side,v);return el;};
   return h;
 }
@@ -220,4 +220,8 @@ test('another visible list row entered during a native flight resumes without dr
   const h=scoreFixture(),g=gate();h.pending(false);h.score('a','us','3');await turn();h.hold(g);const first=h.w.psFlushPendingReady();first.catch(()=>{});
   h.pending(true);h.score('b','them','2');await turn();g.resolve();await assert.rejects(first,e=>e.psCode==='match_pending_left');assert.equal(h.durable.a.scoreUs,'3');assert.equal(h.durable.b.scoreThem,'');
   h.hold(null);h.pending(false);for(let i=0;i<4;i++)await h.timersOnce();assert.equal(h.durable.a.scoreUs,'3');assert.equal(h.durable.b.scoreThem,'2');assert.equal(h.w.psHasPending(),false);
+});
+
+test('a natively accepted list score can verify after immediate navigation hides its row',async()=>{
+  const h=scoreFixture();h.pending(false);const el=h.score('b','us','6');el.getClientRects=()=>[];await turn();await h.w.psFlushPendingReady();assert.equal(h.durable.b.scoreUs,'6');assert.equal(h.w.psHasPending(),false);
 });

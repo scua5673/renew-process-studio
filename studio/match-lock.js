@@ -230,6 +230,17 @@
       result.then(function () { if (flight === result) flight = null; schedule(); }, function () { if (flight === result) flight = null; schedule(); });
       return result;
     };
+    // The native list handler runs after the capture listener. Record its
+    // acceptance synchronously: an immediate detail navigation can hide the
+    // row before the capture microtask, but it cannot undo an accepted write.
+    // Acceptance still needs the ordinary native durable receipt to clear.
+    var nativeScore = win.matchSetScore;
+    if (typeof nativeScore === 'function') win.matchSetScore = function (id, side, v) {
+      var result = nativeScore.apply(this, arguments), o = owner(), field = side === 'them' ? 'scoreThem' : 'scoreUs';
+      var e = typed[JSON.stringify([o, String(id || ''), field])];
+      if (e && e.list && e.side === side && e.v === scoreValue(v) && allowed(e) && value(model(e.mid), field) === e.v) e.accepted = true;
+      return result;
+    };
     function lifecycle() { drain(); }
     win.addEventListener('pagehide', lifecycle, true);
     doc.addEventListener('visibilitychange', function () { if (doc.visibilityState === 'hidden') lifecycle(); }, true);
