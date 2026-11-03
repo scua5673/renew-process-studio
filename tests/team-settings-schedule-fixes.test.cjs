@@ -51,11 +51,28 @@ test('OFF sessions are excluded from weekly counts, including a selected group',
  const day={board:{sched:'훈련'},groupKinds:{A:'OFF',B:'훈련'},trainings:[{grp:['A']},{grp:['B']}]};
  assert.equal(c.daySessionCount(day),1);c.__schedGrp='A';assert.equal(c.daySessionCount(day),0);c.__schedGrp='B';assert.equal(c.daySessionCount(day),1);assert.equal(day.trainings.length,2);
 });
-test('ordinary roster persistence cannot overwrite newer branding',()=>{
- let stored;const c=audienceContext({KEY:'main',scoutStore:{get:()=>({meta:{color:'#abcdef',headline:'latest'}}),set(k,v){stored=v;return true;}},rosterRemember(){},rosterSaveMirrors:()=>true});
- vm.runInContext(part(scout,'function rosterPersist(','function rosterProject('),c);
+test('ordinary roster persistence cannot overwrite newer branding',async()=>{
+ const key='scout_tool_v1',local=new Map(),disk=new Map(),tracked=[];let stored,quota=false;
+ const localStorage={get length(){return local.size;},key:i=>[...local.keys()][i]??null,getItem:k=>local.get(k)??null,
+  setItem(k,v){if(quota&&k.startsWith('ps_roster_pending_v1:'))throw Object.assign(Error('fixture roster batch quota'),{name:'QuotaExceededError'});local.set(k,String(v));},removeItem:k=>local.delete(k)};
+ const c=audienceContext({KEY:key,localStorage,storage:{conditionalGuardVersion:1,keys:async()=>[...disk.keys()],peek:async k=>disk.has(k)?{value:disk.get(k)}:null,
+  async setIfValues(k,expected,raw,checks,current){current();if((disk.get(k)??null)!==expected)return false;disk.set(k,raw);current();return true;}},
+  PSRosterOutbox:require('../studio/roster-outbox.js'),PSRosterPending:require('../studio/roster-pending.js'),rosterOutboxClient:null,rosterRescueWaiting:false,
+  rosterOutboxOwner:()=>({uid:'fixture-coach',wid:'fixture-team'}),teamSaveOwner:()=> 'fixture-owner',scoutAutomaticWriteAllowed:()=>true,psSync:()=>({activeWsObj:()=>({role:'owner'})}),
+  teamSaves:{track(k,work){tracked.push({k,work});Promise.resolve(work).catch(()=>{});}},
+  scoutStore:{get:()=>({meta:{color:'#abcdef',headline:'latest'}}),set(k,v){stored=v;localStorage.setItem(k,JSON.stringify(v));return true;}},rosterRemember(){},rosterSaveMirrors:()=>true});
+ c.window=c;
+ vm.runInContext(part(scout,'function rosterOutbox(){','function rosterPendingRecover(){')+'\n'+part(scout,'function rosterPersist(','function rosterProject('),c);
+ const outbox=c.rosterOutbox();await outbox.prepare();assert.equal(outbox.prepared(),true);
  const main={players:[],meta:{emblem:'stale-logo',color:'#000000',headline:'old',formation:'4-4-2'}};
  assert.equal(c.rosterPersist(main,{skipItems:true}),true);assert.equal(stored.meta.emblem,undefined);assert.equal(stored.meta.color,'#abcdef');assert.equal(stored.meta.headline,'latest');assert.equal(stored.meta.formation,'4-4-2');
+ // The real new guard must still prevent this boundary from writing MAIN
+ // while an actual quota-rejected native batch awaits exact promotion.
+ const original=local.get(key);quota=true;
+ outbox.stage({players:[{id:'new-player',name:'Retained original',type:'ours'}],basePlayers:[],changedIds:['new-player'],deletedIds:[]});
+ assert.equal(c.rosterPersist({players:[],meta:{color:'stale'}},{skipItems:true}),false);
+ assert.equal(local.get(key),original);assert.equal(stored,main);assert.equal(outbox.hasRescue(),true);
+ assert.equal(tracked.length,1);assert.equal(tracked[0].k,key);await assert.rejects(tracked[0].work,/batch quota/);assert.equal(disk.size,1);
 });
 test('adding group training keeps global OFF and assigns the intended group before saving',()=>{
  const day={off:true,board:{sched:'OFF'},trainings:[]};let atSave;
