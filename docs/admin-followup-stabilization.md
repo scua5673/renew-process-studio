@@ -2,17 +2,20 @@
 
 2026-11-03 클라우드 작업. 실제 앱 저장소의 staging에서 분리한 관리자 전용 변경이다.
 
-- 선수 원문 보존은 [PR #751](https://github.com/scua5673/renew-process-studio/pull/751)의 기존 담당에 의존한다. 그 저장 경로·시험·판 번호를 수정하지 않는다.
+- [PR #751](https://github.com/scua5673/renew-process-studio/pull/751)은 3.247로 staging에 병합됐다. 해당 선수 원문 보존·팀 메뉴 통합 코드를 이 가지에 병합해 보존한다. 저장 경로를 중복 구현하지 않는다.
 - 기존 후속관리 모델의 담당자·다음 확인일·배포 버전·메모와 CAS RPC를 사용한다. 운영 DB와 제보 상태/답변은 쓰지 않는다.
 - 공개 기록에는 일반화한 원인, 합성 재현, 검증 결과만 남긴다.
-- 합치기 전 배포 담당 한 명이 최신 staging 및 #751과 통합하고 공통 판 번호를 정해야 한다. 이 가지는 독립 판을 선점하지 않으며 release guard를 우회하지 않는다.
+- 최신 staging을 비강제 병합한다. 별도 PR #755가 쓰는 3.248과 겹치지 않도록 이 관리자 변경은 3.249로 맞춘다. 기존 release guard와 필수 검사를 유지하며 운영 승격은 별도 사용자 확인 뒤에만 한다.
 
-구현·검증 결과와 운영 실행 목록은 이 문서에 이어 기록한다.
+753을 계속 사용하는 통합·검증 기록이다. 새 PR이나 앱 기능은 추가하지 않는다.
 
 ## 확인한 현재 상태
 
-- 기준: `staging e576985f`(3.246), `main e9d2babc`(3.244). 소스의 판이며 실제 게시 성공을 뜻하지 않는다. 이 작업은 운영 사이트/관리자에 로그인하지 않았다.
-- 공개 열린 이슈 검색 결과는 없었다. 열린 PR #751·#739·#737·#625를 읽었다. #751 head `6bb2e9d7`의 [CI 41576445455](https://github.com/scua5673/renew-process-studio/actions/runs/41576445455)는 실패: Chromium storage, WebKit entry/selection, release-gate. 재실행하거나 원인을 단정하지 않았다.
+- 재개 기준: `staging 198afbe1`(3.247, #751 병합), `main f0e3b8ca`(3.246, #754 승격). 이들은 소스 판이며 실제 게시 성공을 뜻하지 않는다. 운영 사이트/관리자에 로그인하거나 운영 자료를 수정하지 않았다.
+- #751의 최종 head `9022fbc6`는 [CI 41579412971](https://github.com/scua5673/renew-process-studio/actions/runs/41579412971)에서 성공했고 병합됐다. 예전 `6bb2e9d7`의 실패는 과거 증거로 보존하며 현재 의존성 차단 사유로 쓰지 않는다.
+- 753의 최초 head `95ac88c1`은 [CI 41579666140](https://github.com/scua5673/renew-process-studio/actions/runs/41579666140) 필수 20개 전부 success, Netlify preview ready를 재확인했다. 이전의 실행 대기 안내는 종료된 과거 상태다.
+- 재개 시 공개 열린 PR은 #755·#753·#739·#737·#625였다. #739의 메뉴 수정은 #751 통합판을 기준으로 보존하며 옛 가지를 따로 합치지 않는다. #755의 보드 저장 전환 후속 수정은 담당이 진행하는 별도 작업이다.
+- staging `198afbe1` 자체 [CI 41584046717](https://github.com/scua5673/renew-process-studio/actions/runs/41584046717)는 Chromium storage/entry, WebKit identity와 gate에서 실패했다. 로그의 선수 보관 관측, 모바일 메뉴 진입, 보드 전환 장벽을 읽었다. 이 실패를 관리자 변경 원인으로 단정하거나 검사를 낮추지 않는다. 해당 경로의 후속 PR #755를 임의 수정하지 않는다.
 - #625의 별도 시험 backend는 여전히 대기다. testprocess/PR preview를 격리 DB로 간주하지 않는다. 모든 브라우저 검증은 로컬 `admin.html`과 메모리 응답만 사용하며 외부 요청을 가로챈다.
 - 앱 저장소에 AGENTS.md는 없었다. `CLAUDE.md`, `docs/OPERATIONS.md`, CI, PR 템플릿, `docs/device-checklist.md`, 기존 관리자 코드·SQL을 확인했다.
 
@@ -34,16 +37,16 @@
 
 | 행동 계약 | 대조한 기존 검증 | 다음 판단 |
 |---|---|---|
-| 명단 추가/편집 → 저장 → 종료 → 재접속 → 다른 기기 | `roster-main-save`, `roster-storage-failure-3144`, #751의 quota 시험 | #751 담당의 원문·서버 확인 및 실제 사용자 재열기 필요 |
+| 명단 추가/편집 → 저장 → 종료 → 재접속 → 다른 기기 | `roster-main-save`, `roster-storage-failure-3144`, #751의 quota 시험 | #751의 합성 원문·서버 검증은 통합판에 반영됨. 실제 사용자의 기존 자료 복구·재열기는 별도 확인 필요 |
 | 큰 일정·용량 부족이 경기 편집까지 막는 경로 | `match-wait-schedule-quota`, `match-mirror-quota-recovery` | 운영 반영 방어의 회귀 유지. 다른 실패까지 동일 원인으로 합치지 않음 |
 | 가져오기에서 원본·모든 페이지·장면 보존 | `board-import-safe-3123`, `board-vault-pages-3137`, `gamemodel-attach-pages`, `gamemodel-vault-import` | 원본 보존과 이전 자료 복구는 별도. 이미 있는 안전 경로를 다시 구현하지 않음 |
-| 입력 중 재수신·한글 조합·편집 종료 | `board-ime-enter`, `roster-projection`, `root-child-save-state` | 실제 입력과 파생 재그리기 구분 유지. #751 변경 파일을 이 가지에서 수정하지 않음 |
+| 입력 중 재수신·한글 조합·편집 종료 | `board-ime-enter`, `roster-projection`, `root-child-save-state` | 실제 입력과 파생 재그리기 구분 유지. #751의 입력/권한/저장 방어 로직을 그대로 보존 |
 | 폴더 이동·숨김·선택 목록 갱신·저장 대상 | `vault-folder-move`, `vault-folder-refresh`, `schedule-library-refresh`, `board-vault-save` | 안정된 식별자·저장/조회 계약 유지. 자동 복구 불가/원문 미확인은 후속 기록에 남김 |
 | 로고·팀 설정·국면별 첨부·다른 기기 재열기 | `team-settings-schedule-fixes`, `training-context`, `gamemodel-anim` | 늦은 이미지/컨텍스트 누출의 기존 회귀 유지. 현 사용자의 복구 완료로 확대하지 않음 |
 
 우선순위는 세 개만 둔다.
 
-1. **자료 보존**: #751 기존 통합 담당 한 명. 실패 CI와 기존 복구 미확인을 보존하고 추가·저장·재접속·서버 반영을 끝까지 확인한다. 이 PR은 의존성이다.
+1. **자료 보존**: #751의 완료된 원문 보존·메뉴 수정을 병합해 유지하고, 이 새 head의 CI로 다시 확인한다. 원 실패 이력과 고객 자료 복구 미확인은 유지한다. 보드 전환의 추가 수정은 #755 기존 담당 한 명의 작업을 따른다.
 2. **후속 확인 누락 방지**: #753 작성자 한 명이 이 가지의 관리자 연결·저장 응답 검증을 구현/검증한다. 기술 수정·게시·기기 적용·사용자 해결·복구를 기존 메모에서 분리한다.
 3. **장기 대기·실기기 종료 확인**: 기존 운영 통합 담당 한 명이 2026-11-04 오전에 이 목록을 재검토하고, 실기기 확인 가능한 사용자와 다음 확인일을 정한다. 계정/기기 원문은 공개 PR에 쓰지 않는다. 이 날짜는 운영 기록에 자동 예약하거나 고객에게 약속한 날짜가 아니다.
 
@@ -76,19 +79,30 @@
 
 ## 재현·검증
 
-- Node 22.23.4, lockfile 의존성 설치. 단위 5,446/5,446 통과. 처음 전체 실행은 함수명/판 고정에 묶인 기존 관리자 시험 2개가 실패했다. 함수 진입점은 보존하고 자산 판 고정은 일반 cache pin 검사로 바꾼 뒤 전체 통과했다. 실제 사용자 데이터나 기대값을 완화하지 않았다.
-- 신규 저장 회귀는 원 코드에서 실패한 뒤 수정 후 통과. 잘못된 메모/담당/분류/상태/배포 버전/확인일/version, 같은 시점의 시간대 표현, 전송 중 새 입력, 이전 조회·다른 계정·409·응답 불명·권한 실패를 검사한다.
-- Chromium 153.0.8010.0 headless(별도 실행 파일) + Playwright 1.62.1, Node 22.23.4: `tests/browser/admin-operations.mjs` 390·1024·1440px 모두 통과. 기존 기록 생성·재열기·동시 편집, 새 연결 초안·중복 방지·잘못된 응답·권한 거부 후 입력 보존, 고객 메시지/접수 상태 변경 없음. 모든 Supabase 호출은 메모리 fixture로 가로채고 다른 외부 출처는 차단한다.
-- 표준 Chromium 다운로드는 손상된 ZIP으로 설치 실패하여 보조 Chromium을 사용했다. 표준 CI 브라우저와 같은 실행 파일이라고 주장하지 않는다. WebKit 26.5 실행 파일은 공식 대체 다운로드로 설치됐지만 GTK/GStreamer 등 시스템 라이브러리가 없었다. `playwright install-deps webkit`은 환경의 setgroups/setuid 제한으로 실패했다. 로컬 WebKit은 실행 미완료이며 기존 CI의 WebKit 검사를 그대로 유지한다. 실제 iPad Safari 설치 앱·두 실기기 동기화·장시간 종료는 기기 없음, 미검증이다.
-- `npm run test:sql` 전체(모든 migration local-test와 SQL 회귀)는 Node 22에서 종료 코드 0으로 통과했다. PR의 필수 CI 결과는 별도 실행에서 확인한다. 운영 SQL 실행·마이그레이션 추가는 없다. 기존 RPC·권한·변경 이력을 그대로 사용하므로 새 스키마가 필요하지 않다.
-- 패키지 생성: 1,955 runtime files. 공통 PWA 판은 staging의 3.246 그대로. 이 결과는 배포 승인/운영 적용 완료가 아니다.
+### 관리자 원 수정
+
+원 코드에서 잘못된 응답의 성공 표시를 재현한 뒤 수정했다. 기존 95ac88c1에서는 Node 22 단위 5,446개·전체 SQL, Chromium 보조 실행 파일의 관리자 흐름을 통과했고, 이후 공식 CI의 Chromium/WebKit 18묶음·regression·release-gate 20개 모두 성공했다. 첫 단위 실행의 기존 함수명/자산 판 고정 실패 2개도 숨기지 않았다. 함수 진입점을 보존하고 자산 검사는 일반 cache pin 검사로 바꿨다.
+
+잘못된 메모/담당/분류/상태/배포 버전/확인일/version, 시간대가 다른 동일 시점, 전송 중 입력, 늦은 조회·다른 계정·409·응답 불명·권한 실패를 검사한다. 기존 닫힘 기록은 그대로다.
+
+### 최신 통합판 검증
+
+- Node 22.23.4·lockfile 의존성으로 전체 단위 5,504/5,504 통과. SQL의 migration local-test 27개와 SQL 회귀 전체도 종료 코드 0으로 통과했다.
+- Playwright 1.62.1 + 보조 Chromium 153.0.8010.0: `tests/browser/admin-operations.mjs` 390·1024·1440px 전부 통과. 합성 제보에서 기존 후속 기록 생성/재열기/동시 편집/잘못된 응답/권한 거부/입력 보존을 확인한다. 실제 Supabase 호출은 메모리 fixture로 가로채고 다른 외부 출처를 차단한다.
+- 새 head는 기존 `.github/workflows/storage-safety.yml` 그대로 Chromium/WebKit 18묶음 + regression + release-gate 20개를 모두 요구한다. 이전 head의 성공을 새 head의 성공으로 대체하지 않는다. 원 실행 결과·새 head·run 링크와 preview 결과는 [PR753 Checks](https://github.com/scua5673/renew-process-studio/pull/753/checks) 및 PR 본문에 남긴다.
+- 로컬 WebKit은 공식 실행 파일 다운로드 후 GTK/GStreamer 의존성 설치가 setgroups/setuid 환경 제한으로 막혀 실행 미완료다. CI WebKit 결과와 별개로 명시한다. 실제 iPad Safari 설치 앱·장시간 종료·실기기 간 동기화는 기기 없음, 미검증이다.
+- 판만 바꾸기 전 선수 명단·pending·동기화·메뉴 시험과 런타임을 staging 원문과 비교했다. app/sw는 release 식별자를 제외하면 같은 내용이다. 753의 matchingAck·후속 연결 구현은 최초 성공 head와 동일하다.
+- `git diff --check`, 문법 검사, runtime package(1,956파일)와 release guard의 3.247 → 3.249 허용을 확인했다. 공통 CACHE/PS_BUILD/일곱 자산 핀 및 관리자 두 JS 핀을 3.249로 맞춘다. 관리자 전용 변경이라 사용자 업데이트 안내는 추가하지 않는다.
+- 운영 SQL·마이그레이션·실계정 localStorage/IDB·제보 접수 상태/답변 변경은 없다. 기존 note/CAS/RLS/변경 이력을 사용한다.
 
 ## 통합·되돌리기
 
-PR #751과 변경 파일이 겹치지 않는다. `studio/app.html`, `sw.js`, release notes, 명단/저장/동기화 경로, 공통 browser runner는 수정하지 않았다.
+753의 원 head와 최신 staging을 부모로 하는 병합으로 이력을 유지한다. 로컬 3-way 병합 계산은 충돌 표시 없이 완료됐다. GitHub의 이전 mergeable 표시만 믿지 않고 실제 병합과 원문 비교를 수행했다. 강제 push·rebase·다른 PR/브랜치 수정은 하지 않는다.
 
-이 PR은 **draft**로 유지한다. 기존 통합 담당이 최신 staging·#751을 재확인하고 공통 CACHE/PS_BUILD/자산 핀을 한 번에 정한 뒤 필수 CI와 게시 검증을 수행한다. 이 가지가 같은 판으로 단독 게시되면 기존 release guard가 거부해야 하며 guard를 우회하지 않는다. 관리자 전용 변경이므로 사용자 업데이트 안내는 추가하지 않았다. `admin.html`이 읽는 두 관리자 JS의 캐시 핀만 갱신했다.
+선수 저장·메뉴·훈련 도구 코드는 최신 staging의 구현과 시험을 그대로 가져온다. 753이 추가하는 제품 변경은 관리자 후속 연결·정확한 저장 응답 확인뿐이다. app/sw는 배포 번호만 갱신한다. 미병합 #755가 사용하는 3.248의 번호/구현을 이 가지에서 덮지 않는다. #755가 staging에 합쳐지면 그 통합 결과를 기준으로 다시 확인한다.
 
-되돌리기는 이 PR의 관리자 파일·시험 변경 커밋을 되돌리는 PR로 한다. DB/고객 자료를 되돌릴 필요가 없고 새 메모도 기존 서버/옛 화면에서 그대로 읽을 수 있다. 게시 후 원복은 통합 담당이 기존 Netlify 배포 복원 절차와 공통 판 정책으로 수행한다. 실계정 저장소 삭제·고객 데이터 덮어쓰기로 원복하지 않는다.
+새 head의 필수 CI를 끝까지 확인한 뒤 검토 준비를 완료한다. 운영 승격/실계정 기기 확인/고객 자료 복구 완료는 이 PR의 자동 검사와 별도이며, 사용자 확인 없이 병합·승격·운영 배포하지 않는다.
 
-검토 PR: [#753](https://github.com/scua5673/renew-process-studio/pull/753). 실기기 없음·공통 판 통합 전이므로 자동 병합/운영 배포는 하지 않는다.
+원복은 **staging 대비 753이 추가한 관리자 변경**을 되돌리는 PR로 한다. 최신 staging을 포함한 병합 커밋을 통째로 역병합해 선수 복구·메뉴 수정을 되돌리지 않는다. 필요한 배포 번호는 현재 판보다 높은 번호로 다시 맞추고 기존 검사를 수행한다. DB/고객 자료를 되돌릴 필요가 없고 새 메모도 옛 화면에서 그대로 읽힌다. 게시 후 원복은 기존 Netlify 배포 복원 절차와 공통 판 정책을 따른다.
+
+검토 PR: [#753](https://github.com/scua5673/renew-process-studio/pull/753). 새 head/CI/preview의 최종 상태는 PR 본문과 Checks에서 함께 확인한다.

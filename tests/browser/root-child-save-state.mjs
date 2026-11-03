@@ -88,9 +88,16 @@ try{
  // Exercise the normal edit/CAS ACK; never bump the server version or seed a
  // receipt merely to obtain a reassuring label.
  await page.evaluate(()=>PSSync.syncNow('synthetic-normal-cas-confirmation'));
- await until(async()=>await frame.evaluate(key=>{const raw=localStorage.getItem(key);return typeof raw==='string'&&PSSaveState.get('schedule')==='saved'&&!psHasPending()&&parent.PSSync.confirmedValue(key,raw)===true;},KEY),'actual normal-CAS exact schedule ACK');
+ // Capture the exact accepted observation. A later automatic round correctly
+ // returns unconfirmed while busy, even when both durable copies are unchanged.
+ let scheduleSaved;
+ await until(async()=>{
+  const observed=await frame.evaluate(async key=>{const durable=(await storage.peek(key))?.value??null,local=localStorage.getItem(key);return {local,durable,state:PSSaveState.get('schedule'),pending:psHasPending(),confirmed:parent.PSSync.confirmedValue(key,local)};},KEY);
+  if(typeof observed.local!=='string'||observed.local!==observed.durable||observed.state!=='saved'||observed.pending||observed.confirmed!==true)return false;
+  scheduleSaved=observed;return true;
+ },'actual normal-CAS exact schedule ACK');
  await page.evaluate(()=>window.dispatchEvent(new Event('ps-sync-state')));
- const scheduleSaved=await frame.evaluate(async key=>{const local=localStorage.getItem(key),durable=(await storage.peek(key))?.value??null;return {local,durable,state:PSSaveState.get('schedule'),pending:psHasPending(),confirmed:parent.PSSync.confirmedValue(key,local)};},KEY),localRaw=scheduleSaved.local,serverRaw=fx.db.get(WT+'|'+KEY).v;
+ const localRaw=scheduleSaved.local,serverRaw=fx.db.get(WT+'|'+KEY).v;
  assert.equal(localRaw,scheduleSaved.durable);assert.equal(localRaw,serverRaw);assert.equal(scheduleSaved.state,'saved');assert.equal(scheduleSaved.pending,false);assert.equal(scheduleSaved.confirmed,true);
  const scheduleScope={state:scheduleSaved.state,pending:scheduleSaved.pending,confirmed:scheduleSaved.confirmed,localHash:hash(localRaw),idbHash:hash(scheduleSaved.durable),serverHash:hash(serverRaw)};
  const team=page.frames().find(f=>/\/studio\/scout\.html/.test(f.url()));assert.ok(team,'The real team-navigation frame remains loaded');

@@ -4,15 +4,15 @@ const html=fs.readFileSync(path.join(__dirname,'../studio/app.html'),'utf8');
 const start=html.indexOf('function sendTeamView(fr,b){'),end=html.indexOf('function activeWorkspace()',start);
 assert.ok(start>=0&&end>start);
 function harness(){
- const timers=[],loads=[],views=[],clicks=[];
- const frame={__psReady:false,contentDocument:{readyState:'loading',querySelector(selector){return {classList:{contains:()=>false},click(){clicks.push(selector);}};}},
+ const timers=[],loads=[],views=[],clicks=[];let shown='home';
+ const frame={__psReady:false,contentDocument:{readyState:'loading',querySelector(selector){if(selector==='.view.on')return shown?{id:shown+'View'}:null;return {classList:{contains:()=>false},click(){clicks.push(selector);}};}},
   contentWindow:{location:{href:'https://fixture.test/studio/scout.html'},postMessage(message){views.push(message.view);}},addEventListener(type,callback){assert.equal(type,'load');loads.push(callback);}};
  const c=vm.createContext({currentTeamKey:'today',fScout:frame,document:{body:{dataset:{psApp:'scout'}}},showApp(){},psSchedPhone:()=>false,psSchedOpenMode:mode=>mode,setTimeout(callback,delay){timers.push({callback,delay});}});
  vm.runInContext(html.slice(start,end),c);
  const followStart=html.indexOf("} else if(d.source==='scout' && d.type==='teamViewNow'){")+"} else if(d.source==='scout' && d.type==='teamViewNow'){".length,followEnd=html.indexOf("} else if(d.source==='scout' && d.type==='openGameModel')",followStart);
  assert.ok(followEnd>followStart);vm.runInContext('function followTeamView(d){'+html.slice(followStart,followEnd)+'}',c);
  return {frame,views,clicks,
-  notify(view){c.followTeamView({view});return c.currentTeamKey;},
+  notify(view,current=view){shown=current;c.followTeamView({view});return c.currentTeamKey;},
   select(key,view,mode){c.currentTeamKey=key;c.sendTeamView(frame,{dataset:{teamView:view,processMode:mode}});},
   leave(){c.currentTeamKey='';},
   ready(){frame.__psReady=true;frame.contentDocument.readyState='complete';},
@@ -49,6 +49,17 @@ test('frame intent is available before its data initialization completes',()=>{
 test('the initial child view cannot cancel a pending selection; later child navigation still follows',()=>{
  const h=harness();h.select('players','team');assert.equal(h.notify('home'),'players');h.ready();h.load();h.flush();
  assert.deepEqual(h.views,['team']);assert.equal(h.notify('team'),'players');assert.equal(h.notify('avail'),'avail');
+});
+test('queued old child notifications cannot replace the current scouting selection',()=>{
+ const h=harness();h.ready();h.select('scouting','players');h.flush();
+ assert.equal(h.notify('home','players'),'scouting');
+ assert.equal(h.notify('team','players'),'scouting');
+ assert.equal(h.notify('players'),'scouting');
+ assert.equal(h.notify('avail'),'avail','current child navigation still follows');
+});
+test('a child notification without a current visible view does not change selection',()=>{
+ const h=harness();h.ready();h.select('scouting','players');h.flush();
+ assert.equal(h.notify('home',null),'scouting');
 });
 test('scout initialization preserves the frame intent, standalone default and attrs deep link',()=>{
  const scout=fs.readFileSync(path.join(__dirname,'../studio/scout.html'),'utf8');

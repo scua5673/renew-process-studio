@@ -8189,7 +8189,11 @@ function chip(msg,onClick){
 
 /* ── 워크스페이스 전환/생성/초대/합류 ── */
 var switching=false, switchingAt=0;   /* 2.258 — 언제부터 전환 중인지 */
-var switchGen=0;   /* 2.338 — 전환 세대. 새 시도·타임아웃이 올리면 옛 체인은 다음 문턱(staleStop)에서 스스로 멈춘다 */
+var switchGen=0;   /* A newer attempt or timeout fences the old chain at staleStop. */
+var workspaceSourceSuspended=null;
+/* Read-only proof for a frame whose already-flushed source is suspended by
+   this transition. It never authorizes a write or a target-prefix read. */
+function workspaceSourceSuspension(){try{return workspaceSourceSuspended?workspaceSourceSuspended():null;}catch(_){return null;}}
 var WS_SWITCH_GUARD='ps_ws_switch_guard_v1',WS_SWITCH_EPOCH='ps_ws_switch_epoch_v1',localSwitchToken='';
 function workspaceSwitchGuardRaw(){try{return String(localStorage.getItem(WS_SWITCH_GUARD)||'');}catch(_){return '';}}
 function workspaceSwitchEpochRaw(){try{return String(localStorage.getItem(WS_SWITCH_EPOCH)||'');}catch(_){return '';}}
@@ -8500,11 +8504,8 @@ function switchWorkspaceCore(wid, skipSave){
      성공으로 돌려준다. 그 결과를 성공으로 오해해 현재 팀 일정을 지우지 않게
      아예 전환을 시작하지 않는다. */
   if(scheduleHeld()){
-    /* 2.338 — 두 경우를 가른다("이동이 원활하지 않다"의 큰 축):
-       ① 일정 탭에 편집 창(훈련 세션 시트 등)이 열려 잠긴 것 — 코치가 닫아야 풀린다. 지금까지는 다른 탭에
-          가 있어도(iframe 은 display 로만 숨는다) 이유 없이 '일정 편집…'만 떠서 막다른 길이었다 → 원인을 이름으로.
-       ② 마지막 입력 뒤 5초 보호창(입력·저장마다 __schedTouch(5000)) — 날짜 칩 하나만 탭해도 5초간
-          전환이 거부됐고 재시도는 수동이었다 → 거부하지 말고 풀릴 때까지 기다렸다 이어 간다. */
+    /* An open schedule editor requires user completion. A recent-edit hold
+       instead waits under the same owner, then retries the transition. */
     if(scheduleEditActive){
       setStatus('전환 취소 — 일정 탭의 편집 창을 닫은 뒤 다시 시도하세요');
       try{chip('일정 탭에 편집 창이 열려 있어요 — 닫으면 바로 전환할 수 있어요');}catch(_){}
@@ -8546,6 +8547,12 @@ function switchWorkspaceCore(wid, skipSave){
   var switchGuardToken='',switchGuardStarted=false,switchOwner=getSess();
   if(!switchOwner||!switchOwner.uid){switching=false;return Promise.resolve({cancelled:1,locked:1});}
   var switchAuthEpoch=signOutEpoch,switchEpoch=workspaceSwitchEpochRaw(),sourceOwnerSeal=String(localStorage.getItem(OWNERKEY)||'');
+  var frameSourceSeal=sourceOwnerSeal,frameSourceEpoch=switchEpoch;
+  workspaceSourceSuspended=function(){
+    if(!switching||wipeStarted||switchFinished||myGen!==switchGen||!switchGuardStarted||!sourceMarkersCurrent()||!workspaceSwitchGuardOwned(switchGuardToken)||!dataUnlocked())return null;
+    return {uid:String(switchOwner.uid),wid:String(from),beforeSeal:frameSourceSeal,beforeEpoch:frameSourceEpoch,
+      seal:sourceOwnerSeal,epoch:switchEpoch,guard:workspaceSwitchGuardRaw()};
+  };
   function switchAccountCurrent(){var ss=getSess();return !!ss&&String(ss.uid||'')===String(switchOwner.uid||'')&&signOutEpoch===switchAuthEpoch&&workspaceSwitchEpochRaw()===switchEpoch;}
   function sourceMarkersCurrent(){return switchAccountCurrent()&&String(activeWs()||'')===String(from)&&String(localStorage.getItem(OWNERKEY)||'')===sourceOwnerSeal;}
   function externalMarkerError(){var e=new Error('Account or workspace changed during transition');e.psExternalMarker=true;return e;}
@@ -8688,14 +8695,14 @@ function switchWorkspaceCore(wid, skipSave){
     recSwitchFail('전환 60초 초과로 중단','switch-timeout');
     try{chip('전환을 멈췄어요 — 네트워크를 확인하고 다시 시도해 주세요');}catch(_){}
   },60000);
-  /* 0) 이 창에서 시작한 공유 저장을 먼저 완료한 뒤 IDB 스냅샷을 읽는다. */
+  /* Flush shared writes before reading the IDB snapshot. */
   return workspaceSwitchWriteBarrier().then(function(gate){
     return beginSwitchGuard(false,gate);
   }).then(function(){
     staleStop();
     if(!sourceMarkersCurrent()||!workspaceSwitchGuardOwned(switchGuardToken)||!setCacheOwner(switchOwner.uid,from))throw externalMarkerError();
     sourceOwnerSeal=String(localStorage.getItem(OWNERKEY)||'');
-    /* 2.338 — 상한이 없어 IDB 가 멈추면 체인이 영원히 매달렸다(감사 확정). 아직 지우기 전이라 중단이 안전하다. */
+    /* Bound IDB waiting before any source deletion. */
     return withTimeout(stashSnapshot(from),10000);
   }).then(function(st){
   staleStop();
@@ -8914,8 +8921,7 @@ function switchWorkspaceCore(wid, skipSave){
     switching=false;
     clearTimeout(overlayGuard);clearTimeout(overlaySlow);
     try{ sessionStorage.removeItem(RLKEY); }catch(_){}
-    /* 공간을 바꾸면 화면의 자료가 통째로 교체된다. 사용자에게는 "보관함이 날아갔다"로 보인다.
-       무엇에서 무엇으로 옮겼는지 남겨, reload 뒤에 설명한다. */
+    /* Keep the source and destination names for the post-reload explanation. */
     try{
       var _to=(wsList().filter(function(w){return w.id===wid;})[0]||{}).name||'';
       var _fr=(wsList().filter(function(w){return w.id===from;})[0]||{}).name||'';
@@ -10970,6 +10976,7 @@ function gmPersonalGet(){ return pdGet(GMP_CFG); }
 function gmPersonalSave(raw,options){ return pdSave(GMP_CFG,raw,options); }
 
 window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dataUnlocked:dataUnlocked,keys:KEYS,state:syncState,   /* 2.625 상태 한 줄 */
+  sourceSuspension:workspaceSourceSuspension,
   confirmedValue:syncConfirmedValue,
   reportSharedView:reportSharedView,
   boardLive:{version:2,scope:'personal',owner:boardLiveContext,get:boardLiveGet,save:boardLiveSave},

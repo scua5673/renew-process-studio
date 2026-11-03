@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
-import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,SHOTS,OUT} from '../fixtures/team-app.mjs';
 // 3.137 — 오류 제보 0ce6d0cc «경기준비 글씨 넣는 상자에 글씨가 안 넣어집니다». 경기 화면이 잠기면(.match-shell.readonly — 서버 확인 대기 ·
 // 선수 · 다른 코치 담당) 칸은 pointer-events:none 이라 눌러도 말이 없었고, 칸을 감싼 label 을 누르면 커서가 들어가 글이 써졌지만 저장되지 않고 사라졌다.
 // 이제(studio/match-lock.js): 잠긴 칸을 누르면 커서를 넣지 않고 까닭을 알리며, 서버 확인 대기면 바로 다시 맞춘다(PSSync.syncNow). 풀리면 그대로 쓴다.
@@ -18,7 +19,7 @@ try{
   const TA='[data-match-field="attack"]';
   // 알림 · 다시 맞추기 부름을 적는다(그대로 부른다)
   await sf.evaluate(()=>{window.__qaToast=[];const t0=window.toast;window.toast=function(m){window.__qaToast.push(String(m));return t0.apply(this,arguments);};
-    const S=parent.PSSync;window.__qaSync=[];S.syncNow=function(r){window.__qaSync.push(String(r||''));return Promise.resolve({});};   /* 진짜 회차는 돌리지 않는다 — 회차 끝의 다시 그리기(syncMatchFromCloud)가 끼어들면 WebKit 에서 차례가 엉킨다 */
+    const S=parent.PSSync;window.__qaActualSyncNow=S.syncNow.bind(S);window.__qaSync=[];S.syncNow=function(r){window.__qaSync.push(String(r||''));return Promise.resolve({});};   /* Guard calls are observed; preparation may separately use the real engine. */
     const p0=window.matchDocPending;window.__qaPend=false;window.matchDocPending=function(){return window.__qaPend||p0.apply(this,arguments);};
     const c0=window.matchCanEdit;window.__qaPerm=false;window.matchCanEdit=function(){return window.__qaPerm?false:c0.apply(this,arguments);};});
   // 처음 연 뒤 도는 회차(match-open · match-open-dependency)가 끝난 뒤에 — 그 끝이 matchState=null · renderMatch() 로 끼어든다(WebKit 은 10초 넘게 걸렸다)
@@ -76,10 +77,52 @@ try{
   s=await st();assert.equal(s.val,'abcde','저장된 글로 다시 그린다 '+JSON.stringify(s));
 
   // 3) 팀 편집 권한 없음 — 그렇다고 알린다(다시 맞추지 않는다)
-  await sf.evaluate(()=>{document.activeElement&&document.activeElement.blur();window.__qaToast.length=0;window.__qaSync.length=0;window.__qaPerm=true;renderMatch();});
+  await sf.evaluate(()=>{document.activeElement&&document.activeElement.blur();window.__permissionPrepScope=teamSaveOwner();window.__permissionPrepId=matchGet().id;renderMatch();});
   await page.waitForTimeout(1700);
+  const permissionPrep={attempts:[],serverRounds:[]},permissionDeadline=Date.now()+8000;
+  async function permissionBound(run){
+    const remaining=permissionDeadline-Date.now();if(remaining<=0)throw Error('permission premise exceeded 8000ms');
+    let timer;try{return await Promise.race([run(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('permission premise exceeded 8000ms')),remaining);})]);}finally{clearTimeout(timer);}
+  }
+  let permissionReady=false,preparedWithServer=false;
+  try{
+    while(Date.now()<permissionDeadline){
+      let barrier={ok:true};try{await permissionBound(()=>sf.evaluate(()=>psFlushPendingReady()));}catch(e){barrier={ok:false,error:e.name};}
+      const observed=await permissionBound(()=>sf.evaluate(async()=>{
+        function current(){if(teamSaveOwner()!==window.__permissionPrepScope||matchGet().id!==window.__permissionPrepId||localStorage.getItem('ps_ws_switch_guard_v1'))throw Error('permission preparation owner changed');}
+        current();const raw=localStorage.getItem(MATCH_KEY),row=(await storage.peek(MATCH_KEY))?.value??null;current();
+        let localExact=false,idbExact=false;try{localExact=JSON.parse(raw).matches.find(m=>m.id===window.__permissionPrepId).attack==='abcde';idbExact=JSON.parse(row).matches.find(m=>m.id===window.__permissionPrepId).attack==='abcde';}catch(_){}
+        return {keyReady:parent.PSSync.keyReady(MATCH_KEY,localStorage.getItem('ps_active_ws')),matchPending:matchDocPending(),syncing:typeof matchSyncing!=='undefined'&&matchSyncing,typed:window.__psMatchLockApi.typed().length,pending:psHasPending(),localIdbExact:raw===row,localExact,idbExact};
+      }));
+      permissionPrep.attempts.push({barrier,...observed});
+      if(barrier.ok&&observed.keyReady&&!observed.matchPending&&!observed.syncing&&observed.typed===0&&!observed.pending&&observed.localIdbExact&&observed.localExact&&observed.idbExact){permissionReady=true;break;}
+      if(!preparedWithServer){
+        preparedWithServer=true;
+        const result=await permissionBound(()=>sf.evaluate(()=>window.__qaActualSyncNow('fixture-permission-ready')));
+        permissionPrep.serverRounds.push({error:!!result?.error,skip:!!result?.skip,pending:result?.pending??null,scheduleDeferred:!!result?.scheduleDeferred});
+      }
+      await page.waitForTimeout(Math.min(100,Math.max(1,permissionDeadline-Date.now())));
+    }
+    assert.equal(permissionReady,true,'permission scenario requires real MATCH readiness and exact durable input');
+    await permissionBound(()=>sf.evaluate(()=>{
+      window.__permissionReadyBefore={keyReady:parent.PSSync.keyReady(MATCH_KEY,localStorage.getItem('ps_active_ws')),matchPending:matchDocPending(),syncing:typeof matchSyncing!=='undefined'&&matchSyncing,typed:window.__psMatchLockApi.typed().length,pending:psHasPending()};
+      const p=window.__permissionReadyBefore;
+      if(teamSaveOwner()!==window.__permissionPrepScope||matchGet().id!==window.__permissionPrepId||localStorage.getItem('ps_ws_switch_guard_v1')||!p.keyReady||p.matchPending||p.syncing||p.typed||p.pending)throw Error('permission premise changed before input');
+      window.__qaToast.length=0;window.__qaSync.length=0;window.__qaPerm=true;renderMatch();
+    }));
+  }catch(error){
+    permissionPrep.error={name:error.name,message:error.message};
+    permissionPrep.current=await sf.evaluate(()=>({keyReady:parent.PSSync.keyReady(MATCH_KEY,localStorage.getItem('ps_active_ws')),matchPending:matchDocPending(),syncing:typeof matchSyncing!=='undefined'&&matchSyncing,typed:window.__psMatchLockApi.typed().length,pending:psHasPending(),reason:window.__psMatchLockApi.reason(),ready:window.__psMatchLockApi.readyInfo()})).catch(e=>({observationError:e.name}));
+    fs.writeFileSync(path.join(OUT,'match-permission-preparation.json'),JSON.stringify(permissionPrep,null,2));throw error;
+  }
+  fs.writeFileSync(path.join(OUT,'match-permission-preparation.json'),JSON.stringify(permissionPrep,null,2));
   await clickField();await page.waitForTimeout(200);
-  s=await st();assert.ok(s.toast.includes('팀 자료를 고칠 권한이 없어요'),JSON.stringify(s));
+  s=await st();
+  if(!s.toast.includes('팀 자료를 고칠 권한이 없어요')){
+    const observed=await sf.evaluate(async()=>{const raw=localStorage.getItem(MATCH_KEY),row=(await storage.peek(MATCH_KEY))?.value??null;let localAttackExact=false;try{localAttackExact=JSON.parse(raw).matches.find(m=>m.id===matchGet().id).attack==='abcde';}catch(_){}return {before:window.__permissionReadyBefore,keyReady:parent.PSSync.keyReady(MATCH_KEY,localStorage.getItem('ps_active_ws')),matchPending:matchDocPending(),syncing:typeof matchSyncing!=='undefined'&&matchSyncing,typed:window.__psMatchLockApi.typed().length,pending:psHasPending(),reason:window.__psMatchLockApi.reason(),ready:window.__psMatchLockApi.readyInfo(),localIdbExact:raw===row,localAttackExact};}).catch(e=>({observationError:e.name}));
+    fs.writeFileSync(path.join(OUT,'match-permission-failure.json'),JSON.stringify({engine,size,observed},null,2));
+  }
+  assert.ok(s.toast.includes('팀 자료를 고칠 권한이 없어요'),JSON.stringify(s));
   assert.equal(s.active,false);assert.ok(!s.sync.includes('match-locked'),'권한 잠금은 다시 맞추지 않는다');
 
   // 4) 화면만 잠긴 채 남았다(고칠 수 있는데 readonly 표시) — 누르면 다시 그려 그 칸으로 들어간다
