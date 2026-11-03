@@ -137,3 +137,19 @@ test('a later real edit to an adopted guest board requires an exact durable draf
  const draft=h.idb.get(h.key);assert.equal(JSON.parse(JSON.parse(draft).raw).snap.players[0].x,777);assert.equal(h.idb.get(Guest.KEY),guestRaw);
  lock();await w.psFlushPendingReady();assert.equal(h.idb.get(h.key),draft,'the guarded barrier only verifies the later edit');
 });
+
+test('playback preparation cancels the new draft timer before exact receipt verification',async()=>{
+ const local=new Map(),idb=new Map(),timers=new Map(),owner={uid:'synthetic-user',wid:'personal-a'},key='synthetic-draft';let drafts=0;
+ const raw=JSON.stringify({snap:{players:[{id:'A',x:521}]},animFrames:[],_savedAt:1});
+ const w={_boardPrivateOwner:owner,_boardPrivateLoaded:true,_boardPrivateEditSeq:1,
+  document:{body:{classList:{contains:()=>false}}},boardDraftWriteNow(){},boardManualChanged:()=>true,boardPrivateCurrent:()=>true,
+  boardLiveCapture:()=>({raw}),boardDraftKey:()=>key,clearTimeout:id=>timers.delete(id),
+  restoreAnimBeforeCapture(){w._boardDraftT=14;timers.set(14,()=>{drafts++;w.boardDraftWriteNow();});},
+  localStorage:{getItem:k=>local.get(k)??null,setItem:(k,v)=>local.set(k,v),removeItem:k=>local.delete(k)},
+  storage:{async get(k){return idb.has(k)?{value:idb.get(k)}:null;},async replaceIfValue(k,b,v,guard){guard();idb.set(k,v);return true;}},
+  PSStorage:{sharedReady:async()=>true,sharedVerified:async()=>true}};
+ install(w);await w.psFlushPendingReady();
+ for(const fn of timers.values())fn();
+ assert.equal(drafts,0,'a timer created by stopping playback cannot start a competing draft receipt');
+ assert.equal(w._boardDraftT,null);assert.equal(w.psHasPending(),false);assert.equal(JSON.parse(idb.get(key)).raw,raw);
+});

@@ -115,7 +115,12 @@
         return raw;
       } catch (_) { return null; }
     }
-    function fieldOf(t) { return t && t.matches && t.matches('[data-match-field]') && t.tagName !== 'SELECT' && !/^(checkbox|radio|date|time)$/.test(String(t.type || '')) ? t : null; }
+    // List scores have their own match id; they must not inherit matchCurrent.
+    function scoreField(t) { return !!(t && t.matches && t.matches('[data-msc][data-mscid]') && t.closest('#matchList') && t.dataset && t.dataset.mscid && /^(us|them)$/.test(t.dataset.msc)); }
+    function scoreElement(e) { return Array.prototype.filter.call(doc.querySelectorAll('#matchList [data-msc]'), function (t) { return scoreField(t) && t.dataset.mscid === e.mid && t.dataset.msc === e.side && t.isConnected && !t.disabled && t.getClientRects().length; })[0] || null; }
+    function inScope(e) { return e.list ? !!scoreElement(e) : cur() === e.mid; }
+    function scoreValue(v) { v = String(v == null ? '' : v).trim(); if (!v) return ''; var n = parseInt(v, 10); return isNaN(n) || n < 0 ? '' : String(Math.min(99, n)); }
+    function fieldOf(t) { if (scoreField(t)) return t; return t && t.matches && t.matches('[data-match-field]') && t.tagName !== 'SELECT' && !/^(checkbox|radio|date|time)$/.test(String(t.type || '')) ? t : null; }
     function editable(shell) { return !!shell && !shell.classList.contains('readonly'); }
     function pending() { try { return typeof win.matchDocPending === 'function' ? !!win.matchDocPending() : false; } catch (_) { return true; } }
     function active() { var o = owner(); return Object.keys(typed).map(function (k) { return typed[k]; }).filter(function (e) { return o === null || e.owner === null || e.owner === o; }); }
@@ -124,13 +129,13 @@
     }
     function value(m, k) { return String(m && m[k] != null ? m[k] : ''); }
     function allowed(e) { try { return e.owner !== null && owner() === e.owner && !pending() && typeof win.matchCanEdit === 'function' && win.matchCanEdit() === true && typeof win.matchCanEditOne === 'function' && win.matchCanEditOne(e.mid) === true && owner() === e.owner; } catch (_) { return false; } }
-    function covered(e) { var m = model(e.mid); return !!(e.covered && allowed(e) && m && value(m, e.field) === e.v && (cur() === e.mid || e.accepted)); }
+    function covered(e) { var m = model(e.mid); return !!(e.covered && allowed(e) && m && value(m, e.field) === e.v && (inScope(e) || e.accepted)); }
     function inputPending() { return active().some(function (e) { return !covered(e); }); }
     function accepted(e) { var m = model(e.mid); return !!(e.accepted && m && value(m, e.field) === e.v); }
     function nativePending() { try { return !!(nativeHas && nativeHas.call(win)); } catch (_) { return true; } }
     function waiting() {
-      var o = owner(), mid = cur(), m = model(mid);
-      return o !== null && !!m && Object.keys(typed).some(function (k) { var e = typed[k]; return e.owner === o && e.mid === mid && value(m, e.field) !== e.v; }) && owner() === o;
+      var o = owner();
+      return o !== null && Object.keys(typed).some(function (k) { var e = typed[k], m = model(e.mid); return e.owner === o && inScope(e) && m && value(m, e.field) !== e.v; }) && owner() === o;
     }
     // An older native save may still finish legitimately. Its success cannot
     // label a newer, rejected input as saved; actual native failures keep priority.
@@ -142,17 +147,19 @@
     function fail() { var e = new Error('아직 경기 입력을 저장하지 못했습니다. 이 경기에서 저장을 다시 확인해 주세요.'); e.psCode = 'match_input_pending'; return e; }
     function schedule() { if (!tickT && active().some(function (e) { return !e.autoPaused; })) tickT = win.setTimeout(tick, 300); }
     function note(el, v) {
-      var o = owner(), mid = cur(), field = el.getAttribute('data-match-field'), key = JSON.stringify([o, mid, field]), previous = typed[key], m = model(mid), base = previous ? previous.base : value(m, field);
+      var list = scoreField(el), o = owner(), mid = list ? el.dataset.mscid : cur(), field = list ? (el.dataset.msc === 'them' ? 'scoreThem' : 'scoreUs') : el.getAttribute('data-match-field');
+      if (list) v = scoreValue(v);
+      var key = JSON.stringify([o, mid, field]), previous = typed[key], m = model(mid), base = previous ? previous.base : value(m, field);
       if (previous && value(m, field) === previous.v) base = previous.v;
       var changed = previous ? previous.v !== String(v) : value(m, field) !== String(v);
       // A new edit can retry this owner's whole MATCH document. Repainting the
       // same text cannot resume a failed write, and cannot release another owner.
       if (o !== null && changed && owner() === o) Object.keys(typed).forEach(function (k) { if (typed[k].owner === o) typed[k].autoPaused = false; });
-      var e = { key: key, owner: o, mid: mid, field: field, v: String(v), base: base, accepted: false, covered: false, autoPaused: !!(previous && !changed && previous.autoPaused) }; typed[key] = e;
+      var e = { key: key, owner: o, mid: mid, field: field, list: list, side: list ? el.dataset.msc : '', v: String(v), base: base, accepted: false, covered: false, autoPaused: !!(previous && !changed && previous.autoPaused) }; typed[key] = e;
       // The capture listener runs before the native input handler. Observe its
       // acceptance afterwards, without replaying or claiming durable storage.
       Promise.resolve().then(function () {
-        if (typed[key] !== e || e.owner === null || owner() !== e.owner || cur() !== e.mid) return;
+        if (typed[key] !== e || e.owner === null || owner() !== e.owner || !inScope(e)) return;
         if (value(model(mid), field) === e.v) e.accepted = true;
         else try { if (typeof win.matchSayState === 'function') win.matchSayState('저장 대기 중…', false); } catch (_) {}
       });
@@ -162,11 +169,20 @@
       var rows = active(), ok = true;
       rows.forEach(function (e) {
         var m = model(e.mid), current = value(m, e.field);
-        if (!allowed(e) || !m || (cur() !== e.mid && !(e.accepted && current === e.v)) || (current !== e.base && current !== e.v)) { ok = false; return; }
-        if (cur() === e.mid && (!accepted(e) || e.autoPaused)) {
-          if (typeof win.matchQueueSave !== 'function') { ok = false; return; }
-          m[e.field] = e.v;
-          try { if (win.matchQueueSave() === false) { ok = false; return; } } catch (_) { ok = false; return; }
+        if (!allowed(e) || !m || (!inScope(e) && !(e.accepted && current === e.v)) || (current !== e.base && current !== e.v)) { ok = false; return; }
+        if (inScope(e) && (!accepted(e) || e.autoPaused)) {
+          try {
+            if (e.list) {
+              var el = scoreElement(e);
+              if (!el || typeof win.matchSetScore !== 'function') { ok = false; return; }
+              win.matchSetScore(e.mid, e.side, e.v, el.closest('.mrow'));
+              if (value(model(e.mid), e.field) !== e.v) { ok = false; return; }
+            } else {
+              if (typeof win.matchQueueSave !== 'function') { ok = false; return; }
+              m[e.field] = e.v;
+              if (win.matchQueueSave() === false) { ok = false; return; }
+            }
+          } catch (_) { ok = false; return; }
           e.accepted = true; e.autoPaused = false;
         }
       });
@@ -175,8 +191,8 @@
     function tick() {
       tickT = 0;
       active().forEach(function (e) {
-        if (e.owner === null || owner() !== e.owner || e.mid !== cur()) return;
-        var el = doc.querySelector('.match-shell [data-match-field="' + e.field + '"]');
+        if (e.owner === null || owner() !== e.owner || !inScope(e)) return;
+        var el = e.list ? scoreElement(e) : doc.querySelector('.match-shell [data-match-field="' + e.field + '"]');
         if (el && el.isConnected && el.value !== e.v && doc.activeElement !== el) el.value = e.v;
       });
       var rows = active();
@@ -205,19 +221,30 @@
         // A native pending barrier may come from input added during this flight,
         // after its own write committed. Only that same-author/match input may
         // continue automatically; real I/O failures retain their retry pause.
-        var mid = cur(), newer = !!(e && e.psCode === 'match_pending_left' && expected !== null && owner() === expected
-          && d.rows.some(function (r) { return r.owner === expected && r.mid === mid; })
-          && active().some(function (r) { return r.owner === expected && r.mid === mid && d.rows.indexOf(r) < 0; }) && owner() === expected);
+        var newer = !!(e && e.psCode === 'match_pending_left' && expected !== null && owner() === expected
+          && d.rows.some(function (r) { return r.owner === expected && inScope(r); })
+          && active().some(function (r) { return r.owner === expected && inScope(r) && d.rows.indexOf(r) < 0; }) && owner() === expected);
         d.rows.forEach(function (r) { r.covered = false; if (typed[r.key] === r && !newer && (!e || e.psCode !== 'match_input_pending')) r.autoPaused = true; }); throw e;
       });
       flight = result; flightOwner = expected;
       result.then(function () { if (flight === result) flight = null; schedule(); }, function () { if (flight === result) flight = null; schedule(); });
       return result;
     };
+    // The native list handler runs after the capture listener. Record its
+    // acceptance synchronously: an immediate detail navigation can hide the
+    // row before the capture microtask, but it cannot undo an accepted write.
+    // Acceptance still needs the ordinary native durable receipt to clear.
+    var nativeScore = win.matchSetScore;
+    if (typeof nativeScore === 'function') win.matchSetScore = function (id, side, v) {
+      var result = nativeScore.apply(this, arguments), o = owner(), field = side === 'them' ? 'scoreThem' : 'scoreUs';
+      var e = typed[JSON.stringify([o, String(id || ''), field])];
+      if (e && e.list && e.side === side && e.v === scoreValue(v) && allowed(e) && value(model(e.mid), field) === e.v) e.accepted = true;
+      return result;
+    };
     function lifecycle() { drain(); }
     win.addEventListener('pagehide', lifecycle, true);
     doc.addEventListener('visibilitychange', function () { if (doc.visibilityState === 'hidden') lifecycle(); }, true);
-    doc.addEventListener('input', function (e) { var t = fieldOf(e.target); if (t && editable(t.closest('.match-shell'))) note(t, t.value); }, true);
+    doc.addEventListener('input', function (e) { var t = fieldOf(e.target); if (t && (scoreField(t) || editable(t.closest('.match-shell')))) note(t, t.value); }, true);
     doc.addEventListener('focusin', function (e) { if (fieldOf(e.target)) { focusMid = cur(); focusOwner = owner(); } }, true);
     // renderMatch 는 모든 칸에 모델 값을 다시 적는다 — 쓰는 중인 칸은 친 글을 돌려놓고(모델은 tick 이 맞춘다), 다른 경기로 바뀐 뒤면 그대로 둔다
     function wrapRender() {

@@ -11,6 +11,7 @@ try{
   app=await openApp(fx,'desktop',{browsers,init:{fn:()=>{
     const set=Storage.prototype.setItem;
     Storage.prototype.setItem=function(k,v){
+      if(String(k).startsWith('ps_roster_pending_v1:')){const top=window.top;top.fixtureBatchTrace=top.fixtureBatchTrace||[];top.fixtureBatchTrace.push({key:k,raw:String(v),url:location.pathname,stack:new Error().stack});if(top.fixtureBatchTrace.length>100)top.fixtureBatchTrace.shift();}
       if(k==='scout_tool_v1'&&localStorage.getItem('fixture_main_quota')==='1'){
         const top=window.top;top.fixtureRejectedMain=top.fixtureRejectedMain||[];top.fixtureRejectedMain.push({key:k,raw:String(v)});
         throw new DOMException('fixture roster main mirror quota','QuotaExceededError');
@@ -43,16 +44,20 @@ try{
   let frame=await openPlayers();
   async function snapshot(label,target=name){
     const local=await frame.evaluate(async name=>{
-      const prefix='ps_roster_pending_v1:',keys=Array.from({length:localStorage.length},(_,i)=>localStorage.key(i)).filter(k=>k?.startsWith(prefix));
-      const durableKeys=(await storage.keys()).filter(k=>k.startsWith(prefix));
+      const prefix='ps_roster_pending_v1:';
       const player=data.players.find(p=>p.name===name);
       let barrier;try{await psFlushPendingReady();barrier={ok:true};}catch(e){barrier={ok:false,code:e.psCode,message:String(e.message||e)};}
-      return {player:player||null,main:localStorage.getItem(KEY),idb:(await storage.peek(KEY))?.value??null,
-        playerRow:player?(await storage.peek('sq:'+player.id))?.value??null:null,
-        pendingBatches:keys.map(key=>({key,raw:localStorage.getItem(key)})),durablePending:await Promise.all(durableKeys.map(async key=>({key,raw:(await storage.peek(key))?.value??null}))),
+      const durableKeys=(await storage.keys()).filter(k=>k.startsWith(prefix));
+      const [idb,playerRow,durablePending]=await Promise.all([storage.peek(KEY),player?storage.peek('sq:'+player.id):null,Promise.all(durableKeys.map(async key=>({key,raw:(await storage.peek(key))?.value??null})))]);
+      // The barrier can start native work. Enumerate LS only after asynchronous
+      // reads, so its key set, raw bodies and pending flags share one observation.
+      const keys=Array.from({length:localStorage.length},(_,i)=>localStorage.key(i)).filter(k=>k?.startsWith(prefix));
+      return {player:player||null,main:localStorage.getItem(KEY),idb:idb?.value??null,
+        playerRow:playerRow?.value??null,
+        pendingBatches:keys.map(key=>({key,raw:localStorage.getItem(key)})),durablePending,
         pending:psHasPending(),rosterPending:rosterPendingRows(),failed:scoutStore.hasFailed(KEY),barrier};
     },target);
-    const value={label,...local,rejected:await page.evaluate(()=>window.fixtureRejectedBatches||[]),rejectedIDB:await page.evaluate(()=>window.fixtureRejectedIDB||[]),rejectedMain:await page.evaluate(()=>window.fixtureRejectedMain||[]),serverMain:fx.db.get(WT+'|scout_tool_v1')?.v??null,
+    const value={label,...local,batchTrace:await page.evaluate(()=>window.fixtureBatchTrace||[]),rejected:await page.evaluate(()=>window.fixtureRejectedBatches||[]),rejectedIDB:await page.evaluate(()=>window.fixtureRejectedIDB||[]),rejectedMain:await page.evaluate(()=>window.fixtureRejectedMain||[]),serverMain:fx.db.get(WT+'|scout_tool_v1')?.v??null,
       serverPlayers:[...fx.db.values()].filter(r=>r.workspace_id===WT&&r.k.startsWith('sq:')).map(r=>({k:r.k,raw:r.v})),writes:fx.writes.slice()};
     observations.push(value);fs.writeFileSync(path.join(out,engine+'-observations.json'),JSON.stringify({engine,observations},null,2));return value;
   }

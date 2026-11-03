@@ -32,6 +32,8 @@ try{
   app=await openApp(fx,'phone',{browsers,phoneStart:true,dark:engine==='webkit'});
   const {page,logs}=app;
   assert.equal(app.browser.browserType().name(),engine);
+  // Navigation measurements start after the candidate key's initial read.
+  await page.waitForFunction(()=>PSSync.keyReady('cs_scout_targets_v1',PSSync.activeWs())&&PSSync.state().kind==='ok'&&!PSSync.pending().count,null,{timeout:30000});
   await page.evaluate(()=>{
     window.__navTrace=[];
     window.__navScalar=function(){const f=document.getElementById('fScout'),d=f&&f.contentDocument;return {section:window.__psTeamSection&&__psTeamSection(),app:document.body.dataset.psApp,request:f&&f.__psTeamViewRequest,pending:f&&f.__psTeamViewPending,target:f&&f.__psTeamViewTarget,childViews:d?[...d.querySelectorAll('.view.on')].map(x=>x.id):[],scoutingOn:document.querySelector('#teamBottom [data-tb="scouting"]').classList.contains('on')};};
@@ -147,6 +149,6 @@ try{
   fs.writeFileSync(path.join(OUT,'mobile-navigation.json'),JSON.stringify({engine,passed:true,results},null,2));
   console.log(JSON.stringify({engine,passed:true,checks:results.length}));
 }catch(error){
-  if(app){await app.page.screenshot({path:path.join(SHOTS,'failure.png')}).catch(()=>{});const geometry=await app.page.evaluate(()=>({innerWidth,innerHeight,viewport:visualViewport&&{width:visualViewport.width,height:visualViewport.height,scale:visualViewport.scale},overflow:[...document.body.querySelectorAll('*')].filter(e=>{const r=e.getBoundingClientRect();return r.width&&r.right>innerWidth}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,width:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right}))}));fs.writeFileSync(path.join(OUT,'failure.json'),JSON.stringify({error:String(error),geometry,logs:app.logs,results},null,2));}
+  if(app){await app.page.screenshot({path:path.join(SHOTS,'failure.png')}).catch(()=>{});const geometry=await app.page.evaluate(()=>({innerWidth,innerHeight,viewport:visualViewport&&{width:visualViewport.width,height:visualViewport.height,scale:visualViewport.scale},overflow:[...document.body.querySelectorAll('*')].filter(e=>{const r=e.getBoundingClientRect();return r.width&&r.right>innerWidth}).slice(0,15).map(e=>({tag:e.tagName,id:e.id,class:e.className,width:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right}))}));const readiness=await app.page.evaluate(()=>{const w=document.getElementById('fScout')?.contentWindow,s=window.PSSync,c=w?.scStore?.();let check;try{c?.check();check={ok:true};}catch(e){check={ok:false,code:e.psCode,message:e.message};}return {timeOrigin:performance.timeOrigin,section:window.__psTeamSection?.(),booting:document.body.classList.contains('ps-booting'),unlocked:s?.dataUnlocked(),sync:s?.state(),pending:s?.pending(),targetReady:s?.keyReady('cs_scout_targets_v1',s?.activeWs()),scoutPreparing:!!w?.scPreparing,client:c?{verified:c.state.verified,hasDoc:!!c.state.doc,rawMatches:c.state.raw===w.localStorage.getItem('cs_scout_targets_v1'),check}:null,trace:window.__navTrace||[]};}).catch(e=>({observationError:e.message}));fs.writeFileSync(path.join(OUT,'failure.json'),JSON.stringify({error:String(error),geometry,readiness,logs:app.logs,results},null,2));}
   throw error;
 }finally{for(const b of Object.values(browsers))await b.close();await fx.close();}
