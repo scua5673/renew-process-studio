@@ -141,6 +141,7 @@
       tools + ' #boardPageStrip.ps-tb>.tb-r{flex:0 0 auto!important}',
       tools + ' #boardPageStrip.ps-tb>.tb-l{flex:1 1 140px!important;max-width:100%!important}',
       // 훈련의 설정·내보내기는 하단 한 곳에 둔다. 일반 보드/보기 전용은 그대로.
+      'html.ps-page-board body.editing.cf-training-session' + NN + NN + ' :is(#boardPageStrip,#psEditToolsToggle,#psEditTools){display:none!important}',
       'html.ps-page-board body.cf-training-tools' + NN + ' #boardPageStrip :is(#tbExport,#bpBoardSettings){display:none!important}',
       'html.ps-page-board body.cf-training-tools' + NN + ' #cmd-export-pop #editorPdf{display:flex!important;width:100%!important;justify-content:flex-start!important;gap:10px!important}',
       'html.ps-page-board body.cf-training-tools' + NN + ' #cmd-export-pop #editorPdf .ep-pdf-lb{display:inline!important}',
@@ -276,6 +277,9 @@
       sync();
     }
     function paint() {
+      var title = doc.getElementById('modalTitle');
+      var training = body.classList.contains('editing') && kindOf(title && title.textContent) === 'train';
+      if (body.classList.contains('cf-training-session') !== training) body.classList.toggle('cf-training-session', training);
       var eh = doc.querySelector('#editorModal .modal-head'); if (eh) { badge(eh, doc.getElementById('modalTitle')); panelBtn(eh); }
       var vb = doc.getElementById('vCreateBar'), vt = doc.getElementById('vCreateTitle'); if (vb && vt) badge(vb, vt, barKind(vt.textContent));
       trainingCommands();
