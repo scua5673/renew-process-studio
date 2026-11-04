@@ -3,30 +3,24 @@ const test=require('node:test'),assert=require('node:assert'),fs=require('fs'),p
 const tw=require('../studio/board-tweaks.js');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 const near=(a,b)=>a.every((v,i)=>Math.abs(v-b[i])<1e-6);
-test('16:9 video frame: pitch centred, only two sizes (normal · wide) whatever sits off the pitch',()=>{
+test('16:9 video frame: pitch centred, one size whatever sits off the pitch (3.254 — two sizes still jumped)',()=>{
   const pb=[100,50,1150,730], m=30;   // 운동장 1050×680
   const base=tw.frame169(pb,m,null,true);
   assert.ok(Math.abs(base[0]+base[2]/2-625)<1e-6&&Math.abs(base[1]+base[3]/2-390)<1e-6,'pitch centre is the frame centre');
   assert.ok(Math.abs(base[2]/base[3]-16/9)<1e-9,'16:9');
-  // 여유 안에 놓인 것 — 기본 화면 그대로
-  assert.ok(near(tw.frame169(pb,m,[90,40,1080,700],true),base),'inside the margin: same frame');
-  // 조금 · 많이 밖(넓게 안) — 둘 다 같은 «넓게» 화면(예전엔 놓인 만큼 조금씩 커졌다)
-  const a=tw.frame169(pb,m,[-60,50,1100,680],true), b=tw.frame169(pb,m,[-120,50,1100,680],true);   // 기본 화면(x −33~1283) 밖으로 조금 · 더
-  assert.ok(near(a,b),'two different spills → the same wide frame');
-  assert.ok(a[2]>base[2],'wide is bigger');
-  assert.ok(Math.abs(a[0]+a[2]/2-625)<1e-6,'still centred on the pitch');
-  // 넓게도 넘으면 그때만 놓인 것에 맞춘다(가운데는 그대로)
-  const far=tw.frame169(pb,m,[-600,50,2400,680],true);
-  assert.ok(far[2]>a[2]&&Math.abs(far[0]+far[2]/2-625)<1e-6);
-  // 하프 등 운동장 일부 보기는 놓인 것을 보지 않는다(예전과 같다)
-  assert.ok(near(tw.frame169(pb,m,[-600,50,2400,680],false),base));
+  assert.ok(Math.abs(base[3]-(680+2*m))<1e-6,'height = pitch + margin');
+  // 여유 안 · 조금 밖 · 많이 밖 · 하프 — 모두 같은 화면(3.085 는 «넓게»로 바뀌어 영상마다 운동장 크기가 달랐다)
+  for(const u of [[90,40,1080,700],[-60,50,1100,680],[-120,50,1100,680],[-600,50,2400,680],[100,50,1050,757]])
+    for(const full of [true,false]) assert.ok(near(tw.frame169(pb,m,u,full),base),'same frame for '+u+' full='+full);
 });
-test('reel box is centred on the pitch, not on whatever is placed',()=>{
+test('reel box is centred on the pitch and keeps its size whatever is placed (3.254)',()=>{
   const pb=[100,50,1150,730], m=30;
   const r=tw.reelBox(pb,m,[400,60,300,200]);
   assert.ok(Math.abs(r[0]+r[2]/2-625)<1e-6&&Math.abs(r[1]+r[3]/2-390)<1e-6);
-  const off=tw.reelBox(pb,m,[1100,60,400,200]);   // 오른쪽 밖으로 나간 것 — 상자는 커지되 가운데는 운동장
-  assert.ok(Math.abs(off[0]+off[2]/2-625)<1e-6&&off[2]>r[2]);
+  assert.ok(near(r,[70,20,1110,740]),'pitch + margin');
+  const off=tw.reelBox(pb,m,[1100,60,400,200]);   // 오른쪽 밖으로 나간 것 — 상자는 그대로
+  assert.ok(near(off,r));
+  assert.ok(near(tw.reelBox(pb,m,null),r));
 });
 test('page-name captions can be left out; a caption written on the scene stays',()=>{
   const on=[{name:'빌드업',frames:[{},{cap:'  3번 침투 '}]},{name:'압박',frames:[{},{}]}];

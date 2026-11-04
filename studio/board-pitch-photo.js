@@ -40,15 +40,18 @@ function frame(pr,m){m=+m||0;return [pr.L-m,pr.T-m,pr.PW+2*m,pr.PH+2*m];}
 /* 사진 자리 — 틀을 다 덮는 가장 작은 크기로, 제 비율 그대로 틀 가운데에(넘치는 쪽은 틀 밖으로). 크기를 모르면 틀 그대로(slice 로 잘라 채운다) */
 function place(f,w,h){if(!(w>0&&h>0))return f.slice();var ar=w/h,fw=f[2],fh=f[3],pw=fw,ph=fh;if(ar>fw/fh)pw=fh*ar;else ph=fw/ar;
   var r=function(v){return Math.round(v*100)/100;};return [r(f[0]+(fw-pw)/2),r(f[1]+(fh-ph)/2),r(pw),r(ph)];}
-/* 사진 영상은 사진 안에서 화면비를 맞춘다. 여백을 늘리거나 사진을 찌그러뜨리지 않고 가운데를 담는다. 원본/편집 화면은 그대로. */
+/* 사진 영상의 화면 = 운동장 틀(규격 경계 + 런오프)을 다 담는 가장 작은 ar 상자, 틀 가운데. 사진 비율과 상관없이 늘 같은 자리 · 같은 크기다.
+   3.254(제보 eb30babd «운동장을 다른 이미지로 불러왔을 때 내보내기 사이즈가 제각각»): 3.178 은 사진 안에서 화면비를 맞춰(사진을 꽉 채움)
+   16:9 사진은 운동장 폭이 화면의 79.8%, 4:3 · 3:2 사진은 94.6%에 위아래 터치라인까지 잘렸다. 이제 기본 운동장 영상과 같은 틀이고,
+   사진이 못 덮는 쪽(16:9 보다 좁은 사진의 양옆)은 보드가 어두운 띠로 채운다(board.html _boardImageXMLRaw · __psExport169). 원본/편집 화면은 그대로. */
 function videoBox(s,pr,m,w,h,ar){
   if(!s||!isRef(s.pitchImg)||(W&&W.__animExport3d))return null;
-  var d=dimsOf(s.pitchImg),f=place(frame(pr,m),d&&d.w,d&&d.h);
+  var f=frame(pr,m);
   if(!f.every(isFinite)||!(f[2]>0&&f[3]>0))return null;
   var pts=[[f[0],f[1]],[f[0]+f[2],f[1]],[f[0],f[1]+f[3]],[f[0]+f[2],f[1]+f[3]]].map(function(p){return s.orientation==='v'?(s.spFlip?[h-p[1],p[0]]:[p[1],w-p[0]]):p;});
   var xs=pts.map(function(p){return p[0];}),ys=pts.map(function(p){return p[1];});
   var x=Math.min.apply(null,xs),y=Math.min.apply(null,ys),pw=Math.max.apply(null,xs)-x,ph=Math.max.apply(null,ys)-y,cx=x+pw/2,cy=y+ph/2;
-  ar=ar>0?ar:16/9;if(pw/ph>ar)pw=ph*ar;else ph=pw/ar;
+  ar=ar>0?ar:16/9;if(pw/ph>ar)ph=pw/ar;else pw=ph*ar;
   return [cx-pw/2,cy-ph/2,pw,ph];
 }
 /* 설정 줄 아래 안내 — st: none | here | missing */
