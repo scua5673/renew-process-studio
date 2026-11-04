@@ -30,6 +30,7 @@ suites.board.push('board-scout-import','board-roster-import');
 suites.idp.push('squad-group-change');
 suites.records.push('training-toolbar-layout');
 suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
+suites.board2.push('meeting-slide-transition');   /* 3.256 — 미팅 슬라이드 넘김: 같은 팀 · 번호만 잇기 · 넘기는 중 저장 막기 */
 suites.entry.push('sync-diagnosis','team-mobile','mobile-navigation');
 suites.entry.push('admin-metrics');
 suites.storage.push('community-youtube');
