@@ -1,4 +1,4 @@
-/* PROCESS STUDIO — 한 기기 한 창 (3.257)
+/* PROCESS STUDIO — 한 기기 한 창 (3.258)
    사용자 «가용인원 체크가 잘 안 돼 · 바꿨는데 되돌아가»(11/4, 풋볼A 주인 · 맥).
    운영 실측(ps_events): 같은 맥에 3.233 창이 11/2부터 숨은 채 살아 있었다(새 판 적용을 2,374번 미룸 · flush_timeout:fScout).
    11/3 에는 3.241 창 두 개가 함께 떠 있었다. 창들은 기기 저장소를 같이 쓴다. 한 창이 선수 행(sq:)을 쓰는 사이 다른 창이 같은 선수를 바꾸면
@@ -10,7 +10,7 @@
        닫을 때의 팀 사본 정리(sync.js wipeTeamCacheSoft)가 저장소를 같이 쓰는 새 창의 사본을 지우지 않게 한다.
      · 숨은 채 열린 창(옛 창이 스스로 새 판으로 다시 열릴 때 등)은 잠금을 뺏지 않는다. 다른 창이 쥐고 있으면 스스로 물러난다.
      · 잠금 API 가 없는 브라우저 · iframe 안 · localStorage ps_one_window='0'(되돌리기)이면 예전 그대로.
-   저장 엔진의 «덮지 않는다» 원칙은 그대로다. 같은 기기에서 동시에 쓰는 창을 없앨 뿐이다. 실제 두 창은 tests/browser/one-window-3257.mjs. */
+   저장 엔진의 «덮지 않는다» 원칙은 그대로다. 같은 기기에서 동시에 쓰는 창을 없앨 뿐이다. 실제 두 창은 tests/browser/one-window-3258.mjs. */
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSOneWindow=api;})(typeof window!=='undefined'?window:null,function(){
   'use strict';
   var LOCK='ps-app-window-v1',PAGE='elsewhere.html',BACK='ps_elsewhere_back',SCREEN='ps_elsewhere_screen',OFF='ps_one_window';

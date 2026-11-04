@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp,ready} from '../fixtures/team-app.mjs';
-// 3.257 — 한 기기 한 창(합성 팀 fixture). 같은 브라우저 문맥(= 같은 기기 저장소)에 앱 창을 둘 띄운다:
+// 3.258 — 한 기기 한 창(합성 팀 fixture). 같은 브라우저 문맥(= 같은 기기 저장소)에 앱 창을 둘 띄운다:
 //  · 새로 연 창(B)이 잠금을 가져가고, 먼저 있던 창(A)은 안내 화면으로 — 동기화를 싣지 않는다
 //  · A 가 물러나도 팀 사본이 남는다(닫기 정리 wipeTeamCacheSoft 는 15초 넘게 산 창에서 서버와 같은 사본을 지운다 — 우리 새로고침 표시로 건너뛴다)
 //  · 안내 화면의 «이 창에서 계속하기» → A 가 다시 쥐고 B 가 물러난다
@@ -9,7 +9,7 @@ import {startFixture,openApp,ready} from '../fixtures/team-app.mjs';
 //  · 서버 기록 window_elsewhere
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
-let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}console.log('one-window-3257 '+s);};
+let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}console.log('one-window-3258 '+s);};
 const errs=[];const watch=(p,n)=>p.on('pageerror',e=>{if(!/ResizeObserver loop/.test(e.message))errs.push(n+': '+e.message);});
 const TEAM=/^(scout_tool_v1|cs_team_v1|process_coach_v1|cs_squad_v1|cs_team_attrs_v1|cs_perms_v1)$/;
 const teamKeys=p=>p.evaluate(re=>Object.keys(localStorage).filter(k=>new RegExp(re).test(k)).sort(),TEAM.source);
@@ -71,6 +71,6 @@ try{
   step('errors');
   for(const l of logs)if(l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text))errs.push('A: '+l.text);
   assert.deepEqual(errs,[],'페이지 오류 없음');
-  console.log('one-window-3257 ok',engine,size);
-}catch(e){console.error('one-window-3257 실패 단계:',cur);throw e;}
+  console.log('one-window-3258 ok',engine,size);
+}catch(e){console.error('one-window-3258 실패 단계:',cur);throw e;}
 finally{for(const b of Object.values(browsers))try{await b.close();}catch(_){} await fx.close();}

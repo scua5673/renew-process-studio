@@ -1,7 +1,7 @@
 'use strict';
-/* 3.257 — 한 기기 한 창(사용자 «가용인원 체크가 잘 안 돼 · 바꿨는데 되돌아가», 풋볼A 주인 맥에 3.233 창이 11/2부터 숨은 채 살아 있었다).
+/* 3.258 — 한 기기 한 창(사용자 «가용인원 체크가 잘 안 돼 · 바꿨는데 되돌아가», 풋볼A 주인 맥에 3.233 창이 11/2부터 숨은 채 살아 있었다).
    셸은 창 잠금 하나를 쥐고, 보이는 새 창이 가져가면 먼저 있던 창은 저장 확인을 잠깐 기다린 뒤 안내 화면으로 물러난다.
-   실제 두 창은 tests/browser/one-window-3257.mjs. */
+   실제 두 창은 tests/browser/one-window-3258.mjs. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const W=require('../studio/one-window.js');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
@@ -95,5 +95,5 @@ test('배선 — 셸은 동기화보다 먼저 잠금을 쥔다 · 안내 화면
   assert.match(ew,/return \/\^app\\\.html\(\\\?\[\^#\]\*\)\?\$\/\.test\(b\)\?b:'app\.html';/,'돌아갈 곳은 app.html 만');
   assert.match(ew,/if\(gone\|\|document\.hidden\|\|/,'숨은 동안은 저절로 열지 않는다');
   assert.match(sw,/'\/studio\/one-window\.js', '\/studio\/elsewhere\.html'/);
-  assert.ok(read('tests/browser/run-critical.mjs').includes("'one-window-3257'"));
+  assert.ok(read('tests/browser/run-critical.mjs').includes("'one-window-3258'"));
 });
