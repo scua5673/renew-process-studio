@@ -265,6 +265,7 @@
     ['ps_sync_rl','device','ls','queue','sync.js'],
     ['ps_sync_session','device','ls','session','scout.html'],
     ['ps_sync_skipped','device','ls','queue','sync.js'],
+    ['ps_sync_stall_at','device','ls','session','sync-stall-report.js'],
     ['ps_tilt3d_boot','device','ls','session','board.html'],
     ['ps_tilt3d_opts_v1','device','ls','pref','board.html'],
     ['ps_dock_float_v1','device','ls','pref','board-dock-float.js'],   // 3.073 떠 있는 하단 도크 — 열린 칸 · 묶은 도구의 마지막 종류
