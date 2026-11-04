@@ -4227,7 +4227,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.167"></script>
 <script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-stadium-ground.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script>
+<script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -10782,6 +10782,7 @@ async function exportMeetingVideo(opts){
   });
   if(!seq.length){toast("슬라이드가 아직 없어요");return;}
   if(seq.length===1){ seq[0].hold=hold/2; seq.push(Object.assign({},seq[0],{snap:cl(seq[0].snap)})); }
+  if(window.PSMeetSlide)PSMeetSlide.edges(seq);   /* 3.256 — 슬라이드 사이는 같은 팀 · 번호만 잇는다 */
   const keep=anim.frames, keepA=animActive;
   window.__meetVideoBusy=1;   /* 끝날 때까지 미팅 저장(meetFlush·meetStore)이 영상용 장면 목록을 슬라이드에 적지 않게 */
   anim.frames=seq; animActive=0;
@@ -16025,7 +16026,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   };
   
   /* ===== 미팅 프레젠테이션 ===== */
-  let meetIdx=-1,meetRaf=null,spotOn=false,_meetHinted=false;
+  let meetIdx=-1,meetRaf=null,meetTo=null,spotOn=false,_meetHinted=false;
   function _mkOv(id){let e=document.getElementById(id);if(!e){e=document.createElement("div");e.id=id;document.body.appendChild(e);}return e;}
   function meetBadge(txt){const e=_mkOv("meetBadge");e.textContent=txt;e.classList.add("on");
     clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("on"),1400);}
@@ -16054,18 +16055,18 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     if(!n){meetBadge("저장된 슬라이드가 없어요");return;}
     let i=meetIdx+dir;if(i<0)i=0;if(i>n-1)i=n-1;
     if(i===meetIdx&&dir!==0)return;
-    meetAutoTok++;
+    meetAutoTok++;meetSettle();
     if(!meetInShow()&&meetIdx>=0&&anim.slides[meetIdx])meetStore(meetIdx,true);   /* 2.935 — 편집 중 ←→ 로 넘길 때도 지금 판을 담고 간다 */
     meetIdx=i;
     const from=captureSnap(),to=meetBind(i,(dir<0&&meetInShow())?"last":"first")||anim.slides[i].snap;   /* 발표에서 뒤로 오면 그 슬라이드의 마지막 장면 */
-    if(meetRaf)cancelAnimationFrame(meetRaf);
-    const t0=performance.now(),DUR=450;
+    const tr=(window.__meetingPageActive&&!document.body.classList.contains("focus-board"))?"none":(window.__ksTransition||"slide"),t0=performance.now(),DUR=tr==="fade"?240:450;   /* 3.256 — go 와 같은 «전환» */
     window.__ksNav=true;setTimeout(function(){window.__ksNav=false;},DUR+250);   /* 2.935 — 넘기는 중간 판이 슬라이드에 담기지 않게(go 와 같은 깃발) */
+    if(tr==="none")loadSnap(to);else{meetTo=to;if(window.PSMeetSlide)PSMeetSlide.live(from,to,tr);
     const step=now=>{let u=(now-t0)/DUR;if(u>1)u=1;
       renderInterp(from,to,easeInOut(u));
       if(u<1)meetRaf=requestAnimationFrame(step);
-      else{meetRaf=null;loadSnap(to);}};
-    meetRaf=requestAnimationFrame(step);
+      else{meetRaf=null;meetTo=null;loadSnap(to);}};
+    meetRaf=requestAnimationFrame(step);}
     meetBadge("슬라이드 "+(i+1)+" / "+n);
     meetCntSync();try{if(window.__ksRender)window.__ksRender();}catch(_){}}
   window.__meetStep=meetStep;
@@ -16114,8 +16115,10 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     meetCntSync();
     return anim.frames.length?anim.frames[animActive].snap:(sl?sl.snap:null);
   }
+  /* 3.256 — 넘기는 중(meetRaf)이면 먼저 도착 판으로 끝낸다. 섞인 판(앞 장 토큰 · 가운데 자리)을 슬라이드에 담지 않게 */
+  function meetSettle(){if(meetRaf){cancelAnimationFrame(meetRaf);meetRaf=null;if(meetTo)try{loadSnap(meetTo);}catch(_){}}meetTo=null;}
   function meetStore(i,thumb){   /* 지금 판을 슬라이드 i 에 담는다(장면 슬라이드면 지금 장면에) */
-    var sl=anim.slides[i];if(!sl||window.__meetVideoBusy)return;if(window.PSMeetCover&&PSMeetCover.isCover(sl)){if(thumb)sl.thumb=PSMeetCover.svg(sl.cover);return;}   /* 2.970 */
+    var sl=anim.slides[i];if(!sl||window.__meetVideoBusy)return;meetSettle();if(window.PSMeetCover&&PSMeetCover.isCover(sl)){if(thumb)sl.thumb=PSMeetCover.svg(sl.cover);return;}   /* 2.970 */
     if(meetBound===sl&&anim.frames.length){
       if(meetInShow()||meetSceneRaf||window.__ksNav||(typeof animPlaying!=="undefined"&&animPlaying))return meetFlush();   /* 발표·장면 사이 보간 중엔 판을 담지 않는다 */
       if(animActive>=0&&anim.frames[animActive]){anim.frames[animActive].snap=meetCap();if(thumb){try{anim.frames[animActive].thumb=boardThumbSVG();}catch(_){}}}
@@ -16308,7 +16311,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   window.__meet={
     frames:function(){return anim.slides;},
     idx:function(){return meetIdx;},
-    go:function(i,which){var n=anim.slides.length;if(!n)return;if(i<0)i=0;if(i>n-1)i=n-1;meetAutoTok++;var from=meetCap();if(meetIdx>=0&&meetIdx<n&&anim.slides[meetIdx]){meetStore(meetIdx,true);if(window.__ksThumb)window.__ksThumb(meetIdx);}meetIdx=i;var to=meetBind(i,which)||anim.slides[i].snap;   /* 2.935 — 장면 슬라이드는 지금 장면을 담고, 갈 슬라이드의 장면을 올린다 */window.__ksNav=true;setTimeout(function(){window.__ksNav=false;},700);var tr=(window.__meetingPageActive&&!document.body.classList.contains("focus-board"))?"none":(window.__ksTransition||"slide");if(tr==="none"){loadSnap(to);}else{if(meetRaf)cancelAnimationFrame(meetRaf);var t0=performance.now(),DUR=(tr==="fade"?240:450);var stp=function(now){var u=(now-t0)/DUR;if(u>1)u=1;try{renderInterp(from,to,easeInOut(u));}catch(_){}if(u<1){meetRaf=requestAnimationFrame(stp);}else{meetRaf=null;loadSnap(to);}};meetRaf=requestAnimationFrame(stp);}meetCntSync();setTimeout(function(){try{if(!anim.slides[i].thumb&&!(meetBound===anim.slides[i]&&animActive>0)){anim.slides[i].thumb=boardThumbSVG();if(window.__ksRender)window.__ksRender();}}catch(_){}},tr==="none"?40:520);if(window.__ksRender)window.__ksRender();},
+    go:function(i,which){var n=anim.slides.length;if(!n)return;if(i<0)i=0;if(i>n-1)i=n-1;meetAutoTok++;meetSettle();var from=meetCap();if(meetIdx>=0&&meetIdx<n&&anim.slides[meetIdx]){meetStore(meetIdx,true);if(window.__ksThumb)window.__ksThumb(meetIdx);}meetIdx=i;var to=meetBind(i,which)||anim.slides[i].snap;   /* 2.935 — 장면 슬라이드는 지금 장면을 담고, 갈 슬라이드의 장면을 올린다 */window.__ksNav=true;setTimeout(function(){window.__ksNav=false;},700);var tr=(window.__meetingPageActive&&!document.body.classList.contains("focus-board"))?"none":(window.__ksTransition||"slide");if(tr==="none"){loadSnap(to);}else{meetTo=to;if(window.PSMeetSlide)PSMeetSlide.live(from,to,tr);var t0=performance.now(),DUR=(tr==="fade"?240:450);var stp=function(now){var u=(now-t0)/DUR;if(u>1)u=1;try{renderInterp(from,to,easeInOut(u));}catch(_){}if(u<1){meetRaf=requestAnimationFrame(stp);}else{meetRaf=null;meetTo=null;loadSnap(to);}};meetRaf=requestAnimationFrame(stp);}meetCntSync();setTimeout(function(){try{if(!anim.slides[i].thumb&&!(meetBound===anim.slides[i]&&animActive>0)){anim.slides[i].thumb=boardThumbSVG();if(window.__ksRender)window.__ksRender();}}catch(_){}},tr==="none"?40:520);if(window.__ksRender)window.__ksRender();},
     add:function(){if(meetIdx>=0&&meetIdx<anim.slides.length&&anim.slides[meetIdx]){meetStore(meetIdx,true);}var f={pdfOrientation:meetingPdfOrientation(anim.slides),snap:meetCap(),thumb:(function(){try{return boardThumbSVG();}catch(_){return "";}})(),title:"",points:[]};var _bsrc=anim.slides[meetIdx]||anim.slides[0];if(_bsrc){if(_bsrc.pageBrand!=null)f.pageBrand=_bsrc.pageBrand;if(_bsrc.textStyles&&_bsrc.textStyles.brand)f.textStyles={brand:JSON.parse(JSON.stringify(_bsrc.textStyles.brand))};}   /* 2.960 — 새 장도 같은 머리글 */var at=(meetIdx>=0?meetIdx+1:anim.slides.length);anim.slides.splice(at,0,f);meetIdx=at;meetBind(at,"first");if(window.__ksRender)window.__ksRender();},   /* 2.935 — 새 슬라이드는 지금 판(장면 슬라이드면 지금 장면)에서 이어서, 장면 없이 시작 */
     newSlide:function(title,points){this.add();var f=anim.slides[meetIdx];if(f){f.title=title||"";f.points=(points||[]).slice();}if(window.__ksRender)window.__ksRender();},
     show:function(fromStart){var _st=fromStart?0:(meetIdx>=0?meetIdx:0);try{window.__meetSyncCur&&window.__meetSyncCur({thumb:true});}catch(_){}try{enterFocus();}catch(_){}if(anim.slides.length){var self=this;setTimeout(function(){self.go(_st,"first");},40);}},
