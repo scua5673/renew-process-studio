@@ -14947,8 +14947,9 @@ function init(){
     /* 3.028 — 운동장 여러 개: 경기장은 카드 배치 전체를 둘러싼다(사용자 «운동장 5개 했을 때도 잘 구현되게»). 예전엔 운동장 1개 상자(W×H)라
        화면을 가로로 채우는 카드(BASEVB 2.2:1)의 바깥 판이 관중석 위로 나가고, 광고판이 판 안을 가로질렀다. 카드 자리는 #ps-multipitch 의
        data-pitch-rect(잔디 좌표 — 워터마크 · 내보내기와 같은 값). 두께 · 간격은 아래 S(운동장 1개 비율)로 재서 넓은 배치에서도 관중석이 두꺼워지지 않는다. */
+    let cards=[];   /* 3.255 — 카드마다 잔디결(PSStadiumGround.mowPlan) */
     if(multi){ try{ const rs=[...svg.querySelectorAll('#ps-multipitch [data-pitch-rect]')].map(g=>g.getAttribute('data-pitch-rect').split(',').map(Number)).filter(r=>r.length===4&&r.every(isFinite)&&r[2]>0&&r[3]>0);
-      if(rs.length){ const pad=M2U(1.5); q={L:Math.min(...rs.map(r=>r[0]))-pad,T:Math.min(...rs.map(r=>r[1]))-pad,R:Math.max(...rs.map(r=>r[0]+r[2]))+pad,B:Math.max(...rs.map(r=>r[1]+r[3]))+pad}; } }catch(_){} }
+      cards=rs; if(rs.length){ const pad=M2U(1.5); q={L:Math.min(...rs.map(r=>r[0]))-pad,T:Math.min(...rs.map(r=>r[1]))-pad,R:Math.max(...rs.map(r=>r[0]+r[2]))+pad,B:Math.max(...rs.map(r=>r[1]+r[3]))+pad}; } }catch(_){} }
     const turf=(window.__ballImgOK&&window.PITCH_IMG&&window.PITCH_IMG.real)||'';
     const L=q.L,R=q.R,T=q.T,B=q.B,PW=R-L,PH=B-T,S=multi?Math.min(PW,PH*105/68):PW,CX=(L+R)/2,CY=(T+B)/2,f=n=>Math.round(n*10)/10,m=S/105;   /* m = 11인제에서의 1m · S = 두께 · 간격의 기준(운동장 하나면 PW) */
     const gx=S*.068,gy=PH*.095,r0=S*.075,bt=S*.0105,tk=S*.028,sd=S*.34;
@@ -14973,7 +14974,7 @@ function init(){
     const ox=(bw-vb.width*k)*al,oy=(bh-vb.height*k)*av;
     host.style.left=((bx0-vb.x)*k+ox)+'px';host.style.top=((by0-vb.y)*k+oy)+'px';host.style.width=((bx1-bx0)*k)+'px';host.style.height=((by1-by0)*k)+'px';
     host.__psVb=[bx0,by0,bx1-bx0,by1-by0];   /* 3.039 — 그림 상자(판 좌표) — 3D 영상이 경기장 그림을 같은 자리에 깐다 */
-    const sig=[wt,L,R,T,B,goals?sp.goal:0,turf?1:0,deco,ad,md.key,brand?1:0,tcol,bleed?1:0].join('|');
+    const sig=[wt,L,R,T,B,goals?sp.goal:0,turf?1:0,cards.join(';'),sp.len,PSStadiumGround.GRAIN_V,deco,ad,md.key,brand?1:0,tcol,bleed?1:0].join('|');   /* 3.255 — 카드 · 규격 · 잎결 판(끝은 분위기 · 브랜딩 그대로 — 시험이 끝을 본다) */
     const gsig=ground?sig+'|'+ground.key:sig;
     host.__psGround=ground?{box:ground.box,mt:mt}:null;
     if(host.__sig===gsig)return;
@@ -14995,10 +14996,11 @@ function init(){
       corners.forEach(([cx,cy,a])=>{for(let i=1;i<cornerN;i++){const t=(a+90*i/cornerN)*Math.PI/180;out.push([cx+Math.cos(t)*(r0+d),cy+Math.sin(t)*(r0+d)]);}});
       return out;};
     const crowd=deco==="full"?crowdTile(brand?tcol:""):'',ct=S*.046;
+    const mow=PSStadiumGround.mowPlan({multi:multi,cards:cards,len:sp.len,L:L,T:T,m:m,f:f}),grain=!!PSStadiumGround.grainTile();   /* 3.255 — 깎은 줄(운동장마다) · 잎결 */
     let o='<defs>'
       +(turf?'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(10*m)+'" height="'+f(10*m)+'"><image href="'+turf+'" width="'+f(10*m)+'" height="'+f(10*m)+'" preserveAspectRatio="none"/></pattern>'
-            :'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(10*m)+'" height="'+f(10*m)+'"><rect width="'+f(10*m)+'" height="'+f(10*m)+'" fill="'+md.ga+'"/><rect width="'+f(5*m)+'" height="'+f(10*m)+'" fill="'+md.gb+'"/></pattern>')
-      +'<pattern id="psStMow" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(10*m)+'" height="'+f(10*m)+'"><rect width="'+f(5*m)+'" height="'+f(10*m)+'" fill="#000" fill-opacity=".07"/><rect x="'+f(5*m)+'" width="'+f(5*m)+'" height="'+f(10*m)+'" fill="#fff" fill-opacity=".06"/></pattern>'
+            :'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(10*m)+'" height="'+f(10*m)+'"><rect width="'+f(10*m)+'" height="'+f(10*m)+'" fill="'+md.ga+'"/>'+(multi?'':'<rect width="'+f(5*m)+'" height="'+f(10*m)+'" fill="'+md.gb+'"/>')+'</pattern>')   /* 3.255 — 사진을 못 그리는 기기의 두 색 줄(x)은 운동장 하나에서만 — 여러 운동장은 카드 띠가 줄이다 */
+      +mow.defs+PSStadiumGround.grainDefs({m:m,L:L,T:T,f:f,rot:mow.rot})
       +(crowd?'<pattern id="psStCrowd" patternUnits="userSpaceOnUse" width="'+f(ct)+'" height="'+f(ct*.96)+'"><image href="'+crowd+'" width="'+f(ct)+'" height="'+f(ct*.96)+'" preserveAspectRatio="none"/></pattern>':'')
       +'<radialGradient id="psStLight" gradientUnits="userSpaceOnUse" cx="'+f(CX)+'" cy="'+f(CY)+'" r="'+f(PW*.7)+'"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></radialGradient>'
       +'<radialGradient id="psStVig" gradientUnits="userSpaceOnUse" cx="'+f(CX)+'" cy="'+f(CY)+'" r="'+f(PW*1.05)+'"><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="'+md.vig+'"/></radialGradient>'
@@ -15007,7 +15009,7 @@ function init(){
       +'<radialGradient id="psStCone"><stop offset="0" stop-color="#fffbe9" stop-opacity=".22"/><stop offset=".6" stop-color="#fffbe9" stop-opacity=".05"/><stop offset="1" stop-color="#fffbe9" stop-opacity="0"/></radialGradient><clipPath id="psStPitchClip"><path d="'+rr(0)+'"/></clipPath>'   /* 3.029 — 조명탑 빛 기둥 */
       +'<linearGradient id="psStGoalSh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".34"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>'
       +'</defs><g transform="'+wt+'">';
-    if(ground)o+=PSStadiumGround.paint(ground,turf,md);
+    if(ground)o+=PSStadiumGround.paint(ground,turf,md,grain);
     /* 관중석 — 좌석·관중 무늬 위에 계단 턱(줄), 위층은 조금 어둡게 · 3.010 «전체»일 때만 */
     if(deco==="full"){
     o+=ring(dT,dS,crowd?'url(#psStCrowd)':'#1c252e');
@@ -15030,6 +15032,7 @@ function init(){
       +'<path d="'+rr(0)+'" fill="url(#psStGrass)"/>'
       +(turf?'<path d="'+rr(0)+'" fill="#1c7a34" fill-opacity=".24"/>':'')   /* 타일의 누런 기를 경기장 잔디 초록으로 */
       +'<path d="'+rr(0)+'" fill="url(#psStMow)"/>'   /* 잔디결(5m)을 중계 화면처럼 또렷하게 */
+      +mow.cards+(grain?'<path d="'+rr(0)+'" fill="url(#psStGrain)"/>':'')   /* 3.255 — 여러 운동장은 카드마다 띠 · 그 위에 깎는 방향 잎결 */
       +'<path d="'+rr(0)+'" fill="url(#psStLight)"/>';
     if(bleed)o+=line(0,'#ffffff',S*.0014,.18);   /* 3.035 — 그리드 판: 판 끝(카드 · 사진에 담기는 범위)을 옅은 줄로 — 잔디가 이어져 끝이 안 보인다 */
     if(md.tint)o+='<path d="'+rr(0)+'" fill="'+md.tint[0]+'" fill-opacity="'+md.tint[1]+'"/>';   /* 3.029 — 낮은 밝게 · 해질녘은 노을 빛 */
