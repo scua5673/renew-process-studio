@@ -5,6 +5,8 @@ import {createHash} from 'node:crypto';
 import {startFixture,openApp,build,root,pw} from '../fixtures/team-app.mjs';
 
 // b62c01fe: synthetic pictures only; real exportPagesVideo, encoder, saved Blob and video decoder.
+// 3.254 (eb30babd): every page uses the same pitch frame (pitch + runoff, 16:9) whatever the picture shape. Where a picture narrower
+// than 16:9 cannot reach (4:3 sides) the board paints a dark band (#0B0D10) — never the default pitch.
 // CI defaults exercise both proven causes: a 4:3 photo and a 500ms real local-read delay.
 // Overrides retain separate natural-latency and internal-padding controls. Encoders are never replaced.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium';
@@ -19,6 +21,10 @@ const forceUnsupported=process.env.PS_PHOTO_FORCE_UNSUPPORTED==='1';
 assert.ok(['16:9','4:3'].includes(photoAspect));
 assert.ok(Number.isFinite(delayMs)&&delayMs>=0&&Number.isFinite(internalPadding)&&internalPadding>=0&&internalPadding<.2);
 fs.mkdirSync(output,{recursive:true});
+const near=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>Math.abs(v-b[i])<.05);
+const covers=(r,v)=>!!r&&r[0]<=v[0]+.5&&r[1]<=v[1]+.5&&r[0]+r[2]>=v[0]+v[2]-.5&&r[1]+r[3]>=v[1]+v[3]-.5;
+// Of the 12 sampled edge points, the 10 at x=.01/.99 fall in the side bands of a 4:3 picture; the 2 at x=.25 stay on the picture.
+const bandEdges=photoAspect==='4:3'?10:0,paddingEdges=photoAspect==='4:3'?1:10;
 const fx=await startFixture(),browsers={};
 const result={test:missing?'anim-photo-missing':'anim-photo-pages',report:'b62c01fe-565c-42f2-9b41-10249ea53b9f',engine,size,build,delayMs,photoAspect,internalPadding,missing,forceRecorder,forceUnsupported,fps,height,externalConnections:'blocked by team-app fixture',privateAttachmentUsed:false,sourceHashes:Object.fromEntries(['studio/board.html','studio/board-pitch-photo.js','studio/board-tweaks.js'].map(f=>[f,createHash('sha256').update(fs.readFileSync(path.join(root,f))).digest('hex')])),passed:false,stages:[]};
 let page,bf,logs=[];
@@ -65,7 +71,7 @@ async function decodeVideoPixels({base64,indexes,fps,colors,type}){
       const edge=[[.01,.05],[.25,.015],[.99,.05],[.01,.3],[.99,.3],[.01,.5],[.99,.5],[.01,.7],[.99,.7],[.01,.84],[.25,.84],[.99,.84]].map(p=>at(...p));
       const match=(v,p)=>p.some(a=>a.every((n,k)=>Math.abs(n-v[k])<=35));
       const grid=[];for(const y of [.02,.12,.3,.5,.7,.84])for(const x of [.01,.15,.35,.5,.65,.85,.99])grid.push(at(x,y));
-      samples.push({frame,time,expectedMediaTime,mediaTime:presented.mediaTime,presentedFrames:presented.presentedFrames,decoded:true,width:c.width,height:c.height,edge,edgeCounts:palettes.map(p=>edge.filter(v=>match(v,p)).length),edgeColorCounts:palettes.map(p=>p.map(a=>edge.filter(v=>match(v,[a])).length)),gridCounts:palettes.map(p=>grid.filter(v=>match(v,p)).length),gridSize:grid.length});
+      samples.push({frame,time,expectedMediaTime,mediaTime:presented.mediaTime,presentedFrames:presented.presentedFrames,decoded:true,width:c.width,height:c.height,edge,bars:edge.filter(v=>[11,13,16].every((n,k)=>Math.abs(n-v[k])<=22)).length,edgeCounts:palettes.map(p=>edge.filter(v=>match(v,p)).length),edgeColorCounts:palettes.map(p=>p.map(a=>edge.filter(v=>match(v,[a])).length)),gridCounts:palettes.map(p=>grid.filter(v=>match(v,p)).length),gridSize:grid.length});
     }
     return {ok:true,width:c.width,height:c.height,duration:v.duration,samples};
   }catch(error){return {ok:false,error:String(error),errorCode:v.error?.code??null,width:v.videoWidth,height:v.videoHeight,duration:v.duration};}
@@ -124,6 +130,7 @@ try{
     assert.deepEqual(result.before.list[i].frames.map(f=>f.snap.players),result.seed.pages[i].players,'authored player positions retained before export');
   }
   stage('three-local-photo-pages-ready');
+  result.expectedVB=await bf.evaluate(()=>window.__export169(null));   // 3.254 — the pitch frame every page must use
   await bf.evaluate(async({delayMs,fps,height,missing,forceRecorder,forceUnsupported})=>{
     const e=window.__photoExport={pick:0,write:0,remove:0,anchor:0,blob:null,xml:[],raster:[],reads:[],recorders:[],toasts:[],delayMs,fps,height,startedAt:performance.now(),last:null,canvas:null};
     const specs=window.__photoTestSpecs;
@@ -145,7 +152,7 @@ try{
       const edge=edgePoints.map(p=>at(...p));
       const counts=palettes.map(p=>edge.filter(v=>match(v,p)).length);
       const grid=[];for(const y of [.02,.12,.3,.5,.7,.84])for(const x of [.01,.15,.35,.5,.65,.85,.99])grid.push(at(x,y));
-      return {...meta,width:w,height:h,edge,edgeCounts:counts,edgeColorCounts:palettes.map(p=>p.map(c=>edge.filter(v=>match(v,[c])).length)),gridCounts:palettes.map(p=>grid.filter(v=>match(v,p)).length),gridSize:grid.length};
+      return {...meta,width:w,height:h,edge,bars:edge.filter(v=>[11,13,16].every((n,k)=>Math.abs(n-v[k])<=22)).length,edgeCounts:counts,edgeColorCounts:palettes.map(p=>p.map(c=>edge.filter(v=>match(v,[c])).length)),gridCounts:palettes.map(p=>grid.filter(v=>match(v,p)).length),gridSize:grid.length};
     };
     window.showSaveFilePicker=async options=>{e.pick++;e.name=options.suggestedName;return {name:options.suggestedName,remove:async()=>{e.remove++;},createWritable:async()=>({write:async blob=>{e.write++;e.blob=blob;},close:async()=>{}})};};
     const toast=window.toast;window.toast=function(message){e.toasts.push(String(message));return toast.apply(this,arguments);};
@@ -163,7 +170,7 @@ try{
         const image=/<image\b[^>]*\bid="ps-pitchimg"[^>]*>/.exec(o.xml)?.[0]||'';
         const attr=k=>new RegExp('(?:^|\\s)'+k+'="([^"]*)"').exec(image)?.[1]??null;
         const ref=state.pitchImg,photo=specs.findIndex(s=>s.ref===ref);
-        e.last={frame:e.xml.length,photo,ref,vb:o.vb,photoPresent:!!image,photoRect:image?['x','y','width','height'].map(k=>Number(attr(k))):null,at:performance.now()-e.startedAt};
+        e.last={frame:e.xml.length,photo,ref,vb:o.vb,photoPresent:!!image,photoRect:image?['x','y','width','height'].map(k=>Number(attr(k))):null,bars:/class="ps-photo-bars"/.test(o.xml),at:performance.now()-e.startedAt};
         e.xml.push(e.last);
       }
       return o;
@@ -215,6 +222,7 @@ try{
         catch(error){out.rejected=true;out.error=String(error);out.userMessage=error.psUserMessage;}
       }else{
         await _animExportGuard(async()=>{
+          window.__psExport169=1;   // the 16:9 export sets this (3.254 — dark bands where the picture does not reach); the guard clears it
           for(const page of savedFrames)for(let i=0;i<page.frames.length;i++){
             loadSnap(page.frames[i].snap);
             await PSPitchPhoto.ready(state.pitchImg,()=>{out.redo++;renderPitchImg();});
@@ -238,8 +246,10 @@ try{
     }else{
       assert.equal(result.frameProbe.frames.length,6,'three pages and two actual authored scenes each');assert.equal(result.frameProbe.redo,6);
       for(const frame of result.frameProbe.frames){
-        assert.equal(frame.photo,frame.page);assert.equal(frame.photoPresent,true);assert.equal(frame.edgeCounts[frame.page],frame.edge.length,'all native SVG/canvas photo edges');
-        const [x,y,w,h]=frame.photoRect,[vx,vy,vw,vh]=frame.vb;assert.ok(x<=vx+.5&&y<=vy+.5&&x+w>=vx+vw-.5&&y+h>=vy+vh-.5,'product photo view is full-bleed');
+        assert.equal(frame.photo,frame.page);assert.equal(frame.photoPresent,true);assert.equal(frame.edgeCounts[frame.page]+frame.bars,frame.edge.length,'every native SVG/canvas edge is the photo or the dark band');
+        assert.equal(frame.bars,photoAspect==='4:3'?10:0,'dark bands only at the sides of a picture narrower than 16:9');
+        assert.ok(near(frame.vb,result.expectedVB),'every page uses the pitch frame '+frame.vb);
+        if(!covers(frame.photoRect,frame.vb))assert.equal(frame.bars>0&&frame.photoPresent,true);
         const reads=result.frameProbe.reads.filter(r=>r.key===result.seed.photos[frame.page].key);if(frame.page<2)assert.ok(reads.some(r=>r.matchesStoredContentAddress&&r.finished<=frame.readyAt),'actual IDB payload ready before native SVG capture');
       }
     }
@@ -299,11 +309,12 @@ try{
   const violations=[];
   const expectedPhoto=i=>{let n=0;for(let p=0;p<counts.length;p++){n+=counts[p];if(i<n)return p;}return -1;};
   for(const frame of result.export.xml){const p=expectedPhoto(frame.frame);if(frame.photo!==p||!frame.photoPresent)violations.push({kind:'svg-photo-missing-or-wrong',frame:frame.frame,expected:p,...frame});
-    if(frame.photoRect){const [x,y,w,h]=frame.photoRect,[vx,vy,vw,vh]=frame.vb;if(x>vx+.5||y>vy+.5||x+w<vx+vw-.5||y+h<vy+vh-.5)violations.push({kind:'svg-photo-does-not-fill-export',frame:frame.frame,photo:frame.photo,photoRect:frame.photoRect,vb:frame.vb});}}
-  for(const frame of result.export.raster){const p=expectedPhoto(frame.frame);if(frame.edgeCounts[p]!==frame.edge.length)violations.push({kind:'recording-canvas-edge-not-photo',frame:frame.frame,photo:p,edgeCounts:frame.edgeCounts,edge:frame.edge});
-    if(internalPadding>0&&p===2&&frame.edgeColorCounts[2][2]<10)violations.push({kind:'authored-padding-cropped-in-canvas',frame:frame.frame,colors:frame.edgeColorCounts[2]});}
-  if(verifiedDecode.ok)for(const frame of verifiedDecode.samples){const p=expectedPhoto(frame.frame);if(frame.edgeCounts[p]!==frame.edge.length)violations.push({kind:'saved-blob-edge-not-photo',frame:frame.frame,photo:p,edgeCounts:frame.edgeCounts,edge:frame.edge});
-    if(internalPadding>0&&p===2&&frame.edgeColorCounts[2][2]<10)violations.push({kind:'authored-padding-cropped-in-saved-blob',frame:frame.frame,colors:frame.edgeColorCounts[2]});}
+    if(frame.photoRect){if(!near(frame.vb,result.expectedVB))violations.push({kind:'svg-frame-not-pitch-frame',frame:frame.frame,vb:frame.vb,expected:result.expectedVB});
+      if(!covers(frame.photoRect,frame.vb)&&!frame.bars)violations.push({kind:'svg-photo-gap-without-dark-band',frame:frame.frame,photo:frame.photo,photoRect:frame.photoRect,vb:frame.vb});}}
+  for(const frame of result.export.raster){const p=expectedPhoto(frame.frame);if(frame.edgeCounts[p]+frame.bars!==frame.edge.length||frame.bars!==bandEdges)violations.push({kind:'recording-canvas-edge-not-photo-or-band',frame:frame.frame,photo:p,edgeCounts:frame.edgeCounts,bars:frame.bars,edge:frame.edge});
+    if(internalPadding>0&&p===2&&frame.edgeColorCounts[2][2]<paddingEdges)violations.push({kind:'authored-padding-cropped-in-canvas',frame:frame.frame,colors:frame.edgeColorCounts[2]});}
+  if(verifiedDecode.ok)for(const frame of verifiedDecode.samples){const p=expectedPhoto(frame.frame);if(frame.edgeCounts[p]+frame.bars!==frame.edge.length||frame.bars!==bandEdges)violations.push({kind:'saved-blob-edge-not-photo-or-band',frame:frame.frame,photo:p,edgeCounts:frame.edgeCounts,bars:frame.bars,edge:frame.edge});
+    if(internalPadding>0&&p===2&&frame.edgeColorCounts[2][2]<paddingEdges)violations.push({kind:'authored-padding-cropped-in-saved-blob',frame:frame.frame,colors:frame.edgeColorCounts[2]});}
   result.violations=violations;
   stage('observations-collected');
   fs.writeFileSync(path.join(output,'observations.json'),JSON.stringify(result,null,2)+'\n');
@@ -314,7 +325,7 @@ try{
   assert.equal(result.sourcePreserved,true,'all pages, frames, current board and selection restored exactly');
   assert.deepEqual(result.errors,[],'no uncaught browser error');
   assert.equal(verifiedDecode.ok,true,'actual saved Blob decodes');assert.deepEqual([verifiedDecode.width,verifiedDecode.height],[640,360]);
-  assert.equal(violations.length,0,'all real SVG/canvas/saved-video pages must stay full-bleed with no default pitch gaps: '+JSON.stringify(violations.slice(0,3)));
+  assert.equal(violations.length,0,'all real SVG/canvas/saved-video pages keep the pitch frame, showing the photo or a dark band — never the default pitch: '+JSON.stringify(violations.slice(0,3)));
   result.passed=true;stage('passed');
   }
 }catch(error){
