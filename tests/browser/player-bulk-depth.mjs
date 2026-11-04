@@ -157,9 +157,16 @@ try{
     await sc.locator('.pw-bulk-row').nth(0).locator('[data-f="club"]').fill('가상 유나이티드');
     await sc.locator('.pw-bulk-row').nth(0).locator('[data-f="grade"]').selectOption('B');
     await sc.locator('.pw-bulk-row').nth(1).locator('[data-f="name"]').fill('가상 후보 둘');
+    /* 3.255 — 후보를 쓴 직후 동기화가 그 문서를 다시 확인하는 동안(keyReady 거짓)에도 배치까지 끝나야 한다.
+       예전엔 한 번 보고 포기해 등록부에만 들어가고 배치가 사라졌다(CI 가끔 · 3.253 뒤 잦아짐). 쓰인 뒤 2.5초 «확인 중»을 만든다. */
+    await page.evaluate(()=>{const S=window.PSSync,o=S.keyReady;let since=0;window.__psHeldScout=0;
+      S.keyReady=function(k){if(k==='cs_scout_targets_v1'&&String(localStorage.getItem(k)||'').includes('가상 후보 하나')){if(!since)since=Date.now();if(Date.now()-since<2500){window.__psHeldScout++;return false;}}return o.apply(this,arguments);};
+      window.__psScoutHoldOff=()=>{S.keyReady=o;};});
     await sc.locator('[data-ok]').click();
     await sc.waitFor({state:'detached'});
-    await frame.waitForFunction(()=>data.players.some(p=>p.type==='target'&&p.name==='가상 후보 하나'&&p.posId==='pos_CM'));
+    await frame.waitForFunction(()=>data.players.some(p=>p.type==='target'&&p.name==='가상 후보 하나'&&p.posId==='pos_CM'),null,{timeout:20000});
+    assert.ok(await page.evaluate(()=>window.__psHeldScout)>0,'the write was followed by a «checking» window');
+    await page.evaluate(()=>window.__psScoutHoldOff());
     const reg=await frame.evaluate(()=>{const c=scStore().state.doc.scoutRegistry.candidates;return Object.values(c).filter(x=>/가상 후보/.test(x.info.name)).map(x=>[x.info.name,x.info.club,x.info.grade]).sort();});
     assert.deepEqual(reg,[['가상 후보 둘','',''],['가상 후보 하나','가상 유나이티드','B']]);
   }

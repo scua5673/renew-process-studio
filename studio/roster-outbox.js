@@ -97,11 +97,14 @@
         if(JSON.stringify(r.player)!==JSON.stringify(wanted[pid]?null:players[pid]))return true;
         same[pid]=true;return false;
       });
-      if(!fresh.length)return receipt(c,ids.map(function(pid){return pending[pid];}));
+      /* 3.255 — 다시 쓰지 않은 선수의 영수증은 새 묶음이 적었을 이전 판 기록(마지막 판 포함)을 그대로 싣는다. 이 기록은 선수 행 쓰기의
+         «이 기기가 쓴 판»(sync.js itemsWritePreimage)이라, 빠지면 앞 저장이 기기 행에 이미 쓴 같은 판을 남의 판으로 본다. 확인 표시(ack)는 sources 만 본다. */
+      function reused(pid){var r=pending[pid],o={};Object.keys(r).forEach(function(k){o[k]=r[k];});o.history=history((r.history||[]).concat(r.player?[r.player]:[]));return o;}
+      if(!fresh.length)return receipt(c,ids.map(reused));
       ids=fresh;
       var batch=write(c,'b',function(t){return {v:1,kind:'batch',uid:c.uid,wid:c.wid,token:t,seq:current.maxSeq+1,rows:ids.map(function(pid,i){return {id:pid,base:pending[pid]?copy(pending[pid].base):(own(base,pid)?copy(base[pid]):null),player:wanted[pid]?null:copy(players[pid]),deleted:wanted[pid],token:t+':'+i,history:pending[pid]?history(pending[pid].history.concat(pending[pid].player?[pending[pid].player]:[])):[]};})};});
       var written=Object.create(null);batch.doc.rows.forEach(function(r){var sources=pending[r.id]?copy(pending[r.id].sources):[];sources.push({key:batch.key,id:r.id,token:r.token,raw:JSON.stringify(r)});written[r.id]={id:r.id,base:copy(r.base),player:copy(r.player),deleted:r.deleted,token:r.token,history:copy(r.history),sources:sources};});
-      return receipt(c,Object.keys(wanted).map(function(pid){return same[pid]?pending[pid]:written[pid];}));
+      return receipt(c,Object.keys(wanted).map(function(pid){return same[pid]?reused(pid):written[pid];}));
     }
     /* 3.253 — 뒤 묶음이 이미 담고 있는 사이 묶음을 지운다(공간만 되찾는다 — 지우기만 하므로 저장소가 가득 차도 된다).
        선수마다 확인 안 된 행 가운데 첫 행(기준 판 · 순서)과 마지막 행(지금 상태)은 남긴다. 사이 행은 기준 판이 같고, 그 선수의 판
