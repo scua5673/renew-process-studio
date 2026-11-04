@@ -97,7 +97,7 @@
         if(JSON.stringify(r.player)!==JSON.stringify(wanted[pid]?null:players[pid]))return true;
         same[pid]=true;return false;
       });
-      /* 3.255 — 다시 쓰지 않은 선수의 영수증은 새 묶음이 적었을 이전 판 기록(마지막 판 포함)을 그대로 싣는다. 이 기록은 선수 행 쓰기의
+      /* 3.257 — 다시 쓰지 않은 선수의 영수증은 새 묶음이 적었을 이전 판 기록(마지막 판 포함)을 그대로 싣는다. 이 기록은 선수 행 쓰기의
          «이 기기가 쓴 판»(sync.js itemsWritePreimage)이라, 빠지면 앞 저장이 기기 행에 이미 쓴 같은 판을 남의 판으로 본다. 확인 표시(ack)는 sources 만 본다. */
       function reused(pid){var r=pending[pid],o={};Object.keys(r).forEach(function(k){o[k]=r[k];});o.history=history((r.history||[]).concat(r.player?[r.player]:[]));return o;}
       if(!fresh.length)return receipt(c,ids.map(reused));

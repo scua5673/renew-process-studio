@@ -4227,7 +4227,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.167"></script>
 <script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-stadium-ground.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script>
+<script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -10782,6 +10782,7 @@ async function exportMeetingVideo(opts){
   });
   if(!seq.length){toast("슬라이드가 아직 없어요");return;}
   if(seq.length===1){ seq[0].hold=hold/2; seq.push(Object.assign({},seq[0],{snap:cl(seq[0].snap)})); }
+  if(window.PSMeetSlide)PSMeetSlide.edges(seq);   /* 3.256 — 슬라이드 사이는 같은 팀 · 번호만 잇는다 */
   const keep=anim.frames, keepA=animActive;
   window.__meetVideoBusy=1;   /* 끝날 때까지 미팅 저장(meetFlush·meetStore)이 영상용 장면 목록을 슬라이드에 적지 않게 */
   anim.frames=seq; animActive=0;
@@ -14947,8 +14948,9 @@ function init(){
     /* 3.028 — 운동장 여러 개: 경기장은 카드 배치 전체를 둘러싼다(사용자 «운동장 5개 했을 때도 잘 구현되게»). 예전엔 운동장 1개 상자(W×H)라
        화면을 가로로 채우는 카드(BASEVB 2.2:1)의 바깥 판이 관중석 위로 나가고, 광고판이 판 안을 가로질렀다. 카드 자리는 #ps-multipitch 의
        data-pitch-rect(잔디 좌표 — 워터마크 · 내보내기와 같은 값). 두께 · 간격은 아래 S(운동장 1개 비율)로 재서 넓은 배치에서도 관중석이 두꺼워지지 않는다. */
+    let cards=[];   /* 3.255 — 카드마다 잔디결(PSStadiumGround.mowPlan) */
     if(multi){ try{ const rs=[...svg.querySelectorAll('#ps-multipitch [data-pitch-rect]')].map(g=>g.getAttribute('data-pitch-rect').split(',').map(Number)).filter(r=>r.length===4&&r.every(isFinite)&&r[2]>0&&r[3]>0);
-      if(rs.length){ const pad=M2U(1.5); q={L:Math.min(...rs.map(r=>r[0]))-pad,T:Math.min(...rs.map(r=>r[1]))-pad,R:Math.max(...rs.map(r=>r[0]+r[2]))+pad,B:Math.max(...rs.map(r=>r[1]+r[3]))+pad}; } }catch(_){} }
+      cards=rs; if(rs.length){ const pad=M2U(1.5); q={L:Math.min(...rs.map(r=>r[0]))-pad,T:Math.min(...rs.map(r=>r[1]))-pad,R:Math.max(...rs.map(r=>r[0]+r[2]))+pad,B:Math.max(...rs.map(r=>r[1]+r[3]))+pad}; } }catch(_){} }
     const turf=(window.__ballImgOK&&window.PITCH_IMG&&window.PITCH_IMG.real)||'';
     const L=q.L,R=q.R,T=q.T,B=q.B,PW=R-L,PH=B-T,S=multi?Math.min(PW,PH*105/68):PW,CX=(L+R)/2,CY=(T+B)/2,f=n=>Math.round(n*10)/10,m=S/105;   /* m = 11인제에서의 1m · S = 두께 · 간격의 기준(운동장 하나면 PW) */
     const gx=S*.068,gy=PH*.095,r0=S*.075,bt=S*.0105,tk=S*.028,sd=S*.34;
@@ -14973,7 +14975,7 @@ function init(){
     const ox=(bw-vb.width*k)*al,oy=(bh-vb.height*k)*av;
     host.style.left=((bx0-vb.x)*k+ox)+'px';host.style.top=((by0-vb.y)*k+oy)+'px';host.style.width=((bx1-bx0)*k)+'px';host.style.height=((by1-by0)*k)+'px';
     host.__psVb=[bx0,by0,bx1-bx0,by1-by0];   /* 3.039 — 그림 상자(판 좌표) — 3D 영상이 경기장 그림을 같은 자리에 깐다 */
-    const sig=[wt,L,R,T,B,goals?sp.goal:0,turf?1:0,deco,ad,md.key,brand?1:0,tcol,bleed?1:0].join('|');
+    const sig=[wt,L,R,T,B,goals?sp.goal:0,turf?1:0,cards.join(';'),sp.len,PSStadiumGround.GRAIN_V,deco,ad,md.key,brand?1:0,tcol,bleed?1:0].join('|');   /* 3.255 — 카드 · 규격 · 잎결 판(끝은 분위기 · 브랜딩 그대로 — 시험이 끝을 본다) */
     const gsig=ground?sig+'|'+ground.key:sig;
     host.__psGround=ground?{box:ground.box,mt:mt}:null;
     if(host.__sig===gsig)return;
@@ -14995,10 +14997,11 @@ function init(){
       corners.forEach(([cx,cy,a])=>{for(let i=1;i<cornerN;i++){const t=(a+90*i/cornerN)*Math.PI/180;out.push([cx+Math.cos(t)*(r0+d),cy+Math.sin(t)*(r0+d)]);}});
       return out;};
     const crowd=deco==="full"?crowdTile(brand?tcol:""):'',ct=S*.046;
+    const mow=PSStadiumGround.mowPlan({multi:multi,cards:cards,len:sp.len,L:L,T:T,m:m,f:f}),grain=!!PSStadiumGround.grainTile();   /* 3.255 — 깎은 줄(운동장마다) · 잎결 */
     let o='<defs>'
       +(turf?'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(10*m)+'" height="'+f(10*m)+'"><image href="'+turf+'" width="'+f(10*m)+'" height="'+f(10*m)+'" preserveAspectRatio="none"/></pattern>'
-            :'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(10*m)+'" height="'+f(10*m)+'"><rect width="'+f(10*m)+'" height="'+f(10*m)+'" fill="'+md.ga+'"/><rect width="'+f(5*m)+'" height="'+f(10*m)+'" fill="'+md.gb+'"/></pattern>')
-      +'<pattern id="psStMow" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(10*m)+'" height="'+f(10*m)+'"><rect width="'+f(5*m)+'" height="'+f(10*m)+'" fill="#000" fill-opacity=".07"/><rect x="'+f(5*m)+'" width="'+f(5*m)+'" height="'+f(10*m)+'" fill="#fff" fill-opacity=".06"/></pattern>'
+            :'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(10*m)+'" height="'+f(10*m)+'"><rect width="'+f(10*m)+'" height="'+f(10*m)+'" fill="'+md.ga+'"/>'+(multi?'':'<rect width="'+f(5*m)+'" height="'+f(10*m)+'" fill="'+md.gb+'"/>')+'</pattern>')   /* 3.255 — 사진을 못 그리는 기기의 두 색 줄(x)은 운동장 하나에서만 — 여러 운동장은 카드 띠가 줄이다 */
+      +mow.defs+PSStadiumGround.grainDefs({m:m,L:L,T:T,f:f,rot:mow.rot})
       +(crowd?'<pattern id="psStCrowd" patternUnits="userSpaceOnUse" width="'+f(ct)+'" height="'+f(ct*.96)+'"><image href="'+crowd+'" width="'+f(ct)+'" height="'+f(ct*.96)+'" preserveAspectRatio="none"/></pattern>':'')
       +'<radialGradient id="psStLight" gradientUnits="userSpaceOnUse" cx="'+f(CX)+'" cy="'+f(CY)+'" r="'+f(PW*.7)+'"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></radialGradient>'
       +'<radialGradient id="psStVig" gradientUnits="userSpaceOnUse" cx="'+f(CX)+'" cy="'+f(CY)+'" r="'+f(PW*1.05)+'"><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="'+md.vig+'"/></radialGradient>'
@@ -15007,7 +15010,7 @@ function init(){
       +'<radialGradient id="psStCone"><stop offset="0" stop-color="#fffbe9" stop-opacity=".22"/><stop offset=".6" stop-color="#fffbe9" stop-opacity=".05"/><stop offset="1" stop-color="#fffbe9" stop-opacity="0"/></radialGradient><clipPath id="psStPitchClip"><path d="'+rr(0)+'"/></clipPath>'   /* 3.029 — 조명탑 빛 기둥 */
       +'<linearGradient id="psStGoalSh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".34"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>'
       +'</defs><g transform="'+wt+'">';
-    if(ground)o+=PSStadiumGround.paint(ground,turf,md);
+    if(ground)o+=PSStadiumGround.paint(ground,turf,md,grain);
     /* 관중석 — 좌석·관중 무늬 위에 계단 턱(줄), 위층은 조금 어둡게 · 3.010 «전체»일 때만 */
     if(deco==="full"){
     o+=ring(dT,dS,crowd?'url(#psStCrowd)':'#1c252e');
@@ -15030,6 +15033,7 @@ function init(){
       +'<path d="'+rr(0)+'" fill="url(#psStGrass)"/>'
       +(turf?'<path d="'+rr(0)+'" fill="#1c7a34" fill-opacity=".24"/>':'')   /* 타일의 누런 기를 경기장 잔디 초록으로 */
       +'<path d="'+rr(0)+'" fill="url(#psStMow)"/>'   /* 잔디결(5m)을 중계 화면처럼 또렷하게 */
+      +mow.cards+(grain?'<path d="'+rr(0)+'" fill="url(#psStGrain)"/>':'')   /* 3.255 — 여러 운동장은 카드마다 띠 · 그 위에 깎는 방향 잎결 */
       +'<path d="'+rr(0)+'" fill="url(#psStLight)"/>';
     if(bleed)o+=line(0,'#ffffff',S*.0014,.18);   /* 3.035 — 그리드 판: 판 끝(카드 · 사진에 담기는 범위)을 옅은 줄로 — 잔디가 이어져 끝이 안 보인다 */
     if(md.tint)o+='<path d="'+rr(0)+'" fill="'+md.tint[0]+'" fill-opacity="'+md.tint[1]+'"/>';   /* 3.029 — 낮은 밝게 · 해질녘은 노을 빛 */
@@ -16025,7 +16029,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   };
   
   /* ===== 미팅 프레젠테이션 ===== */
-  let meetIdx=-1,meetRaf=null,spotOn=false,_meetHinted=false;
+  let meetIdx=-1,meetRaf=null,meetTo=null,spotOn=false,_meetHinted=false;
   function _mkOv(id){let e=document.getElementById(id);if(!e){e=document.createElement("div");e.id=id;document.body.appendChild(e);}return e;}
   function meetBadge(txt){const e=_mkOv("meetBadge");e.textContent=txt;e.classList.add("on");
     clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("on"),1400);}
@@ -16054,18 +16058,18 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     if(!n){meetBadge("저장된 슬라이드가 없어요");return;}
     let i=meetIdx+dir;if(i<0)i=0;if(i>n-1)i=n-1;
     if(i===meetIdx&&dir!==0)return;
-    meetAutoTok++;
+    meetAutoTok++;meetSettle();
     if(!meetInShow()&&meetIdx>=0&&anim.slides[meetIdx])meetStore(meetIdx,true);   /* 2.935 — 편집 중 ←→ 로 넘길 때도 지금 판을 담고 간다 */
     meetIdx=i;
     const from=captureSnap(),to=meetBind(i,(dir<0&&meetInShow())?"last":"first")||anim.slides[i].snap;   /* 발표에서 뒤로 오면 그 슬라이드의 마지막 장면 */
-    if(meetRaf)cancelAnimationFrame(meetRaf);
-    const t0=performance.now(),DUR=450;
+    const tr=(window.__meetingPageActive&&!document.body.classList.contains("focus-board"))?"none":(window.__ksTransition||"slide"),t0=performance.now(),DUR=tr==="fade"?240:450;   /* 3.256 — go 와 같은 «전환» */
     window.__ksNav=true;setTimeout(function(){window.__ksNav=false;},DUR+250);   /* 2.935 — 넘기는 중간 판이 슬라이드에 담기지 않게(go 와 같은 깃발) */
+    if(tr==="none")loadSnap(to);else{meetTo=to;if(window.PSMeetSlide)PSMeetSlide.live(from,to,tr);
     const step=now=>{let u=(now-t0)/DUR;if(u>1)u=1;
       renderInterp(from,to,easeInOut(u));
       if(u<1)meetRaf=requestAnimationFrame(step);
-      else{meetRaf=null;loadSnap(to);}};
-    meetRaf=requestAnimationFrame(step);
+      else{meetRaf=null;meetTo=null;loadSnap(to);}};
+    meetRaf=requestAnimationFrame(step);}
     meetBadge("슬라이드 "+(i+1)+" / "+n);
     meetCntSync();try{if(window.__ksRender)window.__ksRender();}catch(_){}}
   window.__meetStep=meetStep;
@@ -16114,8 +16118,10 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     meetCntSync();
     return anim.frames.length?anim.frames[animActive].snap:(sl?sl.snap:null);
   }
+  /* 3.256 — 넘기는 중(meetRaf)이면 먼저 도착 판으로 끝낸다. 섞인 판(앞 장 토큰 · 가운데 자리)을 슬라이드에 담지 않게 */
+  function meetSettle(){if(meetRaf){cancelAnimationFrame(meetRaf);meetRaf=null;if(meetTo)try{loadSnap(meetTo);}catch(_){}}meetTo=null;}
   function meetStore(i,thumb){   /* 지금 판을 슬라이드 i 에 담는다(장면 슬라이드면 지금 장면에) */
-    var sl=anim.slides[i];if(!sl||window.__meetVideoBusy)return;if(window.PSMeetCover&&PSMeetCover.isCover(sl)){if(thumb)sl.thumb=PSMeetCover.svg(sl.cover);return;}   /* 2.970 */
+    var sl=anim.slides[i];if(!sl||window.__meetVideoBusy)return;meetSettle();if(window.PSMeetCover&&PSMeetCover.isCover(sl)){if(thumb)sl.thumb=PSMeetCover.svg(sl.cover);return;}   /* 2.970 */
     if(meetBound===sl&&anim.frames.length){
       if(meetInShow()||meetSceneRaf||window.__ksNav||(typeof animPlaying!=="undefined"&&animPlaying))return meetFlush();   /* 발표·장면 사이 보간 중엔 판을 담지 않는다 */
       if(animActive>=0&&anim.frames[animActive]){anim.frames[animActive].snap=meetCap();if(thumb){try{anim.frames[animActive].thumb=boardThumbSVG();}catch(_){}}}
@@ -16308,7 +16314,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   window.__meet={
     frames:function(){return anim.slides;},
     idx:function(){return meetIdx;},
-    go:function(i,which){var n=anim.slides.length;if(!n)return;if(i<0)i=0;if(i>n-1)i=n-1;meetAutoTok++;var from=meetCap();if(meetIdx>=0&&meetIdx<n&&anim.slides[meetIdx]){meetStore(meetIdx,true);if(window.__ksThumb)window.__ksThumb(meetIdx);}meetIdx=i;var to=meetBind(i,which)||anim.slides[i].snap;   /* 2.935 — 장면 슬라이드는 지금 장면을 담고, 갈 슬라이드의 장면을 올린다 */window.__ksNav=true;setTimeout(function(){window.__ksNav=false;},700);var tr=(window.__meetingPageActive&&!document.body.classList.contains("focus-board"))?"none":(window.__ksTransition||"slide");if(tr==="none"){loadSnap(to);}else{if(meetRaf)cancelAnimationFrame(meetRaf);var t0=performance.now(),DUR=(tr==="fade"?240:450);var stp=function(now){var u=(now-t0)/DUR;if(u>1)u=1;try{renderInterp(from,to,easeInOut(u));}catch(_){}if(u<1){meetRaf=requestAnimationFrame(stp);}else{meetRaf=null;loadSnap(to);}};meetRaf=requestAnimationFrame(stp);}meetCntSync();setTimeout(function(){try{if(!anim.slides[i].thumb&&!(meetBound===anim.slides[i]&&animActive>0)){anim.slides[i].thumb=boardThumbSVG();if(window.__ksRender)window.__ksRender();}}catch(_){}},tr==="none"?40:520);if(window.__ksRender)window.__ksRender();},
+    go:function(i,which){var n=anim.slides.length;if(!n)return;if(i<0)i=0;if(i>n-1)i=n-1;meetAutoTok++;meetSettle();var from=meetCap();if(meetIdx>=0&&meetIdx<n&&anim.slides[meetIdx]){meetStore(meetIdx,true);if(window.__ksThumb)window.__ksThumb(meetIdx);}meetIdx=i;var to=meetBind(i,which)||anim.slides[i].snap;   /* 2.935 — 장면 슬라이드는 지금 장면을 담고, 갈 슬라이드의 장면을 올린다 */window.__ksNav=true;setTimeout(function(){window.__ksNav=false;},700);var tr=(window.__meetingPageActive&&!document.body.classList.contains("focus-board"))?"none":(window.__ksTransition||"slide");if(tr==="none"){loadSnap(to);}else{meetTo=to;if(window.PSMeetSlide)PSMeetSlide.live(from,to,tr);var t0=performance.now(),DUR=(tr==="fade"?240:450);var stp=function(now){var u=(now-t0)/DUR;if(u>1)u=1;try{renderInterp(from,to,easeInOut(u));}catch(_){}if(u<1){meetRaf=requestAnimationFrame(stp);}else{meetRaf=null;meetTo=null;loadSnap(to);}};meetRaf=requestAnimationFrame(stp);}meetCntSync();setTimeout(function(){try{if(!anim.slides[i].thumb&&!(meetBound===anim.slides[i]&&animActive>0)){anim.slides[i].thumb=boardThumbSVG();if(window.__ksRender)window.__ksRender();}}catch(_){}},tr==="none"?40:520);if(window.__ksRender)window.__ksRender();},
     add:function(){if(meetIdx>=0&&meetIdx<anim.slides.length&&anim.slides[meetIdx]){meetStore(meetIdx,true);}var f={pdfOrientation:meetingPdfOrientation(anim.slides),snap:meetCap(),thumb:(function(){try{return boardThumbSVG();}catch(_){return "";}})(),title:"",points:[]};var _bsrc=anim.slides[meetIdx]||anim.slides[0];if(_bsrc){if(_bsrc.pageBrand!=null)f.pageBrand=_bsrc.pageBrand;if(_bsrc.textStyles&&_bsrc.textStyles.brand)f.textStyles={brand:JSON.parse(JSON.stringify(_bsrc.textStyles.brand))};}   /* 2.960 — 새 장도 같은 머리글 */var at=(meetIdx>=0?meetIdx+1:anim.slides.length);anim.slides.splice(at,0,f);meetIdx=at;meetBind(at,"first");if(window.__ksRender)window.__ksRender();},   /* 2.935 — 새 슬라이드는 지금 판(장면 슬라이드면 지금 장면)에서 이어서, 장면 없이 시작 */
     newSlide:function(title,points){this.add();var f=anim.slides[meetIdx];if(f){f.title=title||"";f.points=(points||[]).slice();}if(window.__ksRender)window.__ksRender();},
     show:function(fromStart){var _st=fromStart?0:(meetIdx>=0?meetIdx:0);try{window.__meetSyncCur&&window.__meetSyncCur({thumb:true});}catch(_){}try{enterFocus();}catch(_){}if(anim.slides.length){var self=this;setTimeout(function(){self.go(_st,"first");},40);}},

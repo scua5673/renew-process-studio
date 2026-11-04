@@ -169,7 +169,7 @@
       var ok=win.save();close();try{win.renderTeam();}catch(_){}try{if(g('renderScoutBoard'))win.renderScoutBoard();}catch(_){}
       toast(ok===false?(typeof TM_ADD_FAIL!=='undefined'?TM_ADD_FAIL:'저장하지 못했어요'):p.add.length+'명 추가됨'+(p.newGroups.length?' · 새 조 '+p.newGroups.map(function(x){return x.label;}).join(', '):''));
     }
-    /* 3.255 — 후보를 쓴 직후엔 동기화가 그 문서를 다시 확인하는 동안 «확인 중»(scout_not_ready · scout_locked)일 수 있다
+    /* 3.257 — 후보를 쓴 직후엔 동기화가 그 문서를 다시 확인하는 동안 «확인 중»(scout_not_ready · scout_locked)일 수 있다
        (scouting-store save 머리글). 예전엔 한 번 보고 포기해 후보는 등록부에 들어가고 배치만 사라졌다 — 확인이 끝날 때까지(15초) 기다린다.
        다른 까닭(자료가 바뀜 · 팀이 바뀜 · 권한)은 예전처럼 바로 멈춘다. */
     function checked(cli){
