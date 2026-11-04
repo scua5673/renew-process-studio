@@ -3,7 +3,7 @@
    - 애니메이션 속도를 모든 장면에 한 번에(0d7c9cca): 속도 옆 «전체» — 켜 두면 속도를 바꿀 때 모든 장면에, 끄면 고른 장면만(예전처럼).
    - 여러 페이지 영상의 아래 자막(178c465c): 내보내기 창 «자막» — 페이지 이름 넣기 · 빼기. 장면에 직접 쓴 자막은 그대로.
    - 영상마다 운동장 자리가 다름(8e143f85): 16:9 는 운동장 기준 화면 두 단계(기본 · 넓게)만 — 놓인 것에 따라 조금씩 커지지 않게.
-     세로(릴스)는 놓인 것 전체가 아니라 운동장을 가운데에.
+     세로(릴스)는 놓인 것 전체가 아니라 운동장을 가운데에. ⟶ 3.254 부터 한 단계(기본)뿐 · 사진 운동장도 같은 틀(아래 frame169).
    - 저장하고 나가기 뒤 보관함(2d392249): 편집하던 항목을 연 폴더로 돌아간다(«내 자료» · «전체 자료»로 되돌리지 않음).
    - 보드 설정 아이콘(사용자 «보드설정 아이콘은 저게 최선이야?» → «조절 막대»): 위쪽 톱니 · 도크 끝 상자를 같은 조절 막대로.
    보드의 함수 선언(window 속성)은 감싸고, let/const 전역은 이름으로 읽는다(eval 없이 — CSP). 장면 유지 0.1초는 board.html 에 직접. */
@@ -16,26 +16,18 @@
   var SPEED_ALL = 'ps_anim_speed_all_v1', CAP = 'ps_anim_export_cap_v1';
 
   // ── 영상 화면: 운동장 상자 → 16:9 화면 ──
-  // pb=[x0,y0,x1,y1] 운동장, m=라인 밖 여유. 놓인 것(uvb)이 기본 화면을 넘으면 «넓게»(여유 ×3), 그것도 넘을 때만 놓인 것에 맞춘다.
-  // 어느 쪽이든 운동장 가운데가 화면 가운데다.
+  // pb=[x0,y0,x1,y1] 운동장, m=라인 밖 여유. 화면은 운동장 + 여유를 담는 16:9 하나뿐이고 운동장 가운데가 화면 가운데다.
+  // 3.254(제보 3d89e952 · eb30babd — 10/17 8e143f85 와 같은 글을 다시): 3.085 의 «기본 · 넓게» 두 단계도 터치라인 선수 이름표 하나로
+  //   «넓게»로 바뀌어 영상마다 운동장 크기가 79.8% ↔ 68.7%(화면 폭 대비)로 오갔다. 이제 놓인 것(uvb · full)은 보지 않는다 —
+  //   운동장 둘레 밖에 둔 것까지 담으려면 내보내기 창 «화면: 훈련 구역». 인자는 예전 호출과 맞추려고 그대로 받는다.
   function frame169(pb, m, uvb, full) {
     var cx = (pb[0] + pb[2]) / 2, cy = (pb[1] + pb[3]) / 2, pw = pb[2] - pb[0], ph = pb[3] - pb[1];
-    function size(mm) { var Hh = ph + 2 * mm, Ww = Hh * 16 / 9; if (Ww < pw + 2 * mm) { Ww = pw + 2 * mm; Hh = Ww * 9 / 16; } return [Ww, Hh]; }
-    var s = size(m);
-    if (uvb && full) {
-      var needW = 2 * Math.max(cx - uvb[0], uvb[0] + uvb[2] - cx), needH = 2 * Math.max(cy - uvb[1], uvb[1] + uvb[3] - cy);
-      if (needW > s[0] + 0.5 || needH > s[1] + 0.5) {
-        s = size(m * 3);
-        if (needW > s[0] + 0.5) { s = [needW, needW * 9 / 16]; }
-        if (needH > s[1] + 0.5) { s = [needH * 16 / 9, needH]; }
-      }
-    }
-    return [cx - s[0] / 2, cy - s[1] / 2, s[0], s[1]];
+    var Hh = ph + 2 * m, Ww = Hh * 16 / 9; if (Ww < pw + 2 * m) { Ww = pw + 2 * m; Hh = Ww * 9 / 16; }
+    return [cx - Ww / 2, cy - Hh / 2, Ww, Hh];
   }
-  // 릴스(9:16): 운동장 상자(+여유)를 가운데에 둔 상자 — 보드가 이 상자를 9:16 으로 늘린다(가운데 그대로)
+  // 릴스(9:16): 운동장 상자(+여유)를 가운데에 둔 상자 — 보드가 이 상자를 9:16 으로 늘린다(가운데 그대로). 3.254 — 놓인 것으로 커지지 않는다(16:9 와 같은 까닭)
   function reelBox(pb, m, uvb) {
     var cx = (pb[0] + pb[2]) / 2, cy = (pb[1] + pb[3]) / 2, hw = (pb[2] - pb[0]) / 2 + m, hh = (pb[3] - pb[1]) / 2 + m;
-    if (uvb) { hw = Math.max(hw, cx - uvb[0], uvb[0] + uvb[2] - cx); hh = Math.max(hh, cy - uvb[1], uvb[1] + uvb[3] - cy); }
     return [cx - hw, cy - hh, hw * 2, hh * 2];
   }
   // 여러 페이지 장면 목록에서 «페이지 이름» 자막만 뺀다(장면에 직접 쓴 자막은 둔다). on = 내보낼 페이지들, seq = 보드가 만든 목록
@@ -217,8 +209,7 @@
       var orig169 = win._export169;
       win._export169 = function (uvb) {
         try {
-          // 사진의 실제 경계를 쓰는 경로를 운동장 여백 규칙으로 덮지 않는다.
-          if (!win.__animExport3d && win.PSPitchPhoto && typeof win.PSPitchPhoto.videoBox === 'function' && typeof state !== 'undefined' && win.PSPitchPhoto.isRef(state.pitchImg)) return orig169.apply(this, arguments);
+          // 3.254 — 운동장 사진도 같은 틀(사진 비율마다 크기가 달랐다). 사진이 못 덮는 쪽은 보드가 어두운 띠로 채운다(_boardImageXMLRaw · __psExport169).
           var pb = typeof win._exportPitchBox === 'function' ? win._exportPitchBox() : null; if (!pb) return orig169.apply(this, arguments);
           var full = typeof win.pitchViewKey === 'function' ? win.pitchViewKey() === 'full' : true;
           return frame169(pb, margin(), uvb, full);

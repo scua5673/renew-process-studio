@@ -8,16 +8,20 @@ const pr={L:30,T:30,PW:1050,PH:680};
 function api(get){const w={storage:{get,set(){throw Error('export must not write photos');}}};
   const c={window:w,module:{exports:{}},setTimeout:()=>1};vm.runInNewContext(source,c);return {p:c.module.exports,w};}
 
-test('photo video keeps the image scale and fills 16:9 inside the image, rather than adding pitch margins',()=>{
-  for(const [w,h] of [[1600,900],[1600,1200],[900,1600]]){
+test('photo video uses the pitch frame (pitch + runoff) in 16:9 for every picture shape — same place, same size (3.254, report eb30babd)',()=>{
+  const want=[-102.78,0,1315.56,740];
+  for(const [w,h] of [[1600,900],[1600,1200],[1500,1000],[2560,1080],[900,1600]]){
     const s={pitchImg:P.refOf('synthetic '+w+'x'+h,w,h),orientation:'h'};
-    const box=P.videoBox(s,pr,30,1110,740,16/9),image=P.place(P.frame(pr,30),w,h);
+    const box=P.videoBox(s,pr,30,1110,740,16/9);
     assert.ok(Math.abs(box[2]/box[3]-16/9)<1e-9,'output aspect ratio');
-    assert.ok(box[0]>=image[0]-.001&&box[1]>=image[1]-.001&&box[0]+box[2]<=image[0]+image[2]+.001&&box[1]+box[3]<=image[1]+image[3]+.001,'every output corner stays inside the actual image');
-    assert.ok(Math.abs(box[0]+box[2]/2-555)<=.01&&Math.abs(box[1]+box[3]/2-370)<=.01,'authored centre retained at the rendered image precision');
+    assert.ok(box.every((v,i)=>Math.abs(v-want[i])<.01),w+'x'+h+' → '+box);
+    const f=P.frame(pr,30);
+    assert.ok(box[0]<=f[0]&&box[1]<=f[1]&&box[0]+box[2]>=f[0]+f[2]&&box[1]+box[3]>=f[1]+f[3],'the whole pitch frame (touchlines too) is inside the video');
   }
   const four=P.videoBox({pitchImg:P.refOf('four',1600,1200)},pr,30,1110,740,16/9);
-  assert.deepEqual(four,[0,57.8125,1110,624.375],'4:3 uses a centred crop without changing coordinates or stretching the image');
+  const image=P.place(P.frame(pr,30),1600,1200);
+  assert.ok(four[0]<image[0]&&four[0]+four[2]>image[0]+image[2],'4:3 leaves bands at the sides (the board paints them dark, not the default pitch)');
+  assert.deepEqual(image,[0,-46.25,1110,832.5],'the picture itself keeps its place on the board');
 });
 
 test('photo framing follows vertical and flipped world coordinates and leaves normal/3D framing alone',()=>{
@@ -26,7 +30,7 @@ test('photo framing follows vertical and flipped world coordinates and leaves no
     const s={pitchImg:ref,orientation:'v',spFlip:flip},before=JSON.stringify(s);
     const box=P.videoBox(s,pr,30,1110,740,16/9);
     assert.ok(Math.abs(box[0]+box[2]/2-370)<.001&&Math.abs(box[1]+box[3]/2-555)<.001);
-    assert.ok(Math.abs(box[2]-740)<.001&&Math.abs(box[3]-416.25)<.001);
+    assert.ok(Math.abs(box[3]-1110)<.001&&Math.abs(box[2]-1973.33)<.01,'vertical board: pitch frame (740×1110) fills the height');
     assert.equal(JSON.stringify(s),before,'export does not modify authored settings');
   }
   assert.equal(P.videoBox({pitchImg:'@real'},pr,30,1110,740),null);

@@ -47,7 +47,7 @@ test('the engine reads opts.frames, cuts between pages, frames each page on its 
   assert.match(run,/if\(ld2\)\{ try\{loadSnap\(f\.snap\);\}catch\(_\)\{\} \}/,'pitch · spec · kit of that page before drawing');
   assert.match(run,/boardImageXML\(plan\[k\]\.vb\|\|uvb\)/,'per-page view box');
   assert.match(run,/_segVB\[g\]\.v169=_export169\(/,'16:9 frame measured while that page is on the board');
-  assert.match(run,/sg\.reel=_toAr\(sg\.raw\)/,'reels too');
+  assert.match(run,/sg\.reel=_toAr\(\(!_fit&&sg\.rb\)\?sg\.rb:sg\.raw\)/,'reels too (3.254 — the pitch box per page unless framing the training area)');
   assert.match(run,/NB=opts\.capN\|\|opts\.pageN\|\|N/);
   assert.match(run,/_unit=opts\.capN\?"슬라이드 ":\(opts\.pageN\?"페이지 ":"장면 "\)/);
   assert.match(run,/titleBar\(meta\)/,'reel title per page');

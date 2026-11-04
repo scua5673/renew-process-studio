@@ -49,6 +49,22 @@
     }
     return [d];
   }
+  // 3.254 — 선 모양(제보 2456db8e «연결선 · 다각형 · 원 도형도 점선 모드»). 실선 · 점선 · 둥근 점선을 모든 그림이 같은 말로 읽고 쓴다.
+  // 점선 도구(dashline · rectdash)와 선수 이동(run)은 처음부터 점선이다 — 점선 도구를 실선으로 고르면 solid 표식(옛 판은 모르는 키라 그대로 점선).
+  // 선수 이동(run)은 «점선 화살표»라는 뜻이라 실선으로 바꾸지 않는다. 글(text)은 선이 없다.
+  var DASHED = /^(dashline|rectdash|run)$/;
+  function lineStyleOf(d) { if (!d) return 'solid'; if (d.dot) return 'dot'; if (d.dash || (DASHED.test(d.type) && !d.solid)) return 'dash'; return 'solid'; }
+  function setLineStyle(d, v) {
+    if (!d || d.type === 'text' || !/^(solid|dash|dot)$/.test(v)) return false;
+    var before = lineStyleOf(d);
+    delete d.dot; delete d.dash; delete d.solid;
+    if (v === 'dot') d.dot = true;
+    else if (v === 'dash') { if (!DASHED.test(d.type)) d.dash = true; }
+    else if (d.type === 'dashline' || d.type === 'rectdash') d.solid = true;
+    return lineStyleOf(d) !== before;
+  }
+  // 그림에 쓸 stroke-dasharray(굵기 배수 lw) — 없으면 실선. 연결선 · 다각형이 2.681 부터 쓰던 값과 같다.
+  function dashArray(style, lw) { lw = +lw || 1; return style === 'dot' ? '0.1 ' + (12 * lw).toFixed(1) : style === 'dash' ? (11 * lw) + ' ' + (8 * lw) : null; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   // 창 자리: 누른 점 오른쪽 아래, 화면을 벗어나면 안쪽으로
   function place(x, y, w, h, vw, vh) {
@@ -218,7 +234,7 @@
         + '<button type="button" data-act="front" title="맨 앞으로 (⌘])">맨 앞</button><button type="button" data-act="back" title="맨 뒤로 (⌘[)">맨 뒤</button>'
         + (doc.getElementById('dupSelBtn') ? '<button type="button" data-act="dup">복제</button>' : '')
         + (doc.getElementById('lockSelBtn') ? '<button type="button" data-act="lock"' + (locked ? ' class="on"' : '') + ' title="위치 고정 — 끌어도 안 움직여요">' + (locked ? '고정 해제' : '고정') + '</button>' : '')
-        + (more ? '<button type="button" data-act="more">선 스타일 더 보기…</button>' : '')
+        + (more ? '<button type="button" data-act="more" title="선 스타일 — 실선 · 점선 · 둥근 점선 · 끝 모양 · 채움">점선 · 선 스타일…</button>' : '')   /* 3.254 — 점선이 여기 있다는 것을 이름으로(제보 2456db8e) */
         + '<button type="button" class="sm-del' + (more ? '' : ' sm-wide') + '" data-act="del">삭제</button></div>';
       doc.body.appendChild(el);
       try { doc.body.classList.add('ps-shape-menu-on'); } catch (_) {}   // 옆 패널은 숨긴다(board-popups.js)
@@ -365,7 +381,7 @@
     return api;
   }
 
-  var api = { positionTexts:positionTexts,resetDrawings: resetDrawings, name: name, clampLw: clampLw, clampOp: clampOp, isRightClick: isRightClick, findDrawing: findDrawing, targets: targets, place: place, css: css, install: install };
+  var api = { lineStyleOf: lineStyleOf, setLineStyle: setLineStyle, dashArray: dashArray, positionTexts:positionTexts,resetDrawings: resetDrawings, name: name, clampLw: clampLw, clampOp: clampOp, isRightClick: isRightClick, findDrawing: findDrawing, targets: targets, place: place, css: css, install: install };
   if (typeof window !== 'undefined' && window.document) { try { install(window); } catch (_) {} }
   return api;
 });

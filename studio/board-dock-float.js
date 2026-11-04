@@ -285,7 +285,7 @@
         h += '<span class="df-sep"></span><span class="df-l">색</span>';
         sw.forEach(function (s, i) { var c = s.getAttribute('data-c'); h += '<button type="button" class="df-sw' + (s.classList.contains('on') ? ' on' : '') + '" data-df-sw="' + i + '" style="background:' + c + '" title="' + c + '"></button>'; });
       }
-      if (doc.getElementById('lineStyleBtn')) h += '<span class="df-sep"></span><button type="button" class="df-k" data-df-line="1" title="선 굵기 · 투명도">굵기</button>';
+      if (doc.getElementById('lineStyleBtn')) h += '<span class="df-sep"></span><button type="button" class="df-k" data-df-line="1" title="선 스타일 — 굵기 · 투명도 · 점선(새로 그릴 선 · 도형)">굵기 · 점선</button>';   // 3.254 — 점선 모드가 여기 있다는 것을 보이게(제보 2456db8e)
       opts.innerHTML = h;
     }
     function place(g) {
