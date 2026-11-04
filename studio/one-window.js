@@ -10,6 +10,9 @@
        닫을 때의 팀 사본 정리(sync.js wipeTeamCacheSoft)가 저장소를 같이 쓰는 새 창의 사본을 지우지 않게 한다.
      · 숨은 채 열린 창(옛 창이 스스로 새 판으로 다시 열릴 때 등)은 잠금을 뺏지 않는다. 다른 창이 쥐고 있으면 스스로 물러난다.
      · 잠금 API 가 없는 브라우저 · iframe 안 · localStorage ps_one_window='0'(되돌리기)이면 예전 그대로.
+     · 같은 탭의 새로고침도 새 문서가 잠금을 가져간다. 이때 «뺏겼다»를 받는 것은 떠나는 옛 문서인데, 옛 문서의 window 는 이미
+       새 문서를 가리킨다(WindowProxy — WebKit 은 옛 문서의 남은 일을 잠깐 더 돌린다). 그래서 처음 붙잡은 document·location 이
+       지금 탭의 것일 때만 움직인다(gone). 안 그러면 옛 문서가 새 문서에 덮개를 씌우고 안내 화면으로 보낸다(3.258 CI).
    저장 엔진의 «덮지 않는다» 원칙은 그대로다. 같은 기기에서 동시에 쓰는 창을 없앨 뿐이다. 실제 두 창은 tests/browser/one-window-3258.mjs. */
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSOneWindow=api;})(typeof window!=='undefined'?window:null,function(){
   'use strict';
@@ -37,8 +40,7 @@
     return (function loop(){if(!left()||Date.now()-t0>=limit)return Promise.resolve();return wait(w,100).then(loop);})();
   }
   /* 떠나는 동안 이 창에서 더 고치지 않게 덮는다 */
-  function cover(w){
-    var d=w.document;
+  function cover(d){
     function put(){
       if(!d.body||d.getElementById('psElsewhereCover'))return;
       var el=d.createElement('div');el.id='psElsewhereCover';el.setAttribute('role','status');
@@ -50,15 +52,16 @@
     if(d.body)put();else d.addEventListener('DOMContentLoaded',put);
   }
   /* 안내 화면으로. 돌아올 주소(해시는 빼고 — 로그인 토큰이 실릴 수 있다)와 보던 화면을 이 탭에 적어 둔다 */
-  function go(w){
+  function go(w,d,loc){
+    d=d||w.document;loc=loc||w.location;
     var ss=null;try{ss=w.sessionStorage;}catch(_){}
     if(ss){
       try{ss.setItem('ps_self_reload','1');}catch(_){}   /* sync.js wipeAllowedNow — 닫기가 아니라 우리가 옮기는 것 */
-      try{ss.setItem(BACK,'app.html'+String(w.location.search||''));}catch(_){}
-      try{var b=w.document.body;ss.setItem(SCREEN,JSON.stringify({app:(b&&b.getAttribute('data-ps-app'))||'',team:w.__psTeamSection?String(w.__psTeamSection()||''):''}));}catch(_){}
+      try{ss.setItem(BACK,'app.html'+String(loc.search||''));}catch(_){}
+      try{var b=d.body;ss.setItem(SCREEN,JSON.stringify({app:(b&&b.getAttribute('data-ps-app'))||'',team:w.__psTeamSection?String(w.__psTeamSection()||''):''}));}catch(_){}
     }
     call(w,'__psBootMarkDone');   /* 멈춘 부팅으로 세지 않는다(WebKit 은 load 전엔 pagehide 를 안 보낸다) */
-    w.location.replace(PAGE);
+    loc.replace(PAGE);
   }
   function start(w,o){
     o=o||{};
@@ -67,21 +70,26 @@
     if(!locks||typeof locks.request!=='function')return st;
     try{if(w.top!==w)return st;}catch(_){return st;}
     try{if(w.localStorage.getItem(OFF)==='0')return st;}catch(_){}
-    var hidden=!!(w.document&&w.document.hidden);
+    var doc0=w.document,loc0=w.location;
+    function gone(){try{return w.document!==doc0;}catch(_){return true;}}   /* 이 창(탭)이 이미 다른 문서로 넘어갔다 */
+    var hidden=!!(doc0&&doc0.hidden);
     st.mode=hidden?'ask':'take';
     function leave(reason){
       if(st.left)return Promise.resolve(st);
       st.left=true;st.reason=reason;var t0=Date.now();
-      if(reason==='stolen')cover(w);
-      st.done=idle(w,o.busyMs||BUSY_MS).then(function(){return reason==='stolen'?flush(w,o.flushMs||FLUSH_MS):'skip';}).then(function(f){
-        st.flush=f;var queued=false;
+      function stop(){st.mode='gone';return st;}
+      if(gone())return Promise.resolve(stop());
+      if(reason==='stolen')cover(doc0);
+      st.done=idle(w,o.busyMs||BUSY_MS).then(function(){if(gone())return 'gone';return reason==='stolen'?flush(w,o.flushMs||FLUSH_MS):'skip';}).then(function(f){
+        st.flush=f;var queued=false;if(gone())return null;
         try{var S=w.PSSync;if(S&&typeof S.event==='function'){
-          S.event('window_elsewhere',{status:'ok',feature:'app',error_code:reason,meta:{stage:f,ms:Date.now()-t0,hidden:!!w.document.hidden}});   /* 글 값은 sync.js safeEventMeta 가 아는 이름(stage)만 남긴다 */
+          S.event('window_elsewhere',{status:'ok',feature:'app',error_code:reason,meta:{stage:f,ms:Date.now()-t0,hidden:!!doc0.hidden}});   /* 글 값은 sync.js safeEventMeta 가 아는 이름(stage)만 남긴다 */
           queued=true;
         }}catch(_){}
         return queued?sent(w,o.sendMs||2000):null;
       }).then(function(){
-        if(typeof o.go==='function')o.go(st);else go(w);
+        if(gone())return stop();
+        if(typeof o.go==='function')o.go(st);else go(w,doc0,loc0);
         return st;
       });
       return st.done;
@@ -89,12 +97,13 @@
     st.leave=leave;
     Promise.resolve().then(function(){
       return locks.request(LOCK,hidden?{mode:'exclusive',ifAvailable:true}:{mode:'exclusive',steal:true},function(lock){
+        if(gone())return;
         if(!lock){st.mode='busy';leave('hidden_busy');return;}
         st.mode='held';
         return new Promise(function(){});   /* 이 창이 살아 있는 동안 쥔다(창이 닫히면 브라우저가 놓는다) */
       });
     }).catch(function(e){
-      if(st.left)return;
+      if(st.left||gone())return;
       if(e&&e.name==='AbortError'){st.mode='stolen';leave('stolen');}
       else st.mode='error';
     });

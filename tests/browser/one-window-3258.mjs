@@ -6,6 +6,7 @@ import {startFixture,openApp,ready} from '../fixtures/team-app.mjs';
 //  · 안내 화면의 «이 창에서 계속하기» → A 가 다시 쥐고 B 가 물러난다
 //  · 숨은 채 열린 창(H)은 뺏지 않고 스스로 물러난다
 //  · 쥔 창을 닫으면 안내 화면의 창이 저절로 다시 연다
+//  · 쥔 창을 새로고침해도 덮개 없이 그대로(옛 문서가 새 문서를 만지지 않는다)
 //  · 서버 기록 window_elsewhere
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
@@ -61,6 +62,12 @@ try{
   await B.waitForURL(/\/studio\/app\.html$/,{timeout:20000});
   await ready(B);
   assert.equal(await mode(B),'held');
+
+  step('reload');
+  /* 같은 탭 새로고침 — 새 문서가 잠금을 가져가고 «뺏김»은 떠나는 옛 문서가 받는다. 옛 문서가 새 문서를 덮거나 보내면 안 된다(#770 첫 CI) */
+  await B.reload({waitUntil:'domcontentloaded'});await ready(B);await B.waitForTimeout(3000);
+  assert.match(B.url(),/\/studio\/app\.html$/);assert.equal(await mode(B),'held');
+  assert.equal(await B.locator('#psElsewhereCover').count(),0,'새로고침한 창에 덮개가 없다');
 
   step('event');
   const t0=Date.now();let ev=[];

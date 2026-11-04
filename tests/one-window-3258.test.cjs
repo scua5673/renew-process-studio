@@ -74,6 +74,23 @@ test('저장 확인이 실패하거나 늦어도 떠난다(새 창이 이어서 
   assert.equal(st.flush,'timeout');assert.equal(t.replaced,'elsewhere.html');
 });
 
+test('같은 탭이 새 문서로 넘어간 뒤(새로고침) 뺏김을 받으면 — 옛 문서는 아무것도 하지 않는다(새 문서를 덮거나 보내지 않는다)',async()=>{
+  /* 브라우저의 window 는 WindowProxy 라 옛 문서의 남은 일이 새 문서를 만진다(WebKit · 3.258 CI 의 덮개) */
+  const v=fakeWin();let flushed=0;v.psFlushAllPendingReady=()=>{flushed++;return Promise.resolve();};
+  const oldLoc=v.location;const st=W.start(v);await tick();v.lockReqs[0].grant({});await tick();
+  const fresh={hidden:false,body:{attrs:{},children:[],getAttribute(){return null;},appendChild(el){this.children.push(el);}},getElementById(){return null;},createElement(){return {style:{},setAttribute(){}};},addEventListener(){}};
+  let freshReplaced=null;v.document=fresh;v.location={search:'',hash:'',replace(u){freshReplaced=u;}};
+  v.lockReqs[0].steal();await tick(30);
+  assert.equal(st.left,false);assert.equal(fresh.body.children.length,0,'새 문서를 덮지 않는다');
+  assert.equal(freshReplaced,null);assert.equal(v.replaced,null);assert.equal(flushed,0);assert.equal(v.events.length,0);
+  assert.equal(v.ss.get('ps_self_reload'),undefined);
+  /* 떠나는 도중에 넘어가도 멈춘다 */
+  const m=fakeWin();m.busy=50;const s2=W.start(m,{busyMs:1000});await tick();m.lockReqs[0].grant({});await tick();m.lockReqs[0].steal();await tick();
+  assert.equal(m.document.body.children[0].id,'psElsewhereCover','아직 이 문서 — 덮는다');
+  m.document={...m.document,body:{attrs:{},children:[],getAttribute(){return null;},appendChild(){}}};m.busy=0;
+  await s2.done;assert.equal(s2.mode,'gone');assert.equal(m.replaced,null);assert.equal(m.events.length,0);
+});
+
 test('기록이 대기열에 남아 있으면 나갈 때까지(최대 sendMs) 기다렸다 떠난다',async()=>{
   const v=fakeWin();v.psFlushAllPendingReady=()=>Promise.resolve();
   v.PSSync={event(n){v.ls.set('ps_event_queue_v2',JSON.stringify([{row:{event_name:n}}]));setTimeout(()=>v.ls.set('ps_event_queue_v2','[]'),30);}};
