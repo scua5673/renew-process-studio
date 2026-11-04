@@ -87,7 +87,23 @@
       },
       removeItem:function(k){local.removeItem(k);}
     };
-    var native=Outbox.create({storage:composite,owner:owner});
+    /* 3.253 — 정리(native.prune)는 이 파일이 시점을 정한다. 큰 저장소(IndexedDB)에 있는 구출 원문은 지우지도 믿지도 않는다 —
+       작은 저장소에만 있는 묶음만 지우고, 큰 저장소 원문은 보존 확인(durable)된 것만 «뒤 묶음»으로 친다. */
+    function cachedRec(k){var c=context();return c?state(c).cache.get(k):null;}
+    var native=Outbox.create({storage:composite,owner:owner,prune:false,
+      durable:function(k){var rec=cachedRec(k);return rec?rec.durable===true:local.getItem(k)!==null;},
+      removable:function(k){return !cachedRec(k)&&local.getItem(k)!==null;}});
+    /* 작은 저장소가 가득 차 묶음이 큰 저장소로 구출된 기기는 사이 묶음을 지워야 구출 원문을 되돌리고(promote) 확인 표시(ACK)를 쓸 수 있다.
+       보존 · 되돌리기 작업이 도는 중엔 하지 않는다. 지웠으면 구출 원문의 기준 사진(capture)을 지금 원문으로 다시 찍는다 —
+       지운 묶음은 지금 상태를 바꾸지 않으므로(prune 머리글) 옛 사진으로 비교하면 «원문이 바뀌었다»로 잘못 멈춘다. */
+    function reclaim(c){
+      try{
+        var s=state(c);if(s.jobs.size||s.loading||s.promoting&&!s.draining||editable()!==true)return 0;
+        scope(c,true);var removed=native.prune();
+        if(removed){scope(c,true);var fresh=capture(c);s.cache.forEach(function(rec){if(rec.capture)rec.capture=fresh;});}
+        return removed;
+      }catch(_){return 0;}
+    }
     function prepared(){try{var c=context();return !c||state(c).preparedStamp===c.stamp&&!state(c).loading&&!state(c).hydrateError;}catch(_){return false;}}
     function assertPrepared(c){scope(c,false);if(!prepared())throw error('선수 변경 보관함을 불러오는 중입니다','StorageError');}
     function hasRescue(){
@@ -179,14 +195,14 @@
       return Promise.resolve().then(wait);
     }
     function stage(input){
-      var c=context();if(!c)return native.stage(input);assertPrepared(c);var cap=capture(c),previous=operation;
+      var c=context();if(!c)return native.stage(input);assertPrepared(c);reclaim(c);var cap=capture(c),previous=operation;
       operation=cap;try{var result=native.stage(input);scope(c,true);return result;}finally{operation=previous;}
     }
     function read(){var c=context();if(c)assertPrepared(c);return native.read();}
     function overlay(players){var c=context();if(c)assertPrepared(c);return native.overlay(players);}
     function pending(){try{return hasRescue()||native.pending();}catch(_){return true;}}
     function writable(){var c=context();assertPrepared(c);scope(c,true);if(hasRescue())throw error('보존 중인 선수 변경을 먼저 확인해 주세요','StorageError');return c;}
-    function ack(receipt){var c=writable(),result=native.ack(receipt);scope(c,true);return result;}
+    function ack(receipt){var c=writable();reclaim(c);var result=native.ack(receipt);scope(c,true);reclaim(c);return result;}
     function settle(receipt,current){var c=writable();return native.settle(receipt,function(){scope(c,true);if(typeof current!=='function'||current()===false)return false;return scope(c,true);});}
     function settled(proof,current){try{var c=writable();return native.settled(proof,function(){scope(c,true);if(typeof current!=='function'||current()===false)return false;return scope(c,true);});}catch(_){return false;}}
     function promote(){
@@ -217,8 +233,13 @@
           });
         });
       }
+      var reclaimed=false;
       function drain(){
-        return ready().then(function(){scope(c,true);var first=s.cache.entries().next();if(first.done)return true;return move(first.value[0],first.value[1]).then(drain);});
+        return ready().then(function(){
+          scope(c,true);
+          if(!reclaimed){reclaimed=true;s.draining=true;try{reclaim(c);}finally{s.draining=false;}}
+          var first=s.cache.entries().next();if(first.done)return true;return move(first.value[0],first.value[1]).then(drain);
+        });
       }
       var work=Promise.resolve().then(drain).catch(function(e){s.promotionError=e;throw e;});
       s.promoting=work;work.then(function(){if(s.promoting===work)s.promoting=null;},function(){if(s.promoting===work)s.promoting=null;});return work;
