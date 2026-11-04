@@ -1,6 +1,12 @@
 /* Durable, owner-scoped roster edits. Immutable batches prevent a late ACK in
  * another tab from replacing a newer draft. This module never sends data. */
-(function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSRosterOutbox=api;})(typeof window!=='undefined'?window:null,function(){
+(function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSRosterOutbox=api;
+  /* 3.253 — 앱을 열 때 맨 위 창(셸)에서 한 번, 선수단 화면이 부팅하기 전에 사이 묶음을 지운다. 작은 저장소가 묶음으로 가득 찬 기기는
+     선수단 화면이 서버 명단을 작은 저장소에 쓰지 못해 부팅을 못 했다 — 저장 · 확인 때의 정리만으로는 그 기기에 닿지 않는다.
+     지우기만 하므로 가득 찬 저장소에서도 돈다. 지운 양은 15초 뒤 사용 기록(roster_outbox_reclaimed)으로 남는다(개수 · KB 만). */
+  try{if(root&&root.top===root&&root.localStorage){var done=api.reclaimAll(root.localStorage);
+    if(done.removed)root.setTimeout(function(){try{var S=root.PSSync;if(S&&S.event)S.event('roster_outbox_reclaimed',{status:'ok',meta:{n:done.removed,kb:Math.round(done.before/1024),left:Math.round(done.after/1024)}});}catch(_){}},15000);}}catch(_){}
+})(typeof window!=='undefined'?window:null,function(){
   'use strict';
   var PREFIX='ps_roster_pending_v1:',own=Function.call.bind(Object.prototype.hasOwnProperty);
   function object(v){return v!==null&&typeof v==='object'&&!Array.isArray(v);}
@@ -23,6 +29,10 @@
   }
   function create(options){
     options=options||{};var storage=options.storage,ownerOf=options.owner;
+    /* 3.253 — 정리(prune)가 지워도 되는 묶음 · 믿어도 되는 묶음을 감싼 쪽(roster-pending)이 알려 준다. 혼자 쓰일 땐 둘 다 참이고 스스로 정리한다. */
+    var durableKey=typeof options.durable==='function'?options.durable:function(){return true;};
+    var removableKey=typeof options.removable==='function'?options.removable:function(){return true;};
+    var selfPrune=options.prune!==false;
     if(!storage||typeof storage.getItem!=='function'||typeof storage.setItem!=='function'||typeof storage.removeItem!=='function'||typeof storage.key!=='function'||typeof ownerOf!=='function')fail('선수 변경 보관함을 준비하지 못했습니다');
     function context(){var o=ownerOf();if(o==null)return null;if(!object(o)||!id(o.uid)||!id(o.wid))fail('선수 변경의 계정과 팀을 확인할 수 없습니다');return {uid:o.uid,wid:o.wid,prefix:PREFIX+encodeURIComponent(o.uid)+':'+encodeURIComponent(o.wid)+':'};}
     function guard(c){var now=context();if(!c||!now||now.prefix!==c.prefix)fail('계정이나 팀이 바뀌어 선수 변경 보관을 중단했습니다');}
@@ -77,19 +87,58 @@
       var wanted=Object.create(null),ids=[];changed.forEach(function(pid){if(!id(pid)||own(wanted,pid)||!own(players,pid))fail('변경한 선수와 보관 원문이 다릅니다');wanted[pid]=false;ids.push(pid);});
       deleted.forEach(function(pid){if(!id(pid)||own(wanted,pid)||own(players,pid))fail('삭제할 선수와 남길 명단이 다릅니다');wanted[pid]=true;ids.push(pid);});
       if(!ids.length)return empty(c);
+      if(selfPrune){try{prune(c);}catch(_){}}
       var current=state(c),pending=Object.create(null);current.rows.forEach(function(r){pending[r.id]=r;});
       if(current.maxSeq>=Number.MAX_SAFE_INTEGER)fail('선수 변경 보관 순서를 확인할 수 없습니다');
+      /* 3.253 — 아직 안 올라간 마지막 판과 같은 선수는 새 묶음에 다시 쓰지 않는다. 서버 저장이 막혀 기준이 안 바뀌면 저장할 때마다
+         같은 선수들이 같은 내용(+ 이전 판 기록 전부)으로 새 묶음에 쌓여 작은 저장소 10MB 를 채웠다(제보 e6fc5d26 — 묶음 9.9MB). */
+      var same=Object.create(null),fresh=ids.filter(function(pid){
+        var r=pending[pid];if(!r||r.deleted!==wanted[pid])return true;
+        if(JSON.stringify(r.player)!==JSON.stringify(wanted[pid]?null:players[pid]))return true;
+        same[pid]=true;return false;
+      });
+      if(!fresh.length)return receipt(c,ids.map(function(pid){return pending[pid];}));
+      ids=fresh;
       var batch=write(c,'b',function(t){return {v:1,kind:'batch',uid:c.uid,wid:c.wid,token:t,seq:current.maxSeq+1,rows:ids.map(function(pid,i){return {id:pid,base:pending[pid]?copy(pending[pid].base):(own(base,pid)?copy(base[pid]):null),player:wanted[pid]?null:copy(players[pid]),deleted:wanted[pid],token:t+':'+i,history:pending[pid]?history(pending[pid].history.concat(pending[pid].player?[pending[pid].player]:[])):[]};})};});
-      return receipt(c,batch.doc.rows.map(function(r){var sources=pending[r.id]?copy(pending[r.id].sources):[];sources.push({key:batch.key,id:r.id,token:r.token,raw:JSON.stringify(r)});return {id:r.id,base:copy(r.base),player:copy(r.player),deleted:r.deleted,token:r.token,history:copy(r.history),sources:sources};}));
+      var written=Object.create(null);batch.doc.rows.forEach(function(r){var sources=pending[r.id]?copy(pending[r.id].sources):[];sources.push({key:batch.key,id:r.id,token:r.token,raw:JSON.stringify(r)});written[r.id]={id:r.id,base:copy(r.base),player:copy(r.player),deleted:r.deleted,token:r.token,history:copy(r.history),sources:sources};});
+      return receipt(c,Object.keys(wanted).map(function(pid){return same[pid]?pending[pid]:written[pid];}));
+    }
+    /* 3.253 — 뒤 묶음이 이미 담고 있는 사이 묶음을 지운다(공간만 되찾는다 — 지우기만 하므로 저장소가 가득 차도 된다).
+       선수마다 확인 안 된 행 가운데 첫 행(기준 판 · 순서)과 마지막 행(지금 상태)은 남긴다. 사이 행은 기준 판이 같고, 그 선수의 판
+       (사이 행의 player · history)을 첫 행과 마지막 행이 이미 모두 담고 있을 때만 지운다 — 그러면 state() 가 내는 기준 판 · 지금 상태 ·
+       이전 판 기록(집합) · 순서가 지우기 전과 같다. 이전 판 기록은 서버 쓰기의 «이 기기가 쓴 판» 목록으로만 쓰인다(sync.js itemsWritePreimage).
+       묶음 하나를 지우는 건 그 안의 확인 안 된 행이 모두 지워도 되는 사이 행일 때 · 보존 확인(retain)이 붙지 않았을 때 · 감싼 쪽이 지워도 된다고 할 때뿐이다. */
+    function prune(c){
+      var current=state(c),retained=Object.create(null),rows=Object.create(null),middle=Object.create(null),removed=0;
+      current.docs.forEach(function(x){if(x.doc.kind==='ack'&&x.doc.retain)x.doc.sources.forEach(function(s){retained[s.key]=true;});});
+      var batches=current.docs.filter(function(x){return x.doc.kind==='batch';}).sort(function(a,b){return a.doc.seq-b.doc.seq||(a.doc.token<b.doc.token?-1:a.doc.token>b.doc.token?1:0);});
+      function open(x,r){return !current.acked[mark({key:x.key,id:r.id,token:r.token})];}
+      batches.forEach(function(x){x.doc.rows.forEach(function(r){if(open(x,r))(rows[r.id]=rows[r.id]||[]).push({key:x.key,row:r});});});
+      Object.keys(rows).forEach(function(pid){
+        var list=rows[pid];if(list.length<3)return;
+        var first=list[0],last=list[list.length-1],base=JSON.stringify(first.row.base),have=Object.create(null);
+        if(!durableKey(first.key)||!durableKey(last.key)||JSON.stringify(last.row.base)!==base)return;
+        (last.row.history||[]).concat(first.row.history||[],first.row.player?[first.row.player]:[]).forEach(function(p){have[JSON.stringify(p)]=true;});
+        for(var i=1;i<list.length-1;i++){var r=list[i].row;if(JSON.stringify(r.base)!==base||r.player&&!have[JSON.stringify(r.player)]||(r.history||[]).some(function(p){return !have[JSON.stringify(p)];}))return;}
+        for(var j=1;j<list.length-1;j++)(middle[list[j].key]=middle[list[j].key]||Object.create(null))[pid]=true;
+      });
+      batches.forEach(function(x){
+        if(retained[x.key]||!middle[x.key]||!removableKey(x.key))return;
+        if(!x.doc.rows.every(function(r){return !open(x,r)||middle[x.key][r.id];}))return;
+        guard(c);if(storage.getItem(x.key)===x.raw){storage.removeItem(x.key);removed++;}
+      });
+      guard(c);return removed;
     }
     function cleanup(c){
       var current=state(c),retained=Object.create(null);
       current.docs.forEach(function(x){if(x.doc.kind==='ack'&&x.doc.retain)x.doc.sources.forEach(function(s){retained[s.key]=true;});});
       current.docs.forEach(function(x){if(x.doc.kind==='batch'&&!retained[x.key]&&x.doc.rows.every(function(r){return current.acked[mark({key:x.key,id:r.id,token:r.token})];})){guard(c);if(storage.getItem(x.key)===x.raw)storage.removeItem(x.key);}});
       current.docs.forEach(function(x){if(x.doc.kind==='ack'&&!x.doc.retain&&x.doc.sources.every(function(s){return storage.getItem(s.key)===null;})){guard(c);if(storage.getItem(x.key)===x.raw)storage.removeItem(x.key);}});
+      if(selfPrune)prune(c);
     }
     function ack(captured){
       var c=context();if(!c||!object(captured)||!object(captured.owner)||captured.owner.uid!==c.uid||captured.owner.wid!==c.wid||captured.key!==c.prefix||!Array.isArray(captured.rows))fail('다른 계정이나 팀의 선수 변경은 확인 처리하지 않습니다');
+      if(selfPrune){try{prune(c);}catch(_){}}
       var current=state(c),sources=[],seen=Object.create(null),ids=Object.create(null),docs=Object.create(null);current.docs.forEach(function(x){docs[x.key]=x;});
       captured.rows.forEach(function(r){if(!object(r)||!id(r.id)||!Array.isArray(r.sources))fail('확인할 선수 변경 원문이 없습니다');r.sources.forEach(function(s){
         if(!object(s)||s.id!==r.id||!validKey(c,s.key,'b')||typeof s.token!=='string'||typeof s.raw!=='string')fail('확인할 선수 변경 대상이 다릅니다');
@@ -152,7 +201,20 @@
       copied.forEach(function(p){if(p.type==='target'){out.push(p);return;}var r=changes[p.id];used[p.id]=1;if(!r)out.push(p);else if(!r.deleted)out.push(copy(r.player));});
       pending.forEach(function(r){if(!used[r.id]&&!r.deleted)out.push(copy(r.player));});guard(c);return out;
     }
-    return {stage:stage,read:read,ack:ack,settle:settle,settled:settled,overlay:overlay,pending:function(){return read().rows.length>0;}};
+    return {stage:stage,read:read,ack:ack,settle:settle,settled:settled,overlay:overlay,pending:function(){return read().rows.length>0;},prune:function(){var c=context();return c?prune(c):0;}};
   }
-  return {create:create,prefix:PREFIX};
+  /* 3.253 — 이 저장소에 묶음이 있는 모든 계정 · 팀(키 이름의 uid · wid)마다 prune. 다른 계정의 묶음도 지금 상태는 그대로다(prune 머리글). */
+  function reclaimAll(storage){
+    var owners=Object.create(null),out={removed:0,before:0,after:0};
+    function bytes(){var n=0;for(var i=0;i<storage.length;i++){var k=storage.key(i);if(typeof k==='string'&&k.indexOf(PREFIX)===0){var v=storage.getItem(k);n+=k.length+(v?v.length:0);}}return n;}
+    for(var i=0;i<storage.length;i++){var k=storage.key(i);if(typeof k!=='string'||k.indexOf(PREFIX)!==0)continue;var part=k.slice(PREFIX.length).split(':');if(part.length===4&&part[2]==='b')owners[part[0]+':'+part[1]]=part;}
+    var list=Object.keys(owners);if(!list.length)return out;
+    out.before=bytes();
+    list.forEach(function(name){
+      var part=owners[name],who;try{who={uid:decodeURIComponent(part[0]),wid:decodeURIComponent(part[1])};}catch(_){return;}
+      try{out.removed+=create({storage:storage,owner:function(){return who;}}).prune();}catch(_){}
+    });
+    out.after=out.removed?bytes():out.before;return out;
+  }
+  return {create:create,prefix:PREFIX,reclaimAll:reclaimAll};
 });
