@@ -11,7 +11,10 @@ const fx=await startFixture(),browsers={},results=[];
 const put=(k,v)=>fx.db.set(WT+'|'+k,{workspace_id:WT,k,v:JSON.stringify(v),cupd:1000,updated_by:A});
 const gm={identity:'함께 보고, 함께 전진한다.',moments:[{key:'ao',name:'공격',phases:[{id:'build',name:'후방 빌드업',principles:['공을 받기 전에 다음 선택을 확인한다.']},{id:'advance',name:'중원 전진',principles:['전진할 수 있으면 전진한다.']}]},{key:'do',name:'수비',phases:[{id:'press',name:'전방 압박',principles:['안쪽을 닫고 바깥으로 유도한다.']}]}]};
 put('cs_scout_targets_v1',depthCandidates());put('cs_gamemodel_v1',gm);
-async function tapSize(loc,label){const b=await loc.boundingBox();assert.ok(b&&b.width>=43.5&&b.height>=43.5,label+' '+JSON.stringify(b));}
+/* 3.253 — 선수단 작업 공간은 동기화 회차마다 도구줄을 통째로 다시 그린다(player-workspace paint → innerHTML). 찾은 단추가 재는 사이에
+   바뀌면 크기가 null 로 나와 느린 WebKit 에서 자주 떨어졌다(11/3 하루 네 번). 다시 찾아 잰다 — 크기 기준은 그대로이고,
+   정말 안 보이면(열어 둔 필터가 저절로 닫힘 등) 5초 뒤 그대로 떨어진다. */
+async function tapSize(loc,label){let b=null;const end=Date.now()+5000;while(!b&&Date.now()<end){b=await loc.boundingBox({timeout:2000}).catch(()=>null);if(!b)await new Promise(r=>setTimeout(r,100));}assert.ok(b&&b.width>=43.5&&b.height>=43.5,label+' '+JSON.stringify(b));}
 try{
  const {page,logs}=await openApp(fx,'phone',{browsers,phoneStart:true,dark:engine==='webkit'});
  async function go(key){
