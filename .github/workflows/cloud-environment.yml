@@ -1,0 +1,48 @@
+name: Cloud environment setup
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/cloud-environment.yml'
+      - '.nvmrc'
+      - 'scripts/setup-cloud.sh'
+      - 'package.json'
+      - 'package-lock.json'
+  push:
+    branches: [main, staging]
+    paths:
+      - '.github/workflows/cloud-environment.yml'
+      - '.nvmrc'
+      - 'scripts/setup-cloud.sh'
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloud-setup-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Install from the cloud setup script on a fresh Linux runner
+        run: bash scripts/setup-cloud.sh
+      - name: Exercise both installed browsers with synthetic accounts
+        env:
+          PS_TEST_GROUP: selection
+          PS_BROWSER_ENGINE: chromium,webkit
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cloud-setup-browser-proof
+          path: test-results/
+          retention-days: 7
