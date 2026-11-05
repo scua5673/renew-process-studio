@@ -241,6 +241,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 앱 글꼴은 Pretendard 하나(`vendor/fonts.css`). «PROCESS STUDIO» 로고 글자만 Jost. SVG `font-family` 속성 · canvas `font` 도 Pretendard 가 먼저(`tests/font-unify-3085` · `board-name-pos-3086`).
 - CSP `font-src 'self' data:` — 글꼴은 자체 호스팅. 이름표 글꼴은 `vendor/name-fonts/<글꼴>/`(SIL OFL, unicode-range 조각).
 - 새 localStorage 키는 `studio/storage-keys.js` 에 적는다.
+- 11/5(판 번호 없음) — 저장 계층의 문(`tests/storage-gate.test.cjs` · `scripts/storage-gate-scan.cjs`, 저장 계층 정리 0단계): 내용 자료(구실 data · draft · queue · recovery, 또는 키가 변수)를 `localStorage.setItem` 으로 직접 쓰는 곳과 빈 `catch` 는 파일마다 기준(`tests/storage-gate.baseline.json`)에서 늘지 않는다 — 내용 자료는 `psSaveShared` · `psSaveSharedAsync` 로, 화면 설정은 표에 pref · seen · session · cache 로 적은 글자 그대로의 키로(세지 않는다). 줄였으면 `node scripts/storage-gate-scan.cjs --write`. 화면마다 따로 적은 정본 목록(scout.html `SHARED_IDB` · team-files.js `IDB_MIRROR` · app.html `KNOWN_IDB` · `MIRRORED_IDB`)은 키 표와 견준다 — 이미 어긋난 여섯은 시험의 `KNOWN`. 스캔의 «살펴볼 곳»(예: team-files.js 가 `scout_tool_v1` 을 쓰는데 목록에 없어 거울만 고친다)은 다음 단계에서 고친다.
 - 3.105 — 커뮤니티 글의 JSON 은 로그인한 누구나 표에 직접 쓸 수 있고, 다른 팀 · 로그아웃 방문자가 같은 사이트 화면에서 읽는다(CSP 는 inline 스크립트를 막지 않는다). 글의 값(좌표 · 수 · 이름 · 주소 · 색)은 `esc` 나 숫자로만 HTML 에 넣는다. 썸네일 SVG 를 innerHTML 로 넣을 땐 `PSSafe.svg`(storage.js — `tests/svg-guard-3105` 가 날것의 자리를 센다). 다른 출처 postMessage 는 storage.js 의 첫 리스너가 막는다 — 새 화면은 storage.js 를 메시지 리스너보다 먼저 읽는다.
 
 ## 시험
