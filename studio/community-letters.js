@@ -69,7 +69,7 @@
   }
   function create(options){
     var doc=options.doc,host=doc.getElementById('grid'),count=doc.getElementById('commCount'),win=doc.defaultView;
-    var list=null,loading=null,error=false,cache={},selected=null,query='',order='old',seq=0,listY=0,lastNumber=0;
+    var list=null,loading=null,error=false,cache={},selected=null,query='',order='old',seq=0,listY=0,lastNumber=0,focusFor=0;
     var history=readHistory({storage:function(){return win.localStorage;},owner:options.owner}),readerOwner=history.owner(),readSnapshot='';
     var social=win.PSLetterSocial?win.PSLetterSocial.create({window:win,fetch:options.fetch,config:options.config,session:options.session,active:options.active,onUpdate:function(){if(!selected)paint(true);}}):null;
     var deep=null;try{deep=new URLSearchParams(win.location.search);var dn=Number(deep.get('letter'));if(Number.isInteger(dn)&&dn>0&&dn<=999)selected=dn;}catch(_){}
@@ -86,7 +86,7 @@
     function paint(force){
       if(!active())return;
       var who=history.owner();
-      if(who!==readerOwner){readerOwner=who;selected=null;seq++;}
+      if(who!==readerOwner){readerOwner=who;selected=null;focusFor=0;seq++;}
       var seen=new Set(history.list(who)),snapshot=who+':'+Array.from(seen).join(',');
       force=force||snapshot!==readSnapshot;readSnapshot=snapshot;
       doc.body.classList.add('pr-letters');
@@ -102,6 +102,9 @@
     }
     function read(n,focus){
       var ticket=++seq,who=history.owner();selected=n;lastNumber=n;
+      /* 3.262 — 누른 레터를 받는 사이 셸이 다시 그리면(게시글 도착 · 같은 검색어 input) paint 가 같은 호를 focus 없이 다시 읽어
+         누른 쪽 ticket 을 앞질렀다 — 제목 초점이 사라졌다(community-process 가끔 실패). 초점 요청은 호에 붙여 둔다. */
+      if(focus)focusFor=n;else if(focusFor!==n)focusFor=0;
       if(!cache[n])status('레터 본문을 불러오는 중…');
       var pending=cache[n]?Promise.resolve(cache[n]):get(nn(n)+'.json');
       return pending.then(function(d){
@@ -112,10 +115,10 @@
         host.innerHTML=article(d,{social:win.PSLetterSocial});if(social)social.mount(host,d);if(count)count.textContent='레터 '+n+'호 · 글 '+d.pieces.length+'편'+(d.training?' · 관련 훈련 '+d.training.exercises.length+'개':'');
         history.mark(n,who);
         if(deep&&deep.has('training')){var k=Number(deep.get('training'));deep=null;if(Number.isInteger(k)&&k>=0){var play=host.querySelector('[data-training="'+k+'"]');if(play)options.openTraining(n,k,play);}}
-        if(focus){host.scrollIntoView({block:'start'});host.querySelector('.pl-title h1').focus({preventScroll:true});}
+        if(focusFor===n){focusFor=0;host.scrollIntoView({block:'start'});host.querySelector('.pl-title h1').focus({preventScroll:true});}
       }).catch(function(){if(ticket===seq&&active())status('레터 본문을 불러오지 못했어요. 다시 시도해 주세요.',true);});
     }
-    function back(){if(social)social.stop();selected=null;seq++;paint(true);var b=host.querySelector('[data-letter="'+lastNumber+'"]');if(b)b.focus({preventScroll:true});win.scrollTo(0,listY);}
+    function back(){if(social)social.stop();selected=null;focusFor=0;seq++;paint(true);var b=host.querySelector('[data-letter="'+lastNumber+'"]');if(b)b.focus({preventScroll:true});win.scrollTo(0,listY);}
     function refresh(){var who=history.owner();if(who!==readerOwner||who+':'+history.list(who).join(',')!==readSnapshot)paint(false);}
     host.addEventListener('click',function(e){
       if(!active())return;
@@ -129,7 +132,7 @@
     });
     win.addEventListener('storage',function(e){if(e.key===null||e.key===READ_PREFIX+history.owner()||e.key==='ps_sync_session')refresh();});
     win.addEventListener('focus',refresh);
-    return {render:function(q){q=String(q||'');var changed=q!==query;query=q;if(changed){if(social)social.stop();selected=null;seq++;}paint(changed);},refresh:refresh,count:function(){return list?list.length:null;},isReading:function(n){return active()&&selected===n;}};
+    return {render:function(q){q=String(q||'');var changed=q!==query;query=q;if(changed){if(social)social.stop();selected=null;focusFor=0;seq++;}paint(changed);},refresh:refresh,count:function(){return list?list.length:null;},isReading:function(n){return active()&&selected===n;}};
   }
   return {create:create,indexRead:indexRead,select:select,article:article,rich:rich,href:href,readHistory:readHistory};
 });

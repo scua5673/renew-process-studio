@@ -11,12 +11,13 @@ const pack=JSON.parse(fs.readFileSync(path.join(root,'studio/packs/03.json'),'ut
 const fx=await startFixture(),browsers={};
 try{
   const {page,context,logs}=await openApp(fx,size,{browsers});
-  let indexDown=true,detailDown=true,lateResolve,lateDone,packResolve;
+  let indexDown=true,detailDown=true,lateResolve,lateDone,packResolve,hold3=null;
   const bodies=[],writes=[];
   await context.route('**/studio/letters/**',async route=>{
     const name=new URL(route.request().url()).pathname.split('/').pop();bodies.push(name);
     if(name==='index.json'&&indexDown||name==='43.json'&&detailDown)return route.fulfill({status:503,body:'busy'});
     if(name==='42.json'){await new Promise(resolve=>lateResolve=resolve);await route.fallback();lateDone=true;return;}
+    if(name==='03.json'&&hold3)await hold3;
     return route.fallback();
   });
   await context.route('**/studio/packs/46.json',async route=>{await new Promise(resolve=>packResolve=resolve);await route.fallback();});
@@ -49,7 +50,12 @@ try{
   await c.selectOption('#plOrder','new');assert.equal((await ids())[0],46);
   await c.selectOption('#plOrder','old');assert.equal((await ids())[0],1);
   await c.fill('#commSearch',letter(3).title);await c.waitForFunction(()=>document.querySelectorAll('.pl-row').length===1);
-  assert.deepEqual(await ids(),[3]);await c.click('[data-letter="3"]');await c.waitForSelector('[data-letter-reader="3"]');
+  /* 3.262 — 본문을 받는 사이 셸이 같은 검색어로 다시 그려도(input · 게시글 도착) 누른 레터의 제목에 초점이 간다 */
+  let release3;hold3=new Promise(resolve=>release3=resolve);
+  assert.deepEqual(await ids(),[3]);await c.click('[data-letter="3"]');
+  await c.waitForFunction(()=>/불러오는 중/.test(document.getElementById('grid').textContent));
+  await c.evaluate(()=>document.getElementById('commSearch').dispatchEvent(new Event('input',{bubbles:true})));
+  hold3=null;release3();await c.waitForSelector('[data-letter-reader="3"]');
   assert.equal(await c.locator('.pl-title h1').textContent(),letter(3).title);
   assert.equal(await c.locator('.pl-section[id^="pl-piece-"]').count(),3);
   assert.equal(await c.locator('.pl-play').count(),3);
