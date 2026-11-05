@@ -27,35 +27,46 @@ function crowdTile(teamCol){ var key=String(teamCol||"");
       여러 운동장은 카드마다(골대가 카드 위 · 아래 = y 방향) 제 골라인에서 홀수 개 띠라 가운데 띠가 하프라인에 걸친다.
       예전엔 경기장 전체에 x 방향 한 장이라 카드에선 줄이 터치라인과 나란했고, 크기가 다른 카드끼리 줄이 안 맞았다. 카드 사이 잔디는 줄 없이 결만.
       그때 psStMow 는 빈 무늬(이름을 쓰는 곳 · 시험은 그대로). 카드 띠는 «간단 · 잔디만»의 바닥 묶음([data-ps-ground] — 영상이 사각형을 늘린다) 밖에 그린다. */
-var _grain=null,GRAIN_V=1;
-function grainTile(){
-  if(_grain!=null)return _grain;
+var _grain={},GRAIN_V=1;
+/* n = 타일 한 변(px, 기본 256 = 3D). 3.263 평면은 128 — 같은 무늬를 줄여 그린다(평면은 8m 칸이 화면에 80px 안팎이라 256 이 필요 없고, 그림 · 영상 내보내기마다 판 SVG 에 실린다) */
+function grainTile(n){
+  const N=n>0?Math.round(n):256,k=N/256;
+  if(_grain[N]!=null)return _grain[N];
   try{
-    const N=256,c=W.document.createElement('canvas');c.width=N;c.height=N;const g=c.getContext('2d');
+    const c=W.document.createElement('canvas');c.width=N;c.height=N;const g=c.getContext('2d');
     let seed=20261104;const rnd=()=>{seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};
     const wrap=(x,y,r,fn)=>{for(const dx of [0,-N,N])for(const dy of [0,-N,N]){if(x+dx+r<0||x+dx-r>N||y+dy+r<0||y+dy-r>N)continue;fn(x+dx,y+dy);}};
     g.lineCap='round';
-    for(let i=0;i<2400;i++){const x=rnd()*N,y=rnd()*N,len=5+rnd()*17,lean=(rnd()-.5)*2.4,a=.05+rnd()*.08,light=rnd()<.5,w=rnd()<.75?.9:1.5;
-      wrap(x,y,len+2,(px,py)=>{g.strokeStyle=(light?'rgba(232,255,214,':'rgba(6,24,8,')+a+')';g.lineWidth=w;g.beginPath();g.moveTo(px,py);g.lineTo(px+lean,py+len);g.stroke();});}
-    _grain=c.toDataURL('image/png');
-  }catch(_){_grain='';}
-  return _grain;
+    for(let i=0;i<2400;i++){const x=rnd()*N,y=rnd()*N,len=(5+rnd()*17)*k,lean=(rnd()-.5)*2.4*k,a=.05+rnd()*.08,light=rnd()<.5,w=(rnd()<.75?.9:1.5)*k;
+      wrap(x,y,len+2*k,(px,py)=>{g.strokeStyle=(light?'rgba(232,255,214,':'rgba(6,24,8,')+a+')';g.lineWidth=w;g.beginPath();g.moveTo(px,py);g.lineTo(px+lean,py+len);g.stroke();});}
+    _grain[N]=c.toDataURL('image/png');
+  }catch(_){_grain[N]='';}
+  return _grain[N];
 }
-/* o = {multi, cards:[[x,y,w,h]…], len(규격 길이 m), L, T, m(1m), f(반올림)} → {defs(psStMow 포함), cards(카드 띠 rect), rot(잎결 방향 — 깎는 방향)} */
+/* 3.263 — 깎은 줄은 약 4m(사용자 «4m 간격으로» · «가로일 때 세로일 때 다 신경써서»). 예전엔 5m.
+   골라인에서 골라인까지 홀수 개 띠(11인제 27 · 8인제 17 · 풋살 11) — 가운데 띠가 하프라인에 걸치고 두 골라인이 띠 경계(띠는 3.9 · 3.8 · 3.6m).
+   평면(board-flat-turf.js)과 3D 가 이 규칙 하나를 쓴다. */
+var BAND=4;
+function bands(len){let n=Math.max(3,Math.round((+len||105)/BAND));if(!(n%2))n++;return n;}
+/* 여러 운동장 카드(골대가 카드 위 · 아래) — 카드마다 띠 폭과 둘레(띠 반 폭, 옆 카드와 안 겹치게) */
+function cardBands(cards,len){
+  const cs=(cards||[]).filter(r=>Array.isArray(r)&&r.length===4&&r.every(Number.isFinite)&&r[2]>0&&r[3]>0),n=bands(len);
+  return cs.map((r,i)=>{const band=r[3]/n;let pad=band*.5;
+    cs.forEach((q,j)=>{if(j===i)return;const gap=Math.max(q[0]-(r[0]+r[2]),r[0]-(q[0]+q[2]),q[1]-(r[1]+r[3]),r[1]-(q[1]+q[3]));if(gap>=0)pad=Math.min(pad,gap/2);});
+    return {r:r,band:band,pad:pad,box:[r[0]-pad,r[1]-pad,r[2]+2*pad,r[3]+2*pad]};});
+}
+/* o = {multi, cards:[[x,y,w,h]…], len(규격 길이 m), L, T, m(1m), pw(운동장 길이 — 없으면 105m), f(반올림)}
+   → {defs(psStMow 포함), cards(카드 띠 rect), rot(잎결 방향 — 깎는 방향), per(잔디 사진 · 두 색 줄의 한 쌍 — 밝은 띠 + 어두운 띠)} */
 function mowPlan(o){
-  const f=o.f||(n=>Math.round(n*10)/10),DK='.07',LT='.06';
-  const cards=(o.cards||[]).filter(r=>Array.isArray(r)&&r.length===4&&r.every(Number.isFinite)&&r[2]>0&&r[3]>0);
-  if(!o.multi||!cards.length){const m=o.m;
-    return {rot:0,cards:'',defs:'<pattern id="psStMow" patternUnits="userSpaceOnUse" x="'+f(o.L)+'" y="'+f(o.T)+'" width="'+f(10*m)+'" height="'+f(10*m)+'"><rect width="'+f(5*m)+'" height="'+f(10*m)+'" fill="#000" fill-opacity="'+DK+'"/><rect x="'+f(5*m)+'" width="'+f(5*m)+'" height="'+f(10*m)+'" fill="#fff" fill-opacity="'+LT+'"/></pattern>'};}
-  let n=Math.max(3,Math.round((+o.len||105)/5));if(!(n%2))n++;
+  const f=o.f||(n=>Math.round(n*10)/10),DK='.07',LT='.06',cs=cardBands(o.cards,o.len);
+  if(!o.multi||!cs.length){const band=(o.pw>0?o.pw:105*o.m)/bands(o.len),per=2*band;
+    return {rot:0,cards:'',per:per,defs:'<pattern id="psStMow" patternUnits="userSpaceOnUse" x="'+f(o.L)+'" y="'+f(o.T)+'" width="'+f(per)+'" height="'+f(per)+'"><rect width="'+f(band)+'" height="'+f(per)+'" fill="#000" fill-opacity="'+DK+'"/><rect x="'+f(band)+'" width="'+f(band)+'" height="'+f(per)+'" fill="#fff" fill-opacity="'+LT+'"/></pattern>'};}
   let defs='<pattern id="psStMow" patternUnits="userSpaceOnUse" width="1" height="1"/>',out='';
-  cards.forEach((r,i)=>{const band=r[3]/n;let pad=band*.5;
-    cards.forEach((q,j)=>{if(j===i)return;const gap=Math.max(q[0]-(r[0]+r[2]),r[0]-(q[0]+q[2]),q[1]-(r[1]+r[3]),r[1]-(q[1]+q[3]));if(gap>=0)pad=Math.min(pad,gap/2);});
-    const id='psStMowC'+i;
+  cs.forEach((c,i)=>{const r=c.r,band=c.band,b=c.box,id='psStMowC'+i;
     defs+='<pattern id="'+id+'" patternUnits="userSpaceOnUse" x="'+f(r[0])+'" y="'+f(r[1])+'" width="'+f(2*band)+'" height="'+f(2*band)+'"><rect width="'+f(2*band)+'" height="'+f(band)+'" fill="#000" fill-opacity="'+DK+'"/><rect y="'+f(band)+'" width="'+f(2*band)+'" height="'+f(band)+'" fill="#fff" fill-opacity="'+LT+'"/></pattern>';
-    out+='<rect class="ps-mow-card" x="'+f(r[0]-pad)+'" y="'+f(r[1]-pad)+'" width="'+f(r[2]+2*pad)+'" height="'+f(r[3]+2*pad)+'" fill="url(#'+id+')"/>';
+    out+='<rect class="ps-mow-card" x="'+f(b[0])+'" y="'+f(b[1])+'" width="'+f(b[2])+'" height="'+f(b[3])+'" fill="url(#'+id+')"/>';
   });
-  return {rot:90,cards:out,defs:defs};
+  return {rot:90,cards:out,defs:defs,per:2*105*o.m/bands(105)};
 }
 /* 잎결 무늬 — 8m 칸, 깎는 방향(rot)으로. 그림이 없으면(노드 시험 · 캔버스 실패) 빈 문자열 */
 function grainDefs(o){const src=grainTile();if(!src)return '';const f=o.f||(n=>Math.round(n*10)/10),s=f(8*o.m);
@@ -123,5 +134,5 @@ function exportView(host,visible){
   exports.set(host,{src:src,key:key,value:value});return value;
   }catch(_){return {src:src,vb:vb.slice()};}
 }
-return {crowdTile:crowdTile,grainTile:grainTile,grainDefs:grainDefs,mowPlan:mowPlan,GRAIN_V:GRAIN_V,viewKey:viewKey,bounds:bounds,paint:paint,cover:cover,exportView:exportView};
+return {crowdTile:crowdTile,grainTile:grainTile,grainDefs:grainDefs,mowPlan:mowPlan,bands:bands,cardBands:cardBands,BAND:BAND,GRAIN_V:GRAIN_V,viewKey:viewKey,bounds:bounds,paint:paint,cover:cover,exportView:exportView};
 });
