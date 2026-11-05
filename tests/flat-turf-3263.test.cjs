@@ -1,8 +1,8 @@
 'use strict';
-/* 3.260 — 평면 잔디(사용자 «평면에서도 잔디결 아주 희미하게» · «4m 간격으로» · «가로일 때 세로일 때 다 신경써서»).
+/* 3.263 — 평면 잔디(사용자 «평면에서도 잔디결 아주 희미하게» · «4m 간격으로» · «가로일 때 세로일 때 다 신경써서»).
    ① 잎결 — 사진 없는 «잔디» 피치에 3D 잎결을 옅게. ② 실사 잔디 사진 — 칸 = 깎은 줄 한 쌍, 돌리기는 운동장 하나(0°) · 여럿(90°)으로
    (세로 판에서 world 가 이미 도는데 무늬를 또 돌려 사진의 띠가 터치라인과 나란했다). ③ 깎은 줄 — 3D psStMow · 카드 띠를 평면에 더 옅게, 약 4m.
-   실제 화면은 tests/browser/board-flat-turf-3260.mjs. 띠 규칙(PSStadiumGround.bands)은 board-grass-mow-3255 도 본다. */
+   실제 화면은 tests/browser/board-flat-turf-3263.mjs. 띠 규칙(PSStadiumGround.bands)은 board-grass-mow-3255 도 본다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const F=require('../studio/board-flat-turf.js'),G=require('../studio/board-stadium-ground.js');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
@@ -68,5 +68,5 @@ test('배선 — board.html <script> 한 줄(잔디 모듈 다음) · sw.js CORE
   const b=read('studio/board.html');
   assert.ok(b.includes('<script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>'));
   assert.ok(read('sw.js').includes("'/studio/board-stadium-ground.js', '/studio/board-flat-turf.js',"));
-  assert.ok(read('tests/browser/run-critical.mjs').includes("suites.board.push('board-flat-turf-3260')"));
+  assert.ok(read('tests/browser/run-critical.mjs').includes("suites.board.push('board-flat-turf-3263')"));
 });

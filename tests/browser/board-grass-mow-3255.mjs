@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 3.255 — 3D 잔디결(합성 팀 fixture 에서만). 실제 경기장 그림(<img> SVG)을 풀어 본다:
-//  · 운동장 5개: 카드마다 띠 무늬가 그 카드의 골라인(data-pitch-rect 위)에서 시작, 27개 띠(11인제 · 3.260 — 예전 21) — 가운데 띠가 하프라인에 걸친다
+//  · 운동장 5개: 카드마다 띠 무늬가 그 카드의 골라인(data-pitch-rect 위)에서 시작, 27개 띠(11인제 · 3.263 — 예전 21) — 가운데 띠가 하프라인에 걸친다
 //  · 운동장 1개: 예전 psStMow(골라인에서 5m) 그대로 · 카드 띠 없음
 //  · 잎결 타일은 실제 PNG(이음새 없는 256 타일) · 바둑판 원인이던 큰 얼룩 없음
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
@@ -32,7 +32,7 @@ try{
     const r=await look(5,o);
     assert.equal(r.cards.length,5,'카드 다섯');assert.equal(r.cardRects,5,'카드마다 띠');
     assert.deepEqual(r.mow,{patternUnits:'userSpaceOnUse',width:'1',height:'1'},'경기장 전체 x 줄은 빈 무늬');
-    r.cards.forEach((c,i)=>{const p=r.cardPats[i],band=c[3]/27;   /* 3.260 — 약 4m(예전 21) */
+    r.cards.forEach((c,i)=>{const p=r.cardPats[i],band=c[3]/27;   /* 3.263 — 약 4m(예전 21) */
       assert.ok(p,'카드 '+i+' 무늬');assert.ok(Math.abs(+p.x-c[0])<.06&&Math.abs(+p.y-c[1])<.06,'골라인에서 시작');
       assert.ok(Math.abs(+p.height-2*band)<.06,'11인제 27개 띠 '+p.height+' vs '+2*band);});
     assert.equal(r.grainPat.patternTransform,'rotate(90)','잎결은 카드의 깎는 방향(x)');

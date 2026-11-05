@@ -1,11 +1,17 @@
 import assert from 'node:assert/strict';
-import {startFixture,openApp,A,WT,WP} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,ready,A,WT,WP} from '../fixtures/team-app.mjs';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',fx=await startFixture(),browsers={};
 const key='cs_meet_sit_v1',base=JSON.stringify({title:'confirmed'}),late=JSON.stringify({title:'late local edit'});
 fx.db.set(WT+'|'+key,{workspace_id:WT,k:key,v:base,cupd:1000,updated_by:A});
 try{
  const {page,context,logs}=await openApp(fx,engine==='webkit'?'ipad':'desktop',{browsers});
+ /* 11/5 — 가짜 «대기 목록 읽기 실패»는 앱이 조용해진 뒤에만 켠다. 부팅 중 프레임 storage 이벤트가 그 사이에 오면
+    부모의 거울 · outbox 꼬리(sync.js editMirrorCommit · editOutboxCommit)가 그 실패를 받아 일부러 rejection 으로 남고(전환 장벽 fail-closed),
+    다음 전환이 시험하려는 «마지막 저장 확인 중 늦은 편집»에 닿기 전에 «barrier failed mirror»로 멈췄다(25번 중 1번꼴, 늦은 편집은 쓰이지도 않음). */
+ const tails=()=>page.evaluate(()=>Promise.allSettled([window.editMirrorCommit,window.editOutboxCommit]).then(r=>r.map(x=>x.status)));
+ await ready(page);
  await page.evaluate(()=>psFlushAllPendingReady());
+ assert.deepEqual(await tails(),['fulfilled','fulfilled'],'parent edit tails are settled before the synthetic failure');
  await page.evaluate(()=>{
   const get=storage.get.bind(storage);
   window.qaQueueReadFailure=true;
@@ -16,6 +22,7 @@ try{
  assert.equal(await page.evaluate(()=>PSSync.activeWs()),WT);
  assert.equal(await page.evaluate(async key=>(await storage.get(key)).value,key),base);
  await page.evaluate(()=>{window.qaQueueReadFailure=false;});
+ assert.deepEqual(await tails(),['fulfilled','fulfilled'],'the synthetic queue failure did not leak into a background edit tail');
 
  await page.evaluate(({key,late})=>{
   const flush=window.psFlushAllPendingReady;let calls=0;

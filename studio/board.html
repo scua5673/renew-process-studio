@@ -8000,7 +8000,7 @@ function renderPitchImg(){try{
       _pt.appendChild(_im); _df.appendChild(_pt); tg.appendChild(_df);
       tg.appendChild(el("rect",{x:-_SXt,y:-_SXt,width:W+2*_SXt,height:H+2*_SXt,fill:"url(#psRealGrass)"}));
     }
-    /* 3.260 — 줄 간격(약 4m) · 방향 · 운동장 카드마다 맞춤은 board-flat-turf.js. 세로 판은 world 가 이미 돈다 — 무늬를 또 돌리면 줄이 터치라인과 나란했다 */
+    /* 3.263 — 줄 간격(약 4m) · 방향 · 운동장 카드마다 맞춤은 board-flat-turf.js. 세로 판은 world 가 이미 돈다 — 무늬를 또 돌리면 줄이 터치라인과 나란했다 */
     /* 위치: 절차적 표면(배경·잔디결) 위, 비네트·그리드·라인 아래 */
     var _an=null;
     [].some.call(world.children,function(c){ if(c.tagName==='rect'&&(c.getAttribute('fill')||'').indexOf('grassVig')>=0){_an=c;return true;} return false; });
@@ -14994,7 +14994,7 @@ function init(){
       corners.forEach(([cx,cy,a])=>{for(let i=1;i<cornerN;i++){const t=(a+90*i/cornerN)*Math.PI/180;out.push([cx+Math.cos(t)*(r0+d),cy+Math.sin(t)*(r0+d)]);}});
       return out;};
     const crowd=deco==="full"?crowdTile(brand?tcol:""):'',ct=S*.046;
-    const mow=PSStadiumGround.mowPlan({multi:multi,cards:cards,len:sp.len,L:L,T:T,m:m,pw:PW,f:f}),grain=!!PSStadiumGround.grainTile(),per=mow.per;   /* 3.255 — 깎은 줄(운동장마다) · 잎결 · 3.260 약 4m(per = 밝은 띠 + 어두운 띠) */
+    const mow=PSStadiumGround.mowPlan({multi:multi,cards:cards,len:sp.len,L:L,T:T,m:m,pw:PW,f:f}),grain=!!PSStadiumGround.grainTile(),per=mow.per;   /* 3.255 — 깎은 줄(운동장마다) · 잎결 · 3.263 약 4m(per = 밝은 띠 + 어두운 띠) */
     let o='<defs>'
       +(turf?'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(per)+'" height="'+f(per)+'"><image href="'+turf+'" width="'+f(per)+'" height="'+f(per)+'" preserveAspectRatio="none"/></pattern>'
             :'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(per)+'" height="'+f(per)+'"><rect width="'+f(per)+'" height="'+f(per)+'" fill="'+md.ga+'"/>'+(multi?'':'<rect width="'+f(per/2)+'" height="'+f(per)+'" fill="'+md.gb+'"/>')+'</pattern>')   /* 3.255 — 사진을 못 그리는 기기의 두 색 줄(x)은 운동장 하나에서만 — 여러 운동장은 카드 띠가 줄이다 */

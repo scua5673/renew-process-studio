@@ -8,7 +8,7 @@ const G=require('../studio/board-stadium-ground.js');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 const attrs=(xml,tag,id)=>{const m=new RegExp('<'+tag+' id="'+id+'"([^>]*)>').exec(xml);if(!m)return null;const o={};m[1].replace(/([\w-]+)="([^"]*)"/g,(_,k,v)=>{o[k]=v;});return o;};
 
-test('운동장 하나 — 골라인 L 에서 어두운 줄 · 밝은 줄(x 방향, 3.260 부터 약 4m: 27개 띠 · 105/27m), 카드 띠 없음',()=>{
+test('운동장 하나 — 골라인 L 에서 어두운 줄 · 밝은 줄(x 방향, 3.263 부터 약 4m: 27개 띠 · 105/27m), 카드 띠 없음',()=>{
   const p=G.mowPlan({multi:false,L:30,T:30,m:10,len:105,pw:1050});
   assert.equal(p.cards,'');assert.equal(p.rot,0);assert.ok(Math.abs(p.per-2*1050/27)<1e-9,'per = 밝은 띠 + 어두운 띠');
   assert.deepEqual(attrs(p.defs,'pattern','psStMow'),{patternUnits:'userSpaceOnUse',x:'30',y:'30',width:'77.8',height:'77.8'});
@@ -19,7 +19,7 @@ test('운동장 하나 — 골라인 L 에서 어두운 줄 · 밝은 줄(x 방�
 });
 
 test('여러 운동장은 카드마다 — 골라인(카드 위)에서 시작해 홀수 개 띠, 가운데 띠가 하프라인에 걸친다',()=>{
-  for(const [len,n] of [[105,27],[65,17],[40,11]]){   /* 3.260 — 약 4m(예전 5m: 21 · 13 · 9) */
+  for(const [len,n] of [[105,27],[65,17],[40,11]]){   /* 3.263 — 약 4m(예전 5m: 21 · 13 · 9) */
     const cards=[[0,0,300,450],[320,0,150,220],[320,240,150,220]];
     const p=G.mowPlan({multi:true,cards,len,L:0,T:0,m:4});
     assert.equal(p.rot,90,'잎결은 x(깎는 방향) — 띠는 y');
@@ -64,7 +64,7 @@ test('작전판 배선 — 카드 · 규격 · 잎결 판이 그림 서명에, �
   assert.match(b,/cards=rs; if\(rs\.length\)\{/);
   assert.match(b,/turf\?1:0,cards\.join\(';'\),sp\.len,PSStadiumGround\.GRAIN_V,deco,ad,md\.key,brand\?1:0,tcol,bleed\?1:0\]\.join\('\|'\);/);
   assert.match(b,/const mow=PSStadiumGround\.mowPlan\(\{multi:multi,cards:cards,len:sp\.len,L:L,T:T,m:m,pw:PW,f:f\}\),grain=!!PSStadiumGround\.grainTile\(\),per=mow\.per;/);
-  assert.match(b,/<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'\+f\(L\)\+'" y="'\+f\(T\)\+'" width="'\+f\(per\)\+'" height="'\+f\(per\)\+'"><image href="'\+turf\+'" width="'\+f\(per\)\+'" height="'\+f\(per\)\+'"/,'잔디 사진 칸 = 깎은 줄 한 쌍(3.260)');
+  assert.match(b,/<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'\+f\(L\)\+'" y="'\+f\(T\)\+'" width="'\+f\(per\)\+'" height="'\+f\(per\)\+'"><image href="'\+turf\+'" width="'\+f\(per\)\+'" height="'\+f\(per\)\+'"/,'잔디 사진 칸 = 깎은 줄 한 쌍(3.263)');
   assert.doesNotMatch(b,/f\(10\*m\)/,'10m 칸은 남지 않는다');
   assert.match(b,/\+mow\.defs\+PSStadiumGround\.grainDefs\(\{m:m,L:L,T:T,f:f,rot:mow\.rot\}\)/);
   assert.match(b,/fill="url\(#psStMow\)"\/>'   \/\* 잔디결\(5m\)을 중계 화면처럼 또렷하게 \*\/\n      \+mow\.cards\+\(grain\?'<path d="'\+rr\(0\)\+'" fill="url\(#psStGrain\)"\/>':''\)/);

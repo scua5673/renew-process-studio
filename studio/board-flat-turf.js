@@ -1,4 +1,4 @@
-/* PROCESS STUDIO — 평면 잔디(3.260): 잎결 · 실사 잔디 줄.
+/* PROCESS STUDIO — 평면 잔디(3.263): 잎결 · 실사 잔디 줄.
    ① 잎결 — 사용자 «평면에서도 잔디결 아주 희미하게»(2026-11-05). 3.255 가 3D 경기장에 깐 잎결(PSStadiumGround.grainTile — 고정 시드 · 이음새 없음)을
       평면 «잔디» 피치(html[data-pitch=grass] · 사진 없음 — 실사 잔디를 못 그리는 기기)에 옅게(0.45). 8m 칸, 운동장 여럿이면 카드의 깎는 방향(90°).
       자리: #world 바로 밑 id 없는 rect — 3D 화면(bc-tilt3d) · 3D 영상(_t3BoardCss) · 운동장 사진(ps-custompitch)이 바탕을 숨기는 규칙에 같이 숨는다.

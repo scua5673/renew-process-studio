@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
-// 3.260 — 평면 잔디(합성 팀 fixture 에서만):
+// 3.263 — 평면 잔디(합성 팀 fixture 에서만):
 //  · 실사 잔디(«잔디» 단추 = @real): 사진 칸 = 깎은 줄 한 쌍(11인제 2×105/27m) · 가로 · 세로 모두 0°(세로 판에서 또 돌리던 것 걷음)
 //    · 깎은 줄 rect.ps-flat-mow(id 없음) — 비네트 바로 위 · 구역 · 라인 아래, 골라인 L 에서 · 8인제는 실제 골라인(PR)에서
 //  · 운동장 5개: 사진 90° · 깎은 줄은 카드마다 90°(카드 위 골라인에서 27개 띠)
@@ -9,7 +9,7 @@ import {startFixture,openApp} from '../fixtures/team-app.mjs';
 //  · 네이비 · 흰색: 아무것도 없다
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
-let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}console.log('board-flat-turf-3260 '+s);};
+let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}console.log('board-flat-turf-3263 '+s);};
 const near=(a,b,msg)=>assert.ok(Math.abs(+a-+b)<.02,msg+' '+a+' vs '+b);
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
@@ -91,6 +91,6 @@ try{
   step('errors');
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
-  console.log('board-flat-turf-3260 ok',engine,size);
-}catch(e){console.error('board-flat-turf-3260 실패 단계:',cur);throw e;}
+  console.log('board-flat-turf-3263 ok',engine,size);
+}catch(e){console.error('board-flat-turf-3263 실패 단계:',cur);throw e;}
 finally{for(const b of Object.values(browsers))try{await b.close();}catch(_){} await fx.close();}
