@@ -261,7 +261,9 @@
     return e;
   }
   /* 페이지가 숨겨지거나(사파리) 연결이 끊기면(UnknownError) 한 번 끊기는 종류. 용량 초과는 아니다. */
-  function transientIdb(e){return !!(e&&/^(AbortError|TimeoutError|UnknownError|TransactionInactiveError)$/.test(e.name||'')&&!isQuotaErr(e));}
+  function transientIdb(e){return !!(e&&/^(AbortError|TimeoutError|UnknownError|TransactionInactiveError)$/.test(e.name||'')&&!isQuotaErr(e))||inactiveIdb(e);}
+  /* 3.264 — 아이폰이 화면을 숨기며 끊은 transaction 은 이름 없이 문구만 온다(«without an in-progress transaction») — 읽기는 한 번 더 */
+  function inactiveIdb(e){return !!(e&&!isQuotaErr(e)&&/without an in-progress transaction|transaction is inactive|transaction aborted/i.test(e.message||''));}
   /* 2.916 — 읽기는 되풀이해도 안전하다. 일시적으로 끊긴 읽기만 연결을 새로 열어 한 번 더 한다.
      쓰기는 다시 보내지 않는다(더 새 편집을 덮을 수 있다 — tx 의 규칙 그대로). */
   function readRetry(run){return run().catch(function(e){if(!transientIdb(e))throw e;if(e.name==='UnknownError')dbp=null;return run();});}
