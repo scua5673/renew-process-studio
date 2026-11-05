@@ -31,6 +31,7 @@ suites.idp.push('squad-group-change');
 suites.records.push('training-toolbar-layout');
 suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
 suites.board2.push('meeting-slide-transition');   /* 3.256 — 미팅 슬라이드 넘김: 같은 팀 · 번호만 잇기 · 넘기는 중 저장 막기 */
+suites.board.push('board-flat-turf-3263');   /* 3.263 — 평면 잔디: 잎결 · 실사 잔디 줄 약 4m · 가로 · 세로 · 운동장 카드마다(board2 웹킷은 20분 한도에 닿아 board 로) */
 suites.entry.push('sync-diagnosis','team-mobile','mobile-navigation');
 suites.entry.push('admin-metrics');
 suites.storage.push('community-youtube');
