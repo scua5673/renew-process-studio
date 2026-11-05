@@ -245,9 +245,9 @@
     ['ps_schedule_cursor_v1','device','ls','pref','process.html'],
     ['ps_section_import_ok_','device','ls','queue','sync.js',{prefix:1}],
     ['ps_self_reload','device','ls','session','app.html'],
-    ['ps_elsewhere_back','device','ls','session','one-window.js'],   // 3.258 — 안내 화면에서 돌아갈 app.html 주소(이 탭 sessionStorage)
-    ['ps_elsewhere_screen','device','ls','session','one-window.js'],   // 3.258 — 물러날 때 보던 화면(이 탭 sessionStorage)
-    ['ps_one_window','device','ls','pref','one-window.js'],   // 3.258 — '0' 이면 한 기기 한 창을 끈다(되돌리기)
+    ['ps_elsewhere_back','device','ls','session','one-window.js'],   // 3.261 — 안내 화면에서 돌아갈 app.html 주소(이 탭 sessionStorage)
+    ['ps_elsewhere_screen','device','ls','session','one-window.js'],   // 3.261 — 물러날 때 보던 화면(이 탭 sessionStorage)
+    ['ps_one_window','device','ls','pref','one-window.js'],   // 3.261 — '0' 이면 한 기기 한 창을 끈다(되돌리기)
     ['ps_selpanel_rc_v1','device','ls','pref','board.html'],
     ['ps_shared_view_seen_v1','device','ls','seen','shared-view-observation.js'],
     ['ps_side_folded_v1','device','ls','pref','app.html'],
@@ -268,6 +268,7 @@
     ['ps_sync_rl','device','ls','queue','sync.js'],
     ['ps_sync_session','device','ls','session','scout.html'],
     ['ps_sync_skipped','device','ls','queue','sync.js'],
+    ['ps_sync_stall_at','device','ls','session','sync-stall-report.js'],
     ['ps_tilt3d_boot','device','ls','session','board.html'],
     ['ps_tilt3d_opts_v1','device','ls','pref','board.html'],
     ['ps_dock_float_v1','device','ls','pref','board-dock-float.js'],   // 3.073 떠 있는 하단 도크 — 열린 칸 · 묶은 도구의 마지막 종류

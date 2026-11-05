@@ -1,4 +1,4 @@
-/* PROCESS STUDIO — 한 기기 한 창 (3.258)
+/* PROCESS STUDIO — 한 기기 한 창 (3.261)
    사용자 «가용인원 체크가 잘 안 돼 · 바꿨는데 되돌아가»(11/4, 풋볼A 주인 · 맥).
    운영 실측(ps_events): 같은 맥에 3.233 창이 11/2부터 숨은 채 살아 있었다(새 판 적용을 2,374번 미룸 · flush_timeout:fScout).
    11/3 에는 3.241 창 두 개가 함께 떠 있었다. 창들은 기기 저장소를 같이 쓴다. 한 창이 선수 행(sq:)을 쓰는 사이 다른 창이 같은 선수를 바꾸면
@@ -12,8 +12,8 @@
      · 잠금 API 가 없는 브라우저 · iframe 안 · localStorage ps_one_window='0'(되돌리기)이면 예전 그대로.
      · 같은 탭의 새로고침도 새 문서가 잠금을 가져간다. 이때 «뺏겼다»를 받는 것은 떠나는 옛 문서인데, 옛 문서의 window 는 이미
        새 문서를 가리킨다(WindowProxy — WebKit 은 옛 문서의 남은 일을 잠깐 더 돌린다). 그래서 처음 붙잡은 document·location 이
-       지금 탭의 것일 때만 움직인다(gone). 안 그러면 옛 문서가 새 문서에 덮개를 씌우고 안내 화면으로 보낸다(3.258 CI).
-   저장 엔진의 «덮지 않는다» 원칙은 그대로다. 같은 기기에서 동시에 쓰는 창을 없앨 뿐이다. 실제 두 창은 tests/browser/one-window-3258.mjs. */
+       지금 탭의 것일 때만 움직인다(gone). 안 그러면 옛 문서가 새 문서에 덮개를 씌우고 안내 화면으로 보낸다(3.261 CI).
+   저장 엔진의 «덮지 않는다» 원칙은 그대로다. 같은 기기에서 동시에 쓰는 창을 없앨 뿐이다. 실제 두 창은 tests/browser/one-window-3261.mjs. */
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSOneWindow=api;})(typeof window!=='undefined'?window:null,function(){
   'use strict';
   var LOCK='ps-app-window-v1',PAGE='elsewhere.html',BACK='ps_elsewhere_back',SCREEN='ps_elsewhere_screen',OFF='ps_one_window';
