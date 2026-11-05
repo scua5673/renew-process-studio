@@ -45,3 +45,10 @@ test('일정 거울이 없으면(이미 걷힌 기기) 걷을 것이 없어 되�
   const h=setup();h.local.delete(SCHEDULE);h.hooks.localWrite=(k,v)=>{if(k===KEY){h.attempts.push(v);throw quota();}};
   const r=await h.run();assert.equal(r.code,'sync_storage');assert.deepEqual(h.rollbacks,[{expected:NEW,value:OLD}]);assert.equal(h.attempts.length,1);
 });
+test('걷은 뒤에도 경기 거울을 못 쓰면 일정 거울을 제자리에 — 다음 회차가 일정을 «받은» 회차가 되지 않는다',async()=>{
+  const h=setup();h.hooks.localWrite=(k,v)=>{if(k===KEY){h.attempts.push(v);throw quota();}};
+  const r=await h.run();assert.equal(r.code,'sync_storage');
+  assert.equal(h.local.get(SCHEDULE),BIG,'일정 거울이 돌아와 있다');assert.equal(h.c.scheduleMirrorLeft,null);
+  assert.equal(h.attempts.length,2,'걷기 전 한 번 · 걷은 뒤 한 번');assert.deepEqual(h.rollbacks,[{expected:NEW,value:OLD}]);
+  assert.ok(!h.errors.some(e=>e.stage==='schedule-mirror-yield'),'자리를 못 냈으니 걷었다고 적지 않는다');
+});

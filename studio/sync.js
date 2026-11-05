@@ -5680,13 +5680,18 @@ function scheduleMirrorYield(){
   return window.storage.get(SCHEDULE_KEY).then(function(r){
     if(!r||r.value!==m||localStorage.getItem(SCHEDULE_KEY)!==m)return false;
     localStorage.removeItem(SCHEDULE_KEY);if(localStorage.getItem(SCHEDULE_KEY)!==null)return false;
-    scheduleMirrorLeft=m;scheduleMirrorStale=null;syncDiagnostic('schedule-mirror-yield',Object.assign(new Error('일정 거울을 걷어 경기 거울 자리를 냈습니다'),{psCode:scheduleMirrorKb(m.length*2)}));return true;
+    scheduleMirrorLeft=m;scheduleMirrorStale=null;return m;
   }).catch(function(){return false;});
 }
+/* 걷은 뒤에도 경기 거울을 못 쓰면 일정 거울을 제자리에(IDB 와 같은 글이라 자료 변화 없음) — 남겨 두면 다음 회차가 일정 거울을 다시 쓰며 «일정을 받은 회차»가 되어 경기를 미룬다 */
 function matchMirrorRetry(v,mirror){
-  return scheduleMirrorYield().then(function(ok){
-    if(!ok)return false;
-    try{if(localStorage.getItem(MATCH_KEY)!==mirror)return false;matchMirrorWriteExact(v);return true;}catch(e){syncDiagnostic('match-mirror-write',e);return false;}
+  return scheduleMirrorYield().then(function(m){
+    if(m===false)return false;
+    var ok=false;
+    try{if(localStorage.getItem(MATCH_KEY)===mirror){matchMirrorWriteExact(v);ok=true;}}catch(e){syncDiagnostic('match-mirror-write',e);}
+    if(ok){syncDiagnostic('schedule-mirror-yield',Object.assign(new Error('일정 거울을 걷어 경기 거울 자리를 냈습니다'),{psCode:scheduleMirrorKb(m.length*2)}));return true;}
+    try{if(localStorage.getItem(SCHEDULE_KEY)===null){localStorage.setItem(SCHEDULE_KEY,m);if(localStorage.getItem(SCHEDULE_KEY)===m)scheduleMirrorLeft=null;}}catch(_){}
+    return false;
   });
 }
 function scheduleMirrorKb(n){ return Math.round((+n||0)/1024)+'k'; }
