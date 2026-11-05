@@ -68,5 +68,5 @@ test('배선 — board.html <script> 한 줄(잔디 모듈 다음) · sw.js CORE
   const b=read('studio/board.html');
   assert.ok(b.includes('<script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>'));
   assert.ok(read('sw.js').includes("'/studio/board-stadium-ground.js', '/studio/board-flat-turf.js',"));
-  assert.ok(read('tests/browser/run-critical.mjs').includes("suites.board2.push('board-flat-turf-3260')"));
+  assert.ok(read('tests/browser/run-critical.mjs').includes("suites.board.push('board-flat-turf-3260')"));
 });
