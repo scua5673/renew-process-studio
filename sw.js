@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.263';
+const CACHE = 'process-3.264';
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/match-home.js', '/studio/training-intensity.js', '/studio/weather-request.js', '/studio/idp-profile-name.js', '/studio/popover-dismiss.js',
@@ -74,10 +74,24 @@ const OPTIONAL = [
 const SHELL = Array.from(new Set(CORE.concat(OPTIONAL)));
 const SHELL_PATHS = new Set(SHELL);
 
+/* 3.264 — 한 파일이 한 번 안 받아지면 install 전체가 실패해 기기가 옛 판에 남았다(7일 sw_redundant 78번). 끊긴 연결·5xx 는 세 번까지
+   다시 받고, 없는 파일(404 등 4xx)은 바로 실패한다. 어느 파일이 막았는지는 열린 화면에 알려 update_install_failed 의 까닭에 남긴다 */
 async function fetchFresh(path) {
-  const res = await fetch(path, { cache: 'no-store' });
-  if (!res || !res.ok) throw new Error('precache-failed:' + path);
-  return res;
+  let last = null;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const res = await fetch(path, { cache: 'no-store' });
+      if (res && res.ok) return res;
+      last = new Error('precache-failed:' + path + ':' + (res ? res.status : 0));
+      if (res && res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) break;
+    } catch (e) { last = e || new Error('precache-failed:' + path); }
+    if (i < 2) await new Promise(r => setTimeout(r, 500 * (i + 1)));
+  }
+  throw last;
+}
+async function notifyInstallFailed(path, error) {
+  const name = String(path || '').split('/').pop().slice(0, 60), reason = String(error && error.message || error || '').slice(0, 80);
+  try { for (const c of await self.clients.matchAll({ type: 'window', includeUncontrolled: true })) c.postMessage({ type: 'ps-sw-install-failed', release: CACHE, path: name, reason }); } catch (_) {}
 }
 
 /* 3.051 — 바뀐 파일만 받는다(피드백 TD-4 — 판마다 13.6MB 를 전부 다시 받았다. 하루 4~5판이면 셀룰러 코치에게 부담).
@@ -113,7 +127,9 @@ async function notifyProgress(done, total) {
 async function precache(cache, path, files, olds, stats) {
   const old = files ? await reusable(path, files[path], olds) : null;
   if (old) { await cache.put(path, old); stats.reused++; if (stats.tick) stats.tick(); return; }
-  await cache.put(path, await fetchFresh(path)); stats.fetched++; if (stats.tick) stats.tick();   /* 3.060 — 진행 알림(받은 뒤에만 센다) */
+  let res;
+  try { res = await fetchFresh(path); } catch (e) { if (CORE.includes(path)) await notifyInstallFailed(path, e); throw e; }   /* 3.264 — 필수 파일이 막히면 어느 파일인지 알린다 */
+  await cache.put(path, res); stats.fetched++; if (stats.tick) stats.tick();   /* 3.060 — 진행 알림(받은 뒤에만 센다) */
 }
 /* 한꺼번에 백 개를 열지 않는다 — 옛 본문을 해시하려고 읽는 메모리(아이패드)를 묶어 둔다 */
 async function eachLimit(list, n, fn) {

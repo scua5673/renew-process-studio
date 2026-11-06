@@ -151,9 +151,13 @@
     }else if(!perms()){
       _msg='팀 권한을 아직 확인하지 못해 보기 전용입니다 — 변경은 저장되지 않아요. 잠시 후 다시 열어 주세요.';
     }else{
-      _msg=_lb+' 편집 권한이 없어 보기 전용입니다 — 변경은 저장되지 않아요. 관리자에게 요청하세요.';
+      _msg=knownMsg(_lb);
     }
     banner(_msg);
+    /* 3.264 — 권한표가 늦게 와도 보기 전용이면(선수) «아직 확인하지 못해 · 잠시 후 다시» 가 그대로 남았다 — 문구만 바꾼다(편집 가능해지면 아래 regate 가 새로 연다) */
+    var _waitPerms=!perms();
+    function knownMsg(lb){ var p=perms()||{},me=p.members&&p.members[String((sess()||{}).uid||'')],role=(me&&me.role)||p.defaultRole||'player'; return role==='player'?'선수 계정은 팀 자료를 보기만 할 수 있어요 — 변경은 저장되지 않아요.':lb+' 편집 권한이 없어 보기 전용입니다 — 변경은 저장되지 않아요. 관리자에게 요청하세요.'; }
+    function reword(){ try{ if(!_waitPerms||!perms()||canEdit(section))return; _waitPerms=false; var b=document.getElementById('psRoBanner'); if(b)b.textContent='🔒 '+knownMsg(_lb); }catch(_){} }
     hideControls(opts.hide);
     /* 차단은 항상. 단 토스트는 '사용자 조작 직후'의 쓰기에만 —
        부팅 시딩·자동저장 타이머까지 알리면 가만히 있어도 토스트가 계속 뜬다. */
@@ -189,9 +193,9 @@
        그대로 남았다(로그인했는데 '보기 전용'). 셸이 세션을 쓰면 iframe 에 storage 이벤트가 오므로
        거기서 다시 판정하고, 편집 가능해졌으면 이 탭을 새로 부팅한다(래퍼·배너·클래스를 하나씩 되돌리는 것보다 안전).
        같은 창에서 쓴 경우 storage 이벤트가 안 오니 2초 폴링을 보조로 둔다. */
-    function regate(){ try{ if(canEdit(section)){ window.__psRegating=true; location.reload(); } }catch(_){} }
+    function regate(){ try{ if(canEdit(section)){ window.__psRegating=true; location.reload(); } else reword(); }catch(_){} }
     try{ window.addEventListener('storage',function(e){ if(!e||!e.key||[SKEY,LS,WL,WA].indexOf(e.key)>=0) regate(); }); }catch(_){}
-    try{ var _rg=setInterval(function(){ if(canEdit(section)){ clearInterval(_rg); regate(); } },2000); }catch(_){}
+    try{ var _rg=setInterval(function(){ if(canEdit(section)){ clearInterval(_rg); regate(); } else reword(); },2000); }catch(_){}
     return true;
   }
 

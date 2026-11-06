@@ -38,3 +38,8 @@ test('a newer published release never impersonates the release already downloade
  const f=fixture();f.set({active:'4.002',published:'4.003'});await f.api.start();f.api.record('deferred','flush_fail:fBoard:disk');
  assert.equal(f.records.find(r=>r.name==='update_available').meta.to,'4.003');assert.equal(f.records.find(r=>r.name==='update_deferred').meta.to,'4.002');assert.equal(f.api.context().to,'4.002');
 });
+test('3.264 — the worker names the file that blocked install and the record carries it',async()=>{
+ const f=fixture();await f.api.start();f.swEvents.message({source:{},data:{type:'ps-sw-install-failed',release:'process-4.002',path:'board-phone-view.js',reason:'precache-failed'}});
+ const r=f.records.find(x=>x.name==='update_install_failed');assert.ok(r);assert.equal(r.error_code,'sw_precache:board-phone-view.js');assert.equal(r.meta.to,'4.002');
+ f.swEvents.message({source:{},data:{type:'ps-sw-install-failed',release:'process-4.002',path:'../x<y>.js?z'}});assert.equal(f.records.filter(x=>x.name==='update_install_failed').length,2);
+});

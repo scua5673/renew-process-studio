@@ -83,7 +83,10 @@
       // Listen before registering/checking; a fast install can otherwise be missed.
       sw.addEventListener('controllerchange',function(){reconcile();});
       sw.addEventListener('message',function(e){
-        if(e.source!==sw.controller||!e.data||e.data.type!=='ps-update-available')return;
+        var d=e&&e.data;if(!d)return;
+        /* 3.264 — 설치가 막힌 파일 이름을 까닭에 남긴다(sw_redundant 만으로는 무엇이 막았는지 몰랐다) */
+        if(d.type==='ps-sw-install-failed'){record('install_failed','sw_precache:'+String(d.path||'').replace(/[^a-zA-Z0-9_.-]/g,'').slice(0,40),{to:d.release});return;}
+        if(e.source!==sw.controller||d.type!=='ps-update-available')return;
         reconcile();
       });
       function resume(){if(!w.document.hidden){reconcile();check();}}

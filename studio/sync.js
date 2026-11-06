@@ -2430,17 +2430,7 @@ function outboxAckPersonal(pwid,m,guard){
    막는 것은 데이터 보호가 아니라 영구 잠금이었다. 보관함·일정·팀 자료는 그대로 센다. */
 function workspaceBlockingPendingKeys(wid){
   var uid=outboxOwner(),sc=outboxScope(uid,wid);
-  /* ══ 2.434 · **이 계정이 영원히 확정을 만들 수 없는 대기**는 전환을 막지 않는다 ══════
-     실제 제보: 전환이 '평가 항목·IDP×3·선수단·경기 준비·리뷰 — 아직 시도 전' 으로 영구히 막혔다.
-     attempts=0 이 영원히 남는 길은 둘뿐이고, 둘 다 **이 기기가 절대 push 할 수 없는** 키다:
-       ① 남의 선수 IDP(cs_idp_v1_<남uid>) — 정책상 pull 전용(3426 '내 것만 push')이고,
-          전환하면 어차피 로컬에서 정리되는 키다(4137). 지킬 대상 자체가 없다.
-       ② 권한으로 거부된 키 — canW(3623)가 push 에서 조용히 걸러(1.634 스태프 기본 보기 전용),
-          실패도 확정도 안 나 attempts=0 대기가 영원히 남는다(ps_sync_denied_map_v1 에 기록됨).
-     둘을 막는 것은 PERSONAL 때와 똑같이 "데이터 보호가 아니라 영구 잠금"이다(위 1.649 주석).
-     ⚠ 로컬 값은 지우지 않으며 전환 전 stash 백업(preswitch)이 그대로 담는다.
-     ⚠ 권한 맵은 permsMissing 회차에는 기록되지 않으므로, 일시적 권한 읽기 실패로
-        문이 열리는 일은 없다 — 그때는 맵이 비어 예전처럼 fail-closed 다. */
+  /* ══ 2.434 · 이 계정이 영원히 확정을 만들 수 없는 대기(남의 IDP · 권한으로 거부된 키)는 전환을 막지 않는다 — PERSONAL 과 같은 생각(1.649). 로컬 값은 안 지우며 preswitch 가 담는다. 권한 맵은 permsMissing 회차엔 안 적혀 fail-closed 그대로 */
   var deniedMap={}; try{ deniedMap=JSON.parse(localStorage.getItem('ps_sync_denied_map_v1')||'{}')||{}; }catch(_){}
   var myIdp='cs_idp_v1_'+uid;
   return outboxRead(true).then(function(q){
@@ -4395,17 +4385,7 @@ function holdOpen(opts){
     });
   });
 }
-/* ══ 1.591 · 자료 확인 — 세 갈래를 한 화면으로 ═══════════════════════════════
-   지금까지 사용자는 네 가지 말을 구별해야 했다: '동기화 대기' '팀에 올리지 않고 멈춘 변경'
-   '동기화로 덮인 자료' '충돌'. 이건 **앱의 내부 사정이지 사용자의 질문이 아니다.**
-   사용자에게는 어느 경우든 질문이 하나뿐이다 — "이 자료가 여기랑 팀에서 다른데, 어느 쪽을 남길까?"
-   (사용자 지적: "다른 기기와 부딪힌 자료 이런 것들이 헷갈려 어떻게 해야 할지 모르겠어")
-
-   갈래마다 '이 기기 것'의 뜻이 실제로 다르다 — 그래서 헷갈리는 게 당연했다. 여기서 흡수한다:
-     보류 : 아직 안 올라감    → 이 기기 것 = 올리기(holdApprove) / 팀 것 = 받기(holdTakeServer)
-     덮임 : 이미 덮인 뒤      → 이 기기 것 = 되돌리기(rescueRestore) / 팀 것 = 그대로 두기
-     충돌 : 이미 이 기기가 이김 → 이 기기 것 = 그대로 두기 / 팀 것 = 가져오기(conflictRestore)
-   '대기'는 선택지가 아니라 진행 상태라 이 목록에 넣지 않는다(설정의 동기화 줄이 보여 준다). */
+/* ══ 1.591 · 자료 확인 — 보류·덮임·충돌 세 갈래를 «이 기기 것 / 팀 것» 한 질문으로 흡수한다(대기는 진행 상태라 목록 밖) */
 function rescueDismiss(k){
   try{ localStorage.removeItem('ps_rescue_'+k);
     rescueSetList(rescueList().filter(function(x){ return x.k!==k; })); }catch(_){}
@@ -5578,10 +5558,11 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
               /* A quota must not strand this pull's NEW IDB beside the OLD
                  mirror. Roll back only our exact write, never a newer edit. */
               if(!e||!(e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||e.code===22||e.code===1014)||(before!==null&&typeof before!=='string')||before===v||afterMirror!==mirror||!window.storage.replaceIfValue)throw e;
+              return matchMirrorRetry(v,mirror).then(function(ok){if(ok&&ownerCurrent())return {stale:false};
               return window.storage.replaceIfValue(k,v,before,function(){
                 if(!ownerCurrent()||localStorage.getItem(k)!==mirror||JSON.stringify([permsRaw(),(activeWsObj()||{}).role])!==matchPermission)
                   throw syncIssue('sync_local_changed','match_mirror_rollback_source','경기 원문 복귀 중 새 편집 또는 계정·권한 변경이 생겼습니다');
-              }).then(function(){throw e;},function(rollbackError){syncDiagnostic('match-mirror-rollback',rollbackError);throw e;});
+              }).then(function(){throw e;},function(rollbackError){syncDiagnostic('match-mirror-rollback',rollbackError);throw e;});});
             }
             return {stale:false};
           }
@@ -5653,7 +5634,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
           /* Screen readers require exact mirrors for roster/matches; permissions also need a synchronous copy. */
           if(k===MATCH_KEY){
             try{matchMirrorWriteExact(v);}
-            catch(e){syncDiagnostic('match-mirror-write',e);throw e;}
+            catch(e){syncDiagnostic('match-mirror-write',e);return matchMirrorRetry(v,afterMirror).then(function(ok){if(ok&&ownerCurrent())return {stale:false};throw e;});}
           }else if(k==='scout_tool_v1'||k==='cs_scout_targets_v1'){
             return PSMirrorSync.write({key:k,value:v,before:expectedLoc!==undefined?idbExpected:(r&&r.value!=null?r.value:null),mirrorBefore:afterMirror,
               mirror:localStorage,storage:window.storage,current:ownerCurrent,recover:window.PSStorage&&PSStorage.sharedPullRecovered});
@@ -5691,6 +5672,27 @@ function scheduleMirrorDrop(raw,mirror){
   if(mirror!==null){var st=scheduleMirrorStale;if(!st||st.v!==raw||st.before!==mirror)return false;
     try{localStorage.removeItem(SCHEDULE_KEY);if(localStorage.getItem(SCHEDULE_KEY)!==null)return false;}catch(_){return false;}}
   scheduleMirrorLeft=raw;scheduleMirrorStale=null;return true;
+}
+/* 3.264 — 경기 거울(cs_team_matches_v1)이 자리가 없어 못 쓰면, IDB 와 똑같은 일정 거울(한 PC 는 7.6MB 가 10MB 를 차지)을 걷어 자리를 낸다 — 3.131 의 «거울 없는 기기» 상태(scheduleMirrorLeft). 화면은 IDB 를 읽는다 */
+function scheduleMirrorYield(){
+  var m=null;try{m=localStorage.getItem(SCHEDULE_KEY);}catch(_){}
+  if(m===null||!window.storage||!window.storage.get)return Promise.resolve(false);
+  return window.storage.get(SCHEDULE_KEY).then(function(r){
+    if(!r||r.value!==m||localStorage.getItem(SCHEDULE_KEY)!==m)return false;
+    localStorage.removeItem(SCHEDULE_KEY);if(localStorage.getItem(SCHEDULE_KEY)!==null)return false;
+    scheduleMirrorLeft=m;scheduleMirrorStale=null;return m;
+  }).catch(function(){return false;});
+}
+/* 걷은 뒤에도 경기 거울을 못 쓰면 일정 거울을 제자리에(IDB 와 같은 글이라 자료 변화 없음) — 남겨 두면 다음 회차가 일정 거울을 다시 쓰며 «일정을 받은 회차»가 되어 경기를 미룬다 */
+function matchMirrorRetry(v,mirror){
+  return scheduleMirrorYield().then(function(m){
+    if(m===false)return false;
+    var ok=false;
+    try{if(localStorage.getItem(MATCH_KEY)===mirror){matchMirrorWriteExact(v);ok=true;}}catch(e){syncDiagnostic('match-mirror-write',e);}
+    if(ok){syncDiagnostic('schedule-mirror-yield',Object.assign(new Error('일정 거울을 걷어 경기 거울 자리를 냈습니다'),{psCode:scheduleMirrorKb(m.length*2)}));return true;}
+    try{if(localStorage.getItem(SCHEDULE_KEY)===null){localStorage.setItem(SCHEDULE_KEY,m);if(localStorage.getItem(SCHEDULE_KEY)===m)scheduleMirrorLeft=null;}}catch(_){}
+    return false;
+  });
 }
 function scheduleMirrorKb(n){ return Math.round((+n||0)/1024)+'k'; }
 function scheduleMirrorTry(v){
