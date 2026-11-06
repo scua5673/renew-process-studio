@@ -69,3 +69,15 @@ test('scout initialization preserves the frame intent, standalone default and at
   vm.runInContext(scout.slice(start,end),c);assert.deepEqual(views,[want]);
  }
 });
+test('3.266 — a slow frame catching up with older requests cannot roll the menu back before it reports the latest view',()=>{
+ const h=harness();h.ready();h.select('today','home');h.select('players','team');h.select('scouting','players');h.flush();
+ assert.equal(h.notify('home','home'),'scouting','frame still on homeView while applying the old home request');
+ assert.equal(h.notify('team','team'),'scouting','frame on teamView while applying the old team request');
+ assert.equal(h.notify('players'),'scouting','caught up');
+ assert.equal(h.notify('avail'),'avail','after catching up, in-frame navigation follows');
+ assert.equal(h.notify('team'),'players','and keeps following');
+});
+test('3.266 — the lag guard expires so a frame that never reports the target cannot freeze the menu',()=>{
+ const h=harness();h.ready();h.select('scouting','players');h.flush();h.frame.__psTeamViewLagAt=Date.now()-5000;
+ assert.equal(h.notify('team'),'players');
+});

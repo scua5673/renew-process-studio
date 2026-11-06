@@ -2443,7 +2443,7 @@ window.wksAddSession=function(di,groups,schoolYears){
   if(!Array.isArray(groups)){
     if(day.off)day.off=false;
     try{ var b=dayBoard(day); if(b&&b.sched!=='경기')b.sched='훈련'; }catch(_){}
-  }
+  }else{ try{ var b2=dayBoard(day); if(b2&&!b2.sched)b2.sched='훈련'; }catch(_){} }   /* 3.266 — 팀을 골라 만든 세션도 빈 날은 «훈련 ▾»(«일정 ＋»로 남았다) */
   try{save();}catch(_){} syncViews();
   /* 2.383 — 만들고 **바로 채우게** 문을 연다(사용자 "훈련 추가+ 누르면 똑같이 떠서 또 바로 추가").
      예전엔 빈 세션만 생기고 사용자가 그 카드를 다시 찾아 눌러야 했다 — 한 걸음이 남았다. */
@@ -4016,16 +4016,13 @@ function matchLogoUpload(di,e){ var f=e.target.files&&e.target.files[0]; if(!f) 
 function boardCopyPrev(){
   var prev=weeksMap[wk-1];
   if(!prev){ try{toast&&toast('지난주가 없어요');}catch(_){} return; }
-  psConfirm('지난주 보드를 이번 주에 복사할까요? (현재 내용 덮어씀)', function(){
+  psConfirm('지난주 일정(세션 · 경기 · 미팅)을 이번 주에 복사할까요? (현재 내용 덮어씀)', function(){
+    /* 3.266 — 하루를 통째로(세션 · 경기 종류 · 조 · 추가 경기). 예전엔 옛 보드 칸과 경기 시간 · 상대만 옮겨 세션이 하나도 없고 컵 · 친선이 리그가 됐다. 경기 id · 리뷰 기록은 안 옮긴다(dupWeek 와 같다) */
     for(var di=0;di<7;di++){
       var p=prev[di]; if(!p) continue;
-      var pb=dayBoard(p);
-      var nb={sched:pb.sched,theme:pb.theme,meet:pb.meet,load:pb.load,warm:pb.warm,warms:(pb.warms||[]).slice(),warmsData:(pb.warmsData||[]).slice(),trains:(pb.trains||[]).slice(),trainThemes:(pb.trainThemes||[]).slice()};
-      week[di].board=nb;
-      week[di].off=(pb.sched==='OFF');
-      if(pb.sched==='경기'){ if(!week[di].match) week[di].match={time:(p.match&&p.match.time)||'',opp:(p.match&&p.match.opp)||''}; }
-      else { if(week[di].match) delete week[di].match; }
-      if(p.meeting) week[di].meeting=p.meeting; else delete week[di].meeting;
+      var c=JSON.parse(JSON.stringify(p)); delete c.mid; delete c.reviewActions; mxStripMid(c);
+      var cur=week[di]||{}; if(cur.d)c.d=cur.d; if(cur.n)c.n=cur.n;
+      week[di]=c;
     }
     try{recomputeMD();}catch(_){}
     syncViews(); try{renderMix();}catch(_){}
@@ -10497,3 +10494,4 @@ html body .wks .wks-fill:not(#_):hover{border-color:var(--c-act,var(--ps-navy,#1
 </style>
 
 <link rel="stylesheet" href="team-mobile.css">
+<script src="schedule-match-time.js"></script>
