@@ -1,5 +1,5 @@
 'use strict';
-/* 3.265 — 세션 없는 경기 날의 «시간 ＋»는 경기 시각을 정한다(studio/schedule-match-time.js). 예전엔 wksPickSes(di,'','time') 가 ensureSlotSession 으로
+/* 3.266 — 세션 없는 경기 날의 «시간 ＋»는 경기 시각을 정한다(studio/schedule-match-time.js). 예전엔 wksPickSes(di,'','time') 가 ensureSlotSession 으로
    경기 날에 훈련 세션(RPE 5)을 만들고 경기 시각은 비워 두었다 — 선수 «오늘»에 «경기 … RPE 5». 훈련 날 · 세션 있는 날은 예전 길 그대로. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const MOD=fs.readFileSync(path.join(__dirname,'../studio/schedule-match-time.js'),'utf8');

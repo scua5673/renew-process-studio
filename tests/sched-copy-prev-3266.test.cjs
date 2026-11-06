@@ -1,5 +1,5 @@
 'use strict';
-/* 3.265 — 일정 «지난주 복사»(주간 액션바 boardCopyPrev)는 하루를 통째로 옮긴다: 세션(trainings · 블록 · 메모) · 경기 종류(컵 · 친선) · 조 · 추가 경기 · 미팅.
+/* 3.266 — 일정 «지난주 복사»(주간 액션바 boardCopyPrev)는 하루를 통째로 옮긴다: 세션(trainings · 블록 · 메모) · 경기 종류(컵 · 친선) · 조 · 추가 경기 · 미팅.
    예전엔 옛 보드 칸(sched · theme · trains …)과 경기의 시간 · 상대만 옮겨, 복사한 주에 세션이 하나도 없었고(요약 «계획만 N일») 컵 경기가 리그로 바뀌었다
    (코치로 일정을 돌려 보다 찾음). 경기 id(mid) · 리뷰 기록(reviewActions)은 «이 주 복제»(dupWeek)와 같이 옮기지 않는다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
