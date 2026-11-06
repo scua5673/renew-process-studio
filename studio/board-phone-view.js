@@ -81,6 +81,8 @@
     }
     function schedule(){if(!queued){queued=true;win.requestAnimationFrame(sync);}}
     function boot(){
+      /* 3.264 — DOMContentLoaded 뒤에도 body 가 없는 문서(교체 중인 iframe)에서 observe 가 던졌다(아이폰 ps_err) */
+      if(!doc.body||!doc.head){if(!boot.retried){boot.retried=1;win.setTimeout(boot,120);}return;}
       var style=doc.createElement('style');style.id='psPhoneBoardStyle';
       var priority=Array(25).join(':not(#psPhoneReadOnly)');
       style.textContent=EDITORS.concat(['#ps-df-tray','#ps-df-opts']).map(function(s){return 'html.ps-page-board body.ps-phone-board-readonly'+priority+' '+s;}).join(',')+'{display:none!important}'+

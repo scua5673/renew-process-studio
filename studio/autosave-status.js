@@ -47,7 +47,7 @@
   function combine(shown,local){
     var r=shown||view(null),l=local;
     function out(kind,text,detail,action,attention){return {kind:kind,text:text,detail:detail,action:action||'',attention:!!attention,complete:false};}
-    if(!l)return r.kind==='bad'?r:out('pending','기기 저장 확인 중…','현재 화면의 기기 저장 상태를 아직 확인하지 못했습니다.','retry');
+    if(!l)return r.kind==='bad'?r:out('pending','기기 저장 확인 중…','현재 화면의 기기 저장 상태를 아직 확인하지 못했습니다.','');   /* 3.264 — 아직 아무것도 안 바꿨는데 «다시 시도»가 보였다 */
     if(l.failed)return out('bad','기기에 저장하지 못했어요','방금 편집의 기기 저장을 확인하지 못했습니다. 화면을 닫기 전에 내용을 따로 복사하고 저장을 다시 시도해 주세요.','retry',true);
     if(l.unknown)return r.kind==='bad'?r:out('pending','기기 저장 확인 중…','현재 화면의 기기 저장 상태를 아직 확인하지 못했습니다.','retry');
     if(l.saving)return out('busy','기기에 저장 중…','화면의 변경사항을 기기에 저장하고 있습니다. 아직 저장 완료가 아닙니다.');
