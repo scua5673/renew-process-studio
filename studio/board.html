@@ -14414,6 +14414,7 @@ function setView(v){
   var __loadSn; if(__CANVAS[v]&&__prevV!==v&&!window.__svSkip){var __vsv=(window.__viewSnaps&&window.__viewSnaps[v]);__loadSn=(__vsv!==undefined)?JSON.parse(JSON.stringify(__vsv)):null;} else {__loadSn=undefined;}  // 뷰 전환 중 boardSaveLive가 덮어쓰기 전에 목표 스냅 확보(작전판↔경기 연동 방지)
   window.__capLock=(window.__capLock||0); var __wasCapLock=window.__capLock; window.__capLock=1;  // 전환 중 라이브 자동저장이 __viewSnaps 오염 못하게
   window.__csView=v;
+  if(v!=="session")psVaultHideLock();
   try{document.documentElement.dataset.csview=v;}catch(_){}
   try{parent.postMessage({source:"board",type:"viewChanged",view:v},"*");}catch(_){}
   const boardLike=(v!=="session");

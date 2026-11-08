@@ -119,7 +119,7 @@ test('the ordinary view-to-edit handoff still opens when no newer navigation int
  h.nodes.vCreateEdit.onclick({stopPropagation(){}});h.run(80);assert.equal(reopened,1);
 });
 test('the animation bar open state survives board-to-library-to-board navigation',()=>{
- const h=harness();h.c.document.querySelectorAll=()=>[];h.c.document.documentElement={dataset:{}};h.c.exitMatch=()=>{};h.c.renderSession=()=>{};h.c.boardSaveLive=()=>{};
+ const h=harness();h.c.document.querySelectorAll=()=>[];h.c.document.documentElement={dataset:{}};h.c.psVaultHideLock=()=>{};h.c.exitMatch=()=>{};h.c.renderSession=()=>{};h.c.boardSaveLive=()=>{};
  vm.runInContext(part('function setView(v){','/* ===== 경기 모드 — 러닝 클락 ===== */'),h.c);
  h.c.setView('session');assert.equal(h.nodes.animBar.classList.contains('on'),false);assert.equal(h.c._liveBoardAnimOpen,true);
  h.c.openItem(item(80),true);assert.equal(h.c._vaultBoardContext.animOpen,true);h.c.doViewClose();h.c.setView('session');h.c.boardShowDefault();assert.equal(h.nodes.animBar.classList.contains('on'),true);assert.equal(h.c.animActive,1);
