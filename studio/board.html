@@ -7902,33 +7902,37 @@ function boardDefaultClear(){
 window.__psSaveBoardDefault=boardDefaultSave;
 window.__psClearBoardDefault=boardDefaultClear;
 window.__psGetBoardDefault=boardDefaultRead;
-/* ══ 3.010 · 내 설정(사용자 «보드 설정도 더 업데이트» — 설정 저장·불러오기) ═══════════════════════════════
-   «기본 세팅»은 새 보드 하나의 출발점(선수 배치까지)이다. 내 설정은 **겉모습만** 이름 붙여 여러 벌 두고,
-   지금 보드에 한 번에 입힌다: 보드 설정의 겉모습(lookKeys — 선수 모양·칩·크기·표시·이름표·라인·그리드·잔디 줄무늬·훈련 격자·공·잔디 톤)
-   + 피치 색. 선수·그림·규격·방향·범위는 건드리지 않는다(규격은 좌표가 바뀐다).
-   ⚠ 이 기기에만(localStorage) — «기본 세팅»과 같은 자리. 8개까지, 같은 이름이면 덮어쓴다. */
+/* 내 스타일은 현재 보드의 스냅샷(방향·배치·그림·운동장·표시)을 저장한다.
+   기존 look 전용 항목은 예전처럼 표시만 적용한다. 이 기기에 8개까지, 같은 이름은 덮어쓴다. */
 const LOOK_PRESET_KEY="ps_board_look_presets_v1",LOOK_PRESET_MAX=8;
 function lookPresetName(v){ return String(v==null?"":v).replace(/[\u0000-\u001f]/g,"").replace(/\s+/g," ").trim().slice(0,16); }
 function lookPresetList(){ try{ var a=JSON.parse(localStorage.getItem(LOOK_PRESET_KEY)||"[]"); if(!Array.isArray(a))return [];
   return a.filter(function(x){ return x&&typeof x==="object"&&lookPresetName(x.name)&&x.look&&typeof x.look==="object"; }).slice(0,LOOK_PRESET_MAX); }catch(_){ return []; } }
 function lookPresetWrite(a){ try{ localStorage.setItem(LOOK_PRESET_KEY,JSON.stringify(a.slice(0,LOOK_PRESET_MAX))); return true; }catch(_){ return false; } }
 function lookPresetSave(name){ name=lookPresetName(name); if(!name)return false;
-  var snap={}; try{ snap=captureSnap(); }catch(_){}
+  var snap; try{ snap=dc(captureSnap()); }catch(_){ try{toast("내 스타일을 저장하지 못했어요");}catch(__){} return false; }
   var a=lookPresetList(),i=-1; a.forEach(function(x,j){ if(x.name===name)i=j; });
-  var rec={name:name,at:Date.now(),look:lookNow(),pitchTheme:snap.pitchTheme||"",pitchCustom:snap.pitchCustom||null};
-  if(i<0&&a.length>=LOOK_PRESET_MAX){ try{toast("내 설정은 "+LOOK_PRESET_MAX+"개까지예요 — 하나를 지우고 저장하세요");}catch(_){} return false; }
+  var rec={v:2,name:name,at:Date.now(),snap:snap,look:lookNow(),pitchTheme:snap.pitchTheme||"",pitchCustom:snap.pitchCustom||null};
+  if(i<0&&a.length>=LOOK_PRESET_MAX){ try{toast("내 스타일은 "+LOOK_PRESET_MAX+"개까지예요 — 하나를 지우고 저장하세요");}catch(_){} return false; }
   if(i>=0)a[i]=rec; else a.push(rec);
-  if(!lookPresetWrite(a)){ try{toast("내 설정을 저장하지 못했어요");}catch(_){} return false; }
+  if(!lookPresetWrite(a)){ try{toast("내 스타일을 저장하지 못했어요");}catch(_){} return false; }
   try{toast(i>=0?"«"+name+"» 설정을 지금 값으로 바꿨어요":"«"+name+"» 설정을 저장했어요");}catch(_){}
   try{window.__syncLookPresetUI&&window.__syncLookPresetUI();}catch(_){} return true; }
 function lookPresetApply(name){ var r=null; lookPresetList().forEach(function(x){ if(x.name===name)r=x; }); if(!r)return false;
+  pushUndo();
   _lookFreeze();
+  if(r.v===2&&r.snap&&typeof r.snap==="object"){
+    try{stopAnim();loadSnap(dc(r.snap));autoOrient=false;}
+    catch(_){try{toast("내 스타일을 적용하지 못했어요");}catch(__){}return false;}
+  }else{
   var ch={}; try{ var m=lookNow(); for(var k in r.look)m[k]=r.look[k]; m.tokV=2; ch=lookApply(lookOf(m)); }catch(_){}   /* lookOf 가 칸마다 검사한다(옛·깨진 값은 기본값) */
   try{ if(window.__applyPitch&&(r.pitchTheme!=null||r.pitchCustom))window.__applyPitch(r.pitchTheme||"",r.pitchCustom||null); }catch(_){}
   try{ buildGrid(); buildLines(); }catch(_){}
   try{ renderTokens(); renderDrawings(); updateDelUI(); }catch(_){}
   try{ lookRebuild(ch); lookSyncUI(); }catch(_){}
+  }
   try{ lookStampScenes(); }catch(_){}
+  try{ autoSaveAnimFrame(); }catch(_){}
   try{ boardSaveLive(); }catch(_){}
   try{ toast("«"+name+"» 설정을 적용했어요"); }catch(_){} return true; }
 function lookPresetDelete(name){ var a=lookPresetList(),b=a.filter(function(x){ return x.name!==name; }); if(b.length===a.length)return false;
@@ -22173,7 +22177,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
        목록에 없는 줄은 원래 순서대로 맨 뒤에 남는다(새 줄을 넣고 여기 안 적어도 사라지지 않는다). */
     var presetRow=(function(){
       var row=make("div","bsPresetRow","menurow bs-preset-row"),list=make("div","bsPresets","bs-presets"),form=make("div","bsPresetForm","bs-preset-form");
-      row.setAttribute("role","group");row.setAttribute("aria-label","내 스타일");   /* 3.036 — «내 설정» → «내 스타일»(운동장 · 선수 표시 값만 담는다 — 기기 설정인 3D 는 안 담는다) */
+      row.setAttribute("role","group");row.setAttribute("aria-label","내 스타일");   /* 현재 보드의 방향·배치·표시를 함께 저장한다. */
       var inp=document.createElement("input");inp.type="text";inp.id="bsPresetName";inp.maxLength=16;inp.placeholder="이름 (예: 경기 분석)";inp.setAttribute("aria-label","내 스타일 이름");inp.autocomplete="off";inp.spellcheck=false;inp.setAttribute("enterkeyhint","done");
       var ok=make("button","bsPresetOk","bs-preset-ok","저장"),no=make("button","bsPresetNo",null,"취소");ok.type="button";no.type="button";
       form.appendChild(inp);form.appendChild(ok);form.appendChild(no);form.hidden=true;
@@ -22181,14 +22185,14 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
       var armed=null,armT=0;
       function draw(){ list.replaceChildren(); var a=lookPresetList();
         a.forEach(function(x){ var chip=make("span",null,"bs-preset"),ap=make("button",null,"bs-preset-apply",x.name),del=make("button",null,"bs-preset-del",armed===x.name?"지우기":"×");
-          ap.type="button";del.type="button";ap.title="«"+x.name+"» 설정을 이 보드에 적용";del.title=armed===x.name?"한 번 더 누르면 지웁니다":"«"+x.name+"» 지우기";del.setAttribute("aria-label",del.title);
+          ap.type="button";del.type="button";ap.title="«"+x.name+"» "+(x.snap?"저장한 방향 · 선수 배치 · 그림 · 설정으로 현재 보드 바꾸기":"표시 설정을 이 보드에 적용");del.title=armed===x.name?"한 번 더 누르면 지웁니다":"«"+x.name+"» 지우기";del.setAttribute("aria-label",del.title);
           if(armed===x.name)chip.classList.add("armed");
           ap.addEventListener("click",function(e){e.stopPropagation();armed=null;lookPresetApply(x.name);draw();});
           del.addEventListener("click",function(e){e.stopPropagation();clearTimeout(armT);
             if(armed===x.name){armed=null;lookPresetDelete(x.name);draw();return;}
             armed=x.name;draw();armT=setTimeout(function(){armed=null;draw();},3000);});   /* 잘못 눌러 지우지 않게 두 번 */
           chip.appendChild(ap);chip.appendChild(del);list.appendChild(chip); });
-        var add=make("button","bsPresetAdd","bs-preset-add",a.length?"＋ 저장":"＋ 지금 스타일 저장");add.type="button";add.title="지금 운동장 · 선수 표시 설정을 이름 붙여 저장";
+        var add=make("button","bsPresetAdd","bs-preset-add",a.length?"＋ 저장":"＋ 지금 스타일 저장");add.type="button";add.title="지금 보드의 가로·세로 방향, 선수 배치, 공·장비·그림, 운동장·선수 표시 설정을 함께 저장";
         add.addEventListener("click",function(e){e.stopPropagation();list.hidden=true;form.hidden=false;inp.value="";try{inp.focus();}catch(_){}});
         list.appendChild(add); }
       function close(){ form.hidden=true; list.hidden=false; }
