@@ -74,6 +74,7 @@ const openMatch=async()=>{
   await page.evaluate(()=>document.querySelector('[data-team-key="match"]').click());
   scout=await (await page.waitForSelector('#fScout')).contentFrame();
   await scout.waitForFunction(()=>typeof matchLoad==='function'&&typeof matchOpen==='function');
+  await scout.evaluate(key=>PSStorage.sharedReady(key),KEY);
   await scout.evaluate(mid=>{setView('match');matchOpen(mid);},MID);
 };
 try{
