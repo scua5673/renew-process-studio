@@ -42,7 +42,7 @@ try{
 
   // Locked library must not leave its iframe overlay or inert canvas behind.
   for(let visit=0;visit<2;visit++){
-    await page.locator('#appSeg [data-app="design"]').first().click();
+    await page.locator('#psTrainBtn').click();
     await bf.waitForFunction(()=>window.__csView==='session'&&!!document.getElementById('psVaultAuthLock'));
     await page.locator('#appSeg [data-app="board"]:not([data-train])').first().click();
     await bf.waitForFunction(()=>window.__csView==='board'&&!document.getElementById('psVaultAuthLock')&&!document.getElementById('boardView').inert);
