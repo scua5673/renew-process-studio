@@ -32,13 +32,14 @@ test('3.010 3D options: camera, stadium detail, ad text — a device setting',()
   assert.match(src,/id="tiltAdInput"[^>]*maxlength="24"/);
 });
 
-test('3.010 «내 설정» keeps looks only, eight per device, never moves players',()=>{
+test('3.010 «내 스타일» stores the board, keeps legacy looks and eight per device',()=>{
   assert.match(src,/const LOOK_PRESET_KEY="ps_board_look_presets_v1",LOOK_PRESET_MAX=8;/);
   const save=/function lookPresetSave\(name\)\{[\s\S]*?\n\}?/.exec(src);assert.ok(save);
-  assert.match(src,/var rec=\{name:name,at:Date\.now\(\),look:lookNow\(\),pitchTheme:snap\.pitchTheme\|\|"",pitchCustom:snap\.pitchCustom\|\|null\};/,'look + pitch colour, no players');
+  assert.match(src,/var rec=\{v:2,name:name,at:Date\.now\(\),snap:snap,look:lookNow\(\),pitchTheme:snap\.pitchTheme\|\|"",pitchCustom:snap\.pitchCustom\|\|null\};/,'full snapshot with legacy look fields');
   const apply=/function lookPresetApply\(name\)\{[\s\S]*?return true; \}/.exec(src)[0];
   assert.match(apply,/ch=lookApply\(lookOf\(m\)\)/,'validated through lookOf');
-  assert.ok(!/state\.players|pitchSpec|orientation/.test(apply),'a preset leaves players, spec and direction alone');
+  assert.match(apply,/loadSnap\(dc\(r\.snap\)\)/,'restore full board through the shared loader');
+  assert.match(apply,/pushUndo\(\)/,'applying can be undone');
   assert.match(apply,/boardSaveLive\(\)/,'the board saves');
   assert.match(src,/armed=x\.name;draw\(\);armT=setTimeout/,'deleting takes two presses');
 });
