@@ -44,6 +44,7 @@
     var controls = Array.prototype.slice.call(strip.querySelectorAll(':scope>.tb-g'));
     var door = doc.getElementById('ehDoor'); if (door) controls.push(door);
     controls.forEach(function (g) {
+      if (g.classList.contains('tb-moved')) return;
       var b = g.getBoundingClientRect();
       if (b.width && b.height && b.right > r.left && b.left < r.right) bottom = Math.max(bottom, b.bottom + 8);
     });
@@ -84,6 +85,9 @@
       S + '>.tb-l{overflow:hidden}',
       // 3.083 — 가운데 덩어리(보기 · 모양)는 화면 가운데에(왼쪽 덩어리가 넓어도) — 양옆과 겹치지 않을 때만(tb-mid, JS 가 잰다)
       S + '.tb-mid>.tb-c{position:absolute;left:50%;top:8px;transform:translateX(-50%)}',
+      S + '>.tb-c.tb-moved{position:absolute!important;transform:none!important;margin:0!important;z-index:2}',
+      S + ' .tb-grip{display:flex;align-items:center;justify-content:center;width:24px;height:30px;padding:0;border:0;background:transparent;color:inherit;flex:none;cursor:grab;touch-action:none;user-select:none}',
+      S + ' .tb-grip:active{cursor:grabbing}',
       S + '>.bp-head{display:none!important}',
       // 3.079 — 패턴북(book-mode)은 왼쪽 기둥이 시퀀스 목록이라 띠를 접는다(board.html 의 접기 규칙과 같은 조건) — 막대가 그 규칙을 덮지 않게
       'html.ps-page-board body.book-mode:not(.focus-board):not(.vault-full):not(.ps-phone-work):not(.ps-dock) #boardPageStrip.ps-tb' + N + N + '{display:none!important}',
@@ -186,6 +190,55 @@
       refit();
     }
     function mk(tag, cls, html) { var e = doc.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+    var toolbarPosition = null;
+    function placeToolbar(C, x, y) {
+      var s = strip(), stage = doc.getElementById('boardStage');
+      if (!s || !stage || !C.offsetWidth || !stage.clientHeight) return;
+      var sr = s.getBoundingClientRect(), br = stage.getBoundingClientRect();
+      var left = Math.max(br.left, 0) + 4, top = Math.max(br.top, sr.top, 0) + 4;
+      x = Math.max(left, Math.min(x, Math.min(br.right, win.innerWidth) - C.offsetWidth - 4));
+      y = Math.max(top, Math.min(y, Math.min(br.bottom, win.innerHeight) - C.offsetHeight - 4));
+      toolbarPosition = { x: x, y: y };
+      C.classList.add('tb-moved');
+      C.style.setProperty('left', (x - sr.left) + 'px', 'important');
+      C.style.setProperty('top', (y - sr.top) + 'px', 'important');
+    }
+    function draggableToolbar(C) {
+      var grip = mk('button', 'tb-grip', '<svg aria-hidden="true" width="16" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>');
+      grip.type = 'button'; grip.title = '드래그하여 보기 막대 이동 · 방향키로 이동 · Home으로 원위치'; grip.setAttribute('aria-label', '보기 막대 이동'); C.prepend(grip);
+      var drag = null;
+      grip.addEventListener('pointerdown', function (e) {
+        if (e.button !== 0 || e.isPrimary === false) return;
+        e.preventDefault(); e.stopPropagation();
+        var r = C.getBoundingClientRect();
+        drag = { id: e.pointerId, x: e.clientX - r.left, y: e.clientY - r.top };
+        grip.setPointerCapture(e.pointerId);
+      });
+      grip.addEventListener('pointermove', function (e) {
+        if (!drag || drag.id !== e.pointerId) return;
+        e.preventDefault(); e.stopPropagation(); placeToolbar(C, e.clientX - drag.x, e.clientY - drag.y);
+      });
+      function end(e) {
+        if (!drag || drag.id !== e.pointerId) return;
+        drag = null;
+        if (grip.hasPointerCapture(e.pointerId)) grip.releasePointerCapture(e.pointerId);
+        refit();
+      }
+      ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (name) { grip.addEventListener(name, end); });
+      grip.addEventListener('click', function (e) { e.stopPropagation(); });
+      grip.addEventListener('keydown', function (e) {
+        var steps = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }, step = steps[e.key];
+        if (!step && e.key !== 'Home') return;
+        e.preventDefault(); e.stopPropagation();
+        if (e.key === 'Home') {
+          toolbarPosition = null; C.classList.remove('tb-moved'); C.style.removeProperty('left'); C.style.removeProperty('top'); center();
+        } else {
+          var r = C.getBoundingClientRect(), amount = e.shiftKey ? 32 : 8;
+          placeToolbar(C, r.left + step[0] * amount, r.top + step[1] * amount);
+        }
+        refit();
+      });
+    }
     function build() {
       var s = strip(); if (!s || busy) return;
       if (!on()) { unbuild(); return; }
@@ -210,6 +263,7 @@
         g.other.forEach(function (n) { L.appendChild(n); });
         C.innerHTML = '<div class="tb-seg" role="group" aria-label="보기"><button type="button" data-v="flat" title="평면 작전판">평면</button><button type="button" data-v="3d" title="3D 경기장">3D</button></div><span class="tb-sep"></span><div class="tb-seg tb-shape" role="group" aria-label="선수 모양"><button type="button" data-shape="shirt" title="선수 모양 — 유니폼" aria-label="유니폼"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 3l-5 3 2 5 2-1v11h10V10l2 1 2-5-5-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z"/></svg></button><button type="button" data-shape="circle" title="선수 모양 — 원형" aria-label="원형"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg></button><button type="button" data-shape="person" title="선수 모양 — 사람(3D · 중계에서 서 있는 선수)" aria-label="사람"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4.5" r="2.6"/><path d="M8.5 8.5h7l1 7h-2l-.6 7h-3.8l-.6-7h-2z"/></svg></button></div><div class="tb-seg tb-rs"><button type="button" class="tb-rsize" title="실제 비율 크기 — 선수 · 공을 몇 배로" aria-label="실제 비율 크기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20L20 4M14 4h6v6M10 20H4v-6"/></svg></button></div>';
         if (win.PSPlayerEye) C.querySelector('.tb-seg').appendChild(win.PSPlayerEye.button());
+        draggableToolbar(C);
         g.right.forEach(function (n) { R.appendChild(n); });
         exportBtn(R);
         s.appendChild(L); s.appendChild(C); s.appendChild(R);
@@ -272,6 +326,7 @@
     function center() {
       var s = strip(); if (!s || !s.classList.contains('ps-tb')) return;
       var L = s.querySelector(':scope>.tb-l'), C = s.querySelector(':scope>.tb-c'), R = s.querySelector(':scope>.tb-r'); if (!L || !C) return;
+      if (toolbarPosition) placeToolbar(C, toolbarPosition.x, toolbarPosition.y);
       if (ro) [L, C, R, doc.getElementById('ehDoor')].forEach(function (g) { if (g && !g.__tbRO) { g.__tbRO = 1; ro.observe(g); } });   // 탭이나 빈 보드의 시작 단추가 바뀌어도 다시 잰다
       var sr = s.getBoundingClientRect(); if (!sr.width) return;
       var lr = L.getBoundingClientRect().left - sr.left + Math.max(L.offsetWidth, L.scrollWidth), rl = R ? R.getBoundingClientRect().left - sr.left : sr.width, cw = C.offsetWidth, mid = sr.width / 2;
