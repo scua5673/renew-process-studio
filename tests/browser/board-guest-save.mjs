@@ -40,6 +40,17 @@ try{
   assert.equal(await bf.evaluate(()=>window.__psBoardGuest.active()),true,'로그인하지 않은 기기는 게스트 보드');
   assert.equal(await bf.evaluate(()=>_boardManualDirty||boardManualChanged()),false,'불러온 판은 «변경»이 아니다');
 
+  // Locked library must not leave its iframe overlay or inert canvas behind.
+  for(let visit=0;visit<2;visit++){
+    await page.locator('#appSeg [data-app="design"]').first().click();
+    await bf.waitForFunction(()=>window.__csView==='session'&&!!document.getElementById('psVaultAuthLock'));
+    await page.locator('#appSeg [data-app="board"]:not([data-train])').first().click();
+    await bf.waitForFunction(()=>window.__csView==='board'&&!document.getElementById('psVaultAuthLock')&&!document.getElementById('boardView').inert);
+    assert.deepEqual(await nums(bf),['9','10'],'returning from locked library preserves the guest board');
+    assert.equal(await bf.evaluate(()=>psVaultUnlocked()),false,'navigation does not unlock private library data');
+  }
+  assert.equal(kvWrites(),writes0,'guest navigation makes no server writes');
+
   // ── ② 저장 안 한 그림 + 게스트가 그대로인 신호 ──
   await bf.evaluate(P=>{pushUndo();state.players.push(P);renderTokens();boardSaveLive();},P(11,700));
   await bf.evaluate(()=>{window.dispatchEvent(new StorageEvent('storage',{key:'ps_active_ws'}));window.dispatchEvent(new StorageEvent('storage',{key:'ps_sync_session'}));});
