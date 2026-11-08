@@ -20,6 +20,8 @@ python3 -m http.server 8080        # 또는 npx serve .  — 저장소 뿌리에
 
 ## 시험
 
+Codex 클라우드 설치와 시작 설정은 [`docs/CLOUD_ENVIRONMENT.md`](docs/CLOUD_ENVIRONMENT.md)를 따른다.
+
 ```bash
 npm test                 # 단위 시험(node --test tests/*.test.cjs)
 npm run test:sql         # migrations/*.local-test.cjs 전부(PGlite, 가상 DB)
