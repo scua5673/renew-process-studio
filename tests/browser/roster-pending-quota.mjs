@@ -62,7 +62,22 @@ try{
     observations.push(value);fs.writeFileSync(path.join(out,engine+'-observations.json'),JSON.stringify({engine,observations},null,2));return value;
   }
   async function addPlayer(n,num){await frame.locator('#tmAdd').click();await frame.locator('[data-k="name"]').fill(n);await frame.locator('[data-k="num"]').fill(num);await frame.locator('[data-act="ok"]').click();await frame.waitForFunction(n=>data.players.some(p=>p.name===n),n);}
+  // Startup normalizes the minimal roster fixture (evaluation defaults and
+  // position names). Its local write barrier is not a server acknowledgement.
+  // Finish that ordinary sync before testing whether a failed new edit uploads.
+  await frame.evaluate(()=>psFlushPendingReady());
+  await page.evaluate(()=>PSSync.syncNow('fixture-roster-quota-baseline'));
+  const baselineDeadline=Date.now()+35000;
+  let baselineReady=false;
+  while(Date.now()<baselineDeadline){
+    const b=await frame.evaluate(async()=>({main:localStorage.getItem(KEY),idb:(await storage.peek(KEY))?.value??null,pending:psHasPending(),rows:rosterPendingRows(),failed:scoutStore.hasFailed(KEY)}));
+    if(b.main!==null&&b.main===b.idb&&b.main===fx.db.get(WT+'|scout_tool_v1')?.v&&!b.pending&&!b.rows&&!b.failed){baselineReady=true;break;}
+    await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  assert.ok(baselineReady,'startup roster must have exact local/IDB/server confirmation before quota injection');
   snapshotBefore=await snapshot('before-add');
+  assert.equal(snapshotBefore.main,snapshotBefore.idb,'baseline local and IDB are exact');
+  assert.equal(snapshotBefore.main,snapshotBefore.serverMain,'baseline server has acknowledged startup normalization');
   await frame.evaluate(()=>localStorage.setItem('fixture_pending_quota','1'));
   await addPlayer(name,'91');
   snapshotAfter=await snapshot('after-first-batch-quota');
