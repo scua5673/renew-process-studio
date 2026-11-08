@@ -75,8 +75,8 @@ async function openSchedule(page,width){
  const frame=await(await page.waitForSelector('#fProcess')).contentFrame();
  await frame.waitForFunction(()=>typeof weeksMap==='object'&&PSSchedule.raw()!=null);
  if(!await frame.locator('#weekView').isVisible()){
-  const phoneWeek=frame.locator('#psPhBar .sg [data-sv="week"]');
-  if(await phoneWeek.isVisible())await phoneWeek.click();else await frame.locator('#vtoggle [data-v="week"]').click();
+  // The phone bar mounts after the schedule data; wait for either visible control.
+  await frame.locator('#psPhBar .sg [data-sv="week"]:visible, #vtoggle [data-v="week"]:visible').first().click();
  }
  await frame.locator('#weekView').waitFor({state:'visible'});
  await frame.evaluate(()=>PSStorage.sharedReady('process_coach_v1'));await page.evaluate(()=>PSStorage.sharedReady('process_coach_v1'));

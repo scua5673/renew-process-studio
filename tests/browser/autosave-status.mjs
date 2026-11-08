@@ -33,7 +33,7 @@ try{
     const label=spec.width+'-'+(serverName?'server-name':'no-name'),calls=[],blocked=[],errors=[];
     if(process.env.PS_TEST_LABEL&&process.env.PS_TEST_LABEL!==label)continue;
     const db=new Map([[WID+'|cs_perms_v1',{workspace_id:WID,k:'cs_perms_v1',v:perms,cupd:1,updated_by:UID}]]);
-    const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},isMobile:spec.mobile,hasTouch:spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
+    const context=await browser.newContext({...(spec.mobile?pw.devices['iPhone 13']:{}),viewport:{width:spec.width,height:spec.height},isMobile:spec.mobile,hasTouch:spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
     await context.addInitScript(({UID,WID,workspaces,perms})=>{
       if(!localStorage.getItem('quiet_fixture_seeded')){
         localStorage.setItem('ps_sync_session',JSON.stringify({uid:UID,at:'synthetic-at',rt:'synthetic-rt',exp:Date.now()+3600000,email:'fixture@example.invalid'}));
@@ -137,7 +137,7 @@ try{
         assert.equal(overlapsRelease,false,'A compact state never overlays update controls');
         await page.screenshot({path:path.join(out,spec.width+'-'+label+'.png')});
       }
-      await page.locator('#psSyncStripBtn').click();const recoveryCount=await page.evaluate(()=>window.__fixtureRecovery);
+      await page.locator('#psSyncStripBtn')[spec.mobile?'tap':'click']();const recoveryCount=await page.evaluate(()=>window.__fixtureRecovery);
       if(recoveryCount!==1){const observed=await page.evaluate(()=>({state:__statusScalar(),trace:__statusClickTrace})).catch(e=>({observationError:e.name}));fs.writeFileSync(path.join(out,label+'-recovery-failure.json'),JSON.stringify({recoveryCount,observed},null,2));}
       assert.equal(recoveryCount,1);
       assert.equal(await page.evaluate(()=>window.__fixtureChoices),0);
@@ -197,7 +197,7 @@ try{
         document.querySelector('#gearPop').classList.remove('on');
         return row;
       },{UID,WID,originals});
-      await page.locator('#psSyncStripBtn').click();await page.locator('[data-psar-id="'+realArchive.id+'"]').waitFor({state:'visible'});
+      await page.locator('#psSyncStripBtn')[spec.mobile?'tap':'click']();await page.locator('[data-psar-id="'+realArchive.id+'"]').waitFor({state:'visible'});
       assert.equal(await page.locator('#psAutosaveRecoveryDialog textarea').count(),0,'The actual bridge starts with metadata only');
       await page.locator('[data-psar-id="'+realArchive.id+'"]').click();await page.locator('[data-psar-action="copy"]').waitFor({state:'visible'});
       await page.evaluate(()=>{window.__recoveryCopyMode='normal';});await page.locator('[data-psar-action="copy"]').click();
