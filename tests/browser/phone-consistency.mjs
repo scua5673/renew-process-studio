@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {startFixture,openApp,ready,SHOTS} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,ready,SHOTS,SIZES} from '../fixtures/team-app.mjs';
 // Real phone controls on isolated synthetic data. Includes the settings stacking
 // regression: it used to be covered by the team navigation despite a high z-index.
+const engine=process.env.PS_BROWSER_ENGINE||'chromium';SIZES.phone.engine=engine;
 const fx=await startFixture(),browsers={};
 const width=Number(process.env.PS_DESIGN_WIDTH||375);
 try{for(const dark of [false,true]){
@@ -24,6 +25,9 @@ try{for(const dark of [false,true]){
  assert.equal(await page.locator('#gearPop .gp-tabs button').nth(1).getAttribute('class'),'on');
  await fits(page);await page.screenshot({path:path.join(SHOTS,`phone-design-${width}-${dark?'dark':'light'}-settings.png`)});
  await page.locator('#gearClose').click();await page.locator('#gearPop.on').waitFor({state:'hidden'});
+ await page.locator('#teamBottom [data-tb=training]').click();
+ const pf=await(await page.locator('#fProcess').elementHandle()).contentFrame();
+ await pf.locator('#psPhGrp').waitFor();await targets(pf,'#psPhGrp');await fits(pf);
  await page.locator('#psTrainBtn').click();
  const board=await (await page.locator('#fBoard').elementHandle()).contentFrame();
  await board.locator('#drillFiles').waitFor();

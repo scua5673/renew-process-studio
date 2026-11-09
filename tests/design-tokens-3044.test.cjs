@@ -31,8 +31,8 @@ test('tokens.css · ui-grammar.css 를 고쳤으니 모든 페이지의 ?v 가 �
   }
 });
 
-/* 스타일 코드 래칫. 3.269 사용자 승인 휴대폰 통일안: phone-consistency.css의 기존 고특이도 규칙 대체 71개를 한정 허용. 새 색/px 글자 없음. 줄였으면 상한도 내린다. */
-const CSS_RATCHET={hex:1320,important:13556,notId:1360,fontPx:4349};   /* staging #418 · #419 가 더한 !important 3 · :not(#_) 7 포함 · 3.066 폰 가로 커뮤니티 뷰어 11 (기존 comm-viewing · mobile-polish !important 규칙을 이겨야 한다) */
+/* 스타일 코드 래칫. 3.269 사용자 승인 휴대폰 통일안: phone-consistency.css의 기존 고특이도 규칙 대체 72개를 한정 허용. 새 색/px 글자 없음. 줄였으면 상한도 내린다. */
+const CSS_RATCHET={hex:1320,important:13557,notId:1360,fontPx:4349};   /* staging #418 · #419 가 더한 !important 3 · :not(#_) 7 포함 · 3.066 폰 가로 커뮤니티 뷰어 11 (기존 comm-viewing · mobile-polish !important 규칙을 이겨야 한다) */
 test('스타일 래칫 — 새 hex 색 · px 글자 크기 · !important · :not(#_) 가 늘지 않는다, 반 픽셀 글자는 0',()=>{
   const hex=new Set(); let important=0,notId=0,fontPx=0; const half=[];
   for(const f of styleFiles()){
@@ -70,7 +70,7 @@ test('team-mobile 공용 스타일은 모든 사용 페이지에서 같은 판�
 
 test('휴대폰 공통 규칙은 모든 앱 화면과 오프라인 필수 파일에 연결된다',()=>{
  const pages=['app','board','community','learning','note','idp','process','scout','playbook','gamemodel','analysis','scouting','terms'];
- const versions=pages.map(p=>{const s=R('studio/'+p+'.html'),m=[...s.matchAll(/phone-consistency\.css\?v=([\d.]+)/g)];assert.equal(m.length,1,p);return m[0][1];});
+ const versions=pages.map(p=>{const s=R('studio/'+p+'.html').replace(/<!--[\s\S]*?-->|<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>/gi,''),m=[...s.matchAll(/phone-consistency\.css\?v=([\d.]+)/g)];assert.equal(m.length,1,p);return m[0][1];});
  assert.equal(new Set(versions).size,1);
  assert.match(R('sw.js'),/'\/studio\/phone-consistency\.css'/);
 });

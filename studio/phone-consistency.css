@@ -39,7 +39,7 @@
  #gearPop .gp-tabs{position:sticky;top:56px;background:var(--c-surface-2);z-index:2}
  html.ps-page-idp body #layers#layers#layers>button:not([hidden]){min-height:44px!important;font-size:var(--t-5)!important;font-weight:600!important}
  html.ps-page-idp summary{min-height:44px!important}
- html body #schedule #psPhBar #psPhGrp{min-height:44px!important;border-radius:var(--r-control)!important}
+ html body #schedule #psPhBar #psPhGrp{height:44px!important;min-height:44px!important;border-radius:var(--r-control)!important}
  #dfSearch{min-height:44px!important}
  /* Note toolbar targets retain their color meaning. */
  #noteToolsToggle{height:44px!important;min-height:44px!important}

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {startFixture,openApp,SHOTS,OUT,WT,A} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,SHOTS,OUT,WT,A,ready} from '../fixtures/team-app.mjs';
 
 // A failed match mirror write must return only this round's candidate IDB
 // write to its exact previous body. Retry through the native sync/readiness/
@@ -71,11 +71,15 @@ const exact=async(expected,timeout=30000)=>{
 };
 const sync=reason=>page.evaluate(reason=>PSSync.syncNow(reason),reason);
 const openMatch=async()=>{
-  await page.evaluate(()=>document.querySelector('[data-team-key="match"]').click());
+  // Reload readiness and the visible navigation precede a real card click.
+  // Calling matchOpen while the shell was still sending its initial view could
+  // immediately send this synthetic interaction back to the list.
+  await ready(page);
+  await page.locator('#appSeg [data-team-hub]').click();
+  await page.locator('#teamNav [data-team-key="match"]:visible, #teamBottom [data-tb="match"]:visible').first().click();
   scout=await (await page.waitForSelector('#fScout')).contentFrame();
-  await scout.waitForFunction(()=>typeof matchLoad==='function'&&typeof matchOpen==='function');
   await scout.evaluate(key=>PSStorage.sharedReady(key),KEY);
-  await scout.evaluate(mid=>{setView('match');matchOpen(mid);},MID);
+  await scout.locator('.mr-hit[data-mid="'+MID+'"]').click();
 };
 try{
   stage='confirmed-old';

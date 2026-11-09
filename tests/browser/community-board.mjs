@@ -33,7 +33,13 @@ const MEET={libId:'Vmeet3042',type:'meeting',name:'가상 미팅 — 빌드업',
 const TRAIN={libId:'Vtrain3038',type:'train',name:'가상 론도',focus:'tech',minutes:15,folder:'',tags:[],savedAt:Date.now()-1000,snap:snap([P(1,8,300,300)])};
 const fx=await startFixture(),browsers={};
 try{
-  const {page,context,logs}=await openApp(fx,size,{browsers});
+  const {page,context,logs}=await openApp(fx,size,{browsers,init:{fn:()=>{
+    // First shared board restores slowly. This used to close the viewer after
+    // 2.4 seconds, although the same board would become ready moments later.
+    if(!/[?&]community_view=1/.test(location.search)||top.__qaSlowSharedBoard)return;
+    top.__qaSlowSharedBoard=true;let actual=false;const readyAt=Date.now()+6000;
+    Object.defineProperty(window,'__boardReady',{configurable:true,get(){return actual&&Date.now()>=readyAt;},set(v){actual=v;}});
+  }}});
   const shot=n=>page.screenshot({path:path.join(SHOTS,`community-board-${engine}-${size}-${n}.png`)});
   const cors={'access-control-allow-origin':'*'};let posted=null;const writes=[];
   await context.route('**/rest/v1/ps_handles**',r=>r.fulfill({status:200,contentType:'application/json',headers:cors,body:JSON.stringify([{handle:'가상엘미하'}])}));
@@ -54,6 +60,7 @@ try{
   await page.evaluate(()=>window.__psShowApp('community'));
   const c=await (await page.waitForSelector('#fComm')).contentFrame();
   await c.waitForSelector('#prSeg');
+  const viewerVisible=async()=>{try{await c.waitForSelector('#cvMask.on');}catch(error){await shot('failure');console.error(JSON.stringify(await c.evaluate(()=>({viewer:document.getElementById('cvMask').className,src:document.getElementById('cvFrame').src,preview:getComputedStyle(document.getElementById('commPreview')).display,grid:document.getElementById('grid').innerText.slice(0,600)}))));throw error;}};
   await c.click('#prTabElm');
   await c.waitForFunction(()=>/아직 올라온 전술노트가 없어요/.test(document.getElementById('grid').textContent));
 
@@ -99,7 +106,7 @@ try{
     await c.waitForFunction(()=>/작전판페이지 3개/.test((document.querySelector('#commPreview .cp-summary')||{}).textContent||''));
     await c.click('#cpOpen');
   }else await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
-  await c.waitForSelector('#cvMask.on');
+  await viewerVisible();
   const viewer=async()=>{ const v=await (await c.waitForSelector('#cvFrame')).contentFrame();
     await v.waitForFunction(()=>!!document.getElementById('commCopyBtn')&&!document.documentElement.classList.contains('comm-boot'));
     return v; };
@@ -166,7 +173,7 @@ try{
   await c.waitForFunction(()=>document.querySelectorAll('#grid .card').length===1&&/가상 미팅/.test(document.querySelector('#grid .card').textContent),null,{timeout:15000});
   if(await c.evaluate(()=>getComputedStyle(document.getElementById('commPreview')).display!=='none')){ await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn'); await c.click('#cpOpen'); }
   else await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
-  await c.waitForSelector('#cvMask.on');
+  await viewerVisible();
   v=await viewer();L=await look(v);
   assert.deepEqual([L.tabs.label,L.tabs.btn,L.title,L.nums,L.play],['이 미팅 자료의 슬라이드',['1빌드업 원칙*','2슬라이드 2장면 3'],'커뮤니티 미팅 자료','5',false]);
   assert.match(L.banner,/^커뮤니티 미팅 자료 — @가상엘미하님이 공유했어요 · 슬라이드 2장 · 보기 전용/);
