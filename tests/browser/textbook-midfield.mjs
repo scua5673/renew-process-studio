@@ -26,6 +26,11 @@ async function assertGoalGeometry(frame){
 const fx=await startFixture(),browsers={};
 try{
  const {page,context,logs}=await openApp(fx,'desktop',{browsers});
+ // Finish native app startup before measuring the separate read-only chapter.
+ // The invariant below still rejects every additional workspace write.
+ await page.evaluate(async()=>{await psFlushAllPendingReady();await PSSync.syncNow('textbook-read-baseline');await psFlushAllPendingReady();});
+ await page.waitForFunction(()=>PSSync.pending().count===0);
+ const beforeReading=structuredClone(fx.writes);
  await page.goto(fx.base+'/studio/textbook/ch10/index.html');
  await page.locator('#choice').scrollIntoViewIfNeeded();
  await page.waitForFunction(()=>document.querySelector('#choice').dataset.nativeReady==='true');
@@ -88,7 +93,7 @@ try{
  await page.locator('main').screenshot({path:path.join(out,'checks','field-notes-print.png')});
  assert.ok(await page.locator('main').evaluate(el=>el.getBoundingClientRect().height<1040),'the print sheet fits the intended writing area');
  await page.emulateMedia({media:'screen'});await page.setViewportSize({width:1280,height:960});
- assert.equal(fx.writes.length,0,'reading and playing the chapter cannot save into a workspace');
+ assert.deepEqual(fx.writes,beforeReading,'reading and playing the chapter cannot add a workspace write');
  await page.goto(fx.base+'/studio/textbook/ch10/index.html');
  await page.getByRole('link',{name:'훈련 3개 보관함에 담기 ↗',exact:true}).click();
  let bf=await importFrame(page);

@@ -79,7 +79,9 @@ const openMatch=async()=>{
   await page.locator('#teamNav [data-team-key="match"]:visible, #teamBottom [data-tb="match"]:visible').first().click();
   scout=await (await page.waitForSelector('#fScout')).contentFrame();
   await scout.evaluate(key=>PSStorage.sharedReady(key),KEY);
+  await scout.waitForFunction(mid=>!matchDocPending()&&matchCanEdit()&&matchLoad().matches.some(m=>m.id===mid),MID);
   await scout.locator('.mr-hit[data-mid="'+MID+'"]').click();
+  await scout.locator('.match-shell.in-one').waitFor({state:'visible'});
 };
 try{
   stage='confirmed-old';
