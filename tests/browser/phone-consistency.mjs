@@ -30,7 +30,7 @@ try{for(const dark of [false,true]){
  await pf.locator('#psPhGrp').waitFor();await targets(pf,'#psPhGrp');await fits(pf);
  await page.locator('#psTrainBtn').click();
  const board=await (await page.locator('#fBoard').elementHandle()).contentFrame();
- await board.locator('#drillFiles').waitFor();
+ await board.locator('#drillFiles .vsort').first().waitFor({state:'visible'});
  await targets(board,'#drillFiles .vx-nav button,#drillFiles .vsort');await fits(board);
  await page.evaluate(()=>window.__psShowApp('note'));
  const note=await (await page.locator('#fNote').elementHandle()).contentFrame();
