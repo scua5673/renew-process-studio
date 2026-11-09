@@ -58,7 +58,12 @@ try{
  await page.locator('#teamSub [data-team-key="attrs"]').click();const scout=await frame(page,'#fScout');await scout.locator('.tc-criteria-head h2').waitFor();assert.equal(await scout.locator('.tc-criteria-head h2').innerText(),'선수 기준');
  assert.equal(await scout.locator('.attr-pos').getAttribute('open'),null);assert.equal(await scout.locator('#attrEditor .attr-cat:not(.attr-pos)').count(),1);
  for(const width of [1280,375]){await page.setViewportSize({width,height:1000});await page.waitForTimeout(200);assert.equal(await scout.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'criteria no horizontal overflow '+width);const out=path.join(SHOTS,'criteria-players-'+engine+'-'+width+'.png');await page.screenshot({path:out,fullPage:true});shots.push(out);}
- await page.setViewportSize({width:1280,height:1000});const before=await scout.evaluate(()=>JSON.parse(JSON.stringify({attrs:data.attrs,players:data.players,positions:data.positions})));
+ await page.setViewportSize({width:1280,height:1000});
+ // Rendering criteria is earlier than confirming the candidate document's
+ // owner and original. Wait for the same real write guard used by the form.
+ await page.waitForFunction(()=>{const f=document.getElementById('fScout');return f&&f.__psTeamViewTarget==='attrs'&&!f.__psTeamViewPending&&!f.__psTeamViewLag;});
+ await scout.waitForFunction(()=>{if(scoutBootPending||!scoutDataLoaded)return false;try{scStore().check();return true;}catch(_){return false;}});
+ const before=await scout.evaluate(()=>JSON.parse(JSON.stringify({attrs:data.attrs,players:data.players,positions:data.positions})));
  await scout.locator('#attrEditBtn').click();await scout.locator('.attr-cat-head').first().click();await scout.locator('.ed-attr-q').first().fill('공을 받기 전에 다음 선택을 확인하나요?');await scout.locator('.ed-attr-w').first().fill('공을 받기 전 어깨 너머를 두 번 확인한다.');await scout.locator('#attrEditBtn').click();
  await scout.evaluate(()=>scoutStore.ready(true));
  const durable=await scout.evaluate(async()=>JSON.parse((await storage.get('scout_tool_v1')).value));assert.equal(durable.attrs[0].w,'공을 받기 전 어깨 너머를 두 번 확인한다.');

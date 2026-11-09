@@ -77,7 +77,11 @@ const openMatch=async()=>{
   await ready(page);
   await page.locator('#appSeg [data-team-hub]').click();
   await page.locator('#teamNav [data-team-key="match"]:visible, #teamBottom [data-tb="match"]:visible').first().click();
+  // The shell acknowledges the requested view separately from document load.
+  // A ready match document can precede roster boot and the card click wiring.
+  await page.waitForFunction(()=>{const f=document.getElementById('fScout');return f&&f.__psTeamViewTarget==='match'&&!f.__psTeamViewPending&&!f.__psTeamViewLag;});
   scout=await (await page.waitForSelector('#fScout')).contentFrame();
+  await scout.waitForFunction(()=>!scoutBootPending&&scoutDataLoaded);
   await scout.evaluate(key=>PSStorage.sharedReady(key),KEY);
   await scout.waitForFunction(mid=>!matchDocPending()&&matchCanEdit()&&matchLoad().matches.some(m=>m.id===mid),MID);
   await scout.locator('.mr-hit[data-mid="'+MID+'"]').click();
