@@ -37,7 +37,7 @@ suites.board2.push('meeting-slide-transition');   /* 3.256 — 미팅 슬라이�
 suites.board.push('board-flat-turf-3263');   /* 3.263 — 평면 잔디: 잎결 · 실사 잔디 줄 약 4m · 가로 · 세로 · 운동장 카드마다(board2 웹킷은 20분 한도에 닿아 board 로) */
 suites.entry.push('sync-diagnosis','team-mobile','mobile-navigation');
 suites.entry.push('admin-metrics');
-suites.entry.push('player-bulk-touch');
+suites.entry.push('player-bulk-touch','phone-consistency');
 suites.entry.push('note-export');   /* 3.265 — 개인 노트 «내보내기»(PDF로 저장 · 인쇄 · 이미지 저장) */
 suites.storage.push('community-youtube');
 suites.storage.push('roster-pending-quota');

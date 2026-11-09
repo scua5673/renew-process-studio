@@ -10447,7 +10447,8 @@ html body .wks-day:not(.is-match):not(.is-off):not(:has(.wks-ses))>.wks-kind .wk
    ① 머리줄 여섯 층(조 · 보기 전환 · 서버 일정 줄 · 주 넘기기 · 세션|목록 · 내용) → 두 줄. 데스크톱(≥901)만 — 폰은 2.594·2.903 의 한 줄 바 그대로.
       서버 일정 줄은 손쓸 일이 있을 때(.att)만 제 줄, 아니면 첫 줄 오른쪽 끝의 작은 글씨.
    ② 세션 카드: 빈 줄을 세우지 않는다(채워진 줄 + «＋ 채우기» 하나). 훈련 줄 띠는 한 색, 오늘·경기는 잉크 테두리.
-   ⚠ process.html 은 문서 끝 </body> 가 인쇄 템플릿 문자열 안에만 있다 — 이 블록은 파일 맨 끝에 붙는다. */
+   ⚠ process.html 은 문서 끝 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
+</body> 가 인쇄 템플릿 문자열 안에만 있다 — 이 블록은 파일 맨 끝에 붙는다. */
 @media (min-width:901px){
   html body #schedule.active:not(#_){display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;align-content:flex-start;column-gap:10px}   /* ⚠ 원래 세로 플렉스(column)다 — row 를 못 박지 않으면 가운데로 한 줄씩 쌓인다(실측) */
   html body #schedule.active:not(#_)>*{flex:0 0 100%;min-width:0}

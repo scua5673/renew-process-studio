@@ -73,4 +73,5 @@ window.psHasPending=function(){return dirty||!!saving;};
 window.psFlushPendingReady=async function(){if(saving)await saving;if(dirty)throw Error('팀 등록의 저장하지 않은 변경이 있습니다.');if(window.PSStorage)await PSStorage.sharedReady(KEY);return true;};
 (async function(){var main=document.querySelector('main'),seal=library.owner();main.inert=true;try{await library.read(seal);ready=true;render();main.inert=false;}catch(e){document.getElementById('emptyEditor').textContent='저장 명단을 불러오지 못했습니다. 기존 자료는 유지됩니다. 계정·팀 상태를 확인한 뒤 다시 열어 주세요.';}})();
 })();
-</script></body></html>
+</script><link rel="stylesheet" href="phone-consistency.css?v=3.269">
+</body></html>
