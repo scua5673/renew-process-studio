@@ -61,3 +61,9 @@ test('스타일시트 순서 — 페이지마다 같은 순서, 예외는 적어
     if(seq.includes('ui-grammar.css'))assert.equal(seq[seq.length-1],'ui-grammar.css',f+' ui-grammar 가 마지막');
   }
 });
+
+test('team-mobile 공용 스타일은 모든 사용 페이지에서 같은 판을 명시한다',()=>{
+ const pages=['app','scout','process','idp','playbook'].map(n=>'studio/'+n+'.html');
+ const versions=pages.map(f=>{const m=R(f).match(/team-mobile\.css\?v=([\d.]+)/);assert.ok(m,f);return m[1];});
+ assert.equal(new Set(versions).size,1);
+});

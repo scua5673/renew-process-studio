@@ -102,7 +102,12 @@
       dialog.querySelector('.pw-bulk-sum').innerHTML=summary(kind).text;
       dialog.querySelector('[data-ok]').textContent=summary(kind).plan.add.length+'명 추가';
     }
-    function refreshSum(){var sm=summary(kindNow);dialog.querySelector('.pw-bulk-sum').innerHTML=sm.text;dialog.querySelector('[data-ok]').textContent=sm.plan.add.length+'명 추가';}
+    function refreshSum(){
+      var sm=summary(kindNow),sum=dialog.querySelector('.pw-bulk-sum'),ok=dialog.querySelector('[data-ok]'),label=sm.plan.add.length+'명 추가';
+      // Replacing an unchanged button label during field blur can consume a WebKit click.
+      if(sum.innerHTML!==sm.text)sum.innerHTML=sm.text;
+      if(ok.textContent!==label)ok.textContent=label;
+    }
     function read(){
       Array.prototype.forEach.call(dialog.querySelectorAll('.pw-bulk-row'),function(el){var i=+el.dataset.row,r=rows[i];if(!r)return;Array.prototype.forEach.call(el.querySelectorAll('[data-f]'),function(f){r[f.dataset.f]=f.value;});});
     }

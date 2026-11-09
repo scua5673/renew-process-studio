@@ -10,6 +10,7 @@ try{
   await page.locator('#appSeg [data-team-hub]').click();
   await page.locator(phone?'#teamBottom [data-tb="players"]':'#teamNav [data-team-key="players"]').click();
   const frame=await (await page.waitForSelector('#fScout')).contentFrame();
+  await frame.getByRole('button',{name:'포지션',exact:true}).click();
   await frame.locator('#pwTeam .pw-depth-pitch').waitFor();
   assert.equal(await frame.locator('#pwTeam .pw-depth-name').count(),18);
   await frame.getByRole('button',{name:'명단',exact:true}).click();
