@@ -72,3 +72,14 @@ test('같은 자리의 서로 다른 단계는 상이로 남기고 빈 정의도
   assert.equal(workspace.depthBoard([],[],[],{}).unplaced.rows.length,0);
   assert.equal(workspace.depthBoard([],[{id:'p',name:'GK'}],[],{}).cards.length,1);
 });
+
+test('부팅 중 자동 선택된 빈 미배치는 자료 수신 뒤 실제 선수 포지션으로 옮긴다',()=>{
+  const empty={id:'__unplaced',rows:[],all:[]},cb={id:'cb',rows:[{id:'one'}],all:[{id:'one'}]};
+  const state={depthPosition:'__unplaced',depthPositionChosen:false},board={cards:[cb],unplaced:empty};
+  assert.equal(workspace.depthSelection(board,state),cb);
+  assert.equal(state.depthPosition,'__unplaced','선택 판단이 화면 상태나 명단을 직접 쓰지 않는다');
+  assert.equal(workspace.depthSelection(board,{...state,depthPositionChosen:true}),empty,'사용자가 직접 고른 빈 미배치는 유지');
+  assert.equal(workspace.depthSelection(board,{depthPosition:'cb'}),cb);
+  assert.equal(workspace.depthSelection(board,{depthPosition:'deleted',depthPositionChosen:true}),cb,'삭제된 포지션은 실제 명단으로');
+  assert.equal(workspace.depthSelection({cards:[],unplaced:empty},{}),empty,'등록 전 빈 화면도 안전');
+});
