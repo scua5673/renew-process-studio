@@ -30,7 +30,7 @@ try{for(const dark of [false,true]){
  await targets(board,'#drillFiles .vx-nav button,#drillFiles .vsort');await fits(board);
  await page.evaluate(()=>window.__psShowApp('note'));
  const note=await (await page.locator('#fNote').elementHandle()).contentFrame();
- await note.locator('#noteToolsToggle').waitFor();await targets(note,'#noteToolsToggle,#nDock #cols button,#nDock #tools button,#nDock #penOnly');
+ await note.locator('#noteToolsToggle').waitFor();await targets(note,'#noteToolsToggle,#nTitle,#nDock #cols button,#nDock #tools button,#nDock #penOnly');
  await fits(note);await page.screenshot({path:path.join(SHOTS,`phone-design-${width}-${dark?'dark':'light'}-note.png`)});
  await context.close();console.log(JSON.stringify({engine:process.env.PS_BROWSER_ENGINE||'chromium',width,dark,passed:true}));
 }}finally{for(const b of Object.values(browsers))await b.close();await fx.close();}

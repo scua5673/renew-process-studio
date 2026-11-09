@@ -46,7 +46,7 @@ test('a phone has no editing tools, so the strip only picks — and the save but
   for(const sel of ['.bp-head:not(#_)','.bp-tab .bpx:not(#_)','.bp-add:not(#_)','#bpLinkChip:not(#_)'])
     assert.ok(css.includes('#boardPageStrip '+sel),'hidden on the phone: '+sel);
   assert.match(css,/#bpLinkChip:not\(#_\)\{display:none!important\}/);
-  assert.match(css,/#boardPageStrip \.bp-tab:not\(#_\)\{min-height:40px!important/,'a 40px touch target');
+  assert.match(css,/#boardPageStrip \.bp-tab:not\(#_\)\{min-height:44px!important/,'a 44px touch target');
   assert.doesNotMatch(css,/boardManualSave|vaultSave/,'«더보기 › 보드 저장»(2.940) presses the real button — do not hide it');
 });
 

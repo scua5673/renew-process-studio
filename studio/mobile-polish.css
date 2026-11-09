@@ -1469,7 +1469,7 @@
   html.ps-page-note body.note-dock .bar>#nModeSeg{order:1!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;}
   html.ps-page-note body.note-dock .bar>#nTplWrap{order:2!important;flex:0 0 auto!important;margin:0!important;}
   html.ps-page-note body.note-dock .bar>#noteToolsToggle{order:3!important;flex:0 0 auto!important;min-width:0!important;min-height:38px!important;padding:0 12px!important;}
-  html.ps-page-note body.note-dock .bar>#nTitle{order:4!important;flex:1 1 100%!important;width:100%!important;min-height:38px!important;}
+  html.ps-page-note body.note-dock .bar>#nTitle{order:4!important;flex:1 1 100%!important;width:100%!important;min-height:44px!important;}
   html.ps-page-note body.note-dock .bar>.note-advanced{order:5!important;flex:1 1 100%!important;}
   html.ps-page-note body.note-dock #nDock{position:fixed;left:8px;right:8px;bottom:8px;z-index:70;display:flex;flex-direction:column;
     background:var(--c-surface);border:1px solid var(--c-line);border-radius:var(--r-card);box-shadow:0 8px 24px rgba(15,23,42,.10),0 1px 2px rgba(15,23,42,.06);overflow:hidden;}

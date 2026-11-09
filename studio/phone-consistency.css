@@ -37,7 +37,10 @@
  #gearPop .gp-row>span{font-size:var(--t-3)!important;color:var(--c-muted)!important;font-weight:500;line-height:1.55}
  #gearPop .gp-row>button{justify-self:start;width:auto;display:flex;align-items:center;justify-content:center}
  #gearPop .gp-tabs{position:sticky;top:56px;background:var(--c-surface-2);z-index:2}
- #dfSearch,#nTitle{min-height:44px!important}
+ html.ps-page-idp body #layers#layers#layers>button:not([hidden]){min-height:44px!important;font-size:var(--t-5)!important;font-weight:600!important}
+ html.ps-page-idp summary{min-height:44px!important}
+ html body #schedule #psPhBar #psPhGrp{min-height:44px!important;border-radius:var(--r-control)!important}
+ #dfSearch{min-height:44px!important}
  /* Note toolbar targets retain their color meaning. */
  #noteToolsToggle{height:44px!important;min-height:44px!important}
  html.ps-page-note body.note-dock #nDock #cols button:not(#_):not(#__),html.ps-page-note body.note-dock #nDock #cols .custcol:not(#_):not(#__),#memoBar .memo-colors button{width:44px!important;height:44px!important}
