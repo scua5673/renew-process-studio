@@ -34,7 +34,7 @@
  #gearPop :is(.gp-tabs button,.gp-row button,.gp-head button){min-height:44px!important;height:auto!important;min-width:44px!important;font-size:var(--t-5)!important;border-radius:var(--r-control)!important}
  #gearPop .gp-row{grid-template-columns:minmax(0,1fr)!important;gap:var(--sp-2);padding-block:var(--sp-3)}
  #gearPop .gp-scope{color:var(--c-act);background:var(--c-surface-2);border-color:var(--c-line-2);font-weight:600}
- #gearPop .gp-row>span{font-weight:500;line-height:1.55}
+ #gearPop .gp-row>span{font-size:var(--t-3)!important;color:var(--c-muted)!important;font-weight:500;line-height:1.55}
  #gearPop .gp-row>button{justify-self:start;width:auto;display:flex;align-items:center;justify-content:center}
  #gearPop .gp-tabs{position:sticky;top:56px;background:var(--c-surface-2);z-index:2}
  #dfSearch,#nTitle{min-height:44px!important}
