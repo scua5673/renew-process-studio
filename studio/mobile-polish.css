@@ -1469,17 +1469,17 @@
   html.ps-page-note body.note-dock .bar>#nModeSeg{order:1!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;}
   html.ps-page-note body.note-dock .bar>#nTplWrap{order:2!important;flex:0 0 auto!important;margin:0!important;}
   html.ps-page-note body.note-dock .bar>#noteToolsToggle{order:3!important;flex:0 0 auto!important;min-width:0!important;min-height:38px!important;padding:0 12px!important;}
-  html.ps-page-note body.note-dock .bar>#nTitle{order:4!important;flex:1 1 100%!important;width:100%!important;min-height:38px!important;}
+  html.ps-page-note body.note-dock .bar>#nTitle{order:4!important;flex:1 1 100%!important;width:100%!important;min-height:44px!important;}
   html.ps-page-note body.note-dock .bar>.note-advanced{order:5!important;flex:1 1 100%!important;}
   html.ps-page-note body.note-dock #nDock{position:fixed;left:8px;right:8px;bottom:8px;z-index:70;display:flex;flex-direction:column;
-    background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 8px 24px rgba(15,23,42,.10),0 1px 2px rgba(15,23,42,.06);overflow:hidden;}
+    background:var(--c-surface);border:1px solid var(--c-line);border-radius:var(--r-card);box-shadow:0 8px 24px rgba(15,23,42,.10),0 1px 2px rgba(15,23,42,.06);overflow:hidden;}
   html.ps-page-note body.note-dock #nDock .note-core,html.ps-page-note body.note-dock #nDock .note-ink{display:flex!important;align-items:center!important;gap:5px!important;width:auto!important;padding:5px 8px!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none;}
   html.ps-page-note body.note-dock #nDock .note-core::-webkit-scrollbar,html.ps-page-note body.note-dock #nDock .note-ink::-webkit-scrollbar{display:none;}
-  html.ps-page-note body.note-dock #nDock .note-core{min-height:46px!important;border-bottom:1px solid #eef0f3;}
+  html.ps-page-note body.note-dock #nDock .note-core{min-height:46px!important;border-bottom:1px solid var(--c-line);}
   html.ps-page-note body.note-dock #nDock .note-ink{min-height:48px!important;}
   html.ps-page-note body.note-dock #nDock #tools{flex:1 1 auto!important;display:flex!important;width:100%!important;background:transparent!important;border:0!important;padding:0!important;gap:2px!important;}
-  html.ps-page-note body.note-dock #nDock #tools button{flex:1 1 0!important;min-width:0!important;min-height:36px!important;padding:0 6px!important;border-radius:9px!important;font-size:13px!important;font-weight:700!important;background:transparent!important;color:#646A73!important;box-shadow:none!important;}
-  html.ps-page-note body.note-dock #nDock #tools button.on{background:#E9EDF5!important;color:var(--ps-navy-h,#1D2D50)!important;box-shadow:inset 0 0 0 1px #C3CCDD!important;}
+  html.ps-page-note body.note-dock #nDock #tools button{flex:1 1 0!important;min-width:0!important;min-height:36px!important;padding:0 6px!important;border-radius:9px!important;font-size:var(--t-5)!important;font-weight:600!important;background:transparent!important;color:var(--c-muted)!important;box-shadow:none!important;}
+  html.ps-page-note body.note-dock #nDock #tools button.on{background:var(--c-surface-2)!important;color:var(--c-act)!important;box-shadow:inset 0 0 0 1px var(--c-line-2)!important;}
   html.ps-page-note body.note-dock #nDock #penOnly,html.ps-page-note body.note-dock #nDock #undoB,html.ps-page-note body.note-dock #nDock #redoB{flex:0 0 32px!important;width:32px!important;min-width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;border-radius:9px!important;}
   html.ps-page-note body.note-dock #nDock #undoB{margin-left:auto!important;}
   html.ps-page-note body.note-dock #nDock #cols{flex:0 0 auto!important;display:flex!important;gap:5px!important;width:auto!important;overflow:visible!important;}

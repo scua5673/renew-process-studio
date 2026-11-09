@@ -1105,11 +1105,12 @@ function openCommunityViewer(post,fallback){
   });
   cvFrame.onload=function(){
     if(seq!==cvOpenSeq||!requestPost)return;
-    var tries=0,send=function(){try{
+    /* 3.269 — slow device restore can outlast the old 30×80ms window. */
+    var readyUntil=Date.now()+15000,send=function(){try{
       if(seq!==cvOpenSeq)return;
       if(cvFrame.contentWindow&&cvFrame.contentWindow.__boardReady&&typeof cvFrame.contentWindow.__commView==='function'){if(window.PSCommunityDetail)PSCommunityDetail.player(cvFrame.contentWindow);cvFrame.contentWindow.__commView(requestPost,false);return;}
     }catch(_){}
-      if(++tries<30)setTimeout(send,80);else{closeCommunityViewer();openDetail(fallback);}
+      if(Date.now()<readyUntil)setTimeout(send,80);else{closeCommunityViewer();openDetail(fallback);}
     };send();
   };
   cvFrame.src='board.html?community_view=1&v=265&post='+encodeURIComponent(post&&post.id||'')+'&open='+seq;
@@ -2296,5 +2297,6 @@ html body.pr-elm:not(.pr-elm-own) .fab:not(#_):not(#__),html body.pr-elm:not(.pr
 <link rel="stylesheet" href="community-youtube.css">
 <link rel="stylesheet" href="community-letters.css"><link rel="stylesheet" href="letter-social.css">
 <link rel="stylesheet" href="community-cards.css">
+<link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>

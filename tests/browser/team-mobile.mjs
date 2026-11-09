@@ -35,7 +35,7 @@ try{
   for(const key of ['today','match','training','players','avail','idp','scouting','playbook','attrs']){
    await go(key);
    if(key==='players'){
-    const f=await frame('#fScout');await f.locator('#pwTeam .pw-depth-pitch').waitFor();
+    const f=await frame('#fScout');await f.getByRole('button',{name:'포지션',exact:true}).click();await f.locator('#pwTeam .pw-depth-pitch').waitFor();
     await tapSize(f.locator('#pwTeam [data-pw-action="tools"]'),'edit tools');
     const pitch=await f.locator('#pwTeam .pw-depth-pitch').boundingBox();assert.ok(pitch.y<680,'phone first pitch reachable without a full screen of tools '+pitch.y);
     await f.locator('#pwTeam [data-pw-action=filters]').click();

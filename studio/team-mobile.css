@@ -150,3 +150,12 @@
   html.ps-page-playbook .tc-structure-row{flex-wrap:wrap}
   html.ps-page-playbook .tc-structure-row :is(strong,span){flex-basis:calc(100% - 164px)}
 }
+
+/* Phone roster: list first, live summary available on demand. */
+@media(max-width:767px) and (orientation:portrait){
+ html.ps-page-scout #teamView .pw-team-summary{order:1;width:100%;font-size:var(--t-3)}
+ html.ps-page-scout #teamView .pw-team-summary>summary{min-height:44px;display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;line-height:1.5}
+ html.ps-page-scout #teamView .pw-team-summary>summary::after{content:'▾';margin-left:auto}
+ html.ps-page-scout #teamView .pw-team-summary[open]>summary::after{content:'▴'}
+ html.ps-page-scout #teamView.tm-waiting .pw-team-summary{visibility:hidden}
+}
