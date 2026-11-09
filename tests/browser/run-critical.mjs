@@ -7,7 +7,7 @@ const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGH
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const suites={
   // Keep the same coverage while exposing selection UI failures in a short job.
-  selection:['fold-board-tools','phone-board-readonly','board-player-panel-drag','board-color-palette','board-selection-menu',
+  selection:['fold-board-tools','phone-board-readonly','board-player-panel-drag','board-color-palette','board-selection-menu','board-page-clipboard',
   /* 3.264 — board2 웹킷이 느린 실행기에서 20분 한도에 두 번 닿았다(staging 15.7분 → 같은 시험이 고르게 30% 느려 19.5분). 긴 넷(선수 시선 · 보관함 둘러보기 · 패턴북 · 미드필드 교본, 웹킷 합 4~5분)을
      3분짜리 selection 으로 옮겨 board2 를 15분 안쪽에 둔다 — 새 board2 시험은 먼저 이 묶음들의 웹킷 실측 합을 본다. */
     'board-player-eye','vault-browse','patternbook','textbook-midfield'],

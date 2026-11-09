@@ -5644,7 +5644,7 @@ function openOverlapLayerPicker(x,y,current){
   setTimeout(()=>document.addEventListener("pointerdown",closeOverlapLayerPicker,{once:true}),0);selectItem(typeOfItem(current)||"ball",current);return true;
 }
 function deselect(){selPanelOpen=false;if(!sel&&!multiSel.length)return;var wasSp=(sel&&sel.type==="spball");sel=null;multiSel=[];_setSelRings();renderDrawings();updateDelUI();updateAlignBar();renderMultiGuides();if(wasSp){try{buildSetPieceLayer();}catch(_){}}}
-function toggleMulti(p){sel=null;const i=multiSel.indexOf(p);if(i>=0)multiSel.splice(i,1);else multiSel.push(p);
+function toggleMulti(p){if(sel&&sel.ref&&typeOfItem(sel.ref)&&multiSel.indexOf(sel.ref)<0)multiSel.push(sel.ref);sel=null;const i=multiSel.indexOf(p);if(i>=0)multiSel.splice(i,1);else multiSel.push(p);
   _setSelRings();renderDrawings();updateDelUI();updateAlignBar();renderMultiGuides();try{positionSelCtl();}catch(_){}}
 function updateAlignBar(){const bar=document.getElementById("alignBar");if(!bar)return;
   const multi=multiSel.length>=2;
@@ -5800,7 +5800,7 @@ function mirrorSelection(axis){
 /* 2.029 — 클립보드(장면·페이지 넘어서도 유지). 아이템은 깊은 복사, id 는 붙일 때 새로 */
 var _tokClip=null,_tokClipN=0;
 function tokClipCopy(){
-  var items=(typeof multiSel!=="undefined"&&multiSel.length)?multiSel.slice():((sel&&sel.type!=="spball"&&sel.type!=="ball")?[sel.ref]:[]);
+  var items=(typeof multiSel!=="undefined"&&multiSel.length)?multiSel.slice():((sel&&sel.type!=="spball")?[sel.ref]:[]);
   if(!items.length)return false;
   _tokClip=items.map(function(o){ var t=typeOfItem(o); if(!t)return null; var c=null; try{c=JSON.parse(JSON.stringify(o));}catch(_){c=Object.assign({},o);} return {t:t,o:c}; }).filter(Boolean);
   _tokClipN=0; if(!_tokClip.length){_tokClip=null;return false;}
@@ -5809,13 +5809,15 @@ function tokClipCopy(){
 function tokClipPaste(){
   if(!_tokClip||!_tokClip.length){ toast("복사한 항목이 없어요"); return false; }
   pushUndo(); _tokClipN++; var dx=44*_tokClipN, dy=22*_tokClipN; var copies=[];
-  _tokClip.forEach(function(it){ var o=it.o, c;
+  _tokClip.forEach(function(it){ var o=JSON.parse(JSON.stringify(it.o)), c;
     if(it.t==="player"){ c=Object.assign({},o,{id:uid++,x:o.x+dx,y:o.y+dy}); state.players.push(c); copies.push(c); }
-    else if(it.t==="equip"){ c=Object.assign({},o,{id:uid++,x:o.x+dx,y:o.y+dy}); state.equipment.push(c); copies.push(c); }
+    else if(it.t==="equip"||it.t==="ball"){ c=Object.assign({},o,{id:uid++,x:o.x+dx,y:o.y+dy}); if(it.t==="ball")c.team="ball"; state.equipment.push(c); copies.push(c); }
     else if(it.t==="drawing"){ c=Object.assign({},o,{pts:(o.pts||[]).map(function(p){return Object.assign({},p,{x:p.x+dx,y:p.y+dy});})}); if(c.id!=null)c.id=uid++; state.drawings.push(c); copies.push(c); } });
   if(!copies.length)return false;
   sel=null; multiSel=copies; renderTokens(); renderDrawings(); updateDelUI(); updateAlignBar(); renderMultiGuides();
   if(copies.length===1){ try{ selectItem(typeOfItem(copies[0])||"equip",copies[0]); }catch(_){} }
+  try{autoSaveAnimFrame();}catch(_){}
+  try{boardSaveLive();}catch(_){}
   toast(copies.length+"개 붙여넣기"); return true;
 }
 function duplicateSelected(){if(typeof multiSel!=="undefined"&&multiSel.length){pushUndo();const dx=44,dy=0;const copies=[];multiSel.forEach(o=>{const t=typeOfItem(o);if(t==="player"){const c=Object.assign({},o,{id:uid++,x:o.x+dx,y:o.y+dy});state.players.push(c);copies.push(c);}else if(t==="equip"){const c=Object.assign({},o,{id:uid++,x:o.x+dx,y:o.y+dy});state.equipment.push(c);copies.push(c);}else if(t==="drawing"){const c=Object.assign({},o,{pts:(o.pts||[]).map(p=>({x:p.x+dx,y:p.y+dy}))});state.drawings.push(c);copies.push(c);}});sel=null;multiSel=copies;renderTokens();renderDrawings();updateDelUI();updateAlignBar();renderMultiGuides();try{boardSaveLive();}catch(_){}try{autoSaveAnimFrame();}catch(_){}return;}
@@ -15830,7 +15832,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
       /* 2.975 — 사용자 단축키 표가 앱 기본 키보다 먼저(조합·스페이스·방향키·⌘+문자). 입력칸에서는 «저장» 만(⌘S 를 눌렀는데 브라우저 «페이지 저장»이 뜨지 않게) */
       if(!toolKeyOpen&&!e.isComposing&&!(t&&t.classList&&t.classList.contains("ps-keycap"))&&!_KC_MOD[e.key]){ var _kv0=(window.__csView||"board");
         if(_kv0==="board"||_kv0==="session"){ var _hit=shortcutHit(comboOf(e)); if(_hit&&(!_fld||_hit==="save")){ e.preventDefault(); if(!e.repeat)runShortcut(_hit); return; } } }
-      if(_fld)return;
+      if(_fld||e.isComposing||e.keyCode===229)return;
       /* v319 — 보관함 등 다른 뷰에선 작전판 단축키 무효(김포 U15 제보).
          1.688 — 훈련 편집기(세션 뷰)는 보드가 주인공이라 예외(사용자: 편집기에서 방향키·백스페이스가 안 됨).
          입력칸 타이핑은 바로 위 target 가드가 계속 거른다. */
@@ -15838,7 +15840,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
       if((e.metaKey||e.ctrlKey)&&(e.key==="z"||e.key==="Z")){e.preventDefault();if(e.shiftKey)redoLast();else undoLast();return;}
       if((e.metaKey||e.ctrlKey)&&(e.key==="y"||e.key==="Y")){e.preventDefault();redoLast();return;}
       /* 2.029 — 토큰·도구·그림 클립보드(사용자, 파워포인트처럼): ⌘C 복사 · ⌘V 붙여넣기(원본에서 살짝 비껴, 연속 붙이면 계속 비껴) · ⌘X 잘라내기 · ⌘D 복제 · ⌘A 전체 선택 */
-      if((e.metaKey||e.ctrlKey)&&!e.altKey){ var _k=(e.key||"").toLowerCase();
+      if((e.metaKey||e.ctrlKey)&&!e.altKey){ var _k=/^Key[CVX]$/.test(e.code||"")?e.code.slice(3).toLowerCase():(e.key||"").toLowerCase();
         if(_k==="c"){ if(tokClipCopy()){e.preventDefault();} return; }
         if(_k==="v"){ if(tokClipPaste()){e.preventDefault();} return; }
         if(_k==="x"){ if(tokClipCopy()){ e.preventDefault(); deleteSelected(); toast("잘라냄"); } return; }
