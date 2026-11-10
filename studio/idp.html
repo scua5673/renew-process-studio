@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script src="data-lock-guard.js"></script>
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
 <!-- PROCESS — IDP (선수 개인 성장: 프로필·셀프 평가·개인 훈련) · 설계: IDP-설계.md v1.1 -->
 <meta charset="utf-8">
@@ -11320,7 +11321,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(ps&&typeof ps.view==='function')return ps.view(myGrp())||null;   /* 2.933 — 읽기 전용 공유 사본: 하루마다 문서 전체를 새로 파싱하지 않는다(여기서 받은 것은 읽기만 한다) */
       if(ps&&typeof ps.readFor==='function')return ps.readFor(myGrp())||null;
       if(ps&&typeof ps.read==='function')return ps.read()||null;
-      return JSON.parse(localStorage.getItem('process_coach_v1')||'null');
+      return PSSafe.sched(JSON.parse(localStorage.getItem('process_coach_v1')||'null'));
     }catch(_){return null;}
   }
   function teamScheduleDay(dt){

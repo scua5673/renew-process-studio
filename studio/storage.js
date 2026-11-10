@@ -31,6 +31,42 @@
     });
   };
 
+  /* 3.272 — 서버 주소 · 공개 키는 상수다(보안 점검). 예전엔 localStorage `ps_sync_cfg` 가 있으면 그 값이 서버가 됐다 — 화면에 스크립트를 한 번만 끼워 넣어도
+     그 기기의 모든 요청(로그인 토큰 포함)을 남의 서버로 돌릴 수 있었고, 새로고침 · 재로그인 뒤에도 남았다. 이제 길은 PSSafe.cfg 하나:
+     · cfg(값)  값이 받아도 되는 주소면 그대로, 아니면 null — sync.js 가 app.html 의 window.PS_SYNC 를 이 문으로 넣는다
+     · cfg()    셸 없이 바로 연 화면(커뮤니티 · 일정 …)이 쓸 설정: 내 창 · 부모 창의 PS_SYNC(검사 통과한 것만) → 없으면 아래 상수
+     받는 주소: https + 이 프로젝트 호스트 하나. 시험용 주소(루프백 서버 — tests/fixtures/team-app.mjs 가 PS_SYNC 를 제 주소로 바꾼다 — 와 «.invalid» 가짜 호스트)는
+     **화면 자체가 시험 주소(127.0.0.1 · localhost · «.invalid»)에서 열렸을 때만** 받는다 — 운영 주소에서는 이 길이 열리지 않는다.
+     `ps_sync_cfg` 는 그 루프백 시험에서만 쓰고 읽으며(바로 연 화면이 fixture 를 찾게), 운영 주소에서는 부팅 때 지운다. 시험 tests/sync-config-3272. */
+  var SYNC_HOST='jvtajoeptzfsdwizxejg.supabase.co',SYNC_KEY='sb_publishable_-Es-apybpr1zPTLzLE2sUw_kV-5ap-k',SYNC_STORE='ps_sync_cfg';
+  /* 시험 주소: 루프백, 그리고 브라우저 시험이 가로채 만든 «….invalid»(RFC 2606 — 실제로는 풀리지 않아 운영 주소가 될 수 없다) */
+  function cfgLoop(host){ return /^(?:127\.0\.0\.1|localhost|\[::1\])$|\.invalid$/.test(String(host||'')); }
+  function cfgHere(){ try{ return cfgLoop(location.hostname); }catch(_){ return false; } }
+  function cfgOk(c){
+    try{
+      if(!c||typeof c.url!=='string'||typeof c.anonKey!=='string'||!c.anonKey)return false;
+      var u=new URL(c.url);
+      if(u.username||u.password)return false;
+      if(u.protocol==='https:'&&u.hostname===SYNC_HOST)return true;
+      return cfgHere()&&(u.protocol==='http:'||u.protocol==='https:')&&cfgLoop(u.hostname);   /* 시험 전용 */
+    }catch(_){ return false; }
+  }
+  function cfgStored(){ try{ var o=JSON.parse(localStorage.getItem(SYNC_STORE)||'null'); return cfgOk(o)?o:null; }catch(_){ return null; } }
+  try{ if(localStorage.getItem(SYNC_STORE)!=null&&!(cfgHere()&&cfgStored()))localStorage.removeItem(SYNC_STORE); }catch(_){}
+  window.PSSafe.cfg=function(given){
+    if(arguments.length){
+      if(!cfgOk(given))return null;
+      try{ if(cfgHere())localStorage.setItem(SYNC_STORE,JSON.stringify({url:given.url,anonKey:given.anonKey})); }catch(_){}
+      return given;
+    }
+    try{ if(cfgOk(window.PS_SYNC))return window.PS_SYNC; }catch(_){}
+    try{ var p=window.parent; if(p&&p!==window&&cfgOk(p.PS_SYNC))return p.PS_SYNC; }catch(_){}
+    try{ var t=window.top; if(t&&t!==window&&cfgOk(t.PS_SYNC))return t.PS_SYNC; }catch(_){}
+    if(cfgHere())return cfgStored();   /* 시험 브라우저: fixture 주소가 없으면 운영 서버로 나가지 않는다 */
+    return {url:'https://'+SYNC_HOST,anonKey:SYNC_KEY};
+  };
+  var SYNC_CFG_READY=1;
+
   /* 3.271 — 팀원(선수 계정 포함)이 동기화로 보내는 문서는 다른 팀원의 화면에서 innerHTML 로 그려진다(로그인 토큰이 localStorage 에 있다).
      글은 PSSafe.html(화면의 esc · wkbdEsc), 그 밖의 자리는 아래 넷만 쓴다 — 시험 tests/xss-synced-docs-3271.
      · img  : <img src> 에 넣을 값. base64 그림 data URL 과 blob: 주소만 남긴다(따옴표 · javascript: · 바깥 주소는 빈칸). 아래 PSImg 가 정하고 PSImg.src 가 늘 거친다
@@ -77,6 +113,63 @@
       if(doc&&typeof doc==='object'){ schedWalk(doc.weeks,0); schedWalk(doc.week,0); schedWalk(doc.grpWeeks,0); schedWalk(doc.templates,0); }
     }catch(_){}
     return doc;
+  };
+  /* 3.272 — 명단(scout_tool_v1 · sq:*) · 후보 · 경기 · 게임모델 문서를 화면이 쓰기 전에 한 번(scout.html scoutStore.get 이 지난다).
+     · id 칸(id · posId · 선수 id 목록 · 종류 칸)은 `data-pid="…"` · `<option value="…">` · 처리기 문자열에 그대로 들어간다 — 구조 글자를 뺀다.
+       앱이 만든 id(«pl_ab12» · «pos_GK» · uuid)에는 그런 글자가 없어 그대로다.
+     · 점수 칸(levels · targets · req)은 숫자다 — 글이 오면 숫자 글만 남기고, 구조 글자가 든 키는 지운다(«목표 3» 칸에 마크업이 그려졌다).
+     글(이름 · 메모 · 상대 · 조 이름)은 건드리지 않는다 — 그리는 쪽이 esc 한다. 작전판 그림 안으로는 들어가지 않는다. */
+  var DOC_ID_FIELDS={id:1,posId:1,pid:1,dbId:1,uid:1,playerId:1,sourceId:1,captainId:1,squadIds:1,startingIds:1,libId:1,scorer:1,assist:1,
+    type:1,scoutSt:1,status:1,kind:1,fmt:1,fifaMode:1,homeAway:1,side:1,cat:1,evalMode:1};
+  var DOC_NUM_MAPS={levels:1,targets:1,req:1};
+  var DOC_BAD=/[<>"'&\\`\u0000-\u001f\u007f\u2028\u2029]/;
+  function docWalk(o,depth){
+    if(!o||typeof o!=='object'||depth>14)return;
+    if(Array.isArray(o)){ for(var i=0;i<o.length;i++)docWalk(o[i],depth+1); return; }
+    for(var k in o){
+      if(!Object.prototype.hasOwnProperty.call(o,k)||SCHED_SKIP[k])continue;
+      var v=o[k];
+      if(DOC_ID_FIELDS[k])o[k]=schedKey(v,depth);
+      else if(DOC_NUM_MAPS[k]&&v&&typeof v==='object'&&!Array.isArray(v)){
+        for(var m in v){
+          if(!Object.prototype.hasOwnProperty.call(v,m))continue;
+          if(DOC_BAD.test(m))delete v[m];
+          else if(typeof v[m]==='string'&&!/^\s*-?\d{0,6}(?:\.\d{1,3})?\s*$/.test(v[m]))delete v[m];
+        }
+      }
+      else if(v&&typeof v==='object')docWalk(v,depth+1);
+    }
+  }
+  window.PSSafe.doc=function(key,doc){
+    try{
+      if(!doc||typeof doc!=='object')return doc;
+      if(key==='process_coach_v1')return window.PSSafe.sched(doc);
+      docWalk(doc,0);
+    }catch(_){}
+    return doc;
+  };
+  /* 3.272 — 일정 사전(cs_themes_v1 · cs_psched_v1 · cs_pmeet_v1 · cs_pwarm_v1 · cs_ptrain_v1 — [이름, 색, 표식])은 팀이 고쳐 쓰는 동기화 문서다.
+     process.html 은 이름을 `onclick="wkbdSetPick(…,'이름')"` 와 글 자리에, 색을 `style="background:색"` 에 그대로 넣는다(자리 열 몇 곳 — 예산 때문에 읽을 때 한 번 고친다).
+     · 색: CSS 색 모양(#hex · var(--x) · rgb()/hsl() · 색 이름)만, 아니면 회색
+     · 이름: 처리기 · 속성 · 태그를 끊는 글자(' " < > ` \ 와 «&#39;» 같은 엔티티의 &)만 뺀다 — 그런 글자가 든 이름은 지금도 눌리지 않는다. «패스 & 무브»는 그대로 */
+  window.PSSafe.color=function(value,fallback){
+    var v=typeof value==='string'?value.trim():'';
+    return /^(?:#[0-9a-f]{3,8}|var\(--[a-z0-9-]+\)|(?:rgb|hsl)a?\([\d\s.,%\/a-z-]+\)|[a-z]{3,24})$/i.test(v)?v:(fallback||'#8A9099');
+  };
+  window.PSSafe.presets=function(lists){
+    try{
+      (lists||[]).forEach(function(list){
+        if(!Array.isArray(list))return;
+        for(var i=list.length-1;i>=0;i--){
+          var o=list[i];
+          if(!Array.isArray(o)||(o[0]&&typeof o[0]==='object')){ list.splice(i,1); continue; }
+          if(typeof o[0]==='string')o[0]=o[0].replace(/[<>"'`\\\u0000-\u001f\u007f\u2028\u2029]/g,'').replace(/&(?=#?\w+;)/g,'');
+          if(o[0]===''||o[0]==null){ list.splice(i,1); continue; }
+          o[1]=window.PSSafe.color(o[1]);
+        }
+      });
+    }catch(_){}
+    return lists;
   };
   window.PSSafe.idp=function(doc){
     try{
@@ -1376,10 +1469,8 @@
 (function(){
   var KEY='cs_errlog_v1', MAX=30, flushing=false;
   function cfg(){
-    try{ if(window.PS_SYNC&&window.PS_SYNC.url&&window.PS_SYNC.anonKey) return window.PS_SYNC; }catch(_){}
-    try{ var p=window.parent; if(p&&p!==window&&p.PS_SYNC&&p.PS_SYNC.url&&p.PS_SYNC.anonKey) return p.PS_SYNC; }catch(_){}
-    try{ var o=JSON.parse(localStorage.getItem('ps_sync_cfg')||'null'); if(o&&o.url&&o.anonKey) return o; }catch(_){}
-    return null;
+    /* 3.272 — 설정은 PSSafe.cfg 하나로(저장된 값으로 서버를 바꾸지 않는다) */
+    try{ return window.PSSafe&&window.PSSafe.cfg?window.PSSafe.cfg():null; }catch(_){ return null; }
   }
   function log(kind,msg,src,line){
     try{
