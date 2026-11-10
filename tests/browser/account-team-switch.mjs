@@ -196,13 +196,24 @@ try{
     await ready(wid,A);
   }
   await page.evaluate(()=>window.__fixtureReportsSettled());
+  /* 3.272 — 앞 계정이 남기는 IndexedDB 사본(account-hygiene.js): 받은 그림 사본 · 사진 · 자동 저장 기준본 · 못 올린 원문 */
+  const J='ps_autosave_journal_v1:'+encodeURIComponent(A)+':'+encodeURIComponent(WA)+':';
+  await page.evaluate(async({J,A})=>{
+    for(const [k,v] of [['ps_blob:fixture-hash','data:image/png;base64,AAAA'],['psimg_fixture_orphan','data:image/png;base64,AAAA'],['psimg_fixture_kept','data:image/png;base64,AAAA']])await window.storage.set(k,v);
+    localStorage.setItem('ps_fixture_survivor_v1','{"note":"a device-only key that outlives the account wipe","photo":"psimg:psimg_fixture_kept"}');
+  },{J,A});
   console.log(JSON.stringify({stage:'logout-start'}));
   await page.evaluate(()=>{window.__fixtureLogoutResult='pending';PSSync.signOut().then(result=>{window.__fixtureLogoutResult=result;}).catch(e=>{window.__fixtureLogoutResult={error:e.message};});});
   console.log(JSON.stringify({stage:'logout-requested'}));
   await page.waitForFunction(()=>window.PSSync&&!PSSync.session()&&!PSSync.dataUnlocked());
   console.log(JSON.stringify({stage:'logged-out'}));
+  /* 기준본 · 보관본은 로그아웃 뒤에 넣는다 — 합성 본문이 든 채로는 로그아웃 장벽이 «확인 못 함»으로 멈춘다(그것이 맞다) */
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('ps_logout_clean_v1'))).uid,A,'the gated logout left its marker');
+  await page.evaluate(async({J})=>{await window.storage.set(J+'base:fixture_key','{"v":1,"kind":"base","note":"synthetic baseline of account A"}');await window.storage.set(J+'archive:fixture_key:1','{"v":1,"kind":"archive","note":"synthetic unsent original of account A"}');},{J});
   // OAuth returns from a provider document. A hash-only goto in the existing app is not a page load.
   await page.evaluate(()=>window.__fixtureReportsSettled());
+  /* 3.272 — 로그인 단추를 누른 것처럼 «시작함» 표식을 남긴다(oauth-gate.js). 표식 없는 콜백은 저장되지 않는다(tests/browser/oauth-callback-gate) */
+  await page.evaluate(()=>PSOAuthGate.begin('google'));
   await bounded(page.goto('about:blank'),'leave logged-out document',10000);
   console.log(JSON.stringify({stage:'provider-document'}));
   if(engine==='chromium'&&process.env.PS_PROFILE_LOGIN==='1'){
@@ -211,6 +222,10 @@ try{
   await bounded(page.goto(base+'/studio/app.html#access_token=fixture-access-B&refresh_token=fixture-refresh-B&expires_in=3600&token_type=bearer',{waitUntil:'domcontentloaded'}),'OAuth return document');
   console.log(JSON.stringify({stage:'OAuth-return'}));
   await ready(WC,B);
+  const leftover=await page.evaluate(async()=>(await window.storage.keys()).filter(k=>/^(ps_blob:|psimg_fixture|ps_autosave_journal_v1:)/.test(k)).map(k=>k.replace(/^ps_autosave_journal_v1:[^:]+:[^:]+:/,'journal:')).sort());
+  assert.deepEqual(leftover.filter(k=>!/^journal:(base|captured):(?!fixture_key)/.test(k)&&!/^ps_blob:(?!fixture-hash)/.test(k)),['journal:archive:fixture_key:1','psimg_fixture_kept'],
+    'after a server-confirmed logout the next account finds no blob copy, baseline or unreferenced photo of the previous one — the unsent original and the photo a surviving key points at stay: '+leftover);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('ps_logout_clean_v1')),null);
   await page.screenshot({path:path.join(out,'new-account.png')});
   // This case verifies a normal completed-entry reload, not an aborted diagnostic
   // request. Let real loopback responses finish: Linux WebKit can report a native

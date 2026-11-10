@@ -65,7 +65,9 @@ try{
  await scout.waitForFunction(()=>{if(scoutBootPending||!scoutDataLoaded)return false;try{scStore().check();return true;}catch(_){return false;}});
  const before=await scout.evaluate(()=>JSON.parse(JSON.stringify({attrs:data.attrs,players:data.players,positions:data.positions})));
  await scout.locator('#attrEditBtn').click();await scout.locator('.attr-cat-head').first().click();await scout.locator('.ed-attr-q').first().fill('공을 받기 전에 다음 선택을 확인하나요?');await scout.locator('.ed-attr-w').first().fill('공을 받기 전 어깨 너머를 두 번 확인한다.');await scout.locator('#attrEditBtn').click();
- await scout.evaluate(()=>scoutStore.ready(true));
+ /* 3.272 — 쓴 직후 동기화가 문서를 다시 확인하는 동안 준비표가 잠깐 닫힌다(3.257 과 같은 틈 · PR #799 · #800 크로미움 records
+    «팀의 후보 자료와 권한을 확인 중입니다»). 사용자 길(player-bulk-add checked)처럼 15초까지 기다린다 — 다른 오류는 그대로 실패 */
+ for(let i=0;;i++){const e=await scout.evaluate(()=>scoutStore.ready(true).then(()=>'',x=>String(x&&x.message||x)));if(!e)break;if(i>=30||!/확인 중/.test(e))throw new Error(e);await page.waitForTimeout(500);}
  const durable=await scout.evaluate(async()=>JSON.parse((await storage.get('scout_tool_v1')).value));assert.equal(durable.attrs[0].w,'공을 받기 전 어깨 너머를 두 번 확인한다.');
  const after=await scout.evaluate(()=>JSON.parse(JSON.stringify({attrs:data.attrs,players:data.players,positions:data.positions})));assert.deepEqual(after.attrs.map(a=>a.id),before.attrs.map(a=>a.id));assert.deepEqual(after.players,before.players);assert.deepEqual(after.positions,before.positions);assert.equal(after.attrs[0].w,'공을 받기 전 어깨 너머를 두 번 확인한다.');
  assert.match(await scout.locator('#attrEditor').innerText(),/공을 받기 전 어깨 너머/);

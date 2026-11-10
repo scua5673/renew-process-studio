@@ -42,15 +42,20 @@ suites.entry.push('admin-metrics');
 suites.entry.push('player-bulk-touch','phone-consistency');
 suites.entry.push('note-export');   /* 3.265 — 개인 노트 «내보내기»(PDF로 저장 · 인쇄 · 이미지 저장) */
 suites.entry.push('i18n-english-shell');   /* 영어 모드 셸: 한글이 남지 않음 · 한국어로 되돌리기 · 한국어 사용자는 영어 사전을 받지 않음 · «학습» 없는 다섯 칸 */
+/* 3.272 — storage 묶음이 두 엔진 모두 20분 한도에 닿았다(PR #800 — 시험 합 16.4분 + 준비). 긴 셋(roster-outbox-full · xss-synced-docs · xss-synced-docs-team, 약 4.7분)은
+   3~5분에 끝나는 boardperf 묶음에서 돈다 */
 suites.storage.push('community-youtube');
 suites.storage.push('roster-pending-quota');
-suites.storage.push('roster-outbox-full');   /* 3.253 — 선수 변경 묶음으로 가득 찬 작은 저장소에서 부팅 · 저장(제보 e6fc5d26) */
-suites.storage.push('xss-synced-docs');   /* 3.271 — 팀원이 동기화로 보낸 IDP · 일정 문서가 코치 화면에서 실행되지 않는다(끼워 넣은 값 탐침) */
+suites.boardperf.push('roster-outbox-full');   /* 3.253 — 선수 변경 묶음으로 가득 찬 작은 저장소에서 부팅 · 저장(제보 e6fc5d26) */
+suites.boardperf.push('xss-synced-docs');   /* 3.271 — 팀원이 동기화로 보낸 IDP · 일정 문서가 코치 화면에서 실행되지 않는다(끼워 넣은 값 탐침) */
 suites.identity.push('sched-fill-team');   /* «일정 ＋» 시트의 «팀 공통»이 «훈련»을 누르면 A팀이 되던 것 — 팀 공통 · 한 팀 · 여러 팀 */
 suites.records.push('sched-day-kind');   /* 한 팀을 OFF 로 돌린 날은 일정 칸 · 요약 · 팀 «오늘» · 주간 PDF 가 모두 OFF(PSSchedule.dayKind) */
 suites.records.push('sched-memo-autosave');   /* 세션 시트 «메모» · «장소»: 치는 동안 저장 + psFlushPending · pagehide · visibilitychange(한글 조합 · 새로고침 · 끊긴 동안) */
 suites.identity.push('sched-safe-actions');   /* 세션 × 되돌리기 알림 · × 44px · 칸 밖으로 안 잘림 / «지난주 복사»가 잡힌 경기를 안 덮음 / «안 올라간 변경» 줄이 판을 안 밂 */
 suites.entry.push('phone-drill-blank');   /* 폰 보기 전용: 장면이 있는 가로 작전판이 빈 화면(숨은 장면 줄 몫으로 판 높이 0) — 보관함 보기 · 전체화면 · 팀 오늘의 훈련 보기, 360 · 390 · 430 */
+suites.boardperf.push('xss-synced-docs-team');   /* 3.272 — 명단 · 경기 · 게임모델 · 일정 사전 · 공지 · 팀원 이름 · 코치→선수 문서(코치로 한 번 · 선수로 한 번, 크로미움 약 160초) */
+suites.entry.push('oauth-callback-gate');   /* 3.272 — 남이 만든 #access_token 링크로는 로그인되지 않는다 · 단추로 시작한 로그인 · 초대 링크 · 다른 창 콜백 · 관리자 화면은 그대로 */
+suites.entry.push('logout-direct-pages');   /* 3.272 — 로그아웃한 기기에서 팀 화면을 주소로 바로 열어도 자료를 그리지 않는다(data-lock-guard.js) */
 const PER_TEST_MS={'board-drag-performance':360000};   /* 3.012 — 한 테스트 한도(기본 240초)의 예외. 위 boardperf 참고 */
 /* 3.012 — 엔진과 상관없이 Chromium 을 직접 띄우는 시험(PS_BROWSER_ENGINE 을 읽지 않는다). WebKit 잡에서는 Chrome 경로가 없어 바로 죽거나
    Chromium 을 한 번 더 돌릴 뿐이라, WebKit 잡에서는 건너뛰고 그렇다고 적는다 — Chromium 잡이 그대로 지킨다. */

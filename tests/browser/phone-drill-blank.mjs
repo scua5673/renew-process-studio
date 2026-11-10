@@ -62,9 +62,15 @@ try{
     await seed(page,f);
     const shot=n=>page.screenshot({path:path.join(SHOTS,`phone-drill-blank-${engine}-${w}-${n}.png`)});
     // ① 보관함 «보기» — 실제 탭
-    const card=f.locator('#drillFiles .vcard',{hasText:NAME}).first();
-    await card.scrollIntoViewIfNeeded();
-    await card.locator('button',{hasText:/^보기$/}).first().tap();
+    // 보관함 목록은 받은 자료 · 썸네일로 다시 그려진다 — 카드가 갈아 끼워지면 다시 찾는다(웹킷 CI «not attached»)
+    for(let i=0;;i++){
+      try{
+        const card=f.locator('#drillFiles .vcard',{hasText:NAME}).first();
+        await card.scrollIntoViewIfNeeded({timeout:5000});
+        await card.locator('button',{hasText:/^보기$/}).first().tap({timeout:5000});
+        break;
+      }catch(e){ if(i>=3) throw e; await page.waitForTimeout(400); }
+    }
     await f.waitForFunction(()=>document.body.classList.contains('vcreating')&&window.__vaultReadOnly===true&&anim.frames.length===3,null,{timeout:15000});
     await f.waitForFunction(()=>document.body.classList.contains('ps-vv-phone')&&state.orientation==='v',null,{timeout:5000});
     await page.waitForTimeout(700);

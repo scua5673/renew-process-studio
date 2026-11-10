@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" data-pitch="">   <!-- 처음 사용하는 보드는 네이비. 저장된 보드 외형은 스냅샷에서 복원한다. -->
 <head>
+<script src="data-lock-guard.js"></script>
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -9141,7 +9142,7 @@ async function exportPNG(){if(!psVaultRequireLogin())return;await window.__nameF
     c.toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=_animExportName("png");a.click();setTimeout(function(){try{URL.revokeObjectURL(a.href);}catch(_){}},5000);},"image/png");};
   img.onerror=()=>toast("이미지 생성 실패");img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(xml);}
 
-function __ensurePptx(cb){ if(window.PptxGenJS){cb();return;} var s=document.createElement("script"); s.src="/pptxgen.bundle.js"; s.onload=function(){cb();}; s.onerror=function(){ var s2=document.createElement("script"); s2.src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"; s2.onload=function(){cb();}; s2.onerror=function(){try{toast("PPT 모듈 로드 실패 — 인터넷 확인");}catch(_){}}; document.head.appendChild(s2); }; document.head.appendChild(s); }
+function __ensurePptx(cb){ if(window.PptxGenJS){cb();return;} var s=document.createElement("script"); s.src="/pptxgen.bundle.js"; s.onload=function(){cb();}; s.onerror=function(){try{toast("PPT 모듈 로드 실패 — 인터넷 확인");}catch(_){}}; document.head.appendChild(s); }
 function __sceneToPng(snap,cb){ try{loadSnap(snap||{});}catch(_){} var o; try{o=boardImageXML();}catch(_){cb(null);return;} var img=new Image(); img.onload=function(){var sc=2,c=document.createElement("canvas");c.width=o.w*sc;c.height=o.h*sc;var ctx=c.getContext("2d");ctx.fillStyle=o.gb||"#1e8c4c";ctx.fillRect(0,0,c.width,c.height);ctx.scale(sc,sc);ctx.drawImage(img,0,0,o.w,o.h);cb(c.toDataURL("image/png"),o.w,o.h);}; img.onerror=function(){cb(null);}; img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(o.xml); }
 /* 2.935 — 바이트 → base64(PptxGenJS 의 data 는 "image/gif;base64,…") */
 function _bytesB64(u8){var s="",CH=0x8000;for(var i=0;i<u8.length;i+=CH)s+=String.fromCharCode.apply(null,u8.subarray(i,i+CH));return btoa(s);}

@@ -6,10 +6,8 @@
 (function(){
 "use strict";
 var CFG=null;
-try{ if(window.PS_SYNC&&window.PS_SYNC.url&&window.PS_SYNC.anonKey) CFG=window.PS_SYNC; }catch(_){}
-try{ if(!CFG){ var _raw=localStorage.getItem('ps_sync_cfg'); if(_raw){ var _o=JSON.parse(_raw); if(_o&&_o.url&&_o.anonKey) CFG=_o; } } }catch(_){}
-/* cfg를 저장해 둔다 — 커뮤니티 등을 단독 URL로 열어도(셸 부모 없이) 서버 설정을 찾을 수 있게 (publishable key라 공개 무해) */
-try{ if(CFG&&CFG.url&&CFG.anonKey) localStorage.setItem('ps_sync_cfg', JSON.stringify({url:CFG.url,anonKey:CFG.anonKey})); }catch(_){}
+/* 3.272 — 서버 설정은 app.html 의 상수(window.PS_SYNC)뿐이고 storage.js PSSafe.cfg(정해진 호스트만)를 지난다. 저장된 값(ps_sync_cfg)으로 서버를 바꾸던 길은 없앴다 */
+try{ CFG=window.PSSafe.cfg(window.PS_SYNC); }catch(_){}
 if(!CFG) return;
 var BASE=String(CFG.url).replace(/\/+$/,'');
 function syncDiagnostic(stage,error){
@@ -797,7 +795,7 @@ function wipeAccountCache(current){
   return idbSensitiveKeys(false).then(function(keys){
     current();removeLocalVerified(local,current);
     return Promise.all(keys.map(function(k){current();return window.storage.del(k,current);}));
-  }).then(function(){current();return verifyWorkspacePubCleared();}).then(function(){current();return true;});
+  }).then(function(){current();return verifyWorkspacePubCleared();}).then(function(){current();return window.PSAccountHygiene?PSAccountHygiene.sweep(current):1;}).then(function(){current();return true;});
 }
 function legacyCacheInfo(){
   var info={has:false,uid:'',teamish:false},uids={};
@@ -1012,6 +1010,7 @@ function signIn(provider){
   var w=window; try{ if(window.top&&window.top!==window&&window.top.location.origin===location.origin)w=window.top; }catch(_){}
   var back=w.location.origin+w.location.pathname;
   try{ w.sessionStorage.setItem('ps_oauth_provider',provider); }catch(_){}
+  try{ PSOAuthGate.begin(provider,w); }catch(_){}   /* 3.272 — 이 브라우저가 시작한 로그인만 콜백에서 받는다(oauth-gate.js) */
   /* Google 브라우저 세션이 남아 있어도 로그인할 계정을 직접 고를 수 있게 한다. */
   try{ if(w.__psBootMarkDone)w.__psBootMarkDone(); }catch(_){}   /* 3.036 — 로그인으로 떠나는 것은 «죽음»이 아니다 */
   w.location.href=BASE+'/auth/v1/authorize?provider='+encodeURIComponent(provider)+'&redirect_to='+encodeURIComponent(back)+(provider==='google'?'&prompt=select_account':'');
@@ -1037,7 +1036,7 @@ function linkIdentity(provider){
     /* 연결 URL도 요청한 계정의 응답이다. 로그아웃/다른 로그인 뒤에는 이동하거나
        새 계정 위에 옛 연결 실패 문구를 표시하지 않는다. */
     if(!sessionIdentityCurrent(request))return;
-    if(r.ok&&j&&typeof j.url==='string'&&j.url){ try{ if(w.__psBootMarkDone)w.__psBootMarkDone(); }catch(_){} w.location.href=j.url; return; }
+    if(r.ok&&j&&typeof j.url==='string'&&j.url){ try{ if(w.__psBootMarkDone)w.__psBootMarkDone(); }catch(_){} try{ PSOAuthGate.begin('',w); }catch(_){} w.location.href=j.url; return; }
     var raw=String((j&&(j.error_description||j.msg||j.message||j.error))||('연결 실패 '+r.status));
     var msg=raw;
     if(/already|exist/i.test(raw)) msg='이 '+(provider==='kakao'?'카카오':'Google')+' 로그인은 이미 다른 계정에 연결돼 있어요 — 그 계정의 팀에는 초대 코드로 합류하세요';
@@ -1053,7 +1052,7 @@ function signOut(){
   var s=getSess();if(!s)return Promise.resolve(true);
   var logoutEpoch=signOutEpoch,logoutSwitchEpoch=workspaceSwitchEpochRaw();
   if(signOutPromise&&signOutOwner&&signOutOwner.uid===String(s.uid||'')&&signOutOwner.wid===String(activeWs()||'')&&signOutOwner.epoch===logoutEpoch&&signOutOwner.switchEpoch===logoutSwitchEpoch)return signOutPromise;
-  function finish(){
+  function finish(gated){
     var latest=getSess();
     if(logoutEpoch!==signOutEpoch||!latest||String(latest.uid||'')!==String(s.uid||''))return false;
     signOutEpoch++;
@@ -1063,6 +1062,7 @@ function signOut(){
     setSess(null);
     var cleared=false;try{cleared=localStorage.getItem(SKEY)===null;}catch(_){}
     if(!cleared){setStatus('로그아웃하지 못했습니다 — 기기의 로그인 상태를 지우지 못했어요');return false;}
+    try{if(gated)PSAccountHygiene.clean(s.uid);}catch(_){}   /* 3.272 */
     setStatus('로그아웃됨');return true;
   }
   /* 서버 자료를 아직 열지 못한 오류 화면에서는 플러시할 안전한 편집본 자체가 없다.
@@ -1108,7 +1108,7 @@ function signOut(){
       var labels=Array.isArray(keys)?keys.slice(0,4).map(keyLabel).join('·'):'';
       throw syncIssue('prelogout_pending','prelogout','pending confirmation'+(labels?(': '+labels):''));
     }
-    if(overlay)hideSwitchOverlay();return finish();
+    if(overlay)hideSwitchOverlay();return finish(1);
   }).catch(function(e){
     var info=classifySyncError(e),msg=info.code==='sync_offline'
       ?'로그아웃 취소 — 오프라인이어서 변경 사항을 팀에 확인할 수 없어요'
@@ -1137,6 +1137,7 @@ function consumeHash(options){
     }
     var p={}; location.hash.replace(/^#/,'').split('&').forEach(function(kv){ var i=kv.indexOf('='); if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1)); });
     if(!p.access_token||!p.refresh_token){oauthCallbackSetIssue('로그인 응답이 완전하지 않습니다. 다시 로그인해 주세요.');return false;}
+    if(window.PSOAuthGate&&!PSOAuthGate.take(p))return false;   /* 3.272 login CSRF */
     var exp=Date.now()+(( +p.expires_in||3600)*1000);
     signOutEpoch++; // 새 OAuth 세션은 이전 조회·갱신의 응답을 무효화한다.
     setDataReady(false);

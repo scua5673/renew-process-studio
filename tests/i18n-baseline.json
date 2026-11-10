@@ -34,13 +34,13 @@
    "untranslated": 152
   },
   "common": {
-   "total": 3,
-   "untranslated": 0
+   "total": 13,
+   "untranslated": 4
   }
  },
  "app": {
-  "total": 14371,
-  "translated": 5050,
-  "pct": 35.1
+  "total": 14381,
+  "translated": 5056,
+  "pct": 35.2
  }
 }

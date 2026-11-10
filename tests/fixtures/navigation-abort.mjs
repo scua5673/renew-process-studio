@@ -43,6 +43,11 @@ const STOPPED=/^(?:InvalidStateError:\s*)?Context is stopped\.?$/;
    느슨하지 않은 까닭: 크로미움 잡이 같은 시험을 돌리고, 크로미움은 같은 오류를 «X is not defined» 로 쓴다 — 이 길은 그 문장을 받지
    않으므로 오타·빠진 <script> 같은 진짜 ReferenceError(매번 난다)는 크로미움에서 그대로 실패한다. */
 const UNDEF=/^(?:ReferenceError:\s*)?Can't find variable: [A-Za-z_$][\w$]*$/;
+/* 3.272 — 같은 흔적의 다른 문장: 못 들어온 파일의 전역을 window.X.y 로 읽는 인라인 스크립트는 ReferenceError 가 아니라
+   «undefined is not an object (evaluating 'window.PSSaveState.createTracker')» TypeError 를 남긴다(staging CI oauth-same-document —
+   scout.html 이 storage.js 의 PSSaveState 를 읽는 줄). window.<전역>.<속성> 을 읽는 그 문장 · 이동 구간 안일 때만 흔적이다.
+   크로미움 문장(«Cannot read properties of undefined»)은 받지 않는다 — 진짜 빠진 스크립트는 크로미움 잡이 잡는다. */
+const UNDEF_WIN=/^(?:TypeError:\s*)?undefined is not an object \(evaluating 'window\.[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*'\)$/;
 const NAV_TAIL=1500,DETACH_PAD=1500,OPEN_NAV=15000;
 const noScheme=u=>String(u||'').replace(/^[a-z][a-z0-9+.-]*:\/\//i,'');
 const originOf=u=>{try{const o=new URL(String(u)).origin;return o&&o!=='null'?o:'';}catch(_){return '';}};
@@ -67,7 +72,7 @@ export function trackNavigationAborts(page,entries,opts){
     return t>=w.start&&t<=end;
   });
   const judge=(message,at)=>{
-    if(UNDEF.test(String(message||'').trim())){const t=at||Date.now(),win=inWindow(t),cut=fails.filter(f=>/\.m?js(?:[?#]|$)/.test(String(f.url))&&Math.abs(f.at-t)<3000).map(f=>String(f.url).split('/').pop());
+    if(UNDEF.test(String(message||'').trim())||UNDEF_WIN.test(String(message||'').trim())){const t=at||Date.now(),win=inWindow(t),cut=fails.filter(f=>/\.m?js(?:[?#]|$)/.test(String(f.url))&&Math.abs(f.at-t)<3000).map(f=>String(f.url).split('/').pop());
       return win?{match:true,abort:true,path:'R'}:{match:true,abort:false,why:JSON.stringify({inNavWindow:false,scriptFailed:cut})};}
     if(STOPPED.test(String(message||'').trim())){const t=at||Date.now();return inWindow(t)?{match:true,abort:true,path:'S'}:{match:true,abort:false,why:'Context is stopped 이 이동 구간 밖'};}
     const p=parse(message);if(!p)return {match:false};
