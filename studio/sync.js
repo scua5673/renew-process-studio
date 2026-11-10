@@ -1010,6 +1010,7 @@ function signIn(provider){
   /* 2.254 — 잠금 오버레이는 iframe 페이지(sync.js 로드되는 board·scout 등)에도 뜬다. 거기서 누르면 iframe 이
      카카오로 가고 콜백 토큰이 iframe 주소로 떨어진다 — 같은 origin 이면 top 창으로 올려서 연다. */
   var w=window; try{ if(window.top&&window.top!==window&&window.top.location.origin===location.origin)w=window.top; }catch(_){}
+  try{ PSOAuthGate.begin(provider,w); }catch(_){}   /* 3.272 — 이 브라우저가 시작한 로그인만 콜백에서 받는다(oauth-gate.js) */
   var back=w.location.origin+w.location.pathname;
   try{ w.sessionStorage.setItem('ps_oauth_provider',provider); }catch(_){}
   /* Google 브라우저 세션이 남아 있어도 로그인할 계정을 직접 고를 수 있게 한다. */
@@ -1037,7 +1038,7 @@ function linkIdentity(provider){
     /* 연결 URL도 요청한 계정의 응답이다. 로그아웃/다른 로그인 뒤에는 이동하거나
        새 계정 위에 옛 연결 실패 문구를 표시하지 않는다. */
     if(!sessionIdentityCurrent(request))return;
-    if(r.ok&&j&&typeof j.url==='string'&&j.url){ try{ if(w.__psBootMarkDone)w.__psBootMarkDone(); }catch(_){} w.location.href=j.url; return; }
+    if(r.ok&&j&&typeof j.url==='string'&&j.url){ try{ if(w.__psBootMarkDone)w.__psBootMarkDone(); }catch(_){} try{ PSOAuthGate.begin('',w); }catch(_){} w.location.href=j.url; return; }
     var raw=String((j&&(j.error_description||j.msg||j.message||j.error))||('연결 실패 '+r.status));
     var msg=raw;
     if(/already|exist/i.test(raw)) msg='이 '+(provider==='kakao'?'카카오':'Google')+' 로그인은 이미 다른 계정에 연결돼 있어요 — 그 계정의 팀에는 초대 코드로 합류하세요';
@@ -1135,6 +1136,7 @@ function consumeHash(options){
       if(/(?:^#|&)refresh_token=/.test(location.hash||''))oauthCallbackSetIssue('로그인 응답이 완전하지 않습니다. 다시 로그인해 주세요.');
       return false;
     }
+    if(window.PSOAuthGate&&!PSOAuthGate.take())return false;   /* 3.272 login CSRF */
     var p={}; location.hash.replace(/^#/,'').split('&').forEach(function(kv){ var i=kv.indexOf('='); if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1)); });
     if(!p.access_token||!p.refresh_token){oauthCallbackSetIssue('로그인 응답이 완전하지 않습니다. 다시 로그인해 주세요.');return false;}
     var exp=Date.now()+(( +p.expires_in||3600)*1000);

@@ -632,6 +632,7 @@
 <script src="studio/admin-support.js?v=3.249"></script>
 <script src="studio/admin-content-data.js?v=2.854"></script>
 <script src="studio/admin-content.js?v=2.890"></script>
+<script src="studio/oauth-gate.js"></script>
 <script>
 /* ===== 설정 (publishable/anon 키만 — secret 키는 절대 두지 않음) ===== */
 var CFG={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publishable_-Es-apybpr1zPTLzLE2sUw_kV-5ap-k"};
@@ -870,7 +871,8 @@ function loadSyncDetails24h(){
       .sort(function(a,b){return b.events-a.events||new Date(b.last_seen)-new Date(a.last_seen);});
   });
 }
-function signIn(p){ location.href=BASE+'/auth/v1/authorize?provider='+encodeURIComponent(p)+'&redirect_to='+encodeURIComponent(location.origin+location.pathname); }
+function signIn(p){ try{ PSOAuthGate.begin(p); }catch(_){}   /* 3.272 — 이 브라우저가 시작한 로그인만 콜백에서 받는다(studio/oauth-gate.js) */
+  location.href=BASE+'/auth/v1/authorize?provider='+encodeURIComponent(p)+'&redirect_to='+encodeURIComponent(location.origin+location.pathname); }
 function signOut(){
   /* 앱과 로그인 세션을 공유한다. 관리자는 편집 장벽/미전송 자료를 확인할 수
      없으므로 여기서 토큰을 지우지 않고 실제 앱의 안전한 로그아웃으로 연결한다. */
@@ -891,6 +893,7 @@ function consumeHash(){
   try{ if(location.hash.indexOf('access_token=')<0)return false;
     var p={}; location.hash.replace(/^#/,'').split('&').forEach(function(kv){var i=kv.indexOf('=');if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1));});
     if(!p.access_token||!p.refresh_token)return false;
+    if(window.PSOAuthGate&&!PSOAuthGate.take())return false;   /* 3.272 login CSRF — 남이 만든 `#access_token=` 링크로는 로그인되지 않는다 */
     setSess({at:p.access_token,rt:p.refresh_token,exp:Date.now()+((+p.expires_in||3600)*1000),email:'',uid:''});
     try{history.replaceState(null,'',location.pathname+location.search);}catch(_){}
     return true;

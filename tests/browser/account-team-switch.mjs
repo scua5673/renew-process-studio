@@ -203,6 +203,8 @@ try{
   console.log(JSON.stringify({stage:'logged-out'}));
   // OAuth returns from a provider document. A hash-only goto in the existing app is not a page load.
   await page.evaluate(()=>window.__fixtureReportsSettled());
+  /* 3.272 — 로그인 단추를 누른 것처럼 «시작함» 표식을 남긴다(oauth-gate.js). 표식 없는 콜백은 저장되지 않는다(tests/browser/oauth-callback-gate) */
+  await page.evaluate(()=>PSOAuthGate.begin('google'));
   await bounded(page.goto('about:blank'),'leave logged-out document',10000);
   console.log(JSON.stringify({stage:'provider-document'}));
   if(engine==='chromium'&&process.env.PS_PROFILE_LOGIN==='1'){

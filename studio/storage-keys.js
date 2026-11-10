@@ -215,6 +215,7 @@
     ['ps_merge_note_v1','device','ls','queue','sync.js'],
     ['ps_notice_seen_v1','device','ls','seen','idp.html'],
     ['ps_oauth_callback_issue','device','ls','session','sync.js'],
+    ['ps_oauth_pending_v1','device','ls','session','oauth-gate.js'],   /* 3.272 — «이 브라우저가 로그인을 시작함» 표식(시각 · 그때의 uid, 10분 · 한 번). sessionStorage 에도 같은 이름 */
     ['ps_oauth_provider','device','ls','session','sync.js'],
     ['ps_opt_auto_at','device','ls','cache','storage.js'],
     ['ps_opt_board_recovery_v1','device','ls','recovery','storage.js',{of:'cs_board_live_v1'}],
