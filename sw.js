@@ -22,7 +22,7 @@ const CORE = [
   '/studio/idp-weekly-growth.js', '/studio/idp-weekly-growth.css',
   '/studio/idp-recovery.js', '/studio/idp-recovery.css', '/studio/idp-roster-refresh.js',
   '/studio/idp-evidence.js', '/studio/idp-evidence.css', '/studio/idp-start.css', '/studio/idp-daily.css',
-  '/studio/team-audience.css', '/studio/team-audience.js', '/studio/schedule-audience.js', '/studio/roster-audience.js', '/studio/schedule-match-time.js',
+  '/studio/team-audience.css', '/studio/team-audience.js', '/studio/schedule-audience.js', '/studio/roster-audience.js', '/studio/schedule-match-time.js', '/studio/schedule-fill-team.js',
   '/studio/storage-keys.js', '/studio/storage.js', '/studio/team-library.js', '/studio/team-load.js', '/studio/photo-crop.js', '/studio/team-photos.js', '/studio/profile-sheet.js', '/studio/player-card.js',
   '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/roster-pending.js','/studio/participation.js', '/studio/avail-edit-guard.js', '/studio/match-board-tools.js', '/studio/match-formats.js', '/studio/match-meet-parts.js', '/studio/match-goals-quick.js', '/studio/match-lock.js', '/studio/sync-mirror.js', '/studio/sync-roster-copies.js', '/studio/sync-size.js', '/studio/sync-observability.js', '/studio/idp-pub-wipe.js', '/studio/sync-items-stale.js', '/studio/sync.js',
   '/studio/sync-diagnosis.js', '/studio/sync-diagnosis-ui.js', '/studio/sync-diagnosis.css', '/studio/sync-stall-report.js', '/studio/crash-breadcrumb.js', '/studio/schedule-lib-slim.js',
