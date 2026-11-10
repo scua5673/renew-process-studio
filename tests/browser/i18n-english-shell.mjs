@@ -148,7 +148,9 @@ try{
     await page.locator('#langSw [data-lang="ko"]').click();
     assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[],'no runtime errors (desktop en)');
   }
-  assert.ok(reqEn.every(u=>!/learning\.html|learn-/.test(u)),'Learning files are not requested');
+  /* learn-model.js 는 학습 앱이 아니라 IDP · 플레이북이 함께 읽는 사전(idp.html · gamemodel.html) — 그 화면이 미리 데워지면 요청된다(PR #800 크로미움 entry) */
+  const learnReq=reqEn.filter(u=>/learning\.html|learn-(?!model\.js)/.test(u));
+  assert.deepEqual(learnReq,[],'Learning files are not requested');
 
   /* 2) 한국어로 부팅한 기기와 한 글자도 다르지 않다 · 영어 사전을 받지 않는다 */
   {
