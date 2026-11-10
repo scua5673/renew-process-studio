@@ -47,6 +47,7 @@ suites.storage.push('roster-outbox-full');   /* 3.253 — 선수 변경 묶음�
 suites.storage.push('xss-synced-docs');   /* 3.271 — 팀원이 동기화로 보낸 IDP · 일정 문서가 코치 화면에서 실행되지 않는다(끼워 넣은 값 탐침) */
 suites.identity.push('sched-fill-team');   /* «일정 ＋» 시트의 «팀 공통»이 «훈련»을 누르면 A팀이 되던 것 — 팀 공통 · 한 팀 · 여러 팀 */
 suites.records.push('sched-day-kind');   /* 한 팀을 OFF 로 돌린 날은 일정 칸 · 요약 · 팀 «오늘» · 주간 PDF 가 모두 OFF(PSSchedule.dayKind) */
+suites.records.push('sched-memo-autosave');   /* 세션 시트 «메모» · «장소»: 치는 동안 저장 + psFlushPending · pagehide · visibilitychange(한글 조합 · 새로고침 · 끊긴 동안) */
 suites.entry.push('phone-drill-blank');   /* 폰 보기 전용: 장면이 있는 가로 작전판이 빈 화면(숨은 장면 줄 몫으로 판 높이 0) — 보관함 보기 · 전체화면 · 팀 오늘의 훈련 보기, 360 · 390 · 430 */
 const PER_TEST_MS={'board-drag-performance':360000};   /* 3.012 — 한 테스트 한도(기본 240초)의 예외. 위 boardperf 참고 */
 /* 3.012 — 엔진과 상관없이 Chromium 을 직접 띄우는 시험(PS_BROWSER_ENGINE 을 읽지 않는다). WebKit 잡에서는 Chrome 경로가 없어 바로 죽거나

@@ -4659,9 +4659,9 @@ function wksFillRender(keep,focus){
     +'<button type="button" class="btn" style="width:100%;justify-content:center" onclick="wksFillLib()">보관함에서 가져오기</button>'
     +'</div>';
 
-  /* ══ 2.908 · 메모(요청 «메모도 적을 수 있는 칸») ═══════════════════════════════════════
+  /* ══ 2.908 · 메모(요청 «메모도 적을 수 있는 칸») ══
      새 자리를 만들지 않는다 — 세션마다 있던 `tr.note`(옛 세션 편집기에서만 적을 수 있었다)를 여기서 적는다.
-     목록·하루 PDF 는 원래 이 글을 찍었고, 이제 주간 보드 PDF 의 메모 줄도 찍는다. 저장은 칸을 벗어날 때. */
+     목록·하루 PDF 는 원래 이 글을 찍었고, 이제 주간 보드 PDF 의 메모 줄도 찍는다. 저장은 칸을 벗어날 때 + 치는 동안(schedule-fill-autosave.js). */
   h+='<div class="wf-sec" id="wfSec-memo"><div class="pksub sm">메모</div>'
     +'<textarea id="wfNote" class="wf-note" rows="3" maxlength="500" placeholder="준비물 · 주의할 점 · 코치 메모" onchange="wksFillNote(this.value)">'+wkbdEsc(String((tr&&tr.note)||''))+'</textarea></div>';
 
@@ -10494,6 +10494,6 @@ html body .wks .wks-fill:not(#_):hover{border-color:var(--c-act,var(--ps-navy,#1
 </style>
 
 <link rel="stylesheet" href="team-mobile.css?v=3.268">
-<script src="schedule-match-time.js"></script><script src="schedule-fill-team.js"></script><script src="schedule-day-kind.js"></script>
+<script src="schedule-match-time.js"></script><script src="schedule-fill-team.js"></script><script src="schedule-day-kind.js"></script><script src="schedule-fill-autosave.js"></script>
 
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
