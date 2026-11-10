@@ -126,7 +126,7 @@
         if(d.pwAddpos!==undefined){addPosition(kind,+d.pwAddpos);return;}
         if(d.pwPosmenu){renamePosition(kind,d.pwPosmenu);return;}
         if(d.pwDetail){if(dragged&&Date.now()-dragged<400)return;open(kind,d.pwDetail,'summary',d.pwAtpos);return;}   /* 3.273 — 요약 · 평가 · 관찰 기록 · IDP 는 이 단추로(이름은 프로필을 바로 연다) */
-        if(d.pwOpen){if(dragged&&Date.now()-dragged<400)return;if(kind==='team'&&states.team.view==='depth'&&states.team.groupEdit)pickGroup(b,d.pwOpen);else openProfile(kind,d.pwOpen,d.pwAtpos);return;}
+        if(d.pwOpen){if(dragged&&Date.now()-dragged<400)return;if(kind==='team'&&states.team.view==='depth'&&states.team.groupEdit)pickGroup(b,d.pwOpen);else{e.stopPropagation();openProfile(kind,d.pwOpen,d.pwAtpos);}return;}   /* 같은 클릭이 방금 연 프로필의 «바깥 누르면 닫기»에 닿지 않게(예전 «프로필 수정»과 같다) */
         if(d.pwAction==='clear'){states[kind].selected=[];paintContent(kind);}
         if(d.pwAction==='compare')compare(kind);
         if(d.pwAction==='points'){modal();detail=null;dialog.classList.remove('pw-comparison');dialog.innerHTML='<header class="pw-dialoghead"><h2 id="pwDetailTitle">스카우팅 질문 기준</h2>'+button('닫기','data-pw-close')+'</header><div class="pw-detailbody"><iframe title="스카우팅 질문 기준" src="scouting.html?view=points"></iframe></div>';show();}
