@@ -7,6 +7,8 @@
     if(!seg||!team||seg.dataset.mobileNavigation)return;
     var original=Array.from(seg.children),phone=window.matchMedia('(max-width:767px)'),active=null;
     var selectors=['button[data-app="board"]:not([data-train])','#psTrainBtn','button[data-app="community"]','button[data-team-hub]','button[data-app="learning"]','#psMoreBtn'];
+    /* «학습» 끄기(learning-off.js) — 꺼져 있으면 다섯 칸 */
+    if(window.PS_LEARNING_ENABLED===false)selectors.splice(4,1);
     var primary=selectors.map(function(s){return seg.querySelector(s);});
     if(primary.some(function(b){return !b;}))return;
     var order=primary.concat(original.filter(function(b){return primary.indexOf(b)<0;})),label=team.getAttribute('aria-label');
@@ -18,6 +20,7 @@
       var focused=document.activeElement,restore=focused&&seg.contains(focused);
       (active?order:original).forEach(function(b){seg.appendChild(b);});
       document.body.classList.toggle('ps-mobile-six',active);
+      seg.style.setProperty('--ps-mnav-n',String(primary.length));
       team.setAttribute('aria-label',active?'팀 운영 메뉴':label||'팀 하단 탭');
       if(restore&&focused.offsetHeight>0)focused.focus({preventScroll:true});
     }

@@ -23,7 +23,7 @@ const CORE = [
   '/studio/idp-recovery.js', '/studio/idp-recovery.css', '/studio/idp-roster-refresh.js',
   '/studio/idp-evidence.js', '/studio/idp-evidence.css', '/studio/idp-start.css', '/studio/idp-daily.css',
   '/studio/team-audience.css', '/studio/team-audience.js', '/studio/schedule-audience.js', '/studio/roster-audience.js', '/studio/schedule-match-time.js',
-  '/studio/storage-keys.js', '/studio/storage.js', '/studio/team-library.js', '/studio/team-load.js', '/studio/photo-crop.js', '/studio/team-photos.js', '/studio/profile-sheet.js', '/studio/player-card.js',
+  '/studio/storage-keys.js', '/studio/storage.js', '/studio/learning-off.js', '/studio/team-library.js', '/studio/team-load.js', '/studio/photo-crop.js', '/studio/team-photos.js', '/studio/profile-sheet.js', '/studio/player-card.js',
   '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/roster-pending.js','/studio/participation.js', '/studio/avail-edit-guard.js', '/studio/match-board-tools.js', '/studio/match-formats.js', '/studio/match-meet-parts.js', '/studio/match-goals-quick.js', '/studio/match-lock.js', '/studio/sync-mirror.js', '/studio/sync-roster-copies.js', '/studio/sync-size.js', '/studio/sync-observability.js', '/studio/idp-pub-wipe.js', '/studio/sync-items-stale.js', '/studio/sync.js',
   '/studio/sync-diagnosis.js', '/studio/sync-diagnosis-ui.js', '/studio/sync-diagnosis.css', '/studio/sync-stall-report.js', '/studio/crash-breadcrumb.js', '/studio/schedule-lib-slim.js',
   '/studio/autosave-status.js', '/studio/sync-confirmation.js', '/studio/update-progress.js', '/studio/update-client.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
@@ -54,7 +54,7 @@ const OPTIONAL = [
   /* 3.076 — 관리자 화면(admin.html · admin-*, 약 0.4MB)은 미리 받지 않는다. 운영자만 쓰고, 열면 그때 받아 이 판 캐시에 담긴다(cacheFirst). */
   '/studio/', '/studio/index.html',
   '/studio/board.html', '/studio/board-player-eye.js', '/studio/player-eye.css',
-  '/studio/gamemodel.html', '/studio/scout.html', '/studio/terms.html', '/studio/idp.html', '/studio/note.html', '/studio/scouting.html', '/studio/community.html', '/studio/analysis.html', '/studio/learning.html', '/studio/playbook.html',
+  '/studio/gamemodel.html', '/studio/scout.html', '/studio/terms.html', '/studio/idp.html', '/studio/note.html', '/studio/scouting.html', '/studio/community.html', '/studio/analysis.html', /* «학습» 끄기(learning-off.js) 동안 미리 받지 않는다 — 켜면 '/studio/learning.html' 을 다시 넣는다 */ '/studio/playbook.html',
   '/studio/balls.js', '/studio/pitches.js', '/studio/rpt-i18n.js',
   '/studio/vault-examples.js',   /* 3.001 — 빈 보관함 첫 화면의 예시. 없으면 첫 화면은 옛 모양 그대로 */
   '/studio/community-fifa.js', '/studio/community-fifa.css', '/studio/community-tax.js', '/studio/community-tax.css', '/studio/community-library.css', '/studio/community-detail.js', '/studio/community-detail.css', '/studio/community-youtube.js', '/studio/community-youtube.css',

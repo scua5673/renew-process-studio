@@ -123,7 +123,8 @@ export const SIZES={
   desktop:{engine:'chromium',ctx:{viewport:{width:1280,height:800},deviceScaleFactor:1}}
 };
 
-export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false,guest=false,init=null}={}){
+export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false,guest=false,init=null,learning=false}={}){
+  /* learning:true 면 «학습»을 켠 판(learning-off.js 의 PS_LEARNING_ENABLED=true)으로 연다 — 꺼 둔 학습 코드가 한 줄로 되살아나는지 보는 시험용 */
   /* 3.131 — init:{fn,arg} 는 앱보다 먼저, 모든 프레임에서 도는 시험용 스크립트(예: 기기 저장 한도 흉내) */
   /* 3.112 — guest:true 면 로그인하지 않은 기기(세션 · 공간 · 계정 흔적 없음)로 연다. 로그인은 시험이 signIn(page) 으로 */
   /* 3.039 — csp:true 면 HTML 응답에 _headers 의 Content-Security-Policy-Report-Only 를 그대로 붙인다(tests/browser/csp-report-only) */
@@ -152,6 +153,7 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
     const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
     if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||fs.statSync(file).isDirectory())return route.fulfill({status:404,body:''});
     let content=fs.readFileSync(file);
+    if(learning&&url.pathname==='/studio/learning-off.js'){const on=content.toString().replace('var PS_LEARNING_ENABLED=false;','var PS_LEARNING_ENABLED=true;');if(on===content.toString())throw new Error('learning-off.js 의 깃발 줄을 찾지 못했다');content=Buffer.from(on);}
     if(url.pathname==='/studio/app.html')content=Buffer.from(content.toString().replace(/(window\.PS_SYNC=\{url:")[^"]+("[,}])/,(_,a,b)=>a+base+b));
     return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream',...(cspValue&&path.extname(file)==='.html'?{headers:{'content-security-policy-report-only':cspValue}}:{})});
   });
