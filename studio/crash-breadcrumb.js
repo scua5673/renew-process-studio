@@ -116,7 +116,7 @@
     function disarm(){armed=false;win.clearInterval(beat);beat=0;win.clearTimeout(trail);trail=0;clear();if(release){try{release();}catch(_){}release=null;}}
     function arm(){
       if(armed)return;armed=true;
-      var go=function(){if(!armed)return;sample();write();win.clearInterval(beat);beat=win.setInterval(function(){sample();write();},BEAT);};
+      var go=function(){if(!armed)return;sample();write();win.clearInterval(beat);beat=win.setInterval(function(){frames();sample();write();},BEAT);};
       var L=nav.locks;
       if(L&&typeof L.request==='function'){
         /* 잠금을 쥔 뒤에만 표식을 쓴다 — 다른 창의 부팅이 «잠금 없는 표식»으로 잘못 읽지 않게 */
@@ -126,10 +126,11 @@
     /* 틀마다: 누른 것(capture · passive) · 단축키 · 보관함 원문 크기(이미 읽은 글의 길이만 — 읽기를 더하지 않는다) */
     function hook(w,tag){
       try{
-        var d=w.document;if(!d||(hooked&&hooked.has(d)))return;if(hooked)hooked.add(d);
-        d.addEventListener('click',function(e){var c=codeOf(e.target);if(c)act(tag+c);},{capture:true,passive:true});
-        d.addEventListener('keydown',function(e){if((e.metaKey||e.ctrlKey)&&e.key&&/^[a-zA-Z]$/.test(e.key))act(tag+'key-'+e.key.toLowerCase()+(e.shiftKey?'S':''));},{capture:true,passive:true});
-        var S=w.storage;
+        var d=w.document;if(!d)return;
+        if(!(hooked&&hooked.has(d))){if(hooked)hooked.add(d);
+          d.addEventListener('click',function(e){var c=codeOf(e.target);if(c)act(tag+c);},{capture:true,passive:true});
+          d.addEventListener('keydown',function(e){if((e.metaKey||e.ctrlKey)&&e.key&&/^[a-zA-Z]$/.test(e.key))act(tag+'key-'+e.key.toLowerCase()+(e.shiftKey?'S':''));},{capture:true,passive:true});}
+        var S=w.storage;   /* storage.js 가 늦게 읽히는 틀은 다음 훑기(틀 load · 10 · 30 · 60초 · 30초 박동)에서 감싼다 */
         if(S&&typeof S.get==='function'&&!S.__psCrumb){S.__psCrumb=1;var get=S.get,set=S.set;
           S.get=function(k){var p=get.apply(this,arguments);if(k===LIB){try{p.then(function(r){vault(r&&r.value);},function(){});}catch(_){}}return p;};
           if(typeof set==='function')S.set=function(k,v){if(k===LIB)vault(v);return set.apply(this,arguments);};}
