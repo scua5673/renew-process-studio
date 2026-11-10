@@ -69,7 +69,13 @@
     if(R&&(force||R.length!==seenRules)){
       XR=[];for(var j=0;j<R.length;j++){var r=R[j];if(r&&r[0]&&typeof r[0].test==='function'&&r[1])XR.push(r);}
       /* 구멍을 뺀 글자가 긴(더 구체적인) 규칙 먼저 */
-      XR.forEach(function(r){if(r[2]==null)r[2]=r[0].source.replace(/\((?:\\.|[^)\\])*\)/g,'').length;});
+      XR.forEach(function(r){
+        if(r[2]!=null)return;
+        var lit=r[0].source.replace(/\((?:\\.|[^)\\])*\)/g,'');
+        r[2]=lit.length;
+        /* 한글이 두 자 이하인 틀(«{}에서 {}» · «{}명»)은 구멍이 숫자 · 영문일 때만 — 문장을 잘못 물지 않게 */
+        r[3]=lit.replace(/[^\u3131-\u318E\uAC00-\uD7A3]/g,'').length<3;
+      });
       XR.sort(function(p,q){return q[2]-p[2];});
       seenRules=R.length;changed=true;
     }
@@ -106,7 +112,12 @@
   function find(t,lang,deep){
     var li=LANGS[lang],k=norm(t),i,m,r=exact(k,t,lang);
     if(r!=null)return r;
-    for(i=0;i<XR.length;i++){if(typeof XR[i][1][lang]!=='string')continue;m=k.match(XR[i][0]);if(m)return fill(XR[i][1][lang],m,lang,deep);}
+    for(i=0;i<XR.length;i++){
+      if(typeof XR[i][1][lang]!=='string')continue;
+      m=k.match(XR[i][0]);
+      if(!m||(XR[i][3]&&HANGUL.test(m.slice(1).join(''))))continue;
+      return fill(XR[i][1][lang],m,lang,deep);
+    }
     var B=base;
     if(B){for(i=0;i<B.R.length;i++){m=k.match(B.R[i][0]);if(m&&B.R[i][li]!=null)return fill(B.R[i][li],m);}}
     /* « · »로 이은 글은 토막마다 — 한 토막이라도 바뀌면 이어 붙인다(앞에 «· »가 붙은 틀도 본다) */

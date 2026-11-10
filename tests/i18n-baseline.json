@@ -7,31 +7,31 @@
   },
   "board": {
    "total": 3085,
-   "untranslated": 2286
+   "untranslated": 2336
   },
   "team": {
    "total": 2929,
-   "untranslated": 2216
+   "untranslated": 2254
   },
   "schedule": {
    "total": 1112,
-   "untranslated": 689
+   "untranslated": 714
   },
   "idp": {
    "total": 2868,
-   "untranslated": 2434
+   "untranslated": 2461
   },
   "gamemodel": {
    "total": 1065,
-   "untranslated": 883
+   "untranslated": 885
   },
   "community": {
    "total": 675,
-   "untranslated": 504
+   "untranslated": 521
   },
   "note": {
    "total": 249,
-   "untranslated": 146
+   "untranslated": 152
   },
   "common": {
    "total": 0,
@@ -40,7 +40,7 @@
  },
  "app": {
   "total": 14364,
-  "translated": 5206,
-  "pct": 36.2
+  "translated": 5041,
+  "pct": 35.1
  }
 }
