@@ -31,6 +31,79 @@
     });
   };
 
+  /* 3.271 — 팀원(선수 계정 포함)이 동기화로 보내는 문서는 다른 팀원의 화면에서 innerHTML 로 그려진다(로그인 토큰이 localStorage 에 있다).
+     글은 PSSafe.html(화면의 esc · wkbdEsc), 그 밖의 자리는 아래 넷만 쓴다 — 시험 tests/xss-synced-docs-3271.
+     · img  : <img src> 에 넣을 값. base64 그림 data URL 과 blob: 주소만 남긴다(따옴표 · javascript: · 바깥 주소는 빈칸). 아래 PSImg 가 정하고 PSImg.src 가 늘 거친다
+     · url  : <a href> 에 넣을 값. http(s) 주소만(앞머리 없는 «youtu.be/…» 는 https 를 붙인다)
+     · arg  : onclick="fn('…')" 의 따옴표 안에 넣을 값. HTML 엔티티(&#39;)는 파서가 먼저 풀어 JS 따옴표를 끊으므로
+              글자 · 숫자 · 한글 밖의 것은 모두 \uXXXX 로 쓴다(JS 문자열 안에서 원래 글자로 돌아오고, HTML 로는 아무 뜻이 없다)
+     · sched: 일정 문서를 읽을 때 한 번 — 키 · 시각 · id 칸에서 구조 글자를 빼고 숫자 칸은 숫자로(아래)
+     · idp  : 남의 IDP 문서를 그리기 전에 한 번 — 숫자 · 종류 칸을 제 모양으로(아니면 지운다). 내 문서에는 쓰지 않는다(저장본을 바꾸지 않게) */
+  window.PSSafe.url=function(value){
+    var s=typeof value==='string'?value.trim():'';
+    if(/^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[\/?#]|$)/i.test(s))s='https://'+s;   /* «youtu.be/…» 처럼 앞머리 없이 적은 주소 */
+    return /^https?:\/\/[^\s"'<>`\\\u0000-\u001f]+$/i.test(s)?s:'';
+  };
+  window.PSSafe.arg=function(value){
+    return String(value==null?'':value).replace(/[^A-Za-z0-9 _.\-\u00a1-\u2027\u202a-\uffff]/g,function(c){
+      return '\\u'+('000'+c.charCodeAt(0).toString(16)).slice(-4);
+    });
+  };
+  /* 일정 문서(process_coach_v1)를 화면이 쓰기 전에 한 번: 글이 아닌 칸(세션 키 · 시각 · id · 종류 · 요일)은 처리기 문자열과 속성에 그대로 들어가는 곳이 많다 —
+     HTML · JS 가 구조로 읽는 글자를 뺀다. 보통 값(«S1a2b» · «17:00» · «오전» · «MD-1»)에는 그런 글자가 없어 그대로다. 숫자 칸은 숫자로.
+     글(상대 · 메모 · 주제 · 이름)은 건드리지 않는다 — 그리는 쪽이 esc 한다. 작전판 그림(snap · thumb …) 안으로는 들어가지 않는다. */
+  var SCHED_KEY_FIELDS={slot:1,time:1,mid:1,id:1,libId:1,fromLib:1,kind:1,phase:1,exp:1,of:1,gmMoment:1,d:1,md:1,trainSlot:1,meetSlot:1,warmSlot:1,libSlot:1};
+  var SCHED_NUM_FIELDS={rpe:1,dur:1,minutes:1,players:1};
+  var SCHED_SKIP={snap:1,thumb:1,scenes:1,frames:1,pages:1,custom:1};
+  function schedKey(v,depth){
+    if(typeof v==='string')return v.replace(/[<>"'&\\`\u0000-\u001f\u007f\u2028\u2029]/g,'');
+    if(Array.isArray(v)){ for(var i=0;i<v.length;i++)v[i]=schedKey(v[i],depth+1); }
+    else schedWalk(v,depth+1);   /* 같은 이름의 묶음(객체)은 지우지 않고 안쪽만 본다 */
+    return v;
+  }
+  function schedWalk(o,depth){
+    if(!o||typeof o!=='object'||depth>12)return;
+    if(Array.isArray(o)){ for(var i=0;i<o.length;i++)schedWalk(o[i],depth+1); return; }
+    for(var k in o){
+      if(!Object.prototype.hasOwnProperty.call(o,k)||SCHED_SKIP[k])continue;
+      var v=o[k];
+      if(SCHED_KEY_FIELDS[k])o[k]=schedKey(v,depth);
+      else if(SCHED_NUM_FIELDS[k]&&typeof v==='string'){ if(!/^\s*-?\d{0,6}(?:\.\d{1,3})?\s*$/.test(v))o[k]=''; }   /* 숫자 글(«15»)은 글 그대로 — 저장본의 모양을 바꾸지 않는다 */
+      else if(v&&typeof v==='object')schedWalk(v,depth+1);
+    }
+  }
+  window.PSSafe.sched=function(doc){
+    try{
+      if(doc&&typeof doc==='object'){ schedWalk(doc.weeks,0); schedWalk(doc.week,0); schedWalk(doc.grpWeeks,0); schedWalk(doc.templates,0); }
+    }catch(_){}
+    return doc;
+  };
+  window.PSSafe.idp=function(doc){
+    try{
+      var num=function(o,k){
+        var v=o[k]; if(v==null||typeof v==='number'||typeof v==='boolean')return;
+        var n=typeof v==='string'&&v.trim()!==''?Number(v):NaN;
+        if(isFinite(n))o[k]=n; else delete o[k];
+      };
+      var each=function(map,fn){
+        if(!map||typeof map!=='object')return;
+        Object.keys(map).forEach(function(k){ var e=map[k]; if(e&&typeof e==='object'&&!Array.isArray(e))fn(e); else delete map[k]; });
+      };
+      if(!doc||typeof doc!=='object')return doc;
+      var p=doc.profile;
+      if(p&&typeof p==='object'){
+        ['video','video2'].forEach(function(k){ if(p[k]!=null)p[k]=window.PSSafe.url(p[k]); });
+        if(p.photo!=null&&typeof p.photo!=='string')delete p.photo;
+      }
+      each(doc.log,function(e){
+        if(e.t!=null&&!/^(?:team|match|rest|rehab|injury)$/.test(e.t))delete e.t;
+        ['w','rpe','sleep','sleepq','body','try'].forEach(function(k){ num(e,k); });
+      });
+      each(doc.growth,function(g){ num(g,'h'); num(g,'w'); });
+    }catch(_){}
+    return doc;
+  };
+
   /* 3.105 — 썸네일 SVG 를 innerHTML 로 넣기 전의 단일 정리 규칙.
      썸네일은 작전판이 만든 그림이지만 저장된 문자열이라 남의 손을 탈 수 있다(커뮤니티 담기·팀 문서·파일 열기).
      정규식으로 지우던 옛 방식(community sanSvg)은 <animate/onbegin=…> 처럼 공백 없는 처리기와 엔티티로 쓴 javascript: 를 놓쳤다.
@@ -1356,7 +1429,11 @@
   "use strict";
   var PRE='psimg_', REF='psimg:', mem={}, loaded=null;
   function isRef(v){ return typeof v==='string' && v.indexOf(REF)===0; }
-  function isData(v){ return typeof v==='string' && v.indexOf('data:image')===0; }
+  /* 3.271 — 그림 값은 이 모양뿐이다: base64 그림 data URL(캔버스 · FileReader 가 만드는 모양) 또는 blob: 주소.
+     `data:image…" onerror="…` 처럼 앞머리만 흉내 낸 글은 그림으로 치지 않는다(보관소에 넣지도, src 로 내보내지도 않는다). */
+  var IMG_OK=/^(?:data:image\/[a-z0-9.+-]{1,40};base64,[a-z0-9+\/]*={0,2}|blob:[a-z0-9:\/._%-]+)$/i;
+  function safe(v){ return typeof v==='string'&&IMG_OK.test(v)?v:''; }
+  function isData(v){ return typeof v==='string' && v.indexOf('data:image')===0 && IMG_OK.test(v); }
   function newId(){ return PRE+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
   /* 화면은 동기적으로 src 를 넣는다 — 미리 메모리에 올려 둔다. */
@@ -1373,10 +1450,11 @@
     })();
     return loaded;
   }
+  /* 3.271 — 그림이 아닌 값은 내보내지 않는다(safe = PSSafe.img). 선수가 제 IDP 문서의 profile.photo 에 `x" onerror="…` 를 넣으면
+     코치 화면의 '<img src="'+src+'">' 에서 실행됐다. 아직 안 옮긴 원본 data URL 은 그대로 보여준다. */
   function src(v){
     if(!v) return '';
-    if(isRef(v)) return mem[v.slice(REF.length)]||'';
-    return v;                       /* 아직 안 옮긴 원본 data URL 도 그대로 보여준다 */
+    return safe(isRef(v)?mem[v.slice(REF.length)]:v);
   }
   function put(dataUrl){
     if(!isData(dataUrl)) return Promise.resolve(dataUrl);
@@ -1517,7 +1595,8 @@
     });
   }
 
-  window.PSImg={ ready:ready, src:src, put:put, verify:verify, del:del, migrate:migrate, isRef:isRef, isData:isData, stripIdp:stripIdp };
+  window.PSImg={ ready:ready, src:src, put:put, verify:verify, del:del, migrate:migrate, isRef:isRef, isData:isData, stripIdp:stripIdp, safe:safe };
+  try{ if(window.PSSafe)window.PSSafe.img=safe; }catch(_){}
   /* 화면이 사진을 그리기 전에 메모리에 올려 둔다. 이전은 조용히 넘어간다(실패해도 원본이 남아 있다). */
   try{ ready().then(function(){ return migrate(); }).catch(function(){}); }catch(_){}
 })();
@@ -1793,7 +1872,9 @@
   var idbShadow=null,shadowT=0,shadowSeq=0;
   function mirrorRaw(){ try{ return localStorage.getItem(SCHED_KEY); }catch(_){ return null; } }
   function schedRaw(){ var raw=mirrorRaw(); return (idbShadow&&idbShadow.mirror===raw)?idbShadow.raw:raw; }
-  function readSched(){ var v=schedRaw(); try{ return v?JSON.parse(v):null; }catch(_){ return null; } }
+  /* 3.271 — 읽은 일정은 키 · 시각 · id 칸을 제 모양으로 한 뒤에 내준다(PSSafe.sched — 저장본은 그대로) */
+  function schedSafe(d){ try{ return window.PSSafe&&window.PSSafe.sched?window.PSSafe.sched(d):d; }catch(_){ return d; } }
+  function readSched(){ var v=schedRaw(); try{ return v?schedSafe(JSON.parse(v)):null; }catch(_){ return null; } }
   function shadowShape(raw){ try{ var d=JSON.parse(raw); return !!(d&&typeof d==='object'&&!Array.isArray(d)&&d.weeks&&typeof d.weeks==='object'); }catch(_){ return false; } }
   function shadowRead(){
     var st=window.storage;if(!st||!st.get)return Promise.resolve(null);
@@ -1853,7 +1934,7 @@
     if(raw!==viewMemo.raw)viewMemo={raw:raw,by:{}};
     var key=String(grp||'');
     if(!Object.prototype.hasOwnProperty.call(viewMemo.by,key)){
-      var d=null;try{d=JSON.parse(raw);}catch(_){}
+      var d=null;try{d=schedSafe(JSON.parse(raw));}catch(_){}
       viewMemo.by[key]=(d&&key)?readForData(d,key):d;
     }
     return viewMemo.by[key];
