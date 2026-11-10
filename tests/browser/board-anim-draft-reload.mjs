@@ -27,7 +27,7 @@ const state=f=>f.evaluate(async()=>{
  return {frames:anim.frames.length,changed:boardManualChanged(),touched:_boardUserTouched,dirty:_boardManualDirty,snapshot:window.__psBoardDraft&&window.__psBoardDraft.snapshot(),idb:count(idb),ls:count(ls),ready,animBar:window.__animLive(),playing:animPlaying};
 });
 try{
- for(const [width,mode] of [[1280,'edit'],[1280,'playing'],[1280,'vault-first'],[768,'edit'],[768,'vault-first']]){
+ for(const [width,mode] of [[1280,'edit'],[1280,'playing'],[1280,'vault-first'],[1280,'vault-first-edit'],[768,'edit'],[768,'vault-first'],[393,'vault-first']]){
   if(process.env.PS_CASE&&process.env.PS_CASE!==width+'-'+mode)continue;
   SIZES.animdraft={engine,ctx:{viewport:{width,height:860},deviceScaleFactor:1}};
   const {page,context}=await openApp(fx,'animdraft',{browsers});
@@ -35,12 +35,6 @@ try{
    await page.evaluate(()=>document.querySelector('#appSeg button[data-app="board"]').click());
    let f=await frame(page);
    await page.waitForFunction(()=>PSSync.state().kind==='ok'&&!PSSync.pending().count,null,{timeout:30000});
-   const phone=width<700;
-   if(phone){
-    // 폰 작전판은 보기 전용이다 — 만들 수 없으니 잃을 것도 없다
-    results.push({engine,width,mode,skipped:'phone-read-only',readOnly:await f.evaluate(()=>typeof psPhoneBoardReadOnly==='function'&&psPhoneBoardReadOnly())});
-    continue;
-   }
    await f.evaluate(()=>{if(!window.__animLive())document.getElementById('animToggle').click();});
    await f.waitForFunction(()=>window.__animLive(),null,{timeout:10000});
    await f.evaluate(()=>document.getElementById('animAdd').click());
@@ -52,7 +46,7 @@ try{
    if(mode==='playing'){await f.evaluate(()=>playAnim());await page.waitForTimeout(300);}
    const before=await state(f);
    await page.reload();
-   if(mode==='vault-first'){
+   if(mode.startsWith('vault-first')){
     // 제보자의 길: 다시 열린 뒤 보관함을 먼저 보고(같은 작전판 틀을 빌려 쓴다) 작전판으로 간다
     await page.evaluate(()=>document.querySelector('#appSeg button[data-app="design"]').click());
     f=await frame(page);await page.waitForTimeout(2500);
@@ -60,16 +54,21 @@ try{
    await page.evaluate(()=>document.querySelector('#appSeg button[data-app="board"]').click());
    f=await frame(page);
    let bar=false;try{await f.waitForFunction(()=>!!document.getElementById('boardDraftBar'),null,{timeout:12000});bar=true;}catch(_){}
-   let restored=null;
+   let restored=null,next=null;
+   if(bar&&mode==='vault-first-edit'){
+    // 띠를 두고 그냥 이어서 손대면 그 작업이 새 초안이다 — 옛 초안에 막혀 저장이 실패하면 안 된다
+    await dragToken(page,f,40);await page.waitForTimeout(1600);next=await state(f);
+    results.push({engine,width,mode,bar,next:{ready:next.ready,store:next.snapshot.store,failed:next.snapshot.failed}});
+    assert.equal(next.ready,'ok',width+' '+mode+': 이어서 손댄 작업의 초안 저장');assert.equal(next.snapshot.failed,false);
+    continue;
+   }
    if(bar){await f.evaluate(()=>document.querySelector('#boardDraftBar .bd-keep').click());await page.waitForTimeout(500);restored=await f.evaluate(()=>({frames:anim.frames.length,changed:boardManualChanged()}));}
    const after=await f.evaluate(()=>({frames:anim.frames.length,view:window.__csView}));
-   let next=null;
-   if(!bar&&process.env.PS_REPORT_ONLY){await dragToken(page,f,40);await page.waitForTimeout(1500);next=await state(f);}
-   results.push({engine,width,mode,before:{frames:before.frames,ready:before.ready,idb:before.idb},bar,restored,after,next:next&&{ready:next.ready,idb:next.idb,ls:next.ls,snapshot:next.snapshot}});
+   results.push({engine,width,mode,before:{frames:before.frames,ready:before.ready,idb:before.idb},bar,restored,after,});
    if(!process.env.PS_REPORT_ONLY){
-    assert.equal(before.frames,3,'장면 셋을 만들었다');
+    assert.ok(before.frames>=3,'장면을 만들었다');
     assert.equal(bar,true,width+' '+mode+': 다시 연 뒤 «저장하지 않은 작업» 띠');
-    assert.equal(restored.frames,3,width+' '+mode+': 되살린 장면 수');
+    assert.equal(restored.frames,before.frames,width+' '+mode+': 되살린 장면 수');
    }
   }finally{await context.close();}
  }

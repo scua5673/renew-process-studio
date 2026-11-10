@@ -367,6 +367,21 @@
       if(p&&p.owner===owner&&p.generation===value.generation&&p.seq===value.seq&&r&&p.token===r.token){value.failed=value.failed||p.failed;value.pending=value.pending||p.pending;}
       if(value.unknown){value.blocked=true;value.localDurable=false;}return value;
     };
+    /* 제보 0976735a — «되살리기» 띠는 내 보드를 불러온 그 순간 한 번만 권했다(restoreLiveBoard → boardDraftOffer).
+       그때 같은 틀을 빌려 쓰는 화면(보관함 · 훈련 편집 · 미팅)이 떠 있으면 건너뛰고 다시 묻지 않아, 작업 보드로 돌아와도
+       저장 안 한 작업이 사라진 것처럼 보였다. 읽지 않은 그 초안은 known 에도 없어 그 뒤 새 초안 쓰기가 계속 «충돌»로
+       실패했다(update_deferred flush_fail:fBoard:board_draft_storage). 불러온 기록마다, 작업 보드가 처음 한가해질 때 한 번 더 권한다. */
+    var offered=null;
+    api.offerWhenFree=function(){
+      try{
+        var o=w._boardPrivateOwner,r=w._boardPrivateRecord;
+        if(!o||!w._boardPrivateLoaded||w.__boardRestoring||!w.boardPrivateCurrent(o)||typeof w.boardDraftOffer!=='function'||typeof w.boardDraftBusy!=='function')return false;
+        var tag=JSON.stringify(o)+'|'+(r&&r.token||'');
+        if(offered===tag||w.boardDraftBusy()||w.boardManualChanged())return false;
+        offered=tag;Promise.resolve(w.boardDraftOffer(o,r)).catch(function(){});return true;
+      }catch(_){return false;}
+    };
+    if(typeof w.setInterval==='function')w.setInterval(api.offerWhenFree,1000);
     w.__psBoardDraft=api;
     return api;
   }
