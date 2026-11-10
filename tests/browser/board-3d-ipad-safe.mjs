@@ -50,6 +50,8 @@ try{
   // ④ 데스크톱은 건드리지 않는다 — 창 두 개가 서로의 3D 부팅을 «멈춤»으로 읽던 것(3.033 검토에서 재현)
   {const {page,context}=await openApp(fx,'desktop',{browsers,tilt3d:true});
    const a=await openBoard(page);
+   /* 3.275 부터 같은 기기에는 앱 창 하나(one-window.js) — 두 창이 함께 사는 것은 잠금 API 가 없는 브라우저뿐이라 되돌리기 스위치로 그 경우를 본다 */
+   await page.evaluate(()=>localStorage.setItem('ps_one_window','0'));
    const page2=await context.newPage();await page2.goto(fx.base+'/studio/app.html',{waitUntil:'domcontentloaded'});await page2.waitForTimeout(3000);
    const b=await openBoard(page2);
    const two={a:await a.evaluate(()=>({tilt:document.body.classList.contains('bc-tilt3d'),safe:window.__tiltBootSafe})),b:await b.evaluate(()=>({tilt:document.body.classList.contains('bc-tilt3d'),safe:window.__tiltBootSafe,mark:localStorage.getItem('ps_tilt3d_boot'),stored:localStorage.getItem('ps_board_tilt3d')}))};
