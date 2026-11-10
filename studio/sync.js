@@ -795,7 +795,7 @@ function wipeAccountCache(current){
   return idbSensitiveKeys(false).then(function(keys){
     current();removeLocalVerified(local,current);
     return Promise.all(keys.map(function(k){current();return window.storage.del(k,current);}));
-  }).then(function(){current();return verifyWorkspacePubCleared();}).then(function(){current();return true;});
+  }).then(function(){current();return verifyWorkspacePubCleared();}).then(function(){current();return window.PSAccountHygiene?PSAccountHygiene.sweep(current):1;}).then(function(){current();return true;});
 }
 function legacyCacheInfo(){
   var info={has:false,uid:'',teamish:false},uids={};
@@ -1052,7 +1052,7 @@ function signOut(){
   var s=getSess();if(!s)return Promise.resolve(true);
   var logoutEpoch=signOutEpoch,logoutSwitchEpoch=workspaceSwitchEpochRaw();
   if(signOutPromise&&signOutOwner&&signOutOwner.uid===String(s.uid||'')&&signOutOwner.wid===String(activeWs()||'')&&signOutOwner.epoch===logoutEpoch&&signOutOwner.switchEpoch===logoutSwitchEpoch)return signOutPromise;
-  function finish(){
+  function finish(gated){
     var latest=getSess();
     if(logoutEpoch!==signOutEpoch||!latest||String(latest.uid||'')!==String(s.uid||''))return false;
     signOutEpoch++;
@@ -1062,6 +1062,7 @@ function signOut(){
     setSess(null);
     var cleared=false;try{cleared=localStorage.getItem(SKEY)===null;}catch(_){}
     if(!cleared){setStatus('로그아웃하지 못했습니다 — 기기의 로그인 상태를 지우지 못했어요');return false;}
+    try{if(gated)PSAccountHygiene.clean(s.uid);}catch(_){}   /* 3.272 */
     setStatus('로그아웃됨');return true;
   }
   /* 서버 자료를 아직 열지 못한 오류 화면에서는 플러시할 안전한 편집본 자체가 없다.
@@ -1107,7 +1108,7 @@ function signOut(){
       var labels=Array.isArray(keys)?keys.slice(0,4).map(keyLabel).join('·'):'';
       throw syncIssue('prelogout_pending','prelogout','pending confirmation'+(labels?(': '+labels):''));
     }
-    if(overlay)hideSwitchOverlay();return finish();
+    if(overlay)hideSwitchOverlay();return finish(1);
   }).catch(function(e){
     var info=classifySyncError(e),msg=info.code==='sync_offline'
       ?'로그아웃 취소 — 오프라인이어서 변경 사항을 팀에 확인할 수 없어요'
