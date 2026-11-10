@@ -4982,7 +4982,7 @@ window.psFailAlert=function(lead,e,stage){
       if(me&&me.at&&window.PS_SYNC){
         serverP=fetch(window.PS_SYNC.url+'/rest/v1/rpc/ps_delete_my_data',{method:'POST',
           headers:{'Content-Type':'application/json',apikey:window.PS_SYNC.anonKey,Authorization:'Bearer '+me.at},body:'{}'})
-          .then(function(r){if(!r.ok)throw new Error('server '+r.status);return '서버 삭제 완료'});
+          .then(function(r){if(!r.ok)return r.text().then(function(t){throw window.PSAccountDelete?PSAccountDelete.fail(r.status,t):new Error('server '+r.status);});return '서버 삭제 완료'});
       }
       serverP.then(function(msg){
         var idbP=Promise.resolve();
@@ -5004,7 +5004,7 @@ window.psFailAlert=function(lead,e,stage){
         });
       }).catch(function(e){
         btn.disabled=false;btn.textContent='내 데이터 삭제';
-        psFailAlert('서버에서 지우지 못했어요. 이 기기의 자료도 지우지 않았어요 — 인터넷 연결을 확인하고 다시 시도해 주세요.',e,'data_delete');
+        psFailAlert((e&&e.psText)||'서버에서 지우지 못했어요. 이 기기의 자료도 지우지 않았어요 — 인터넷 연결을 확인하고 다시 시도해 주세요.',e,'data_delete');
       });
       }   /* run() 끝 — 1.847 */
     };
@@ -8052,6 +8052,7 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="popover-dismiss.js"></script><script src="sync.js?v=3.271"></script>
 <script src="team-files.js"></script>
 <script src="sync-stall-report.js"></script>
+<script src="account-delete.js"></script>
 <link rel="stylesheet" href="support.css?v=3.271">
 <link rel="stylesheet" href="support-image.css?v=20261023">
 <script src="support-image.js?v=20261023"></script>
