@@ -1,4 +1,4 @@
-/* PROCESS STUDIO — 한 기기 한 창 (3.275 — PR #770 의 3.261 을 3.272~3.274 위에 다시 올림)
+/* PROCESS STUDIO — 한 기기 한 창 (3.276 — PR #770 의 3.261 을 3.272~3.274 위에 다시 올림)
    사용자 «가용인원 체크가 잘 안 돼 · 바꿨는데 되돌아가»(11/4, 풋볼A 주인 · 맥).
    운영 실측(ps_events): 같은 맥에 3.233 창이 11/2부터 숨은 채 살아 있었다(새 판 적용을 2,374번 미룸 · flush_timeout:fScout).
    11/3 에는 3.241 창 두 개가 함께 떠 있었다. 창들은 기기 저장소를 같이 쓴다. 한 창이 선수 행(sq:)을 쓰는 사이 다른 창이 같은 선수를 바꾸면
@@ -18,7 +18,7 @@
        로그인 시작 표식(ps_oauth_pending_v1)은 이 모듈이 읽지도 지우지도 않는다.
      · 데스크톱 탭 종료 기록(3.271 crash-breadcrumb.js)은 떠나기 직전 __psBootMarkDone 으로 표식 · 잠금을 내려놓는다 — 물러난 창은 «죽은 탭»이 아니다.
      · 보관함에서 만들던 작전판(3.273 board-vault-draft.js)은 저장 확인이 blocked:vault-edit 로 거절돼도 떠날 때의 pagehide 가 기기에 적는다.
-   저장 엔진의 «덮지 않는다» 원칙은 그대로다. 같은 기기에서 동시에 쓰는 창을 없앨 뿐이다. 실제 두 창은 tests/browser/one-window-3275.mjs. */
+   저장 엔진의 «덮지 않는다» 원칙은 그대로다. 같은 기기에서 동시에 쓰는 창을 없앨 뿐이다. 실제 두 창은 tests/browser/one-window-3276.mjs. */
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSOneWindow=api;})(typeof window!=='undefined'?window:null,function(){
   'use strict';
   var LOCK='ps-app-window-v1',PAGE='elsewhere.html',BACK='ps_elsewhere_back',SCREEN='ps_elsewhere_screen',OFF='ps_one_window';

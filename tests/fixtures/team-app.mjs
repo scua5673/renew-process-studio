@@ -126,8 +126,8 @@ export const SIZES={
 };
 
 export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false,guest=false,init=null,learning=false,oneWindow=false}={}){
-  /* 3.275 — 한 기기 한 창(studio/one-window.js)은 시험에서 기본으로 끈다(되돌리기 스위치 localStorage ps_one_window='0' — 운영 기본은 켬, tests/one-window-3275 가 지킨다).
-     같은 문맥에 앱 창을 둘 띄우는 시험이 많아(먼저 연 창이 안내 화면으로 물러난다) 켠 채 보는 시험만 oneWindow:true(tests/browser/one-window-3275).
+  /* 3.276 — 한 기기 한 창(studio/one-window.js)은 시험에서 기본으로 끈다(되돌리기 스위치 localStorage ps_one_window='0' — 운영 기본은 켬, tests/one-window-3276 가 지킨다).
+     같은 문맥에 앱 창을 둘 띄우는 시험이 많아(먼저 연 창이 안내 화면으로 물러난다) 켠 채 보는 시험만 oneWindow:true(tests/browser/one-window-3276).
      PS_ONE_WINDOW=1 이면 어느 시험이든 켠 채로 돈다(로그인 · 로그아웃 · 새 판 적용이 창 잠금과 함께 도는지 손으로 볼 때). */
   if(process.env.PS_ONE_WINDOW==='1')oneWindow=true;
   /* learning:true 면 «학습»을 켠 판(learning-off.js 의 PS_LEARNING_ENABLED=true)으로 연다 — 꺼 둔 학습 코드가 한 줄로 되살아나는지 보는 시험용 */

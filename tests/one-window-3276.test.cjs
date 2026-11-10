@@ -1,7 +1,7 @@
 'use strict';
-/* 3.275(PR #770 의 3.261) — 한 기기 한 창(사용자 «가용인원 체크가 잘 안 돼 · 바꿨는데 되돌아가», 풋볼A 주인 맥에 3.233 창이 11/2부터 숨은 채 살아 있었다).
+/* 3.276(PR #770 의 3.261) — 한 기기 한 창(사용자 «가용인원 체크가 잘 안 돼 · 바꿨는데 되돌아가», 풋볼A 주인 맥에 3.233 창이 11/2부터 숨은 채 살아 있었다).
    셸은 창 잠금 하나를 쥐고, 보이는 새 창이 가져가면 먼저 있던 창은 저장 확인을 잠깐 기다린 뒤 안내 화면으로 물러난다.
-   실제 두 창은 tests/browser/one-window-3275.mjs. */
+   실제 두 창은 tests/browser/one-window-3276.mjs. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const W=require('../studio/one-window.js');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
@@ -146,7 +146,7 @@ test('운영 기본은 켬 · 시험 fixture 만 기본으로 끈다(켠 채 보
   assert.ok(!app.includes('ps_one_window'),'셸은 스위치를 쓰지 않는다');
   for(const f of ['studio/sync.js','studio/storage.js','studio/account-hygiene.js','studio/update-client.js'])assert.ok(!read(f).includes("'ps_one_window'"),f+' 가 스위치를 켜거나 끄지 않는다');
   assert.match(fxs,/oneWindow=false\}=\{\}\)\{/);assert.match(fxs,/if\(!oneWindow\)\{try\{localStorage\.setItem\('ps_one_window','0'\);\}catch\(_\)\{\}\}/);
-  assert.match(read('tests/browser/one-window-3275.mjs'),/openApp\(fx,size,\{browsers,oneWindow:true\}\)/);
+  assert.match(read('tests/browser/one-window-3276.mjs'),/openApp\(fx,size,\{browsers,oneWindow:true\}\)/);
 });
 
 test('배선 — 셸은 동기화보다 먼저 잠금을 쥔다 · 안내 화면은 아무것도 쓰지 않는다 · 서비스워커가 둘 다 담는다',()=>{
@@ -161,5 +161,5 @@ test('배선 — 셸은 동기화보다 먼저 잠금을 쥔다 · 안내 화면
   assert.match(ew,/return \/\^app\\\.html\(\\\?\[\^#\]\*\)\?\$\/\.test\(b\)\?b:'app\.html';/,'돌아갈 곳은 app.html 만');
   assert.match(ew,/if\(gone\|\|document\.hidden\|\|/,'숨은 동안은 저절로 열지 않는다');
   assert.match(sw,/'\/studio\/one-window\.js', '\/studio\/elsewhere\.html'/);
-  assert.ok(read('tests/browser/run-critical.mjs').includes("'one-window-3275'"));
+  assert.ok(read('tests/browser/run-critical.mjs').includes("'one-window-3276'"));
 });

@@ -27,7 +27,7 @@ const suites={
   entry:['admin-logout-handoff','admin-operations','admin-support','autosave-status','root-child-save-state','guidance','ipad-team-navigation','mobile-oauth','oauth-same-document','quiet-entry','phone-start','install-door','board-cold-restore','vault-hidden-previews','permissions-filter','csp-report-only'],   /* 3.085 install-door — 홈 화면 설치 문 · 한 번 뜨는 안내 */
   records:['team-criteria','idp-player-matches','idp-start','idp-weekly-growth','match-lineup','personal-large-upload','roster-history-review','roster-projection','roster-recovery','save-status-layout','storage-commit','team-position-delete','training-context','training-dock-layout','coach-idp-entry','invite-link-export','board-reports-3155','board-rotation-fade','board-feedback-3163','board-page-history','squad-cards','schedule-group-visibility']
 };
-suites.identity.push('update-delivery','update-client-lifecycle','one-window-3275');   /* 3.275 한 기기 한 창 */
+suites.identity.push('update-delivery','update-client-lifecycle','one-window-3276');   /* 3.275 한 기기 한 창 */
 suites.records.push('multipitch-rotation','board-settings-pitches');
 suites.board.push('board-scout-import','board-roster-import');
 suites.idp.push('squad-group-change');
@@ -55,7 +55,6 @@ suites.records.push('sched-memo-autosave');   /* 세션 시트 «메모» · «�
 suites.identity.push('sched-safe-actions');   /* 세션 × 되돌리기 알림 · × 44px · 칸 밖으로 안 잘림 / «지난주 복사»가 잡힌 경기를 안 덮음 / «안 올라간 변경» 줄이 판을 안 밂 */
 suites.entry.push('phone-drill-blank');   /* 폰 보기 전용: 장면이 있는 가로 작전판이 빈 화면(숨은 장면 줄 몫으로 판 높이 0) — 보관함 보기 · 전체화면 · 팀 오늘의 훈련 보기, 360 · 390 · 430 */
 suites.boardperf.push('xss-synced-docs-team');   /* 3.272 — 명단 · 경기 · 게임모델 · 일정 사전 · 공지 · 팀원 이름 · 코치→선수 문서(코치로 한 번 · 선수로 한 번, 크로미움 약 160초) */
-suites.boardperf.push('board-return-clean-3274');   /* 3.274 — 다른 앱에 갔다 작전판으로 돌아오기는 편집이 아니다 */
 suites.boardperf.push('depth-panel-reorder-3273');   /* 3.273 — «선택한 포지션» 목록에서 끌어 순서 · 이름을 누르면 프로필 바로 */
 suites.entry.push('oauth-callback-gate');   /* 3.272 — 남이 만든 #access_token 링크로는 로그인되지 않는다 · 단추로 시작한 로그인 · 초대 링크 · 다른 창 콜백 · 관리자 화면은 그대로 */
 suites.entry.push('logout-direct-pages');   /* 3.272 — 로그아웃한 기기에서 팀 화면을 주소로 바로 열어도 자료를 그리지 않는다(data-lock-guard.js) */
