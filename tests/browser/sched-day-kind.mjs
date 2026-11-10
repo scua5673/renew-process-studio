@@ -17,6 +17,8 @@ try{
   await page.waitForTimeout(600);
   const cell=()=>f.evaluate(di=>{const c=document.querySelectorAll('.wks-day')[di];return {chip:c.querySelector('.wks-kbtn').textContent.trim(),off:c.classList.contains('is-off'),text:c.innerText.replace(/\s+/g,' '),cards:c.querySelectorAll('.wks-card,.wks-ses').length};},DI);
   const before=await cell();assert.equal(before.chip,'훈련 ▾');assert.match(before.text,/17:00/);
+  /* 합성 팀은 «오늘»에 훈련이 없으면 하나 넣는다(team-app.mjs) — 세션 수가 요일마다 달라 화요일에만 통과했다(11/11 수요일 CI 에서 떨어짐). OFF 전 수에서 하나 준 것을 본다. */
+  const sesBefore=await f.evaluate(()=>weekSummaryCount(week).ses);
   // 종류 칩 → 시트(처음엔 첫 조 A팀이 골라져 있다) → OFF
   await f.locator('.wks-day').nth(DI).locator('.wks-kbtn').tap();
   const sheet=f.locator('#sheet');await sheet.locator('#wfSec-kind').waitFor();
@@ -31,7 +33,7 @@ try{
   assert.equal(after.chip,'OFF ▾','종류 칩 '+JSON.stringify(after));assert.equal(after.off,true);assert.match(after.text,/A팀 · OFF/);assert.doesNotMatch(after.text,/17:00/);
   // ② 요약: «계획만» 없음 · 휴식 1
   const sum=await f.evaluate(()=>{const c=weekSummaryCount(week);return {plan:c.plan||0,off:c.off,ses:c.ses,text:document.body.innerText.includes('계획만')};});
-  assert.deepEqual(sum,{plan:0,off:1,ses:1,text:false},'요약 '+JSON.stringify(sum));
+  assert.deepEqual(sum,{plan:0,off:1,ses:sesBefore-1,text:false},'요약 '+JSON.stringify(sum));
   // ③ 주간 PDF(깔끔하게 · 자세히 같은 문서) · 일간 PDF: 그 날은 휴식
   const print=await f.evaluate(di=>{const col=k=>{const d=new DOMParser().parseFromString(__buildPrintDoc(k),'text/html');return [...d.querySelectorAll('.pwb-col')].map(c=>c.textContent.replace(/\s+/g,' '))[di];};
     const sIdx=dayIdx;dayIdx=di;let dayDoc='';try{dayDoc=new DOMParser().parseFromString(__buildPrintDoc('day'),'text/html').querySelector('.pdaybody').textContent.replace(/\s+/g,' ');}finally{dayIdx=sIdx;}
