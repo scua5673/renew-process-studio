@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PROCESS STUDIO</title>
+<!-- 3.275 — 한 기기 한 창(one-window.js). 다른 창이 앱을 가져가면 먼저 있던 창이 이 화면으로 온다.
+     동기화 · 저장을 싣지 않는다 — 이 창은 아무것도 쓰지 않는다. «이 창에서 계속하기»는 app.html 로 돌아가 잠금을 가져온다. -->
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.173">
+<meta name="theme-color" content="#ECEDF0">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/assets/brand/studio-180-v1.png">
+<style>
+  html,body{margin:0;min-height:100%}
+  body{box-sizing:border-box;min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;
+    padding:var(--sp-4) max(var(--sp-4),env(safe-area-inset-right)) var(--sp-4) max(var(--sp-4),env(safe-area-inset-left));
+    background:var(--c-bg);color:var(--c-ink);-webkit-font-smoothing:antialiased;
+    font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif}
+  .ew{box-sizing:border-box;width:100%;max-width:400px;padding:var(--sp-6) var(--sp-5) var(--sp-5);text-align:center;
+    background:var(--c-surface);border:1px solid var(--c-line);border-radius:var(--r-card);box-shadow:var(--sh-1)}
+  .ew-mark{display:block;width:56px;height:56px;margin:0 auto var(--sp-4);border-radius:14px}
+  .ew h1{margin:0 0 var(--sp-2);font-size:var(--t-7);font-weight:700;line-height:1.35;letter-spacing:-.01em}
+  .ew p{margin:0;font-size:var(--t-5);line-height:1.6;color:var(--c-muted);word-break:keep-all}
+  .ew button{display:block;width:100%;min-height:48px;margin-top:var(--sp-5);border:0;border-radius:var(--r-control);cursor:pointer;
+    background:var(--c-ink);color:var(--c-surface);font:inherit;font-size:var(--t-5);font-weight:700}
+  .ew button:focus-visible{outline:2px solid var(--c-act);outline-offset:2px}
+  .ew .ew-note{margin-top:var(--sp-3);font-size:var(--t-3);color:var(--c-faint)}
+</style>
+</head>
+<body>
+<script>try{var t=localStorage.getItem('cs_theme');if(t==='dark'||(t==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)){document.body.classList.add('fmdark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#121417');}}catch(_){}</script>
+<main class="ew" aria-labelledby="ewTitle">
+  <img class="ew-mark" src="/assets/brand/studio-192-v1.png" alt="" width="56" height="56">
+  <h1 id="ewTitle">다른 창에서 이어서 쓰고 있어요</h1>
+  <p>PROCESS STUDIO 는 한 기기에서 창 하나로 저장해요. 마지막에 연 창이 지금 저장하는 창입니다.</p>
+  <button type="button" id="ewHere">이 창에서 계속하기</button>
+  <p class="ew-note">누르면 이 창이 저장하는 창이 되고, 다른 창에 이 안내가 떠요.</p>
+</main>
+<script>
+(function(){
+  'use strict';
+  var LOCK='ps-app-window-v1',gone=false;
+  /* 영어 화면(cs_lang==='en')이면 영어로 — 번역기(i18n.js)를 싣지 않는다(이 창은 아무것도 쓰지 않는다). 같은 글이 i18n/en-common.js 에 있다 */
+  try{if(localStorage.getItem('cs_lang')==='en'){
+    var EN=["You're continuing in another window",'PROCESS STUDIO saves from one window per device. The window you opened last is the one that saves now.','Continue in this window','This window will take over saving, and the other window will show this notice.'];
+    ['#ewTitle','.ew p','#ewHere','.ew-note'].forEach(function(q,i){var el=document.querySelector(q);if(el)el.textContent=EN[i];});
+    document.documentElement.lang='en';
+  }}catch(_){}
+  /* 돌아갈 곳은 app.html(+ 떠날 때의 검색어)만 — 다른 주소로 보내지 않는다 */
+  function back(){var b='';try{b=sessionStorage.getItem('ps_elsewhere_back')||'';}catch(_){}return /^app\.html(\?[^#]*)?$/.test(b)?b:'app.html';}
+  /* 보던 화면을 이어서 연다(app.html psResumeScreen 은 2분 안의 표시만 읽는다 — 누른 시각으로 적는다) */
+  function resume(){
+    try{var s=JSON.parse(sessionStorage.getItem('ps_elsewhere_screen')||'null');
+      if(s&&(s.app||s.team))sessionStorage.setItem('ps_resume_screen',JSON.stringify({app:String(s.app||''),team:String(s.team||''),at:Date.now()}));}catch(_){}
+  }
+  function open(){if(gone)return;gone=true;resume();location.replace(back());}
+  document.getElementById('ewHere').addEventListener('click',open);
+  /* 다른 창이 닫혀 잠금이 비었으면 이 창을 다시 볼 때 저절로 연다. 숨은 동안은 열지 않는다 — 숨은 창이 다시 살아나 겹치지 않게 */
+  function check(){
+    if(gone||document.hidden||!navigator.locks||typeof navigator.locks.query!=='function')return;
+    navigator.locks.query().then(function(s){
+      var busy=[].concat((s&&s.held)||[],(s&&s.pending)||[]).some(function(l){return l&&l.name===LOCK;});
+      if(!busy)open();
+    }).catch(function(){});
+  }
+  document.addEventListener('visibilitychange',check);window.addEventListener('focus',check);
+  setInterval(check,3000);setTimeout(check,600);
+})();
+</script>
+</body>
+</html>
