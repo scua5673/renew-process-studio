@@ -28,3 +28,5 @@ test('세 칸 격자 — 넓은 화면 · 폰 아래 시트 둘 다',()=>{
   assert.match(flat,/§\.ps-sm-mobile \.ps-sm-identity\[data-pos=true\]\{grid-template-columns:minmax\(0,1fr\) \d+px \d+px\}/,'폰 시트는 글자가 16px 이라 더 넓게');
   assert.match(flat,/§ #nameCtl,§ #numCtl,§ #posCtl\{/,'세 칸이 같은 모양');
 });
+
+test('브라우저 시험이 CI 묶음에 있다',()=>{assert.ok(fs.readFileSync(path.join(__dirname,'browser/run-critical.mjs'),'utf8').includes("'board-position-direct-3271'"));assert.ok(fs.existsSync(path.join(__dirname,'browser/board-position-direct-3271.mjs')));});

@@ -73,3 +73,5 @@ test('작전판에 물려 있다 — 본문 함수는 window 속성이라 감싼
   assert.match(t,/win\._animCarryIds/,'새 구간 규칙을 만들지 않는다');
   assert.doesNotMatch(t,/win\.(state|anim|animActive)\b/,'let 전역은 window 속성이 아니다(3.086)');
 });
+
+test('브라우저 시험이 CI 묶음에 있다',()=>{assert.ok(fs.readFileSync(path.join(__dirname,'browser/run-critical.mjs'),'utf8').includes("'board-vision-carry-3271'"));assert.ok(fs.existsSync(path.join(__dirname,'browser/board-vision-carry-3271.mjs')));});
