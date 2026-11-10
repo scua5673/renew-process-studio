@@ -241,6 +241,9 @@
        막대는 한 줄(이름은 줄임표 — 두 줄로 접혀 페이지 띠를 덮었다). */
   var PHONE_W = 600;
   var PHONE_CSS = [
+    /* 3.277 — 폰 보관함 목록 줄(사용자 11/10 스크린샷 «보관함 너무 이상하게 보여»): 옛 «썸네일 줄»(#drillFiles.vlist — 112px 그림 위에 별 · 색 점을 얹고 글을 두 줄로) 규칙이
+       파인더 목록(#vaultFinderCss — 28px 칸 · 그림 없음 · 글 칸 38px)과 겹쳐 별이 흰 알약으로 색 점을 덮고 글이 잘렸다. 폰에선 색 점 · 한 줄 이름 · 한 줄 정보 · 단추. */
+    '@media(max-width:700px){#drillFiles:not(#_):not(#__) .vx-items.vx-list .vcard{grid-template-columns:14px minmax(0,1fr)!important;column-gap:8px!important;min-height:56px!important;padding:8px 10px!important;align-items:center!important}#drillFiles:not(#_):not(#__) .vx-items.vx-list .vcard .vc-badge{position:static!important;width:10px!important;height:10px!important;min-width:0!important;margin:0!important;justify-self:center;box-shadow:none!important}#drillFiles:not(#_):not(#__) .vx-items.vx-list .vcard .vc-pin,#drillFiles:not(#_):not(#__) .vx-items.vx-list .vcard .vc-th{display:none!important}#drillFiles:not(#_):not(#__) .vx-items.vx-list .vcard .vc-bd{padding-left:0!important}#drillFiles:not(#_):not(#__) .vx-items.vx-list .vcard .vc-txt{max-height:none!important}#drillFiles:not(#_):not(#__) .vx-items.vx-list .vcard .vc-nm,#drillFiles:not(#_):not(#__) .vx-items.vx-list .vcard .vc-mt{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;display:block!important}#drillFiles:not(#_):not(#__) .vx-items.vx-list .vcard .vc-mt{margin-top:2px!important}#drillFiles:not(#_):not(#__) .vx-items.vx-list{padding-bottom:84px!important}}',
     'body.ps-vv-phone #vCreateBar{flex-wrap:nowrap!important}',
     'body.ps-vv-phone #vCreateBar #vCreateTitle{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     'body.ps-vv-phone #vCreateBar .vcb-sp,body.ps-vv-phone #vCreateBar #vCreateFlow{display:none!important}',
