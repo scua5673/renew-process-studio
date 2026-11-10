@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
-<script src="storage.js"></script><script src="training-intensity.js"></script>
+<script src="storage.js"></script><script src="schedule-lib-slim.js"></script><script src="training-intensity.js"></script>
 <link rel="stylesheet" href="team-audience.css"><script src="team-audience.js"></script><script src="schedule-audience.js"></script>
 <script src="review-training.js"></script>
 <script src="daily-effort.js"></script>
@@ -8514,7 +8514,7 @@ function dupSession(){
   commitSession();
 }
 const FOCUS2THEME={warm:'피지컬',bp:'빌드업',bpo:'수비',tr_att:'전환',tr_def:'전환',set:'세트피스',phys:'피지컬',tech:'기술·개인',rec:'리커버리'};
-let __psLibCache=[];
+let __psLibCache=[];var psLibSlim=window.psLibSlim||Object;
 let __psLibEpoch=0,__psLibUnlockedLast=null,__psLibForcedLock=false;
 function psLibraryApi(){
   try{if(window.parent&&window.parent!==window&&window.parent.PSSync)return window.parent.PSSync;}catch(_){}
@@ -8555,7 +8555,7 @@ function psLibraryReload(){
   try{
     window.storage.get('cs_drill_lib_v1').then(function(r){
       if(epoch!==__psLibEpoch||!psLibraryDataUnlocked())return;
-      try{var a=r&&r.value?JSON.parse(r.value):[];__psLibCache=Array.isArray(a)?a:[];}catch(_){__psLibCache=[];}
+      try{var a=r&&r.value?JSON.parse(r.value):[];__psLibCache=Array.isArray(a)?psLibSlim(a):[];}catch(_){__psLibCache=[];}
       if(epoch===__psLibEpoch&&psLibraryDataUnlocked())renderDrillShelf();
     }).catch(function(){});
   }catch(_){}
@@ -8574,7 +8574,7 @@ function psLibraryRefresh(){
     if(epoch!==__psLibEpoch||seq!==__psLibRefreshSeq||!psLibraryDataUnlocked())return false;
     var a=null; try{ a=r&&r.value?JSON.parse(r.value):[]; }catch(_){ return false; }
     if(!Array.isArray(a))return false;
-    __psLibCache=a;
+    __psLibCache=psLibSlim(a);
     try{ renderDrillShelf(); }catch(_){}
     return true;
   }).catch(function(){ return false; }).then(function(ok){ if(__psLibPending===p)__psLibPending=null; return ok; });
@@ -8595,7 +8595,7 @@ function libDrills(){
   if(!psLibraryDataUnlocked()){__psLibCache=[];return [];}
   if(__psLibCache.length)return __psLibCache;
   try{const raw=localStorage.getItem('cs_drill_lib_v1');if(!raw)return [];
-    const arr=JSON.parse(raw);if(Array.isArray(arr))__psLibCache=arr;return Array.isArray(arr)?arr:[];}catch(_){return [];}}
+    const arr=JSON.parse(raw);if(Array.isArray(arr))__psLibCache=psLibSlim(arr);return Array.isArray(arr)?arr:[];}catch(_){return [];}}
 function renderDrillShelf(){
   document.querySelectorAll('.drillShelf').forEach(box=>{
     box.innerHTML='';
