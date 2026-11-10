@@ -49,6 +49,7 @@ test('season counts every topic moment once per day — the row cannot say «85�
     ['cs_gamemodel_v1',JSON.stringify({moments:[{key:'dt',name:'공격 → 수비 전환',phases:[]},{key:'at',name:'수비 → 공격 전환',phases:[]},{key:'set',name:'세트피스',phases:[{id:'p_set',name:'코너'}]}]})]]);
   const c=scheduleApi(local);
   c.PSSchedule.hasMatch=()=>false;
+  if(!c.PSSafe)c.PSSafe={sched:d=>d};   /* 3.272 — 화면은 읽은 일정을 PSSafe.sched(storage.js)로 한 번 거른다. 이 시험은 셈만 본다 */
   vm.runInContext(part(SC,'function ckSeasonStats(){','function tgeTrainCount(')+';this.ckSeasonStats=ckSeasonStats;',c);
   const st=c.ckSeasonStats();
   assert.equal(st.byMoment.dt,1,'공-수 전환 하루');

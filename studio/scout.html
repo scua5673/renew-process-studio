@@ -2161,8 +2161,8 @@ html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
     var inpCss='width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:9px 11px;border:1.5px solid rgba(128,140,160,.45);border-radius:10px;background:transparent;color:inherit;outline:none';
     fields.forEach(function(f,i){
       h+='<label style="display:block;margin-bottom:10px"><span style="display:block;font-size:11px;font-weight:700;color:'+(dark?'#9AA4B3':'#6a7078')+';margin-bottom:5px">'+f.label+(f.required?' <i style="color:#d12f38;font-style:normal">*</i>':'')+'</span>';
-      if(f.type==='select'){ h+='<select data-k="'+f.key+'" style="'+inpCss+'">'+(f.options||[]).map(function(o){var v=(typeof o==='string')?o:o.value,l=(typeof o==='string')?o:o.label;return '<option value="'+String(v).replace(/"/g,'&quot;')+'"'+(f.value===v?' selected':'')+'>'+l+'</option>';}).join('')+'</select>'; }
-      else if(f.type==='seg'){ h+='<span data-seg="'+f.key+'" style="display:flex;gap:6px">'+(f.options||[]).map(function(o){var v=(typeof o==='string')?o:o.value,l=(typeof o==='string')?o:o.label;var on=f.value===v;return '<button type="button" data-v="'+String(v).replace(/"/g,'&quot;')+'" style="flex:1;font:inherit;font-size:13px;font-weight:600;padding:9px 0;border-radius:10px;border:1.5px solid '+(on?'#14213D':'rgba(128,140,160,.45)')+';background:'+(on?'#14213D':'transparent')+';color:'+(on?'#fff':'inherit')+';cursor:pointer">'+l+'</button>';}).join('')+'</span>'; }
+      if(f.type==='select'){ h+='<select data-k="'+f.key+'" style="'+inpCss+'">'+(f.options||[]).map(function(o){var v=(typeof o==='string')?o:o.value,l=(typeof o==='string')?o:o.label;return '<option value="'+String(v).replace(/"/g,'&quot;')+'"'+(f.value===v?' selected':'')+'>'+PSSafe.html(l)+'</option>';}).join('')+'</select>'; }
+      else if(f.type==='seg'){ h+='<span data-seg="'+f.key+'" style="display:flex;gap:6px">'+(f.options||[]).map(function(o){var v=(typeof o==='string')?o:o.value,l=(typeof o==='string')?o:o.label;var on=f.value===v;return '<button type="button" data-v="'+String(v).replace(/"/g,'&quot;')+'" style="flex:1;font:inherit;font-size:13px;font-weight:600;padding:9px 0;border-radius:10px;border:1.5px solid '+(on?'#14213D':'rgba(128,140,160,.45)')+';background:'+(on?'#14213D':'transparent')+';color:'+(on?'#fff':'inherit')+';cursor:pointer">'+PSSafe.html(l)+'</button>';}).join('')+'</span>'; }
       else { h+='<input data-k="'+f.key+'" type="'+(f.type||'text')+'" value="'+String(f.value==null?'':f.value).replace(/"/g,'&quot;')+'" placeholder="'+String(f.placeholder||'').replace(/"/g,'&quot;')+'" '+(f.type==='number'?'inputmode="numeric" ':'')+(f.maxlength?'maxlength="'+f.maxlength+'" ':'')+'autocomplete="off" style="'+inpCss+'">'; }
       h+='</label>';
     });
@@ -6355,7 +6355,7 @@ function teamSaveOwner(){
 const teamSaves=window.PSSaveState.createTracker("team",teamSaveOwner);
 const scoutStore={
   /* 3.062 — 일정은 PSSchedule.raw(): 거울이 IDB 정본보다 뒤처진 기기(아이패드 거울 쓰기 실패)에서도 정본을 읽고, 정본 위에 고쳐 쓴다 */
-  get(k){try{const v=(k==="process_coach_v1"&&window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem(k);if(v)return JSON.parse(v);}catch(_){}return mem[k]??null;},
+  get(k){try{const v=(k==="process_coach_v1"&&window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem(k);if(v){const d=JSON.parse(v);return typeof PSSafe!=="undefined"&&PSSafe.doc?PSSafe.doc(k,d):d;}}catch(_){}return mem[k]??null;},
   /* 동기 접수 여부를 돌려준다. 예전에는 실패를 삼키고 mem에만 넣은 뒤 호출부가 "저장됨"이라고
      말해서, 코치는 저장된 줄 알고 앱을 닫았다. mem 사본은 이 탭이 살아 있는 동안의
      임시 대비일 뿐 저장이 아니다. */
@@ -7648,7 +7648,7 @@ function renderCritMatrix(){
           const explicit=p.targets&&p.targets[a.id];
           const core=Array.isArray(p.core)?p.core.indexOf(a.id)>=0:(coreIdsFor(p)||[]).indexOf(a.id)>=0;
           cell.classList.toggle("df",!explicit);
-          cell.innerHTML=(core?'<span class="st">★</span>':'')+tgt(p,a.id);
+          cell.innerHTML=(core?'<span class="st">★</span>':'')+(+tgt(p,a.id)||3);
           cell.title=posAbbr(p.name)+" · "+a.name+" 목표 "+tgt(p,a.id)+(explicit?"":" (기본값)")+" — 탭해서 1~5 변경";
         };
         paint();
@@ -19044,7 +19044,7 @@ function ckSeasonStats(){
      «한 번도 안 했다» 로 읽힌다 — 실제로는 128일 중 76일에 국면 자체를 안 붙인 것이었다(사용자 실데이터). */
   var out={train:0,off:0,match:0,byMoment:{},moments:[],any:false,weeks:0,detail:{},tagged:0};   /* 2.482 — detail[moKey]={last,phases:{id:{n,last}},unspec,days} · 날수 기준(하루 중복 제거) */
   try{
-    var src=JSON.parse(((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem("process_coach_v1"))||"null");
+    var src=PSSafe.sched(JSON.parse(((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem("process_coach_v1"))||"null"));
     var weeks=src&&src.weeks; if(!weeks||typeof weeks!=="object")return out;
     var model=null; try{ model=JSON.parse(localStorage.getItem("cs_gamemodel_v1")||"null"); }catch(_){}
     var pm={},order=[];
@@ -19123,7 +19123,7 @@ function ckSeasonStats(){
 function tgeTrainCount(model){
   var out={byPhase:{},byMoment:{},any:false};
   try{
-    var src=JSON.parse(((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem("process_coach_v1"))||"null");
+    var src=PSSafe.sched(JSON.parse(((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem("process_coach_v1"))||"null"));
     var weeks=src&&src.weeks; if(!weeks||typeof weeks!=="object")return out;
     var cur=0;
     try{ var am=src.anchorMonday?new Date(src.anchorMonday+"T00:00:00"):null;

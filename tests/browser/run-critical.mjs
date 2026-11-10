@@ -45,6 +45,7 @@ suites.storage.push('community-youtube');
 suites.storage.push('roster-pending-quota');
 suites.storage.push('roster-outbox-full');   /* 3.253 — 선수 변경 묶음으로 가득 찬 작은 저장소에서 부팅 · 저장(제보 e6fc5d26) */
 suites.storage.push('xss-synced-docs');   /* 3.271 — 팀원이 동기화로 보낸 IDP · 일정 문서가 코치 화면에서 실행되지 않는다(끼워 넣은 값 탐침) */
+suites.storage.push('xss-synced-docs-team');   /* 3.272 — 명단 · 경기 · 게임모델 · 일정 사전 · 공지 · 팀원 이름 · 코치→선수 문서(코치로 한 번 · 선수로 한 번, 크로미움 약 160초) */
 const PER_TEST_MS={'board-drag-performance':360000};   /* 3.012 — 한 테스트 한도(기본 240초)의 예외. 위 boardperf 참고 */
 /* 3.012 — 엔진과 상관없이 Chromium 을 직접 띄우는 시험(PS_BROWSER_ENGINE 을 읽지 않는다). WebKit 잡에서는 Chrome 경로가 없어 바로 죽거나
    Chromium 을 한 번 더 돌릴 뿐이라, WebKit 잡에서는 건너뛰고 그렇다고 적는다 — Chromium 잡이 그대로 지킨다. */
