@@ -353,7 +353,14 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "훈련 설계":"Training design",
 "훈련 인원":"Players in training",
 "＋ 경기 추가":"＋ Add match",
-"＋ 새 노트":"＋ New note"
+"＋ 새 노트":"＋ New note",
+"이 기기에 남아 있는 자료는 다른 계정의 것입니다. 앱을 열어 계정을 확인한 뒤 이용해 주세요.":"The data left on this device belongs to another account. Open the app and check your account before continuing.",
+"이 기기에 남아 있는 자료는 다른 계정의 것입니다.":"The data left on this device belongs to another account.",
+"앱을 열어 계정을 확인한 뒤 이용해 주세요.":"Open the app and check your account before continuing.",
+"로그아웃된 기기예요. 팀 자료는 로그인한 뒤에 보입니다.":"This device is signed out. Team data appears after you sign in.",
+"로그아웃된 기기예요.":"This device is signed out.",
+"팀 자료는 로그인한 뒤에 보입니다.":"Team data appears after you sign in.",
+"로그인하러 가기":"Go to sign in"
 },{
 "\"{}\" 노트를 지울까요?":"Delete note \"{}\"?",
 "PDF 저장됨 ✓ — {}":"PDF saved ✓ — {}",
