@@ -24,6 +24,8 @@
   };
   // 잠긴 칸 — scout.html 의 «.match-shell.readonly [data-match-field],.match-shell.readonly #matchPrivateNote{pointer-events:none}» 과 같은 칸
   var FIELD = '[data-match-field],#matchPrivateNote';
+  // 한 줄(같은 주인 · 경기 · 칸의 아직 확인 안 된 입력)이 기억하는 «내가 지나온 값» 수 — 처음 값은 늘 남긴다
+  var OWN_MAX = 24;
 
   // 왜 잠겼나 — '' 이면 지금은 고칠 수 있다(화면만 옛 상태)
   function reason(win) {
@@ -150,12 +152,15 @@
       var list = scoreField(el), o = owner(), mid = list ? el.dataset.mscid : cur(), field = list ? (el.dataset.msc === 'them' ? 'scoreThem' : 'scoreUs') : el.getAttribute('data-match-field');
       if (list) v = scoreValue(v);
       var key = JSON.stringify([o, mid, field]), previous = typed[key], m = model(mid), base = previous ? previous.base : value(m, field);
-      if (previous && value(m, field) === previous.v) base = previous.v;
+      // 본문이 받은 글(지연 저장 전)은 기준을 그 글로 옮긴다. 그 사이 회차 끝의 syncMatchFromCloud 가 matchState=null 로
+      // 모델을 저장본으로 되돌리면 값은 «이 줄이 지나온 내 값»(처음 값 · 먼저 친 글) 중 하나다 — 남의 값이 아니므로 다시 넣는다(own).
+      var own = previous ? previous.own : [base];
+      if (previous && value(m, field) === previous.v) { base = previous.v; if (own.indexOf(base) < 0) own = [own[0]].concat(own.slice(1).slice(-(OWN_MAX - 2)), [base]); }
       var changed = previous ? previous.v !== String(v) : value(m, field) !== String(v);
       // A new edit can retry this owner's whole MATCH document. Repainting the
       // same text cannot resume a failed write, and cannot release another owner.
       if (o !== null && changed && owner() === o) Object.keys(typed).forEach(function (k) { if (typed[k].owner === o) typed[k].autoPaused = false; });
-      var e = { key: key, owner: o, mid: mid, field: field, list: list, side: list ? el.dataset.msc : '', v: String(v), base: base, accepted: false, covered: false, autoPaused: !!(previous && !changed && previous.autoPaused) }; typed[key] = e;
+      var e = { key: key, owner: o, mid: mid, field: field, list: list, side: list ? el.dataset.msc : '', v: String(v), base: base, own: own, accepted: false, covered: false, autoPaused: !!(previous && !changed && previous.autoPaused) }; typed[key] = e;
       // The capture listener runs before the native input handler. Observe its
       // acceptance afterwards, without replaying or claiming durable storage.
       Promise.resolve().then(function () {
@@ -169,7 +174,7 @@
       var rows = active(), ok = true;
       rows.forEach(function (e) {
         var m = model(e.mid), current = value(m, e.field);
-        if (!allowed(e) || !m || (!inScope(e) && !(e.accepted && current === e.v)) || (current !== e.base && current !== e.v)) { ok = false; return; }
+        if (!allowed(e) || !m || (!inScope(e) && !(e.accepted && current === e.v)) || (current !== e.base && current !== e.v && e.own.indexOf(current) < 0)) { ok = false; return; }
         if (inScope(e) && (!accepted(e) || e.autoPaused)) {
           try {
             if (e.list) {

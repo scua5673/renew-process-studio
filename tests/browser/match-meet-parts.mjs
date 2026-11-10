@@ -185,6 +185,9 @@ try{
       entry.equal=typeof entry.localRaw==='string'&&entry.localRaw===entry.idbRaw;
       entry.local=hash(entry.localRaw);entry.idb=hash(entry.idbRaw);delete entry.localRaw;delete entry.idbRaw;
     }
+    // CI 는 실패한 시험의 stderr 끝만 보인다(run-critical) — 아래 파일(artifact)을 열지 않아도 까닭이 보이게 한 줄로도 남긴다.
+    if(actual&&!actual.unavailable)console.error('[match-meet-parts] failure state '+JSON.stringify({sameMatch:actual.sameMatch,timer:actual.timer,mpr:actual.mpr,pending:actual.pending,hasPending:actual.hasPending,docPending:actual.docPending,canEdit:actual.canEdit,typed:actual.typed,failed:actual.failed,stale:actual.stale,stage:actual.stage,active:actual.active?.field??null,saved:actual.savedState?.text,
+      fields:Object.fromEntries(['memory','local','dom'].map(where=>[where,Object.fromEntries(Object.entries(actual.fields?.[where]||{}).map(([k,v])=>[k,v==null?null:String(v).length]))]))}));
     const server=fx.db.get(actual.activeWorkspace+'|cs_team_matches_v1');
     const serverDoc=server&&JSON.parse(server.v),serverRow=serverDoc?.matches?.find(m=>m.id===failureMid);
     fs.writeFileSync(path.join(OUT,`match-meet-parts-${engine}-${size}-failure.json`),JSON.stringify({v:1,syntheticOnly:true,engine,size,step:cur,error:{name:e.name,message:e.message},actual,server:{capturedAt:Date.now(),body:hash(server?.v),fields:Object.fromEntries(['oppAttack','oppConclusion','oppSetPlay'].map(k=>[k,serverRow?.[k]??null]))}},null,2)+'\n',{flag:'wx',mode:0o600});

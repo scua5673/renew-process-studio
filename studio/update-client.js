@@ -13,6 +13,8 @@
     if(/^(ws_busy|tx_busy)/.test(code))return '팀·계정 전환을 마친 뒤 자동으로 다시 확인해요.';
     if(/^unsafe:/.test(code))return '입력이나 편집창을 마치면 저장을 확인한 뒤 바꿔요.';
     if(/^flush_timeout:/.test(code))return label+'의 저장 확인이 지연되고 있어요. 해당 화면의 저장 상태를 확인해 주세요.';
+    /* 0976735a — 보관함 · 훈련 편집 중이라 미뤄진 것은 고장이 아니다. «저장을 확인하지 못해»라고 하면 새로고침을 눌러 만들던 것을 잃는다 */
+    if(/^flush_fail:[^:]*:board_draft_storage:blocked:(vault-edit|vault-ctx|editing)$/.test(code))return '보관함에서 편집 중인 자료를 저장하거나 닫으면 새 버전으로 바꿔요. 작성 중인 내용은 유지해요.';
     if(/^flush_fail:/.test(code))return label+'의 기기 저장을 확인하지 못해 업데이트를 보류했어요. 해당 화면에서 저장을 확인한 뒤 다시 시도해 주세요.';
     return '연결을 확인한 뒤 자동으로 다시 시도해요. 작성 중인 내용은 유지해요.';
   }

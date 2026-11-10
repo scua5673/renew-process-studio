@@ -4226,7 +4226,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.167"></script>
-<script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>
+<script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
 <script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script>
 <script>
@@ -18072,7 +18072,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     setTimeout(function(){try{nm.focus();nm.select();}catch(_){}},60);
   }
   /* 훈련·세트피스 편집기도 같은 저장 확인창을 사용한다. */
-  try{window.__vaultOpenSaveSheet=openSaveSheet;}catch(_){}
+  try{window.__vaultOpenSaveSheet=openSaveSheet;}catch(_){}window.__vaultNewBoard=newBoardItem;
   function vaultSaveCurrent(_o){
     _o=_o||{};
     /* 2.907 — 작업 보드에서는 _vaultAutoStatus 줄이 없어 실패가 말없이 사라졌다. 오류가 있을 때만 알린다(로그인 안내·권한 안내는 각자 말한다). */

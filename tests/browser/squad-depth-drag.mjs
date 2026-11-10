@@ -59,8 +59,8 @@ try{for(const size of (process.env.PS_SIZES||'desktop,ipad,phone').split(',')){
   await f.evaluate(()=>document.addEventListener('pointerdown',()=>renderTeam(),{once:true}));
   const name=slot().locator('.pw-depth-name').first();
   if(size==='desktop')await name.click();else await name.tap();
-  await f.locator('#pwDrawer[open]').waitFor();
-  await f.getByRole('button',{name:'선수 상세 닫기'}).click();
+  /* 3.273 — 이름을 누르면 프로필이 바로 열린다 */
+  await f.locator('#plEditModal').waitFor({state:'visible'});await f.locator('#plClose').click();await f.locator('#plEditModal').waitFor({state:'hidden'});
   assert.equal(await f.locator('.pw-depth-ghost').count(),0,'a plain tap still opens details and leaves no drag behind');
   for(const width of size==='phone'?[375,393]:size==='ipad'?[768]:[1280]){
    await page.setViewportSize({width,height:size==='desktop'?900:1024});
