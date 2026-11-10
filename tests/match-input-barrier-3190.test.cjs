@@ -225,3 +225,27 @@ test('another visible list row entered during a native flight resumes without dr
 test('a natively accepted list score can verify after immediate navigation hides its row',async()=>{
   const h=scoreFixture();h.pending(false);const el=h.score('b','us','6');el.getClientRects=()=>[];await turn();await h.w.psFlushPendingReady();assert.equal(h.durable.b.scoreUs,'6');assert.equal(h.w.psHasPending(),false);
 });
+// 회차 끝의 syncMatchFromCloud 는 지연 저장(320ms)이 남아 있어도 matchState=null · renderMatch() 로 모델을 저장본으로 되돌린다.
+// 글자를 둘 이상 친 칸은 기준(base)이 앞 글자로 옮겨 가 있어, 되돌아온 «내 처음 값»을 남의 값으로 보고 영영 대기했다(CI WebKit match-meet-parts «match-new-opp»).
+test('accepted keystrokes survive a model reload to the stored value they started from',async()=>{
+  const h=fixture();h.pending(false);h.input('a');await turn();h.input('ab');await turn();
+  h.models.a.reviewGood='old';   // matchState=null → 저장본(처음 값)으로 다시 읽힘
+  assert.equal(h.w.psHasPending(),true);
+  await h.w.psFlushPendingReady();assert.equal(h.durable.a.reviewGood,'ab');assert.equal(h.w.psHasPending(),false);assert.deepEqual(h.api.typed(),[]);
+});
+test('a reload to this author\'s own earlier accepted keystroke replays the latest text',async()=>{
+  const h=fixture();h.pending(false);h.input('a');await turn();h.input('ab');await turn();h.input('abc');await turn();
+  h.models.a.reviewGood='a';   // 지연 저장이 'a' 까지만 쓴 뒤 다시 읽힘
+  await h.w.psFlushPendingReady();assert.equal(h.durable.a.reviewGood,'abc');assert.deepEqual(h.api.typed(),[]);
+});
+test('a foreign value after accepted keystrokes is still a field conflict',async()=>{
+  const h=fixture();h.pending(false);h.input('a');await turn();h.input('ab');await turn();
+  h.models.a.reviewGood='new foreign field';const queued=h.calls.queue;
+  await assert.rejects(h.w.psFlushPendingReady(),e=>e.psCode==='match_input_pending');
+  assert.equal(h.calls.queue,queued);assert.equal(h.models.a.reviewGood,'new foreign field');assert.equal(h.w.psHasPending(),true);assert.deepEqual(h.api.typed(),['reviewGood']);
+});
+test('a render that reloads the model keeps the focused accepted keystrokes replayable',async()=>{
+  const h=fixture();h.pending(false);h.fire('focusin');h.input('a');await turn();h.input('ab');await turn();
+  h.models.a.reviewGood='old';h.w.renderMatch();assert.equal(h.field.value,'ab','쓰는 중인 칸은 그대로');
+  await h.w.psFlushPendingReady();assert.equal(h.durable.a.reviewGood,'ab');assert.deepEqual(h.api.typed(),[]);
+});

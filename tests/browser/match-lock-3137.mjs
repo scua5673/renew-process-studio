@@ -75,6 +75,28 @@ try{
   await sf.evaluate(()=>document.activeElement.blur());await page.waitForTimeout(400);
   await sf.evaluate(()=>{matchState=null;renderMatch();});
   s=await st();assert.equal(s.val,'abcde','저장된 글로 다시 그린다 '+JSON.stringify(s));
+  // 2c) 회차가 아닌 때 친 글(본문이 받아 320ms 지연 저장만 남은 글) — 그 사이 처음 연 회차가 끝나 syncMatchFromCloud 가 matchState=null · renderMatch() 로 모델을 저장본으로 되돌린다.
+  //     글자를 둘 이상 친 칸은 기준이 앞 글자로 옮겨 가 있어 «남의 값»으로 보고 영영 대기했다(CI WebKit match-meet-parts «match-new-opp» — 저장본에 끝내 안 들어감).
+  //     쓰는 중인 칸(attack) · 다른 칸으로 옮겨 간 뒤의 칸(defense) 둘 다. 한 evaluate 안에서 차례를 못박는다(지연 저장이 끼어들 틈 없음).
+  const lost=await sf.evaluate(TA=>{
+    const type=(el,list)=>{el.focus();for(const v of list){el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));}};
+    const d=document.querySelector('[data-match-field="defense"]'),a=document.querySelector(TA);
+    type(d,['x','xy']);type(a,['abcdef','abcdefg']);
+    const before={timer:!!matchSaveTimer,attack:matchGet().attack,defense:matchGet().defense};
+    matchState=null;renderMatch();
+    return {before,after:{attack:matchGet().attack,defense:matchGet().defense,dom:a.value}};
+  },TA);
+  assert.deepEqual(lost.before,{timer:true,attack:'abcdefg',defense:'xy'},'본문이 받았고 지연 저장이 남았다 '+JSON.stringify(lost));
+  assert.deepEqual(lost.after,{attack:'abcde',defense:'',dom:'abcdefg'},'회차 끝이 모델을 저장본으로 되돌린다(쓰는 칸의 글은 그대로) '+JSON.stringify(lost));
+  const kept=async()=>sf.evaluate(()=>{const id=matchGet().id,row=(JSON.parse(localStorage.getItem('cs_team_matches_v1')||'{}').matches||[]).find(m=>m.id===id)||{};
+    return {attack:row.attack,defense:row.defense,dom:document.querySelector('[data-match-field="defense"]').value,typed:window.__psMatchLockApi.typed(),timer:!!matchSaveTimer,store:scoutStore.hasPending(),pending:psHasPending(),state:document.getElementById('matchSavedState').textContent};});
+  await sf.waitForFunction(()=>{const id=matchGet().id,row=(JSON.parse(localStorage.getItem('cs_team_matches_v1')||'{}').matches||[]).find(m=>m.id===id)||{};
+    return row.attack==='abcdefg'&&row.defense==='xy'&&!window.__psMatchLockApi.typed().length&&!psHasPending();},null,{timeout:8000}).catch(()=>{});
+  s=await kept();
+  assert.deepEqual({attack:s.attack,defense:s.defense,dom:s.dom,typed:s.typed,pending:s.pending},{attack:'abcdefg',defense:'xy',dom:'xy',typed:[],pending:false},'되돌려진 글은 다시 모델에 들어가 저장된다 '+JSON.stringify(s));
+  await sf.evaluate(()=>{const a=document.querySelector('[data-match-field="attack"]');a.focus();a.value='abcde';a.dispatchEvent(new Event('input',{bubbles:true}));const d=document.querySelector('[data-match-field="defense"]');d.focus();d.value='';d.dispatchEvent(new Event('input',{bubbles:true}));d.blur();});
+  await sf.waitForFunction(()=>!psHasPending()&&!window.__psMatchLockApi.typed().length&&matchGet().attack==='abcde'&&!matchGet().defense,null,{timeout:8000});
+  await page.waitForTimeout(400);
 
   // 3) 팀 편집 권한 없음 — 그렇다고 알린다(다시 맞추지 않는다)
   await sf.evaluate(()=>{document.activeElement&&document.activeElement.blur();window.__permissionPrepScope=teamSaveOwner();window.__permissionPrepId=matchGet().id;renderMatch();});
