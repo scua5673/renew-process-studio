@@ -20946,7 +20946,7 @@ try{ var _nb=document.getElementById('dfNew');
     pages.forEach(function(p){ if(!p)return; st(p.snap); try{ if(p.anim&&Array.isArray(p.anim.frames))p.anim.frames.forEach(function(f){ if(f)st(f.snap); }); }catch(_){} });
     try{ window.__lookStampScenes&&window.__lookStampScenes(); }catch(_){} }
 
-  function clearHistory(){try{window.__clearBoardHistory&&window.__clearBoardHistory();}catch(_){}}
+  function clearHistory(k){try{window.__clearBoardHistory&&window.__clearBoardHistory(k);}catch(_){}}
   /* ══ 3.014 · «새 보드» — 작업 보드를 처음부터(오류 제보 88a82188) ══
      사용자 «첫 화면 보드 초기화 하는 게 있으면 좋을 것 같습니다 · 전 작업이 계속 남아 있네요». 작업 보드는 마지막 «보드 저장»을 다시 열어서
      예전 페이지·장면이 늘 남았고, 비우는 길은 보드 설정 › 접힌 «초기화 및 삭제» 속 «기본 배치로 초기화»뿐이었다(그것도 페이지·장면은 남긴다).
@@ -21004,14 +21004,14 @@ try{ var _nb=document.getElementById('dfNew');
     back();
   }
   function add(){ if(_lent)return; ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
-    pages.splice(idx+1,0,{snap:blankSnap(),thumb:"",name:""}); idx++; loadIdx(idx,true);clearHistory();render(); persist(); _toast("페이지 "+pages.length); }
+    pages.splice(idx+1,0,{snap:blankSnap(),thumb:"",name:""}); idx++; loadIdx(idx,true);clearHistory(1);render(); persist(); _toast("페이지 "+pages.length); }
   function dup(i){ ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
     var src=pages[i]; if(!src)return; var _cp={snap:_clone(src.snap),anim:src.anim?_clone(src.anim):null,thumb:src.thumb,name:(src.name||((window.__vaultBook?"시퀀스 ":"페이지 ")+(i+1)))+" 복사"};
     ["grp","when","call","mo","ph"].forEach(function(k){ if(typeof src[k]==="string"&&src[k])_cp[k]=src[k]; });   /* 2.985 · 2.990 국면 자리도 */
-    pages.splice(i+1,0,_cp); idx=i+1; loadIdx(idx,true);clearHistory();render(); persist(); }
+    pages.splice(i+1,0,_cp); idx=i+1; loadIdx(idx,true);clearHistory(1);render(); persist(); }
   function switchTo(i){ if(!pages||i===idx||!pages[i])return; try{ if(window.__bkMap)window.__bkMap.close(); }catch(_){} restoreAnimBeforeCapture();capture();   /* 2.990 — 시퀀스를 고르면 국면 지도는 걷힌다 */ idx=i; loadIdx(idx,true);if(!window.PSBoardPageHistory||!PSBoardPageHistory.keep())clearHistory();render(); persist(); }
   function del(i){ if(!pages||pages.length<=1)return;
-    var go=function(){ if(i!==idx)capture(); pages.splice(i,1); if(idx>i)idx--; else if(idx===i)idx=Math.max(0,i-1); loadIdx(idx,true);clearHistory();render();persist(); _bkTouch(); };
+    var go=function(){ restoreAnimBeforeCapture();capture(); pages.splice(i,1); if(idx>i)idx--; else if(idx===i)idx=Math.max(0,i-1); loadIdx(idx,true);clearHistory(1);render();persist(); _bkTouch(); };
     var _q=window.__vaultBook?("«"+bkSeqName(pages[i],i)+"» 시퀀스를 삭제할까요? 장면도 함께 지워집니다."):"이 페이지를 삭제할까요?";   /* 2.985 */
     if(window.psConfirm)window.psConfirm(_q,go); else if(window.confirm(_q))go(); }
   function rename(i){ if(_lent)return; ensure(); if(!pages||!pages[i])return; var cur=pages[i].name||("페이지 "+(i+1));   /* ensure() — 1페이지(가상 탭)에서도 이름을 바꿀 수 있게 */
