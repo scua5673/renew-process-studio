@@ -31,10 +31,11 @@ try{
   await f.evaluate(async()=>{if(window.psFlushPending)await psFlushPending();});
   assert.deepEqual(await f.evaluate(()=>data.players.filter(p=>p.type!=='target'&&p.posId==='pos_CM').map(p=>p.name)),[before[2],before[0],before[1]]);
   // 이름을 누르면 프로필이 바로
+  await page.waitForTimeout(600);   // 끌기 직후 0.4초는 클릭을 무시한다(잘못 눌림 방지)
   await cands().nth(0).locator('.pw-depth-candidate-name').click();
   await f.locator('#plEditModal').waitFor({state:'visible'});assert.equal(await f.locator('#pwDrawer[open]').count(),0);
   assert.equal(await f.locator('#plName').inputValue(),before[2]);
   await f.locator('#plClose').click();await f.locator('#plEditModal').waitFor({state:'hidden'});
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));assert.deepEqual(errs,[],'no page errors');
   console.log(JSON.stringify({passed:true,engine}));
-}finally{await fx.close?.().catch?.(()=>{});process.exit(process.exitCode||0);}
+}catch(e){console.error(e);process.exitCode=1;}finally{process.exit(process.exitCode||0);}

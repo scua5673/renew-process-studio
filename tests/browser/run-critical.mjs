@@ -40,6 +40,7 @@ suites.board.push('board-page-undo-3271');   /* 3.271 — 페이지 추가 · �
 suites.entry.push('sync-diagnosis','team-mobile','mobile-navigation');
 suites.entry.push('admin-metrics');
 suites.entry.push('player-bulk-touch','phone-consistency');
+suites.entry.push('schedule-fab-phone-3273');   /* 3.273 — 폰 일정의 떠 있는 «＋ 오늘에 추가»: 폭 112 · 글자 양옆 여백(3.218 의 min-width:44px 에 눌렸다) */
 suites.entry.push('note-export');   /* 3.265 — 개인 노트 «내보내기»(PDF로 저장 · 인쇄 · 이미지 저장) */
 suites.entry.push('i18n-english-shell');   /* 영어 모드 셸: 한글이 남지 않음 · 한국어로 되돌리기 · 한국어 사용자는 영어 사전을 받지 않음 · «학습» 없는 다섯 칸 */
 /* 3.272 — storage 묶음이 두 엔진 모두 20분 한도에 닿았다(PR #800 — 시험 합 16.4분 + 준비). 긴 셋(roster-outbox-full · xss-synced-docs · xss-synced-docs-team, 약 4.7분)은
@@ -54,6 +55,7 @@ suites.records.push('sched-memo-autosave');   /* 세션 시트 «메모» · «�
 suites.identity.push('sched-safe-actions');   /* 세션 × 되돌리기 알림 · × 44px · 칸 밖으로 안 잘림 / «지난주 복사»가 잡힌 경기를 안 덮음 / «안 올라간 변경» 줄이 판을 안 밂 */
 suites.entry.push('phone-drill-blank');   /* 폰 보기 전용: 장면이 있는 가로 작전판이 빈 화면(숨은 장면 줄 몫으로 판 높이 0) — 보관함 보기 · 전체화면 · 팀 오늘의 훈련 보기, 360 · 390 · 430 */
 suites.boardperf.push('xss-synced-docs-team');   /* 3.272 — 명단 · 경기 · 게임모델 · 일정 사전 · 공지 · 팀원 이름 · 코치→선수 문서(코치로 한 번 · 선수로 한 번, 크로미움 약 160초) */
+suites.boardperf.push('board-return-clean-3274');   /* 3.274 — 다른 앱에 갔다 작전판으로 돌아오기는 편집이 아니다 */
 suites.boardperf.push('depth-panel-reorder-3273');   /* 3.273 — «선택한 포지션» 목록에서 끌어 순서 · 이름을 누르면 프로필 바로 */
 suites.entry.push('oauth-callback-gate');   /* 3.272 — 남이 만든 #access_token 링크로는 로그인되지 않는다 · 단추로 시작한 로그인 · 초대 링크 · 다른 창 콜백 · 관리자 화면은 그대로 */
 suites.entry.push('logout-direct-pages');   /* 3.272 — 로그아웃한 기기에서 팀 화면을 주소로 바로 열어도 자료를 그리지 않는다(data-lock-guard.js) */
