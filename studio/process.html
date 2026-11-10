@@ -2283,7 +2283,7 @@ window.wksPickSes=function(di,slot,kind){
           :['1','2','3','4','5','6','7','8','9','10'].map(function(x){return {v:x,name:'RPE '+x};});   /* 3.080 — 1~10 모두 */
   var btns=opts.map(function(o){
     if(!o||!o.v)return '';
-    return '<button class="fp'+(String(cur)===String(o.v)?' on':'')+'" onclick="wksSetSes(\''+wkbdEsc(String(o.v)).replace(/'/g,'&#39;')+'\')">'
+    return '<button class="fp'+(String(cur)===String(o.v)?' on':'')+'" onclick="wksSetSes(\''+_fillEsc(o.v)+'\')">'
       +wkbdEsc(o.name)+'</button>'; }).join('');
   var clr=cur?('<button class="fp" onclick="wksSetSes(\'\')">지우기</button>'):'';
   var sheet=document.getElementById('sheet');
@@ -2302,7 +2302,7 @@ window.wksPickSes=function(di,slot,kind){
 var __topicSel=[];
 function wksTopicSheet(di,slot){
   var day=week[di]; if(!day)return;
-  var esc1=function(x){ return wkbdEsc(String(x==null?'':x)).replace(/'/g,'&#39;'); };
+  var esc1=_fillEsc;
   var opts=wksTopicOpts();
   var sel={}; (__topicSel||[]).forEach(function(v){ sel[v]=1; });
   var extra=(__topicSel||[]).filter(function(v){ return !opts.some(function(o){return o.v===v;}); })
@@ -2774,7 +2774,7 @@ function dupWeek(){
 /* ---------- 저장 / 불러오기 (localStorage) ---------- */
 let ddayLabel='';
 /* 사진은 IndexedDB 에 있고 본문에는 참조만 있다. 아직 안 옮긴 원본도 그대로 통과시킨다. */
-function __psImgSrc(v){ try{ return window.PSImg.src(v); }catch(_){ return v||''; } }
+function __psImgSrc(v){ try{ return window.PSImg.src(v); }catch(_){ return ''; } }
 const STORE_KEY='process_coach_v1';
 var seasonPlan={};   /* 3.073 — 시즌 계획(일정 문서 최상위 seasonPlan). var — 부팅 때 loadState 가 먼저 돌 수 있다. 읽고 쓰는 곳은 year-plan.js */
 
@@ -3109,7 +3109,7 @@ function loadState(opt){
     var focus=null;
     if(opt.preserveCursor){try{focus=dateOf(wk*7+((typeof dayIdx==='number')?dayIdx:0));}catch(_){}}
     const raw=(opt.raw!=null)?opt.raw:localStorage.getItem(STORE_KEY); if(!raw) return;
-    const data=JSON.parse(raw);
+    const data=PSSafe.sched(JSON.parse(raw));
     __schedRev=Math.max(0,+data.scheduleRev||0);
     __syncAnchor(data);
     if(data.weeks && typeof data.weeks==='object'){
@@ -3255,7 +3255,7 @@ function renderWeek(){
     const row=document.createElement('div'); row.className='row';
     let cells='';
     if(day.match){
-      cells+=`<div class="matchcell" onclick="openMatch(${di})"><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7l3.5 2.5-1.3 4h-4.4l-1.3-4z"/></svg>경기 · ${day.match.time}</div><div class="o">${day.match.opp||'상대 미정'} ›</div><button class="wkx" aria-label="경기 삭제" onclick="event.stopPropagation();weekDelMatch(${di})">×</button></div>`;
+      cells+=`<div class="matchcell" onclick="openMatch(${di})"><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7l3.5 2.5-1.3 4h-4.4l-1.3-4z"/></svg>경기 · ${wkbdEsc(day.match.time)}</div><div class="o">${wkbdEsc(day.match.opp||'상대 미정')} ›</div><button class="wkx" aria-label="경기 삭제" onclick="event.stopPropagation();weekDelMatch(${di})">×</button></div>`;
       cells+=mxExtraHtml(day,'mxcell');   /* 2.620 */
     }
     (day.trainings||[]).forEach((tr,ti)=>{
@@ -3263,7 +3263,7 @@ function renderWeek(){
       const fitPill=L?`<span class="fitpill" style="color:${loadColor(L)}">${loadShort(L)}</span>`:'';
       const dotc=tr.aims?distColorAx(tr.aims):'';
       const topic = tr.aims
-        ? `<span class="ttopic"><span class="cdot" style="background:${dotc}"></span>${tr.aims}</span>`
+        ? `<span class="ttopic"><span class="cdot" style="background:${dotc}"></span>${wkbdEsc(tr.aims)}</span>`
         : '';
       const chev=`<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>`;
       let body='';
@@ -3271,21 +3271,21 @@ function renderWeek(){
         let blks='';
         tr.blocks.forEach((b,bi)=>{
           const dc=distColorAx(b.theme);
-          const fmt=b.fmt?`<span class="fmt">${b.fmt}</span>`:'';
-          const dur=b.dur?`<span class="bld">${b.dur}′</span>`:'';
-          const desc=b.desc?`<div class="bdesc">${b.desc}</div>`:'';
+          const fmt=b.fmt?`<span class="fmt">${wkbdEsc(b.fmt)}</span>`:'';
+          const dur=b.dur?`<span class="bld">${+b.dur}′</span>`:'';
+          const desc=b.desc?`<div class="bdesc">${wkbdEsc(b.desc)}</div>`:'';
           blks+=`<div class="block" onclick="event.stopPropagation();openSession(${di},${ti},${bi})">
-            <span class="bphase"><b class="bnum">${circNum(bi)}</b> ${PHASE_SHORT[b.phase]||b.phase}</span>
-            <span class="btype"><span class="cdot" style="background:${dc}"></span><span style="flex:1">${b.theme}${fmt}${b.board?' <span class="bbadge">경기</span>':''}${desc}</span>${dur}</span></div>`;
+            <span class="bphase"><b class="bnum">${circNum(bi)}</b> ${wkbdEsc(PHASE_SHORT[b.phase]||b.phase)}</span>
+            <span class="btype"><span class="cdot" style="background:${dc}"></span><span style="flex:1">${wkbdEsc(b.theme)}${fmt}${b.board?' <span class="bbadge">경기</span>':''}${desc}</span>${dur}</span></div>`;
         });
-        const noteLine = tr.note?`<div class="snote">“${tr.note}”</div>`:'';
+        const noteLine = tr.note?`<div class="snote">“${wkbdEsc(tr.note)}”</div>`:'';
         body=`${noteLine}<div class="blocks">${blks}</div>
           <button class="editbtn" onclick="event.stopPropagation();openSession(${di},${ti})">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>편집 · 총 ${trMinutes(tr)}분</button>`;
       }
       cells+=`<div class="train ${tr._open?'open':''}">
         <div class="thead" onclick="openDayHub(wk,${di})">
-          <span class="tlabel">${tr.slot?`<span class="tslot">${wkbdEsc(tr.slot)}</span>`:''}훈련${tr.time?` · ${tr.time}${endTime(tr)&&trMinutes(tr)?'–'+endTime(tr):''}`:''}${tr.players?` · ${tr.players}명`:''}</span>${topic}${fitPill}<button class="wkx" aria-label="훈련 삭제" onclick="event.stopPropagation();weekDelTr(${di},${ti})">×</button></div>
+          <span class="tlabel">${tr.slot?`<span class="tslot">${wkbdEsc(tr.slot)}</span>`:''}훈련${tr.time?` · ${wkbdEsc(tr.time)}${endTime(tr)&&trMinutes(tr)?'–'+endTime(tr):''}`:''}${tr.players?` · ${wkbdEsc(tr.players)}명`:''}</span>${topic}${fitPill}<button class="wkx" aria-label="훈련 삭제" onclick="event.stopPropagation();weekDelTr(${di},${ti})">×</button></div>
         ${body}</div>`;
     });
     /* 2.131 — 미팅도 **어느 세션의 것인지** 보이게(2.129 meetSlot). 슬롯이 없으면 예전 그대로 한 줄 */
@@ -3724,7 +3724,7 @@ function trainPresetsHTML(di,cur){
       formRow='<div class="pksub sm">'+wkbdEsc(__trainFormOpen)+' 구성</div>'
         +'<div class="fmtpick wf-subpick">'+(function(){ var _cus=trainFormCustomSet(__trainFormOpen);
           return _fs.map(function(f){
-            var full=__trainFormOpen+' '+f, e=wkbdEsc(f).replace(/'/g,'&#39;');
+            var full=__trainFormOpen+' '+f, e=_fillEsc(f);
             return '<button class="fp sm'+(cur===full?' on':'')+(_cus[f]?' cus':'')+'" onclick="wkbdTrainForm('+di+',\''+e+'\')">'+wkbdEsc(f)
               +(_cus[f]?('<span class="fp-x" onclick="event.stopPropagation();wkbdTrainFormDel('+di+',\''+e+'\')">×</span>'):'')+'</button>'; }).join(''); })()+'</div>'
         +'<div class="freerow"><input id="schedFormFree" type="text" maxlength="20" placeholder="구성 직접 입력 — 예: 4v4+3" onkeydown="if(event.key===&quot;Enter&quot;&amp;&amp;!event.isComposing&amp;&amp;event.keyCode!==229){event.preventDefault();wkbdTrainFormFree('+di+');}"><button class="freeadd" onclick="wkbdTrainFormFree('+di+')">적용</button></div>';
@@ -3736,9 +3736,9 @@ function trainPresetsHTML(di,cur){
       /* on: 구성 줄이 열려 있으면 그 유형만, 아니면 현재 값이 이 유형(그대로든 구성 조합이든)일 때.
          ⚠ 접두사 매칭이 아니라 사전 판정(_isFormOf) — 'Rondo warmup' 같은 딴 이름을 오인하지 않는다 */
       var _on=__trainFormOpen?(__trainFormOpen===it.name):((cur===it.name)||(_hasF&&_isFormOf(cur,it.name)));
-      if(_hasF)return '<button class="fp'+(_on?' on':'')+'" onclick="wkbdTrainType('+di+',\''+wkbdEsc(it.name).replace(/'/g,'&#39;')+'\')">'
+      if(_hasF)return '<button class="fp'+(_on?' on':'')+'" onclick="wkbdTrainType('+di+',\''+_fillEsc(it.name)+'\')">'
         +wkbdEsc(it.name)+'<i class="fp-car">▾</i>'+(it.n>1?('<em>'+it.n+'</em>'):'')+'</button>';
-      return '<button class="fp'+(_on?' on':'')+'" onclick="wkbdSetPick('+di+',\'train\',\''+wkbdEsc(it.name).replace(/'/g,'&#39;')+'\')">'
+      return '<button class="fp'+(_on?' on':'')+'" onclick="wkbdSetPick('+di+',\'train\',\''+_fillEsc(it.name)+'\')">'
         +wkbdEsc(it.name)+(it.n>1?('<em>'+it.n+'</em>'):'')+'</button>'; }).join('')+'</div>'+formRow;
 }
 function wkbdPick(di,field,ti){ __pickTi=(ti==null?null:ti); __pickDi=di; __pickField=field;
@@ -3823,7 +3823,7 @@ function wkbdPick(di,field,ti){ __pickTi=(ti==null?null:ti); __pickDi=di; __pick
         if(_gs.length){
 _grpRow='<div class="pksub">조</div><div class="fmtpick">'
             + _gs.map(function(g){
-                return '<button class="fp'+(_sel===g?' on':'')+'" onclick="wkbdSetDayGrp('+di+',\''+wkbdEsc(schedGroupLabel(g)).replace(/'/g,'&#39;')+'\')">'+wkbdEsc(schedGroupLabel(g))+'</button>'; }).join('')
+                return '<button class="fp'+(_sel===g?' on':'')+'" onclick="wkbdSetDayGrp('+di+',\''+_fillEsc(schedGroupLabel(g))+'\')">'+wkbdEsc(schedGroupLabel(g))+'</button>'; }).join('')
             /* 2.385 — 팀 공통을 **마지막**에(세션 모달과 같은 순서). 조를 고르는 게 보통이고 팀 공통이 예외다 */
             + '<button class="fp'+(_sel?'':' on')+'" onclick="wkbdSetDayGrp('+di+',\'\')">팀 공통</button>'
             + '</div>';
@@ -3859,7 +3859,7 @@ function wkbdThemeRender(){
       if(_gm&&Array.isArray(_gm.moments)&&_gm.moments.length){
         gmRows=_gm.moments.map(function(m){ var k=m.cat||m.key||'', col=_COL[k]||'#6b727a', nm=m.name||k, subs=(m.phases||[]).map(function(ph){return ph&&ph.name||'';}).filter(Boolean);
           return '<div class="thm-row gm"><span class="thm-dot ro" style="background:'+col+'"></span>'
-            +'<button class="thm-name'+((b.gmMoment===k&&cur===nm)?' on':'')+'" onclick="wkbdSetGm('+__themeDi+',\''+wkbdEsc(k)+'\',\''+wkbdEsc(nm)+'\',\''+col+'\')"><b>'+wkbdEsc(nm)+'</b>'+(subs.length?'<small>'+wkbdEsc(subs.join(' · '))+'</small>':'')+'</button><span class="thm-sp"></span></div>'; }).join('');
+            +'<button class="thm-name'+((b.gmMoment===k&&cur===nm)?' on':'')+'" onclick="wkbdSetGm('+__themeDi+',\''+_fillEsc(k)+'\',\''+_fillEsc(nm)+'\',\''+col+'\')"><b>'+wkbdEsc(nm)+'</b>'+(subs.length?'<small>'+wkbdEsc(subs.join(' · '))+'</small>':'')+'</button><span class="thm-sp"></span></div>'; }).join('');
       } }catch(_){}
     var clr=cur?'<button class="thm-back" onclick="wkbdSetPick('+__themeDi+',\'theme\',\'\')">선택 해제</button>':'';
     sheet.innerHTML='<button class="closex" onclick="closeSheet()">×</button><h3 class="thm-h">'+day.d+'요일 — 주제</h3>'
@@ -4347,7 +4347,7 @@ var __fillPickOpen=false; /* 2.486 — 세션 표의 ➕블록 픽커가 열려 
 var __fillTimeOpen=-1;    /* 2.487 — 시간 입력이 열린 행(실인덱스) */
 var __fillNameOpen=-1;    /* 2.535 — 이름 입력이 열린 행(사용자 "눌러서 바로 수정도 가능하게") */
 var __fillDraft=-1;       /* 2.488 — 구성 서랍이 붙은 방금 쌓은 블록(실인덱스) */   /* 2.391 — __fillNoSes: 세션을 아직 만들지 않은 채 여는 모드(고르고 나서 만든다) */
-function _fillEsc(x){ return wkbdEsc(String(x==null?'':x)).replace(/'/g,'&#39;'); }
+function _fillEsc(x){ return PSSafe.arg(x); }
 function _fillTr(){ if(__fillNoSes)return {grp:__fillGroups}; var d=week[__fillDi]; if(!d)return null;
   return ((d.trainings)||[]).filter(function(t){ return String(((t&&t.slot)||''))===__fillSlot; })[0]||null; }
 function _fillList(b,arrK,slotK){
@@ -6101,7 +6101,7 @@ function renderDay(){
   document.getElementById('dayLabel').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 (${day.d})${day.md?' · '+day.md:''}${(typeof __schedGrp==='string'&&__schedGrp)?' · '+schedGroupLabel(__schedGrp):''}`;
   const wrap=document.getElementById('dayView'); let html='';
   if(day.match){
-    html+=`<div class="matchcell" ${firstShown?`onclick="openMatch(${dayIdx})"`:(shownExtra>=0?`onclick="wkbdGoMatchX('${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}',${dayIdx},${shownExtra})"`:'')}><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7l3.5 2.5-1.3 4h-4.4l-1.3-4z"/></svg>경기 · ${day.match.time}</div><div class="o">${day.match.opp||'상대 미정'} ›</div>${(()=>{ const pl=(typeof wkbdMatchPlace!=='function')?'':wkbdMatchPlace(dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'),day.match.opp||''); return pl?`<div class="s">${wkbdEsc(pl)}</div>`:''; })()}</div>`;   /* 2.912 — 경기장 */
+    html+=`<div class="matchcell" ${firstShown?`onclick="openMatch(${dayIdx})"`:(shownExtra>=0?`onclick="wkbdGoMatchX('${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}',${dayIdx},${shownExtra})"`:'')}><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7l3.5 2.5-1.3 4h-4.4l-1.3-4z"/></svg>경기 · ${wkbdEsc(day.match.time)}</div><div class="o">${wkbdEsc(day.match.opp||'상대 미정')} ›</div>${(()=>{ const pl=(typeof wkbdMatchPlace!=='function')?'':wkbdMatchPlace(dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'),day.match.opp||''); return pl?`<div class="s">${wkbdEsc(pl)}</div>`:''; })()}</div>`;   /* 2.912 — 경기장 */
     html+=mxExtraHtml(day,'mxcell');   /* 2.620 */
   }
   const bd=dayBoard(day);
@@ -6113,15 +6113,15 @@ function renderDay(){
     return;
   }
   const mkTx=(lab,f,val,ti)=>{ const tid=(ti==null?'':` data-ti="${ti}"`); return `<div class="dayrow"><div class="drlab">${lab}</div><div class="wkbd-tx drtx" contenteditable="true" data-di="${dayIdx}" data-f="${f}"${tid} data-ph="${BOARD_PH[f]||''}" onblur="wkbdSave(this)">${wkbdEsc(val||'')}</div></div>`; };
-  const mkPick=(lab,f,val)=>{ const c=bColor(f,val); const action=f==='sched'&&__schedGrp?`wksChooseSession(${dayIdx})`:`wkbdPick(${dayIdx},'${f}')`; const cell=val?`<button class="drpick" style="border-color:${c};color:${c}" onclick="${action}"><span class="cdot" style="background:${c}"></span>${val}</button>`:`<button class="drpick empty" onclick="${action}">＋</button>`; return `<div class="dayrow"><div class="drlab">${lab}</div><div class="drval">${cell}</div></div>`; };
-  const mkPickTrain=(lab,val,ti)=>{ const c=bColor('train',val); const cell=val?`<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdPick(${dayIdx},'train',${ti})"><b>${val}</b></button>`:`<button class="drpick empty" onclick="wkbdPick(${dayIdx},'train',${ti})">＋</button>`; return `<div class="dayrow"><div class="drlab">${lab}</div><div class="drval">${cell}</div></div>`; };
+  const mkPick=(lab,f,val)=>{ const c=bColor(f,val); const action=f==='sched'&&__schedGrp?`wksChooseSession(${dayIdx})`:`wkbdPick(${dayIdx},'${f}')`; const cell=val?`<button class="drpick" style="border-color:${c};color:${c}" onclick="${action}"><span class="cdot" style="background:${c}"></span>${wkbdEsc(val)}</button>`:`<button class="drpick empty" onclick="${action}">＋</button>`; return `<div class="dayrow"><div class="drlab">${lab}</div><div class="drval">${cell}</div></div>`; };
+  const mkPickTrain=(lab,val,ti)=>{ const c=bColor('train',val); const cell=val?`<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdPick(${dayIdx},'train',${ti})"><b>${wkbdEsc(val)}</b></button>`:`<button class="drpick empty" onclick="wkbdPick(${dayIdx},'train',${ti})">＋</button>`; return `<div class="dayrow"><div class="drlab">${lab}</div><div class="drval">${cell}</div></div>`; };
   if(window.PSReviewSchedule)html+=PSReviewSchedule.dayHTML(day,dayIdx);
   html+=mkPick('일정','sched',bd.sched);
   html+=mkPick('주제','theme',bd.theme);
-  { let mch=(bd.meets||[]).map((mx,mi)=>{ const md=(bd.meetsData&&bd.meetsData[mi])||null; const c=bColor('meet',mx); const th=(md&&md.thumb)?`<span class="dthumb">${PSSafe.svg(md.thumb)}</span>`:''; const mn=(md&&md.minutes)?`<span class="dmin">${md.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdMeetTap(${dayIdx},${mi})">${th}<b style="flex:1;text-align:left">${mx}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">미팅</div><div class="drval drtrains">${mch}<button class="drpick empty" onclick="wkbdAddMeet(${dayIdx})">＋ 미팅 추가</button></div></div>`; }
+  { let mch=(bd.meets||[]).map((mx,mi)=>{ const md=(bd.meetsData&&bd.meetsData[mi])||null; const c=bColor('meet',mx); const th=(md&&md.thumb)?`<span class="dthumb">${PSSafe.svg(md.thumb)}</span>`:''; const mn=(md&&md.minutes)?`<span class="dmin">${+md.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdMeetTap(${dayIdx},${mi})">${th}<b style="flex:1;text-align:left">${wkbdEsc(mx)}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">미팅</div><div class="drval drtrains">${mch}<button class="drpick empty" onclick="wkbdAddMeet(${dayIdx})">＋ 미팅 추가</button></div></div>`; }
   html+=mkPick('강도','load',bd.load);
-  { let wch=(bd.warms||[]).map((wx,wi)=>{ const wd=(bd.warmsData&&bd.warmsData[wi])||null; const c=bColor('warm',wx); const th=(wd&&wd.thumb)?`<span class="dthumb">${PSSafe.svg(wd.thumb)}</span>`:''; const mn=(wd&&wd.minutes)?`<span class="dmin">${wd.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdWarmTap(${dayIdx},${wi})">${th}<b style="flex:1;text-align:left">${wx}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">웜업</div><div class="drval drtrains">${wch}<button class="drpick empty" onclick="wkbdAddWarm(${dayIdx})">＋ 웜업 추가</button></div></div>`; }
-  { let tch=(bd.trains||[]).map((tx,ti)=>{ const td=(bd.trainData&&bd.trainData[ti])||null; const c=bColor('train',tx); const th=(td&&td.thumb)?`<span class="dthumb">${PSSafe.svg(td.thumb)}</span>`:''; const mn=(td&&td.minutes)?`<span class="dmin">${td.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdTrainTap(${dayIdx},${ti})">${th}<b style="flex:1;text-align:left">${tx}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">훈련</div><div class="drval drtrains">${tch}<button class="drpick empty" onclick="wkbdAddTrain(${dayIdx})">＋ 훈련 추가</button></div></div>`; }
+  { let wch=(bd.warms||[]).map((wx,wi)=>{ const wd=(bd.warmsData&&bd.warmsData[wi])||null; const c=bColor('warm',wx); const th=(wd&&wd.thumb)?`<span class="dthumb">${PSSafe.svg(wd.thumb)}</span>`:''; const mn=(wd&&wd.minutes)?`<span class="dmin">${+wd.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdWarmTap(${dayIdx},${wi})">${th}<b style="flex:1;text-align:left">${wkbdEsc(wx)}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">웜업</div><div class="drval drtrains">${wch}<button class="drpick empty" onclick="wkbdAddWarm(${dayIdx})">＋ 웜업 추가</button></div></div>`; }
+  { let tch=(bd.trains||[]).map((tx,ti)=>{ const td=(bd.trainData&&bd.trainData[ti])||null; const c=bColor('train',tx); const th=(td&&td.thumb)?`<span class="dthumb">${PSSafe.svg(td.thumb)}</span>`:''; const mn=(td&&td.minutes)?`<span class="dmin">${+td.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdTrainTap(${dayIdx},${ti})">${th}<b style="flex:1;text-align:left">${wkbdEsc(tx)}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">훈련</div><div class="drval drtrains">${tch}<button class="drpick empty" onclick="wkbdAddTrain(${dayIdx})">＋ 훈련 추가</button></div></div>`; }
   wrap.innerHTML=html;
 }
 /* ---------- 세션 주제·부하 (세션 편집창 안에서 사용) ---------- */
@@ -7746,9 +7746,9 @@ function pSessionBlock(tr,day){
   let blk='';
   tr.blocks.forEach((b,bi)=>{
     const col=distColorAx(b.theme);
-    const dd=b.dur?` <span class="pld">${b.dur}′</span>`:'';
-    const ds=b.desc?` <span style="color:#8A9099">— ${b.desc}</span>`:'';
-    blk+=`<div class="pblk"><span class="pph">${circNum(bi)} ${PHASE_SHORT[b.phase]||b.phase}</span><span class="pdot" style="background:${col}"></span><span class="pth">${b.theme}${b.fmt?` <em>${b.fmt}</em>`:''}${ds}</span>${dd}</div>`;
+    const dd=b.dur?` <span class="pld">${+b.dur}′</span>`:'';
+    const ds=b.desc?` <span style="color:#8A9099">— ${pdfEsc(b.desc)}</span>`:'';
+    blk+=`<div class="pblk"><span class="pph">${circNum(bi)} ${pdfEsc(PHASE_SHORT[b.phase]||b.phase)}</span><span class="pdot" style="background:${col}"></span><span class="pth">${pdfEsc(b.theme)}${b.fmt?` <em>${pdfEsc(b.fmt)}</em>`:''}${ds}</span>${dd}</div>`;
     const _co=pdfCoachOf(b.libId||b.fromLib||'',b.theme); if(_co)blk+=`<div class="pblk pco">☞ ${pdfEsc(_co)}</div>`;   /* 2.586 */
   });
   if(!(tr.blocks||[]).length&&day&&!__pBlank)blk+=pBoardItems(day,tr.slot);   /* 2.908 */
@@ -7763,7 +7763,7 @@ function pSessionBlock(tr,day){
 }
 function pDayBody(day,ruled){
   let inner='';
-  if(day.match) inner+=`<div class="pmatch">경기 · ${day.match.time}${day.match.opp?' · '+day.match.opp:''}</div>`+mxExtraHtml(day,'pmatch mx');   /* 2.620 */
+  if(day.match) inner+=`<div class="pmatch">경기 · ${pdfEsc(day.match.time)}${day.match.opp?' · '+pdfEsc(day.match.opp):''}</div>`+mxExtraHtml(day,'pmatch mx');   /* 2.620 */
   const pmeet=__pBlank?'':(''+(day.meeting||'')).trim();
   if(pmeet) inner+=`<div class="pmeet">미팅 · ${pmeet.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>`;
   (day.trainings||[]).forEach(tr=>{ inner+=pSessionBlock(tr,day); });
@@ -8222,11 +8222,11 @@ function blockCard(b, bi){
   const dotc = distColorAx(b.theme);
   const sub  = (b.theme && b.theme!==big) ? b.theme : '';
   const meta = [sub, b.fmt].filter(Boolean).join(' · ');
-  const durTag = b.dur?`<span class="bdur">${b.dur}′</span>`:'';
+  const durTag = b.dur?`<span class="bdur">${+b.dur}′</span>`:'';
   const chev = `<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>`;
   const summary = `<div class="bsum" onclick="toggleBlock(${bi})">
-      <span class="bp"><b class="bnum">${circNum(bi)}</b> ${PHASE_SHORT[b.phase]||b.phase}</span>${b.exp&&EXP_BY[b.exp]?`<span class="beb${b.exp==='act'?' act':''}" title="${EXP_BY[b.exp].n} — ${EXP_BY[b.exp].h}">${EXP_BY[b.exp].s}</span>`:''}
-      <span class="bt"><span class="cdot" style="background:${dotc}"></span>${big}${meta?` <em>· ${meta}</em>`:''}</span>
+      <span class="bp"><b class="bnum">${circNum(bi)}</b> ${wkbdEsc(PHASE_SHORT[b.phase]||b.phase)}</span>${b.exp&&EXP_BY[b.exp]?`<span class="beb${b.exp==='act'?' act':''}" title="${EXP_BY[b.exp].n} — ${EXP_BY[b.exp].h}">${EXP_BY[b.exp].s}</span>`:''}
+      <span class="bt"><span class="cdot" style="background:${dotc}"></span>${wkbdEsc(big)}${meta?` <em>· ${wkbdEsc(meta)}</em>`:''}</span>
       ${b.of&&window.PS_LM&&PS_LM.cat(b.of)?`<span class="bof" title="학습모델 ${PS_LM.label(b.of)}">${b.of}</span>`:''}${durTag}${chev}
       <button class="brem" onclick="event.stopPropagation();sbRemove(${bi})" aria-label="빼기" title="빼기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12" style="display:block;pointer-events:none" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>`;
@@ -8754,7 +8754,7 @@ function renderTemplateSheet(){
     return;
   }
   if(!__tplSel || !myTemplates.some(t=>t.id===__tplSel)) __tplSel=myTemplates[0].id;
-  const chips=myTemplates.map(t=>`<button class="fp ${__tplSel===t.id?'on':''}" onclick="setTplSel('${t.id}')">${t.name}<span class="tpldel" onclick="event.stopPropagation();delTpl('${t.id}')">✕</span></button>`).join('');
+  const chips=myTemplates.map(t=>`<button class="fp ${__tplSel===t.id?'on':''}" onclick="setTplSel('${_fillEsc(t.id)}')">${wkbdEsc(t.name)}<span class="tpldel" onclick="event.stopPropagation();delTpl('${_fillEsc(t.id)}')">✕</span></button>`).join('');
   sheet.innerHTML=`<button class="closex" onclick="closeSheet()">×</button>
     <h3>내 구성 불러오기</h3>
     <div class="sub">저장해 둔 구성을 이 주에 불러와요. 불러온 뒤 자유롭게 고치세요 — 정해진 답은 없어요.</div>
@@ -10240,7 +10240,7 @@ window.quickFillWeek=function(){
               var who=hasV9?((String(h.v).match(/"editedBy":"([^"]{1,20})"/)||[])[1]||''):String(h.edited_by||'');
               var row=document.createElement('button');row.type='button';
               row.style.cssText='display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:none;padding:11px 13px;margin-top:8px;cursor:pointer;color:inherit';
-              row.innerHTML='<b style="font-size:13px;flex:0 0 auto">'+lbl+'</b><span style="font-weight:var(--fw-body);font-size:var(--fs-sub);line-height:1;color:var(--txt-dim,#8a9099)">경기 '+nMatch+' · 기준 '+anch.slice(5).replace('-','/')+(who?' · '+who:'')+'</span><span style="margin-left:auto;font-weight:var(--fw-body);font-size:var(--fs-sub);line-height:1;color:var(--acc,var(--ps-navy,#14213D))">되돌리기</span>';
+              row.innerHTML='<b style="font-size:13px;flex:0 0 auto">'+lbl+'</b><span style="font-weight:var(--fw-body);font-size:var(--fs-sub);line-height:1;color:var(--txt-dim,#8a9099)">경기 '+nMatch+' · 기준 '+(/^\d{4}-\d\d-\d\d$/.test(anch)?anch.slice(5).replace('-','/'):'')+(who?' · '+wkbdEsc(who):'')+'</span><span style="margin-left:auto;font-weight:var(--fw-body);font-size:var(--fs-sub);line-height:1;color:var(--acc,var(--ps-navy,#14213D))">되돌리기</span>';
               row.onclick=function(){
                 if(!confirm(lbl+' 시점으로 일정을 되돌릴까요?\n지금 일정도 서버 기록에 남아 다시 되돌릴 수 있어요.'))return;
                 row.disabled=true;
