@@ -171,8 +171,19 @@ try{
   assert.deepEqual(fill,["O'Neil 조",JSQ,'A팀'],'a quoted name reaches the handler as the same text');
   await probe(page,'fill sheet');
 
+  step('other-team-screens');
+  /* 같은 일정 · 선수 문서를 읽는 다른 팀 화면(오늘 · 선수단 · 경기 · 가용인원 …)도 한 번씩 연다 */
+  const keys=await page.evaluate(()=>[...document.querySelectorAll('#teamNav [data-team-key]')].map(b=>b.dataset.teamKey));
+  const visited=[];
+  for(const k of keys){
+    const ok=await page.evaluate(k=>{const b=[...document.querySelectorAll('#teamNav [data-team-key="'+k+'"]')].find(b=>b.offsetParent);if(!b)return false;b.click();return true;},k);
+    if(!ok)continue;visited.push(k);
+    await page.waitForTimeout(1800);await probe(page,'team screen '+k);
+  }
+  assert.ok(visited.length>=3,'team screens visited: '+visited);
+
   const dialogs=logs.filter(l=>l.type==='dialog');assert.deepEqual(dialogs,[],'no dialog');
   const pe=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));assert.deepEqual(pe,[],JSON.stringify(pe.slice(0,3)));
-  console.log(JSON.stringify({engine,test:'xss-synced-docs',ok:true,idpLayers:layersOf,sheets:opened}));
+  console.log(JSON.stringify({engine,test:'xss-synced-docs',ok:true,idpLayers:layersOf,sheets:opened,screens:visited}));
 }catch(e){console.error('[xss-synced-docs] step='+cur);throw e;}
 finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close?.();}
