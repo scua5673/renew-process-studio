@@ -96,7 +96,7 @@ async function bounded(p,label,ms=30000){let timer;try{return await Promise.race
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
 let context,page,profiler;
 try{
-  context=await browser.newContext({viewport:{width:1280,height:900},serviceWorkers:'block',timezoneId:'Asia/Seoul'});
+  context=await browser.newContext({locale:'ko-KR',viewport:{width:1280,height:900},serviceWorkers:'block',timezoneId:'Asia/Seoul'});
   await context.addInitScript(({A,WA,teams,base})=>{
     if(location.origin!==base)return;
     if(localStorage.getItem('switch_fixture_seeded'))return;

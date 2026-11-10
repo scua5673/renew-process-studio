@@ -61,7 +61,7 @@ let browser;const results=[];
 try{
   browser=await chromium.launch({headless:true,...(process.env.PS_CHROME_PATH?{executablePath:process.env.PS_CHROME_PATH}:{})});
   for(const spec of [{name:'375-phone',width:375,height:812,touch:true,mobile:true},{name:'768-landscape',width:768,height:600,touch:true},{name:'1280-desktop',width:1280,height:900}]){
-    const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,isMobile:!!spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul',reducedMotion:'reduce'}),errors=[];
+    const context=await browser.newContext({locale:'ko-KR',viewport:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,isMobile:!!spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul',reducedMotion:'reduce'}),errors=[];
     await context.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort('blockedbyclient'));
     await context.routeWebSocket('**/*',socket=>socket.close());
     context.on('page',page=>{page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(20000);});

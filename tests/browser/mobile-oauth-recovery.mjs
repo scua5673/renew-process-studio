@@ -50,7 +50,7 @@ try{
   // Keep it an explicit diagnostic opt-in: PS_TEST_WIDTHS=820. The supported
   // default matrix is Chromium 393/507/820 and WebKit 393/507 (15 provider taps).
   for(const spec of [{width:393,height:852,device:'phone'},{width:507,height:900,device:'phone'},{width:820,height:1180,device:'ipad'}].filter(s=>process.env.PS_TEST_WIDTHS?process.env.PS_TEST_WIDTHS.split(',').includes(String(s.width)):!(engine==='webkit'&&s.device==='ipad'))){
-    const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},screen:{width:spec.width,height:spec.height},isMobile:true,hasTouch:true,deviceScaleFactor:2,userAgent:spec.device==='ipad'?padUA:phoneUA,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
+    const context=await browser.newContext({locale:'ko-KR',viewport:{width:spec.width,height:spec.height},screen:{width:spec.width,height:spec.height},isMobile:true,hasTouch:true,deviceScaleFactor:2,userAgent:spec.device==='ipad'?padUA:phoneUA,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
     await context.addInitScript(({base})=>{
       if(location.origin!==base||window!==window.top)return;
       sessionStorage.removeItem('ps_exp_dismiss');

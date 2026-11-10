@@ -16,7 +16,7 @@ const TODAY=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric
 const fixture={v:1,profile:{name:'가상 복구 선수',pos:'CM'},selfEval:{levels:{}},trainings:[],log:{[TODAY]:{memo:'처음 기록'}},
   vision:{statement:'함께 기회를 만드는 선수',reason:'동료를 돕기 위해',behaviors:[{id:'behavior-stable',text:'받기 전에 주변을 확인한다'}],focusId:'behavior-stable',revision:'vision-original',updatedAt:100,history:[]}};
 async function context(browser,spec,locked=false){
-  const c=await browser.newContext({viewport:{width:spec.width,height:spec.height},isMobile:!!spec.mobile,hasTouch:!!spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
+  const c=await browser.newContext({locale:'ko-KR',viewport:{width:spec.width,height:spec.height},isMobile:!!spec.mobile,hasTouch:!!spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
   await c.route('**/*',r=>new URL(r.request().url()).origin===base?r.continue():r.abort('blockedbyclient'));
   await c.addInitScript(({uid,wid,key,fixture,locked})=>{
     if(!localStorage.getItem('fixture-recovery-seeded')){

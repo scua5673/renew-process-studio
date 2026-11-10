@@ -25,7 +25,7 @@ const wait=page=>page.waitForTimeout(250);
 try{
  browser=await playwright[engine].launch({headless:true,...(engine==='chromium'&&process.env.PS_CHROME_PATH?{executablePath:process.env.PS_CHROME_PATH}:{})});
  for(const spec of [{name:'desktop',width:1280,height:900},{name:'tablet-touch',width:1024,height:768,touch:true},{name:'phone',width:393,height:852,touch:true,mobile:true}]){
-  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,isMobile:!!spec.mobile,...(spec.touch?{userAgent:spec.mobile?'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1':'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'}:{}),deviceScaleFactor:1,serviceWorkers:'block'});
+  const context=await browser.newContext({locale:'ko-KR',viewport:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,isMobile:!!spec.mobile,...(spec.touch?{userAgent:spec.mobile?'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1':'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'}:{}),deviceScaleFactor:1,serviceWorkers:'block'});
   await context.route('**/*',r=>new URL(r.request().url()).origin===base?r.continue():r.abort('blockedbyclient'));
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push({message:e.message,stack:e.stack}));
   await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
