@@ -1935,7 +1935,7 @@
     var key=String(grp||'');
     if(!Object.prototype.hasOwnProperty.call(viewMemo.by,key)){
       var d=null;try{d=schedSafe(JSON.parse(raw));}catch(_){}
-      viewMemo.by[key]=(d&&key)?readForData(d,key):d;
+      viewMemo.by[key]=(d&&key)?readForData(d,key):effectiveDoc(d);   /* 전체 보기의 읽기 전용 사본은 하루의 종류를 한 규칙으로 읽는다(dayKind) */
     }
     return viewMemo.by[key];
   }
@@ -2107,6 +2107,71 @@
     }
     return o;
   }
+  /* ── 하루의 종류는 한 곳에서 읽는다(코치로 일정을 돌려 보다 찾음) ──
+     한 팀(A팀)을 OFF 로 돌린 날(day.groupKinds — 2.876)은 하루의 `board.sched` 가 «훈련» 그대로 남는다. 일정 칸은 «A팀 · OFF»인데 종류 칩은 «훈련 ▾»,
+     요약은 «계획만 1일», 팀 «오늘»은 숨은 A팀 세션을 «팀 훈련 17:00», 주간 PDF 는 «훈련 · 세부 미정»이라 말했다 — 읽는 곳마다 잣대가 달랐다.
+     저장본은 고치지 않는다(조별 OFF 는 제 기능이다). 읽을 때 한 규칙으로:
+     · 경기 › 하루 OFF(day.off · sched 'OFF') › 열리는 세션(조가 모두 OFF 인 세션은 안 열린다) › «훈련»으로 정한 조 › 주인 있는 보드 칩 = 훈련.
+     · 그 어느 것도 없는데 OFF 로 돌린 조가 있으면 그 날은 OFF — 빈 «훈련» 표시(지운 세션이 남긴 것)보다 사람이 누른 OFF 가 이긴다.
+     · 조별 지정이 하나도 없는 날은 예전 그대로(`sched` 값). */
+  function sessionActive(tr,day){
+    var L=groupList(tr,day);
+    return !L.length||L.some(function(g){return groupKind(day,g)!=='OFF';});
+  }
+  function activeSessions(day){
+    return (day&&Array.isArray(day.trainings)?day.trainings:[]).filter(function(t){return t&&typeof t==='object'&&sessionActive(t,day);});
+  }
+  function dayKind(day){
+    if(!day||typeof day!=='object')return '';
+    if(hasMatch(day))return '경기';
+    var b=day.board||{},raw=b.sched==='훈련'?'훈련':'';
+    if(day.off||b.sched==='OFF')return 'OFF';
+    var kinds=Object.keys(day.groupKinds||{}).map(function(g){return groupKind(day,g);}).filter(Boolean);
+    if(!kinds.length)return raw||(activeSessions(day).length?'훈련':'');
+    if(activeSessions(day).length||kinds.indexOf('훈련')>=0)return '훈련';
+    if(kinds.indexOf('OFF')<0)return raw;
+    /* 숨은 세션의 것이 아닌 보드 칩(하루 단위로 적어 둔 훈련)이 있으면 다른 조는 훈련한다 */
+    var hidden=(Array.isArray(day.trainings)?day.trainings:[]).filter(Boolean).map(function(t){return String(t.slot||'');});
+    var own=[['trains','trainSlot'],['warms','warmSlot'],['libs','libSlot']].some(function(k){
+      return (Array.isArray(b[k[0]])?b[k[0]]:[]).some(function(v,i){return String(v==null?'':v).trim()&&hidden.indexOf(String(((b[k[1]]||[])[i])||''))<0;});
+    });
+    return own?'훈련':'OFF';
+  }
+  /* 화면용 하루 — 바뀔 것이 없으면 **같은 객체**, 있으면 얕은 사본(원본 · 저장본은 그대로).
+     · 종류가 OFF 로 읽히는 날은 off:true · board.sched 'OFF'(옛 판정 `day.off||b.sched==='OFF'` 를 쓰는 화면이 그대로 맞는다).
+     · opts.prune — 안 열리는 세션과 그 세션 몫의 보드 칩을 사본에서 걷는다(«오늘»처럼 trainings[0] 을 그 날의 훈련으로 읽는 화면용).
+       OFF 로 읽히는 날은 늘 걷는다(남은 세션이 모두 안 열리는 세션이다 — 일간 PDF 가 그 세션을 찍었다). 그 밖의 날은 일정 화면이 칩을 순번으로 고치므로 걷지 않는다. */
+  function effectiveDay(day,opts){
+    if(!day||typeof day!=='object'||!day.groupKinds||!Object.keys(day.groupKinds).length)return day;
+    var b=day.board||{},off=dayKind(day)==='OFF'&&!(day.off||b.sched==='OFF');
+    var all=Array.isArray(day.trainings)?day.trainings:[],act=activeSessions(day),prune=(off||!!(opts&&opts.prune))&&act.length!==all.length;
+    if(!off&&!prune)return day;
+    var o=Object.assign({},day);
+    if(day.board)o.board=Object.assign({},day.board);
+    if(off){o.off=true;o.board=o.board||{};o.board.sched='OFF';}
+    if(prune){
+      var gone=all.filter(function(t){return act.indexOf(t)<0;}).map(function(t){return String((t&&t.slot)||'');});
+      o.trainings=act;
+      if(o.board)[['trains','trainSlot','trainData','trainThemes'],['warms','warmSlot','warmsData'],['meets','meetSlot','meetsData'],['libs','libSlot','libData']].forEach(function(keys){
+        var src=day.board[keys[0]];if(!Array.isArray(src))return;
+        var keep=src.map(function(_,i){return i;}).filter(function(i){return gone.indexOf(String(((day.board[keys[1]]||[])[i])||''))<0;});
+        if(keep.length===src.length)return;
+        keys.forEach(function(k){if(Array.isArray(day.board[k]))o.board[k]=keep.map(function(i){return day.board[k][i];});});
+      });
+    }
+    return o;
+  }
+  function effectiveDoc(d){
+    if(!d||!d.weeks||typeof d.weeks!=='object')return d;
+    var out=null;
+    Object.keys(d.weeks).forEach(function(k){
+      var arr=d.weeks[k];if(!Array.isArray(arr))return;
+      var next=null;
+      arr.forEach(function(day,i){var e=effectiveDay(day,{prune:true});if(e!==day){next=next||arr.slice();next[i]=e;}});
+      if(next){if(!out){out=Object.assign({},d);out.weeks=Object.assign({},d.weeks);}out.weeks[k]=next;}
+    });
+    return out||d;
+  }
   function readForData(d,grp){ var o=Object.assign({},d);o.weeks={};var weeks=d.grpWeeks&&d.grpWeeks[grp]||d.weeks||{};Object.keys(weeks).forEach(function(k){o.weeks[k]=(weeks[k]||[]).map(function(day){return groupDay(day,grp);});});o.grpScope=grp;return o; }
   /* ══ 2.951 · 세션의 분·국면은 **한 곳에서** 센다 ══════════════════════════════
      코치 점검(10/7): 같은 주를 «오늘»은 공-수 85분·수-공 85분, «플레이북»은 0분이라 말했다.
@@ -2140,6 +2205,7 @@
     /* 2.475 — 죽은 export 정리(전수조사: 외부 사용은 anchor·hasMatch·mondayOf·newId·stampIds·cellOf·read·readFor 뿐).
        ymd·parseYmd·sourceId·normalize 본체는 내부 호출로 산다 — export 표면만 걷음 */
     groupLabel:groupLabel, groupKind:groupKind, groupList:groupList, groupDay:groupDay,
+    dayKind:dayKind, sessionActive:sessionActive, activeSessions:activeSessions, effectiveDay:effectiveDay,
     mondayOf:mondayOf,
     hasMatch:hasMatch, newId:newId, stampIds:stampIds,
     anchor:anchor, cellOf:cellOf,

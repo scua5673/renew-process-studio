@@ -19073,6 +19073,7 @@ function ckSeasonStats(){
       arr.forEach(function(day,di){
         if(!day)return;
         if(w===cur&&di>todayIdx)return;                       /* 아직 오지 않은 날은 안 센다 */
+        try{ day=PSSchedule.effectiveDay(day,{prune:true}); }catch(_){}   /* 하루의 종류는 한 규칙(조를 OFF 로 돌려 열리는 세션이 없는 날은 OFF) */
         var bd=day.board||{};
         var trs=(day.trainings&&day.trainings.length)?day.trainings:[];
         var isM=false; try{ isM=!!(window.PSSchedule&&PSSchedule.hasMatch(day)); }catch(_){}
