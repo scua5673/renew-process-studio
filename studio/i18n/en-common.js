@@ -10,6 +10,11 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 })(window,{
 "다른 팀원이 남아 있어 계정을 지울 수 없어요. 팀을 넘기거나 삭제한 뒤 탈퇴해 주세요":"You can't delete your account while other members are still on the team. Transfer or delete the team first, then leave.",
 "서비스 관리자 계정은 여기서 지울 수 없어요 — 관리자 권한을 먼저 내려 주세요. 서버와 이 기기에서 아무것도 지우지 않았어요.":"Service admin accounts can't be deleted here — remove admin rights first. Nothing was deleted on the server or this device.",
+"다른 창에서 이어서 쓰고 있어요":"You're continuing in another window",
+"PROCESS STUDIO 는 한 기기에서 창 하나로 저장해요. 마지막에 연 창이 지금 저장하는 창입니다.":"PROCESS STUDIO saves from one window per device. The window you opened last is the one that saves now.",
+"이 창에서 계속하기":"Continue in this window",
+"누르면 이 창이 저장하는 창이 되고, 다른 창에 이 안내가 떠요.":"This window will take over saving, and the other window will show this notice.",
+"다른 창에서 이어서 쓰고 있어요. 이 창의 저장을 마무리하는 중이에요.":"You're continuing in another window. Finishing this window's saves…",
 "11 대 11":"11 v 11",
 "11인제":"11-a-side",
 "12주 목표":"12-week goal",
