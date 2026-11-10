@@ -106,6 +106,25 @@ try{
   await f.evaluate(()=>__psPages.book.dup(0));s=await now();assert.equal(s.undo,0,'패턴북(시퀀스 복제)은 예전 경계');assert.equal(s.names.length,4);await undo();assert.equal((await now()).names.length,4);
   await f.evaluate(()=>{window.__vaultBook=false;window.__vaultEdit=false;window.__curVaultId=null;});
 
+  step('vault-edit');
+  // 보관함 작전판 편집 안에서도 같은 기록 — 나갔다 오면 작업 보드의 기록(지운 페이지 포함)이 그대로 돌아온다
+  await seed();await go(1);const liveB=await bodyOf(1);await del();const liveState=await now();
+  await f.evaluate(async()=>{const copy=x=>JSON.parse(JSON.stringify(x)),base=captureSnap(),sn=(id,x)=>({...copy(base),players:[{id,team:'blue',num:8,x,y:350}],drawings:[],pitchImg:null});
+    const item={libId:'page-undo-vault',type:'board',name:'합성 페이지 되돌리기',owner:parent.PSSync.session().uid,savedAt:Date.now(),folder:'',tags:[],thumb:'',snap:sn('VA',420),pages:[{name:'Vault A',snap:sn('VA',420),thumb:''},{name:'Vault B',snap:sn('VB',720),thumb:''},{name:'Vault C',snap:sn('VC',820),thumb:''}]};
+    const rows=await libGet();rows.unshift(item);await libWrite(rows);libTouch();});
+  await page.evaluate(()=>document.querySelector('#appSeg [data-app="design"]:not([data-train])').click());
+  await f.waitForFunction(()=>window.__csView==='session');await f.evaluate(()=>{libFilter.folder='__all';renderDrillFiles();});
+  await f.locator('#drillFiles .vcard').filter({hasText:'합성 페이지 되돌리기'}).locator('button.edit').click();
+  await f.waitForFunction(()=>window.__vaultEdit&&window.__curVaultId==='page-undo-vault'&&!window.__vaultHydrating&&__psPages.pg()?.length===3);
+  assert.equal((await now()).undo,0,'보관함 편집은 제 기록으로 시작');
+  await go(1);await del();s=await now();assert.deepEqual(s.names,['Vault A','Vault C']);assert.equal(s.undo,1);
+  await undo();s=await now();assert.deepEqual(s.names,['Vault A','Vault B','Vault C'],'보관함 편집 안의 삭제 되돌리기');assert.equal(s.idx,1);assert.equal(s.id,'VB');assert.equal(s.x,720);
+  await add();await undo();assert.deepEqual((await now()).names,['Vault A','Vault B','Vault C']);
+  await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
+  await page.locator('#fBoard').waitFor({state:'visible'});await f.waitForFunction(()=>window.__csView==='board'&&!window.__vaultEdit);
+  assert.deepEqual(await now(),liveState,'작업 보드로 돌아오면 페이지 · 기록 그대로');
+  await undo();s=await now();assert.deepEqual(s.names,['A','B','C'],'보관함에 다녀온 뒤에도 지운 페이지를 되살린다');assert.equal(s.idx,1);assert.equal(await bodyOf(1),liveB);
+
   step('save-reopen');
   // 지웠다 되살린 페이지가 저장 · 다시 열기 뒤에도 온전하다
   await seed();await go(1);const keep=await bodyOf(1);await del();await undo();
