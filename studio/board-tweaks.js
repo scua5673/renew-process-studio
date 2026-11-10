@@ -102,6 +102,27 @@
     });
     return recs;
   }
+  // 3.271 — 시야 · 시선(제보 756c0a48). ① 시야(vis · 넓이 · 거리) · 시선(lookAt)은 이 페이지에만 — 2.980 은 시선을 걸 때 시야까지 모든 페이지의 같은 id 토큰에 켰다(잔상 trail 은 그대로 모든 페이지).
+  // ② «시야» 단추는 이 장면부터 뒤로: 구간은 3.254 «계속 강조»의 _animCarryIds(carry) 가 정한다 — 장면마다 «그 토큰의 시야가 켜져 있나»를 id 목록으로 바꿔 그 규칙에 그대로 넘긴다(규칙을 다시 쓰지 않는다).
+  //    지금 장면(k)은 판이 주인이라(장면을 담을 때 들어간다) 뒤 장면만 고친다. 바꾼 장면의 snap · 토큰은 사본으로(되돌리기 기록이 옛 snap 을 들고 있다). 반환 = 바뀐 마지막 장면 번호.
+  function visionPageOnly(fields) { return Array.isArray(fields) && fields.some(function (f) { return f === 'lookAt' || f === 'vis'; }); }
+  function visionCarry(frames, k, toks, on, was, carry) {
+    var last = k; if (!Array.isArray(frames) || !frames[k] || typeof carry !== 'function') return last;
+    var at = function (f, id) { var a = f && f.snap && f.snap.players; if (!Array.isArray(a)) return -1; for (var i = 0; i < a.length; i++) if (a[i] && a[i].id === id) return i; return -1; };
+    (toks || []).forEach(function (p) {
+      if (!p || !!was[p.id] === !!on) return;   // 이미 그 상태였던 토큰(여럿을 함께 누를 때)은 이어 가지 않는다
+      var sh = frames.map(function (f, j) { var i = j === k ? -1 : at(f, p.id); return (j === k ? !!was[p.id] : i >= 0 && !!f.snap.players[i].vis) ? { v: [p.id] } : {}; });
+      var end = carry(sh, k, 'v', p.id, !!on);
+      for (var j = k + 1; j <= end; j++) {
+        var f = frames[j], i = at(f, p.id); if (i < 0) continue;
+        var c = Object.assign({}, f.snap.players[i]); c.vis = !!on;
+        if (on) { if (typeof c.dir !== 'number' && typeof p.dir === 'number') c.dir = p.dir; if (!c.visW && p.visW) c.visW = p.visW; if (!c.visR && p.visR) c.visR = p.visR; }
+        var sn = Object.assign({}, f.snap); sn.players = f.snap.players.slice(); sn.players[i] = c; f.snap = sn; delete f.thumb;
+      }
+      if (end > last) last = end;
+    });
+    return last;
+  }
   // 3.136 — 미팅 중(meetOn)엔 작업 보드 페이지 묶음(window.__psPages)이 지금 판(슬라이드)을 담지도, 다른 페이지를 고치지도 않게 감싼다(아래 mount 9)
   function guardPages(P, meetOn) {
     if (!P || typeof P.eachOther !== 'function') return false; if (P.eachOther.__psMeetSafe) return true;
@@ -492,9 +513,39 @@
     // 슬라이드 사이엔 id 가 겹친다(경기의 «선발 11» 장) — id 로 찾는 페이지 규칙을 슬라이드에 그대로 돌리지 않는다.
     function hookPages() { return guardPages(win.__psPages, function () { return doc.body.classList.contains('meet-mode'); }); }
 
+    // ── 10. 시야 · 시선은 이 페이지에만 · «시야»는 이 장면부터 뒤로(3.271 — 제보 756c0a48, 위 visionPageOnly · visionCarry) ──
+    function hookVision() {
+      var prop = win._tokPropAll, tv = win.toggleVision;
+      if (typeof prop !== 'function' || typeof tv !== 'function' || typeof win._animCarryIds !== 'function') return false; if (tv.__psCarry) return true;
+      var g = function (ps, fields) {
+        var P = win.__psPages, eo = P && P.eachOther;
+        if (typeof eo !== 'function' || !visionPageOnly(fields)) return prop.apply(this, arguments);
+        P.eachOther = function () { return 0; };
+        try { return prop.apply(this, arguments); } finally { P.eachOther = eo; }
+      };
+      win._tokPropAll = g;
+      // 장면이 판에 물려 있을 때만(autoSaveAnimFrame 과 같은 조건 — 장면 막대가 닫혔거나 재생 · 내보내는 중이면 판만 바꾸는 예전 그대로)
+      var bound = function () { try { var a = A(), k = act(); return !!(a && Array.isArray(a.frames) && a.frames.length > 1 && k >= 0 && a.frames[k] && win._animLive && win._animLive() && !playing() && !win.__animExport && (!body.classList.contains('meet-mode') || (win.__meetSceneBound && win.__meetSceneBound()))); } catch (_) { return false; } };
+      var h = function () {
+        var ps = [], was = {}, ok = bound();
+        if (ok) try { ps = (win.selectedPlayers(false) || []).slice(); ps.forEach(function (p) { was[p.id] = !!p.vis; }); } catch (_) { ps = []; }
+        var r = tv.apply(this, arguments);
+        try {
+          if (!ok || !ps.length) return r;
+          var on = !!ps[0].vis, k = act(), last = visionCarry(A().frames, k, ps, on, was, win._animCarryIds);
+          if (last > k) {
+            try { win.renderAnimFrames(); } catch (_) {} try { win.boardSaveLive(); } catch (_) {}
+            try { win.toast((on ? '시야 표시' : '시야 끔') + ' · ' + (win._animCarryRange ? win._animCarryRange(k, last) : '뒤 장면까지')); } catch (_) {}
+          }
+        } catch (_) {}
+        return r;
+      };
+      h.__psCarry = 1; win.toggleVision = h; return true;
+    }
+
     // ── 시작 · 다시 그릴 때 ──
     var tries = 0;
-    (function boot() { var ok = hookSpeed(), ok2 = hookPitch(), ok3 = hookKit() && hookEach() && hookPages(), ok4 = hookTeam(); if ((!ok || !ok2 || !ok3 || !ok4) && ++tries < 40) win.setTimeout(boot, 250); })();
+    (function boot() { var ok = hookSpeed(), ok2 = hookPitch(), ok3 = hookKit() && hookEach() && hookPages(), ok4 = hookTeam() && hookVision(); if ((!ok || !ok2 || !ok3 || !ok4) && ++tries < 40) win.setTimeout(boot, 250); })();
     try {
       new win.MutationObserver(function (list) {
         for (var i = 0; i < list.length; i++) for (var j = 0; j < list[i].addedNodes.length; j++) { var n = list[i].addedNodes[j]; if (n && n.id === 'evSheet') capRow(n); }
@@ -510,5 +561,5 @@
   }
   if (typeof window !== 'undefined' && window.document && /\/studio\/board\.html/.test(String(window.location && window.location.pathname))) boot(window);
   return { frame169: frame169, reelBox: reelBox, stripPageCaps: stripPageCaps, putPitch: putPitch, spreadPitch: spreadPitch, undoPitch: undoPitch, PITCH_KEYS: PITCH_KEYS, SPEED_ALL: SPEED_ALL, CAP: CAP,
-    KIT_KEYS: KIT_KEYS, putKit: putKit, spreadKit: spreadKit, guardPages: guardPages };
+    KIT_KEYS: KIT_KEYS, putKit: putKit, spreadKit: spreadKit, guardPages: guardPages, visionPageOnly: visionPageOnly, visionCarry: visionCarry };
 });
