@@ -15986,7 +15986,7 @@ function syncMatchFromCloud(){
       var d=Array.isArray(r&&r.deferred)?r.deferred:[];
       if(d.indexOf(MATCH_KEY)>=0)return api.syncNow("match-open-dependency");
       return r;
-    }).then(function(){matchSyncing=false;matchState=null;renderMatch();},function(){matchSyncing=false;});
+    }).then(function(){matchSyncing=false;try{matchFlushNow();}catch(_){}matchState=null;renderMatch();},function(){matchSyncing=false;});   /* 3.273 — 저장 대기(320ms) 중인 입력을 먼저 적는다: 그냥 비우면 방금 고른 값이 사라졌다 */
   }catch(_){matchSyncing=false;}
 }
 function teamHomeGoSchedule(){try{parent.postMessage({source:"scout",type:"openSchedule"},"*");}catch(_){}}
