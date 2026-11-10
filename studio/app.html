@@ -755,7 +755,7 @@ function psAutoReloadWhenSafe(manualOnly){
     }).then(function(done){
       if(!done)finish('팀·계정의 저장 작업이 진행 중입니다. 잠시 후 다시 열기를 눌러 주세요.','tx_busy');
     }).catch(function(e){
-      finish('작성 내용의 기기 저장을 확인하지 못해 업데이트를 보류했어요. 작업 내용을 보관한 뒤 다시 시도해 주세요.','flush_fail:'+((e&&e.psFrame)||'?')+':'+((e&&(e.psCode||e.name))||'?'));
+      finish('작성 내용의 기기 저장을 확인하지 못해 업데이트를 보류했어요. 작업 내용을 보관한 뒤 다시 시도해 주세요.','flush_fail:'+((e&&e.psFrame)||'?')+':'+((e&&(e.psCode||e.name))||'?')+(e&&e.psWhy?':'+e.psWhy:''));   /* 0976735a — 화면이 단 짧은 까닭(psWhy)까지 */
     });
   };
   window.__psForceReload=function(m){var P=window.PSUpdProg;if(P&&P.gate)P.gate(m,go,psSafeToReload);else go(m);};   /* 3.098 — 보이는 화면에서 스스로 바꿀 땐 5초 세고(update-progress.js) */
