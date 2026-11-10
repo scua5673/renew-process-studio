@@ -22,7 +22,8 @@
     var rawSession=read(store,'ps_sync_session'),rawOwner=read(store,'ps_cache_owner_v1'),ws=read(store,'ps_active_ws');
     if(rawSession===undefined||rawOwner===undefined)return '';   /* 저장소를 읽을 수 없다 */
     var s=json(rawSession),o=json(rawOwner);
-    var session=(s&&s.at&&s.rt)?s:null,owner=(o&&o.uid)?String(o.uid):'';
+    /* 세션 판정은 느슨하게(토큰이나 uid 가 하나라도 있으면 세션) — 로그아웃은 이 키를 통째로 지운다. 엄격하게 보면 갱신 중인 세션을 잠글 수 있다 */
+    var session=(s&&typeof s==='object'&&(s.at||s.uid))?s:null,owner=(o&&o.uid)?String(o.uid):'';
     if(!session)return (rawOwner||ws)?'signed-out':'';
     if(session.uid&&owner&&String(session.uid)!==owner)return 'other-account';
     return '';

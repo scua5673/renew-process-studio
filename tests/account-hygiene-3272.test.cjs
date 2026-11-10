@@ -90,7 +90,8 @@ test('data-lock-guard: signed out with account traces → locked; signed in or a
   assert.equal(guard.state(box({ps_sync_session:S,ps_cache_owner_v1:O,ps_active_ws:W})),'');
   assert.equal(guard.state(box({ps_cache_owner_v1:O,ps_active_ws:W})),'signed-out');
   assert.equal(guard.state(box({ps_active_ws:W})),'signed-out');
-  assert.equal(guard.state(box({ps_sync_session:'{"uid":"x","at":"only-access"}',ps_cache_owner_v1:O})),'signed-out','a session without both tokens is not a session (sync.js getSess)');
+  assert.equal(guard.state(box({ps_sync_session:JSON.stringify({uid:A,at:'only-access'}),ps_cache_owner_v1:O})),'','a session being refreshed (one token) is still a session — never lock on a doubt');
+  assert.equal(guard.state(box({ps_sync_session:'null',ps_cache_owner_v1:O})),'signed-out');assert.equal(guard.state(box({ps_sync_session:'{}',ps_cache_owner_v1:O})),'signed-out');
   assert.equal(guard.state(box({ps_sync_session:'not json',ps_cache_owner_v1:O})),'signed-out');
   assert.equal(guard.state(box({})),'','no account ever used this device — guest board and pages stay open');
   assert.equal(guard.state(box({ps_sync_session:JSON.stringify({uid:B,at:'b',rt:'r'}),ps_cache_owner_v1:O})),'other-account');
