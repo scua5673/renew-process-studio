@@ -2615,7 +2615,7 @@ function sceneInfo(it){ var t=0,s=0;
   else if(it&&Array.isArray(it.frames)) s=it.frames.length;
   else if(it&&Array.isArray(it.slides)) s=it.slides.length;
   else if(it){t=1;if(it.snap||it.thumb)s=1;s+=(it.scenes&&it.scenes.length)||0;}
-  return {t:t,s:s};
+  return {t:+t||0,s:+s||0};   /* 3.271 — scenes:{length:"<img…>"} 같은 가짜 길이는 숫자가 아니면 0 */
 }
 function preview(wid,lidEnc){ var lid=decodeURIComponent(lidEnc);
   if(window.PSAdminContent&&window.PSAdminContentData){

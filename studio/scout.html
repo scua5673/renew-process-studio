@@ -7273,7 +7273,7 @@ function save(){
 function attr(id){return data.attrs.find(a=>a.id===id);}
 function pos(id){return data.positions.find(p=>p.id===id);}
 function posGroupOf(name){var a=(posAbbr(name)||name||"").toUpperCase();if(/GK|골키퍼|키퍼/.test(a))return"GK";if(/WB|CB|LB|RB|백|수비/.test(a))return"DEF";if(/DM|CM|AM|LM|RM|미드/.test(a))return"MID";if(/CF|ST|LW|RW|SS|FW|공격|윙|스트라이커/.test(a))return"ATT";return"ETC";}
-function posOptionsHTML(curId,formKey){var allow=null;if(formKey){try{var _sl=tmFormSlots(formKey)||[];allow={};_sl.forEach(function(s){var a=(Array.isArray(s)?s[0]:(s&&(s.pos||s.name)||s))||"";allow[(""+a).toUpperCase()]=1;});}catch(_){allow=null;}}var G={GK:[],DEF:[],MID:[],ATT:[],ETC:[]};data.positions.forEach(function(p){if(allow){var ab=(posAbbr(p.name)||p.name||"").toUpperCase();if(!allow[ab])return;}(G[posGroupOf(p.name)]||G.ETC).push(p);});var L={GK:"골키퍼",DEF:"수비",MID:"미드필더",ATT:"공격",ETC:"기타"};var h='<option value="">포지션</option>';["GK","DEF","MID","ATT","ETC"].forEach(function(k){if(!G[k].length)return;h+='<optgroup label="'+L[k]+'">';G[k].forEach(function(p){h+='<option value="'+p.id+'"'+(p.id===curId?" selected":"")+'>'+(posAbbr(p.name)||p.name)+'</option>';});h+="</optgroup>";});return h;}
+function posOptionsHTML(curId,formKey){var allow=null;if(formKey){try{var _sl=tmFormSlots(formKey)||[];allow={};_sl.forEach(function(s){var a=(Array.isArray(s)?s[0]:(s&&(s.pos||s.name)||s))||"";allow[(""+a).toUpperCase()]=1;});}catch(_){allow=null;}}var G={GK:[],DEF:[],MID:[],ATT:[],ETC:[]};data.positions.forEach(function(p){if(allow){var ab=(posAbbr(p.name)||p.name||"").toUpperCase();if(!allow[ab])return;}(G[posGroupOf(p.name)]||G.ETC).push(p);});var L={GK:"골키퍼",DEF:"수비",MID:"미드필더",ATT:"공격",ETC:"기타"};var h='<option value="">포지션</option>';["GK","DEF","MID","ATT","ETC"].forEach(function(k){if(!G[k].length)return;h+='<optgroup label="'+L[k]+'">';G[k].forEach(function(p){h+='<option value="'+esc(p.id)+'"'+(p.id===curId?" selected":"")+'>'+esc(posAbbr(p.name)||p.name)+'</option>';});h+="</optgroup>";});return h;}
 function player(id){return data.players.find(p=>p.id===id);}
 function tgt(p,aid){return p.targets[aid]||3;}
 function lvl(pl,aid){return (pl.levels&&pl.levels[aid])||3;}
@@ -10248,7 +10248,7 @@ function resumePageHTML(pl, lang, pageLb, more){   /* pageLb: 인쇄 짝(1/2·2/
     ${specs?`<div class="rz-specs">${specs}</div>`:``}
     ${(careerRows||awardRows)?`<div class="rz-sec">${LB.career}</div><div class="rz-pgrid">${careerRows}${awardRows}</div>`:``}
     ${more?rzMoreHTML(pf,LB):``}
-    ${pf.video?`<div class="rz-sec">${LB.video}</div><div class="rz-pgrid"><div class="rz-prow"><span class="rz-pk">${LB.highlight}</span><b><a class="rz-link" href="${esc(pf.video)}">${esc(pf.video)}</a></b></div></div>`:``}
+    ${pf.video?`<div class="rz-sec">${LB.video}</div><div class="rz-pgrid"><div class="rz-prow"><span class="rz-pk">${LB.highlight}</span><b><a class="rz-link" href="${esc(PSSafe.url(pf.video))}">${esc(pf.video)}</a></b></div></div>`:``}
     ${contact?`<div class="rz-contact">${contact}</div>`:``}
     <div class="rz-rfoot"><span><b>PRO</b>FILE · ${LB.resumeTitle}</span><span>${pageLb?pageLb+' · ':''}${today} ${LB.createdSuffix}</span></div>
   </div>`;
@@ -18583,13 +18583,13 @@ function renderStatusView(){
     var sum=tr+off?('훈련 '+tr+' · 휴식 '+off):'기록 시작';
     var curNote=stCurNote(p.id);
     var noteBtn=(cur!=="ok")
-      ?'<button type="button" class="st-note'+(curNote?"":" empty")+'" onclick="stNoteModal(\''+p.id+'\')">'+(curNote?esc(curNote):"＋ 사유 입력")+'</button>'
+      ?'<button type="button" class="st-note'+(curNote?"":" empty")+'" onclick="stNoteModal(\''+PSSafe.arg(p.id)+'\')">'+(curNote?esc(curNote):"＋ 사유 입력")+'</button>'
       :'';
     return '<div class="st-row" data-pid="'+p.id+'" data-st="'+cur+'"><span class="st-drag" title="끌어서 그룹 이동" aria-label="그룹 이동"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13" style="display:block;pointer-events:none" aria-hidden="true"><path d="M8 6h8M8 12h8M8 18h8"/></svg></span><span class="num">'+esc(String(p.num||"·"))+'</span>'
       +'<span class="who"><b>'+esc(p.name||"이름 없음")+'</b><small>'+esc(ps?(posAbbr(ps.name)||ps.name):"포지션 미정")+'</small>'+noteBtn+'</span>'
       +'<span class="st-hist" title="최근 14일"><span class="dots">'+dots+'</span><small>'+sum+'</small></span>'
       +'<span class="st-seg">'+ST_ROWS.map(function(r){
-        return '<button type="button" data-k="'+r[0]+'" class="'+(cur===r[0]?"on":"")+'" onclick="stSet(\''+p.id+'\',\''+r[0]+'\')">'+r[1]+'</button>';
+        return '<button type="button" data-k="'+r[0]+'" class="'+(cur===r[0]?"on":"")+'" onclick="stSet(\''+PSSafe.arg(p.id)+'\',\''+r[0]+'\')">'+r[1]+'</button>';
       }).join("")+'</span></div>';
   }
   var html="";

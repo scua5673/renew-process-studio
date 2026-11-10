@@ -14700,7 +14700,7 @@ function mnSave(){try{localStorage.setItem("cs_matchnotes",JSON.stringify(matchN
 function clockStamp(){const m=Math.floor(matchClock.elapsed/60);return (matchClock.half===2?"후":"전")+m+"'";}
 function mnPlayerOpts(){const mPs=state.players.filter(p=>!p.coach);if(!mPs.length)return '<option value="">선수 없음</option>';
   return mPs.sort((a,b)=>(a.team+a.num).localeCompare(b.team+b.num)).map(p=>{
-    const t=p.team==="blue"?"우리":p.team==="red"?"상대":p.team;return `<option value="${t} ${p.num}">${t} ${p.num}</option>`;}).join("");}
+    const t=p.team==="blue"?"우리":p.team==="red"?"상대":p.team;return `<option>${PSSafe.html(t+" "+p.num)}</option>`;}).join("");}
 function mnEl(){let p=document.getElementById("matchNotes");if(p)return p;
   const stage=document.getElementById("boardStage");if(!stage)return null;
   const btn=document.createElement("button");btn.id="matchNotesBtn";btn.className="mn-btn";
@@ -14730,7 +14730,7 @@ function mnRender(){const p=document.getElementById("matchNotes");if(!p)return;
   if(mnCat==="player"){who.style.display="";who.innerHTML=mnPlayerOpts();}else{who.style.display="none";}
   const list=p.querySelector("#mnList"),arr=matchNotes[mnCat]||[];
   if(!arr.length){list.innerHTML='<div class="mn-empty">아직 메모가 없어요. 경기 보면서 떠오르는 걸 적어두세요.</div>';return;}
-  list.innerHTML=arr.map((n,i)=>`<div class="mn-item"><span class="mn-t">${n.t}</span>${n.who?`<span class="mn-who">${n.who}</span>`:""}<span class="mn-tx">${(n.txt||"").replace(/</g,"&lt;")}</span><button class="mn-x" data-i="${i}">×</button></div>`).join("");
+  list.innerHTML=arr.map((n,i)=>`<div class="mn-item"><span class="mn-t">${PSSafe.html(n.t)}</span>${n.who?`<span class="mn-who">${PSSafe.html(n.who)}</span>`:""}<span class="mn-tx">${(n.txt||"").replace(/</g,"&lt;")}</span><button class="mn-x" data-i="${i}">×</button></div>`).join("");
   [...list.querySelectorAll(".mn-x")].forEach(x=>x.onclick=()=>{arr.splice(+x.dataset.i,1);mnSave();mnRender();});}
 function mnAdd(){const p=document.getElementById("matchNotes");if(!p)return;
   const ti=p.querySelector("#mnText"),txt=(ti.value||"").trim();if(!txt)return;

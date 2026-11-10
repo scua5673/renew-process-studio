@@ -2003,7 +2003,8 @@ window.psFailAlert=function(lead,e,stage){
       if(!L.length){ mb.style.display='none'; return; }
       var n=L[L.length-1]; mb.style.display='flex'; mb.setAttribute('data-id',n.id);
       var who=n.by?(n.by+'(다른 기기)'):'다른 기기';
-      mtx.innerHTML='<b>'+who+'가 '+ymdKo(n.ymd)+' «'+fieldKo(n.path)+'»를 먼저 바꿔서 그쪽으로 합쳤어요</b><span>내가 고친 값은 24시간 안에 되돌릴 수 있어요'+(L.length>1?(' · 같은 알림 '+L.length):'')+'</span>';
+      var E=window.PSSafe.html;   /* 3.271 — 이름(editedBy) · 날짜 · 칸 이름은 다른 팀원의 문서에서 온다 */
+      mtx.innerHTML='<b>'+E(who)+'가 '+E(ymdKo(n.ymd))+' «'+E(fieldKo(n.path))+'»를 먼저 바꿔서 그쪽으로 합쳤어요</b><span>내가 고친 값은 24시간 안에 되돌릴 수 있어요'+(L.length>1?(' · 같은 알림 '+L.length):'')+'</span>';
       mmine.style.display=n.mine==null?'none':'';
     }
     mmine.addEventListener('click',function(){ var S=window.PSSync, id=mb.getAttribute('data-id'); if(!S||!id)return; mmine.disabled=true; mmine.textContent='되돌리는 중…';
