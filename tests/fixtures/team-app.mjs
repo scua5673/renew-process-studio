@@ -129,8 +129,13 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
   /* 3.131 — init:{fn,arg} 는 앱보다 먼저, 모든 프레임에서 도는 시험용 스크립트(예: 기기 저장 한도 흉내) */
   /* 3.112 — guest:true 면 로그인하지 않은 기기(세션 · 공간 · 계정 흔적 없음)로 연다. 로그인은 시험이 signIn(page) 으로 */
   /* 3.039 — csp:true 면 HTML 응답에 _headers 의 Content-Security-Policy-Report-Only 를 그대로 붙인다(tests/browser/csp-report-only) */
-  const cspValue=csp?(/\n  Content-Security-Policy-Report-Only: (.+)\n/.exec(fs.readFileSync(path.join(root,'_headers'),'utf8'))||[])[1]:null;
-  if(csp&&!cspValue)throw new Error('_headers 에 Content-Security-Policy-Report-Only 가 없다');
+  /* 3.272 — 막는 정책(Content-Security-Policy)도 같이 붙인다: connect-src · frame-src · worker-src · media-src · manifest-src · form-action 은 이제 막는다.
+     PS_FIXTURE_CSP=1 이면 어느 시험이든 두 정책을 붙여 돈다 — 막힌 것은 «[csp-enforce] …» 로 stderr 에 적힌다(정책을 조일 때 묶음을 이렇게 돌려 본다) */
+  if(process.env.PS_FIXTURE_CSP==='1')csp=true;
+  const headerText=csp?fs.readFileSync(path.join(root,'_headers'),'utf8'):'';
+  const cspValue=csp?(/\n  Content-Security-Policy-Report-Only: (.+)\n/.exec(headerText)||[])[1]:null;
+  const cspEnforce=csp?(/\n  Content-Security-Policy: (.+)\n/.exec(headerText)||[])[1]:null;
+  if(csp&&(!cspValue||!cspEnforce))throw new Error('_headers 에 Content-Security-Policy(-Report-Only) 가 없다');
   const S=SIZES[sizeName];
   const browser=browsers[S.engine]||(browsers[S.engine]=await pw[S.engine].launch({headless:true,...(S.engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})}));
   const context=await browser.newContext({...S.ctx,serviceWorkers:'block',timezoneId:'Asia/Seoul',locale:'ko-KR',colorScheme:dark?'dark':'light'});
@@ -155,10 +160,11 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
     if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||fs.statSync(file).isDirectory())return route.fulfill({status:404,body:''});
     let content=fs.readFileSync(file);
     if(url.pathname==='/studio/app.html')content=Buffer.from(content.toString().replace(/(window\.PS_SYNC=\{url:")[^"]+("[,}])/,(_,a,b)=>a+base+b));
-    return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream',...(cspValue&&path.extname(file)==='.html'?{headers:{'content-security-policy-report-only':cspValue}}:{})});
+    return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream',...(cspValue&&path.extname(file)==='.html'?{headers:{'content-security-policy-report-only':cspValue,'content-security-policy':cspEnforce}}:{})});
   });
   const page=await context.newPage();page.setDefaultTimeout(45000);
   const logs=[];
+  if(csp)context.on('console',m=>{const t=m.text();if(/Content Security Policy/i.test(t)&&!/report-only/i.test(t))console.error('[csp-enforce] '+t.slice(0,300));});
   const tag=()=>fx.curStep||'';
   page.on('console',m=>{const t=m.type();if(t==='error'||t==='warning'||/PSSync|\[ps/i.test(m.text()))logs.push({step:tag(),type:t,text:m.text().slice(0,500),url:(m.location()||{}).url?.replace(base,'')});});
   /* 3.012 — 기록은 500자로 자르되 원문은 raw(JSON 에 안 나오는 속성)로 남겨 이동 흔적 판정에 쓴다. 선수단 키 16개를 묶은 ps_kv 주소는

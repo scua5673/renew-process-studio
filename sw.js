@@ -58,7 +58,7 @@ const OPTIONAL = [
   '/studio/balls.js', '/studio/pitches.js', '/studio/rpt-i18n.js',
   '/studio/vault-examples.js',   /* 3.001 — 빈 보관함 첫 화면의 예시. 없으면 첫 화면은 옛 모양 그대로 */
   '/studio/community-fifa.js', '/studio/community-fifa.css', '/studio/community-tax.js', '/studio/community-tax.css', '/studio/community-library.css', '/studio/community-detail.js', '/studio/community-detail.css', '/studio/community-youtube.js', '/studio/community-youtube.css',
-  /* 3.076 — PPT 모듈(pptxgen 0.46MB)은 미리 받지 않는다. 내보낼 때 받고, 못 받으면 board · gamemodel 이 jsdelivr 로 다시 받는다. */
+  /* 3.076 — PPT 모듈(pptxgen 0.46MB)은 미리 받지 않는다. 내보낼 때 받는다(3.272 — 바깥 CDN 으로는 다시 받지 않는다). */
   /* 2.552 — 통짜 폰트(2,009KB)를 **미리 받지 않는다.** 여기 목록에 있으면 첫 방문에
      화면과 상관없이 2MB 를 끌어온다 — 코치는 운동장에서 셀룰러로 앱을 연다.
      ⚠ Pretendard 는 이제 92 조각 동적 서브셋이라 **화면이 실제로 쓰는 조각만** 내려온다.
@@ -66,7 +66,7 @@ const OPTIONAL = [
         받는 즉시 잡는다 — 오프라인은 그대로 되고, 안 쓰는 글자는 안 받는다.
      ⚠ Jost(라틴 26KB)는 남긴다 — 숫자·영문에 늘 쓰여 어차피 첫 화면에서 받는다. */
   '/vendor/fonts.css', '/vendor/tokens.css', '/vendor/Jost-latin.woff2', '/vendor/qrcode.js',
-  /* 3.076 — PDF 뷰어(pdfjs 1.4MB)는 미리 받지 않는다. 개인 노트에서 PDF 를 열 때 받고, 못 받으면 note.html 이 cdnjs 로 다시 받는다. */
+  /* 3.076 — PDF 뷰어(pdfjs 1.4MB)는 미리 받지 않는다. 개인 노트에서 PDF 를 열 때 받는다(3.272 — 바깥 CDN 으로는 다시 받지 않는다). */
   '/icon-192.png', '/icon-512.png', '/icon-512-maskable.png', '/favicon.png', '/apple-touch-icon.png',
   '/icon-mac-192.png', '/icon-mac-512.png', '/icon-mac-1024.png',
   '/assets/brand/studio-64-v1.png', '/assets/brand/studio-180-v1.png', '/assets/brand/studio-192-v1.png',

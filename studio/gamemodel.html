@@ -3012,7 +3012,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
      선수가 이해하는 순서다 — 표지 → 왜(세 문장) → 국면별 원칙+작전판 그림 → 너의 역할(포지션) → 우리의 말(공용어) → 마무리.
      한 장에 문장 하나·그림 하나. 코치가 말을 붙이는 용도라 슬라이드는 비운다. 팀 색·엠블럼은 스카우팅 밴드 설정을 재사용. */
   function _pptxEnsure(cb){ if(window.PptxGenJS){cb();return;} var s=document.createElement('script'); s.src='/pptxgen.bundle.js'; s.onload=cb;
-    s.onerror=function(){ var s2=document.createElement('script'); s2.src='https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'; s2.onload=cb; s2.onerror=function(){alert('PPT 모듈을 불러오지 못했어요 — 인터넷 연결을 확인하세요');}; document.head.appendChild(s2); };
+    s.onerror=function(){alert('PPT 모듈을 불러오지 못했어요 — 인터넷 연결을 확인하세요');};   /* 3.272 — 바깥 CDN 으로 다시 받지 않는다(같은 파일이 /pptxgen.bundle.js 로 실려 있다) */
     document.head.appendChild(s); }
   function _svgToPng(svgMarkup,w,h){ return new Promise(function(res){ try{
     var img=new Image(); var url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgMarkup);
