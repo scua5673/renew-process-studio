@@ -56,6 +56,14 @@ test('a different account that signed in meanwhile is never replaced silently',(
   assert.equal(go.take(),true,'the session expiring while at the provider does not block the new sign-in');
 });
 
+test('identity linking: the returning token must belong to the account that left to link',()=>{
+  const jwt=sub=>'h.'+Buffer.from(JSON.stringify({sub,exp:1})).toString('base64url')+'.s';
+  const mk=()=>{const f=fakeWindow({session:{uid:'coach-A',at:'a',rt:'a'}});f.win.atob=s=>Buffer.from(s,'base64').toString('binary');return {f,g:mount(f.win)};};
+  let x=mk();x.g.begin('',x.f.win);assert.equal(x.g.take({access_token:jwt('coach-A')}),true,'same account — linked');
+  x=mk();x.g.begin('',x.f.win);assert.equal(x.g.take({access_token:jwt('attacker')}),false);assert.equal(x.g.last(),'other-user');
+  x=mk();x.g.begin('',x.f.win);assert.equal(x.g.take({access_token:'opaque-token'}),true,'an unreadable token is left to the server — never locked out on a guess');
+  x=mk();x.g.begin('google',x.f.win);assert.equal(x.g.take({access_token:jwt('coach-B')}),true,'a sign-in the user started may bring another account (account picker)');
+});
 test('the refusal is announced without markup from the address',()=>{
   const made=[];const el=tag=>({tag,style:{},dataset:{},attrs:{},children:[],setAttribute(k,v){this.attrs[k]=v;},appendChild(c){this.children.push(c);},remove(){}});
   const f=fakeWindow({hash:'#access_token=<img src=x onerror=alert(1)>&refresh_token=r'});
@@ -68,7 +76,7 @@ test('the refusal is announced without markup from the address',()=>{
 
 test('sync.js and admin.html pass every stored callback through the gate',()=>{
   const body=sync.slice(sync.indexOf('function consumeHash('),sync.indexOf('function oauthCallbackPending('));
-  const gate=body.indexOf('PSOAuthGate.take()'),store=body.indexOf('setSess({at:p.access_token');
+  const gate=body.indexOf('PSOAuthGate.take(p)'),store=body.indexOf('setSess({at:p.access_token');
   assert.ok(gate>0&&store>gate,'consumeHash asks the gate before it stores the tokens');
   assert.ok(body.indexOf('signOutEpoch++',gate)>gate&&body.slice(0,gate).indexOf('signOutEpoch++')<0,'a refused callback does not invalidate the running session');
   const signIn=sync.slice(sync.indexOf('function signIn('),sync.indexOf('function linkIdentity('));
@@ -76,7 +84,7 @@ test('sync.js and admin.html pass every stored callback through the gate',()=>{
   const link=sync.slice(sync.indexOf('function linkIdentity('),sync.indexOf('function signOut('));
   assert.match(link,/PSOAuthGate\.begin\([^)]*\)[^;]*;[^\n]*w\.location\.href=j\.url/,'identity linking also returns through the callback');
   const adminHash=admin.slice(admin.indexOf('function consumeHash('),admin.indexOf('function consumeHash(')+900);
-  assert.ok(adminHash.indexOf('PSOAuthGate.take()')>0&&adminHash.indexOf('PSOAuthGate.take()')<adminHash.indexOf('setSess('),'admin consumeHash asks the gate first');
+  assert.ok(adminHash.indexOf('PSOAuthGate.take(p)')>0&&adminHash.indexOf('PSOAuthGate.take(p)')<adminHash.indexOf('setSess('),'admin consumeHash asks the gate first');
   assert.match(admin.slice(admin.indexOf('function signIn(p)'),admin.indexOf('function signOut()')),/PSOAuthGate\.begin\(p\)/,'admin signIn marks the start');
 });
 

@@ -1137,7 +1137,7 @@ function consumeHash(options){
     }
     var p={}; location.hash.replace(/^#/,'').split('&').forEach(function(kv){ var i=kv.indexOf('='); if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1)); });
     if(!p.access_token||!p.refresh_token){oauthCallbackSetIssue('로그인 응답이 완전하지 않습니다. 다시 로그인해 주세요.');return false;}
-    if(window.PSOAuthGate&&!PSOAuthGate.take())return false;   /* 3.272 login CSRF */
+    if(window.PSOAuthGate&&!PSOAuthGate.take(p))return false;   /* 3.272 login CSRF */
     var exp=Date.now()+(( +p.expires_in||3600)*1000);
     signOutEpoch++; // 새 OAuth 세션은 이전 조회·갱신의 응답을 무효화한다.
     setDataReady(false);

@@ -5,7 +5,8 @@
    이제 이 브라우저가 스스로 로그인을 시작했을 때만 받는다:
      · begin(provider)  로그인 단추(signIn · linkIdentity · admin signIn)가 떠나기 직전에 «시작함» 표식을 적는다
                         (sessionStorage + localStorage — 설치 앱은 돌아오는 창이 달라 sessionStorage 가 비어 있을 수 있다)
-     · take()           콜백이 토큰을 저장하기 직전에 표식을 한 번만 쓴다. 없거나 10분이 지났거나, 시작할 때와 다른 계정이 그 사이 로그인해 있으면
+     · take(p)          콜백이 토큰을 저장하기 직전에 표식을 한 번만 쓴다. 없거나 10분이 지났거나, 시작할 때와 다른 계정이 그 사이 로그인해 있거나,
+                        «로그인 방법 연결»로 떠났는데 다른 계정의 토큰이 왔으면
                         받지 않는다 — 주소의 토큰을 지우고, 지금 로그인한 계정은 그대로 두고, 까닭을 화면에 말한다.
    표식에는 비밀이 없다(시각 · 그때 로그인해 있던 uid). 응답과 묶인 값이 아니므로 «내가 로그인을 누른 뒤 10분 안»의 틈은 남는다 — 막으려면 PKCE(code flow)로 옮겨야 한다.
    이 파일이 없으면 sync.js 는 예전처럼 받는다(로그인이 막히지 않게). 시험 tests/oauth-gate-3272 · 브라우저 oauth-callback-gate. */
@@ -31,16 +32,27 @@
     }
     /* 로그인으로 떠나기 직전. w = 실제로 떠나는 창(iframe 에서 누르면 맨 위 창) */
     function begin(provider,w){
-      var mark=JSON.stringify({t:Date.now(),from:uid()}),ok=false;
+      /* provider 없이 부르면 «로그인 방법 연결»(linkIdentity) — 돌아오는 토큰은 지금 계정의 것이어야 한다 */
+      var mark=JSON.stringify({t:Date.now(),from:uid(),link:provider?0:1}),ok=false;
       [store('sessionStorage',w),store('localStorage',w)].forEach(function(s){try{if(s){s.setItem(KEY,mark);ok=true;}}catch(_){}});
       try{if(provider)store('sessionStorage',w).setItem('ps_oauth_provider',provider);}catch(_){}
       return ok;
     }
-    function verdict(mark,now,current){
+    /* 토큰(JWT)의 주인 uid. 읽지 못하면 '' — 그때는 막지 않는다(판정은 서버가 한다) */
+    function subject(token){
+      try{
+        var part=String(token||'').split('.')[1]; if(!part)return '';
+        part=part.replace(/-/g,'+').replace(/_/g,'/'); while(part.length%4)part+='=';
+        var o=JSON.parse(win.atob?win.atob(part):atob(part));
+        return o&&typeof o.sub==='string'?o.sub:'';
+      }catch(_){ return ''; }
+    }
+    function verdict(mark,now,current,sub){
       if(!mark)return 'none';
       var age=now-mark.t;
       if(!(age>=0&&age<=TTL))return 'stale';
       if(current&&String(mark.from||'')!==current)return 'other-user';   /* 시작한 뒤 다른 계정이 로그인해 있다 — 말없이 바꾸지 않는다 */
+      if(mark.link&&current&&sub&&sub!==current)return 'other-user';      /* 연결하러 갔는데 다른 계정의 토큰이 왔다 */
       return '';
     }
     function clearUrl(){
@@ -71,10 +83,10 @@
       try{win.setTimeout(function(){try{var S=win.PSSync;if(S&&typeof S.event==='function')S.event('oauth_callback_refused',{status:'blocked',feature:'auth',error_code:why});}catch(_){}} ,4000);}catch(_){}
     }
     /* 콜백이 토큰을 저장하기 직전: 받을 수 있으면 true(표식은 지운다 — 한 번만) */
-    function take(){
+    function take(params){
       var mark=read(store('sessionStorage'))||read(store('localStorage'));
       drop();
-      var why=verdict(mark,Date.now(),uid());
+      var why=verdict(mark,Date.now(),uid(),subject(params&&params.access_token));
       last=why||'ok';
       if(!why)return true;
       clearUrl();notice(why);

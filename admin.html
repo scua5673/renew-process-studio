@@ -893,7 +893,7 @@ function consumeHash(){
   try{ if(location.hash.indexOf('access_token=')<0)return false;
     var p={}; location.hash.replace(/^#/,'').split('&').forEach(function(kv){var i=kv.indexOf('=');if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1));});
     if(!p.access_token||!p.refresh_token)return false;
-    if(window.PSOAuthGate&&!PSOAuthGate.take())return false;   /* 3.272 login CSRF — 남이 만든 `#access_token=` 링크로는 로그인되지 않는다 */
+    if(window.PSOAuthGate&&!PSOAuthGate.take(p))return false;   /* 3.272 login CSRF — 남이 만든 `#access_token=` 링크로는 로그인되지 않는다 */
     setSess({at:p.access_token,rt:p.refresh_token,exp:Date.now()+((+p.expires_in||3600)*1000),email:'',uid:''});
     try{history.replaceState(null,'',location.pathname+location.search);}catch(_){}
     return true;
