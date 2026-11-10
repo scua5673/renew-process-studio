@@ -1368,6 +1368,7 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "자신있음":"Confident",
 "자신있음·배우는 중·위임":"Confident · learning · delegate",
 "작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있어요.":"Saving your work on this device, then opening the new version.",
+"보관함에서 편집 중인 자료를 저장하거나 닫으면 새 버전으로 바꿔요. 작성 중인 내용은 유지해요.":"The new version opens once you save or close the item you are editing in the Library. Your work in progress is kept.",
 "작성 내용의 기기 저장을 확인하지 못해 업데이트를 보류했어요. 작업 내용을 보관한 뒤 다시 시도해 주세요.":"Couldn't confirm your work was saved on this device, so the update is on hold. Back up your work and try again.",
 "작성 내용의 저장을 확인하지 못했어요. 작업은 이 기기에 그대로 있어요.":"Couldn't confirm what you wrote was saved. Your work is still on this device.",
 "작성일":"Date written",
