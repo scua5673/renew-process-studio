@@ -255,7 +255,7 @@
     ['ps_support_reply_v1:','device','ls','draft','support.js',{prefix:1}],
     ['ps_sync_403_v1','device','ls','queue','sync.js'],
     ['ps_sync_base_','device','idb','queue','storage.js',{prefix:1}],
-    ['ps_sync_cfg','device','ls','session','sync.js'],
+    ['ps_sync_cfg','device','ls','session','storage.js'],   /* 3.272 — 루프백 시험 서버 주소만(운영 주소에서는 부팅 때 지운다 · PSSafe.cfg) */
     ['ps_sync_conf_seen','device','ls','seen','sync.js'],
     ['ps_sync_conflict_','device','ls','queue','sync.js',{prefix:1}],
     ['ps_sync_conflicts_v1','device','ls','queue','sync.js'],

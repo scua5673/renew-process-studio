@@ -31,6 +31,42 @@
     });
   };
 
+  /* 3.272 — 서버 주소 · 공개 키는 상수다(보안 점검). 예전엔 localStorage `ps_sync_cfg` 가 있으면 그 값이 서버가 됐다 — 화면에 스크립트를 한 번만 끼워 넣어도
+     그 기기의 모든 요청(로그인 토큰 포함)을 남의 서버로 돌릴 수 있었고, 새로고침 · 재로그인 뒤에도 남았다. 이제 길은 PSSafe.cfg 하나:
+     · cfg(값)  값이 받아도 되는 주소면 그대로, 아니면 null — sync.js 가 app.html 의 window.PS_SYNC 를 이 문으로 넣는다
+     · cfg()    셸 없이 바로 연 화면(커뮤니티 · 일정 …)이 쓸 설정: 내 창 · 부모 창의 PS_SYNC(검사 통과한 것만) → 없으면 아래 상수
+     받는 주소: https + 이 프로젝트 호스트 하나. 시험용 주소(루프백 서버 — tests/fixtures/team-app.mjs 가 PS_SYNC 를 제 주소로 바꾼다 — 와 «.invalid» 가짜 호스트)는
+     **화면 자체가 시험 주소(127.0.0.1 · localhost · «.invalid»)에서 열렸을 때만** 받는다 — 운영 주소에서는 이 길이 열리지 않는다.
+     `ps_sync_cfg` 는 그 루프백 시험에서만 쓰고 읽으며(바로 연 화면이 fixture 를 찾게), 운영 주소에서는 부팅 때 지운다. 시험 tests/sync-config-3272. */
+  var SYNC_HOST='jvtajoeptzfsdwizxejg.supabase.co',SYNC_KEY='sb_publishable_-Es-apybpr1zPTLzLE2sUw_kV-5ap-k',SYNC_STORE='ps_sync_cfg';
+  /* 시험 주소: 루프백, 그리고 브라우저 시험이 가로채 만든 «….invalid»(RFC 2606 — 실제로는 풀리지 않아 운영 주소가 될 수 없다) */
+  function cfgLoop(host){ return /^(?:127\.0\.0\.1|localhost|\[::1\])$|\.invalid$/.test(String(host||'')); }
+  function cfgHere(){ try{ return cfgLoop(location.hostname); }catch(_){ return false; } }
+  function cfgOk(c){
+    try{
+      if(!c||typeof c.url!=='string'||typeof c.anonKey!=='string'||!c.anonKey)return false;
+      var u=new URL(c.url);
+      if(u.username||u.password)return false;
+      if(u.protocol==='https:'&&u.hostname===SYNC_HOST)return true;
+      return cfgHere()&&(u.protocol==='http:'||u.protocol==='https:')&&cfgLoop(u.hostname);   /* 시험 전용 */
+    }catch(_){ return false; }
+  }
+  function cfgStored(){ try{ var o=JSON.parse(localStorage.getItem(SYNC_STORE)||'null'); return cfgOk(o)?o:null; }catch(_){ return null; } }
+  try{ if(localStorage.getItem(SYNC_STORE)!=null&&!(cfgHere()&&cfgStored()))localStorage.removeItem(SYNC_STORE); }catch(_){}
+  window.PSSafe.cfg=function(given){
+    if(arguments.length){
+      if(!cfgOk(given))return null;
+      try{ if(cfgHere())localStorage.setItem(SYNC_STORE,JSON.stringify({url:given.url,anonKey:given.anonKey})); }catch(_){}
+      return given;
+    }
+    try{ if(cfgOk(window.PS_SYNC))return window.PS_SYNC; }catch(_){}
+    try{ var p=window.parent; if(p&&p!==window&&cfgOk(p.PS_SYNC))return p.PS_SYNC; }catch(_){}
+    try{ var t=window.top; if(t&&t!==window&&cfgOk(t.PS_SYNC))return t.PS_SYNC; }catch(_){}
+    if(cfgHere())return cfgStored();   /* 시험 브라우저: fixture 주소가 없으면 운영 서버로 나가지 않는다 */
+    return {url:'https://'+SYNC_HOST,anonKey:SYNC_KEY};
+  };
+  var SYNC_CFG_READY=1;
+
   /* 3.271 — 팀원(선수 계정 포함)이 동기화로 보내는 문서는 다른 팀원의 화면에서 innerHTML 로 그려진다(로그인 토큰이 localStorage 에 있다).
      글은 PSSafe.html(화면의 esc · wkbdEsc), 그 밖의 자리는 아래 넷만 쓴다 — 시험 tests/xss-synced-docs-3271.
      · img  : <img src> 에 넣을 값. base64 그림 data URL 과 blob: 주소만 남긴다(따옴표 · javascript: · 바깥 주소는 빈칸). 아래 PSImg 가 정하고 PSImg.src 가 늘 거친다
@@ -78,42 +114,6 @@
     }catch(_){}
     return doc;
   };
-  window.PSSafe.idp=function(doc){
-    try{
-      var num=function(o,k){
-        var v=o[k]; if(v==null||typeof v==='number'||typeof v==='boolean')return;
-        var n=typeof v==='string'&&v.trim()!==''?Number(v):NaN;
-        if(isFinite(n))o[k]=n; else delete o[k];
-      };
-      var each=function(map,fn){
-        if(!map||typeof map!=='object')return;
-        Object.keys(map).forEach(function(k){ var e=map[k]; if(e&&typeof e==='object'&&!Array.isArray(e))fn(e); else delete map[k]; });
-      };
-      if(!doc||typeof doc!=='object')return doc;
-      var p=doc.profile;
-      if(p&&typeof p==='object'){
-        ['video','video2'].forEach(function(k){ if(p[k]!=null)p[k]=window.PSSafe.url(p[k]); });
-        if(p.photo!=null&&typeof p.photo!=='string')delete p.photo;
-      }
-      each(doc.log,function(e){
-        if(e.t!=null&&!/^(?:team|match|rest|rehab|injury)$/.test(e.t))delete e.t;
-        ['w','rpe','sleep','sleepq','body','try'].forEach(function(k){ num(e,k); });
-      });
-      each(doc.growth,function(g){ num(g,'h'); num(g,'w'); });
-    }catch(_){}
-    return doc;
-  };
-
-  /* 3.105 — 썸네일 SVG 를 innerHTML 로 넣기 전의 단일 정리 규칙.
-     썸네일은 작전판이 만든 그림이지만 저장된 문자열이라 남의 손을 탈 수 있다(커뮤니티 담기·팀 문서·파일 열기).
-     정규식으로 지우던 옛 방식(community sanSvg)은 <animate/onbegin=…> 처럼 공백 없는 처리기와 엔티티로 쓴 javascript: 를 놓쳤다.
-     그래서 실행되지 않는 template 안에서 DOM 으로 읽고, SVG 이름공간의 그림 요소만 남긴다:
-       · script·foreignObject·style·애니메이션(animate·set …) 요소와 SVG 가 아닌 요소는 통째로 뺀다
-       · on* 속성, javascript:·바깥 주소 url(…) 이 든 속성을 뺀다. 안쪽 참조 url(#…)·href="#…" 는 남는다(그라디언트·클립)
-       · <image> 만 data:image/·blob:·같은 사이트 경로를 쓸 수 있다(공·사진 토큰)
-     정리한 결과를 한 번 더 읽어 모양이 같을 때만 돌려준다(다시 읽으며 모양이 바뀌는 문자열은 버린다). 실패하면 '' — 그림 없음으로 보인다. */
-  var SVG_NS='http://www.w3.org/2000/svg';
-  var SVG_DROP={script:1,foreignobject:1,style:1,animate:1,animatemotion:1,animatetransform:1,animatecolor:1,set:1,discard:1,handler:1,listener:1};
   /* 3.272 — 명단(scout_tool_v1 · sq:*) · 후보 · 경기 · 게임모델 문서를 화면이 쓰기 전에 한 번(scout.html scoutStore.get 이 지난다).
      · id 칸(id · posId · 선수 id 목록 · 종류 칸)은 `data-pid="…"` · `<option value="…">` · 처리기 문자열에 그대로 들어간다 — 구조 글자를 뺀다.
        앱이 만든 id(«pl_ab12» · «pos_GK» · uuid)에는 그런 글자가 없어 그대로다.
@@ -171,6 +171,42 @@
     }catch(_){}
     return lists;
   };
+  window.PSSafe.idp=function(doc){
+    try{
+      var num=function(o,k){
+        var v=o[k]; if(v==null||typeof v==='number'||typeof v==='boolean')return;
+        var n=typeof v==='string'&&v.trim()!==''?Number(v):NaN;
+        if(isFinite(n))o[k]=n; else delete o[k];
+      };
+      var each=function(map,fn){
+        if(!map||typeof map!=='object')return;
+        Object.keys(map).forEach(function(k){ var e=map[k]; if(e&&typeof e==='object'&&!Array.isArray(e))fn(e); else delete map[k]; });
+      };
+      if(!doc||typeof doc!=='object')return doc;
+      var p=doc.profile;
+      if(p&&typeof p==='object'){
+        ['video','video2'].forEach(function(k){ if(p[k]!=null)p[k]=window.PSSafe.url(p[k]); });
+        if(p.photo!=null&&typeof p.photo!=='string')delete p.photo;
+      }
+      each(doc.log,function(e){
+        if(e.t!=null&&!/^(?:team|match|rest|rehab|injury)$/.test(e.t))delete e.t;
+        ['w','rpe','sleep','sleepq','body','try'].forEach(function(k){ num(e,k); });
+      });
+      each(doc.growth,function(g){ num(g,'h'); num(g,'w'); });
+    }catch(_){}
+    return doc;
+  };
+
+  /* 3.105 — 썸네일 SVG 를 innerHTML 로 넣기 전의 단일 정리 규칙.
+     썸네일은 작전판이 만든 그림이지만 저장된 문자열이라 남의 손을 탈 수 있다(커뮤니티 담기·팀 문서·파일 열기).
+     정규식으로 지우던 옛 방식(community sanSvg)은 <animate/onbegin=…> 처럼 공백 없는 처리기와 엔티티로 쓴 javascript: 를 놓쳤다.
+     그래서 실행되지 않는 template 안에서 DOM 으로 읽고, SVG 이름공간의 그림 요소만 남긴다:
+       · script·foreignObject·style·애니메이션(animate·set …) 요소와 SVG 가 아닌 요소는 통째로 뺀다
+       · on* 속성, javascript:·바깥 주소 url(…) 이 든 속성을 뺀다. 안쪽 참조 url(#…)·href="#…" 는 남는다(그라디언트·클립)
+       · <image> 만 data:image/·blob:·같은 사이트 경로를 쓸 수 있다(공·사진 토큰)
+     정리한 결과를 한 번 더 읽어 모양이 같을 때만 돌려준다(다시 읽으며 모양이 바뀌는 문자열은 버린다). 실패하면 '' — 그림 없음으로 보인다. */
+  var SVG_NS='http://www.w3.org/2000/svg';
+  var SVG_DROP={script:1,foreignobject:1,style:1,animate:1,animatemotion:1,animatetransform:1,animatecolor:1,set:1,discard:1,handler:1,listener:1};
   function svgFlat(v){ return String(v==null?'':v).replace(/[\u0000- \u007f-\u009f]+/g,'').toLowerCase(); }
   function svgRefOk(tag,v){
     var s=svgFlat(v);
@@ -1433,10 +1469,8 @@
 (function(){
   var KEY='cs_errlog_v1', MAX=30, flushing=false;
   function cfg(){
-    try{ if(window.PS_SYNC&&window.PS_SYNC.url&&window.PS_SYNC.anonKey) return window.PS_SYNC; }catch(_){}
-    try{ var p=window.parent; if(p&&p!==window&&p.PS_SYNC&&p.PS_SYNC.url&&p.PS_SYNC.anonKey) return p.PS_SYNC; }catch(_){}
-    try{ var o=JSON.parse(localStorage.getItem('ps_sync_cfg')||'null'); if(o&&o.url&&o.anonKey) return o; }catch(_){}
-    return null;
+    /* 3.272 — 설정은 PSSafe.cfg 하나로(저장된 값으로 서버를 바꾸지 않는다) */
+    try{ return window.PSSafe&&window.PSSafe.cfg?window.PSSafe.cfg():null; }catch(_){ return null; }
   }
   function log(kind,msg,src,line){
     try{

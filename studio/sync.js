@@ -6,10 +6,8 @@
 (function(){
 "use strict";
 var CFG=null;
-try{ if(window.PS_SYNC&&window.PS_SYNC.url&&window.PS_SYNC.anonKey) CFG=window.PS_SYNC; }catch(_){}
-try{ if(!CFG){ var _raw=localStorage.getItem('ps_sync_cfg'); if(_raw){ var _o=JSON.parse(_raw); if(_o&&_o.url&&_o.anonKey) CFG=_o; } } }catch(_){}
-/* cfg를 저장해 둔다 — 커뮤니티 등을 단독 URL로 열어도(셸 부모 없이) 서버 설정을 찾을 수 있게 (publishable key라 공개 무해) */
-try{ if(CFG&&CFG.url&&CFG.anonKey) localStorage.setItem('ps_sync_cfg', JSON.stringify({url:CFG.url,anonKey:CFG.anonKey})); }catch(_){}
+/* 3.272 — 서버 설정은 app.html 의 상수(window.PS_SYNC)뿐이고 storage.js PSSafe.cfg(정해진 호스트만)를 지난다. 저장된 값(ps_sync_cfg)으로 서버를 바꾸던 길은 없앴다 */
+try{ CFG=window.PSSafe.cfg(window.PS_SYNC); }catch(_){}
 if(!CFG) return;
 var BASE=String(CFG.url).replace(/\/+$/,'');
 function syncDiagnostic(stage,error){
@@ -1010,9 +1008,9 @@ function signIn(provider){
   /* 2.254 — 잠금 오버레이는 iframe 페이지(sync.js 로드되는 board·scout 등)에도 뜬다. 거기서 누르면 iframe 이
      카카오로 가고 콜백 토큰이 iframe 주소로 떨어진다 — 같은 origin 이면 top 창으로 올려서 연다. */
   var w=window; try{ if(window.top&&window.top!==window&&window.top.location.origin===location.origin)w=window.top; }catch(_){}
-  try{ PSOAuthGate.begin(provider,w); }catch(_){}   /* 3.272 — 이 브라우저가 시작한 로그인만 콜백에서 받는다(oauth-gate.js) */
   var back=w.location.origin+w.location.pathname;
   try{ w.sessionStorage.setItem('ps_oauth_provider',provider); }catch(_){}
+  try{ PSOAuthGate.begin(provider,w); }catch(_){}   /* 3.272 — 이 브라우저가 시작한 로그인만 콜백에서 받는다(oauth-gate.js) */
   /* Google 브라우저 세션이 남아 있어도 로그인할 계정을 직접 고를 수 있게 한다. */
   try{ if(w.__psBootMarkDone)w.__psBootMarkDone(); }catch(_){}   /* 3.036 — 로그인으로 떠나는 것은 «죽음»이 아니다 */
   w.location.href=BASE+'/auth/v1/authorize?provider='+encodeURIComponent(provider)+'&redirect_to='+encodeURIComponent(back)+(provider==='google'?'&prompt=select_account':'');
@@ -1136,9 +1134,9 @@ function consumeHash(options){
       if(/(?:^#|&)refresh_token=/.test(location.hash||''))oauthCallbackSetIssue('로그인 응답이 완전하지 않습니다. 다시 로그인해 주세요.');
       return false;
     }
-    if(window.PSOAuthGate&&!PSOAuthGate.take())return false;   /* 3.272 login CSRF */
     var p={}; location.hash.replace(/^#/,'').split('&').forEach(function(kv){ var i=kv.indexOf('='); if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1)); });
     if(!p.access_token||!p.refresh_token){oauthCallbackSetIssue('로그인 응답이 완전하지 않습니다. 다시 로그인해 주세요.');return false;}
+    if(window.PSOAuthGate&&!PSOAuthGate.take())return false;   /* 3.272 login CSRF */
     var exp=Date.now()+(( +p.expires_in||3600)*1000);
     signOutEpoch++; // 새 OAuth 세션은 이전 조회·갱신의 응답을 무효화한다.
     setDataReady(false);

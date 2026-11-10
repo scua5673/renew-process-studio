@@ -10189,7 +10189,7 @@ window.quickFillWeek=function(){
   if(role==='executive'||role==='admin'){
     try{
       var sess9=null,cfg9=null;
-      try{sess9=JSON.parse(localStorage.getItem('ps_sync_session')||'null');cfg9=JSON.parse(localStorage.getItem('ps_sync_cfg')||'null');}catch(_){}
+      try{sess9=JSON.parse(localStorage.getItem('ps_sync_session')||'null');cfg9=PSSafe.cfg();}catch(_){}
       if(sess9&&sess9.at&&cfg9&&cfg9.url){
         var tries9=0;
         var mount9=function(){

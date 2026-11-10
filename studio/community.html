@@ -500,9 +500,8 @@ function plInRange(v,rk){var n=parseInt(v,10);if(!n)return false;
 
 /* ── 서버·세션 (board.html 패턴) ── */
 function cfg(){
-  try{var p=window.parent;if(p&&p!==window&&p.PS_SYNC&&p.PS_SYNC.url&&p.PS_SYNC.anonKey)return p.PS_SYNC;}catch(_){}
-  try{var o=JSON.parse(localStorage.getItem('ps_sync_cfg')||'null');if(o&&o.url&&o.anonKey)return o;}catch(_){}
-  return null;
+  /* 3.272 — 서버 설정은 storage.js PSSafe.cfg 하나(정해진 호스트만 · 저장된 값으로 바꾸지 않는다) */
+  try{return window.PSSafe.cfg();}catch(_){return null;}
 }
 function sess(){
   try{var p=window.parent;if(p&&p!==window&&p.PSSync&&p.PSSync.session)return p.PSSync.session()||null;}catch(_){}
