@@ -72,8 +72,10 @@
       return job;
     }
     var composite={
-      get length(){return mergedKeys().length;},
-      key:function(i){return mergedKeys()[i]||null;},
+      /* 구출 원문이 없으면(거의 늘) 작은 저장소 그대로다 — 예전엔 length · key(i) 마다 키 목록을 통째로 다시 만들어, 키 n 개를 한 번 훑는 데 n² 칸을 썼다
+         (20MB 보관함을 여는 동안 이 줄에서만 470MB — 저장소 알림마다 선수단 화면이 묶음을 훑는다). 구출 원문이 있을 때만 합친 목록. */
+      get length(){var c=activeCache();return c&&c.size?mergedKeys().length:local.length;},
+      key:function(i){var c=activeCache();return c&&c.size?mergedKeys()[i]||null:local.key(i)||null;},
       getItem:mergedGet,
       setItem:function(k,raw){
         try{local.setItem(k,raw);return;}
