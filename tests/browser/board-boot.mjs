@@ -12,7 +12,7 @@ const css=app.split('\n').filter(line=>line.trim().startsWith('#loading.ps-boot-
 const html=`<!doctype html><meta charset="utf-8"><style>${css}\nbody.ps-booting iframe{visibility:hidden}#loading.ps-boot-done{display:none}</style><body class="ps-booting"><div id="loading" class="ps-boot-screen"><span id="psBootMessage">불러오는 중…</span><button id="psBootRetry">다시 열기</button></div><iframe id="board" src="/board"></iframe><script>var fBoard=document.getElementById('board'),loading=document.getElementById('loading');${reload}\n${boot}\nwindow.__psShellBootReady=true;window.psFlushAllPendingReady=()=>Promise.reject(Error('fixture write failure'));</script>`;
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})});
 try{
- const context=await browser.newContext({serviceWorkers:'block'});
+ const context=await browser.newContext({locale:'ko-KR',serviceWorkers:'block'});
  let release;const gate=new Promise(r=>release=r);
  await context.route('**/*',async route=>{
   if(new URL(route.request().url()).pathname==='/board'){

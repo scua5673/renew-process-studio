@@ -34,7 +34,7 @@ try{
     // The shipped iPad shell uses a 1100px layout viewport. Keep WebKit touch input
     // in those layout pixels; Chromium also covers the physical viewport scaling.
     const viewport=engine==='webkit'&&spec.ipad&&spec.mobile?{width:1100,height:Math.round(spec.height*1100/spec.width)}:{width:spec.width,height:spec.height};
-    const context=await browser.newContext({viewport,screen:spec.ipad?{width:820,height:1180}:{width:393,height:852},isMobile:spec.mobile,hasTouch:true,userAgent:spec.ua,serviceWorkers:'block'});
+    const context=await browser.newContext({locale:'ko-KR',viewport,screen:spec.ipad?{width:820,height:1180}:{width:393,height:852},isMobile:spec.mobile,hasTouch:true,userAgent:spec.ua,serviceWorkers:'block'});
     await context.route('**/*',r=>new URL(r.request().url()).origin===base?r.continue():r.abort());
     await context.addInitScript(()=>{
       Object.defineProperty(navigator,'maxTouchPoints',{get:()=>5});

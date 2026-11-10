@@ -7,7 +7,7 @@ test('3.017 moving between pages of one work keeps the board settings; opening a
   assert.match(board,/function loadIdx\(i,keep\)\{ try\{ window\.loadSnap\(pages\[i\]\.snap\|\|\{\},keep\?\{keepLook:true\}:undefined\);/);
   assert.match(board,/if\(keep\)_lookStampPages\(\); \}/,'the page and its scenes get the current settings');
   for(const s of [
-    'idx++; loadIdx(idx,true);clearHistory();',                         // ＋ 페이지
+    'idx++; loadIdx(idx,true);clearHistory(1);',                        // ＋ 페이지(3.271 — 추가 · 복제 · 삭제는 기록을 비우는 대신 표식 1: board-page-history 가 되돌리기 한 줄로 적는다)
     'pages.splice(i+1,0,_cp); idx=i+1; loadIdx(idx,true);',              // 복제
     '/* 2.990 — 시퀀스를 고르면 국면 지도는 걷힌다 */ idx=i; loadIdx(idx,true);', // 고르기
     'else if(idx===i)idx=Math.max(0,i-1); loadIdx(idx,true);',           // 지우기

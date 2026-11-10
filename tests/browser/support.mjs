@@ -14,7 +14,7 @@ const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{ex
 const results=[];
 try{
   for(const width of [1280,393]){
-    const context=await browser.newContext({viewport:{width,height:852},serviceWorkers:'block'});
+    const context=await browser.newContext({locale:'ko-KR',viewport:{width,height:852},serviceWorkers:'block'});
     let unavailable=false,delayGet=null,createFailures=1,replyFailures=1,createWrongAck=1,replyWrongAck=1;
     const blocked=[],requests=[],reports=new Map(),replies=new Map();
     const record={id:existing,title:'이전 문의 <img src=x onerror="window.fixtureXss=1">',body:'이전 문의 본문',created_at:'2026-09-15T01:00:00Z',diagnostics:{environment:{appVersion:'2.815'},logs:[]}};

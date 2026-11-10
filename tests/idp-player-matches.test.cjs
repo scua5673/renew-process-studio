@@ -42,7 +42,7 @@ function harness(){
   ]);
   const reads=[],writes=[];
   function refuseWrite(...args){writes.push(args);throw new Error('readonly path attempted a write');}
-  const c={PREFIX,_idpRecoveryAuthLocked:false,doc:freeze({v:1,matchSelf:{mine:{good:'코치 개인 문서'}}}),viewing:PREFIX+'coach',
+  const c={PREFIX,PSSafe:{idp:d=>d},_idpRecoveryAuthLocked:false,doc:freeze({v:1,matchSelf:{mine:{good:'코치 개인 문서'}}}),viewing:PREFIX+'coach',
     localStorage:{getItem(key){reads.push(key);if(state.throwKey===key)throw new Error('storage unavailable');return local.has(key)?local.get(key):null;},setItem:refuseWrite,removeItem:refuseWrite,clear:refuseWrite},
     save:refuseWrite,load:refuseWrite,syncMyIdpSoon:refuseWrite,console,Date};
   c.window=c;c.parent={PSSync:{session:()=>state.liveUid?{uid:state.liveUid}:null,dataUnlocked:()=>state.unlocked}};

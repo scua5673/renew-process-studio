@@ -166,6 +166,8 @@
     ['ps_boot_alive_v1','device','ls','session','app.html'],
     ['ps_boot_crumb_v1','device','ls','session','app.html'],
     ['ps_boot_crash_sent_v1','device','ls','diag','app.html'],
+    ['ps_crash_crumb_v1','device','ls','session','crash-breadcrumb.js'],   // 데스크톱 탭 종료 표식 — sessionStorage(가득 찬 기기의 같은 탭) · `:tab`
+    ['ps_crash_crumb_v1:','device','ls','session','crash-breadcrumb.js',{prefix:1}],   // 탭마다 한 줄(300자 안팎), 정상 종료 때 지운다
     ['ps_boot_safe_carry_v1','device','ls','session','app.html'],
     ['ps_cache_owner_v1','device','ls','session','scout.html'],
     ['ps_cache_wipe','device','ls','session','sync.js'],
@@ -213,6 +215,8 @@
     ['ps_merge_note_v1','device','ls','queue','sync.js'],
     ['ps_notice_seen_v1','device','ls','seen','idp.html'],
     ['ps_oauth_callback_issue','device','ls','session','sync.js'],
+    ['ps_logout_clean_v1','device','ls','session','account-hygiene.js'],   /* 3.272 — «서버 확인을 마친 로그아웃»을 한 계정(uid · 시각). 다음 계정이 로그인할 때 그 계정의 자동 저장 기준본 · 주인 없는 사진을 지워도 되는지 본다 */
+    ['ps_oauth_pending_v1','device','ls','session','oauth-gate.js'],   /* 3.272 — «이 브라우저가 로그인을 시작함» 표식(시각 · 그때의 uid, 10분 · 한 번). sessionStorage 에도 같은 이름 */
     ['ps_oauth_provider','device','ls','session','sync.js'],
     ['ps_opt_auto_at','device','ls','cache','storage.js'],
     ['ps_opt_board_recovery_v1','device','ls','recovery','storage.js',{of:'cs_board_live_v1'}],
@@ -252,7 +256,7 @@
     ['ps_support_reply_v1:','device','ls','draft','support.js',{prefix:1}],
     ['ps_sync_403_v1','device','ls','queue','sync.js'],
     ['ps_sync_base_','device','idb','queue','storage.js',{prefix:1}],
-    ['ps_sync_cfg','device','ls','session','sync.js'],
+    ['ps_sync_cfg','device','ls','session','storage.js'],   /* 3.272 — 루프백 시험 서버 주소만(운영 주소에서는 부팅 때 지운다 · PSSafe.cfg) */
     ['ps_sync_conf_seen','device','ls','seen','sync.js'],
     ['ps_sync_conflict_','device','ls','queue','sync.js',{prefix:1}],
     ['ps_sync_conflicts_v1','device','ls','queue','sync.js'],

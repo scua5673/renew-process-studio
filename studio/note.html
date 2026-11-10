@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script src="data-lock-guard.js"></script>
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -1952,9 +1953,7 @@ function ensurePdfjs(){
       sc.onerror=()=>{ if(next)next(); else rej(new Error('offline')); };
       document.head.appendChild(sc);
     }
-    load('/vendor/pdfjs/pdf.min.js','/vendor/pdfjs/pdf.worker.min.js',true,function(){
-      load('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',false,null);
-    });
+    load('/vendor/pdfjs/pdf.min.js','/vendor/pdfjs/pdf.worker.min.js',true,null);   /* 3.272 — 바깥 CDN 으로 다시 받지 않는다(무결성 확인 없는 남의 스크립트가 로그인 토큰 옆에서 돌지 않게). 같은 파일이 /vendor/pdfjs 에 실려 있다 */
   });
 }
 /* 파일 메뉴 — PDF 열기·이미지 저장·A4 인쇄 묶음(툴바 줄 수 축소) */

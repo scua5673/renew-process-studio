@@ -70,8 +70,41 @@
     return { flush: flush, pending: function () { return pending; } };
   }
 
+  /* 읽는 중인 목록 같이 쓰기(제보 de2e508c 조사). psVaultRenderRead 는 «아직 시작 전»인 읽기만 같이 썼다 — 큰 보관함은 읽기 하나가 0.3초쯤 걸려,
+     보관함을 열면 setView 그리기(0.03초)가 읽는 중에 이 파일의 flush(0.08초)가 또 읽기를 줄 세웠고, 저장 뒤 다시 그리기도 둘이었다. 읽기 하나가 렌더러 메모리를
+     100~140MB 잠깐 올린다(합성 82개 20MB · 크로미움 /proc RSS). 이제 «읽는 중»인 읽기도 같이 쓴다(같은 Promise) — 그 사이 아무것도 안 바뀌었을 때만:
+     이 판의 보관함 차례(_libTurnTail)가 그대로 · 이 판이 쓰지 않음(libWrite) · 바뀜 신호(cs_lib_rev — 이 판의 libSet · 동기화 libSave · 일정 · 플레이북이 찍는다)가 그대로 ·
+     계정 · 팀 · 잠금이 그대로 · 로그인 알림(psVaultAuthChanged — 주인이 바뀌었을 수 있다, 3.176 시험이 그 읽기를 따로 센다)이 오지 않음.
+     읽기가 끝나면 잊는다 — 끝난 목록은 같이 쓰지 않는다(다음 그리기는 예전처럼 새로 읽는다: 숨은 사이 끝난 읽기를 버리는 3.146 규칙 그대로).
+     숨은 판(__psVaultDefer)은 원래 길 그대로(읽지 않는다). 쓰는 길은 건드리지 않는다. */
+  function share(win) {
+    var orig = win && win.psVaultRenderRead, write = win && win.libWrite, auth = win && win.psVaultAuthChanged;
+    if (typeof orig !== 'function' || orig.__psShare) return null;
+    var last = null, gen = 0, stats = { reads: 0, shared: 0 };
+    function rev() { try { return win.localStorage.getItem('cs_lib_rev'); } catch (_) { return null; } }
+    function own() {
+      try { return String(win.psMyUid()) + '|' + String((win.psActiveWs() || {}).id) + '|' + (win.psVaultUnlocked() === true ? 1 : 0); } catch (_) { return null; }
+    }
+    if (typeof write === 'function') win.libWrite = function () { gen++; last = null; return write.apply(this, arguments); };
+    if (typeof auth === 'function') win.psVaultAuthChanged = function () { gen++; last = null; return auth.apply(this, arguments); };
+    var wrapped = function () {
+      if (typeof win.__psVaultDefer === 'function' && win.__psVaultDefer()) { last = null; return orig.apply(this, arguments); }
+      var r = rev(), o = own();
+      if (last && o !== null && last.own === o && last.gen === gen && last.tail === win._libTurnTail && last.rev === r) { stats.shared++; return last.p; }
+      var p = orig.apply(this, arguments), e = { p: p, own: o, gen: gen, tail: win._libTurnTail, rev: r };
+      last = o === null ? null : e; stats.reads++;
+      function done() { if (last === e) last = null; }
+      Promise.resolve(p).then(done, done);
+      return p;
+    };
+    wrapped.__psShare = 1; win.psVaultRenderRead = wrapped;
+    return { stats: stats, drop: function () { last = null; } };
+  }
+
   if (typeof window !== 'undefined' && window.document && /\/studio\/board\.html/.test(String(window.location && window.location.pathname))) {
     try { mount(window); } catch (_) {}
+    /* 이 파일은 작전판 본문보다 먼저 읽힌다 — psVaultRenderRead 가 생긴 뒤(문서가 다 읽힌 뒤)에 감싼다 */
+    try { window.addEventListener('DOMContentLoaded', function () { try { window.__psVaultShare = share(window); } catch (_) {} }); } catch (_) {}
   }
-  return { frameHidden: frameHidden, vaultHidden: vaultHidden, mount: mount };
+  return { frameHidden: frameHidden, vaultHidden: vaultHidden, mount: mount, share: share };
 });

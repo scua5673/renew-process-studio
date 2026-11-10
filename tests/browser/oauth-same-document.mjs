@@ -44,7 +44,7 @@ if(engine==='webkit'){
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{}),...(rejectProxy?{proxy:{server:'http://127.0.0.1:'+rejectProxy.address().port}}:{})});
 let context,page,profiler,navAborts=null;
 try{
-  context=await browser.newContext({viewport:{width:1280,height:900},serviceWorkers:'block',timezoneId:'Asia/Seoul',offline:!rejectProxy});
+  context=await browser.newContext({locale:'ko-KR',viewport:{width:1280,height:900},serviceWorkers:'block',timezoneId:'Asia/Seoul',offline:!rejectProxy});
   // The app sees online because its fixture responses are fulfilled locally.
   // Transport is offline (Chromium) or restricted to the rejecting proxy
   // (WebKit); neither mode can contact the real authentication/data service.
@@ -145,6 +145,8 @@ try{
   await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});await ready(WA,A);
   const before=await page.evaluate(()=>({uid:PSSync.session()?.uid,at:PSSync.session()?.at,unlocked:PSSync.dataUnlocked()}));
   await page.evaluate(()=>{window.__beforeCallbackDocument='same-document-sentinel';window.__hashEvents=0;window.addEventListener('hashchange',()=>window.__hashEvents++);});
+  /* 3.272 — 로그인 단추를 누른 것처럼 «시작함» 표식을 남긴다(oauth-gate.js). 표식 없는 콜백은 저장되지 않는다(tests/browser/oauth-callback-gate) */
+  await page.evaluate(()=>PSOAuthGate.begin('google'));
   await page.goto(base+'/studio/app.html#access_token=fixture-access-B&refresh_token=fixture-refresh-B&expires_in=3600&token_type=bearer');
   await ready(WC,B);
   const after=await page.evaluate(()=>({uid:PSSync.session()?.uid,at:PSSync.session()?.at,unlocked:PSSync.dataUnlocked(),sameDocument:window.__beforeCallbackDocument==='same-document-sentinel',fragmentContainsToken:location.hash.includes('access_token=')}));
@@ -168,6 +170,7 @@ try{
   // document or hashchange. Invoke the actual registered pageshow handler.
   const persistedLock=await page.evaluate(()=>{
     window.__beforeRestoredCallback='old-B-document';
+    PSOAuthGate.begin('google');
     history.replaceState(null,'',location.pathname+'#access_token=fixture-access-A&refresh_token=fixture-refresh-A&expires_in=3600');
     window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
     return {unlocked:PSSync.dataUnlocked(),uid:PSSync.session()?.uid};

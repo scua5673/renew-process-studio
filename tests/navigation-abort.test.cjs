@@ -174,3 +174,17 @@ test('R: WebKit «Can\'t find variable» counts only inside a navigation window,
   assert.equal(n.isAbort('ReferenceError: PSTeamLibrary is not defined',Date.now()),false);
   assert.equal(n.isAbort(MSG,Date.now()+60000),false,'long after the navigation it stays an error');
 });
+
+/* 3.272 — 같은 흔적의 TypeError 모양(window.PSSaveState.createTracker — storage.js 가 못 들어온 scout.html) */
+test('R: WebKit «undefined is not an object (evaluating window.X.y)» counts only inside a navigation window',()=>{
+  const MSG="undefined is not an object (evaluating 'window.PSSaveState.createTracker')";
+  const p=fakePage(),n=track(p,null);
+  assert.equal(n.isAbort(MSG,Date.now()),false,'outside any navigation it stays an error');
+  assert.match(n.judge(MSG,Date.now()).why,/inNavWindow/);
+  p.emit('request',navReq(B+'/studio/app.html',{}));
+  assert.equal(n.isAbort(MSG,Date.now()),true);
+  assert.equal(n.isAbort('TypeError: '+MSG,Date.now()),true);
+  assert.equal(n.isAbort("undefined is not an object (evaluating 'data.players.length')",Date.now()),false,'only a window.<global>.<prop> read');
+  assert.equal(n.isAbort("Cannot read properties of undefined (reading 'createTracker')",Date.now()),false,'the Chromium sentence is never a trace');
+  assert.equal(n.isAbort(MSG,Date.now()+60000),false);
+});

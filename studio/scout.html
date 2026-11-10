@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script src="data-lock-guard.js"></script>
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
 <script>/* 2.205 — 앱 셸 안(iframe)에서 열릴 때 셸이 setView 를 보내기 전 기본 뷰(스카우팅)가 한 프레임 보였다(사용자: "팀 들어가면 다른 게 열렸다가 갑자기 뜬다"). 첫 setView 까지 뷰를 가린다. 1.5초 안전장치 */
 try{ if(window.parent&&window.parent!==window){ document.documentElement.classList.add('ps-wait'); setTimeout(function(){ document.documentElement.classList.remove('ps-wait'); },1500); } }catch(_){}</script>
@@ -2161,8 +2162,8 @@ html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
     var inpCss='width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:9px 11px;border:1.5px solid rgba(128,140,160,.45);border-radius:10px;background:transparent;color:inherit;outline:none';
     fields.forEach(function(f,i){
       h+='<label style="display:block;margin-bottom:10px"><span style="display:block;font-size:11px;font-weight:700;color:'+(dark?'#9AA4B3':'#6a7078')+';margin-bottom:5px">'+f.label+(f.required?' <i style="color:#d12f38;font-style:normal">*</i>':'')+'</span>';
-      if(f.type==='select'){ h+='<select data-k="'+f.key+'" style="'+inpCss+'">'+(f.options||[]).map(function(o){var v=(typeof o==='string')?o:o.value,l=(typeof o==='string')?o:o.label;return '<option value="'+String(v).replace(/"/g,'&quot;')+'"'+(f.value===v?' selected':'')+'>'+l+'</option>';}).join('')+'</select>'; }
-      else if(f.type==='seg'){ h+='<span data-seg="'+f.key+'" style="display:flex;gap:6px">'+(f.options||[]).map(function(o){var v=(typeof o==='string')?o:o.value,l=(typeof o==='string')?o:o.label;var on=f.value===v;return '<button type="button" data-v="'+String(v).replace(/"/g,'&quot;')+'" style="flex:1;font:inherit;font-size:13px;font-weight:600;padding:9px 0;border-radius:10px;border:1.5px solid '+(on?'#14213D':'rgba(128,140,160,.45)')+';background:'+(on?'#14213D':'transparent')+';color:'+(on?'#fff':'inherit')+';cursor:pointer">'+l+'</button>';}).join('')+'</span>'; }
+      if(f.type==='select'){ h+='<select data-k="'+f.key+'" style="'+inpCss+'">'+(f.options||[]).map(function(o){var v=(typeof o==='string')?o:o.value,l=(typeof o==='string')?o:o.label;return '<option value="'+String(v).replace(/"/g,'&quot;')+'"'+(f.value===v?' selected':'')+'>'+PSSafe.html(l)+'</option>';}).join('')+'</select>'; }
+      else if(f.type==='seg'){ h+='<span data-seg="'+f.key+'" style="display:flex;gap:6px">'+(f.options||[]).map(function(o){var v=(typeof o==='string')?o:o.value,l=(typeof o==='string')?o:o.label;var on=f.value===v;return '<button type="button" data-v="'+String(v).replace(/"/g,'&quot;')+'" style="flex:1;font:inherit;font-size:13px;font-weight:600;padding:9px 0;border-radius:10px;border:1.5px solid '+(on?'#14213D':'rgba(128,140,160,.45)')+';background:'+(on?'#14213D':'transparent')+';color:'+(on?'#fff':'inherit')+';cursor:pointer">'+PSSafe.html(l)+'</button>';}).join('')+'</span>'; }
       else { h+='<input data-k="'+f.key+'" type="'+(f.type||'text')+'" value="'+String(f.value==null?'':f.value).replace(/"/g,'&quot;')+'" placeholder="'+String(f.placeholder||'').replace(/"/g,'&quot;')+'" '+(f.type==='number'?'inputmode="numeric" ':'')+(f.maxlength?'maxlength="'+f.maxlength+'" ':'')+'autocomplete="off" style="'+inpCss+'">'; }
       h+='</label>';
     });
@@ -6355,7 +6356,7 @@ function teamSaveOwner(){
 const teamSaves=window.PSSaveState.createTracker("team",teamSaveOwner);
 const scoutStore={
   /* 3.062 — 일정은 PSSchedule.raw(): 거울이 IDB 정본보다 뒤처진 기기(아이패드 거울 쓰기 실패)에서도 정본을 읽고, 정본 위에 고쳐 쓴다 */
-  get(k){try{const v=(k==="process_coach_v1"&&window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem(k);if(v)return JSON.parse(v);}catch(_){}return mem[k]??null;},
+  get(k){try{const v=(k==="process_coach_v1"&&window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem(k);if(v){const d=JSON.parse(v);return typeof PSSafe!=="undefined"&&PSSafe.doc?PSSafe.doc(k,d):d;}}catch(_){}return mem[k]??null;},
   /* 동기 접수 여부를 돌려준다. 예전에는 실패를 삼키고 mem에만 넣은 뒤 호출부가 "저장됨"이라고
      말해서, 코치는 저장된 줄 알고 앱을 닫았다. mem 사본은 이 탭이 살아 있는 동안의
      임시 대비일 뿐 저장이 아니다. */
@@ -7273,7 +7274,7 @@ function save(){
 function attr(id){return data.attrs.find(a=>a.id===id);}
 function pos(id){return data.positions.find(p=>p.id===id);}
 function posGroupOf(name){var a=(posAbbr(name)||name||"").toUpperCase();if(/GK|골키퍼|키퍼/.test(a))return"GK";if(/WB|CB|LB|RB|백|수비/.test(a))return"DEF";if(/DM|CM|AM|LM|RM|미드/.test(a))return"MID";if(/CF|ST|LW|RW|SS|FW|공격|윙|스트라이커/.test(a))return"ATT";return"ETC";}
-function posOptionsHTML(curId,formKey){var allow=null;if(formKey){try{var _sl=tmFormSlots(formKey)||[];allow={};_sl.forEach(function(s){var a=(Array.isArray(s)?s[0]:(s&&(s.pos||s.name)||s))||"";allow[(""+a).toUpperCase()]=1;});}catch(_){allow=null;}}var G={GK:[],DEF:[],MID:[],ATT:[],ETC:[]};data.positions.forEach(function(p){if(allow){var ab=(posAbbr(p.name)||p.name||"").toUpperCase();if(!allow[ab])return;}(G[posGroupOf(p.name)]||G.ETC).push(p);});var L={GK:"골키퍼",DEF:"수비",MID:"미드필더",ATT:"공격",ETC:"기타"};var h='<option value="">포지션</option>';["GK","DEF","MID","ATT","ETC"].forEach(function(k){if(!G[k].length)return;h+='<optgroup label="'+L[k]+'">';G[k].forEach(function(p){h+='<option value="'+p.id+'"'+(p.id===curId?" selected":"")+'>'+(posAbbr(p.name)||p.name)+'</option>';});h+="</optgroup>";});return h;}
+function posOptionsHTML(curId,formKey){var allow=null;if(formKey){try{var _sl=tmFormSlots(formKey)||[];allow={};_sl.forEach(function(s){var a=(Array.isArray(s)?s[0]:(s&&(s.pos||s.name)||s))||"";allow[(""+a).toUpperCase()]=1;});}catch(_){allow=null;}}var G={GK:[],DEF:[],MID:[],ATT:[],ETC:[]};data.positions.forEach(function(p){if(allow){var ab=(posAbbr(p.name)||p.name||"").toUpperCase();if(!allow[ab])return;}(G[posGroupOf(p.name)]||G.ETC).push(p);});var L={GK:"골키퍼",DEF:"수비",MID:"미드필더",ATT:"공격",ETC:"기타"};var h='<option value="">포지션</option>';["GK","DEF","MID","ATT","ETC"].forEach(function(k){if(!G[k].length)return;h+='<optgroup label="'+L[k]+'">';G[k].forEach(function(p){h+='<option value="'+esc(p.id)+'"'+(p.id===curId?" selected":"")+'>'+esc(posAbbr(p.name)||p.name)+'</option>';});h+="</optgroup>";});return h;}
 function player(id){return data.players.find(p=>p.id===id);}
 function tgt(p,aid){return p.targets[aid]||3;}
 function lvl(pl,aid){return (pl.levels&&pl.levels[aid])||3;}
@@ -7648,7 +7649,7 @@ function renderCritMatrix(){
           const explicit=p.targets&&p.targets[a.id];
           const core=Array.isArray(p.core)?p.core.indexOf(a.id)>=0:(coreIdsFor(p)||[]).indexOf(a.id)>=0;
           cell.classList.toggle("df",!explicit);
-          cell.innerHTML=(core?'<span class="st">★</span>':'')+tgt(p,a.id);
+          cell.innerHTML=(core?'<span class="st">★</span>':'')+(+tgt(p,a.id)||3);
           cell.title=posAbbr(p.name)+" · "+a.name+" 목표 "+tgt(p,a.id)+(explicit?"":" (기본값)")+" — 탭해서 1~5 변경";
         };
         paint();
@@ -10248,7 +10249,7 @@ function resumePageHTML(pl, lang, pageLb, more){   /* pageLb: 인쇄 짝(1/2·2/
     ${specs?`<div class="rz-specs">${specs}</div>`:``}
     ${(careerRows||awardRows)?`<div class="rz-sec">${LB.career}</div><div class="rz-pgrid">${careerRows}${awardRows}</div>`:``}
     ${more?rzMoreHTML(pf,LB):``}
-    ${pf.video?`<div class="rz-sec">${LB.video}</div><div class="rz-pgrid"><div class="rz-prow"><span class="rz-pk">${LB.highlight}</span><b><a class="rz-link" href="${esc(pf.video)}">${esc(pf.video)}</a></b></div></div>`:``}
+    ${pf.video?`<div class="rz-sec">${LB.video}</div><div class="rz-pgrid"><div class="rz-prow"><span class="rz-pk">${LB.highlight}</span><b><a class="rz-link" href="${esc(PSSafe.url(pf.video))}">${esc(pf.video)}</a></b></div></div>`:``}
     ${contact?`<div class="rz-contact">${contact}</div>`:``}
     <div class="rz-rfoot"><span><b>PRO</b>FILE · ${LB.resumeTitle}</span><span>${pageLb?pageLb+' · ':''}${today} ${LB.createdSuffix}</span></div>
   </div>`;
@@ -18583,13 +18584,13 @@ function renderStatusView(){
     var sum=tr+off?('훈련 '+tr+' · 휴식 '+off):'기록 시작';
     var curNote=stCurNote(p.id);
     var noteBtn=(cur!=="ok")
-      ?'<button type="button" class="st-note'+(curNote?"":" empty")+'" onclick="stNoteModal(\''+p.id+'\')">'+(curNote?esc(curNote):"＋ 사유 입력")+'</button>'
+      ?'<button type="button" class="st-note'+(curNote?"":" empty")+'" onclick="stNoteModal(\''+PSSafe.arg(p.id)+'\')">'+(curNote?esc(curNote):"＋ 사유 입력")+'</button>'
       :'';
     return '<div class="st-row" data-pid="'+p.id+'" data-st="'+cur+'"><span class="st-drag" title="끌어서 그룹 이동" aria-label="그룹 이동"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13" style="display:block;pointer-events:none" aria-hidden="true"><path d="M8 6h8M8 12h8M8 18h8"/></svg></span><span class="num">'+esc(String(p.num||"·"))+'</span>'
       +'<span class="who"><b>'+esc(p.name||"이름 없음")+'</b><small>'+esc(ps?(posAbbr(ps.name)||ps.name):"포지션 미정")+'</small>'+noteBtn+'</span>'
       +'<span class="st-hist" title="최근 14일"><span class="dots">'+dots+'</span><small>'+sum+'</small></span>'
       +'<span class="st-seg">'+ST_ROWS.map(function(r){
-        return '<button type="button" data-k="'+r[0]+'" class="'+(cur===r[0]?"on":"")+'" onclick="stSet(\''+p.id+'\',\''+r[0]+'\')">'+r[1]+'</button>';
+        return '<button type="button" data-k="'+r[0]+'" class="'+(cur===r[0]?"on":"")+'" onclick="stSet(\''+PSSafe.arg(p.id)+'\',\''+r[0]+'\')">'+r[1]+'</button>';
       }).join("")+'</span></div>';
   }
   var html="";
@@ -19044,7 +19045,7 @@ function ckSeasonStats(){
      «한 번도 안 했다» 로 읽힌다 — 실제로는 128일 중 76일에 국면 자체를 안 붙인 것이었다(사용자 실데이터). */
   var out={train:0,off:0,match:0,byMoment:{},moments:[],any:false,weeks:0,detail:{},tagged:0};   /* 2.482 — detail[moKey]={last,phases:{id:{n,last}},unspec,days} · 날수 기준(하루 중복 제거) */
   try{
-    var src=JSON.parse(((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem("process_coach_v1"))||"null");
+    var src=PSSafe.sched(JSON.parse(((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem("process_coach_v1"))||"null"));
     var weeks=src&&src.weeks; if(!weeks||typeof weeks!=="object")return out;
     var model=null; try{ model=JSON.parse(localStorage.getItem("cs_gamemodel_v1")||"null"); }catch(_){}
     var pm={},order=[];
@@ -19073,6 +19074,7 @@ function ckSeasonStats(){
       arr.forEach(function(day,di){
         if(!day)return;
         if(w===cur&&di>todayIdx)return;                       /* 아직 오지 않은 날은 안 센다 */
+        try{ day=PSSchedule.effectiveDay(day,{prune:true}); }catch(_){}   /* 하루의 종류는 한 규칙(조를 OFF 로 돌려 열리는 세션이 없는 날은 OFF) */
         var bd=day.board||{};
         var trs=(day.trainings&&day.trainings.length)?day.trainings:[];
         var isM=false; try{ isM=!!(window.PSSchedule&&PSSchedule.hasMatch(day)); }catch(_){}
@@ -19123,7 +19125,7 @@ function ckSeasonStats(){
 function tgeTrainCount(model){
   var out={byPhase:{},byMoment:{},any:false};
   try{
-    var src=JSON.parse(((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem("process_coach_v1"))||"null");
+    var src=PSSafe.sched(JSON.parse(((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem("process_coach_v1"))||"null"));
     var weeks=src&&src.weeks; if(!weeks||typeof weeks!=="object")return out;
     var cur=0;
     try{ var am=src.anchorMonday?new Date(src.anchorMonday+"T00:00:00"):null;

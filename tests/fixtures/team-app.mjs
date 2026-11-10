@@ -19,6 +19,8 @@ export const build=appHtml.match(/window\.PS_BUILD='([^']+)'/)[1];
 export const A='11111111-1111-4111-8111-111111111111';
 export const WT='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',WP='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const teams=[{id:WT,kind:'team',name:'가상 테스트 FC',role:'owner',owner_id:A},{id:WP,kind:'personal',name:'가상 개인 공간',role:'owner',owner_id:A}];
+/* 3.272 — startFixture({teamRole:'member',teamName}) : 로그인한 A 가 팀 주인이 아닌 팀원(선수 · 코치)인 팀. 역할은 cs_perms_v1 이 정한다 */
+const teamsFor=o=>teams.map(t=>t.id===WT&&o&&(o.teamRole||o.teamName)?{...t,role:o.teamRole||t.role,name:o.teamName||t.name,owner_id:o.teamRole&&o.teamRole!=='owner'?'99999999-9999-4999-8999-999999999999':t.owner_id}:t);
 
 const POS=['GK','CB','LCB','RCB','LB','RB','DM','CM','AM','LW','RW','CF'];
 function players(){
@@ -61,8 +63,8 @@ export async function startFixture(opts={}){
     calls.push({step,t:Date.now(),m:req.method,p:url.pathname,q:url.search.slice(0,200),...(url.pathname==='/rest/v1/ps_events'?{body:req.body}:{})});   /* 3.036 — 이벤트 행은 본문도(boot_after_crash 시험) */
     let body=[];
     if(url.pathname==='/auth/v1/user')body={id:uid,email:'a@example.invalid'};
-    else if(url.pathname.endsWith('/ps_bootstrap'))body=teams;
-    else if(url.pathname.endsWith('/ps_members_of_v2')||url.pathname.endsWith('/ps_members_of'))body=[{user_id:uid,name:'가상 코치',email:'a@example.invalid',role:'owner'}];
+    else if(url.pathname.endsWith('/ps_bootstrap'))body=teamsFor(opts);
+    else if(url.pathname.endsWith('/ps_members_of_v2')||url.pathname.endsWith('/ps_members_of'))body=opts.members||[{user_id:uid,name:'가상 코치',email:'a@example.invalid',role:'owner'}];   /* 3.272 — members: 팀원 목록을 시험이 정한다(이름 · 이메일 탐침) */
     else if(url.pathname.endsWith('/ps_key_scope'))body='team';
     else if(url.pathname==='/rest/v1/ps_kv'){
       if(kvGate&&req.method==='GET'&&(!kvGate.wid||url.searchParams.get('workspace_id')==='eq.'+kvGate.wid)&&(!kvGate.key||url.searchParams.get('k')==='eq.'+kvGate.key))await kvGate.promise;   /* 3.104 — holdKvPull(): 팀 자료 받기를 붙잡아 «받기 전» 틈을 만든다 */
@@ -123,12 +125,18 @@ export const SIZES={
   desktop:{engine:'chromium',ctx:{viewport:{width:1280,height:800},deviceScaleFactor:1}}
 };
 
-export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false,guest=false,init=null}={}){
+export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false,guest=false,init=null,learning=false}={}){
+  /* learning:true 면 «학습»을 켠 판(learning-off.js 의 PS_LEARNING_ENABLED=true)으로 연다 — 꺼 둔 학습 코드가 한 줄로 되살아나는지 보는 시험용 */
   /* 3.131 — init:{fn,arg} 는 앱보다 먼저, 모든 프레임에서 도는 시험용 스크립트(예: 기기 저장 한도 흉내) */
   /* 3.112 — guest:true 면 로그인하지 않은 기기(세션 · 공간 · 계정 흔적 없음)로 연다. 로그인은 시험이 signIn(page) 으로 */
   /* 3.039 — csp:true 면 HTML 응답에 _headers 의 Content-Security-Policy-Report-Only 를 그대로 붙인다(tests/browser/csp-report-only) */
-  const cspValue=csp?(/\n  Content-Security-Policy-Report-Only: (.+)\n/.exec(fs.readFileSync(path.join(root,'_headers'),'utf8'))||[])[1]:null;
-  if(csp&&!cspValue)throw new Error('_headers 에 Content-Security-Policy-Report-Only 가 없다');
+  /* 3.272 — 막는 정책(Content-Security-Policy)도 같이 붙인다: connect-src · frame-src · worker-src · media-src · manifest-src · form-action 은 이제 막는다.
+     PS_FIXTURE_CSP=1 이면 어느 시험이든 두 정책을 붙여 돈다 — 막힌 것은 «[csp-enforce] …» 로 stderr 에 적힌다(정책을 조일 때 묶음을 이렇게 돌려 본다) */
+  if(process.env.PS_FIXTURE_CSP==='1')csp=true;
+  const headerText=csp?fs.readFileSync(path.join(root,'_headers'),'utf8'):'';
+  const cspValue=csp?(/\n  Content-Security-Policy-Report-Only: (.+)\n/.exec(headerText)||[])[1]:null;
+  const cspEnforce=csp?(/\n  Content-Security-Policy: (.+)\n/.exec(headerText)||[])[1]:null;
+  if(csp&&(!cspValue||!cspEnforce))throw new Error('_headers 에 Content-Security-Policy(-Report-Only) 가 없다');
   const S=SIZES[sizeName];
   const browser=browsers[S.engine]||(browsers[S.engine]=await pw[S.engine].launch({headless:true,...(S.engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})}));
   const context=await browser.newContext({...S.ctx,serviceWorkers:'block',timezoneId:'Asia/Seoul',locale:'ko-KR',colorScheme:dark?'dark':'light'});
@@ -143,7 +151,7 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
     if(dark)localStorage.setItem('cs_theme','dark');
     if(tilt3d!==null)localStorage.setItem('ps_board_tilt3d',tilt3d?'1':'0');   /* 3.027 — 앱은 처음 들어온 기기를 3D 로 연다. 시험은 평면이 기본(null = 처음 들어온 기기 그대로) */
     if(!examples)localStorage.setItem('ps_vault_px_v1',JSON.stringify({[A+'|'+WT]:1}));   /* 3.001 — 보관함 «프로세스» 예시를 이미 받은 사용자(이 판 전과 같은 보관함). 예시 넣기를 보는 시험만 examples:true */
-  },{A,WT,teams,base,dark,examples,tilt3d,guest});
+  },{A,WT,teams:teamsFor(fx_opts),base,dark,examples,tilt3d,guest});
   if(init)await context.addInitScript(init.fn,init.arg);
   await context.routeWebSocket('**/*',s=>s.close());
   const blocked=[];
@@ -152,11 +160,13 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
     const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
     if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||fs.statSync(file).isDirectory())return route.fulfill({status:404,body:''});
     let content=fs.readFileSync(file);
+    if(learning&&url.pathname==='/studio/learning-off.js'){const on=content.toString().replace('var PS_LEARNING_ENABLED=false;','var PS_LEARNING_ENABLED=true;');if(on===content.toString())throw new Error('learning-off.js 의 깃발 줄을 찾지 못했다');content=Buffer.from(on);}
     if(url.pathname==='/studio/app.html')content=Buffer.from(content.toString().replace(/(window\.PS_SYNC=\{url:")[^"]+("[,}])/,(_,a,b)=>a+base+b));
-    return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream',...(cspValue&&path.extname(file)==='.html'?{headers:{'content-security-policy-report-only':cspValue}}:{})});
+    return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream',...(cspValue&&path.extname(file)==='.html'?{headers:{'content-security-policy-report-only':cspValue,'content-security-policy':cspEnforce}}:{})});
   });
   const page=await context.newPage();page.setDefaultTimeout(45000);
   const logs=[];
+  if(csp)context.on('console',m=>{const t=m.text();if(/Content Security Policy/i.test(t)&&!/report-only/i.test(t))console.error('[csp-enforce] '+t.slice(0,300));});
   const tag=()=>fx.curStep||'';
   page.on('console',m=>{const t=m.type();if(t==='error'||t==='warning'||/PSSync|\[ps/i.test(m.text()))logs.push({step:tag(),type:t,text:m.text().slice(0,500),url:(m.location()||{}).url?.replace(base,'')});});
   /* 3.012 — 기록은 500자로 자르되 원문은 raw(JSON 에 안 나오는 속성)로 남겨 이동 흔적 판정에 쓴다. 선수단 키 16개를 묶은 ps_kv 주소는

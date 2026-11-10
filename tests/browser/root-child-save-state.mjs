@@ -83,7 +83,10 @@ try{
  assert.equal(await page.evaluate(()=>__psAutosaveView().complete),false);
  await shots('actual-local-failure','기기에 저장하지 못했어요');await record('real child quota failure overrides stale root ok',{originalServerHash:hash(original)});
  await page.evaluate(()=>{PSSync.state=window.__savedActualSyncState;delete window.__savedActualSyncState;localStorage.removeItem('qa_save_status_fault');});
- await frame.evaluate(()=>saveNow());await frame.evaluate(()=>psFlushPendingReady());
+ /* 3.272 — 느린 CI 에서 이 자리의 evaluate 가 «Resulting promise was garbage collected»(일정 틀이 그 사이 다시 읽힘)로 한 번 떨어졌다(PR #799 chromium entry, 로컬 0/6).
+    틀을 다시 잡아 한 번 더 한다 — 다시 읽혀 메모가 사라졌다면 아래 until 이 «actual recovered edit» 로 분명히 떨어진다. */
+ for(let i=0;;i++){try{const f=await(await page.waitForSelector('#fProcess')).contentFrame();await f.waitForFunction(()=>typeof saveNow==='function'&&typeof psFlushPendingReady==='function');await f.evaluate(()=>saveNow());await f.evaluate(()=>psFlushPendingReady());break;}
+  catch(e){if(i>=2||!/garbage collected|context was destroyed|Target closed|detached/i.test(String(e)))throw e;await page.waitForTimeout(500);}}
  await until(async()=>fx.db.get(WT+'|'+KEY).v.includes(note)&&await page.evaluate(()=>PSSync.state().kind==='ok'&&PSSync.pending().count===0),'actual recovered edit and fixture server write');
  // Exercise the normal edit/CAS ACK; never bump the server version or seed a
  // receipt merely to obtain a reassuring label.

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script src="data-lock-guard.js"></script>
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
 <!-- PROCESS — IDP (선수 개인 성장: 프로필·셀프 평가·개인 훈련) · 설계: IDP-설계.md v1.1 -->
 <meta charset="utf-8">
@@ -5327,6 +5328,9 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
   }
   function load(key){ try{ var r=localStorage.getItem(key); if(!r)return blank();
     var o=JSON.parse(r); if(!o||o.v!==1)return blank();
+    /* 3.271 — 남의 IDP 문서(선수가 제 손으로 쓰는 문서를 코치가 본다)는 그리기 전에 숫자 · 종류 · 주소 칸을 제 모양으로(storage.js PSSafe.idp).
+       내 문서는 건드리지 않는다 — 저장본이 바뀐다. 남의 문서는 이 화면에서 저장하지 않는다(save 의 주인 확인). */
+    if(key!==myKey())PSSafe.idp(o);
     o.profile=o.profile||{}; o.selfEval=o.selfEval||blank().selfEval; o.trainings=o.trainings||[]; o.done=o.done||{}; o.log=o.log||{};
     o.selfEval.levels=o.selfEval.levels||{};   /* 1.974 — levels 가 빠진 저장본이면 점수 탭이 죽었다(TypeError) */
     o.imgNotes=o.imgNotes||[];   /* 이미지노트 — 이 필드가 생기기 전에 저장된 IDP 도 열려야 한다 */
@@ -5532,7 +5536,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function ro(){ return viewing!==myKey(); }
   /* 2.463 — 사진 필드는 참조(psimg:)일 수 있다(stripIdp — 남의 문서 사진을 큰 저장소로).
      그리기 전에 바이트로 푼다. 모든 <img src> 자리는 이 함수를 거친다. */
-  function phSrc(v){ try{ return window.PSImg?(PSImg.src(v||'')||''):(v||''); }catch(_){ return v||''; } }
+  function phSrc(v){ try{ return PSImg.src(v||'')||''; }catch(_){ return ''; } }   /* 3.271 — 풀지 못한 값을 그대로 내보내지 않는다 */
   function uid(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
   function esc(s){ return window.PSSafe&&window.PSSafe.html?window.PSSafe.html(s):String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   /* ══ 2.741 · 선수 소유의 `내 방향` ═══════════════════════════════════════════════
@@ -7316,7 +7320,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'), ms=(pm&&pm.members)||{}, uid2='';
     Object.keys(ms).some(function(u){ if(String((ms[u]&&ms[u].playerId)||'')===String(pid)){ uid2=u; return true; } return false; });
     if(!uid2)return '';
-    var d2=JSON.parse(localStorage.getItem(PREFIX+uid2)||'null');
+    var d2=PSSafe.idp(JSON.parse(localStorage.getItem(PREFIX+uid2)||'null'));
     var k=d2&&d2.arch&&d2.arch.key;
     return (k&&PS_ARCH.get(k))?k:'';
   }catch(_){ return ''; } }
@@ -7794,7 +7798,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'), ms=(pm&&pm.members)||{}, uid2='';
     Object.keys(ms).some(function(u){ if(String((ms[u]&&ms[u].playerId)||'')===String(pid)){ uid2=u; return true; } return false; });
     if(!uid2)return null;
-    var d2=JSON.parse(localStorage.getItem(PREFIX+uid2)||'null');
+    var d2=PSSafe.idp(JSON.parse(localStorage.getItem(PREFIX+uid2)||'null'));
     return (d2&&d2.profile&&typeof d2.profile==='object')?d2.profile:null;
   }catch(_){ return null; } }
   var SQP_ST={ok:'훈련 가능',injury:'부상',rehab:'회복 중',out:'불참',rest:'휴식'};
@@ -8731,7 +8735,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     try{
       var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'), ms=(pm&&pm.members)||{}, uid2='';
       Object.keys(ms).some(function(u){ if(String((ms[u]&&ms[u].playerId)||'')===String(pid)){ uid2=u; return true; } return false; });
-      if(uid2){ var d2=JSON.parse(localStorage.getItem(PREFIX+uid2)||'null'); if(d2&&typeof d2==='object')out={uid:uid2,d:d2}; }
+      if(uid2){ var d2=PSSafe.idp(JSON.parse(localStorage.getItem(PREFIX+uid2)||'null')); if(d2&&typeof d2==='object')out={uid:uid2,d:d2}; }
     }catch(_){}
     _sqLnCache.m[pid]=out; return out;
   }
@@ -8776,7 +8780,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!ids.length)return {state:'unlinked'};
     if(ids.length!==1)return {state:'ambiguous'};
     var d;
-    try{ raw=localStorage.getItem(PREFIX+ids[0]); if(!raw)return {state:'pending'}; d=JSON.parse(raw); }catch(_){return {state:'invalid'};}
+    try{ raw=localStorage.getItem(PREFIX+ids[0]); if(!raw)return {state:'pending'}; d=PSSafe.idp(JSON.parse(raw)); }catch(_){return {state:'invalid'};}
     if(!sqMatchObject(d)||d.v!==1||(d.matchSelf!=null&&!sqMatchObject(d.matchSelf)))return {state:'invalid'};
     return {state:'ready',uid:ids[0],doc:d};
   }
@@ -9029,7 +9033,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var ids=Object.keys(pm.members).filter(function(u){return p&&p.id&&String((pm.members[u]||{}).playerId||'')===String(p.id);});
     if(!ids.length)return {state:'unlinked'};
     if(ids.length!==1)return {state:'ambiguous'};
-    try{raw=localStorage.getItem(PREFIX+ids[0]);if(!raw)return {state:'pending'};d=JSON.parse(raw);}catch(_){return {state:'invalid'};}
+    try{raw=localStorage.getItem(PREFIX+ids[0]);if(!raw)return {state:'pending'};d=PSSafe.idp(JSON.parse(raw));}catch(_){return {state:'invalid'};}
     if(!sqMatchObject(d)||d.v!==1)return {state:'invalid'};
     return {state:'ready',uid:ids[0],doc:d};
   }
@@ -11074,7 +11078,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<div class="pf-sec">영상</div>'
       +'<div class="pf-grid">'
       +'<div class="fld full"><label>하이라이트 영상 링크 (유튜브)'
-      +(p.video?' <a href="'+esc(p.video)+'" target="_blank" rel="noopener" style="font-weight:800;color:var(--accent);margin-left:6px;text-decoration:underline">열기 ↗</a>':'')
+      +(PSSafe.url(p.video)?' <a href="'+esc(PSSafe.url(p.video))+'" target="_blank" rel="noopener" style="font-weight:800;color:var(--accent);margin-left:6px;text-decoration:underline">열기 ↗</a>':'')
       +'</label><input data-f="video" type="url" inputmode="url" value="'+esc(p.video||'')+'" placeholder="https://youtu.be/…"'+dis+'></div>'
       +'</div>'
       +'</div>';
@@ -11280,7 +11284,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       pts.forEach(function(p){ h+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3" fill="'+color+'"/>'; });
       var last=vs[vs.length-1], li=-1; rows.forEach(function(x,i){ if(x.v!=null)li=i; });
       var lx=Math.min(cx(li),W-Rt-24), anchor=(li>n-4)?'end':'middle';
-      h+='<text x="'+lx.toFixed(1)+'" y="'+(vy(last.v)-10).toFixed(1)+'" text-anchor="'+anchor+'" font-size="12" font-weight="800" fill="'+color+'">'+last.v+unit+'</text>';
+      h+='<text x="'+lx.toFixed(1)+'" y="'+(vy(last.v)-10).toFixed(1)+'" text-anchor="'+anchor+'" font-size="12" font-weight="800" fill="'+color+'">'+(+last.v)+unit+'</text>';
     } else {
       h+='<text x="'+(W/2)+'" y="'+((H-B+T)/2+4)+'" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-3)">이번 주 측정에 기록하면 여기 채워져요</text>';
     }
@@ -11317,7 +11321,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(ps&&typeof ps.view==='function')return ps.view(myGrp())||null;   /* 2.933 — 읽기 전용 공유 사본: 하루마다 문서 전체를 새로 파싱하지 않는다(여기서 받은 것은 읽기만 한다) */
       if(ps&&typeof ps.readFor==='function')return ps.readFor(myGrp())||null;
       if(ps&&typeof ps.read==='function')return ps.read()||null;
-      return JSON.parse(localStorage.getItem('process_coach_v1')||'null');
+      return PSSafe.sched(JSON.parse(localStorage.getItem('process_coach_v1')||'null'));
     }catch(_){return null;}
   }
   function teamScheduleDay(dt){
@@ -12479,7 +12483,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var org=sec('소속 · 연락',[ row('팀',p.team?esc(p.team):''), row('에이전트',p.agent?esc(p.agent):''), row('연락처',p.phone?esc(pfPhoneFmt(p.phone)):''), row('이메일',p.email?esc(p.email):'') ]);
     var sch=[p.elem,p.mid,p.high,p.univ].filter(function(x){return x&&String(x).trim();}).map(esc).join(' → ');
     var aw=String(p.awards||'').split(/\n/).map(function(x){return x.trim();}).filter(Boolean);
-    var car=sec('경력',[ row('시작',p.startYear?esc(p.startYear)+'년':''), row('학교',sch), aw.length?'<div class="pf-kv"><span>수상</span><b>'+aw.slice(0,4).map(esc).join('<br>')+(aw.length>4?'<small>＋'+(aw.length-4)+'</small>':'')+'</b></div>':'', p.video?'<div class="pf-kv"><span>영상</span><b><a href="'+esc(p.video)+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:800;text-decoration:underline">하이라이트 열기 ↗</a></b></div>':'' ]);
+    var car=sec('경력',[ row('시작',p.startYear?esc(p.startYear)+'년':''), row('학교',sch), aw.length?'<div class="pf-kv"><span>수상</span><b>'+aw.slice(0,4).map(esc).join('<br>')+(aw.length>4?'<small>＋'+(aw.length-4)+'</small>':'')+'</b></div>':'', PSSafe.url(p.video)?'<div class="pf-kv"><span>영상</span><b><a href="'+esc(PSSafe.url(p.video))+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:800;text-decoration:underline">하이라이트 열기 ↗</a></b></div>':'' ]);
     var gc=p.guardianConsent; var cons=needsGuardian(p)?sec('보호자 동의',[ row('동의',gc&&gc.name?esc(gc.name)+' · '+new Date(+gc.at||0).toLocaleDateString()+'<small>'+(/photo/.test(gc.scope||'')?'기록 · 사진·영상':'기록만 (사진·영상 미동의)')+'</small>':'<span style="color:var(--no)">아직 없음</span>') ]):'';   /* 2.668 */
     var all=basic+body+org+car+cons; if(!all)return '';
     return '<div class="card pf-view">'+all+'</div>';
@@ -12917,7 +12921,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         var dots=pl.slice(0,4).map(function(t){ return '<i'+(isDone(dt,t.id)?' class="done"':'')+'></i>'; }).join('');
         if(doneExtras(dt).length) dots+='<i class="done"></i>';          /* 계획 외로 한 훈련도 완료 점 */
         var tags='';
-        if(lgm.t) tags+='<span class="mon-tag '+lgm.t+'">'+DT_LB[lgm.t]+'</span>';
+        if(DT_LB.hasOwnProperty(lgm.t)) tags+='<span class="mon-tag '+lgm.t+'">'+DT_LB[lgm.t]+'</span>';
         /* 1.907 — 팀이 있으면 팀 일정(훈련·경기)이 자동으로 달력에 깔린다(사용자). 선수가 직접 기록하기 전까지 '예정' 표시(점선), 기록하면 그 기록이 대신 선다.
            읽기 전용 — 개인 log 에 쓰지 않는다(teamScheduleDayView 는 process_coach_v1 을 절대 되쓰지 않음) */
         else { try{ var tsv=teamScheduleDayView(dt); if(tsv){ if(tsv.match) tags+='<span class="mon-tag match plan" title="팀 일정 · 예정">경기</span>'; else if(!tsv.off&&tsv.trainings&&tsv.trainings.length) tags+='<span class="mon-tag team plan" title="팀 일정 · 예정">팀훈련</span>'; } }catch(_){} }
@@ -12926,7 +12930,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         if(csm) tags+='<span class="coach-mark">코치 '+esc(PHYS_LB[csm]||csm)+'</span>';
         var rxm=''; try{ rxm=rReactMark('day:'+ymd(dt),true); }catch(_){}
         h+='<button type="button" class="mon-cell'+(out?' out':'')+(sameDay(dt,today)?' today':'')+(rxm?' has-rx':'')+'" data-d="'+ymd(dt)+'" aria-label="'+(dt.getMonth()+1)+'월 '+dt.getDate()+'일 기록 열기'+(rxm?' · 코치 반응 있음':'')+'">'
-          +(lgm.t?'<span class="typbar '+lgm.t+'"></span>':'')
+          +(DT_LB.hasOwnProperty(lgm.t)?'<span class="typbar '+lgm.t+'"></span>':'')
           +(lgm.memo?'<span class="memoDot">'+ic('note')+'</span>':'')
           +'<span class="dn">'+dt.getDate()+'</span>'
           +(tags?'<span class="mon-tags">'+tags+'</span>':'')
@@ -15084,7 +15088,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     if(p.video)
       h+='<div class="rs-sec">'+LB.video+'</div>'
-        +'<div class="rs-row"><i>'+LB.highlight+'</i><b><a href="'+esc(p.video)+'" class="rs-link">'+esc(p.video)+'</a></b></div>';
+        +'<div class="rs-row"><i>'+LB.highlight+'</i><b><a href="'+esc(PSSafe.url(p.video))+'" class="rs-link">'+esc(p.video)+'</a></b></div>';
     h+='<div class="rs-ft"><span><b>PRO</b>CESS STUDIO · '+LB.resumeTitle+'</span><span>'+dstr+' '+LB.createdSuffix+'</span></div>';
     return h;
   }
@@ -15164,7 +15168,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var career=[['초등학교',p.elem],['중학교',p.mid],['고등학교',p.high],['대학교',p.univ]].filter(function(x){return x[1];});
     var awards=(p.awards||'').trim()?p.awards.trim().split('\n').map(function(l){return l.trim();}).filter(Boolean).slice(0,10):[];
     var contact=[['연락처',p.phone],['이메일',p.email],['에이전트',p.agent]].filter(function(x){return x[1];});
-    var vid=(p.video||'').trim();
+    var vid=PSSafe.url(p.video);
     var h='<section class="rp2 rp2-page rp2-resume">'+rpHead('PLAYER RESUME','선수 이력서');
     h+='<div class="rp2-rscols">'
       /* 왼쪽 — 사진 + 신체 + 영상·연락 */

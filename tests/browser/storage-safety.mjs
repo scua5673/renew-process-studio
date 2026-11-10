@@ -118,7 +118,7 @@ try {
     { name: '1100-coarse', width: 1100, height: 820, touch: true },
     { name: '1280-desktop', width: 1280, height: 900 }
   ]) {
-    const context = await browser.newContext({ viewport: { width: spec.width, height: spec.height }, hasTouch: !!spec.touch, isMobile: !!spec.mobile, serviceWorkers: 'block', timezoneId: 'Asia/Seoul' });
+    const context = await browser.newContext({locale:'ko-KR',viewport: { width: spec.width, height: spec.height }, hasTouch: !!spec.touch, isMobile: !!spec.mobile, serviceWorkers: 'block', timezoneId: 'Asia/Seoul' });
     // This context is created for this test; no existing browser profiles or user tabs are used.
     await context.route('**/*', route => new URL(route.request().url()).origin === base ? route.continue() : route.abort('blockedbyclient'));
     const page = await context.newPage();

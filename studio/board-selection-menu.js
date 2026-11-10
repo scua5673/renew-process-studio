@@ -25,13 +25,14 @@
     function label(text,to){var n=el('div','ps-sm-label',text);to.appendChild(n);return n;}
     function button(text,title,fn){var b=el('button','',text);b.type='button';b.title=title||text;b.setAttribute('aria-label',title||text);b.onclick=fn;return b;}
     function proxy(target,text){return button(text,text,function(){var n=doc.querySelector(target);if(n)n.click();soon();});}
-    var scroll=el('div','ps-sm-body'),identity=el('div','ps-sm-identity'),align=el('section','ps-sm-align'),bib=el('section','ps-sm-bibs'),size=el('div','ps-sm-size'),quick=el('div','ps-sm-quick'),more=el('details','ps-sm-more'),summary=el('summary','','포지션 · 주발 · 장면'),extras=el('div','ps-sm-extras'),bottom=el('div','ps-sm-footer');
+    var scroll=el('div','ps-sm-body'),identity=el('div','ps-sm-identity'),align=el('section','ps-sm-align'),bib=el('section','ps-sm-bibs'),size=el('div','ps-sm-size'),quick=el('div','ps-sm-quick'),more=el('details','ps-sm-more'),summary=el('summary','','주발 · 장면'),extras=el('div','ps-sm-extras'),bottom=el('div','ps-sm-footer');
     more.append(summary,extras);scroll.append(identity,align,bib,size,quick,more);
     ['left','right','top','bottom'].forEach(function(k){ctl.style.removeProperty(k);});
     body.classList.add('ps-selection-ui');
     ctl.classList.add('ps-selection-menu','sel-near');ctl.setAttribute('role','region');ctl.setAttribute('aria-label','선택 항목 편집');
     ctl.append(head,scroll,bottom);
-    label('이름',identity);label('번호',identity);move('nameCtl',identity);move('numCtl',identity);
+    /* 3.271 — 포지션 고르개(#posCtl — 원래 요소 · 원래 change 처리기)도 이름 · 번호와 같은 줄에(제보 0033117a «한번 더 클릭하지 않아도 바로»). 예전엔 접힌 «포지션 · 주발 · 장면» 안이었다. */
+    label('이름',identity);label('번호',identity);var posLabel=label('포지션',identity);move('nameCtl',identity);move('numCtl',identity);
     doc.getElementById('nameInput').setAttribute('aria-label','선수 이름');
     label('정렬 · 간격',align);var grid=el('div','ps-sm-align-grid'),dist=el('div','ps-sm-distribute');align.append(grid,dist);
     var paths=['M4 3v18M7 7h12v4H7zM7 15h8v4H7z','M12 3v18M5 7h14v4H5zM8 15h8v4H8z','M20 3v18M5 7h12v4H5zM9 15h8v4H9z','M3 4h18M7 7h4v12H7zM15 7h4v8h-4z','M3 12h18M7 5h4v14H7zM15 8h4v8h-4z','M3 20h18M7 5h4v12H7zM15 9h4v8h-4z'];
@@ -42,7 +43,7 @@
     label('크기',size);move('sizeCtl',size);['dupSelBtn','lockSelBtn','labelVisBtn'].forEach(id=>move(id,quick));
     move('delSelBtn',bottom);var deletion=el('span','ps-sm-delete-label'),delButton=doc.getElementById('delSelBtn');Array.from(delButton.childNodes).filter(n=>n.nodeType===3).forEach(n=>n.remove());delButton.appendChild(deletion);
     var positions=el('div','ps-sm-position'),feet=el('div','ps-sm-feet'),meter=el('div','ps-sm-meter');extras.append(positions,feet,meter);
-    label('포지션',positions);move('posCtl',positions);label('주발',feet);feet.appendChild(foot);
+    move('posCtl',identity);label('주발',feet);feet.appendChild(foot);
     label('간격 (m)',meter);var meterTools=el('div','ps-sm-meter-tools'),meterValue=el('output','','5');meterTools.append(proxy('#alignBar [data-msp="-"]','−'),meterValue,proxy('#alignBar [data-msp="+"]','＋'),proxy('#alignBar [data-mspx]','가로 적용'),proxy('#alignBar [data-mspy]','세로 적용'));meter.appendChild(meterTools);
     function collect(){Array.from(ctl.children).forEach(function(n){if(n===head||n===scroll||n===bottom||n.classList.contains('ps-in-h'))return;if(n.id==='alignBar'||n.id==='selMoreBtn'||n.id==='selRowBreak')return;extras.appendChild(n);});}
     collect();
@@ -69,15 +70,15 @@
         var counts={};list.forEach(o=>{var k=kind(o);counts[k]=(counts[k]||0)+1;});
         var subtitle=many?Object.keys(counts).map(k=>({player:'선수',equip:'장비',drawing:'도형',ball:'공'}[k]||'항목')+' '+counts[k]+(k==='player'?'명':'개')).join(' · '):singlePlayer?[one.pos||'포지션 미지정',one.name||'이름 미지정'].join(' · '):'선택한 항목에 적용';
         text(head.querySelector('.ps-in-sub'),subtitle);head.querySelector('.ps-in-ball').classList.toggle('ps-sm-count',many);
-        hide(identity,!singlePlayer);hide(align,!many);hide(bib,!players.length);hide(size,doc.getElementById('sizeCtl').style.display==='none');hide(positions,!singlePlayer||doc.getElementById('posCtl').style.display==='none');hide(feet,!singlePlayer);hide(meter,!many);
-        // Names and numbers remain available for mixed selections in the expanded area.
-        ['nameCtl','numCtl'].forEach(id=>move(id,many?extras:identity));
+        hide(identity,!singlePlayer);hide(align,!many);hide(bib,!players.length);hide(size,doc.getElementById('sizeCtl').style.display==='none');var posOn=!!singlePlayer&&doc.getElementById('posCtl').style.display!=='none';hide(positions,true);hide(posLabel,!posOn);if(identity.dataset.pos!==String(posOn))identity.dataset.pos=String(posOn);hide(feet,!singlePlayer);hide(meter,!many);
+        // Names and numbers remain available for mixed selections in the expanded area. 여럿일 때 포지션 칸은 예전처럼 숨은 자리(positions)에.
+        ['nameCtl','numCtl','posCtl'].forEach(id=>move(id,many?(id==='posCtl'?positions:extras):identity));
         text(scope,players.length!==list.length?'선수 '+players.length+'명만':many?players.length+'명':'');
         var colors=players.map(p=>win.PSBoardEdit.bibColor(p)),same=colors.every(c=>c===colors[0]);text(mixed,same?'':'여러 색');
         swatches.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',same&&colors[0]===b.dataset.bib?'true':'false'));
         grid.querySelectorAll('button').forEach(b=>b.disabled=list.filter(o=>!o.locked&&win.PSBoardEdit.center(o)).length<2);
         dist.querySelectorAll('button').forEach(b=>b.disabled=list.filter(o=>!o.locked&&win.PSBoardEdit.center(o)).length<3);
-        text(summary,many?'반전 · 겹침 순서 · 장면':'포지션 · 주발 · 장면');text(deletion,many?'선택한 '+list.length+'개 삭제':'선택 항목 삭제');
+        text(summary,many?'반전 · 겹침 순서 · 장면':'주발 · 장면');text(deletion,many?'선택한 '+list.length+'개 삭제':'선택 항목 삭제');
         var ab=doc.getElementById('mspVal');if(ab)text(meterValue,ab.textContent);
         if(singlePlayer)foot.querySelectorAll('button').forEach(function(b){var on=b.dataset.foot===(one.foot||'');b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));});
       }finally{syncing=false;}

@@ -62,6 +62,12 @@ try{
     observations.push(value);fs.writeFileSync(path.join(out,engine+'-observations.json'),JSON.stringify({engine,observations},null,2));return value;
   }
   async function addPlayer(n,num){await frame.locator('#tmAdd').click();await frame.locator('[data-k="name"]').fill(n);await frame.locator('[data-k="num"]').fill(num);await frame.locator('[data-act="ok"]').click();await frame.waitForFunction(n=>data.players.some(p=>p.name===n),n);}
+  /* 3.272 — 선수단 화면은 열린 뒤 배경에서 명단을 한 번 고쳐 쓸 수 있다(posName 채움 · 행 없는 선수 고쳐 저장). 그 저장이 «추가 전»과 «추가 후» 사이에
+     끼면 추가와 상관없는 main 바뀜이 잡힌다(PR #800 웹킷 storage) — 대기 없음 · main 이 1.2초 그대로일 때 «추가 전»을 찍는다 */
+  for(let i=0,prev=null,same=0;i<25&&same<3;i++){
+    const cur=await frame.evaluate(()=>JSON.stringify([localStorage.getItem('scout_tool_v1'),typeof psHasPending==='function'&&psHasPending()]));
+    same=cur===prev&&!cur.endsWith(',true]')?same+1:0;prev=cur;await page.waitForTimeout(400);
+  }
   snapshotBefore=await snapshot('before-add');
   await frame.evaluate(()=>localStorage.setItem('fixture_pending_quota','1'));
   await addPlayer(name,'91');
