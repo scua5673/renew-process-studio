@@ -110,6 +110,8 @@
   html.ps-page-process body:not(.ps-player-schedule) #schedule{padding-inline:0!important}
   html.ps-page-process body:not(.ps-player-schedule) #schedule>#psPhBar:not(#_):not(#__){margin-inline:0!important;padding-inline:0!important}
   html.ps-page-process body:not(.ps-player-schedule) #schedule :is(button,select):not(#_):not(#__):not(#___){min-height:44px!important;min-width:44px}
+  /* 3.273 — 떠 있는 «＋ 오늘에 추가»는 위 줄(모든 단추 min-width:44px)에 눌려 글자 폭에 딱 붙었다 — process.html 의 112 와 양옆 여백을 되돌린다 */
+  html.ps-page-process body:not(.ps-player-schedule) #schedule .schedule-fab:not(#_):not(#__):not(#___){min-width:112px;padding-inline:14px}
   html.ps-page-process body:not(.ps-player-schedule) #psPhBar .nv:not(#_):not(#__){width:44px!important}
   html.ps-page-process body:not(.ps-player-schedule) #schedule :is(input,select,textarea):not(#_):not(#__){font-size:var(--t-6)!important}
 
