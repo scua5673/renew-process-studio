@@ -8,6 +8,8 @@ for(k in D)(E[k]||(E[k]={})).en=D[k];
 for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
 for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
 })(window,{
+"다른 팀원이 남아 있어 계정을 지울 수 없어요. 팀을 넘기거나 삭제한 뒤 탈퇴해 주세요":"You can't delete your account while other members are still on the team. Transfer or delete the team first, then leave.",
+"서비스 관리자 계정은 여기서 지울 수 없어요 — 관리자 권한을 먼저 내려 주세요. 서버와 이 기기에서 아무것도 지우지 않았어요.":"Service admin accounts can't be deleted here — remove admin rights first. Nothing was deleted on the server or this device.",
 "11 대 11":"11 v 11",
 "11인제":"11-a-side",
 "12주 목표":"12-week goal",
@@ -390,5 +392,6 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "페이지 {}":"Page {}",
 "평균 {}":"Average {}",
 "훈련 {}":"Training {}",
-"휴식 {}":"Rest {}"
+"휴식 {}":"Rest {}",
+"내가 소유한 팀{}에 다른 팀원이 남아 있어 계정을 지울 수 없어요. 팀을 넘기거나 삭제한 뒤 탈퇴해 주세요 — 팀원을 모두 내보내면 탈퇴할 때 팀도 함께 지워지고, 팀을 다른 사람에게 넘기려면 문의해 주세요. 서버와 이 기기에서 아무것도 지우지 않았어요.":"You can't delete your account while other members are still on your team{}. Transfer or delete the team first, then leave — if you remove all members the team is deleted with your account; to hand the team to someone else, contact us. Nothing was deleted on the server or this device."
 },{});

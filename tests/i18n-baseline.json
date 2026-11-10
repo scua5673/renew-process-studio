@@ -7,15 +7,15 @@
   },
   "board": {
    "total": 3085,
-   "untranslated": 2336
+   "untranslated": 2333
   },
   "team": {
    "total": 2929,
    "untranslated": 2254
   },
   "schedule": {
-   "total": 1112,
-   "untranslated": 714
+   "total": 1116,
+   "untranslated": 715
   },
   "idp": {
    "total": 2868,
@@ -34,13 +34,13 @@
    "untranslated": 152
   },
   "common": {
-   "total": 0,
+   "total": 3,
    "untranslated": 0
   }
  },
  "app": {
-  "total": 14364,
-  "translated": 5041,
+  "total": 14371,
+  "translated": 5050,
   "pct": 35.1
  }
 }
