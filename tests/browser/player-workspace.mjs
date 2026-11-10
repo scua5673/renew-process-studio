@@ -25,11 +25,11 @@ try{
   await frame.getByRole('button',{name:'선수 비교',exact:true}).click();
   assert.equal(await frame.getByRole('heading',{name:'선수 비교 · 2명'}).isVisible(),true);
   await frame.getByRole('button',{name:'닫기',exact:true}).click();
+  /* 3.273 — 이름을 누르면 «선수 상세» 요약을 거치지 않고 프로필이 바로 열린다 */
   await frame.getByRole('button',{name:'가상 선수 1 GK',exact:true}).click();
-  assert.equal(await frame.getByRole('tab',{name:'요약',exact:true}).getAttribute('aria-selected'),'true');
-  await frame.getByRole('tab',{name:'요약',exact:true}).press('ArrowRight');
-  assert.equal(await frame.getByRole('tab',{name:'평가',exact:true}).getAttribute('aria-selected'),'true');
-  await frame.getByRole('button',{name:'선수 상세 닫기'}).click();
+  await frame.locator('#plEditModal').waitFor({state:'visible'});assert.equal(await frame.locator('#pwDrawer[open]').count(),0);
+  assert.equal(await frame.locator('#plName').inputValue().catch(()=>frame.evaluate(()=>player(editingPlayer).name)),'가상 선수 1');
+  await frame.locator('#plClose').click();await frame.locator('#plEditModal').waitFor({state:'hidden'});
   if(await frame.locator('#pwTeam [data-pw-action="tools"]').isVisible())await frame.locator('#pwTeam [data-pw-action="tools"]').click();
   await frame.getByRole('button',{name:'배치·명단 편집',exact:true}).click();
   assert.equal(await frame.locator('#teamList').isVisible(),true,'existing edit controls remain reachable');
@@ -53,12 +53,11 @@ try{
   }
   await page.setViewportSize(viewport);
   await frame.getByRole('button',{name:'LCB 24명 전체 보기',exact:true}).click();
-  assert.equal(await frame.locator('#pwScout .pw-depth-candidate').count(),6);
-  await frame.getByRole('button',{name:'6명 더 보기 · 18명 남음',exact:true}).click();
-  assert.equal(await frame.locator('#pwScout .pw-depth-candidate').count(),12);
+  /* 3.273 — 후보도 선수단처럼 전원(여섯 명씩 끊지 않는다) */
+  assert.equal(await frame.locator('#pwScout .pw-depth-candidate').count(),24);
+  assert.equal(await frame.locator('#pwScout [data-pw-action="more"]').count(),0);
+  assert.equal(await frame.locator('#pwScout [data-pw-slot="pos_LCB"] .pw-depth-name').count(),24,'카드에도 전원');
   await frame.getByRole('button',{name:'영입대상 8',exact:true}).click();
-  assert.equal(await frame.locator('#pwScout .pw-depth-candidate').count(),6);
-  await frame.getByRole('button',{name:'6명 더 보기 · 2명 남음',exact:true}).click();
   assert.equal(await frame.locator('#pwScout .pw-depth-candidate').count(),8);
   await frame.getByRole('button',{name:'전체 24',exact:true}).click();
   await frame.getByRole('searchbox',{name:'후보 검색'}).fill('가상 LCB 후보 24');
@@ -68,17 +67,15 @@ try{
   assert.equal(await frame.locator('#pwScout .pw-depth-candidate').count(),1);
   if(phone){await frame.getByRole('button',{name:'↑ 작전판',exact:true}).click();}
   await frame.getByRole('button',{name:'RCB 19명 전체 보기',exact:true}).click();
-  await frame.getByRole('button',{name:'6명 더 보기 · 13명 남음',exact:true}).click();
-  await frame.getByRole('button',{name:'6명 더 보기 · 7명 남음',exact:true}).click();
-  await frame.getByRole('button',{name:'6명 더 보기 · 1명 남음',exact:true}).click();
-  await frame.locator('#pwScout .pw-depth-panel .pw-depth-candidate-name').filter({hasText:'가상 GK 후보'}).click();
+  assert.equal(await frame.locator('#pwScout .pw-depth-candidate').count(),19,'전원 — 더 보기 없이');
+  await frame.locator('#pwScout .pw-depth-panel .pw-depth-candidate').filter({hasText:'가상 GK 후보'}).locator('.pw-depth-detail').click();
   await frame.getByRole('tab',{name:'평가',exact:true}).click();
   await frame.frameLocator('#pwDetailBody iframe').getByRole('combobox',{name:'포지션 그룹'}).waitFor();
   assert.equal(await frame.frameLocator('#pwDetailBody iframe').getByRole('combobox',{name:'포지션 그룹'}).inputValue(),'2','selected RCB placement opens defender questions');
   await frame.getByRole('button',{name:'선수 상세 닫기'}).click();
   assert.equal(fx.db.get(WT+'|cs_scout_targets_v1').v,original,'viewing depths must not save candidate data');
   await frame.getByRole('button',{name:'GK 8명 전체 보기',exact:true}).click();
-  await frame.getByRole('button',{name:'가상 GK 후보 가상 유나이티드 · #1 · 등급 B 추천 포인트 미평가',exact:true}).click();
+  await frame.getByRole('button',{name:'가상 GK 후보 평가 · 기록 보기',exact:true}).click();
   await frame.getByRole('tab',{name:'평가',exact:true}).click();
   const points=frame.frameLocator('#pwDetailBody iframe');
   await points.getByRole('combobox',{name:'포지션 그룹'}).waitFor();

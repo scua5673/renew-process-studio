@@ -85,7 +85,10 @@ try{
     assert.equal(await page.evaluate(()=>PSI18n.lang()),'en');
     assert.equal(await page.evaluate(()=>document.documentElement.lang),'en','shell <html lang>');
     assert.deepEqual(await page.evaluate(()=>PSI18n.packs().slice(0,2)),['en-common','en-shell'],'shell dictionaries are requested first');
-    const frameLangs=await page.evaluate(()=>[...document.querySelectorAll('iframe')].map(f=>{try{const d=f.contentDocument;return d&&d.body&&d.body.childNodes.length&&d.location.href!=='about:blank'?d.documentElement.lang:'en';}catch(_){return 'en';}}));
+    /* 틀은 문서가 실린 뒤(load) 걷기가 lang 을 찍는다 — 막 실린 틀을 한 번만 보면 빈 값이 잡힌다(PR #804 웹킷 entry). 5초까지 기다렸다 본다 */
+    const frameLangsOf=()=>[...document.querySelectorAll('iframe')].map(f=>{try{const d=f.contentDocument;return d&&d.body&&d.body.childNodes.length&&d.location.href!=='about:blank'?d.documentElement.lang:'en';}catch(_){return 'en';}});
+    let frameLangs=await page.evaluate(frameLangsOf);
+    for(let i=0;i<20&&!frameLangs.every(l=>l==='en');i++){await page.waitForTimeout(250);frameLangs=await page.evaluate(frameLangsOf);}
     assert.ok(frameLangs.every(l=>l==='en'),'iframe <html lang> follows the shell '+JSON.stringify(frameLangs));
     assert.deepEqual(await page.locator('#appSeg button').evaluateAll(es=>es.filter(e=>e.getClientRects().length).map(e=>e.textContent.trim())),['Board','Library','Team','IDP','Community'],'desktop rail in English, Learning removed');
     await expectEnglish(page,'desktop board');
