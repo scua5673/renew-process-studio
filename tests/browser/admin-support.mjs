@@ -77,7 +77,7 @@ try{
       return send({message:'unexpected fixture endpoint'},404);
     };
     async function makeContext(admin){
-      const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});await context.route('**/*',routeHandler);
+      const context=await browser.newContext({locale:'ko-KR',viewport:{width,height:900},serviceWorkers:'block'});await context.route('**/*',routeHandler);
       await context.routeWebSocket('**/*',socket=>{blocked.push(socket.url());socket.close();});
       await context.addInitScript(({admin,ADM})=>{
         if(admin)localStorage.setItem('ps_sync_session',JSON.stringify({uid:ADM,at:'fixture-admin-access',rt:'PRIVATE_ADMIN_REFRESH',email:'admin@example.test',exp:Date.now()+86400000}));

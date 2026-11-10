@@ -41,6 +41,7 @@ suites.entry.push('sync-diagnosis','team-mobile','mobile-navigation');
 suites.entry.push('admin-metrics');
 suites.entry.push('player-bulk-touch','phone-consistency');
 suites.entry.push('note-export');   /* 3.265 — 개인 노트 «내보내기»(PDF로 저장 · 인쇄 · 이미지 저장) */
+suites.entry.push('i18n-english-shell');   /* 영어 모드 셸: 한글이 남지 않음 · 한국어로 되돌리기 · 한국어 사용자는 영어 사전을 받지 않음 · «학습» 없는 다섯 칸 */
 suites.storage.push('community-youtube');
 suites.storage.push('roster-pending-quota');
 suites.storage.push('roster-outbox-full');   /* 3.253 — 선수 변경 묶음으로 가득 찬 작은 저장소에서 부팅 · 저장(제보 e6fc5d26) */

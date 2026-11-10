@@ -25,7 +25,7 @@ const server=http.createServer((req,res)=>{
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`;
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})});
 try{
- const context=await browser.newContext(),old=await context.newPage();
+ const context=await browser.newContext({locale:'ko-KR'}),old=await context.newPage();
  await old.goto(base+'/studio/app.html');
  await old.evaluate(async()=>{await caches.open('unrelated-app-cache');await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;});
  await old.reload();await old.waitForFunction(()=>!!navigator.serviceWorker.controller);

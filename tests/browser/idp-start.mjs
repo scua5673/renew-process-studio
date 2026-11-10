@@ -33,7 +33,7 @@ const NEXT_ACTION='패스한 뒤 동료를 도울 공간으로 움직인다';
 const MEMO='작은 경기에서 공을 받기 전에 뒤를 보고 빈 동료에게 패스했다.';
 
 async function newContext(browser,spec){
-  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,
+  const context=await browser.newContext({locale:'ko-KR',viewport:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,
     isMobile:!!spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
   await context.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort('blockedbyclient'));
   // A fresh context and a fake session are used throughout. No real profile,

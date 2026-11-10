@@ -3,10 +3,11 @@ import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 3.080 — 학습 기록 · 개인 게임모델은 계정(내 개인 공간)에 저장된다. 기기 A 에서 공부하고 게임모델에 원칙을 담으면,
 //          새 기기 B(빈 저장소)에서 같은 진도 · 같은 게임모델이 보인다. 팀 공간이 열려 있어도 개인 공간 키로만 쓴다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium';
+// «학습»은 꺼져 있다(learning-off.js). 학습 기록 동기화 코드는 남아 있으므로 깃발을 켠 판(learning:true)으로 본다.
 const fx=await startFixture(),browsers={};
 const learnFrame=async page=>{ await page.evaluate(()=>window.__psShowApp('learning')); const f=await (await page.waitForSelector('#fLearning')).contentFrame(); await f.waitForFunction(()=>typeof save==='function'&&window.BOOKS&&BOOKS.studio); return f; };
 try{
-  const A=await openApp(fx,'desktop',{browsers});
+  const A=await openApp(fx,'desktop',{browsers,learning:true});
   await A.page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
   const owner=await A.page.evaluate(()=>PSSync.learn.owner());
   assert.ok(owner&&owner.wid&&owner.wid!==owner.active,'팀 공간이 열려 있어도 개인 공간에 쓴다');
@@ -23,7 +24,7 @@ try{
   assert.match(gw[gw.length-1].v,/기기 A 에서 담은 원칙/);
 
   // 새 기기 B — 빈 저장소
-  const B=await openApp(fx,'desktop',{browsers});
+  const B=await openApp(fx,'desktop',{browsers,learning:true});
   await B.page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
   assert.equal(await B.page.evaluate(()=>localStorage.getItem('cs_gamemodel_personal_v1')),null,'B 는 처음엔 비어 있다');
   const lb=await learnFrame(B.page);

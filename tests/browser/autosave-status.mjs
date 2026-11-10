@@ -33,7 +33,7 @@ try{
     const label=spec.width+'-'+(serverName?'server-name':'no-name'),calls=[],blocked=[],errors=[];
     if(process.env.PS_TEST_LABEL&&process.env.PS_TEST_LABEL!==label)continue;
     const db=new Map([[WID+'|cs_perms_v1',{workspace_id:WID,k:'cs_perms_v1',v:perms,cupd:1,updated_by:UID}]]);
-    const context=await browser.newContext({...(spec.mobile?pw.devices['iPhone 13']:{}),viewport:{width:spec.width,height:spec.height},isMobile:spec.mobile,hasTouch:spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
+    const context=await browser.newContext({locale:'ko-KR',...(spec.mobile?pw.devices['iPhone 13']:{}),viewport:{width:spec.width,height:spec.height},isMobile:spec.mobile,hasTouch:spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
     await context.addInitScript(({UID,WID,workspaces,perms})=>{
       if(!localStorage.getItem('quiet_fixture_seeded')){
         localStorage.setItem('ps_sync_session',JSON.stringify({uid:UID,at:'synthetic-at',rt:'synthetic-rt',exp:Date.now()+3600000,email:'fixture@example.invalid'}));

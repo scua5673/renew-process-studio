@@ -13,7 +13,7 @@ const server=http.createServer((req,res)=>{let f;try{f=path.resolve(root,'.'+dec
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
 let browser;
 try{
- browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});const context=await browser.newContext({viewport:{width:1024,height:768},serviceWorkers:'block'}),calls=[];
+ browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});const context=await browser.newContext({locale:'ko-KR',viewport:{width:1024,height:768},serviceWorkers:'block'}),calls=[];
  await context.addInitScript(({UID,WID})=>{
   if(!localStorage.getItem('ps_sync_session'))localStorage.setItem('ps_sync_session',JSON.stringify({uid:UID,at:'synthetic-at',rt:'synthetic-rt',exp:Date.now()+3600000,email:'fixture@example.invalid'}));
   if(!localStorage.getItem('ps_cache_owner_v1'))localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:UID,wid:WID}));
