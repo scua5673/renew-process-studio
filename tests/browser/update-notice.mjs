@@ -10,7 +10,7 @@ const code=app.slice(app.indexOf('function psReloadWorkspaceSeal(){'),app.indexO
 const html=`<!doctype html><meta charset="utf-8"><textarea id="draft"></textarea><div id="updBanner" style="display:none"><span id="updMessage">새 판이 있어요</span><button id="updNow">다시 열기</button><button id="updLater">나중에</button></div><button id="retry">자동 저장 재확인</button><script>${code}\nwindow.psFlushAllPendingReady=()=>Promise.reject(Error('fixture storage failure'));document.getElementById('draft').focus();psAutoReloadWhenSafe();psShowUpdBand();document.getElementById('retry').onclick=()=>window.__psForceReload();</script>`;
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})});
 try{
- const context=await browser.newContext({serviceWorkers:'block'});await context.route('**/*',route=>route.fulfill({contentType:'text/html',body:html}));
+ const context=await browser.newContext({locale:'ko-KR',serviceWorkers:'block'});await context.route('**/*',route=>route.fulfill({contentType:'text/html',body:html}));
  const page=await context.newPage();await page.goto('https://update-notice.invalid/');
  await page.locator('#draft').fill('보존할 작성 내용');await page.locator('#updNow').click();
  await page.waitForFunction(()=>document.getElementById('updMessage').textContent.includes('확인하지 못해'));

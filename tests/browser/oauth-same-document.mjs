@@ -44,7 +44,7 @@ if(engine==='webkit'){
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{}),...(rejectProxy?{proxy:{server:'http://127.0.0.1:'+rejectProxy.address().port}}:{})});
 let context,page,profiler,navAborts=null;
 try{
-  context=await browser.newContext({viewport:{width:1280,height:900},serviceWorkers:'block',timezoneId:'Asia/Seoul',offline:!rejectProxy});
+  context=await browser.newContext({locale:'ko-KR',viewport:{width:1280,height:900},serviceWorkers:'block',timezoneId:'Asia/Seoul',offline:!rejectProxy});
   // The app sees online because its fixture responses are fulfilled locally.
   // Transport is offline (Chromium) or restricted to the rejecting proxy
   // (WebKit); neither mode can contact the real authentication/data service.

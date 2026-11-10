@@ -8,7 +8,8 @@ const engine=process.env.PS_BROWSER_ENGINE||'chromium';
 SIZES.phone.engine=engine;
 SIZES.phone.ctx={...SIZES.phone.ctx,viewport:{width:390,height:844},deviceScaleFactor:1};
 const fx=await startFixture(),browsers={},results=[];
-const expected=['보드','보관함','커뮤니티','팀 운영','학습','더보기'];
+// «학습»은 뺐다(사용자 «학습은 빼자» — studio/learning-off.js PS_LEARNING_ENABLED=false). 폰 하단은 다섯 칸, 넓은 화면 레일도 다섯.
+const expected=['보드','보관함','커뮤니티','팀 운영','더보기'];
 let app;
 async function bar(page){
   return page.locator('#appSeg button').evaluateAll(es=>es.filter(e=>e.getClientRects().length&&getComputedStyle(e).display!=='none').map(e=>{
@@ -76,7 +77,13 @@ try{
     if(width===390){await page.waitForTimeout(1000);await page.screenshot({path:path.join(SHOTS,'community.png')});}
   }
   await page.setViewportSize({width:390,height:844});
-  for(const [selector,appName] of [['#psTrainBtn','design'],['[data-app="learning"]','learning'],['[data-app="board"]:not([data-train])','board']]){
+  assert.equal(await page.locator('[data-app="learning"],[data-tb-app="learning"]').count(),0,'no Learning entry point in the shell');
+  // An old deep link or resume record still lands on the board without an error.
+  await page.evaluate(()=>window.__psShowApp('learning'));
+  await page.waitForFunction(()=>document.body.dataset.psApp==='board');
+  const widths=(await bar(page)).map(b=>Math.round(b.width));
+  assert.ok(Math.max(...widths)-Math.min(...widths)<=1,'five equal columns '+JSON.stringify(widths));
+  for(const [selector,appName] of [['#psTrainBtn','design'],['[data-app="board"]:not([data-train])','board']]){
     await nav(selector).click();
     await page.waitForFunction(name=>document.body.dataset.psApp===name,appName);
     assert.equal(await nav(selector).getAttribute('aria-current'),'page',appName+' selection');
@@ -103,7 +110,7 @@ try{
   // Breakpoint changes restore original desktop order, including global IDP.
   await page.setViewportSize({width:1100,height:820});
   await page.waitForFunction(()=>!document.body.classList.contains('ps-mobile-six'));
-  assert.deepEqual((await bar(page)).map(b=>b.label),['보드','보관함','팀 운영','IDP','커뮤니티','학습']);
+  assert.deepEqual((await bar(page)).map(b=>b.label),['보드','보관함','팀 운영','IDP','커뮤니티']);
   assert.equal(await page.locator('#teamBottom').isVisible(),false);
   await page.setViewportSize({width:390,height:844});
   await page.waitForFunction(()=>document.body.classList.contains('ps-mobile-six'));

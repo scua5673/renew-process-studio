@@ -8,7 +8,7 @@ const P=read('process.html'),B=read('board.html');
 
 function page(lib){
   const listeners={},shelf=[];let resolveGet=null;
-  const c=vm.createContext({JSON,Promise,__psLibEpoch:0,__psLibCache:[{libId:'old',name:'옛 훈련'}],
+  const c=vm.createContext({JSON,Promise,psLibSlim:require('../studio/schedule-lib-slim.js').slim,__psLibEpoch:0,__psLibCache:[{libId:'old',name:'옛 훈련'}],
     psLibraryDataUnlocked:()=>true,renderDrillShelf(){shelf.push(c.__psLibCache.length);},
     addEventListener(n,fn){(listeners[n]||(listeners[n]=[])).push(fn);}});
   c.window=c;

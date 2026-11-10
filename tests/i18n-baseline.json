@@ -1,0 +1,46 @@
+{
+ "note": "node scripts/i18n-coverage.mjs --write-baseline — 영역마다 번역 안 된 글 수(늘면 시험이 막는다) · 앱 전체 번역 비율(내려가면 막는다)",
+ "areas": {
+  "shell": {
+   "total": 2381,
+   "untranslated": 0
+  },
+  "board": {
+   "total": 3085,
+   "untranslated": 2333
+  },
+  "team": {
+   "total": 2929,
+   "untranslated": 2254
+  },
+  "schedule": {
+   "total": 1116,
+   "untranslated": 715
+  },
+  "idp": {
+   "total": 2868,
+   "untranslated": 2461
+  },
+  "gamemodel": {
+   "total": 1065,
+   "untranslated": 885
+  },
+  "community": {
+   "total": 675,
+   "untranslated": 521
+  },
+  "note": {
+   "total": 249,
+   "untranslated": 152
+  },
+  "common": {
+   "total": 3,
+   "untranslated": 0
+  }
+ },
+ "app": {
+  "total": 14371,
+  "translated": 5050,
+  "pct": 35.1
+ }
+}

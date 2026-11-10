@@ -21,7 +21,7 @@ const server=http.createServer((req,res)=>{
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`,engine=process.env.PS_BROWSER_ENGINE||'chromium';
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})});
 try{
- const context=await browser.newContext(),page=await context.newPage();await page.goto(base+'/studio/app.html');
+ const context=await browser.newContext({locale:'ko-KR'}),page=await context.newPage();await page.goto(base+'/studio/app.html');
  await page.waitForFunction(()=>navigator.serviceWorker.controller);await page.evaluate(()=>PSUpdateClient.reconcile());
  assert.equal(await page.locator('#version').textContent(),'4.001','first installation does not reload endlessly');
  await page.locator('#draft').fill('사라지면 안 되는 경기 메모');await page.evaluate(()=>window.saveFailure=true);

@@ -4,7 +4,7 @@ import {startFixture,openApp,visibleFrameId} from '../fixtures/team-app.mjs';
 //          → 게임모델 단계의 «보관함 훈련 n개». 팀 게임모델은 건드리지 않는다. 작전판 편집이 되는 화면(데스크톱)에서만.
 const fx=await startFixture(),browsers={};
 try{
-  const {page,logs}=await openApp(fx,'desktop',{browsers});
+  const {page,logs}=await openApp(fx,'desktop',{browsers,learning:true});   /* «학습»은 꺼져 있다(learning-off.js) — 깃발을 켠 판에서 고리가 그대로 도는지 본다 */
   await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
   const teamBefore=await page.evaluate(()=>localStorage.getItem('cs_gamemodel_v1'));
   await page.evaluate(()=>window.__psShowApp('learning'));

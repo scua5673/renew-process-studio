@@ -66,7 +66,7 @@ function edgeFixture(){
   return f;
 }
 async function makeContext(browser,spec,role='executive',locked=false){
-  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},isMobile:!!spec.mobile,hasTouch:!!spec.touch,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
+  const context=await browser.newContext({locale:'ko-KR',viewport:{width:spec.width,height:spec.height},isMobile:!!spec.mobile,hasTouch:!!spec.touch,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
   await context.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort('blockedbyclient'));
   await context.addInitScript(({uid,wid,role,locked,initial})=>{
     if(!localStorage.getItem('fixture-context-seeded')){

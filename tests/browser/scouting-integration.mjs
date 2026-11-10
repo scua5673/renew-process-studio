@@ -60,7 +60,7 @@ function permsRaw(){return localStorage.getItem('cs_perms_v1');}
 ${['scoutWriteAllowed','scoutReadyRaw'].map(syncFunction).join('\n')}
 return keyReady;`;
 async function contextFor(browser, spec, role = 'admin') {
-  const context = await browser.newContext({ viewport: { width: spec.width, height: spec.height }, hasTouch: !!spec.touch,
+  const context = await browser.newContext({locale:'ko-KR',viewport: { width: spec.width, height: spec.height }, hasTouch: !!spec.touch,
     isMobile: !!spec.mobile, serviceWorkers: 'block', timezoneId: 'Asia/Seoul' });
   // Every scenario gets a new temporary profile. No production host, account, or browser storage is accessed.
   await context.route('**/*', route => new URL(route.request().url()).origin === base ? route.continue() : route.abort('blockedbyclient'));

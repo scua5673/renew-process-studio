@@ -4874,7 +4874,7 @@ function applyView(){
      바를 여는 건 '모드 전환'이라 그때 한 번 운동장이 조정되는 편이 낫다 → 상시 손해를 없앰. (1280×800: 714×445 → 783×488, 간격 186 → 142) */
   try{ if(!_dockOwnsStageReserve&&!document.body.classList.contains("meet-mode")){
     var __ab=document.getElementById("animBar");
-    if(__ab && __ab.classList.contains("on")){ _abH=(typeof _animBarPad==="function"?_animBarPad():0)||window.__animReserve||0; }
+    if(__ab && __ab.classList.contains("on") && getComputedStyle(__ab).display!=="none"){ _abH=(typeof _animBarPad==="function"?_animBarPad():0)||window.__animReserve||0; }   /* 숨은 장면 줄(폰 보기 전용)은 자리를 안 잡는다 — 잡으면 판 높이가 0 */
   } }catch(_){}
   /* 레거시 레이아웃은 보관함 열람 바(vCreateBar) 자리도 미리 예약한다. Command Dock v5는
      실측된 stage content box를 그대로 써야 중복 예약 없이 최대 크기가 되므로 이 보정을 건너뛴다. */
@@ -4950,7 +4950,7 @@ function worldClamp(x,y){const b=worldBounds();
   return {x:Math.max(b.minX+2,Math.min(b.maxX-2,x)),y:Math.max(b.minY+2,Math.min(b.maxY-2,y))};}
 function fitBoardAspect(){try{applyView();}catch(_){}}
 /* 애니메이션 바가 열리면 운동장을 그 위로 올려 겹침 제거 — svg 높이를 직접 줄이고 상단 정렬(레이아웃 방식 무관) */
-function _animBarPad(){try{var ab=document.getElementById("animBar"),st=document.getElementById("boardStage");if(ab&&st&&ab.classList.contains("on")){var abR=ab.getBoundingClientRect(),stR=st.getBoundingClientRect();var stPadBottom=parseFloat(getComputedStyle(st).paddingBottom)||0;var stContentH=stR.height-stPadBottom;var abTopInStage=abR.top-stR.top;var pad=stContentH-abTopInStage;return Math.max(0,pad+2);}}catch(_){}return 0;}
+function _animBarPad(){try{var ab=document.getElementById("animBar"),st=document.getElementById("boardStage");if(ab&&st&&ab.classList.contains("on")){var abR=ab.getBoundingClientRect(),stR=st.getBoundingClientRect();if(!abR.height)return 0;var stPadBottom=parseFloat(getComputedStyle(st).paddingBottom)||0;var stContentH=stR.height-stPadBottom;var abTopInStage=abR.top-stR.top;var pad=stContentH-abTopInStage;return Math.max(0,pad+2);}}catch(_){}return 0;}
 function _animFitPad(){try{if(document.body.classList.contains("comm-viewing"))return;   /* 2.575 — 뷰어는 자리를 한 번 잡으면 끝 */
   var st=document.getElementById("boardStage");if(st)st.style.paddingBottom="";
   /* 2.903 — 폰 저장 띠는 psSelBarLayout 의 늘-비움 68px 에 선다. 여기서 지운 채 두면 세로 운동장 골라인이 띠 밑으로 간다(훈련→작전판 복귀 등) */
@@ -14700,7 +14700,7 @@ function mnSave(){try{localStorage.setItem("cs_matchnotes",JSON.stringify(matchN
 function clockStamp(){const m=Math.floor(matchClock.elapsed/60);return (matchClock.half===2?"후":"전")+m+"'";}
 function mnPlayerOpts(){const mPs=state.players.filter(p=>!p.coach);if(!mPs.length)return '<option value="">선수 없음</option>';
   return mPs.sort((a,b)=>(a.team+a.num).localeCompare(b.team+b.num)).map(p=>{
-    const t=p.team==="blue"?"우리":p.team==="red"?"상대":p.team;return `<option value="${t} ${p.num}">${t} ${p.num}</option>`;}).join("");}
+    const t=p.team==="blue"?"우리":p.team==="red"?"상대":p.team;return `<option>${PSSafe.html(t+" "+p.num)}</option>`;}).join("");}
 function mnEl(){let p=document.getElementById("matchNotes");if(p)return p;
   const stage=document.getElementById("boardStage");if(!stage)return null;
   const btn=document.createElement("button");btn.id="matchNotesBtn";btn.className="mn-btn";
@@ -14730,7 +14730,7 @@ function mnRender(){const p=document.getElementById("matchNotes");if(!p)return;
   if(mnCat==="player"){who.style.display="";who.innerHTML=mnPlayerOpts();}else{who.style.display="none";}
   const list=p.querySelector("#mnList"),arr=matchNotes[mnCat]||[];
   if(!arr.length){list.innerHTML='<div class="mn-empty">아직 메모가 없어요. 경기 보면서 떠오르는 걸 적어두세요.</div>';return;}
-  list.innerHTML=arr.map((n,i)=>`<div class="mn-item"><span class="mn-t">${n.t}</span>${n.who?`<span class="mn-who">${n.who}</span>`:""}<span class="mn-tx">${(n.txt||"").replace(/</g,"&lt;")}</span><button class="mn-x" data-i="${i}">×</button></div>`).join("");
+  list.innerHTML=arr.map((n,i)=>`<div class="mn-item"><span class="mn-t">${PSSafe.html(n.t)}</span>${n.who?`<span class="mn-who">${PSSafe.html(n.who)}</span>`:""}<span class="mn-tx">${(n.txt||"").replace(/</g,"&lt;")}</span><button class="mn-x" data-i="${i}">×</button></div>`).join("");
   [...list.querySelectorAll(".mn-x")].forEach(x=>x.onclick=()=>{arr.splice(+x.dataset.i,1);mnSave();mnRender();});}
 function mnAdd(){const p=document.getElementById("matchNotes");if(!p)return;
   const ti=p.querySelector("#mnText"),txt=(ti.value||"").trim();if(!txt)return;
@@ -20946,7 +20946,7 @@ try{ var _nb=document.getElementById('dfNew');
     pages.forEach(function(p){ if(!p)return; st(p.snap); try{ if(p.anim&&Array.isArray(p.anim.frames))p.anim.frames.forEach(function(f){ if(f)st(f.snap); }); }catch(_){} });
     try{ window.__lookStampScenes&&window.__lookStampScenes(); }catch(_){} }
 
-  function clearHistory(){try{window.__clearBoardHistory&&window.__clearBoardHistory();}catch(_){}}
+  function clearHistory(k){try{window.__clearBoardHistory&&window.__clearBoardHistory(k);}catch(_){}}
   /* ══ 3.014 · «새 보드» — 작업 보드를 처음부터(오류 제보 88a82188) ══
      사용자 «첫 화면 보드 초기화 하는 게 있으면 좋을 것 같습니다 · 전 작업이 계속 남아 있네요». 작업 보드는 마지막 «보드 저장»을 다시 열어서
      예전 페이지·장면이 늘 남았고, 비우는 길은 보드 설정 › 접힌 «초기화 및 삭제» 속 «기본 배치로 초기화»뿐이었다(그것도 페이지·장면은 남긴다).
@@ -21004,14 +21004,14 @@ try{ var _nb=document.getElementById('dfNew');
     back();
   }
   function add(){ if(_lent)return; ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
-    pages.splice(idx+1,0,{snap:blankSnap(),thumb:"",name:""}); idx++; loadIdx(idx,true);clearHistory();render(); persist(); _toast("페이지 "+pages.length); }
+    pages.splice(idx+1,0,{snap:blankSnap(),thumb:"",name:""}); idx++; loadIdx(idx,true);clearHistory(1);render(); persist(); _toast("페이지 "+pages.length); }
   function dup(i){ ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
     var src=pages[i]; if(!src)return; var _cp={snap:_clone(src.snap),anim:src.anim?_clone(src.anim):null,thumb:src.thumb,name:(src.name||((window.__vaultBook?"시퀀스 ":"페이지 ")+(i+1)))+" 복사"};
     ["grp","when","call","mo","ph"].forEach(function(k){ if(typeof src[k]==="string"&&src[k])_cp[k]=src[k]; });   /* 2.985 · 2.990 국면 자리도 */
-    pages.splice(i+1,0,_cp); idx=i+1; loadIdx(idx,true);clearHistory();render(); persist(); }
+    pages.splice(i+1,0,_cp); idx=i+1; loadIdx(idx,true);clearHistory(1);render(); persist(); }
   function switchTo(i){ if(!pages||i===idx||!pages[i])return; try{ if(window.__bkMap)window.__bkMap.close(); }catch(_){} restoreAnimBeforeCapture();capture();   /* 2.990 — 시퀀스를 고르면 국면 지도는 걷힌다 */ idx=i; loadIdx(idx,true);if(!window.PSBoardPageHistory||!PSBoardPageHistory.keep())clearHistory();render(); persist(); }
   function del(i){ if(!pages||pages.length<=1)return;
-    var go=function(){ if(i!==idx)capture(); pages.splice(i,1); if(idx>i)idx--; else if(idx===i)idx=Math.max(0,i-1); loadIdx(idx,true);clearHistory();render();persist(); _bkTouch(); };
+    var go=function(){ restoreAnimBeforeCapture();capture(); pages.splice(i,1); if(idx>i)idx--; else if(idx===i)idx=Math.max(0,i-1); loadIdx(idx,true);clearHistory(1);render();persist(); _bkTouch(); };
     var _q=window.__vaultBook?("«"+bkSeqName(pages[i],i)+"» 시퀀스를 삭제할까요? 장면도 함께 지워집니다."):"이 페이지를 삭제할까요?";   /* 2.985 */
     if(window.psConfirm)window.psConfirm(_q,go); else if(window.confirm(_q))go(); }
   function rename(i){ if(_lent)return; ensure(); if(!pages||!pages[i])return; var cur=pages[i].name||("페이지 "+(i+1));   /* ensure() — 1페이지(가상 탭)에서도 이름을 바꿀 수 있게 */

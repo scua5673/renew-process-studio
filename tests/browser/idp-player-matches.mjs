@@ -62,7 +62,7 @@ await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0
 const base=`http://127.0.0.1:${server.address().port}`;
 
 async function newContext(browser,spec){
-  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,isMobile:!!spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
+  const context=await browser.newContext({locale:'ko-KR',viewport:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,isMobile:!!spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
   await context.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort('blockedbyclient'));
   await context.addInitScript(({uid,wid,documents})=>{
     if(!localStorage.getItem('fixture-player-matches-seeded')){

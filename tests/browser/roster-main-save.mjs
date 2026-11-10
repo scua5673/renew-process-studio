@@ -15,7 +15,7 @@ const engine=process.env.PS_BROWSER_ENGINE||'chromium';
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
 fs.mkdirSync(out,{recursive:true});
 try{
- const context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage(),errors=[];
+ const context=await browser.newContext({locale:'ko-KR',serviceWorkers:'block'}),page=await context.newPage(),errors=[];
  await context.route('**/*',route=>{
   const url=new URL(route.request().url());if(url.origin!==base)return route.abort();
   if(url.pathname==='/parent.html')return route.fulfill({contentType:'text/html; charset=utf-8',body:'<!doctype html><meta charset="utf-8"><script src="/studio/storage.js"></script><div class="frames"><iframe id="fScout" src="/studio/scout.html" style="width:100%;height:800px"></iframe></div>'});

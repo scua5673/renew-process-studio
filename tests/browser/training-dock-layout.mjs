@@ -45,7 +45,7 @@ try{
  browser=await playwright[engine].launch({headless:true,...(engine==='chromium'&&process.env.PS_CHROME_PATH?{executablePath:process.env.PS_CHROME_PATH}:{})});
  for(const spec of [{width:1280,height:900},{width:1440,height:900},{width:1728,height:1117},{width:1024,height:768,touch:true}].filter(s=>!process.env.PS_TEST_WIDTHS||process.env.PS_TEST_WIDTHS.split(',').includes(String(s.width)))){
   const result={spec,baseline,states:[],errors:[]};results.push(result);
-  const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},screen:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,isMobile:!!spec.touch,serviceWorkers:'block',...(spec.touch?{userAgent:'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'}:{})});
+  const context=await browser.newContext({locale:'ko-KR',viewport:{width:spec.width,height:spec.height},screen:{width:spec.width,height:spec.height},hasTouch:!!spec.touch,isMobile:!!spec.touch,serviceWorkers:'block',...(spec.touch?{userAgent:'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'}:{})});
   await context.route('**/*',r=>new URL(r.request().url()).origin===base?r.continue():r.abort('blockedbyclient'));
   await context.addInitScript(()=>{
     const uid='11111111-1111-4111-8111-111111111111',wid='22222222-2222-4222-8222-222222222222';
