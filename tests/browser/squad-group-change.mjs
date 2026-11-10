@@ -52,7 +52,7 @@ try{for(const size of (process.env.PS_SIZES||'desktop,phone').split(',')){
   await f.evaluate(()=>{document.body.classList.remove('ps-roster-locked');renderTeam();});assert.equal(await toggle().getAttribute('aria-pressed'),'false');await toggle().click();
   await pick();await f.getByRole('menuitemradio',{name:'B팀',exact:true}).click();
   await f.evaluate(async()=>{if(window.psFlushPending)await psFlushPending();await scoutStore.ready(true);});await page.waitForTimeout(1500);
-  await toggle().click();await name().click();await f.locator('#pwDrawer[open]').waitFor();await f.getByRole('button',{name:'선수 상세 닫기'}).click();
+  await toggle().click();await name().click();await f.locator('#plEditModal').waitFor({state:'visible'});await f.locator('#plClose').click();await f.locator('#plEditModal').waitFor({state:'hidden'});
   await page.reload();f=await open();assert.equal(await f.evaluate(()=>data.players.find(p=>p.id==='vp01').grp),'B팀','group survives reload');assert.equal(await toggle().getAttribute('aria-pressed'),'false','mode is transient');
   await toggle().click();await pick();
   const bounds=await f.locator('.pw-group-picker').boundingBox(),frameBox=await page.locator('#fScout').boundingBox();assert.ok(bounds.x>=frameBox.x&&bounds.x+bounds.width<=frameBox.x+frameBox.width+1,'picker fits viewport');
