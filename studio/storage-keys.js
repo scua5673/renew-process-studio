@@ -166,6 +166,8 @@
     ['ps_boot_alive_v1','device','ls','session','app.html'],
     ['ps_boot_crumb_v1','device','ls','session','app.html'],
     ['ps_boot_crash_sent_v1','device','ls','diag','app.html'],
+    ['ps_crash_crumb_v1','device','ls','session','crash-breadcrumb.js'],   // 데스크톱 탭 종료 표식 — sessionStorage(가득 찬 기기의 같은 탭) · `:tab`
+    ['ps_crash_crumb_v1:','device','ls','session','crash-breadcrumb.js',{prefix:1}],   // 탭마다 한 줄(300자 안팎), 정상 종료 때 지운다
     ['ps_boot_safe_carry_v1','device','ls','session','app.html'],
     ['ps_cache_owner_v1','device','ls','session','scout.html'],
     ['ps_cache_wipe','device','ls','session','sync.js'],
