@@ -25,7 +25,10 @@ try{
  assert.ok(await pb.locator('[data-lib="drill1"]').isVisible());
  for(const width of [1280,1100,375]){await page.setViewportSize({width,height:980});if(width===375)await pb.locator('[data-ph="build"]').click();await page.waitForTimeout(200);assert.equal(await pb.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'playbook no horizontal overflow '+width);const out=path.join(SHOTS,'criteria-playbook-'+engine+'-'+width+'.png');await page.screenshot({path:out,fullPage:true});shots.push(out);}
  await page.setViewportSize({width:1280,height:1000});
- await pb.locator('[data-pedit="0"]').click();await pb.locator('[name="title"]').fill('첫 압박선을 넘고 전진 패스를 찾는다');
+ /* 폭을 375 → 1280 으로 되돌린 직후엔 플레이북이 다시 그려진다 — 그 사이 누른 «편집»은 갈아 끼워진 단추에 닿아 창이 안 뜬다(staging 웹킷 records).
+    창이 뜰 때까지 다시 누른다(다섯 번 · 다른 실패는 그대로) */
+ for(let i=0;;i++){await pb.locator('[data-pedit="0"]').click();if(await pb.locator('[name="title"]').waitFor({state:'visible',timeout:3000}).then(()=>true,()=>false))break;if(i>=4)throw new Error('플레이북 편집 창이 열리지 않았다');}
+ await pb.locator('[name="title"]').fill('첫 압박선을 넘고 전진 패스를 찾는다');
  // An unrelated concurrent edit must survive the open dialog.
  await page.evaluate(()=>{const k='cs_gamemodel_v1',d=JSON.parse(localStorage.getItem(k));d.moments[1].extra='newer';localStorage.setItem(k,JSON.stringify(d));});
  await save(pb);let doc=await getDoc(page,'cs_gamemodel_v1');assert.equal(doc.moments[0].phases[0].principles[0].t,'첫 압박선을 넘고 전진 패스를 찾는다');assert.equal(doc.moments[1].extra,'newer');assert.deepEqual(doc.moments[0].phases[0].snap,gm.moments[0].phases[0].snap);assert.equal(doc.moments[0].phases[0].principles[0].extra.retain,true);
