@@ -19,7 +19,7 @@ test('frame loader preserves a loaded editor and reloads only an empty stalled p
  let writes=0,removes=0,src='scout.html',url='about:blank';
  const fr={dataset:{},__psLoadAt:1000,contentWindow:{location:{get href(){return url;}}},getAttribute:()=>src,removeAttribute:()=>{src='';removes++;},setAttribute:(k,v)=>{src=v;writes++;},addEventListener:()=>{}};
  Object.assign(ctx,{Date:{now:()=>10000},shellSwitchBlocked:false,PS_BUILD:'test',currentTeamKey:'team',psSchedOpenMode:x=>x});
- for(const name of ['fScout','fProcess','fGameModel','fTerms','fIdp','fNote','fScouting','fComm','fAnalysis','fPlaybook','fLearning'])ctx[name]=fr;
+ for(const name of ['fScout','fProcess','fGameModel','fTerms','fIdp','fNote','fScouting','fComm','fAnalysis','fPlaybook','fLearning','fProfile'])ctx[name]=fr;
  assert.equal(ctx.ensureAppFrame('scout'),fr);assert.equal(writes,1);assert.equal(removes,1);assert.equal(fr.__psLoadAt,10000);assert.equal(fr.__psReady,false);
  // A second click inside the grace period must not cancel the replacement request.
  ctx.ensureAppFrame('scout');assert.equal(writes,1);

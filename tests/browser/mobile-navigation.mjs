@@ -9,7 +9,7 @@ SIZES.phone.engine=engine;
 SIZES.phone.ctx={...SIZES.phone.ctx,viewport:{width:390,height:844},deviceScaleFactor:1};
 const fx=await startFixture(),browsers={},results=[];
 // «학습»은 뺐다(사용자 «학습은 빼자» — studio/learning-off.js PS_LEARNING_ENABLED=false). 폰 하단은 다섯 칸, 넓은 화면 레일도 다섯.
-const expected=['보드','보관함','커뮤니티','팀 운영','더보기'];
+const expected=['보드','보관함','커뮤니티','프로필','팀 운영','더보기'];   /* 3.280 — 프로필은 커뮤니티 바로 다음 칸 */
 let app;
 async function bar(page){
   return page.locator('#appSeg button').evaluateAll(es=>es.filter(e=>e.getClientRects().length&&getComputedStyle(e).display!=='none').map(e=>{
@@ -110,7 +110,7 @@ try{
   // Breakpoint changes restore original desktop order, including global IDP.
   await page.setViewportSize({width:1100,height:820});
   await page.waitForFunction(()=>!document.body.classList.contains('ps-mobile-six'));
-  assert.deepEqual((await bar(page)).map(b=>b.label),['보드','보관함','팀 운영','IDP','커뮤니티']);
+  assert.deepEqual((await bar(page)).map(b=>b.label),['보드','보관함','팀 운영','IDP','커뮤니티','프로필']);
   assert.equal(await page.locator('#teamBottom').isVisible(),false);
   await page.setViewportSize({width:390,height:844});
   await page.waitForFunction(()=>document.body.classList.contains('ps-mobile-six'));

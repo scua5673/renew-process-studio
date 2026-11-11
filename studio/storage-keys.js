@@ -230,6 +230,7 @@
     ['ps_phone_board_hint_v1','device','ls','seen','board.html'],
     ['ps_pitch_photo:','device','idb','data','board-pitch-photo.js',{prefix:1}],   /* 3.100 — 운동장 사진(판에는 @photo: 참조만 · 서버로 가지 않는다) */
     ['ps_private_board_draft_v1:','device','ls','draft','storage.js',{prefix:1}],
+    ['ps_profiles_v1:','device','idb','data','profile-app.js',{prefix:1}],   // 3.280 — «프로필» 앱의 선수 · 코치 프로필(계정마다 · 이 기기에만 · 동기화 없음)
     ['ps_private_board_rev_v1','device','ls','cache','app.html'],
     ['ps_push_log_v1','device','ls','diag','sync.js'],
     ['ps_push_ok_','device','ls','queue','sync.js',{prefix:1}],

@@ -605,7 +605,7 @@ html.ps-page-note #stage{padding-left:10px!important;}
   html.ps-page-app #appSeg#appSeg button[data-app="scouting"]{order:12!important;}
   html.ps-page-app #appSeg#appSeg button[data-app="idp"]{order:21!important;}
   html.ps-page-app #appSeg#appSeg button[data-app="learning"]{order:22!important;}
-  html.ps-page-app #appSeg#appSeg button[data-app="community"]{order:31!important;}
+  html.ps-page-app #appSeg#appSeg button[data-app="community"],html.ps-page-app #appSeg#appSeg button[data-app="profile"]{order:31!important;}   /* 3.280 — 프로필은 커뮤니티 바로 밑(같은 차례 · DOM 순서대로) */
   /* 1.833 — 그룹 라벨(개인/팀/성장/공유) 제거(사용자 지시). 그룹 사이 간격만 남긴다 */
   html.ps-page-app #appSeg#appSeg button[data-team-hub],
   html.ps-page-app #appSeg#appSeg button[data-app="idp"],
