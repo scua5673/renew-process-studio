@@ -36,7 +36,7 @@
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
 <script src="learning-off.js"></script><script src="i18n.js"></script>
-<script src="autosave-status.js?v=3.278"></script>
+<script src="autosave-status.js?v=3.280"></script>
 <script src="sync-confirmation.js"></script>
 <script src="sync-diagnosis.js"></script>
 <script src="sync-diagnosis-ui.js"></script>
@@ -533,7 +533,7 @@
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
 <script src="playbook-data.js"></script><script src="playbook-shell.js"></script>
-<script>window.PS_BUILD='3.278';</script>
+<script>window.PS_BUILD='3.280';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1349,6 +1349,8 @@ window.psFailAlert=function(lead,e,stage){
       <button data-scope="global" data-app="idp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 19.5v-5"/><path d="M12 19.5v-9"/><path d="M18.5 19.5v-14"/></svg><span>IDP</span></button>
       <!-- 1.856 — 1.854 의 사이드바 매치 데스크 버튼 제거(사용자). 진입로는 보관함 › 분석 -->
       <button data-scope="personal" data-app="community"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h11a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H9l-4 3.5v-3.5H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2z"/><path d="M19 9.5h1a2 2 0 0 1 2 2v4.5a2 2 0 0 1-2 2h-1v3l-3.5-3H12"/></svg><span>커뮤니티</span></button>
+      <!-- 3.280 — 프로필: 팀 운영과 별개로 선수 · 코치 프로필 한 장을 만들어 뽑는다(사용자 «커뮤니티 밑에») -->
+      <button data-scope="personal" data-app="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/><circle cx="12" cy="10" r="2.6"/><path d="M7.5 17.2a4.6 4.6 0 0 1 9 0"/></svg><span>프로필</span></button>
       <!-- 1.661 — IDP 안에 있던 경기 읽기·용어 학습을 최상위 메뉴로 승격한다.
            화면만 따로 보이고 저장은 기존 IDP 문서의 learning 필드를 그대로 쓴다. -->
       <button data-scope="global" data-app="learning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5c-1.6-1.3-3.6-2-6-2H3v13h3c2.4 0 4.4.7 6 2 1.6-1.3 3.6-2 6-2h3v-13h-3c-2.4 0-4.4.7-6 2z"/><path d="M12 6.5v13"/></svg><span>학습</span></button>
@@ -1650,7 +1652,7 @@ window.psFailAlert=function(lead,e,stage){
     <div class="ps-upd-row" data-upd-row hidden><span class="pur-t"><span data-upd-rowtext></span><small data-upd-msg hidden></small></span><button type="button" data-upd="row" data-upd-now>적용</button></div><!-- 2.947 -->
     <!-- 2.940 — 폰 작전판엔 저장 띠가 없다(2.939). 계정에 올리는 길을 여기 하나 둔다 — 작전판을 보고 있을 때만 보인다 -->
     <div class="tms-g" data-am-row="board" hidden><i>보드</i><button type="button" data-am="boardsave" title="작업 보드를 계정에 저장">보드 저장</button></div>
-    <div class="tms-g"><i>앱</i><button type="button" data-am-app="design">보관함</button><button type="button" data-am-nav="idp">IDP</button><button type="button" data-am="install" data-install-door hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v6.5"/><path d="M9.3 11.4 12 14l2.7-2.6"/><path d="M10.5 18.3h3"/></svg><span data-install-label>홈 화면에 추가</span></button></div><!-- 3.110 — 설치 문(install-door.js 가 보이기 · 이름) -->
+    <div class="tms-g"><i>앱</i><button type="button" data-am-app="design">보관함</button><button type="button" data-am-nav="idp">IDP</button><button type="button" data-am-app="profile">프로필</button><button type="button" data-am="install" data-install-door hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v6.5"/><path d="M9.3 11.4 12 14l2.7-2.6"/><path d="M10.5 18.3h3"/></svg><span data-install-label>홈 화면에 추가</span></button></div><!-- 3.110 — 설치 문(install-door.js 가 보이기 · 이름) -->
     <div class="tms-g"><i>도움</i><button type="button" data-am="settings">앱 설정</button><button type="button" data-am="support">오류 제보</button><button type="button" data-am="guide">사용법</button></div>
   </div>
   <div class="ps-updpop" id="psUpdPop" role="dialog" aria-labelledby="psUpdPopT" hidden>
@@ -2035,7 +2037,7 @@ window.psFailAlert=function(lead,e,stage){
     <iframe id="fScouting" title="스카우팅" style="display:none"></iframe>
 <iframe id="fComm" title="커뮤니티" style="display:none"></iframe>
     <iframe id="fAnalysis" title="팀 · 선수 등록" style="display:none" allowfullscreen allow="fullscreen"></iframe>
-    <iframe id="fPlaybook" title="플레이북" style="display:none"></iframe><!-- 2.576 -->
+    <iframe id="fPlaybook" title="플레이북" style="display:none"></iframe><iframe id="fProfile" title="프로필" style="display:none"></iframe><!-- 2.576 -->
     <!-- 옛 코치 교재 프레임은 구버전 복귀 호환을 위해 남기되 더는 메뉴에서 열지 않는다.
          최상위 학습은 fIdp의 기존 경기 읽기 화면을 공유해 기록을 둘로 가르지 않는다. -->
     <iframe id="fLearning" title="학습" style="display:none"></iframe>
@@ -2104,7 +2106,7 @@ window.psFailAlert=function(lead,e,stage){
     var fScouting=document.getElementById('fScouting');
     var fComm=document.getElementById('fComm');
     var fAnalysis=document.getElementById('fAnalysis');
-    var fPlaybook=document.getElementById('fPlaybook');   /* 2.576 */
+    var fPlaybook=document.getElementById('fPlaybook');var fProfile=document.getElementById('fProfile');   /* 2.576 */
     var fLearning=document.getElementById('fLearning');
     var loading=document.getElementById('loading');
     var seg=document.getElementById('appSeg');
@@ -2224,6 +2226,7 @@ window.psFailAlert=function(lead,e,stage){
     var hints={board:'전술·세션을 그리고, 애니메이션·영상으로 내보내세요',
                design:'드릴 블록을 쌓아 오늘 세션을 만들고, 링크·PDF로 전달하세요',
                community:'코치들의 작전판·훈련·경기 분석을 탐색하고 보관함에 담기',
+               profile:'선수 · 코치 프로필을 한 장으로 만들어 바로 뽑아요',
                analysis:'팀과 선수 명단을 등록하고 보드에서 불러오세요',
                learning:'경기 읽기와 축구 용어를 익히고 다음 훈련 행동으로 연결하세요',
                process:'경기일(MD) 기준 자동 주기화 · 훈련 블록에서 작전판 첨부 가능',
@@ -2309,7 +2312,7 @@ window.psFailAlert=function(lead,e,stage){
         scouting:[fScouting,'scouting.html?v='+PS_BUILD],
         community:[fComm,'community.html?v='+PS_BUILD]
         ,analysis:[fAnalysis,'analysis.html?v='+PS_BUILD]
-        ,playbook:[fPlaybook,'playbook.html?v='+PS_BUILD]   /* 2.576 — 플레이북(읽기 전용) */
+        ,playbook:[fPlaybook,'playbook.html?v='+PS_BUILD],profile:[fProfile,'profile.html?v='+PS_BUILD]   /* 2.576 — 플레이북(읽기 전용) */
         ,learning:[fLearning,'learning.html?v='+PS_BUILD]   /* 2.219 — 학습은 독립 앱(learning.html). IDP 안의 옛 학습 층은 그대로 두되 셸에서는 더 안 연다 */
       }[app];
       if(!item||!item[0])return null;
@@ -2452,7 +2455,7 @@ window.psFailAlert=function(lead,e,stage){
     }catch(_){} }
     function closeTransientUI(nextApp){
       try{
-        var frames=[fBoard,fProcess,fGameModel,fScout,fTerms,fIdp,fNote,fScouting,fComm,fAnalysis,fLearning,fPlaybook];
+        var frames=[fBoard,fProcess,fGameModel,fScout,fTerms,fIdp,fNote,fScouting,fComm,fAnalysis,fLearning,fPlaybook,fProfile];
         frames.forEach(function(fr){
           if(fr&&fr.contentWindow&&fr.getAttribute('src')){
             fr.contentWindow.postMessage({source:'app',type:'closeTransientUI',nextApp:nextApp},'*');
@@ -2609,7 +2612,7 @@ window.psFailAlert=function(lead,e,stage){
       /* 2.384 — 팀 화면이 아니면 헤더의 조용한 줄을 지운다(다른 화면의 정보처럼 읽히지 않게) */
       try{ var _thn=document.getElementById('teamHeadNote');
         if(_thn&&!currentTeamKey){ _thn.textContent=''; _thn.style.display='none'; } }catch(_){}
-      var _psVisBefore=(function(){try{var a=[fBoard,fProcess,fGameModel,fScout,fTerms,fIdp,fNote,fScouting,fComm,fAnalysis,fLearning,fPlaybook,document.getElementById('printView')];
+      var _psVisBefore=(function(){try{var a=[fBoard,fProcess,fGameModel,fScout,fTerms,fIdp,fNote,fScouting,fComm,fAnalysis,fLearning,fPlaybook,fProfile,document.getElementById('printView')];
         for(var i=0;i<a.length;i++){if(a[i]&&a[i].style.display==='block')return a[i];}}catch(_){}return null;})();
       /* ⚠ 2.359 — 이 줄은 **fBoard 를 보이게 하기 전**에 있어야 한다(사용자: "보관함에 들어갈 때 깜빡여").
          아래 1381행처럼 보이게 한 **뒤**에 setView('session') 을 부르면, 프레임은 아직 작전판 캔버스를
@@ -2631,7 +2634,7 @@ window.psFailAlert=function(lead,e,stage){
       fScouting.style.display = app==='scouting'?'block':'none';
       fComm.style.display = app==='community'?'block':'none';
       fAnalysis.style.display = app==='analysis'?'block':'none';
-      fPlaybook.style.display = app==='playbook'?'block':'none';   /* 2.576 */
+      fPlaybook.style.display = app==='playbook'?'block':'none';fProfile.style.display = app==='profile'?'block':'none';   /* 2.576 */
       fLearning.style.display = app==='learning'?'block':'none';   /* 2.219 */
       /* 2.323 — 학습을 열면 **목차부터**(사용자). 목차에서 갈래를 골라 온 경우엔 뒤이어 오는 openLearnArea 가 이긴다 */
       if(app==='learning'){ try{ fLearning.contentWindow.postMessage({type:'learnHome'},'*'); }catch(_){} }
@@ -2650,7 +2653,7 @@ window.psFailAlert=function(lead,e,stage){
       var pvw=document.getElementById('printView'); if(pvw)pvw.style.display = app==='print'?'block':'none';
       var h=document.getElementById('hintbar'); if(h) h.textContent=hints[app]||'';
       /* 전환 페이드 — 화면이 뚝 나타나지 않게 */
-      try{var _act=(app==='print')?document.getElementById('printView'):(app==='board'||app==='design')?fBoard:(app==='process')?fProcess:(app==='gamemodel')?fGameModel:(app==='scout')?fScout:(app==='terms')?fTerms:(app==='idp')?fIdp:(app==='learning')?fLearning:(app==='community')?fComm:(app==='analysis')?fAnalysis:(app==='playbook')?fPlaybook:(app==='scouting')?fScouting:fNote;
+      try{var _act=(app==='print')?document.getElementById('printView'):(app==='board'||app==='design')?fBoard:(app==='process')?fProcess:(app==='gamemodel')?fGameModel:(app==='scout')?fScout:(app==='terms')?fTerms:(app==='idp')?fIdp:(app==='learning')?fLearning:(app==='community')?fComm:(app==='analysis')?fAnalysis:(app==='playbook')?fPlaybook:(app==='profile')?fProfile:(app==='scouting')?fScouting:fNote;
         /* 2.359 — 이미 보이던 프레임이면 페이드를 다시 걸지 않는다(사용자 "보관함에 들어갈 때 깜빡여").
            작전판↔보관함은 같은 fBoard 라, 페이드를 재생하면 멀쩡히 보이던 화면이 투명해졌다 돌아온다.
            프레임이 실제로 바뀔 때만 페이드가 뜻이 있다. */
@@ -4144,7 +4147,7 @@ window.psFailAlert=function(lead,e,stage){
 /* ===== Light/Dark theme toggle (default light) ===== */
 (function(){
   var KEY='cs_theme';
-  function frames(){return ['fBoard','fProcess','fGameModel','fScout','fTerms','fIdp','fNote','fComm','fAnalysis','fScouting','fLearning','fPlaybook'].map(function(id){return document.getElementById(id);}).filter(Boolean);}   /* 2.476 — 스카우팅·학습이 빠져 다크 모드가 그 두 iframe 에 안 내려갔다(전수조사 곁 발견) */
+  function frames(){return ['fBoard','fProcess','fGameModel','fScout','fTerms','fIdp','fNote','fComm','fAnalysis','fScouting','fLearning','fPlaybook','fProfile'].map(function(id){return document.getElementById(id);}).filter(Boolean);}   /* 2.476 — 스카우팅·학습이 빠져 다크 모드가 그 두 iframe 에 안 내려갔다(전수조사 곁 발견) */
   function applyFrame(f,dark){try{var b=f.contentDocument&&f.contentDocument.body;if(b)b.classList.toggle('fmdark',dark);}catch(e){}}
   var MQ=null;try{MQ=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');}catch(_){}   /* 2.642 — 자동(기기 따라가기) */
   function mode(){try{var v=localStorage.getItem(KEY);return (v==='dark'||v==='auto')?v:'light';}catch(e){return 'light';}}
@@ -7908,18 +7911,18 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="sync-size.js"></script>
 <script src="sync-observability.js"></script>
 <script src="idp-pub-wipe.js"></script>
-<script src="autosave-journal.js?v=3.278"></script>
-<script src="autosave-merge.js?v=3.278"></script>
-<script src="autosave-runtime.js?v=3.278"></script>
-<script src="autosave-recovery.js?v=3.278"></script>
+<script src="autosave-journal.js?v=3.280"></script>
+<script src="autosave-merge.js?v=3.280"></script>
+<script src="autosave-runtime.js?v=3.280"></script>
+<script src="autosave-recovery.js?v=3.280"></script>
 <script src="roster-outbox.js"></script>
 <script src="sync-items-stale.js"></script>
 <script src="permissions-filter.js"></script>
-<script src="popover-dismiss.js"></script><script src="oauth-gate.js"></script><script src="account-hygiene.js"></script><script src="sync.js?v=3.278"></script>
+<script src="popover-dismiss.js"></script><script src="oauth-gate.js"></script><script src="account-hygiene.js"></script><script src="sync.js?v=3.280"></script>
 <script src="team-files.js"></script>
 <script src="sync-stall-report.js"></script>
 <script src="account-delete.js"></script>
-<link rel="stylesheet" href="support.css?v=3.278">
+<link rel="stylesheet" href="support.css?v=3.280">
 <link rel="stylesheet" href="support-image.css?v=20261023">
 <script src="support-image.js?v=20261023"></script>
 <script src="support.js?v=20261023"></script>
@@ -8185,7 +8188,7 @@ html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button:not(#_):not(#__){m
 html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button:not(#_):not(#__):not(#___){min-height:44px!important}
 }
 </style>
-<link rel="stylesheet" href="team-mobile.css?v=3.278">
+<link rel="stylesheet" href="team-mobile.css?v=3.280">
 <link rel="stylesheet" href="mobile-navigation.css">
 <script src="mobile-navigation.js"></script>
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">

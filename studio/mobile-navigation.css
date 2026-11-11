@@ -31,6 +31,7 @@
   html.ps-page-app body.ps-mobile-six #appSeg#appSeg #psMoreBtn[aria-expanded="true"] svg:not(#_):not(#__){background:var(--dv2-accent-soft);stroke-width:2}
   html.ps-page-app body.ps-mobile-six #appSeg#appSeg button.on span:not(#_):not(#__){font-weight:800}
   html.ps-page-app body.ps-mobile-six #appSeg#appSeg button[data-app="idp"]:not(#_):not(#__):not(#___),
+  html.ps-page-app body.ps-mobile-six:not(.ps-mnav-profile) #appSeg#appSeg button[data-app="profile"]:not(#_):not(#__):not(#___),
   html.ps-page-app body.ps-mobile-six #appSeg#appSeg button[data-app="design"]:not(#_):not(#__):not(#___){display:none!important}
   html.ps-page-app body.ps-mobile-six.ps-team-open:not(.ps-match-edit):not(.mfull) #teamBottom:not(#_):not(#__){
     display:grid;position:static;flex:0 0 auto;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(56px,1.25fr) repeat(2,minmax(0,1fr));

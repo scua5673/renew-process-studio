@@ -41,7 +41,7 @@ suites.entry.push('sync-diagnosis','team-mobile','mobile-navigation');
 suites.entry.push('admin-metrics');
 suites.entry.push('player-bulk-touch','phone-consistency');
 suites.entry.push('schedule-fab-phone-3273');   /* 3.273 — 폰 일정의 떠 있는 «＋ 오늘에 추가»: 폭 112 · 글자 양옆 여백(3.218 의 min-width:44px 에 눌렸다) */
-suites.entry.push('note-export');   /* 3.265 — 개인 노트 «내보내기»(PDF로 저장 · 인쇄 · 이미지 저장) */
+suites.entry.push('note-export');suites.entry.push('note-picture-3279');suites.entry.push('profile-app-3280');   /* 3.265 — 개인 노트 «내보내기»(PDF로 저장 · 인쇄 · 이미지 저장) */
 suites.entry.push('i18n-english-shell');   /* 영어 모드 셸: 한글이 남지 않음 · 한국어로 되돌리기 · 한국어 사용자는 영어 사전을 받지 않음 · «학습» 없는 다섯 칸 */
 /* 3.272 — storage 묶음이 두 엔진 모두 20분 한도에 닿았다(PR #800 — 시험 합 16.4분 + 준비). 긴 셋(roster-outbox-full · xss-synced-docs · xss-synced-docs-team, 약 4.7분)은
    3~5분에 끝나는 boardperf 묶음에서 돈다 */
