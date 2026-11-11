@@ -2228,3 +2228,19 @@ for(k in D)(E[k]||(E[k]={})).en=D[k];
 for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
 for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
 })(window,{"선수 · 코치 프로필을 한 장으로 만들어 바로 뽑아요": "Make a one-page player or coach profile and print it right away"},{},{});
+/* 3.281 — 가용인원 기록이 멈춘 까닭(autosave-status.js reason) */
+(function(w,D,T){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+})(window,{
+"앞선 입력을 이 기기에 보관해 두었습니다.":"An earlier entry for this player is kept on this device.",
+"다른 편집을 먼저 확인해야 합니다.":"Another edit needs to be checked first.",
+"기기 저장 공간이 모자라 기록을 멈췄습니다.":"Recording stopped because this device is out of storage space.",
+"기기 저장 확인이 남아 있습니다.":"A device save is still waiting to be confirmed.",
+"계정이나 팀이 바뀌었습니다.":"The account or team changed.",
+"기록하지 못했습니다. 입력은 남아 있습니다. 다시 시도하거나 창을 닫고 최신 기록을 확인해 주세요.":"The record could not be saved. Your entry is still here. Try again, or close this window and check the latest record."
+},{
+"{} 입력은 이 창에 남아 있습니다. {}에서 남길 쪽을 고른 뒤 다시 기록해 주세요.":"{} Your entry stays in this window. Choose which version to keep under {}, then record again.",
+"{} 입력은 이 창에 남아 있습니다. {}에서 이유를 본 뒤 다시 기록해 주세요.":"{} Your entry stays in this window. See the reason under {}, then record again.",
+"{} 기록 창을 닫고 다시 열어 주세요.":"{} Close this window and open it again."
+});

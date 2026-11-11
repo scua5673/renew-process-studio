@@ -6404,7 +6404,9 @@ const scoutStore={
     }
   },
   /* boolean은 접수 결과다. 저장됨 표시·화면 종료는 ready의 검증 완료를 기다린다. */
-  ready(retryFailed){return Promise.resolve(retryFailed&&typeof rosterPendingRecover==='function'?rosterPendingRecover():true).then(function(){return teamSaves.ready(retryFailed);}).then(function(){
+  /* 3.281 — only(k): 기다릴 키를 고른다. 가용인원 기록은 통짜 문서만 기다리고(sq:<id> 행의 보관·실패는 배경 flush 몫) 행 flush 도 하지 않는다 */
+  ready(retryFailed,only){return Promise.resolve(retryFailed&&typeof rosterPendingRecover==='function'?rosterPendingRecover():true).then(function(){return teamSaves.ready(retryFailed,only);}).then(function(){
+    if(typeof only==='function')return true;
     var PI=typeof itemsPI==="function"?itemsPI():null;
     return PI&&PI.flush?PI.flush():true;
   });},
@@ -16052,13 +16054,18 @@ function avCurrentStatus(meta,pid,st,today,note){
   if(last.from===today){last.s=st;if(note!==undefined){if(note)last.n=note;else delete last.n;}return;}
   last.to=stAddDays(today,-1);arr.push(next);
 }
+/* 3.281 — 가용인원 기록은 통짜 문서(scout_tool_v1)의 meta 에만 쓴다. 덮어쓰기 위험은 통짜 문서 쪽(rosterPendingRecover · 그 문서의 IDB 확인)에만 있어
+   쓰기 전후 장벽은 통짜 문서 키만 기다린다. 보관(sync-items-stale)·실패한 선수 행(sq:<id>)은 기다리지 않고 쓰기 뒤 배경 flush 에 맡긴다(배경 모드는 보관된 행을 건너뛴다).
+   운영 11/5~11/11 풋볼A 데스크톱: 보관된 행 하나(sq:plmt…)가 store_ready 를 46번 막아 가용인원 기록·새 판 적용이 함께 멈췄다(제보 e6fc5d26 · de2e508c). */
+function avWholeDocKey(k){return String(k).indexOf('sq:')!==0;}
+function avRowsFlushLater(){try{var PI=typeof itemsPI==='function'?itemsPI():null;if(PI&&PI.flush)Promise.resolve(PI.flush(true)).catch(function(){});}catch(_){}}
 async function stSetAt(pid,st,ymd,captured,note,until){
   var day=ymd||stYmd(),ctx=captured||avEditContext(pid,day);
   if(avSaving)throw new Error("앞선 기록을 저장 중입니다. 잠시 후 다시 시도해 주세요.");
   if(ctx.pid!==String(pid)||ctx.day!==day||!avEditCurrent(ctx))throw new Error("계정이나 팀이 바뀌었습니다. 기록을 다시 열어 주세요.");
   avSaving=true;
   try{
-    await scoutStore.ready(true);
+    await scoutStore.ready(true,avWholeDocKey);
     if(!avEditCurrent(ctx))throw new Error("계정이나 권한이 바뀌었습니다. 기록을 다시 열어 주세요.");
     var raw=localStorage.getItem(KEY),latest=raw&&JSON.parse(raw);
     if(!latest||!Array.isArray(latest.players)||!Array.isArray(latest.attrs)||!Array.isArray(latest.positions))throw new Error("현재 선수 자료를 확인하지 못했습니다.");
@@ -16076,7 +16083,7 @@ async function stSetAt(pid,st,ymd,captured,note,until){
     // It never claims that the server has acknowledged this draft.
     if(accepted!==false)ctx.cell=avCellSignature(data,pid,day);
     if(accepted===false)throw new Error("기기에 기록하지 못했습니다. 입력을 유지했으니 다시 시도해 주세요.");
-    await scoutStore.ready(true);
+    await scoutStore.ready(true,avWholeDocKey);avRowsFlushLater();
     if(!avEditCurrent(ctx))throw new Error("계정이나 팀이 바뀌어 기록 확인을 중단했습니다.");
     var saved=JSON.parse(localStorage.getItem(KEY)||"null");
     if(!saved||avCellSignature(saved,pid,day)!==ctx.cell)throw new Error("저장 중 기록이 바뀌었습니다. 최신 내용을 확인해 주세요.");
@@ -16219,6 +16226,14 @@ function renderAvailPlayers(ours,from,to){
 }
 function avFocusCard(id){var target=$(id);if(!target)return;try{target.focus({preventScroll:true});target.scrollIntoView({block:'start',behavior:'smooth'});}catch(_){target.focus();}}
 function avClosePicker(){if(avPickerState)avPickerState.close();}
+/* 3.281 — 기록이 멈춘 까닭을 코치 말로(autosave-status.js reason — 셸 밖이면 예전 한 문장). sq:<id> 는 선수 이름으로 */
+function avSaveReason(error){
+  try{var S=(window.parent&&window.parent!==window&&window.parent.PSAutosaveStatus)||window.PSAutosaveStatus;
+    if(S&&S.reason)return S.reason(error,{label:function(k){k=String(k);if(k.indexOf('sq:')===0){var p=(data.players||[]).find(function(x){return x&&'sq:'+x.id===k;});return '선수 '+(p&&p.name?p.name:k.slice(3));}return k===KEY?'선수단 자료':'';},
+      quota:function(){try{return !!(window.PSStorage&&PSStorage.quotaState&&PSStorage.quotaState().failed);}catch(_){return false;}}}).text;
+  }catch(_){}
+  return '기록하지 못했습니다. 입력은 남아 있습니다. 다시 시도하거나 창을 닫고 최신 기록을 확인해 주세요.';
+}
 function avOpenPicker(button){
   if(typeof avCanEdit!=='function'||!avCanEdit()||typeof avEditContext!=='function'||typeof avEditCurrent!=='function')return;
   var pid=button.dataset.avSt,day=button.dataset.avEditDay||availDay||stYmd(),ctx;
@@ -16262,7 +16277,7 @@ function avOpenPicker(button){
       if(isToday&&selected==='injury'&&!wasSpan)setTimeout(function(){try{var fresh=(data.players||[]).find(function(x){return String(x.id)===String(pid);});if(fresh)stInjurySheet(fresh,{ret:false});}catch(_){}},0);   /* 2.943 — 복귀 예상은 이 창에서 골랐으니 부위만 */
     }catch(error){
       if(!valid()){state.close();return;}
-      feedback.textContent='기록하지 못했습니다. 입력은 남아 있습니다. 다시 시도하거나 창을 닫고 최신 기록을 확인해 주세요.';feedback.classList.add('is-error');
+      feedback.textContent=avSaveReason(error);feedback.classList.add('is-error');
       pk.querySelectorAll('[data-k],[data-ret],[data-av-save],textarea').forEach(function(x){x.disabled=false;});
       busy=false;
     }
@@ -22067,7 +22082,7 @@ html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srg
 </style>
 <link rel="stylesheet" href="team-criteria.css">
 <link rel="stylesheet" href="player-workspace.css"><script src="player-workspace.js"></script><script src="player-bulk-add.js"></script>
-<link rel="stylesheet" href="team-mobile.css?v=3.280">
+<link rel="stylesheet" href="team-mobile.css?v=3.281">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>
