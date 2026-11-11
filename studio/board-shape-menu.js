@@ -94,6 +94,37 @@
     return result;
   }
 
+  // 3.282 — 지운 그림은 이 장면부터 뒤로도 지운다(제보 74e59fd4 «장면마다 일일이 해당 도형을 삭제해야 하는 번거로움»).
+  // 3.254 «계속 강조» · 3.271 «시야»와 같은 규칙: 장면 index 에서 지운 그림을 뒤 장면에서 찾아 지우고, 그 그림이 없는 장면(뒤에서 따로 지웠다 다시 둔 곳)을 만나면 거기서 멈춘다.
+  // 같은 그림 = 같은 _sceneId(뒤 장면에서 옮겨 두었어도 같은 그림). 옛 자료(_sceneId 없음)는 모양이 하나로 가려질 때만 — 가릴 수 없으면 남긴다(skipped).
+  // 고쳐 쓰지 않는다: 바뀐 장면만 새 객체(되돌리기 기록이 옛 장면을 들고 있다). 반환 last = 지운 마지막 장면 번호(0부터, 없으면 index).
+  function removeDrawings(frames,index,items){
+    var result={frames:frames.slice(),changed:0,skipped:0,last:index};
+    function signature(o){return JSON.stringify([o.type,!!o.grid,!!o.closed,(o.pts||[]).length,o.type==='text'?o.text:null,o.ids||null]);}
+    function same(a,b){var x=Object.assign({},a),y=Object.assign({},b);delete x._sceneId;delete y._sceneId;return JSON.stringify(x)===JSON.stringify(y);}
+    function find(ds,d){
+      var at=ds.findIndex(function(q){return d._sceneId&&q._sceneId===d._sceneId;});
+      if(at>=0)return at;
+      var possible=[];ds.forEach(function(q,j){if(!q._sceneId&&signature(q)===signature(d))possible.push(j);});
+      if(possible.length>1){possible=possible.filter(function(j){return same(ds[j],d);});if(possible.length!==1)return -2;}
+      return possible.length===1?possible[0]:-1;
+    }
+    var live=items.map(function(){return true;});
+    for(var i=index+1;i<frames.length;i++){
+      var f=frames[i];if(!f)break;
+      var ds=(f.snap&&f.snap.drawings||[]).slice(),hit=false;
+      items.forEach(function(d,n){
+        if(!live[n]||!d)return;
+        var at=find(ds,d);
+        if(at<0){if(at===-2)result.skipped++;live[n]=false;return;}
+        ds.splice(at,1);hit=true;result.changed++;
+      });
+      if(hit){result.frames[i]=Object.assign({},f,{snap:Object.assign({},f.snap,{drawings:ds})});delete result.frames[i].thumb;result.last=i;}
+      if(!live.some(Boolean))break;
+    }
+    return result;
+  }
+
   // Position only: preserve each scene's text, style, identity and intentional absence.
   function positionTexts(frames,index,items){
     var out={frames:frames.slice(),changed:0,skipped:0};
@@ -275,10 +306,12 @@
             if (ts.length === 1) { call('removeDrawing', ts[0]); return; }
             call('pushUndo');
             var s2 = S(); if (!s2) return;
+            var mark = carryMark();
             s2.drawings = s2.drawings.filter(function (o) { return ts.indexOf(o) < 0; });
             try { if (typeof sel !== 'undefined' && sel && ts.indexOf(sel.ref) >= 0) sel = null; } catch (_) {}
             try { if (typeof multiSel !== 'undefined') multiSel = (multiSel || []).filter(function (o) { return ts.indexOf(o) < 0; }); } catch (_) {}
             repaint(true); call('updateDelUI'); call('toast', '제거됨');
+            carryDone(mark);
           }
         });
       });
@@ -326,6 +359,51 @@
       if(edit&&!pos){pos=doc.createElement('button');pos.type='button';pos.id='textPositionAllBtn';pos.className='dup-sel';pos.textContent='모든 장면에 위치 적용';pos.title='같은 텍스트의 위치만 맞춥니다. 장면별 내용과 서식은 유지돼요.';edit.insertAdjacentElement('afterend',pos);pos.onclick=function(e){e.stopPropagation();applyPositions();};}
       if(pos){var selected=selection();pos.style.display=selected.length&&selected.every(isText)?'inline-flex':'none';}
     }
+    // 3.282 — 지운 그림을 뒤 장면에서도(제보 74e59fd4). 지우기 전 mark, 지운 뒤 done — 그 사이 판에서 빠진 그림만 본다.
+    // 잘라내기(⌘X)는 옮기려는 것이라 이 장면만(tokClipCopy 가 돈 같은 틱). 재생 · 내보내기 · 보기 전용 · 썸네일 그리는 중엔 안 한다.
+    var cutting = false;
+    function carryMark() {
+      try {
+        if (cutting || win.__psThumbCapturing || !editable()) return null;
+        if (typeof anim === 'undefined' || typeof animActive === 'undefined' || !anim || !Array.isArray(anim.frames)) return null;
+        if (typeof animPlaying !== 'undefined' && animPlaying) return null;
+        if (animActive < 0 || animActive >= anim.frames.length - 1) return null;
+        return { k: animActive, frames: anim.frames, ds: draws().slice() };
+      } catch (_) { return null; }
+    }
+    function carryDone(mark) {
+      try {
+        if (!mark || anim.frames !== mark.frames || animActive !== mark.k) return 0;
+        var now = draws(), gone = mark.ds.filter(function (d) { return now.indexOf(d) < 0; });
+        if (!gone.length) return 0;
+        var old = anim.frames, plan = removeDrawings(old, mark.k, gone);
+        if (!plan.changed) return 0;
+        anim.frames = plan.frames;
+        call('renderAnimFrames'); call('renderOnion'); call('boardSaveLive');
+        var k = mark.k, range = '장면 ' + (k + 2) + (plan.last > k + 1 ? '~' + (plan.last + 1) : '');
+        call('toast', '삭제됨 · ' + range + '에서도 지웠어요');
+        var t = doc.getElementById('cs-ftoast'); if (!t) return plan.changed;
+        var b = doc.createElement('button'); b.type = 'button'; b.className = 'ftoast-act'; b.textContent = '이 장면만';
+        b.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
+        b.addEventListener('click', function (ev) {
+          ev.stopPropagation(); try { b.remove(); } catch (_) {}
+          if (anim.frames !== plan.frames || animActive !== k) { call('toast', '다른 장면으로 옮겨 되돌리지 않았어요 — 되돌리기(⌘Z)를 쓰세요'); return; }
+          var back = plan.frames.slice();
+          for (var i = k + 1; i < back.length; i++) if (back[i] !== old[i] && old[i]) back[i] = old[i];   // 바꿔 끼운 장면만 옛 장면으로(지금 장면의 삭제는 그대로)
+          anim.frames = back;
+          call('renderAnimFrames'); call('renderOnion'); call('boardSaveLive');
+          call('toast', '이 장면에서만 지우고 뒤 장면은 되돌렸어요');
+        });
+        t.appendChild(b); t.style.pointerEvents = 'auto';
+        clearTimeout(t._ft); t._ft = win.setTimeout(function () { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(10px)'; t.style.pointerEvents = 'none'; win.setTimeout(function () { t.textContent = ''; t.setAttribute('aria-hidden', 'true'); }, 220); }, 6000);
+        return plan.changed;
+      } catch (_) { return 0; }
+    }
+    function carryWrap(name) {
+      var fn = win[name];
+      if (typeof fn !== 'function') return;
+      win[name] = function () { var mark = carryMark(), r = fn.apply(this, arguments); carryDone(mark); return r; };
+    }
     function go() {
       var capture=win.captureSnap;
       if(typeof capture==='function')win.captureSnap=function(){
@@ -369,6 +447,9 @@
       var _el = win.drawingEl;
       if (typeof _el === 'function') win.drawingEl = function (d) { var g = _el.apply(this, arguments); try { if (g) g.__psD = d; } catch (_) {} return g; };
       try { var L = layer(), ds = draws(); if (L && L.children && L.children.length === ds.length) Array.prototype.forEach.call(L.children, function (g, i) { g.__psD = ds[i]; }); } catch (_) {}   // 부팅 중 그린 것
+      carryWrap('removeDrawing'); carryWrap('deleteSelected');
+      var _clip = win.tokClipCopy;
+      if (typeof _clip === 'function') win.tokClipCopy = function () { cutting = true; try { Promise.resolve().then(function () { cutting = false; }); } catch (_) { cutting = false; } return _clip.apply(this, arguments); };
       mountBack();
       var _u = win.updateDelUI;
       if (typeof _u === 'function') win.updateDelUI = function () { var r = _u.apply(this, arguments); try { syncBack(); } catch (_) {} return r; };
@@ -381,7 +462,7 @@
     return api;
   }
 
-  var api = { lineStyleOf: lineStyleOf, setLineStyle: setLineStyle, dashArray: dashArray, positionTexts:positionTexts,resetDrawings: resetDrawings, name: name, clampLw: clampLw, clampOp: clampOp, isRightClick: isRightClick, findDrawing: findDrawing, targets: targets, place: place, css: css, install: install };
+  var api = { lineStyleOf: lineStyleOf, setLineStyle: setLineStyle, dashArray: dashArray, positionTexts:positionTexts,resetDrawings: resetDrawings, removeDrawings: removeDrawings, name: name, clampLw: clampLw, clampOp: clampOp, isRightClick: isRightClick, findDrawing: findDrawing, targets: targets, place: place, css: css, install: install };
   if (typeof window !== 'undefined' && window.document) { try { install(window); } catch (_) {} }
   return api;
 });
