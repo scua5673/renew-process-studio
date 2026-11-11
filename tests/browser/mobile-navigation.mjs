@@ -110,7 +110,7 @@ try{
   // Breakpoint changes restore original desktop order, including global IDP.
   await page.setViewportSize({width:1100,height:820});
   await page.waitForFunction(()=>!document.body.classList.contains('ps-mobile-six'));
-  assert.deepEqual((await bar(page)).map(b=>b.label),['보드','보관함','팀 운영','IDP','커뮤니티']);
+  assert.deepEqual((await bar(page)).map(b=>b.label),['보드','보관함','팀 운영','IDP','커뮤니티','프로필']);
   assert.equal(await page.locator('#teamBottom').isVisible(),false);
   await page.setViewportSize({width:390,height:844});
   await page.waitForFunction(()=>document.body.classList.contains('ps-mobile-six'));

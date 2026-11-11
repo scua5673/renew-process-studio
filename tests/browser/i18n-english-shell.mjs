@@ -90,7 +90,7 @@ try{
     let frameLangs=await page.evaluate(frameLangsOf);
     for(let i=0;i<20&&!frameLangs.every(l=>l==='en');i++){await page.waitForTimeout(250);frameLangs=await page.evaluate(frameLangsOf);}
     assert.ok(frameLangs.every(l=>l==='en'),'iframe <html lang> follows the shell '+JSON.stringify(frameLangs));
-    assert.deepEqual(await page.locator('#appSeg button').evaluateAll(es=>es.filter(e=>e.getClientRects().length).map(e=>e.textContent.trim())),['Board','Library','Team','IDP','Community'],'desktop rail in English, Learning removed');
+    assert.deepEqual(await page.locator('#appSeg button').evaluateAll(es=>es.filter(e=>e.getClientRects().length).map(e=>e.textContent.trim())),['Board','Library','Team','IDP','Community','Profile'],'desktop rail in English, Learning removed');
     await expectEnglish(page,'desktop board');
     await noOverflow(page,'desktop board');
     await page.screenshot({path:path.join(SHOTS,'i18n-desktop-board.png')});
@@ -165,7 +165,7 @@ try{
     const seen=await page.evaluate(()=>performance.getEntriesByType('resource').map(e=>e.name));
     assert.deepEqual(seen.concat(reqKo).filter(u=>/\/i18n\/en-/.test(u)),[],'Korean boot requests no English dictionary');
     assert.equal(await page.evaluate(()=>document.documentElement.lang),'ko');
-    assert.deepEqual(await page.locator('#appSeg button').evaluateAll(es=>es.filter(e=>e.getClientRects().length).map(e=>e.textContent.trim())),['보드','보관함','팀 운영','IDP','커뮤니티'],'Korean rail, Learning removed');
+    assert.deepEqual(await page.locator('#appSeg button').evaluateAll(es=>es.filter(e=>e.getClientRects().length).map(e=>e.textContent.trim())),['보드','보관함','팀 운영','IDP','커뮤니티','프로필'],'Korean rail, Learning removed');
     /* 영어 → 한국어로 돌린 화면과 처음부터 한국어인 화면의 고정 문구가 같다 */
     const staticKo=()=>page.evaluate(()=>[...document.querySelectorAll('#appSeg button span,#gearPop .gp-section-title,#gearPop .gp-lb,#teamBottom button span,#appMoreSheet button,#teamMoreSheet button')].map(e=>e.textContent.trim()));
     const before=await staticKo();

@@ -407,3 +407,55 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "휴식 {}":"Rest {}",
 "내가 소유한 팀{}에 다른 팀원이 남아 있어 계정을 지울 수 없어요. 팀을 넘기거나 삭제한 뒤 탈퇴해 주세요 — 팀원을 모두 내보내면 탈퇴할 때 팀도 함께 지워지고, 팀을 다른 사람에게 넘기려면 문의해 주세요. 서버와 이 기기에서 아무것도 지우지 않았어요.":"You can't delete your account while other members are still on your team{}. Transfer or delete the team first, then leave — if you remove all members the team is deleted with your account; to hand the team to someone else, contact us. Nothing was deleted on the server or this device."
 },{});
+/* 3.280 — «프로필» 앱(profile-app.js) */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{
+"예: 김서율": "e.g. Alex Kim",
+"예: 2010. 3. 14.": "e.g. 14 Mar 2010",
+"예: RB · 오른발": "e.g. RB · right foot",
+"예: 172cm · 63kg": "e.g. 172 cm · 63 kg",
+"예: 6": "e.g. 6",
+"소속": "Club / school",
+"예: OO중학교 · OO FC": "e.g. Riverside School · Riverside FC",
+"장점": "Strengths",
+"한 줄에 하나씩": "One per line",
+"경력 · 수상": "Career · honours",
+"예: 2025 전국대회 8강": "e.g. 2025 national quarter-finalist",
+"경기 영상 주소": "Match video link",
+"연락처(선택)": "Contact (optional)",
+"적으면 종이에 나와요": "Printed only if filled in",
+"예: 이승기": "e.g. Sam Lee",
+"예: 1985. 6. 2.": "e.g. 2 Jun 1985",
+"직책": "Role",
+"예: 감독 · GK 코치": "e.g. Head coach · GK coach",
+"자격증": "Licences",
+"예: AFC B · KFA 골키퍼 2급": "e.g. AFC B · GK Level 2",
+"지도 경력": "Coaching career",
+"선수 경력": "Playing career",
+"지도 철학": "Coaching philosophy",
+"한두 문장": "One or two sentences",
+"(선택)": " (optional)",
+"이 기기에 저장하지 못했어요 — 저장 공간을 확인해 주세요": "Couldn't save on this device — check storage space",
+"선수 · 코치 프로필을 한 장으로 만들어 바로 뽑아요": "Make a one-page player or coach profile and print it right away",
+"＋ 코치 프로필": "+ Coach profile",
+"＋ 선수 프로필": "+ Player profile",
+"완성": "Complete",
+"왼쪽에서 프로필을 고르거나 새로 만들어 주세요": "Pick a profile on the left or create a new one",
+"사진 바꾸기": "Change photo",
+"사진 빼기": "Remove photo",
+"이 기기에만 저장돼요 · 팀 명단과는 따로예요. 빈 칸은 종이에 나오지 않아요.": "Saved on this device only · separate from the team roster. Empty fields are left off the page.",
+"정말 지울까요? 한 번 더": "Delete? Tap again",
+"프로필을 지웠어요": "Profile deleted",
+"사진을 읽을 수 없어요": "Couldn't read that photo"
+},{
+"이름 없는 {}": "Unnamed {}",
+"{} 프로필": "{} profile",
+"{}_프로필": "{}_profile",
+"아직 {} 프로필이 없어요 — 위의 «＋ {} 프로필»로 시작하세요": "No {} profiles yet — start with “+ {} profile” above",
+"{}칸 남음": "{} left",
+"프로필은 {}개까지 만들 수 있어요": "You can keep up to {} profiles",
+"{} 사본": "{} copy"
+},{});

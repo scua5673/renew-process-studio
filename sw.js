@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.279';
+const CACHE = 'process-3.280';
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/match-home.js', '/studio/training-intensity.js', '/studio/weather-request.js', '/studio/idp-profile-name.js', '/studio/popover-dismiss.js', '/studio/oauth-gate.js', '/studio/data-lock-guard.js', '/studio/account-hygiene.js',
@@ -16,7 +16,7 @@ const CORE = [
   '/studio/board-practice.js', '/studio/board-draft.js', '/studio/board-vault-draft.js', '/studio/board-rescue.js', '/studio/textbook-pack.js', '/studio/textbook-native.js', '/studio/board-stadium-ground.js', '/studio/board-flat-turf.js',
   '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-settings-skin.js', '/studio/board-token-depth.js', '/studio/board-pitch-photo.js', '/studio/board-shortcuts.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-comm-look.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-page-history.js', '/studio/board-player-panel-drag.js', '/studio/board-actions.js', '/studio/board-vault-lazy.js', '/studio/board-guest.js', '/studio/board-save-ask.js', '/studio/board-vault-browse.js', '/studio/board-vault-import.js', '/studio/board-quick-export.js', '/studio/board-pdf-save.js', '/studio/board-meet-8.js', '/studio/board-import-safe.js', '/studio/board-meet-look.js', '/studio/board-export-name.js', '/studio/board-meet-cover.js', '/studio/board-meet-cover.css', '/studio/board-jersey.js', '/studio/board-edit-view.js', '/studio/board-meet-form.js', '/studio/board-meet-reserve.js', '/studio/board-meet-slide.js', '/studio/board-meet-reserve.css', '/studio/board-shape-menu.js', '/studio/board-popups.js', '/studio/board-text-polish.js', '/studio/vault-folder-move.js',
   '/studio/process.html',
-  '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/pdf-export.js', '/studio/note-export.js', '/studio/note-picture.js', '/studio/schedule-poster.js', '/studio/review-training.css', '/studio/year-plan.js',
+  '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/pdf-export.js', '/studio/note-export.js', '/studio/note-picture.js', '/studio/profile.html', '/studio/profile-app.js', '/studio/schedule-poster.js', '/studio/review-training.css', '/studio/year-plan.js',
   '/studio/first-work.js', '/studio/first-work.css',
   '/studio/daily-effort.js', '/studio/daily-effort.css', '/studio/session-focus.js',
   '/studio/idp-weekly-growth.js', '/studio/idp-weekly-growth.css',
