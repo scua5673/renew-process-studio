@@ -2244,3 +2244,11 @@ for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'
 "{} 입력은 이 창에 남아 있습니다. {}에서 이유를 본 뒤 다시 기록해 주세요.":"{} Your entry stays in this window. See the reason under {}, then record again.",
 "{} 기록 창을 닫고 다시 열어 주세요.":"{} Close this window and open it again."
 });
+
+/* 3.284 — storage.js 알약: 선수 행 보관 오류(«일부 변경 보관» + 보관된 변경으로 가는 길) */
+(function(w,D,T){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+})(window,{},{
+"선수 변경은 이 기기에 남아 있어요. {}에서 남길 쪽을 고르면 이어서 저장해요.":"Player changes stay on this device. Choose which version to keep under {}, and saving continues."
+});

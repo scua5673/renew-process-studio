@@ -13,7 +13,11 @@
   function text(x){return typeof x==='string'&&x.length>0;}
   function id(x){return text(x)&&x.trim()===x&&['__proto__','prototype','constructor'].indexOf(x)<0;}
   function raw(x){return x===null||typeof x==='string';}
-  var projectionWatches=new WeakMap();
+  var projectionWatches=new WeakMap(),latest=null;
+  /* 3.284 — 셸 밖(선수단 화면)에서 묻는 길: 이 창의 저장 엔진(sync.js)이 만든 마지막 인스턴스에 «이 요청이 이미 보관에 있나»를 묻는다.
+     sync.js 는 예산이 없어(PSItems 에 못 붙임) 모듈이 접근자를 낸다. 인스턴스가 아직 없으면 «모른다» = 거짓(fail-closed). */
+  function latestHeld(r){try{return !!latest&&latest.held(r)===true;}catch(_){return false;}}
+  function latestArchived(j){try{return !!latest&&latest.archived(j)===true;}catch(_){return false;}}
   // A completed round may confirm an unchanged row after the iframe's one-shot
   // boot read. Notify its existing guarded renderer; never apply or write here.
   function watchProjection(w,scope,notify){
@@ -117,14 +121,50 @@
       })().catch(function(e){if(ticket===loadTicket&&same(c,context()))loaded=null;throw e;});latestLoad=work;return work;
     }
     function signature(job){return JSON.stringify(payload(job));}
+    /* 3.284 — 증서(certificate)는 원문 글자 그대로이거나, 쓴 행이 없는(written 빈) 같은 요청(sameRequest)을 기존 보관에 맞춘 것일 수 있다.
+       같은 요청을 다시 올린 작업(새 sequence · at — 선수단 화면의 재시도 폐쇄)이 배경 회차마다 보관을 하나 더 만들지 않는다. 행을 일부 쓴 작업은 그 흔적(written)이 새 보관에 남아야 하므로 예전 그대로. */
     function skip(job){
-      try{var proof=certificates.get(job);if(!proof||!ready())return false;checkJob(job);return proof===signature(job)&&records.some(function(r){return r.localRaw===proof;});}catch(_){return false;}
+      try{
+        var proof=certificates.get(job);if(!proof||!ready())return false;checkJob(job);
+        var r=records.find(function(r){return r.localRaw===proof;});if(!r)return false;
+        var body=signature(job);if(proof===body)return true;
+        var p=JSON.parse(body);return !p.written.length&&sameRequest(r,body,p);
+      }catch(_){return false;}
     }
+    /* 같은 요청: 원문 그대로이거나, 같은 기기 묶음 영수증(intent)에 같은 선수들의 같은 입력(authored) */
+    function sameRequest(r,body,p){return r.localRaw===body||!!p.intent&&JSON.stringify(p.intent)===JSON.stringify(r.payload.intent)&&p.ids.every(function(k){return r.payload.ids.indexOf(k)>=0&&p.authored[k]===r.payload.authored[k];});}
     function retired(job){
       try{
         if(!ready())return false;
         var body=signature(job),p=JSON.parse(body);
-        return records.some(function(r){return resolved.has(r.id)&&(r.localRaw===body||p.intent&&JSON.stringify(p.intent)===JSON.stringify(r.payload.intent)&&p.ids.every(function(k){return r.payload.ids.indexOf(k)>=0&&p.authored[k]===r.payload.authored[k];}));});
+        return records.some(function(r){return resolved.has(r.id)&&sameRequest(r,body,p);});
+      }catch(_){return false;}
+    }
+    /* 3.284 — 이 요청이 이미 활성 보관(아직 사람이 고르지 않은 items-stale-device)에 있다. 원문은 journal 에 불변으로, 영수증은 기기 묶음에 있어
+       기기에 안전하다 — 다시 올리는 쪽(선수단 화면의 rosterSaveRows)은 실패 대신 held 로 끝낸다. 보관 원문 · 승자 선택 · 서버 기준은 건드리지 않는다. */
+    function archived(job){
+      try{
+        if(!ready())return false;
+        var body=signature(job),p=JSON.parse(body);
+        return records.some(function(r){return !resolved.has(r.id)&&sameRequest(r,body,p);});
+      }catch(_){return false;}
+    }
+    /* 3.284 — 기기 묶음 영수증(read() 의 rows)이 모두 활성 보관의 영수증 안에 있다: 행마다 그 선수의 보관 영수증 행이 같은 마지막 판(token)이고
+       행의 모든 출처(key · id · token)를 담고 있어야 한다. 새 묶음(새 출처)이 하나라도 있으면 «올릴 차례의 변경»이라 거짓. 모르면(안 읽힘 · 빈 영수증) 거짓. */
+    function held(receipt){
+      try{
+        if(!ready())return false;
+        var rows=receipt&&Array.isArray(receipt.rows)?receipt.rows:null;if(!rows||!rows.length)return false;
+        var intents=active().map(function(r){return r.payload.intent;}).filter(function(i){return i&&Array.isArray(i.rows);});
+        if(!intents.length)return false;
+        return rows.every(function(row){
+          if(!row||!id(row.id)||!Array.isArray(row.sources)||!row.sources.length||typeof row.token!=='string')return false;
+          return intents.some(function(i){
+            var mine=i.rows.find(function(x){return x&&x.id===row.id;});
+            if(!mine||mine.token!==row.token||!Array.isArray(mine.sources))return false;
+            return row.sources.every(function(s){return !!s&&mine.sources.some(function(t){return !!t&&t.key===s.key&&t.id===s.id&&t.token===s.token;});});
+          });
+        });
       }catch(_){return false;}
     }
     async function readRows(ids,c,current){
@@ -142,8 +182,8 @@
         function current(){guard(c);checkJob(job);if(signature(job)!==localRaw)throw issue('items_stale_changed');}
         current();
         await load();current();
-        var existing=records.find(function(r){return r.localRaw===localRaw;});
-        if(existing){certificates.set(job,localRaw);return {id:existing.id,reason:REASON};}
+        var existing=records.find(function(r){return r.localRaw===localRaw;})||(p.written.length?null:records.find(function(r){return !resolved.has(r.id)&&sameRequest(r,localRaw,p);}));
+        if(existing){certificates.set(job,existing.localRaw);return {id:existing.id,reason:REASON};}
         var values=await readRows(p.ids,c,current),remoteRaw=JSON.stringify({v:1,kind:'items-stale-device-comparison',provenance:'device-idb',values:values});
         var archived=await journal.archive(c,'scout_tool_v1',localRaw,remoteRaw,0,REASON);current();
         var value=await journal.read(c,archived.id);current();
@@ -228,7 +268,8 @@
       await load();current();if(!resolved.has(p.id))throw issue('items_stale_archive');
       return {resolved:true};
     }
-    return {load:load,capture:capture,background:background,foreground:foreground,before:before,skip:skip,retired:retired,count:count,fenced:fenced,hold:hold,keys:keys,state:state,prepare:prepare,resolve:resolve};
+    var api={load:load,capture:capture,background:background,foreground:foreground,before:before,skip:skip,retired:retired,archived:archived,held:held,count:count,fenced:fenced,hold:hold,keys:keys,state:state,prepare:prepare,resolve:resolve};
+    latest=api;return api;
   }
-  return {create:create,REASON:REASON,CARRIERS:CARRIERS,watchProjection:watchProjection};
+  return {create:create,REASON:REASON,CARRIERS:CARRIERS,watchProjection:watchProjection,held:latestHeld,archived:latestArchived};
 });

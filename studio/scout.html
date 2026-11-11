@@ -6405,10 +6405,13 @@ const scoutStore={
   },
   /* boolean은 접수 결과다. 저장됨 표시·화면 종료는 ready의 검증 완료를 기다린다. */
   /* 3.281 — only(k): 기다릴 키를 고른다. 가용인원 기록은 통짜 문서만 기다리고(sq:<id> 행의 보관·실패는 배경 flush 몫) 행 flush 도 하지 않는다 */
+  /* 3.284 — 끝의 행 flush 는 배경 모드(PI.flush(true)): 앞(foreground) 모드는 보관(items-stale-device)이 하나라도 있으면 대기열을 비우기도 전에 던져(3.217 «직접 저장은 미완료»)
+     새 판 적용 · 화면 떠나기 전 저장 확인이 보관된 행에 영영 막혔다. 배경 모드는 보관된 요청은 건너뛰고 나머지를 올리며, 옛 입력 실패는 바로 journal 에 보관해(held) 기기에 안전하게 둔다.
+     아직 보관되지 않은 행의 실패는 앞의 teamSaves.ready 가 먼저 막는다. 구출 묶음(rosterPendingRecover)의 flush 는 그대로 앞 모드. */
   ready(retryFailed,only){return Promise.resolve(retryFailed&&typeof rosterPendingRecover==='function'?rosterPendingRecover():true).then(function(){return teamSaves.ready(retryFailed,only);}).then(function(){
     if(typeof only==='function')return true;
     var PI=typeof itemsPI==="function"?itemsPI():null;
-    return PI&&PI.flush?PI.flush():true;
+    return PI&&PI.flush?PI.flush(true):true;
   });},
   hasFailed(k){return teamSaves.hasFailed(k);},
   hasPending(){return teamSaves.hasPending();},
@@ -7071,8 +7074,16 @@ function rosterPendingRecover(){
   }).then(function(){current();if(rosterPendingRows())throw new Error('선수 변경 저장 확인이 남아 있습니다');rosterRescueWaiting=false;return true;});
   rosterRescueRecovery=work;work.then(function(){if(rosterRescueRecovery===work)rosterRescueRecovery=null;},function(){if(rosterRescueRecovery===work)rosterRescueRecovery=null;});return work;
 }
+/* 3.284 — 보관(journal items-stale-device + 기기 묶음 영수증)에 든 묶음은 «올릴 차례의 변경»이 아니다: 사람이 «보관된 변경»에서 고르기 전엔 올라가지 않는다(3.217).
+   예전엔 그 영수증만으로 psHasPending 이 참이라 새 판 적용 · 화면 떠나기 전 저장 확인이 match_pending_left 로 영영 막혔다. 구출 묶음(hasRescue)은 그대로 기다린다. 모르면 참(fail-closed). */
+function rosterStaleModule(){try{var w=window.parent&&window.parent!==window?window.parent:window,M=w.PSItemsStale;return M&&typeof M.held==='function'&&typeof M.archived==='function'?M:null;}catch(_){return null;}}
 function rosterPendingRows(){
-  try{return !!rosterOutboxOwner()&&rosterOutbox().pending();}catch(_){return true;}
+  try{
+    if(!rosterOutboxOwner())return false;
+    var box=rosterOutbox();if(!box.pending())return false;
+    if(box.hasRescue&&box.hasRescue())return true;
+    var M=rosterStaleModule();return !(M&&M.held(box.read())===true);
+  }catch(_){return true;}
 }
 function rosterResumeRows(force){
   if(!scoutAutomaticWriteAllowed()||!rosterOutboxOwner())return false;
@@ -7125,20 +7136,27 @@ function rosterSaveRows(players,options,receipt){
     }
     var bases=receipt?receipt.rows.filter(function(r){return r.base;}).map(function(r){return r.base;}):options.basePlayers||[];
     request={players:JSON.parse(JSON.stringify(players)),options:{changedIds:ids.slice(),deletedIds:deleted.slice(),basePlayers:JSON.parse(JSON.stringify(bases)),baseHistory:receipt?receipt.rows.map(function(r){return {id:r.id,players:r.history||[]};}):[],intent:receipt?JSON.parse(JSON.stringify(receipt)):null}};
-    work=PI.writeReady(request.players,request.options);
-    work=Promise.resolve(work).then(function(result){
+    work=attempt();
+  }catch(e){work=Promise.reject(e);accepted=false;}
+  /* 3.284 — 보관(journal + 기기 묶음 영수증)에 이미 있는 요청은 실패가 아니라 held 다: 사람이 «보관된 변경»에서 고르기 전엔 풀리지 않고(3.217) 원문은 기기에 안전하다.
+     예전엔 다시 올릴 때마다 before() 에서 fenced 로 실패해 sq:<id> 가 «실패»로 남고, 새 판 적용 · 화면 떠나기 전 저장 확인(psFlushPendingReady → store_ready)을 영영 막았다
+     (운영 기록 flush_fail:fScout:store_ready.sync_local_changed:sq:<id> 46건). 영수증은 ACK 하지 않는다 — 고른 뒤 settle 이 푼다. 아직 보관되지 않은 새 입력은 예전처럼 실패(다음 배경 회차가 보관). */
+  function attempt(){
+    var M=receipt?rosterStaleModule():null;
+    if(M&&M.held(receipt)===true)return Promise.resolve({held:true});
+    return Promise.resolve(PI.writeReady(request.players,request.options)).then(function(result){
       if(owner!==teamSaveOwner())throw new Error("선수 저장 중 계정이나 팀이 바뀌었습니다");
       if(receipt)rosterOutbox().ack(receipt);
       return result;
+    },function(e){
+      if(M&&e&&e.psStage==='items_stale_review'&&owner===teamSaveOwner()&&M.archived(e.psItemsJob)===true)return {held:true};
+      throw e;
     });
-  }catch(e){work=Promise.reject(e);accepted=false;}
+  }
   function retry(){
     if(owner!==teamSaveOwner())throw new Error("계정이나 팀이 바뀌어 이전 저장을 재시도하지 않습니다");
     if(!PI||PI.patchVersion!==1||!PI.writeReady||!request)throw new Error("선수 저장 기능을 업데이트해야 합니다. 변경사항은 보관됩니다.");
-    return PI.writeReady(request.players,request.options).then(function(result){
-      if(owner!==teamSaveOwner())throw new Error("선수 저장 중 계정이나 팀이 바뀌었습니다");
-      if(receipt)rosterOutbox().ack(receipt);return result;
-    });
+    return attempt();
   }
   touched.forEach(function(id){teamSaves.track('sq:'+id,work,retry);});
   return accepted;
@@ -22082,7 +22100,7 @@ html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srg
 </style>
 <link rel="stylesheet" href="team-criteria.css">
 <link rel="stylesheet" href="player-workspace.css"><script src="player-workspace.js"></script><script src="player-bulk-add.js"></script>
-<link rel="stylesheet" href="team-mobile.css?v=3.282">
+<link rel="stylesheet" href="team-mobile.css?v=3.284">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>
