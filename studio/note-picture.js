@@ -95,10 +95,14 @@
       var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,s.w,s.h);g.drawImage(src,0,0,s.w,s.h);
       return {src:c.toDataURL('image/jpeg',0.86),ar:s.w/s.h};
     }
+    /* 파일 → data URL 로 읽는다(blob: 주소는 웹킷 시험 환경에서 빈 그림이 된다 — 3.265 의 fetch(blob:) 와 같은 까닭. FileReader 는 어디서나 같다) */
     function fromImageFile(f){
-      return new Promise(function(res,rej){var u=w.URL.createObjectURL(f),im=new w.Image();
-        im.onload=function(){try{res(toJpeg(im,im.naturalWidth,im.naturalHeight));}catch(e){rej(e);}finally{try{w.URL.revokeObjectURL(u);}catch(_){}}};
-        im.onerror=function(){try{w.URL.revokeObjectURL(u);}catch(_){}rej(Error('image'));};im.src=u;});
+      return new Promise(function(res,rej){var r=new w.FileReader();
+        r.onerror=function(){rej(Error('read'));};
+        r.onload=function(){var im=new w.Image();
+          im.onload=function(){try{res(toJpeg(im,im.naturalWidth,im.naturalHeight));}catch(e){rej(e);}};
+          im.onerror=function(){rej(Error('image'));};im.src=String(r.result||'');};
+        r.readAsDataURL(f);});
     }
     async function fromPdf(buf){
       var lib=await w.ensurePdfjs(),doc=await lib.getDocument({data:buf,isEvalSupported:false}).promise,pg=await doc.getPage(1);
