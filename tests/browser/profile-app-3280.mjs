@@ -49,11 +49,12 @@ try{
   /* 팀 명단은 그대로 */
   assert.equal(players(),roster,'팀 명단 선수 그대로');
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));assert.deepEqual(errs,[],'no page errors');
-  /* 폰: 아래 메뉴엔 없고 «더보기» 안에 */
+  /* 폰: 아래 메뉴의 커뮤니티 다음 칸 */
   const ph=await openApp(fx,'pfPhone',{browsers});
   await ph.page.waitForTimeout(1200);
-  assert.equal(await ph.page.evaluate(()=>{const b=document.querySelector('#appSeg button[data-app="profile"]');return !!b&&getComputedStyle(b).display==='none';}),true,'폰 아래 메뉴엔 프로필 칸이 없다');
-  await ph.page.locator('#psMoreBtn').click();await ph.page.locator('#appMoreSheet [data-am-app="profile"]').click();
+  const bar=await ph.page.evaluate(()=>[...document.querySelectorAll('#appSeg button')].filter(b=>b.getClientRects().length).map(b=>({t:b.textContent.trim(),x:Math.round(b.getBoundingClientRect().left)})).sort((a,b)=>a.x-b.x).map(b=>b.t));
+  assert.equal(bar[bar.indexOf('커뮤니티')+1],'프로필','폰 아래 메뉴: 커뮤니티 다음 칸이 프로필 '+bar.join(','));
+  await ph.page.locator('#appSeg button[data-app="profile"]').click();
   const pf=await frameOf(ph.page);
   await pf.locator('#pfAddPlayer').click();await pf.locator('#pf_name').fill('가상 폰선수');
   assert.equal(await pf.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'폰에서 가로로 넘치지 않는다');

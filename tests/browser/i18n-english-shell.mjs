@@ -187,7 +187,7 @@ try{
     await page.locator('#appSeg [data-team-hub]').click();
     await page.waitForFunction(()=>document.body.classList.contains('ps-team-open'));
     await page.waitForTimeout(800);
-    assert.deepEqual(await page.locator('#appSeg button').evaluateAll(es=>es.filter(e=>e.getClientRects().length&&getComputedStyle(e).display!=='none').map(e=>e.textContent.trim())),['Board','Library','Community','Team','More'],'phone bottom bar: five English destinations');
+    assert.deepEqual(await page.locator('#appSeg button').evaluateAll(es=>es.filter(e=>e.getClientRects().length&&getComputedStyle(e).display!=='none').map(e=>e.textContent.trim())),['Board','Library','Community','Profile','Team','More'],'phone bottom bar: six English destinations (Profile right after Community)');
     await expectEnglish(page,'phone team today');
     await noOverflow(page,'phone team today');
     await page.screenshot({path:path.join(SHOTS,'i18n-phone-team.png')});
