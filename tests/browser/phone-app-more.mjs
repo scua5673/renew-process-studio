@@ -22,7 +22,7 @@ try{
     const shown=()=>page.evaluate(()=>[...document.querySelectorAll('#appMoreSheet .tms-g button')].filter(b=>b.offsetParent!==null).map(b=>b.textContent.trim()));
     const items=await shown();
     // 휴대폰은 보드 보기 전용이므로 더보기에도 저장을 노출하지 않는다.
-    assert.deepEqual(items,['보관함','IDP','홈 화면에 추가','앱 설정','오류 제보','사용법'],'폰 더보기에는 보드 저장이 없다');
+    assert.deepEqual(items,['보관함','IDP','프로필','홈 화면에 추가','앱 설정','오류 제보','사용법'],'폰 더보기에는 보드 저장이 없다');
     const board=await (await page.$('#fBoard')).contentFrame();
     await board.evaluate(()=>{window.__bsClicks=0;document.getElementById('boardManualSave').addEventListener('click',()=>{window.__bsClicks++;});});
     assert.equal(await sheet.locator('[data-am=boardsave]').isVisible(),false);
@@ -38,7 +38,7 @@ try{
     assert.equal(await more.evaluate(b=>b.classList.contains('on')),false,'보관함은 전용 버튼에 불');
     assert.equal(await page.locator('#psTrainBtn').getAttribute('aria-current'),'page');
     await more.tap();await wait(200);
-    assert.deepEqual(await shown(),['보관함','IDP','홈 화면에 추가','앱 설정','오류 제보','사용법'],'보관함 화면에서는 «보드 저장»이 없다');
+    assert.deepEqual(await shown(),['보관함','IDP','프로필','홈 화면에 추가','앱 설정','오류 제보','사용법'],'보관함 화면에서는 «보드 저장»이 없다');
     await page.keyboard.press('Escape');await wait(150);
     assert.equal(await sheet.isVisible(),false,'Esc 로 닫힌다');
     await page.locator('#appSeg button[data-app="board"]:not([data-train])').tap();await wait(900);
