@@ -120,7 +120,8 @@ try{
   await team.evaluate(()=>localStorage.setItem('qa_scout_quota','1'));
   const full=await record(QUOTA,'rest','합성 저장 공간 메모');
   assert.equal(full.open,true);
-  assert.equal(full.feedback,'기기 저장 공간이 모자라 기록을 멈췄습니다. 입력은 이 창에 남아 있습니다. '+DIAG_PATH+'에서 이유를 본 뒤 다시 기록해 주세요.','저장 공간 부족(PSStorage.quotaState)은 그 말로');
+  // 첫 시도의 오류는 stSetAt 자신의 문장(psCode 없음) — 저장 공간 표시(PSStorage.quotaState)가 벌써 섰으면 그 말로, 아직이면(WebKit) 예전 한 문장
+  assert.match(full.feedback,/^(기기 저장 공간이 모자라 기록을 멈췄습니다\. 입력은 이 창에 남아 있습니다\. 앱 설정|기록하지 못했습니다\. 입력은 남아 있습니다\.)/,full.feedback);
   await team.evaluate(()=>localStorage.removeItem('qa_scout_quota'));
   // 표식을 지운 뒤 다시 «기록하기»: 앞선 통짜 문서 쓰기의 기기 확인(2.744 — 같은 원문만 재검증)이 남아 있어 그 자료 이름(psKey)과 진단 보기가 보인다
   await team.locator('.av-pick [data-av-save]').click();
