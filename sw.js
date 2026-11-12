@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.282';
+const CACHE = 'process-3.284';
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/match-home.js', '/studio/training-intensity.js', '/studio/weather-request.js', '/studio/idp-profile-name.js', '/studio/popover-dismiss.js', '/studio/oauth-gate.js', '/studio/data-lock-guard.js', '/studio/account-hygiene.js',
@@ -25,7 +25,7 @@ const CORE = [
   '/studio/team-audience.css', '/studio/team-audience.js', '/studio/schedule-audience.js', '/studio/roster-audience.js', '/studio/schedule-match-time.js', '/studio/schedule-fill-team.js', '/studio/schedule-day-kind.js', '/studio/schedule-fill-autosave.js', '/studio/schedule-del-undo.js', '/studio/schedule-syncline-steady.js',
   '/studio/storage-keys.js', '/studio/storage.js', '/studio/learning-off.js', '/studio/i18n.js', '/studio/team-library.js', '/studio/team-load.js', '/studio/photo-crop.js', '/studio/team-photos.js', '/studio/profile-sheet.js', '/studio/player-card.js',
   '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/roster-pending.js','/studio/participation.js', '/studio/avail-edit-guard.js', '/studio/one-window.js', '/studio/elsewhere.html', '/studio/match-board-tools.js', '/studio/match-formats.js', '/studio/match-meet-parts.js', '/studio/match-goals-quick.js', '/studio/match-lock.js', '/studio/sync-mirror.js', '/studio/sync-roster-copies.js', '/studio/sync-size.js', '/studio/sync-observability.js', '/studio/idp-pub-wipe.js', '/studio/sync-items-stale.js', '/studio/sync.js',
-  '/studio/sync-diagnosis.js', '/studio/sync-diagnosis-ui.js', '/studio/sync-diagnosis.css', '/studio/sync-stall-report.js', '/studio/crash-breadcrumb.js', '/studio/account-delete.js', '/studio/schedule-lib-slim.js',
+  '/studio/items-stale-nudge.js', '/studio/sync-diagnosis.js', '/studio/sync-diagnosis-ui.js', '/studio/sync-diagnosis.css', '/studio/sync-stall-report.js', '/studio/crash-breadcrumb.js', '/studio/account-delete.js', '/studio/schedule-lib-slim.js',
   '/studio/autosave-status.js', '/studio/sync-confirmation.js', '/studio/update-progress.js', '/studio/update-client.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
   '/studio/shared-view-observation.js',
   '/studio/team-files.js',

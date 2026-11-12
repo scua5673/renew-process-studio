@@ -2244,3 +2244,19 @@ for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'
 "{} 입력은 이 창에 남아 있습니다. {}에서 이유를 본 뒤 다시 기록해 주세요.":"{} Your entry stays in this window. See the reason under {}, then record again.",
 "{} 기록 창을 닫고 다시 열어 주세요.":"{} Close this window and open it again."
 });
+/* 3.281 — 선수 입력 보류 알림 띠 · «모두 해제» */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{
+"선수 입력 보류가 남아 있으면 그 선수의 변경(가용인원 체크 포함)이 팀에 올라가지 않아요. 아래 단추는 지금 이 기기에 보이는 내용을 그대로 유지하고 보류만 풉니다. 보관된 이전 입력은 지워지지 않아요.": "While player entries are on hold, changes to those players (including availability checks) are not sent to the team. The button below keeps what this device shows now and only releases the hold. The earlier entries that were set aside are not deleted.",
+"지금 정리": "Sort out now",
+"나중에": "Later"
+},{
+"선수 입력 보류 {}건 모두 해제 · 지금 기기 내용 유지": "Release all {} player holds · keep this device's data",
+"보류 해제 중… {} / {}": "Releasing holds… {} / {}",
+"보류 {}건을 해제했고 {}건은 확인하지 못해 남겨 두었습니다. 잠시 뒤 다시 눌러 주세요.": "Released {} holds; {} could not be confirmed and were left on hold. Try again in a moment.",
+"보류 {}건을 모두 해제했습니다. 이제 변경이 팀에 올라갑니다. 보관된 원문은 그대로 남아 있습니다.": "All {} holds released. Changes will now be sent to the team. The originals that were set aside are kept.",
+"선수 입력 {}건이 확인을 기다려요 — 가용인원 · 선수 변경이 팀에 올라가지 않아요": "{} player entries are waiting for review — availability and player changes are not reaching the team"
+},{});
