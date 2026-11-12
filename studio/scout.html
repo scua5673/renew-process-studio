@@ -9823,6 +9823,7 @@ function openPlayer(id,opts){
   /* 1.852 — 포지션·구분 칩(스카우팅 패널과 같은 모양). 숨긴 select 와 값 동기화 */
   try{const pc=$("plPosChips");if(pc){pc.innerHTML="";data.positions.forEach(q=>{const b=document.createElement("button");b.type="button";b.textContent=posAbbr(q.name);b.title=q.name;b.className=(q.id===(pl.posId||""))?"on":"";b.onclick=()=>{ps.value=(pl.posId===q.id)?"":q.id;ps.onchange();};pc.appendChild(b);});}}catch(_){}
   try{const tc=$("plTypeChips");if(tc){tc.innerHTML="";[["ours","우리 선수"],["target","스카우트 대상"]].forEach(([v,l])=>{const b=document.createElement("button");b.type="button";b.textContent=l;b.className=((pl.type||"ours")===v)?"on":"";b.onclick=()=>{$("plType").value=v;$("plType").onchange();tc.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));};tc.appendChild(b);});}}catch(_){}
+  try{tmAudienceEditChips(pl);}catch(e){console.warn("[openPlayer] audience chips",e);}   /* 3.283 — 조 · 학년 칩(roster-audience.js) */
   $("plName").oninput=()=>{pl.name=$("plName").value;save();$("plEditTitle").textContent=pl.name||"선수 편집";renderPlayers();};
   $("plMemo").oninput=()=>{pl.memo=$("plMemo").value;save();};
   const pf=pl.profile=pl.profile||{};
@@ -16094,7 +16095,7 @@ function avResolve(p,day){
 }
 function avScheduled(kind){ return kind==="train"||kind==="match"; }
 function avStateLabel(r){ return AV_ST_LB[r.s]||"미기록"; }
-function avGrouping(){ return '<span class="av-vseg" role="group" aria-label="선수 묶기">'+[["grp","조별"],["pos","포지션별"],["name","이름순"]].map(function(x){return '<button type="button" data-av-view="'+x[0]+'" aria-pressed="'+(availView===x[0])+'"'+(availView===x[0]?' class="on"':'')+'>'+x[1]+'</button>';}).join("")+'</span>'; }
+function avGrouping(){ return '<span class="av-vseg" role="group" aria-label="선수 묶기">'+[["grp","조별"],["pos","포지션별"],["name","이름순"]].map(function(x){return '<button type="button" data-av-view="'+x[0]+'" aria-pressed="'+(availView===x[0])+'"'+(availView===x[0]?' class="on"':'')+'>'+x[1]+'</button>';}).join("")+'</span>'+avYearToggleHTML(); }
 function avGroups(ours,day){
   var rows=Object.create(null), order=[], posIndex=Object.create(null);
   (data.positions||[]).forEach(function(p,i){posIndex[p.id]=i;});
@@ -16104,13 +16105,13 @@ function avGroups(ours,day){
   }else if(availView==="pos"){order=(data.positions||[]).map(function(p){return posAbbr(p.name)||p.name;}).concat(Object.keys(rows).sort());}
   else order=["전체"];
   order=order.filter(function(g,i){return g!=="미지정"&&rows[g]&&order.indexOf(g)===i;}); if(rows["미지정"])order.push("미지정");
-  return order.map(function(g){return {name:g,players:rows[g].slice().sort(function(a,b){
+  return order.map(function(g){return {name:g,players:avYearOrder(rows[g].slice().sort(function(a,b){
     if(availView!=="name"){
       if(day){var as=avResolve(a,day).s,bs=avResolve(b,day).s, ar=as&&as!=="ok"?1:0,br=bs&&bs!=="ok"?1:0;if(ar!==br)return ar-br;}
       var ap=posIndex[a.posId]==null?999:posIndex[a.posId],bp=posIndex[b.posId]==null?999:posIndex[b.posId];if(ap!==bp)return ap-bp;
     }
     return String(a.name||"").localeCompare(String(b.name||""),"ko");
-  })};});
+  }))};});
 }
 function avEditButton(p,day,r){
   var can=avRenderCache?avRenderCache.canEdit:typeof avCanEdit==="function"&&avCanEdit();
@@ -16138,8 +16139,8 @@ function renderAvailDaily(ours){
       if(isScheduled){scheduled++;total.scheduled++;}
       if(r.s==='ok'){participating++;total.ok++;}else if(r.s)total.rest++;
       if(r.s==='rehab')rc.rehab++;else if(r.s&&r.s!=='ok')rc.out++;else if(r.s==='ok'){if(_gk)rc.gk++;else rc.field++;}
-      var row='<div class="av-pl"><span class="no">'+esc(p.num||'–')+'</span><span class="nm">'+avPlayerLink(p)+'<small>'+esc(avPosition(p))+'</small>'+(r.note?'<small class="av-player-note">'+esc(r.note)+'</small>':'')+'</span>'+avEditButton(p,day,r)+'</div>';
-      if((split||availView!=='name')&&r.s&&r.s!=='ok'){restRows+=row;restN++;}else okRows+=row;
+      var row='<div class="av-pl"><span class="no">'+esc(p.num||'–')+'</span><span class="nm">'+avPlayerLink(p)+'<small>'+esc(avPosition(p))+'</small>'+avYearTag(p)+(r.note?'<small class="av-player-note">'+esc(r.note)+'</small>':'')+'</span>'+avEditButton(p,day,r)+'</div>';
+      if((split||availView!=='name')&&r.s&&r.s!=='ok'){restRows+=row;restN++;}else okRows+=avYearLead(group,p)+row;
     });
     if(split){
       var gname=availView==='name'?'':esc(group.name)+' ',okN=group.players.length-restN;okTot+=okN;restTot+=restN;
@@ -16195,7 +16196,7 @@ function renderAvailPlayers(ours,from,to){
   var h='<div class="av-player-toolbar"><span>선수 이름을 누르면 부상 기록과 날짜별 기록이 열립니다.</span>'+avGrouping()+'</div><div class="av-table-wrap" tabindex="0" role="region" aria-label="선수별 누적 기록"><table class="av-total-table av-total-9"><caption class="av-sr-only">'+esc(from+'부터 '+to+'까지 선수별 누적 — 훈련·경기 일정이 있던 날 기준')+'</caption><thead><tr><th scope="col">선수</th><th scope="col">훈련</th><th scope="col">경기</th><th scope="col">휴식</th><th scope="col">불참</th><th scope="col">재활</th><th scope="col">부상</th><th scope="col">참여율</th><th scope="col" class="av-c-now">지금</th></tr></thead><tbody>';
   avGroups(ours).forEach(function(group){
     if(availView!=='name')h+='<tr class="av-table-group"><th colspan="'+cols+'" scope="rowgroup">'+esc(group.name)+'</th></tr>';
-    group.players.forEach(function(p){var t=avTotals(p,from,to),pc=avPct(t),m=t.missed;
+    group.players.forEach(function(p){var t=avTotals(p,from,to),pc=avPct(t),m=t.missed;h+=avYearLead(group,p,cols);
       h+='<tr'+(String(p.id)===String(availPlayer)?' class="is-selected"':'')+' title="'+esc((p.name||'선수')+' — 일정 '+t.scheduled+'일')+'"><th scope="row"><div class="av-player-summary">'+avPlayerLink(p)+'<small class="av-player-meta">'+esc([p.num?'#'+p.num:'',avPosition(p)].filter(Boolean).join(' · '))+'</small></div></th>'
         +'<td data-label="훈련">'+avStat(t.training,'training')+'</td><td data-label="경기">'+avStat(t.match,'match')+'</td><td data-label="휴식">'+avStat(m.rest,'rest')+'</td><td data-label="불참">'+avStat(m.out,'out')+'</td><td data-label="재활">'+avStat(m.rehab,'rehab')+'</td><td data-label="부상">'+avStat(m.injury,'injury')+'</td>'
         +'<td data-label="참여율"><span data-av-stat="pct">'+(pc==null?'—':pc+'%')+'</span></td><td class="av-c-now">'+avNowHTML(p)+'</td></tr>';});
@@ -20884,8 +20885,8 @@ function init(){
     window.psForm({title:"선수 추가",sub:"이름만 있어도 됩니다 — 나머지는 표에서 언제든 채울 수 있어요.",ok:"추가",
       fields:[{key:"name",label:"이름",type:"text",placeholder:"예: 김민재",required:true,maxlength:20},
               {key:"num",label:"등번호",type:"number",placeholder:"예: 10",maxlength:3},
-              {key:"posId",label:"포지션",type:"select",options:posOpts,value:""}],
-      onOk:function(v){data.players.push({id:uid("pl"),name:v.name,num:v.num||"",foot:"",type:"ours",posId:v.posId||"",levels:{},memo:"",manual:true});var ok=save();renderTeam();try{toast(ok===false?TM_ADD_FAIL:v.name+" 추가됨");}catch(_){}}});
+              {key:"posId",label:"포지션",type:"select",options:posOpts,value:""}].concat(tmAudienceFields()),
+      onOk:function(v){data.players.push(tmAudienceApply({id:uid("pl"),name:v.name,num:v.num||"",foot:"",type:"ours",posId:v.posId||"",levels:{},memo:"",manual:true},v));var ok=save();renderTeam();try{toast(ok===false?TM_ADD_FAIL:v.name+" 추가됨");}catch(_){}}});
   };
   if($("tmAdd"))$("tmAdd").onclick=()=>{window.__tmAddSheet();};
   if($("tmQuickAdd"))$("tmQuickAdd").addEventListener("keydown",e=>{if(e.key!=="Enter"||e.isComposing||e.keyCode===229)return;e.preventDefault();const inp=$("tmQuickAdd"),nm=inp.value.trim();if(!nm)return;data.players.push({id:uid("pl"),name:nm,num:"",foot:"",type:"ours",posId:"",levels:{},memo:""});if(save()===false)try{toast(TM_ADD_FAIL);}catch(_){}renderTeam();inp.value="";inp.focus();});
@@ -22067,7 +22068,7 @@ html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srg
 </style>
 <link rel="stylesheet" href="team-criteria.css">
 <link rel="stylesheet" href="player-workspace.css"><script src="player-workspace.js"></script><script src="player-bulk-add.js"></script>
-<link rel="stylesheet" href="team-mobile.css?v=3.282">
+<link rel="stylesheet" href="team-mobile.css?v=3.283">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>

@@ -72,6 +72,7 @@
     ['cs_align_space_v1','device','ls','pref','board.html'],
     ['cs_animres_v1','device','ls','cache','board.html'],
     ['cs_av_view_v1','device','ls','pref','scout.html'],
+    ['cs_av_year_v1','device','ls','pref','roster-audience.js'],   /* 3.283 — 가용인원 조별 보기의 «학년 나누기» 켜짐 */
     ['cs_eval_mode_v1','device','ls','pref','scout.html'],   /* 3.077 — 선수 평가 «빠른 평가 · 전체» 고른 것 */
     ['cs_avail_open_v1','device','ls','pref','scout.html'],
     ['cs_ball_style','device','ls','pref','board.html'],

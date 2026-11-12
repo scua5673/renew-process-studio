@@ -24,8 +24,10 @@ async function seed(page,f){
   await page.evaluate(()=>document.querySelector('#appSeg button[data-app="design"]:not([data-train])').click());
   await f.waitForFunction(()=>window.__csView==='session'&&document.getElementById('dfNew'),null,{timeout:15000});
   await f.evaluate(async name=>{
-    const base=captureSnap();assert0(base.orientation==='h'&&(base.pitchView||'full')==='full');
-    function assert0(x){if(!x)throw new Error('기본 판이 가로 전체가 아니다');}
+    /* 3.283 — 폰 부팅 기본은 세로(board.html innerWidth≤520)이고 자동 방향(__autoOrient)은 판이 보일 때만 재는데 보관함 보기에선 판이 0×0 이라
+       «기본 판이 가로 전체» 단정은 부팅 경합(팀 «오늘»로 넘어가기 전 판이 잠깐 보였는가)에 따라 흔들렸다(11/12 웹킷 · 로컬 양쪽). 이 시험은 «가로 작전판»이
+       폰에서 보이는가를 보므로 기대하지 않고 가로 전체로 맞춘다 */
+    const base=captureSnap();base.orientation='h';base.spFlip=false;base.pitchView='full';
     const mk=dx=>{const c=JSON.parse(JSON.stringify(base));c.players=[{id:1,team:'blue',num:8,x:300+dx,y:300},{id:2,team:'red',num:4,x:520+dx,y:420},{id:3,team:'blue',num:10,x:700+dx,y:200}];
       c.drawings=[{type:'arrow',color:'#ffffff',pts:[{x:320+dx,y:320},{x:480+dx,y:400}]}];return c;},fr=dx=>({snap:mk(dx),dur:1});
     const lib=(await libGet()).filter(x=>x.libId!=='USELAND');
