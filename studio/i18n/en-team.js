@@ -9,7 +9,7 @@ for(k in D)(E[k]||(E[k]={})).en=D[k];
 for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
 for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
 })(window,{},{},{});
-/* 3.281 — 가용인원 «학년 나누기» · 선수 추가 시트 · 선수 편집 창의 조 · 학년(roster-audience.js) */
+/* 3.283 — 가용인원 «학년 나누기» · 선수 추가 시트 · 선수 편집 창의 조 · 학년(roster-audience.js) */
 (function(w,D,T,C){D["학년 나누기"]="Split by year group";D["학년 미지정"]="No year group";D["조"]="Group";D["학년"]="Year group";D["없음"]="None";D["미지정"]="Unassigned";D["1학년"]="Year 1";D["2학년"]="Year 2";D["3학년"]="Year 3";
 T["{}학년"]="Year {}";T["가능 {} / {}명"]="{} of {} available";T["{}명"]="{} players";
 var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;

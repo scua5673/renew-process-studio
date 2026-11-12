@@ -1,5 +1,5 @@
 'use strict';
-/* 3.281 — 가용인원 조별 보기 안에서 «학년 나누기»(사용자 «조별에서 학년별로 나눌 수 있게») · 선수 추가 시트 · 선수 편집 창의 조 · 학년.
+/* 3.283 — 가용인원 조별 보기 안에서 «학년 나누기»(사용자 «조별에서 학년별로 나눌 수 있게») · 선수 추가 시트 · 선수 편집 창의 조 · 학년.
    roster-audience.js 의 순수 함수는 vm 으로 돌리고, scout.html · idp.html 은 배선(호출 자리)만 글자로 본다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.join(__dirname,'..');

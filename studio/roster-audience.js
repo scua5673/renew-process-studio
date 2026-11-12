@@ -35,7 +35,7 @@ function tmSchoolYearBar(){
   b.onclick=function(){psPickOpen(b,['','1','2','3'].map(function(y){return {v:y,lb:y?y+'학년':'전체 학년'};}),tmSchoolYearFilter,function(y){tmSchoolYearFilter=y;renderTeam();},'학년 보기');};bar.appendChild(b);
 }
 
-/* ══ 3.281 · 가용인원 조별 보기 안에서 «학년 나누기»(사용자 11/11 «조별에서 학년별로 나눌 수 있게») ══
+/* ══ 3.283 · 가용인원 조별 보기 안에서 «학년 나누기»(사용자 11/11 «조별에서 학년별로 나눌 수 있게») ══
    켜면 조마다 1·2·3학년 줄로 갈라진다 — 학년을 적은 선수가 그 조에 하나라도 있을 때만. 켜고 끈 값은 이 기기에만(cs_av_year_v1), 조별 보기에서만 쓴다.
    쉼 상자처럼 학년 줄 아래가 아닌 자리의 선수는 자리 옆에 학년을 적는다. 선수별 누적 표도 같은 단추를 따른다. 새 저장 칸은 없다 — 선수의 schoolYear 그대로. */
 var avYearSplit=false;try{avYearSplit=localStorage.getItem('cs_av_year_v1')==='1';}catch(e){avYearSplit=false;}
@@ -89,7 +89,7 @@ if(typeof document!=='undefined'&&document.head){
   document.head.appendChild(avYearCss);
 }
 
-/* ══ 3.281 · 선수 추가 시트 · 선수 편집 창의 조 · 학년(사용자 11/11 «선수 추가하거나 프로필 수정에 조와 학년 선택할 수 있게») ══
+/* ══ 3.283 · 선수 추가 시트 · 선수 편집 창의 조 · 학년(사용자 11/11 «선수 추가하거나 프로필 수정에 조와 학년 선택할 수 있게») ══
    선수단 표의 조 꼬리표 · 학년 단추와 같은 값(grp · schoolYear)을 같은 저장 길(save)로 쓴다. 조 목록은 PSTeamAudience.keys — 이름은 tmGrpLabel 로 보인다. */
 var TM_YEAR_OPTS=[['','미지정'],['1','1학년'],['2','2학년'],['3','3학년']];
 function tmAudienceFields(){

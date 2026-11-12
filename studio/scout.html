@@ -9823,7 +9823,7 @@ function openPlayer(id,opts){
   /* 1.852 — 포지션·구분 칩(스카우팅 패널과 같은 모양). 숨긴 select 와 값 동기화 */
   try{const pc=$("plPosChips");if(pc){pc.innerHTML="";data.positions.forEach(q=>{const b=document.createElement("button");b.type="button";b.textContent=posAbbr(q.name);b.title=q.name;b.className=(q.id===(pl.posId||""))?"on":"";b.onclick=()=>{ps.value=(pl.posId===q.id)?"":q.id;ps.onchange();};pc.appendChild(b);});}}catch(_){}
   try{const tc=$("plTypeChips");if(tc){tc.innerHTML="";[["ours","우리 선수"],["target","스카우트 대상"]].forEach(([v,l])=>{const b=document.createElement("button");b.type="button";b.textContent=l;b.className=((pl.type||"ours")===v)?"on":"";b.onclick=()=>{$("plType").value=v;$("plType").onchange();tc.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));};tc.appendChild(b);});}}catch(_){}
-  try{tmAudienceEditChips(pl);}catch(e){console.warn("[openPlayer] audience chips",e);}   /* 3.281 — 조 · 학년 칩(roster-audience.js) */
+  try{tmAudienceEditChips(pl);}catch(e){console.warn("[openPlayer] audience chips",e);}   /* 3.283 — 조 · 학년 칩(roster-audience.js) */
   $("plName").oninput=()=>{pl.name=$("plName").value;save();$("plEditTitle").textContent=pl.name||"선수 편집";renderPlayers();};
   $("plMemo").oninput=()=>{pl.memo=$("plMemo").value;save();};
   const pf=pl.profile=pl.profile||{};
@@ -22068,7 +22068,7 @@ html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srg
 </style>
 <link rel="stylesheet" href="team-criteria.css">
 <link rel="stylesheet" href="player-workspace.css"><script src="player-workspace.js"></script><script src="player-bulk-add.js"></script>
-<link rel="stylesheet" href="team-mobile.css?v=3.281">
+<link rel="stylesheet" href="team-mobile.css?v=3.283">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>

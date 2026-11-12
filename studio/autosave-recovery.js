@@ -99,6 +99,35 @@
         if(!current(gen))return;if(!Array.isArray(rows)||rows.some(function(row){return !validRow(row);}))throw new Error('autosave_list_invalid');
         rows=rows.filter(function(row){return row.reason!=='items-stale-resolved';});
         message(rows.length?'':'보관된 변경이 없습니다.',gen);
+        /* 3.281 — 선수 입력 보류를 한 번에(운영 기록: 한 기기가 8일 동안 보류를 풀지 않아 팀 변경 819건이 올라가지 못했고 가용인원 체크가 되돌아갔다 —
+           항목마다 원문을 열어 세 번 누르는 길은 코치가 쓰지 않았다). 사람이 누를 때만, 항목마다 원래 확인 길(prepare → resolve)을 그대로 지난다:
+           지금 기기 사본을 유지하고 그 입력의 보류만 푼다. 하나라도 확인이 어긋나면 그 항목은 보류로 남는다. 원문은 지우지 않는다. */
+        var held=rows.filter(function(row){return row.reason==='items-stale-device';});
+        if(held.length&&typeof o.prepareItemsReview==='function'&&typeof o.resolveItemsReview==='function'){
+          var box=node('div',undefined,'psar-actions'),all=node('button','선수 입력 보류 '+held.length+'건 모두 해제 · 지금 기기 내용 유지');all.type='button';all.setAttribute('data-psar-action','resolve-all-items');box.appendChild(all);
+          body.insertBefore(node('p','선수 입력 보류가 남아 있으면 그 선수의 변경(가용인원 체크 포함)이 팀에 올라가지 않아요. 아래 단추는 지금 이 기기에 보이는 내용을 그대로 유지하고 보류만 풉니다. 보관된 이전 입력은 지워지지 않아요.'),list);body.insertBefore(box,list);
+          all.addEventListener('click',function(){
+            if(!current(gen)||all.disabled)return;all.disabled=true;var ticket=++readTicket;selected=null;originals=null;detail.replaceChildren();
+            function live(){return current(gen)&&ticket===readTicket;}
+            var done=0,left=0;
+            held.reduce(function(chain,row,i){return chain.then(function(){
+              if(!live())return;message('보류 해제 중… '+(i+1)+' / '+held.length,gen);
+              return Promise.resolve(o.read(row)).then(function(value){
+                if(!live())return;if(!exact(row,value))throw new Error('autosave_original_mismatch');
+                return Promise.resolve(o.prepareItemsReview(row,value,live)).then(function(prepared){
+                  if(!live())return;if(prepared&&prepared.resolved){done++;return;}
+                  if(!prepared||typeof prepared.currentRaw!=='string')throw new Error('items_review_invalid');
+                  return Promise.resolve(o.resolveItemsReview(row,value,prepared,live)).then(function(result){if(!result||result.resolved!==true)throw new Error('items_review_unconfirmed');done++;});
+                });
+              }).catch(function(){left++;});
+            });},Promise.resolve()).then(function(){
+              if(!live())return;all.disabled=left>0?false:true;
+              message(left?('보류 '+done+'건을 해제했고 '+left+'건은 확인하지 못해 남겨 두었습니다. 잠시 뒤 다시 눌러 주세요.'):('보류 '+done+'건을 모두 해제했습니다. 이제 변경이 팀에 올라갑니다. 보관된 원문은 그대로 남아 있습니다.'),gen);
+              try{if(typeof o.afterItemsResolved==='function')o.afterItemsResolved(done,left);}catch(_){}
+              try{if(done&&w.PSSync&&typeof w.PSSync.syncNow==='function')w.PSSync.syncNow('items-resolved');}catch(_){}   /* 풀린 변경을 바로 올린다 */
+            });
+          });
+        }
         rows.forEach(function(row){var button=node('button');button.type='button';button.setAttribute('data-psar-id',row.id);button.appendChild(node('strong',named(row)));button.appendChild(node('small',new Date(row.at).toLocaleString('ko-KR')+' · '+reason(row.reason)));button.addEventListener('click',function(){read(row,gen);});list.appendChild(button);});
       }).catch(function(){message('보관 목록을 읽지 못했습니다. 창을 닫고 다시 열어 주세요.',gen);});
     }

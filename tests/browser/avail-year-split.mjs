@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 
-// 3.281 — 가용인원 조별 보기의 «학년 나누기» · 선수 추가 시트 · 선수 편집 창의 조 · 학년.
+// 3.283 — 가용인원 조별 보기의 «학년 나누기» · 선수 추가 시트 · 선수 편집 창의 조 · 학년.
 // Actual scout iframe + actual shared storage, in a fresh browser profile (availability.mjs 의 틀).
 // Every external request is blocked. Only synthetic players and dates exist.
 const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
