@@ -131,7 +131,10 @@ try{
     assert.deepEqual(crumbs.keys.filter(k=>k!==crumbs.mine),[],'물러난 창의 표식이 남지 않는다');
     assert.deepEqual(await C.evaluate(()=>PSCrashCrumb.check()),{dead:0,stale:0});
   }
-  assert.equal(fx.calls.filter(c=>c.p==='/rest/v1/ps_events').flatMap(c=>[].concat(c.body||[])).filter(r=>r&&r.event_name==='boot_after_crash').length,0,'죽은 탭 기록 없음');
+  /* 떨어지면 어느 창이 «죽은 탭»으로 읽혔는지(error_code D:<앱> · meta stage · reason · msg · age · n)를 실패 문장과 stderr 에 남긴다 — CI 로그엔 fixture 의 요청 본문이 없다 */
+  const crashed=fx.calls.filter(c=>c.p==='/rest/v1/ps_events').flatMap(c=>[].concat(c.body||[])).filter(r=>r&&r.event_name==='boot_after_crash').map(r=>({code:r.error_code,meta:r.meta}));
+  if(crashed.length)console.error('[one-window-3276] boot_after_crash '+JSON.stringify(crashed));
+  assert.equal(crashed.length,0,'죽은 탭 기록 없음 '+JSON.stringify(crashed));
 
   step('errors');
   for(const l of logs)if(l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text))errs.push('A: '+l.text);
