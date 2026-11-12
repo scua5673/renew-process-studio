@@ -6405,7 +6405,7 @@ const scoutStore={
   },
   /* boolean은 접수 결과다. 저장됨 표시·화면 종료는 ready의 검증 완료를 기다린다. */
   /* 3.281 — only(k): 기다릴 키를 고른다. 가용인원 기록은 통짜 문서만 기다리고(sq:<id> 행의 보관·실패는 배경 flush 몫) 행 flush 도 하지 않는다 */
-  /* 3.284 — 끝의 행 flush 는 배경 모드(PI.flush(true)): 앞(foreground) 모드는 보관(items-stale-device)이 하나라도 있으면 대기열을 비우기도 전에 던져(3.217 «직접 저장은 미완료»)
+  /* 3.285 — 끝의 행 flush 는 배경 모드(PI.flush(true)): 앞(foreground) 모드는 보관(items-stale-device)이 하나라도 있으면 대기열을 비우기도 전에 던져(3.217 «직접 저장은 미완료»)
      새 판 적용 · 화면 떠나기 전 저장 확인이 보관된 행에 영영 막혔다. 배경 모드는 보관된 요청은 건너뛰고 나머지를 올리며, 옛 입력 실패는 바로 journal 에 보관해(held) 기기에 안전하게 둔다.
      아직 보관되지 않은 행의 실패는 앞의 teamSaves.ready 가 먼저 막는다. 구출 묶음(rosterPendingRecover)의 flush 는 그대로 앞 모드. */
   ready(retryFailed,only){return Promise.resolve(retryFailed&&typeof rosterPendingRecover==='function'?rosterPendingRecover():true).then(function(){return teamSaves.ready(retryFailed,only);}).then(function(){
@@ -7074,7 +7074,7 @@ function rosterPendingRecover(){
   }).then(function(){current();if(rosterPendingRows())throw new Error('선수 변경 저장 확인이 남아 있습니다');rosterRescueWaiting=false;return true;});
   rosterRescueRecovery=work;work.then(function(){if(rosterRescueRecovery===work)rosterRescueRecovery=null;},function(){if(rosterRescueRecovery===work)rosterRescueRecovery=null;});return work;
 }
-/* 3.284 — 보관(journal items-stale-device + 기기 묶음 영수증)에 든 묶음은 «올릴 차례의 변경»이 아니다: 사람이 «보관된 변경»에서 고르기 전엔 올라가지 않는다(3.217).
+/* 3.285 — 보관(journal items-stale-device + 기기 묶음 영수증)에 든 묶음은 «올릴 차례의 변경»이 아니다: 사람이 «보관된 변경»에서 고르기 전엔 올라가지 않는다(3.217).
    예전엔 그 영수증만으로 psHasPending 이 참이라 새 판 적용 · 화면 떠나기 전 저장 확인이 match_pending_left 로 영영 막혔다. 구출 묶음(hasRescue)은 그대로 기다린다. 모르면 참(fail-closed). */
 function rosterStaleModule(){try{var w=window.parent&&window.parent!==window?window.parent:window,M=w.PSItemsStale;return M&&typeof M.held==='function'&&typeof M.archived==='function'?M:null;}catch(_){return null;}}
 function rosterPendingRows(){
@@ -7138,7 +7138,7 @@ function rosterSaveRows(players,options,receipt){
     request={players:JSON.parse(JSON.stringify(players)),options:{changedIds:ids.slice(),deletedIds:deleted.slice(),basePlayers:JSON.parse(JSON.stringify(bases)),baseHistory:receipt?receipt.rows.map(function(r){return {id:r.id,players:r.history||[]};}):[],intent:receipt?JSON.parse(JSON.stringify(receipt)):null}};
     work=attempt();
   }catch(e){work=Promise.reject(e);accepted=false;}
-  /* 3.284 — 보관(journal + 기기 묶음 영수증)에 이미 있는 요청은 실패가 아니라 held 다: 사람이 «보관된 변경»에서 고르기 전엔 풀리지 않고(3.217) 원문은 기기에 안전하다.
+  /* 3.285 — 보관(journal + 기기 묶음 영수증)에 이미 있는 요청은 실패가 아니라 held 다: 사람이 «보관된 변경»에서 고르기 전엔 풀리지 않고(3.217) 원문은 기기에 안전하다.
      예전엔 다시 올릴 때마다 before() 에서 fenced 로 실패해 sq:<id> 가 «실패»로 남고, 새 판 적용 · 화면 떠나기 전 저장 확인(psFlushPendingReady → store_ready)을 영영 막았다
      (운영 기록 flush_fail:fScout:store_ready.sync_local_changed:sq:<id> 46건). 영수증은 ACK 하지 않는다 — 고른 뒤 settle 이 푼다. 아직 보관되지 않은 새 입력은 예전처럼 실패(다음 배경 회차가 보관). */
   function attempt(){
@@ -9843,6 +9843,7 @@ function openPlayer(id,opts){
   /* 1.852 — 포지션·구분 칩(스카우팅 패널과 같은 모양). 숨긴 select 와 값 동기화 */
   try{const pc=$("plPosChips");if(pc){pc.innerHTML="";data.positions.forEach(q=>{const b=document.createElement("button");b.type="button";b.textContent=posAbbr(q.name);b.title=q.name;b.className=(q.id===(pl.posId||""))?"on":"";b.onclick=()=>{ps.value=(pl.posId===q.id)?"":q.id;ps.onchange();};pc.appendChild(b);});}}catch(_){}
   try{const tc=$("plTypeChips");if(tc){tc.innerHTML="";[["ours","우리 선수"],["target","스카우트 대상"]].forEach(([v,l])=>{const b=document.createElement("button");b.type="button";b.textContent=l;b.className=((pl.type||"ours")===v)?"on":"";b.onclick=()=>{$("plType").value=v;$("plType").onchange();tc.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));};tc.appendChild(b);});}}catch(_){}
+  try{tmAudienceEditChips(pl);}catch(e){console.warn("[openPlayer] audience chips",e);}   /* 3.283 — 조 · 학년 칩(roster-audience.js) */
   $("plName").oninput=()=>{pl.name=$("plName").value;save();$("plEditTitle").textContent=pl.name||"선수 편집";renderPlayers();};
   $("plMemo").oninput=()=>{pl.memo=$("plMemo").value;save();};
   const pf=pl.profile=pl.profile||{};
@@ -16119,7 +16120,7 @@ function avResolve(p,day){
 }
 function avScheduled(kind){ return kind==="train"||kind==="match"; }
 function avStateLabel(r){ return AV_ST_LB[r.s]||"미기록"; }
-function avGrouping(){ return '<span class="av-vseg" role="group" aria-label="선수 묶기">'+[["grp","조별"],["pos","포지션별"],["name","이름순"]].map(function(x){return '<button type="button" data-av-view="'+x[0]+'" aria-pressed="'+(availView===x[0])+'"'+(availView===x[0]?' class="on"':'')+'>'+x[1]+'</button>';}).join("")+'</span>'; }
+function avGrouping(){ return '<span class="av-vseg" role="group" aria-label="선수 묶기">'+[["grp","조별"],["pos","포지션별"],["name","이름순"]].map(function(x){return '<button type="button" data-av-view="'+x[0]+'" aria-pressed="'+(availView===x[0])+'"'+(availView===x[0]?' class="on"':'')+'>'+x[1]+'</button>';}).join("")+'</span>'+avYearToggleHTML(); }
 function avGroups(ours,day){
   var rows=Object.create(null), order=[], posIndex=Object.create(null);
   (data.positions||[]).forEach(function(p,i){posIndex[p.id]=i;});
@@ -16129,13 +16130,13 @@ function avGroups(ours,day){
   }else if(availView==="pos"){order=(data.positions||[]).map(function(p){return posAbbr(p.name)||p.name;}).concat(Object.keys(rows).sort());}
   else order=["전체"];
   order=order.filter(function(g,i){return g!=="미지정"&&rows[g]&&order.indexOf(g)===i;}); if(rows["미지정"])order.push("미지정");
-  return order.map(function(g){return {name:g,players:rows[g].slice().sort(function(a,b){
+  return order.map(function(g){return {name:g,players:avYearOrder(rows[g].slice().sort(function(a,b){
     if(availView!=="name"){
       if(day){var as=avResolve(a,day).s,bs=avResolve(b,day).s, ar=as&&as!=="ok"?1:0,br=bs&&bs!=="ok"?1:0;if(ar!==br)return ar-br;}
       var ap=posIndex[a.posId]==null?999:posIndex[a.posId],bp=posIndex[b.posId]==null?999:posIndex[b.posId];if(ap!==bp)return ap-bp;
     }
     return String(a.name||"").localeCompare(String(b.name||""),"ko");
-  })};});
+  }))};});
 }
 function avEditButton(p,day,r){
   var can=avRenderCache?avRenderCache.canEdit:typeof avCanEdit==="function"&&avCanEdit();
@@ -16163,8 +16164,8 @@ function renderAvailDaily(ours){
       if(isScheduled){scheduled++;total.scheduled++;}
       if(r.s==='ok'){participating++;total.ok++;}else if(r.s)total.rest++;
       if(r.s==='rehab')rc.rehab++;else if(r.s&&r.s!=='ok')rc.out++;else if(r.s==='ok'){if(_gk)rc.gk++;else rc.field++;}
-      var row='<div class="av-pl"><span class="no">'+esc(p.num||'–')+'</span><span class="nm">'+avPlayerLink(p)+'<small>'+esc(avPosition(p))+'</small>'+(r.note?'<small class="av-player-note">'+esc(r.note)+'</small>':'')+'</span>'+avEditButton(p,day,r)+'</div>';
-      if((split||availView!=='name')&&r.s&&r.s!=='ok'){restRows+=row;restN++;}else okRows+=row;
+      var row='<div class="av-pl"><span class="no">'+esc(p.num||'–')+'</span><span class="nm">'+avPlayerLink(p)+'<small>'+esc(avPosition(p))+'</small>'+avYearTag(p)+(r.note?'<small class="av-player-note">'+esc(r.note)+'</small>':'')+'</span>'+avEditButton(p,day,r)+'</div>';
+      if((split||availView!=='name')&&r.s&&r.s!=='ok'){restRows+=row;restN++;}else okRows+=avYearLead(group,p)+row;
     });
     if(split){
       var gname=availView==='name'?'':esc(group.name)+' ',okN=group.players.length-restN;okTot+=okN;restTot+=restN;
@@ -16220,7 +16221,7 @@ function renderAvailPlayers(ours,from,to){
   var h='<div class="av-player-toolbar"><span>선수 이름을 누르면 부상 기록과 날짜별 기록이 열립니다.</span>'+avGrouping()+'</div><div class="av-table-wrap" tabindex="0" role="region" aria-label="선수별 누적 기록"><table class="av-total-table av-total-9"><caption class="av-sr-only">'+esc(from+'부터 '+to+'까지 선수별 누적 — 훈련·경기 일정이 있던 날 기준')+'</caption><thead><tr><th scope="col">선수</th><th scope="col">훈련</th><th scope="col">경기</th><th scope="col">휴식</th><th scope="col">불참</th><th scope="col">재활</th><th scope="col">부상</th><th scope="col">참여율</th><th scope="col" class="av-c-now">지금</th></tr></thead><tbody>';
   avGroups(ours).forEach(function(group){
     if(availView!=='name')h+='<tr class="av-table-group"><th colspan="'+cols+'" scope="rowgroup">'+esc(group.name)+'</th></tr>';
-    group.players.forEach(function(p){var t=avTotals(p,from,to),pc=avPct(t),m=t.missed;
+    group.players.forEach(function(p){var t=avTotals(p,from,to),pc=avPct(t),m=t.missed;h+=avYearLead(group,p,cols);
       h+='<tr'+(String(p.id)===String(availPlayer)?' class="is-selected"':'')+' title="'+esc((p.name||'선수')+' — 일정 '+t.scheduled+'일')+'"><th scope="row"><div class="av-player-summary">'+avPlayerLink(p)+'<small class="av-player-meta">'+esc([p.num?'#'+p.num:'',avPosition(p)].filter(Boolean).join(' · '))+'</small></div></th>'
         +'<td data-label="훈련">'+avStat(t.training,'training')+'</td><td data-label="경기">'+avStat(t.match,'match')+'</td><td data-label="휴식">'+avStat(m.rest,'rest')+'</td><td data-label="불참">'+avStat(m.out,'out')+'</td><td data-label="재활">'+avStat(m.rehab,'rehab')+'</td><td data-label="부상">'+avStat(m.injury,'injury')+'</td>'
         +'<td data-label="참여율"><span data-av-stat="pct">'+(pc==null?'—':pc+'%')+'</span></td><td class="av-c-now">'+avNowHTML(p)+'</td></tr>';});
@@ -20917,8 +20918,8 @@ function init(){
     window.psForm({title:"선수 추가",sub:"이름만 있어도 됩니다 — 나머지는 표에서 언제든 채울 수 있어요.",ok:"추가",
       fields:[{key:"name",label:"이름",type:"text",placeholder:"예: 김민재",required:true,maxlength:20},
               {key:"num",label:"등번호",type:"number",placeholder:"예: 10",maxlength:3},
-              {key:"posId",label:"포지션",type:"select",options:posOpts,value:""}],
-      onOk:function(v){data.players.push({id:uid("pl"),name:v.name,num:v.num||"",foot:"",type:"ours",posId:v.posId||"",levels:{},memo:"",manual:true});var ok=save();renderTeam();try{toast(ok===false?TM_ADD_FAIL:v.name+" 추가됨");}catch(_){}}});
+              {key:"posId",label:"포지션",type:"select",options:posOpts,value:""}].concat(tmAudienceFields()),
+      onOk:function(v){data.players.push(tmAudienceApply({id:uid("pl"),name:v.name,num:v.num||"",foot:"",type:"ours",posId:v.posId||"",levels:{},memo:"",manual:true},v));var ok=save();renderTeam();try{toast(ok===false?TM_ADD_FAIL:v.name+" 추가됨");}catch(_){}}});
   };
   if($("tmAdd"))$("tmAdd").onclick=()=>{window.__tmAddSheet();};
   if($("tmQuickAdd"))$("tmQuickAdd").addEventListener("keydown",e=>{if(e.key!=="Enter"||e.isComposing||e.keyCode===229)return;e.preventDefault();const inp=$("tmQuickAdd"),nm=inp.value.trim();if(!nm)return;data.players.push({id:uid("pl"),name:nm,num:"",foot:"",type:"ours",posId:"",levels:{},memo:""});if(save()===false)try{toast(TM_ADD_FAIL);}catch(_){}renderTeam();inp.value="";inp.focus();});
@@ -22100,7 +22101,7 @@ html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srg
 </style>
 <link rel="stylesheet" href="team-criteria.css">
 <link rel="stylesheet" href="player-workspace.css"><script src="player-workspace.js"></script><script src="player-bulk-add.js"></script>
-<link rel="stylesheet" href="team-mobile.css?v=3.284">
+<link rel="stylesheet" href="team-mobile.css?v=3.285">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>

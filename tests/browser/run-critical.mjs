@@ -17,7 +17,7 @@ const suites={
   board2:['board-pitch-all-pages','player-eye-renderer','meeting-work-pages','meeting-formation','meeting-new-look','meeting-view-3130','meeting-pitch-pick','board-quick-export','board-pdf-save-3204','board-import-safe-3123','board-vault-pages-3137','team-load-all-scenes','page-switch-play','anim-erase-export','anim-export-once','meeting-names-video','meeting-upgrade','gamemodel-anim','gamemodel-attach-pages','board-feedback-2975','anim-all-pages','anim-photo-pages','anim-photo-missing','anim-export-fit','anim-orient','shaper-ball','phone-page-strip','vault-phone-view-3134','rondo-grid','board-pitch-photo','board-shortcuts-3143','board-text-polish','board-reports-3254','board-grass-mow-3255'],
   identity:['session-team-picker','month-quick-detail','admin-content-play','admin-user-made','admin-safety','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','workspace-held-review-3146','workspace-guard-storage','workspace-late-save','workspace-board-draft','mobile-oauth-recovery','schedule-phone','phone-app-more','board-settings-manual','year-weekdays'],
   storage:['storage-conditional','items-stale-round-block','storage-optimize-coalesce','svg-guard','storage-safety','personal-docs-sync','library-insert-ack','library-read-revision','team-library','private-board-isolation','board-guest-save','roster-main-save','scout-unread-roster','roster-storage-failure-3144','autosave-journal-recovery','letter-pack','vault-file-import','community-process','letter-social','community-quality','community-elmiha','community-board','community-view-look','community-library','community-detail','community-cards','vault-examples','warm-tabs','thumb-diet','phone-boot-vault','vault-open-memory','match-wait-schedule-quota','match-mirror-quota-recovery','process-save-quota','sync-stall-report','crash-breadcrumb'],
-  idp:['match-board-tools','match-formats-8','match-fmt-3118','match-ob-tray','match-board-vault','match-meet-parts','match-lock-3137','match-large-schedule','match-board-show','availability','idp-recovery','idp-story-dedup','support','support-image','squad-phone','player-workspace','player-bulk-depth','squad-depth-drag','scouting-integration','review-training','idp-coach-goals','team-heads','learn-gm-loop','idp-update-reload','idp-pub-wipe','idp-cache-source'],
+  idp:['match-board-tools','match-formats-8','match-fmt-3118','match-ob-tray','match-board-vault','match-meet-parts','match-lock-3137','match-large-schedule','match-board-show','availability','avail-year-split','idp-recovery','idp-story-dedup','support','support-image','squad-phone','player-workspace','player-bulk-depth','squad-depth-drag','scouting-integration','review-training','idp-coach-goals','team-heads','learn-gm-loop','idp-update-reload','idp-pub-wipe','idp-cache-source'],
   /* 3.012 — 보드 끌기 성능은 WebKit 에서 혼자 149~223초(테스트 하나 240초 한도)였다. 느린 러너 하나가 board 잡 전체와 배포(release-gate)를 막지 않게
      자기 묶음으로 떼고, 이 테스트만 한도를 360초로 둔다(PER_TEST_MS) — 묶음이 혼자라 잡은 7분 안쪽, Netlify 의 12분 대기 안이다. */
   boardperf:['board-view-toolbar-move','board-portrait-goal-3145','board-drag-performance','board-pencil'],   /* 3.025 — 펜슬 그리기(손바닥 · 중간 점 · 프레임당 한 번 · 3D 투영 · 호버) */
@@ -31,18 +31,19 @@ suites.identity.push('update-delivery','update-client-lifecycle','one-window-327
 suites.records.push('multipitch-rotation','board-settings-pitches');
 suites.board.push('board-scout-import','board-roster-import');
 suites.idp.push('squad-group-change');
-suites.idp.push('avail-held-row-3281');suites.idp.push('items-stale-held');   /* 3.284 — 보관된 선수 행(journal + 기기 묶음 영수증)은 새 판 적용 · 화면 떠나기 전 저장 확인을 막지 않는다(held) · 알약 «일부 변경 보관» · 고르면 풀림 */   /* 3.281 — 보관된 선수 행(sq:<id>)이 있는 기기에서 가용인원 기록: 통짜 문서만 기다려 기록 · 보관 그대로 · 멈추면 까닭과 가는 길(e6fc5d26 · de2e508c) */
+suites.idp.push('avail-held-row-3281');suites.idp.push('items-stale-held');   /* 3.285 — 보관된 선수 행(journal + 기기 묶음 영수증)은 새 판 적용 · 화면 떠나기 전 저장 확인을 막지 않는다(held) · 알약 «일부 변경 보관» · 고르면 풀림 */   /* 3.281 — 보관된 선수 행(sq:<id>)이 있는 기기에서 가용인원 기록: 통짜 문서만 기다려 기록 · 보관 그대로 · 멈추면 까닭과 가는 길(e6fc5d26 · de2e508c) */
 suites.records.push('training-toolbar-layout');
 suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
 suites.board2.push('meeting-slide-transition');   /* 3.256 — 미팅 슬라이드 넘김: 같은 팀 · 번호만 잇기 · 넘기는 중 저장 막기 */
 suites.board.push('board-flat-turf-3263');   /* 3.263 — 평면 잔디: 잎결 · 실사 잔디 줄 약 4m · 가로 · 세로 · 운동장 카드마다(board2 웹킷은 20분 한도에 닿아 board 로) */
 suites.selection.push('board-vision-carry-3271','board-position-direct-3271');   /* 3.271 — 시야 · 시선은 이 페이지에만 + 이 장면부터 뒤로(756c0a48) · 오른쪽 클릭 창의 포지션(0033117a) */
 suites.board.push('board-page-undo-3271');   /* 3.271 — 페이지 추가 · 복제 · 삭제 되돌리기(1bc9b7d4) — board2 웹킷은 20분 한도에 닿아 board 로 */
+suites.selection.push('board-shape-delete-carry-3282');   /* 3.282 — 지운 그림은 이 장면부터 뒤 장면에서도(74e59fd4) · 알림의 «이 장면만» */
 suites.entry.push('sync-diagnosis','team-mobile','mobile-navigation');
 suites.entry.push('admin-metrics');
 suites.entry.push('player-bulk-touch','phone-consistency');
 suites.entry.push('schedule-fab-phone-3273');   /* 3.273 — 폰 일정의 떠 있는 «＋ 오늘에 추가»: 폭 112 · 글자 양옆 여백(3.218 의 min-width:44px 에 눌렸다) */
-suites.entry.push('note-export');suites.entry.push('note-picture-3279');suites.entry.push('profile-app-3280');   /* 3.265 — 개인 노트 «내보내기»(PDF로 저장 · 인쇄 · 이미지 저장) */
+suites.entry.push('note-export');suites.entry.push('note-picture-3279');suites.entry.push('profile-app-3280');suites.boardperf.push('items-stale-bulk-3281');   /* 3.265 — 개인 노트 «내보내기»(PDF로 저장 · 인쇄 · 이미지 저장) */
 suites.entry.push('i18n-english-shell');   /* 영어 모드 셸: 한글이 남지 않음 · 한국어로 되돌리기 · 한국어 사용자는 영어 사전을 받지 않음 · «학습» 없는 다섯 칸 */
 /* 3.272 — storage 묶음이 두 엔진 모두 20분 한도에 닿았다(PR #800 — 시험 합 16.4분 + 준비). 긴 셋(roster-outbox-full · xss-synced-docs · xss-synced-docs-team, 약 4.7분)은
    3~5분에 끝나는 boardperf 묶음에서 돈다 */

@@ -95,7 +95,7 @@ try{
  assert.equal(await page.evaluate(async()=>(await PSItems.readAll()).pending),true,'row projection remains blocked while held');
  // Mount the actual scout retry closure for the archived receipt. Its fresh request
  // carries the same durable A sources; the UI choice must settle this cached path as well.
- // 3.284 — 보관(journal + 기기 묶음 영수증)에 있는 행을 다시 올리면 «실패»가 아니라 held 로 끝난다: 저장 확인(psFlushPendingReady)은 지나가되
+ // 3.285 — 보관(journal + 기기 묶음 영수증)에 있는 행을 다시 올리면 «실패»가 아니라 held 로 끝난다: 저장 확인(psFlushPendingReady)은 지나가되
  // 영수증은 ACK 되지 않고 동기화 상태도 «저장됨»이 아니다. 예전(3.217~3.281)엔 teamSaves.hasFailed('sq:vp01') 이 참이었다.
  const mounted=await team.evaluate(receipt=>{const accepted=rosterSaveRows([],{},receipt);return {accepted};},queued.receipt);assert.equal(mounted.accepted,true);
  await team.waitForFunction(()=>!teamSaves.hasPending());

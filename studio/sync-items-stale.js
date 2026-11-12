@@ -14,7 +14,7 @@
   function id(x){return text(x)&&x.trim()===x&&['__proto__','prototype','constructor'].indexOf(x)<0;}
   function raw(x){return x===null||typeof x==='string';}
   var projectionWatches=new WeakMap(),latest=null;
-  /* 3.284 — 셸 밖(선수단 화면)에서 묻는 길: 이 창의 저장 엔진(sync.js)이 만든 마지막 인스턴스에 «이 요청이 이미 보관에 있나»를 묻는다.
+  /* 3.285 — 셸 밖(선수단 화면)에서 묻는 길: 이 창의 저장 엔진(sync.js)이 만든 마지막 인스턴스에 «이 요청이 이미 보관에 있나»를 묻는다.
      sync.js 는 예산이 없어(PSItems 에 못 붙임) 모듈이 접근자를 낸다. 인스턴스가 아직 없으면 «모른다» = 거짓(fail-closed). */
   function latestHeld(r){try{return !!latest&&latest.held(r)===true;}catch(_){return false;}}
   function latestArchived(j){try{return !!latest&&latest.archived(j)===true;}catch(_){return false;}}
@@ -121,7 +121,7 @@
       })().catch(function(e){if(ticket===loadTicket&&same(c,context()))loaded=null;throw e;});latestLoad=work;return work;
     }
     function signature(job){return JSON.stringify(payload(job));}
-    /* 3.284 — 증서(certificate)는 원문 글자 그대로이거나, 쓴 행이 없는(written 빈) 같은 요청(sameRequest)을 기존 보관에 맞춘 것일 수 있다.
+    /* 3.285 — 증서(certificate)는 원문 글자 그대로이거나, 쓴 행이 없는(written 빈) 같은 요청(sameRequest)을 기존 보관에 맞춘 것일 수 있다.
        같은 요청을 다시 올린 작업(새 sequence · at — 선수단 화면의 재시도 폐쇄)이 배경 회차마다 보관을 하나 더 만들지 않는다. 행을 일부 쓴 작업은 그 흔적(written)이 새 보관에 남아야 하므로 예전 그대로. */
     function skip(job){
       try{
@@ -140,7 +140,7 @@
         return records.some(function(r){return resolved.has(r.id)&&sameRequest(r,body,p);});
       }catch(_){return false;}
     }
-    /* 3.284 — 이 요청이 이미 활성 보관(아직 사람이 고르지 않은 items-stale-device)에 있다. 원문은 journal 에 불변으로, 영수증은 기기 묶음에 있어
+    /* 3.285 — 이 요청이 이미 활성 보관(아직 사람이 고르지 않은 items-stale-device)에 있다. 원문은 journal 에 불변으로, 영수증은 기기 묶음에 있어
        기기에 안전하다 — 다시 올리는 쪽(선수단 화면의 rosterSaveRows)은 실패 대신 held 로 끝낸다. 보관 원문 · 승자 선택 · 서버 기준은 건드리지 않는다. */
     function archived(job){
       try{
@@ -149,7 +149,7 @@
         return records.some(function(r){return !resolved.has(r.id)&&sameRequest(r,body,p);});
       }catch(_){return false;}
     }
-    /* 3.284 — 기기 묶음 영수증(read() 의 rows)이 모두 활성 보관의 영수증 안에 있다: 행마다 그 선수의 보관 영수증 행이 같은 마지막 판(token)이고
+    /* 3.285 — 기기 묶음 영수증(read() 의 rows)이 모두 활성 보관의 영수증 안에 있다: 행마다 그 선수의 보관 영수증 행이 같은 마지막 판(token)이고
        행의 모든 출처(key · id · token)를 담고 있어야 한다. 새 묶음(새 출처)이 하나라도 있으면 «올릴 차례의 변경»이라 거짓. 모르면(안 읽힘 · 빈 영수증) 거짓. */
     function held(receipt){
       try{

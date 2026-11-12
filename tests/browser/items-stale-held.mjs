@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {startFixture,openApp,WT,OUT,SIZES} from '../fixtures/team-app.mjs';
 
-// 3.284 — 보관된 선수 행(journal items-stale-device + 기기 묶음 영수증)이 «새 판 적용 · 화면 떠나기 전 저장 확인»(scout.html psFlushPendingReady →
+// 3.285 — 보관된 선수 행(journal items-stale-device + 기기 묶음 영수증)이 «새 판 적용 · 화면 떠나기 전 저장 확인»(scout.html psFlushPendingReady →
 // app.html psFlushAllPendingReady)을 영영 막던 길(운영 기록 flush_fail:fScout:store_ready.sync_local_changed:sq:<id> 46건 · update_deferred 6분마다).
 // 실제 PSItems/PSSync + IDB CAS + 실제 기기 묶음. 보관된 행은 items-stale-round-block 과 같은 방법으로 만든다(제품 보호 장치를 흉내 내지 않는다).
 // 고치기 전(3.281): 다시 올린 행이 teamSaves 에 «실패»로 남고(재시도 폐쇄가 before() 에서 매번 fenced), psHasPending 이 참(묶음 미ACK) → match_pending_left.

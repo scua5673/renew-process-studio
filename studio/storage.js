@@ -1786,7 +1786,7 @@
 
   /* 자체 저장 표시가 없는 화면을 위한 안전망.
      용량 초과 배너가 이미 떠 있으면 같은 말을 두 번 하지 않는다. */
-  /* 3.284 — 선수 행의 옛 입력 실패(sync-items-stale: items_write_stale_job · items_stale_review)는 «앱을 닫으면 사라지는» 편집이 아니다 —
+  /* 3.285 — 선수 행의 옛 입력 실패(sync-items-stale: items_write_stale_job · items_stale_review)는 «앱을 닫으면 사라지는» 편집이 아니다 —
      원문은 기기 묶음(roster-outbox)에 있고 다음 배경 회차가 journal 에 보관해 «보관된 변경»에서 고른다(3.217). 그 길(PATH_HELD)은 autosave-status.js 한 곳에서 읽는다. */
   function heldPath(error){
     try{

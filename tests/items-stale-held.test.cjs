@@ -1,5 +1,5 @@
 'use strict';
-// 3.284 — 보관된 선수 행(journal items-stale-device + 기기 묶음 영수증)은 «올릴 차례의 변경»이 아니다.
+// 3.285 — 보관된 선수 행(journal items-stale-device + 기기 묶음 영수증)은 «올릴 차례의 변경»이 아니다.
 // sync-items-stale.js: archived(job) — 이 요청이 이미 활성 보관에 있다 · held(receipt) — 기기 묶음 영수증이 모두 활성 보관 안에 있다 ·
 // 모듈 접근자 PSItemsStale.held/archived(셸 밖 선수단 화면이 묻는 길). storage.js: 그 실패의 알약은 «일부 변경 보관 — 앱 설정 › 데이터 › 보관된 변경».
 const test=require('node:test');
