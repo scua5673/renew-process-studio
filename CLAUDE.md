@@ -289,6 +289,8 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 헤드리스 크로미움은 iframe 안 `a.download` 내려받기 이름을 «download»로만 알린다(3.115) — 이름은 `HTMLAnchorElement.prototype.click` 을 감싸 `this.download` 로 본다. 받은 PDF 는 `pdftoppm -png` 로 그림을 볼 수 있다.
 - `anim-export-once` · `meeting-names-video` 도 이 컨테이너에서는 손대지 않은 코드에서 실패한다(영상 저장 — 3.115 · 3.128 에 staging 으로 확인).
 - 미리보기 그림의 한글 글자: `/usr/share/fonts/opentype/unifont/unifont.otf`.
+- 11/13(판 번호 없음) — `workspace-guard-storage` 의 `always` 가 3~6번에 1번 `barrier failed frames:fScout StorageOwnerChangedError` 로 떨어진 까닭: 첫 전환의 뒷정리가 아니라 **선수단 화면(fScout)이 아직 켜지는 중**이었다. 앱의 `ready` 뒤에도 그 화면은 1~2초 더 켜지고(`scoutBoot` → 보관함 `prepare` → 첫 정리 저장), 그 사이에 전환하면 ① 첫 장벽 때는 `psFlushPendingReady` 가 없어 지나가고 ② guard 뒤 두 번째 장벽에서 `roster-pending.js transitionProof` 가 «전환 전에 준비한 적 없음(`preparedStamp` 없음)»으로 멈춘다. 다 켜진 직후면 `mirror StorageOwnerChangedError` · `preswitch failed sync_local_changed` · `vp01 posName`(켜지며 붙이는 자리 이름) 으로도 떨어진다 — 모두 가드가 맞게 멈춘 것(자료 그대로, 다시 누르면 됨). 시험이 `scoutSettled`(`scoutBootPending===false` · `scoutDataLoaded` · `scMainMigrationPending===false` 뒤 flush → `syncNow` → flush)를 기다리게 했다(아이패드 · 폰은 선수단 화면을 미리 띄우지 않아 기다리지 않는다 — `psWarmNone`). 전환을 보는 시험은 `ready(page)` 만 믿지 말고 이것을 기다린다. 재현은 한 번씩이 아니라 **세 묶음을 동시에** 돌려야 잘 난다(고치기 전 30번 중 9번, 뒤 24/24 · 연속 25/25).
+- 같은 일이 실제 기기에서도 난다(앱을 열자마자 팀 전환 → «전환 취소 — 선수단·경기 화면의 저장을 확인하지 못했어요», 다시 누르면 됨). 장벽 앞에서 «불러오는 화면이 뜰 때까지» 기다리는 모듈을 시험해 봤으나 화면이 뜬 뒤의 첫 저장과 또 겹쳐 반쪽이었다(넣지 않음). 제대로 고치려면 화면마다 «다 켜졌다» 신호가 있어야 하고 sync.js 예산은 13바이트 남았다 — 제보가 오면 그때.
 
 ## Supabase
 - 프로젝트 `jvtajoeptzfsdwizxejg`. 오류 제보 `ps_support_reports` · 답변 `ps_support_replies`(관리자 답 `author_role='admin'`). 앱 오류 · CSP 보고 `ps_events`.

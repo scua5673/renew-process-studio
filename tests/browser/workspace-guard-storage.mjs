@@ -13,10 +13,23 @@ const init={fn:()=>{
    return set.call(this,k,v);
  };
 }};
+/* 11/13 — 전환은 선수단 화면(fScout)이 다 켜지고, 켜지며 하는 첫 정리 저장(평가 항목 · 자리 이름)이 서버까지 간 뒤에 시작한다.
+   데스크톱은 앱이 열린 뒤 선수단 화면을 미리 띄운다(app.html psWarmPlan). 앱은 바로 준비 완료(ready)로 보이지만 그 화면은 1~2초 더 켜진다.
+   그 사이에 전환하면 저장 가드가 «켜지는 중인 화면의 저장을 확인할 수 없다»로 전환을 취소한다(roster-pending.js transitionProof →
+   «barrier failed frames:fScout StorageOwnerChangedError», 켜진 직후면 «mirror» · «sync_local_changed»). 가드가 맞게 멈춘 것이고
+   이 시험이 보려는 것(전환 표식을 못 쓸 때)과는 다른 일이다. 아이패드 · 폰은 미리 띄우지 않으니(psWarmNone) 기다릴 화면이 없다. */
+async function scoutSettled(page){
+ await page.waitForFunction(()=>{try{
+   const f=document.getElementById('fScout'),w=f.contentWindow;
+   if(!f.getAttribute('src'))return !!window.__psSafeBoot||/^(ipad|phone)$/.test(document.documentElement.getAttribute('data-ps-device')||'');
+   return w.scoutBootPending===false&&w.scoutDataLoaded===true&&w.scMainMigrationPending===false&&typeof w.psFlushPendingReady==='function';
+  }catch(_){return false;}},null,{timeout:45000});
+ await page.evaluate(async()=>{await psFlushAllPendingReady();await PSSync.syncNow();await psFlushAllPendingReady();});
+}
 try{
  for(const mode of ['duplicate','always']){
   const {page,context,logs}=await openApp(fx,engine==='webkit'?'ipad':'desktop',{browsers,init});
-  await page.evaluate(()=>psFlushAllPendingReady());
+  await scoutSettled(page);
   const raw=JSON.stringify({notes:[{id:'qa-note',body:'synthetic note '.repeat(20000)}]});
   await page.evaluate(async({raw,mode})=>{
    await storage.set('cs_notes_v1',raw);localStorage.setItem('cs_notes_v1',raw);
