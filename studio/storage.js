@@ -1857,8 +1857,10 @@
         paintTracked();
         return row.promise;
       }
-      function ready(retryFailed){
-        var expected=current(),snapshot=Object.create(null),keys=Object.keys(entries);
+      /* 3.281 — only(k): 기다릴 키를 고른다(가용인원 기록은 통짜 문서만 — sq:<id> 행의 보관·실패는 배경 flush 몫). 없으면 전부 */
+      function ready(retryFailed,only){
+        var pick=function(k){return typeof only!=='function'||only(k)===true;};
+        var expected=current(),snapshot=Object.create(null),keys=Object.keys(entries).filter(pick);
         /* 전환/명시적 저장은 같은 원문을 한 번 재검증할 수 있다. 다른 키 성공으로
            해제하지 않고, 호출자가 소유자·거울 원문까지 확인한 경우에만 회복한다. */
         if(retryFailed)keys.forEach(function(k){
@@ -1877,7 +1879,7 @@
           });
         })).then(function(){
           if(current()!==expected)throw new Error('storage owner changed');
-          if(Object.keys(entries).some(function(k){return snapshot[k]!==entries[k]||entries[k].pending;}))return ready();
+          if(Object.keys(entries).filter(pick).some(function(k){return snapshot[k]!==entries[k]||entries[k].pending;}))return ready(undefined,only);
           return true;
         });
       }
