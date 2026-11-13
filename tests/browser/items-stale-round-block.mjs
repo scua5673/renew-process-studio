@@ -93,10 +93,15 @@ try{
  assert.equal(payload.authored.vp01,JSON.stringify({...JSON.parse(baseline.item),memo:'SYNTHETIC QUEUED A'}));assert.equal(payload.expected.vp01,baseline.item);assert.equal(comparison.provenance,'device-idb');assert.equal(comparison.values.vp01,queued.otherRaw);assert.deepEqual(payload.intent,queued.receipt);
  assert.equal(await page.evaluate(async()=>{try{await PSItems.flush();return false;}catch(e){return e.psStage==='items_stale_review';}}),true);
  assert.equal(await page.evaluate(async()=>(await PSItems.readAll()).pending),true,'row projection remains blocked while held');
- // Mount the actual failed scout retry closure. Its fresh request carries the
- // same durable A sources; the UI choice must settle this cached path as well.
+ // Mount the actual scout retry closure for the archived receipt. Its fresh request
+ // carries the same durable A sources; the UI choice must settle this cached path as well.
+ // 3.285 — 보관(journal + 기기 묶음 영수증)에 있는 행을 다시 올리면 «실패»가 아니라 held 로 끝난다: 저장 확인(psFlushPendingReady)은 지나가되
+ // 영수증은 ACK 되지 않고 동기화 상태도 «저장됨»이 아니다. 예전(3.217~3.281)엔 teamSaves.hasFailed('sq:vp01') 이 참이었다.
  const mounted=await team.evaluate(receipt=>{const accepted=rosterSaveRows([],{},receipt);return {accepted};},queued.receipt);assert.equal(mounted.accepted,true);
- await team.waitForFunction(()=>teamSaves.hasFailed('sq:vp01'));
+ await team.waitForFunction(()=>!teamSaves.hasPending());
+ const heldMount=await team.evaluate(async()=>({failed:teamSaves.hasFailed('sq:vp01'),pending:psHasPending(),outbox:rosterOutbox().pending(),flush:await psFlushPendingReady().then(()=>true,e=>e.psCode||String(e)),state:parent.PSSync.state().kind,pill:!!document.getElementById('psSaveFailed')}));
+ assert.deepEqual(heldMount,{failed:false,pending:false,outbox:true,flush:true,state:heldMount.state,pill:false});assert.notEqual(heldMount.state,'ok','held is never shown as saved');proof.heldMount=heldMount;
+ assert.equal((await archives()).filter(r=>r.doc.reason==='items-stale-device').length,1,'mounting the archived receipt archives nothing new');
  await page.screenshot({path:path.join(OUT,engine+'-stale-job-review.png'),animations:'disabled'});
  await page.evaluate(()=>PSAutosaveRecovery.open());const dialog=page.locator('#psAutosaveRecoveryDialog');await dialog.locator('[data-psar-id="'+original.doc.id+'"]').click();
  await dialog.locator('textarea[aria-label="보관된 선수 입력"]').waitFor();assert.equal(await dialog.locator('textarea[aria-label="보관된 선수 입력"]').inputValue(),original.doc.localRaw);assert.equal(await dialog.locator('textarea[aria-label="당시 기기의 다른 사본"]').inputValue(),original.doc.remoteRaw);

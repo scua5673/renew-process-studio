@@ -1765,7 +1765,7 @@
     try{ window.dispatchEvent(new CustomEvent('ps-save-state',{detail:{scope:scope,state:next,error:error||null,owner:owner}})); }catch(_){}
     if(next==='failed'){
       try{ window.PSStorageDiagnostic('save-failed:'+scope,error); }catch(_){}
-      pill(true);
+      pill(true,error);
     }else if(next==='saved'&&!anyFailed()){
       pill(false);
     }
@@ -1786,19 +1786,30 @@
 
   /* 자체 저장 표시가 없는 화면을 위한 안전망.
      용량 초과 배너가 이미 떠 있으면 같은 말을 두 번 하지 않는다. */
-  function pill(show){
+  /* 3.285 — 선수 행의 옛 입력 실패(sync-items-stale: items_write_stale_job · items_stale_review)는 «앱을 닫으면 사라지는» 편집이 아니다 —
+     원문은 기기 묶음(roster-outbox)에 있고 다음 배경 회차가 journal 에 보관해 «보관된 변경»에서 고른다(3.217). 그 길(PATH_HELD)은 autosave-status.js 한 곳에서 읽는다. */
+  function heldPath(error){
+    try{
+      if(!error||typeof error!=='object'||!/^items_stale|^items_write_stale/.test(String(error.psStage||'')))return '';
+      var A=window.PSAutosaveStatus||(window.parent&&window.parent!==window&&window.parent.PSAutosaveStatus);
+      return A&&A.paths&&A.paths.held?String(A.paths.held):'';
+    }catch(_){return '';}
+  }
+  function pill(show,error){
     if(!document.body) return;
     var el=document.getElementById('psSaveFailed');
     if(!show){ if(el)try{el.remove();}catch(_){} return; }
     if(quotaChecking())return;
     if(document.getElementById('psStorageFull')) return;
     if(el) return;
+    var held=heldPath(error);
     el=document.createElement('div'); el.id='psSaveFailed';
     el.style.cssText='position:fixed;left:16px;bottom:16px;z-index:99998;max-width:min(340px,88vw);'
       +'background:#C24A46;color:#fff;font:700 12px/1.45 Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
       +'padding:10px 12px;border-radius:11px;box-shadow:0 8px 24px rgba(0,0,0,.28);display:flex;align-items:center;gap:9px;';
     var t=document.createElement('span'); t.style.cssText='flex:1';
-    t.innerHTML='⚠ <b>저장되지 않았습니다.</b><br>앱을 닫으면 방금 편집이 사라집니다.';
+    if(held){t.appendChild(document.createTextNode('⚠ '));var hb=document.createElement('b');hb.textContent='일부 변경 보관';t.appendChild(hb);t.appendChild(document.createElement('br'));t.appendChild(document.createTextNode('선수 변경은 이 기기에 남아 있어요. '+held+'에서 남길 쪽을 고르면 이어서 저장해요.'));}
+    else t.innerHTML='⚠ <b>저장되지 않았습니다.</b><br>앱을 닫으면 방금 편집이 사라집니다.';
     var x=document.createElement('button'); x.type='button'; x.textContent='닫기';
     x.style.cssText='flex:0 0 auto;border:0;background:rgba(255,255,255,.22);color:#fff;font:inherit;padding:5px 9px;border-radius:7px;cursor:pointer';
     x.onclick=function(){ try{el.remove();}catch(_){} };

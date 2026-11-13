@@ -97,7 +97,10 @@ try{
  // Mount the actual failed scout retry closure. Its fresh request carries the
  // same durable A sources; the UI choice must settle this cached path as well.
  const mounted=await team.evaluate(receipt=>{const accepted=rosterSaveRows([],{},receipt);return {accepted};},queued.receipt);assert.equal(mounted.accepted,true);
- await team.waitForFunction(()=>teamSaves.hasFailed('sq:vp01'));
+ /* 3.285 — 보관(journal + 기기 묶음 영수증)에 있는 행을 다시 올리면 «실패»가 아니라 held 로 끝난다(items-stale-held): 영수증은 ACK 되지 않고 상태는 여전히 확인 대기 */
+ await team.waitForFunction(()=>!teamSaves.hasPending());
+ assert.equal(await team.evaluate(()=>teamSaves.hasFailed('sq:vp01')),false,'보관된 영수증을 다시 올린 것은 실패가 아니다(3.285)');
+ assert.equal(await team.evaluate(()=>rosterOutbox().pending()),true,'영수증은 그대로(고른 뒤 settle)');
  await page.screenshot({path:path.join(OUT,engine+'-stale-job-review.png'),animations:'disabled'});
  /* 3.281 — 한 번에 풀기: 알림 띠 «지금 정리» → «보관된 변경» 창의 «모두 해제». 항목마다 원래 확인 길을 지나고, 지금 기기 사본은 그대로 · 원문도 그대로. */
  const nudge=page.locator('#psStaleNudge');await nudge.waitFor({state:'visible',timeout:20000});

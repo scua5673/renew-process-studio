@@ -82,8 +82,16 @@ try{
   for(let n=1;n<=2;n++)await page.evaluate(n=>PSSync.syncNow('avail-held-round-'+n),n);
   const kept=await poll(async()=>{const k=(await archives()).filter(r=>r.doc.reason==='items-stale-device');return k.length===1?k:false;},'stale row archived once');
   assert.equal(await page.evaluate(async()=>{try{await PSItems.flush();return '';}catch(e){return e.psStage;}}),'items_stale_review');
-  // 3) 실제 기기처럼 실패한 행 저장이 다시 올라간 상태(부팅 때 rosterResumeRows 가 하는 일) — teamSaves 의 sq: 행은 실패로 남고 새 판 적용의 저장 확인은 막힌다(바뀌지 않은 범위)
+  // 3) 실제 기기처럼 실패한 행 저장이 다시 올라간 상태(부팅 때 rosterResumeRows 가 하는 일). 3.285 — 보관된 영수증 그대로면 held 로 끝나 막지 않으므로(items-stale-held),
+  //    여기서는 그 선수의 **아직 보관되지 않은 새 입력**(새 묶음)을 올린다 — teamSaves 의 sq: 행은 실패로 남고 새 판 적용의 저장 확인은 막힌다(보관되기 전엔 예전 그대로)
   assert.equal(await team.evaluate(receipt=>rosterSaveRows([],{},receipt),queued.receipt),true);
+  await team.waitForFunction(()=>!teamSaves.hasPending());
+  assert.equal(await team.evaluate(()=>teamSaves.hasFailed('sq:vp01')),false,'보관된 영수증을 다시 올린 것은 실패가 아니다(3.285)');
+  assert.equal(await page.evaluate(()=>{
+    const doc=JSON.parse(localStorage.getItem('scout_tool_v1')),edited=JSON.parse(JSON.stringify(doc.players)),p=edited.find(p=>p.id==='vp01');p.memo='SYNTHETIC QUEUED A2';
+    const scout=document.getElementById('fScout').contentWindow,receipt=scout.rosterOutbox().stage({players:edited,basePlayers:doc.players,changedIds:['vp01'],deletedIds:[]});
+    return scout.rosterSaveRows(edited,{changedIds:['vp01'],deletedIds:[],basePlayers:doc.players},receipt);
+  }),true);
   await team.waitForFunction(()=>teamSaves.hasFailed('sq:vp01'));
   const barrier=await team.evaluate(async()=>{try{await psFlushPendingReady();return {ok:true};}catch(e){return {ok:false,code:e.psCode,reason:typeof avSaveReason==='function'?avSaveReason(e):''};}});
   assert.equal(barrier.ok,false);assert.match(barrier.code,/^store_ready\.sync_local_changed:sq:vp01/,'운영 기록(flush_fail:fScout:store_ready.sync_local_changed:sq:<id>)과 같은 모양');
