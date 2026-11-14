@@ -19112,7 +19112,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{var ex=document.getElementById("mmPickOv");if(ex)ex.remove();}catch(_){}
     var cur=o.cur||null,live=cur?meetLiveMatch(cur):null,lists=meetPickLists(meetMatchesAll(),meetYmd());
     var ov=document.createElement("div");ov.id="mmPickOv";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-label","경기 연결");
-    var KD={official:"리그",cup:"컵",friendly:"친선"};   /* 3.080 — 일정과 같은 이름 */
+    var KD={official:"리그",cup:"컵",tour:"대회",friendly:"친선"};   /* 3.080 — 일정과 같은 이름(3.287 대회 — match-kind.js) */
     function row(m,past){ var on=cur&&String(cur.mid)===String(m.id);
       var meta=[m.competition||KD[m.kind]||"",m.homeAway||""].filter(Boolean).join(" · ");
       var tail=""; if(past){ var su=String(m.scoreUs==null?"":m.scoreUs).trim(),st=String(m.scoreThem==null?"":m.scoreThem).trim(); if(su!==""&&st!=="")tail=su+":"+st; }

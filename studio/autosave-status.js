@@ -179,5 +179,28 @@
       }
     });
   }
-  return {view:view,combine:combine,observe:observe,observeShell:observeShell};
+  /* 3.281 — 직접 저장(가용인원 기록 창)이 멈춘 까닭을 코치 말로. 저장 엔진의 psCode(sync_local_changed · sync_storage · sync_workspace_changed)나
+     기기 저장 공간 부족을 알면 그 문장과 가는 길(PATH_HELD · PATH_DIAG)을, 모르면 예전 한 문장. o.label(key) 는 psKey(sq:<id> · scout_tool_v1)를
+     코치 말로, o.quota() 는 기기 저장 공간 부족 표시. psCode 없이 psKey 만 있으면 그 자료의 기기 저장 확인이 남은 것(sync_storage 로 본다). */
+  function reason(error,options){
+    var o=options||{},e=error&&typeof error==='object'?error:{message:String(error||'')},msg=String(e.message||'').trim(),stage=String(e.psStage||'');
+    var key=e.psKey?String(e.psKey):'',who='';try{who=key&&typeof o.label==='function'?String(o.label(key)||''):'';}catch(_){who='';}
+    var full=false;try{full=typeof o.quota==='function'&&o.quota()===true;}catch(_){full=false;}
+    var quota=full||e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||e.code===22||e.code===1014||/quota|저장 공간/i.test(msg);
+    var code=String(e.psCode||'');
+    /* scout.html psFlushPendingReady 의 tag() 는 psCode 를 «store_ready.sync_local_changed:sq:<id>» 로 바꿔 둔다(psTagged) — 그 속의 코드 · 키를 읽는다 */
+    if(e.psTagged===true){var t=/^[a-z_]+(?:\.([a-z_]+))?(?::(.+))?$/.exec(code);if(t){code=t[1]==='owner_changed'?'sync_workspace_changed':t[1]==='raw_changed'?'':(t[1]||'');if(!key&&t[2]){key=t[2];try{who=typeof o.label==='function'?String(o.label(key)||''):'';}catch(_){who='';}}}}
+    if(!code&&(quota||key))code='sync_storage';
+    var out={code:code,stage:stage,key:key,path:'',text:''},lead=who?who+' · ':'';
+    if(code==='sync_local_changed'){
+      var held=/^items_stale|^items_write_stale/.test(stage);
+      out.path=PATH_HELD;out.text=lead+(held?'앞선 입력을 이 기기에 보관해 두었습니다.':(msg||'다른 편집을 먼저 확인해야 합니다.'))+' 입력은 이 창에 남아 있습니다. '+PATH_HELD+'에서 남길 쪽을 고른 뒤 다시 기록해 주세요.';return out;
+    }
+    if(code==='sync_storage'){
+      out.path=PATH_DIAG;out.text=lead+(quota?'기기 저장 공간이 모자라 기록을 멈췄습니다.':(msg||'기기 저장 확인이 남아 있습니다.'))+' 입력은 이 창에 남아 있습니다. '+PATH_DIAG+'에서 이유를 본 뒤 다시 기록해 주세요.';return out;
+    }
+    if(code==='sync_workspace_changed'){out.text=lead+(msg||'계정이나 팀이 바뀌었습니다.')+' 기록 창을 닫고 다시 열어 주세요.';return out;}
+    out.text='기록하지 못했습니다. 입력은 남아 있습니다. 다시 시도하거나 창을 닫고 최신 기록을 확인해 주세요.';return out;
+  }
+  return {view:view,combine:combine,observe:observe,observeShell:observeShell,reason:reason,paths:{diag:PATH_DIAG,held:PATH_HELD}};
 });
