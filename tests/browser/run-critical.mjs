@@ -37,6 +37,7 @@ suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meet
 suites.board2.push('meeting-slide-transition');   /* 3.256 — 미팅 슬라이드 넘김: 같은 팀 · 번호만 잇기 · 넘기는 중 저장 막기 */
 suites.board.push('board-flat-turf-3263');   /* 3.263 — 평면 잔디: 잎결 · 실사 잔디 줄 약 4m · 가로 · 세로 · 운동장 카드마다(board2 웹킷은 20분 한도에 닿아 board 로) */
 suites.board.push('board-page-thumb-diet-3288');   /* 3.288 — 페이지 장면 썸네일은 저장으로 나가는 사본에서만 뗀다 · 다시 열면 장면 줄이 다시 그린다(제보 de2e508c) */
+suites.board.push('team-load-team34-3288');   /* 3.288 — 저장 팀을 팀 3 · 4 에도(제보 29c97fc5): 자리 그대로 · 남는 선수와 판에 없는 팀은 대기 줄 둘째 줄 · 다른 팀을 덮지 않는다 */
 suites.selection.push('board-vision-carry-3271','board-position-direct-3271');   /* 3.271 — 시야 · 시선은 이 페이지에만 + 이 장면부터 뒤로(756c0a48) · 오른쪽 클릭 창의 포지션(0033117a) */
 suites.board.push('board-page-undo-3271');   /* 3.271 — 페이지 추가 · 복제 · 삭제 되돌리기(1bc9b7d4) — board2 웹킷은 20분 한도에 닿아 board 로 */
 suites.selection.push('board-shape-delete-carry-3282');   /* 3.282 — 지운 그림은 이 장면부터 뒤 장면에서도(74e59fd4) · 알림의 «이 장면만» */
