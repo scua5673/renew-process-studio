@@ -2641,17 +2641,9 @@ function libHash(it){return hash(libShareJSON(it));}
 /* ══ 3.005 · 옛 자료의 장면별 썸네일 정리 ══ 2.559 부터 저장은 장면 0 썸네일만 남긴다. 그 전 자료의 frames[1…].thumb 를 **이 기기 사본에서만** 뗀다
    (서버로 올리지 않고 시각도 그대로 — 고친 적 없으면 기준 지문 m.li[id].h 만 옮긴다). 받은 자료도 적용 전에 거친다. 공간마다 한 번은 보관함 단계를 건너뛰지 않는다(m.ld). ══ */
 /* ── 3.005 · 썸네일 정리 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
-var LIB_DIET=1;
-function libDietHas(it){
-  var fr=(it&&typeof it==='object')?it.frames:null; if(!Array.isArray(fr))return false;
-  for(var i=1;i<fr.length;i++){ var f=fr[i]; if(f&&typeof f==='object'&&!Array.isArray(f)&&typeof f.thumb==='string'&&f.thumb)return true; }
-  return false;
-}
-function libDietItem(it){
-  var n=0,fr=(it&&typeof it==='object')?it.frames:null; if(!Array.isArray(fr))return 0;
-  for(var i=1;i<fr.length;i++){ var f=fr[i]; if(f&&typeof f==='object'&&!Array.isArray(f)&&typeof f.thumb==='string'&&f.thumb){ delete f.thumb; n++; } }
-  return n;
-}
+var LIB_DIET=2;   /* 3.288 — 페이지 장면(pages[].anim.frames)까지 · 규칙은 lib-diet.js(제보 de2e508c) */
+function libDietHas(it){ var D=window.PSLibDiet; return !!D&&D.has(it); }
+function libDietItem(it){ var D=window.PSLibDiet; return D?D.strip(it):0; }
 /* ── 3.005 · 썸네일 정리 순수 구간 끝 ── */
 /* ══ 3.071 · 폰 · 아이패드는 보관함 본문을 조금씩 받는다 ══
    10/17 아이폰 · 아이패드(운영자 계정 하나 · 팀 보관함 149개 33MB · 한 개 최대 2MB): 앱을 열면 load 뒤 5초 안에 강제 종료 →

@@ -58,6 +58,27 @@ test('토큰보다 많은 선수는 extra — 대기 줄은 16명마다 한 줄 
   assert.equal(L.bench(16)[1],0.965-0.05);
 });
 
+/* 3.288 — 팀 3 · 4(제보 29c97fc5 «팀 3, 팀 4 에도 불러오기»): 판에 그 팀 토큰이 없으면 자리 없이 대기 줄만, 팀 1 · 2 의 첫 줄을 덮지 않게 둘째 줄부터 */
+test('대기 줄의 첫 칸(from) — 자리가 없으면 모두 대기 줄, from 16 은 둘째 줄부터라 첫 줄(팀 1 · 2 대기)과 겹치지 않는다',()=>{
+  const players=Array.from({length:20},(_,i)=>P(i?'CM':'GK','선수'+i));
+  const first=L.plan([],players.slice(0,16),{keep:true}),p=L.plan([],players,{keep:false,from:16});
+  assert.equal(p.bench,20);assert.deepEqual(p.pick,[]);assert.ok(p.add.every(a=>a.bench));
+  assert.deepEqual([p.add[0].x,p.add[0].y],L.bench(16));assert.deepEqual([p.add[19].x,p.add[19].y],L.bench(35));
+  const key=a=>a.x.toFixed(3)+','+a.y.toFixed(3),taken=new Set(first.add.map(key));
+  assert.equal(p.add.filter(a=>taken.has(key(a))).length,0,'첫 줄 16칸과 안 겹친다');
+  assert.equal(new Set(p.add.map(key)).size,20);
+  assert.ok(p.add.every(a=>a.x>0&&a.x<1&&a.y>0&&a.y<1),'운동장 안');
+  assert.deepEqual(L.plan(S442,players,{keep:true}).add[0],Object.assign(L.plan(S442,players,{keep:true,from:0}).add[0]),'from 을 안 주면 예전 그대로');
+});
+test('작전판 — 불러오기 창은 팀 넷, 팀 3 · 4 는 판에 없으면 대기 줄(둘째 줄)',()=>{
+  const B=require('node:fs').readFileSync(require('node:path').join(__dirname,'../studio/board.html'),'utf8');
+  assert.ok(B.includes('<option value="blue">팀 1</option><option value="red">팀 2</option><option value="yellow">팀 3</option><option value="green">팀 4</option></select>'));
+  assert.ok(B.includes("x34=side==='yellow'||side==='green'"));
+  assert.ok(B.includes("cur.length?_sqTokSlots(cur,flip):x34?[]:(FORM[fe&&fe.value]||FORM['433'])"));
+  assert.ok(B.includes("{keep:cur.length>0,from:x34?16:0,code:posCode,base:posBase,group:posGroup}"));
+  assert.ok(B.includes("flip=cur.length?_sqTokFlip(cur):isRightTeam(side)"),'팀 4 는 팀 2 쪽(오른쪽 팀) 구석');
+});
+
 test('판이 비었으면 포메이션 자리에 새로 놓고 빈 자리는 비워 둔다',()=>{
   const players=[P('GK','골키퍼'),P('LCB','왼쪽 수비'),P('ST','공격수')];
   const p=L.plan(S442,players,{keep:false});
