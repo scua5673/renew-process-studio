@@ -28,8 +28,9 @@
       r.text=text;return r;
     }catch(_){return null;}
   }
-  /* 담은 시각(_savedAt)만 다른 두 본문은 같은 작업이다 */
-  function body(raw){try{var d=JSON.parse(raw);delete d._savedAt;return JSON.stringify(d);}catch(_){return String(raw);}}
+  /* 담은 시각(_savedAt)만 다른 두 본문은 같은 작업이다. 3.288 — 페이지 장면 썸네일(lib-diet.js 가 저장에서 뗀다)만 다른 것도:
+     옛 판이 남긴 무거운 사본을 새 판의 가벼운 화면과 견줄 때 «다른 작업»으로 보고 띠를 띄우지 않게 */
+  function body(raw){try{var d=JSON.parse(raw);delete d._savedAt;try{if(d.boardPages&&typeof PSLibDiet!=='undefined')PSLibDiet.pagesStrip(d.boardPages.pages);}catch(_){}return JSON.stringify(d);}catch(_){return String(raw);}}
   function newer(a,b){return a&&b?(b.at>a.at?b:a):(a||b);}
   /* 쓸 자리: 이번에 연 문서의 자리 → 빈 자리 → 저장본보다 낡은 자리 → 가장 오래된 자리. recs[i] = 그 자리의 사본 또는 null */
   function pickSlot(recs,load,savedAt,now){
