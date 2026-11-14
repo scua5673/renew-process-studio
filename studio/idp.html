@@ -6,7 +6,7 @@
 <!-- PROCESS — IDP (선수 개인 성장: 프로필·셀프 평가·개인 훈련) · 설계: IDP-설계.md v1.1 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="storage.js"></script><script src="training-intensity.js"></script><script src="idp-profile-name.js"></script><script src="team-audience.js"></script>
+<script src="storage.js"></script><script src="match-kind.js"></script><script src="training-intensity.js"></script><script src="idp-profile-name.js"></script><script src="team-audience.js"></script>
 <script src="idp-evidence.js"></script>
 <script src="idp-recovery.js"></script>
 <script src="idp-weekly-growth.js"></script>
@@ -14395,7 +14395,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +'</div></section>'; }
     }catch(_){}
     function row(m){
-      var sc=mtScore(m), rl=sc?{W:'승',D:'무',L:'패'}[sc.r]:'', kind=m.kind==='friendly'?'친선':(m.kind==='cup'?'컵':'리그');
+      var sc=mtScore(m), rl=sc?{W:'승',D:'무',L:'패'}[sc.r]:'', kind=PSMatchKind.label(m.kind);
       return '<button type="button" class="mt-row" data-mt-open="'+esc(m.id)+'"><span class="mt-row-d">'+esc(mtDate(m.date))+(m.time?' '+esc(m.time):'')+'</span>'
         +'<span class="mt-row-m"><b>vs '+esc(m.opponent||'상대')+'</b><small>'+kind+(m.competition?' · '+esc(m.competition):'')+'</small></span>'
         +'<span class="mt-row-r">'+(sc?'<b class="r-'+sc.r+'">'+sc.us+':'+sc.them+'<i>'+rl+'</i></b>':'')
@@ -14417,7 +14417,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<button type="button" class="gl-pick none" data-mt-vnone'+(cur?'':' hidden')+'>연결 해제</button></div></div>';
   }
   function rMatchDetail(m){
-    var sc=mtScore(m), kind=m.kind==='friendly'?'친선':(m.kind==='cup'?'컵':'리그'), rl=sc?{W:'승',D:'무',L:'패'}[sc.r]:'', who=ro()?'선수':'내', future=mtUpcoming(m);
+    var sc=mtScore(m), kind=PSMatchKind.label(m.kind), rl=sc?{W:'승',D:'무',L:'패'}[sc.r]:'', who=ro()?'선수':'내', future=mtUpcoming(m);
     var mm={}; try{ mm=rvRec(viewing).matchMessages||{}; if(!mm||typeof mm!=='object'||Array.isArray(mm))mm={}; }catch(_){ mm={}; }
     var h='<button type="button" class="mt-back" data-mt-back>‹ 경기 목록</button>';
     var r=mtSelf(m.id), sc2=mtSc5(r.score), _apps=String(r.apps||'');   /* 2.782 — 출전은 머리 카드로 올라간다 */
@@ -16294,7 +16294,7 @@ html.ps-page-idp .dcols,html.ps-page-idp .dcol{display:contents}
   html.ps-page-idp body.ps-player-role .dcol{display:block;min-width:0}
 }
 </style>
-<link rel="stylesheet" href="team-mobile.css?v=3.284">
+<link rel="stylesheet" href="team-mobile.css?v=3.287">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>

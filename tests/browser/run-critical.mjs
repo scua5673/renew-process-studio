@@ -53,6 +53,7 @@ suites.boardperf.push('roster-outbox-full');   /* 3.253 — 선수 변경 묶음
 suites.boardperf.push('xss-synced-docs');   /* 3.271 — 팀원이 동기화로 보낸 IDP · 일정 문서가 코치 화면에서 실행되지 않는다(끼워 넣은 값 탐침) */
 suites.identity.push('sched-fill-team');   /* «일정 ＋» 시트의 «팀 공통»이 «훈련»을 누르면 A팀이 되던 것 — 팀 공통 · 한 팀 · 여러 팀 */
 suites.records.push('sched-day-kind');   /* 한 팀을 OFF 로 돌린 날은 일정 칸 · 요약 · 팀 «오늘» · 주간 PDF 가 모두 OFF(PSSchedule.dayKind) */
+suites.records.push('match-kind-tour');   /* 3.287 — 경기 종류 «대회»: 일정 시트 · 월간 칸 · 월간 팝업(오른쪽 끝 칸도 화면 안) · 경기 목록(공식전) · 경기 정보 */
 suites.records.push('sched-memo-autosave');   /* 세션 시트 «메모» · «장소»: 치는 동안 저장 + psFlushPending · pagehide · visibilitychange(한글 조합 · 새로고침 · 끊긴 동안) */
 suites.identity.push('sched-safe-actions');   /* 세션 × 되돌리기 알림 · × 44px · 칸 밖으로 안 잘림 / «지난주 복사»가 잡힌 경기를 안 덮음 / «안 올라간 변경» 줄이 판을 안 밂 */
 suites.entry.push('phone-drill-blank');   /* 폰 보기 전용: 장면이 있는 가로 작전판이 빈 화면(숨은 장면 줄 몫으로 판 높이 0) — 보관함 보기 · 전체화면 · 팀 오늘의 훈련 보기, 360 · 390 · 430 */
