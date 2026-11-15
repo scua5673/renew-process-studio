@@ -117,7 +117,9 @@ try{
   await dialog.getByRole('button',{name:'닫기',exact:true}).click();await page.waitForTimeout(800);
   if(await page.evaluate(()=>PSSync.state().reason!=='items_stale_review'))break;
   await page.evaluate(()=>PSAutosaveRecovery.open());const again=dialog.locator('[data-psar-action="resolve-all-items"]');
-  await dialog.locator('.psar-status').waitFor();await page.waitForTimeout(500);
+  // open() resolves after reading/rendering the list. Successful reads clear the
+  // status text, so waiting for that empty paragraph to be visible races forever.
+  await dialog.waitFor({state:'visible'});await page.waitForTimeout(500);
   if(await again.count()){await again.click();await dialog.getByText(/보류 \d+건을/).waitFor({timeout:30000});}
  }
  await poll(()=>page.evaluate(()=>PSSync.state().reason!=='items_stale_review'),'보류 상태가 풀린다');
