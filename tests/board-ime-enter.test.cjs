@@ -43,7 +43,8 @@ function rosterSetup(){
   return n;
  }
  const panel=node('div'),players=[{id:'a',team:'yellow',name:'원래',num:'7'}];
- const context={document:{getElementById:id=>id==='rosterPanel'?panel:null,createElement:node},state:{players,teamColors:{}},autoTxt:()=>"#111",syncNameToScenes(){counts.sync++;},renderTokens(){counts.paint++;}};
+ const context={PSTeams:require('../studio/board-teams.js'),   /* 3.294 — 잘라 온 구간의 TEAMHEX 가 새 팀 색을 채운다 */
+  document:{getElementById:id=>id==='rosterPanel'?panel:null,createElement:node},state:{players,teamColors:{}},autoTxt:()=>"#111",syncNameToScenes(){counts.sync++;},renderTokens(){counts.paint++;}};
  vm.runInNewContext(source.slice(start,end),context);
  context.renderRoster();
  const name=panel.children.find(x=>x.className==='rs-row').children.find(x=>x.className==='rs-name');
