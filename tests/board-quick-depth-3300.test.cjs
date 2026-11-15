@@ -94,6 +94,59 @@ test('library item and edit-back: same item, same places, drawings and look kept
   assert.equal(Q.editable({...it,quick:null}),false);assert.equal(Q.editable({...it,type:'meeting'}),false);
 });
 
+test('moving a slot: stage percent ↔ world, only moved slots rewrite the token place, swap leaves places alone',()=>{
+  // 창의 자리(왼쪽 % · 위 %) ↔ 세계 좌표 — 포메이션 자리와 같은 식
+  for(const [k,F] of Object.entries(Q.FORMS))F.s.forEach((sl,i)=>assert.deepEqual(Q.world(k,sl[1],sl[2]),Q.at(k,i),k+' '+i));
+  const w=Q.world('4-2-3-1',70,40);assert.deepEqual(w,{x:660,y:506});
+  const back=Q.pct('4-2-3-1',w.x,w.y);assert.ok(Math.abs(back[0]-70)<0.2&&Math.abs(back[1]-40)<0.2,JSON.stringify(back));
+  assert.deepEqual(Q.world('3-3-1',50,50),{x:555,y:370},'small pitches are centred');
+  assert.deepEqual(Q.world('4-2-3-1',50,50,'u12'),Q.world('3-3-1',50,50),'saved pitch spec wins over the formation default');
+  assert.notDeepEqual(Q.world('4-2-3-1',20,20,'u12'),Q.world('4-2-3-1',20,20));
+  // 새 보드 — 옮긴 자리만 그 자리, 나머지는 포메이션 자리
+  const s=Q.FORMS['4-2-3-1'].s.map((_,i)=>['선수'+i]),pos=s.map(()=>null);pos[8]=[70,40];
+  const it=Q.itemFor('4-2-3-1',s,'',Date.UTC(2026,10,16),pos);
+  assert.deepEqual([it.snap.players[8].x,it.snap.players[8].y],[660,506]);
+  s.forEach((_,i)=>{if(i!==8)assert.deepEqual([it.snap.players[i].x,it.snap.players[i].y],[Q.at('4-2-3-1',i).x,Q.at('4-2-3-1',i).y],'slot '+i);});
+  // 토큰이 서 있는 곳을 창의 자리로 읽는다(아이패드에서 옮긴 토큰도)
+  it.snap.players[2].x=300;it.snap.players[2].y=200;
+  const seen=Q.posFrom(it);
+  assert.ok(Math.abs(seen[8][0]-70)<0.2&&Math.abs(seen[8][1]-40)<0.2);
+  assert.deepEqual(seen[2],[25,74.3]);
+  assert.ok(Math.abs(seen[0][0]-50)<0.2&&Math.abs(seen[0][1]-89)<0.2,'unmoved token reads as its formation place');
+  const gone={...it,snap:{...it.snap,players:it.snap.players.filter(p=>p.id!==5)}};assert.equal(Q.posFrom(gone)[4],null,'a deleted token falls back to the formation place');
+  // 고치기 — 옮긴 자리만 새로 쓰고, 안 옮긴 토큰은 글자 그대로(반올림도 없다)
+  it.snap.players[3].x=123.4;it.snap.players[3].num='77';
+  const moved=s.map(()=>null);moved[10]=[50,15];
+  Q.applyEdit(it,'4-2-3-1',s,'',it.savedAt+5,moved);
+  assert.deepEqual([it.snap.players[10].x,it.snap.players[10].y],[923,370]);
+  assert.deepEqual([it.snap.players[3].x,it.snap.players[3].num],[123.4,'77']);
+  assert.deepEqual([it.snap.players[2].x,it.snap.players[2].y],[300,200]);
+  assert.deepEqual([it.snap.players[8].x,it.snap.players[8].y],[660,506]);
+  // 운동장 밖으로는 못 나간다
+  const edge=s.map(()=>null);edge[1]=[-30,140];Q.applyEdit(it,'4-2-3-1',s,'',it.savedAt+9,edge);
+  const e=Q.pct('4-2-3-1',it.snap.players[1].x,it.snap.players[1].y);assert.ok(e[0]>=5.8&&e[0]<=94.2&&e[1]>=2.8&&e[1]<=95.2,JSON.stringify(e));
+  // 포메이션을 바꾸면 새 포메이션 자리(옮긴 자리는 따라가지 않는다)
+  Q.applyEdit(it,'4-3-3',Q.remap('4-2-3-1',s,'4-3-3').slots,'',it.savedAt+12,Q.FORMS['4-3-3'].s.map(sl=>[sl[1],sl[2]]));
+  Q.FORMS['4-3-3'].s.forEach((_,i)=>assert.deepEqual([it.snap.players[i].x,it.snap.players[i].y],[Q.at('4-3-3',i).x,Q.at('4-3-3',i).y],'4-3-3 '+i));
+});
+
+test('drag wiring: token grabs at once, name labels after a long press, drop on a token swaps names',()=>{
+  const q=read('studio/board-quick-depth.js'),v=read('studio/board-phone-view.js');
+  assert.match(q,/\.pq-bdg\{[^}]*touch-action:none/,'the round token never starts a scroll');
+  assert.match(q,/HOLD=280/,'same long press as the squad depth board');
+  assert.match(q,/quick:e\.pointerType==='mouse'\|\|!!e\.target\.closest\('\.pq-bdg'\)/);
+  assert.match(q,/doc\.addEventListener\('touchmove',block,\{passive:false\}\)/);
+  assert.match(q,/if\(Date\.now\(\)-dragged<450\)return;/,'the click after a drop does not open the sheet');
+  assert.match(q,/M\.slots\[d\.i\]=M\.slots\[d\.to\];M\.slots\[d\.to\]=a;/,'drop on another token swaps the two name lists');
+  assert.match(q,/M\.pos\[d\.i\]=\[round1\(d\.l\),round1\(d\.t\)\];M\.moved\[d\.i\]=true;/);
+  assert.match(q,/pos=movedPos\(\)/,'only moved slots are written');
+  assert.match(q,/data-pq="pos-reset" id="pqPosReset" hidden/);
+  assert.match(q,/label:'이름 · 자리 고치기'/);
+  assert.match(v,/qe\.mode==='edit'/,'viewing my quick board: the tap hint points at the edit button');
+  const en=read('studio/i18n/en-board.js');
+  for(const k of ['이름 · 자리 고치기','포메이션 자리로','포메이션 자리로 돌렸어요','{} 자리를 옮겼어요','{} ↔ {} 이름을 맞바꿨어요','고친 내용을 버리고 닫을까요?','이름 · 자리는 위의 «{}»에서 바꿔요'])assert.ok(en.includes('"'+k+'":'),k);
+});
+
 test('names are trimmed, capped and never empty',()=>{
   assert.deepEqual(Q.splitNames(' 가 ,, 나 / 다 '),['가','나','다']);
   assert.deepEqual(Q.splitNames('가 나 다'),['가','나','다'],'Korean names separated by spaces only');

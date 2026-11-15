@@ -2,10 +2,12 @@
    폰 «보드»는 보기 전용(3.230)이라 큰 편집기를 열지 않는다. 안내 띠(board-phone-view.js)의 «＋ 빠른 보드»가 이름만 넣는 창을 띄우고,
    «저장»이 보관함에 작전판 하나를 새로 담는다(페이지 1 · 장면 없음). 자리마다 선수 토큰 하나 — 자리 표시 pos · 주전 name · 뒤 순번 depth(이름 목록).
    · 뒤 순번은 토큰의 새 칸 depth 하나다. 이 모듈이 makeToken 을 감싸 이름표 밑에 흐린 이름표로 그린다(폰 · 아이패드 · 컴퓨터 · 내보내기 모두 같은 SVG).
-   · 보관함 항목의 quick:{v,form} 이 «빠른 보드» 표시 — 폰 보기에서 «이름 고치기»로 이 창을 다시 연다(만든 사람 · 페이지 하나 · 장면 하나일 때만).
+   · 보관함 항목의 quick:{v,form} 이 «빠른 보드» 표시 — 폰 보기에서 «이름 · 자리 고치기»로 이 창을 다시 연다(만든 사람 · 페이지 하나 · 장면 하나일 때만).
      고치면 토큰 이름 · 뒤 순번만 바꾸고 그림 · 장비 · 판 설정 · 같은 포메이션의 토큰 자리는 그대로 둔다.
    · «선수단에서»는 board-scout-import.js 의 read(win,'team') · teamRows 를 읽기만 한다(선수단 순서 = 뎁스 순서, 선수단 자료는 바꾸지 않는다).
    · 쓰는 길은 보관함의 원래 길(libTurn → libGet → libWrite + libTouch · stampCreator · editedAt=savedAt, 3.291).
+   · 자리 옮기기(사용자 11/16 «선수단 토큰이 움직이게 · 슬롯처럼 이동»): 창의 토큰을 끌어 옮긴다 — 빨간 토큰은 바로, 이름표는 길게(280ms · 선수단 뎁스 판 슬롯과 같은 규칙).
+     빈 곳에 놓으면 그 자리가 옮겨지고(토큰 x · y), 다른 토큰 위에 놓으면 두 자리의 이름을 맞바꾼다. 옮긴 자리만 토큰 좌표를 새로 쓴다(안 옮긴 토큰은 글자 그대로).
    board.html 은 <script> 한 줄 + window.__vaultOpenView 한 줄. 순수 함수는 단위 시험이 바로 부른다. */
 (function(root,factory){
   var api=factory();
@@ -37,6 +39,8 @@
   var FAM_KO={GK:'골키퍼',LB:'왼쪽 수비',RB:'오른쪽 수비',FB:'풀백',CB:'센터백',DM:'수비형 미드',CM:'중앙 미드',AM:'공격형 미드',LW:'왼쪽 윙',RW:'오른쪽 윙',W:'윙',ST:'공격수'};
   var MAX_NAMES=12,NAME_LEN=20,TOK=0.8,DEPTH_SHOW=4;
   var DEFAULT_FORM='4-2-3-1',TAG='빠른 보드';
+  /* 창의 운동장 안에서 토큰이 설 수 있는 범위(왼쪽 % · 위 %) · 길게 누르기 · 맞바꾸기 거리(px) */
+  var LMIN=6,LMAX=94,TMIN=3,TMAX=95,HOLD=280,SWAP_PX=20;
 
   function clean(n){return String(n==null?'':n).replace(/\s+/g,' ').trim().slice(0,NAME_LEN);}
   function slotsOf(form){return (FORMS[form]||FORMS[DEFAULT_FORM]).s;}
@@ -116,39 +120,48 @@
     return {slots:out,hit:hit,miss:miss};
   }
   /* 세계 좌표 — 11인제 1m = 10 단위, 가운데 (555,370). 작은 규격은 그 안 가운데(board.html PR()). 세로 보기(spFlip 끔)는 x 가 작을수록 아래 */
-  function at(form,i){
-    var F=FORMS[form]||FORMS[DEFAULT_FORM],s=F.s[i],sp=SPEC[F.n];
-    return {x:Math.round(555+((1-s[2]/100)-0.5)*sp[1]*10),y:Math.round(370+(s[1]/100-0.5)*sp[2]*10)};
+  function dims(form,spec){
+    var sp=SPEC[(FORMS[form]||FORMS[DEFAULT_FORM]).n];
+    if(spec)for(var k in SPEC){if(SPEC[k][0]===spec){sp=SPEC[k];break;}}
+    return sp;
   }
-  function players(form,slots,prev){
+  /* 창의 자리(왼쪽 % · 위 %) ↔ 세계 좌표. spec 은 저장본의 운동장 규격(아이패드에서 바꿨을 수 있다) */
+  function world(form,l,t,spec){var sp=dims(form,spec);return {x:Math.round(555+((1-t/100)-0.5)*sp[1]*10),y:Math.round(370+(l/100-0.5)*sp[2]*10)};}
+  function pct(form,x,y,spec){var sp=dims(form,spec);return [((y-370)/(sp[2]*10)+0.5)*100,(1-((x-555)/(sp[1]*10)+0.5))*100];}
+  function bound(v,a,b){return Math.max(a,Math.min(b,v));}
+  function round1(v){return Math.round(v*10)/10;}
+  function at(form,i){var s=slotsOf(form)[i];return world(form,s[1],s[2]);}
+  /* pos[i]=[왼쪽 %, 위 %] 가 있는 자리만 토큰 좌표를 새로 쓴다(끌어 옮긴 자리). 없는 자리는 예전 토큰 그대로 · 새 토큰은 포메이션 자리 */
+  function players(form,slots,prev,pos,spec){
     var F=FORMS[form]||FORMS[DEFAULT_FORM],keep=prev&&prev.form===form?prev.players:null;
     return F.s.map(function(s,i){
       var names=(slots[i]||[]).map(clean).filter(Boolean).slice(0,MAX_NAMES),id=i+1,old=null;
       if(keep)for(var k=0;k<keep.length;k++){if(keep[k]&&keep[k].id===id&&!keep[k].coach){old=keep[k];break;}}
       var p=old?JSON.parse(JSON.stringify(old)):{id:id,team:'red',num:String(id),pos:META[s[0]][0],color:null};
-      if(!old){var w=at(form,i);p.x=w.x;p.y=w.y;}
+      var q=pos&&pos[i],w=q&&isFinite(q[0])&&isFinite(q[1])?world(form,bound(+q[0],LMIN,LMAX),bound(+q[1],TMIN,TMAX),spec):(old?null:at(form,i));
+      if(w){p.x=w.x;p.y=w.y;}
       p.name=names[0]||'';
       if(names.length>1)p.depth=names.slice(1);else delete p.depth;
       return p;
     });
   }
-  function snapFor(form,slots,prevSnap,prevForm){
+  function snapFor(form,slots,prevSnap,prevForm,pos){
     var F=FORMS[form]||FORMS[DEFAULT_FORM];
     if(prevSnap&&prevForm===form){
       var s=JSON.parse(JSON.stringify(prevSnap)),others=(s.players||[]).filter(function(p){return !(p&&p.id>=1&&p.id<=F.s.length);});
-      s.players=players(form,slots,{form:form,players:prevSnap.players||[]}).concat(others);
+      s.players=players(form,slots,{form:form,players:prevSnap.players||[]},pos,prevSnap.pitchSpec).concat(others);
       return s;
     }
     return {pitchSpec:SPEC[F.n][0],orientation:'v',spFlip:false,area:'full',pitchView:'full',pvSide:'own',fieldMode:'standard',pitchN:1,pitchTheme:'grass',
       lines:true,gridType:'off',label:'pos',tokenScale:TOK,tokV:2,tokShape:'circle',namePos:'below',nameSize:'m',nameStyle:'pill',
-      players:players(form,slots,null),ball:null,drawings:[],equipment:[]};
+      players:players(form,slots,null,pos),ball:null,drawings:[],equipment:[]};
   }
   function today(now){var d=new Date(now||Date.now());return (d.getMonth()+1)+'/'+d.getDate();}
   function title(form,now){return form+' 뎁스 · '+today(now);}
-  function itemFor(form,slots,name,now){
+  function itemFor(form,slots,name,now,pos){
     now=now||Date.now();
     return {libId:'V'+now.toString(36)+Math.random().toString(36).slice(2,5),type:'board',name:clean(name)?String(name).trim().slice(0,60):title(form,now),folder:'',thumb:'',
-      snap:snapFor(form,slots),tags:[TAG],savedAt:now,editedAt:now,quick:{v:1,form:FORMS[form]?form:DEFAULT_FORM}};
+      snap:snapFor(form,slots,null,null,pos),tags:[TAG],savedAt:now,editedAt:now,quick:{v:1,form:FORMS[form]?form:DEFAULT_FORM}};
   }
   /* 다시 고칠 수 있는 빠른 보드 — 작전판 · 페이지 하나 · 장면 하나 */
   function editable(d){
@@ -162,10 +175,20 @@
       return [p.name].concat(Array.isArray(p.depth)?p.depth:[]).map(clean).filter(Boolean).slice(0,MAX_NAMES);
     });
   }
-  /* 고친 이름을 같은 항목에 — 판 설정 · 그림 · 장비 · 페이지 하나 · 장면 하나는 그대로 */
-  function applyEdit(d,form,slots,name,now){
+  /* 토큰이 지금 서 있는 곳을 창의 자리로(아이패드에서 옮긴 토큰도 그 자리에 보인다). 토큰이 없는 자리는 null = 포메이션 자리 */
+  function posFrom(d){
+    var form=d.quick.form,spec=d.snap.pitchSpec;
+    return slotsOf(form).map(function(s,i){
+      var p=(d.snap.players||[]).find(function(x){return x&&x.id===i+1&&!x.coach;});
+      if(!p||!isFinite(p.x)||!isFinite(p.y))return null;
+      var q=pct(form,+p.x,+p.y,spec);
+      return [round1(bound(q[0],LMIN,LMAX)),round1(bound(q[1],TMIN,TMAX))];
+    });
+  }
+  /* 고친 이름 · 옮긴 자리를 같은 항목에 — 판 설정 · 그림 · 장비 · 페이지 하나 · 장면 하나는 그대로 */
+  function applyEdit(d,form,slots,name,now,pos){
     now=now||Date.now();
-    var snap=snapFor(form,slots,d.snap,d.quick.form);
+    var snap=snapFor(form,slots,d.snap,d.quick.form,pos);
     if(d.quick.form!==form){var fresh=snapFor(form,slots);['pitchSpec','pitchView','area','fieldMode'].forEach(function(k){snap[k]=fresh[k];});}
     d.snap=snap;d.quick={v:1,form:form};
     if(clean(name))d.name=String(name).trim().slice(0,60);
@@ -234,9 +257,13 @@
     '#psQuick .pq-stage svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}'+
     '#psQuick .pq-stage svg *{fill:none;stroke:rgba(255,255,255,.5);stroke-width:1.3;vector-effect:non-scaling-stroke}'+
     '#psQuick .pq-stage svg .pq-dot{fill:rgba(255,255,255,.5);stroke:none}'+
-    '#psQuick .pq-slot{position:absolute;transform:translate(-50%,-15px);display:flex;flex-direction:column;align-items:center;gap:2px;padding:0;border:0;background:none;color:#fff}'+
-    '#psQuick .pq-bdg{flex:none;display:inline-block;width:30px;height:30px;border-radius:999px;background:var(--pq-team);color:#fff;font:700 12px/30px Pretendard,-apple-system,sans-serif;letter-spacing:-.03em;text-align:center;box-shadow:0 0 0 2px #fff,0 2px 6px rgba(0,0,0,.35);margin-bottom:3px}'+
+    '#psQuick .pq-slot{position:absolute;transform:translate(-50%,-15px);display:flex;flex-direction:column;align-items:center;gap:2px;padding:0;border:0;background:none;color:#fff;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}'+
+    '#psQuick .pq-bdg{flex:none;display:inline-block;width:30px;height:30px;border-radius:999px;background:var(--pq-team);color:#fff;font:700 12px/30px Pretendard,-apple-system,sans-serif;letter-spacing:-.03em;text-align:center;box-shadow:0 0 0 2px #fff,0 2px 6px rgba(0,0,0,.35);margin-bottom:3px;touch-action:none;cursor:grab}'+
     '#psQuick .pq-slot.pq-on .pq-bdg{box-shadow:0 0 0 2px #fff,0 0 0 6px rgba(255,255,255,.55),0 2px 6px rgba(0,0,0,.35)}'+
+    /* 끄는 토큰은 맨 위로 떠 보이고, 놓으면 이름을 맞바꿀 토큰은 노란 테 */
+    '#psQuick .pq-slot.pq-drag{z-index:6;opacity:.96}#psQuick .pq-slot.pq-drag .pq-bdg{transform:scale(1.2);box-shadow:0 0 0 2px #fff,0 10px 20px rgba(0,0,0,.5);cursor:grabbing}'+
+    '#psQuick .pq-slot.pq-swap .pq-bdg{box-shadow:0 0 0 2px #fff,0 0 0 6px #FFD54A,0 2px 6px rgba(0,0,0,.35)}'+
+    '#psQuick .pq-swaptag{position:absolute;left:50%;top:-26px;transform:translateX(-50%);padding:0 8px;border-radius:999px;background:#FFD54A;color:#14213D;font:700 12px/20px Pretendard,-apple-system,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35)}'+
     '#psQuick .pq-nm{display:block;max-width:100%;padding:0 6px;border-radius:6px;font:700 12px/17px Pretendard,-apple-system,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
     '#psQuick .pq-st{background:#fff;color:#14213D;box-shadow:0 1px 2px rgba(0,0,0,.25)}'+
     '#psQuick .pq-bk{background:rgba(18,22,30,.42);color:rgba(255,255,255,.92);font-weight:600}'+
@@ -280,19 +307,19 @@
 
   function isPhoneView(win){try{return !!(win.psPhoneBoardReadOnly&&win.psPhoneBoardReadOnly());}catch(_){return false;}}
   function viewing(win){var b=win.document.body;return !!(b&&b.classList.contains('vcreating')&&win.__vaultReadOnly);}
-  /* 안내 띠의 단추 — 작업 보드에서는 «＋ 빠른 보드», 보관함에서 연 빠른 보드(내가 만든 것)는 «이름 고치기», 그 밖은 없음 */
+  /* 안내 띠의 단추 — 작업 보드에서는 «＋ 빠른 보드», 보관함에서 연 빠른 보드(내가 만든 것)는 «이름 · 자리 고치기», 그 밖은 없음 */
   function entry(win){
     var b=win.document.body;
     if(!b||!isPhoneView(win)||!win.__boardReady)return null;
     if(b.classList.contains('comm-viewing')||b.classList.contains('editing')||b.classList.contains('meet-mode')||win.__csView==='session')return null;
-    if(viewing(win)){var d=win.__vvItem;try{if(editable(d)&&(typeof canEditItem!=='function'||canEditItem(d)))return {mode:'edit',label:'이름 고치기'};}catch(_){}return null;}
+    if(viewing(win)){var d=win.__vvItem;try{if(editable(d)&&(typeof canEditItem!=='function'||canEditItem(d)))return {mode:'edit',label:'이름 · 자리 고치기'};}catch(_){}return null;}
     if(b.classList.contains('vcreating'))return null;
     return {mode:'new',label:'＋ 빠른 보드'};
   }
 
   function make(win){
-    var doc=win.document,M={form:DEFAULT_FORM,slots:blank(DEFAULT_FORM),title:'',active:-1,showAll:false,editing:null,roster:null,rosterState:'idle',undo:null,dirty:false,saving:false};
-    var pend={form:DEFAULT_FORM,fill:'roster'},root=null,tmr=null;
+    var doc=win.document,M={form:DEFAULT_FORM,slots:blank(DEFAULT_FORM),pos:[],moved:[],title:'',active:-1,showAll:false,editing:null,roster:null,rosterState:'idle',undo:null,dirty:false,saving:false};
+    var pend={form:DEFAULT_FORM,fill:'roster'},root=null,tmr=null,drag=null,dragged=0;
     function el(tag,cls,txt){var e=doc.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
     function $(id){return doc.getElementById(id);}
     function boardToast(t){try{if(win.toast)win.toast(t);}catch(_){}}
@@ -300,7 +327,13 @@
       var t=root.querySelector('.pq-toast');t.querySelector('span').textContent=msg;t.querySelector('button').hidden=!undo;t.hidden=false;
       win.clearTimeout(tmr);tmr=win.setTimeout(function(){t.hidden=true;},undo?5000:2600);
     }
-    function setUndo(){M.undo={form:M.form,slots:copy(M.slots)};}
+    function copyPos(a){return (a||[]).map(function(p){return p?p.slice():null;});}
+    function setUndo(){M.undo={form:M.form,slots:copy(M.slots),pos:copyPos(M.pos),moved:M.moved.slice()};}
+    /* 자리 — M.pos[i] 가 없으면 포메이션 자리. M.moved[i] 인 자리만 저장할 때 토큰 좌표를 새로 쓴다 */
+    function resetPos(form,all){M.pos=slotsOf(form).map(function(){return null;});M.moved=slotsOf(form).map(function(){return !!all;});}
+    function posOf(i){var s=slotsOf(M.form)[i];return M.pos[i]||[s[1],s[2]];}
+    function movedPos(){return slotsOf(M.form).map(function(s,i){return M.moved[i]?posOf(i).slice():null;});}
+    function offForm(){return slotsOf(M.form).some(function(s,i){var p=M.pos[i];return !!p&&(Math.abs(p[0]-s[1])>0.6||Math.abs(p[1]-s[2])>0.6);});}
     function where(name){for(var i=0;i<M.slots.length;i++){if(M.slots[i].indexOf(name)>=0)return i;}return -1;}
     function build(){
       if(!$('psQuickStyle')){var st=el('style');st.id='psQuickStyle';st.textContent=CSS;doc.head.appendChild(st);}
@@ -310,7 +343,8 @@
         '<button type="button" class="pq-btn pq-pri" data-pq="save">저장</button></div>'+
         '<div class="pq-tools"><button type="button" class="pq-btn" data-pq="form" id="pqFormBtn"></button>'+
         '<button type="button" class="pq-btn" data-pq="fill" aria-label="선수단 순서로 채우기">선수단에서</button>'+
-        '<button type="button" class="pq-btn" data-pq="paste">붙여넣기</button><button type="button" class="pq-btn" data-pq="clear">비우기</button></div>'+
+        '<button type="button" class="pq-btn" data-pq="paste">붙여넣기</button><button type="button" class="pq-btn" data-pq="clear">비우기</button>'+
+        '<button type="button" class="pq-btn" data-pq="pos-reset" id="pqPosReset" hidden>포메이션 자리로</button></div>'+
         '<div class="pq-body" id="pqBody"><div class="pq-hint"><b id="pqCount"></b></div>'+
         '<div class="pq-wrap"><div class="pq-stage" id="pqStage"></div></div><div id="pqPad"></div></div>'+
         '<div class="pq-scrim" hidden></div>'+
@@ -322,26 +356,32 @@
         '<section class="pq-sheet" id="pqPaste" hidden aria-labelledby="pqPasteT"><div class="pq-grab"></div><div class="pq-sh-head"><div class="pq-sh-t"><b id="pqPasteT">붙여넣기</b><small>한 줄에 한 자리 · 자리 이름 뒤에 이름을 쉼표로</small></div><button type="button" class="pq-btn pq-ghost" data-pq="paste-close">닫기</button></div>'+
         '<div class="pq-sh-body"><textarea id="pqPasteText" aria-label="붙여 넣을 명단" placeholder="GK 윤태오, 서지안&#10;CB 오세찬, 장하율, 임준서&#10;골키퍼 윤태오 서지안"></textarea><p class="pq-small">메모에 적어 둔 명단을 그대로 붙여 넣어도 돼요. CB처럼 두 자리면 번갈아 들어가요. 적지 않은 자리는 그대로 둬요.</p></div>'+
         '<div class="pq-sh-foot"><button type="button" class="pq-btn pq-pri" data-pq="paste-go">넣기</button></div></section>'+
-        '<section class="pq-sheet" id="pqAsk" hidden aria-labelledby="pqAskT"><div class="pq-grab"></div><div class="pq-sh-head"><div class="pq-sh-t"><b id="pqAskT">고친 이름을 버리고 닫을까요?</b><small>보관함의 보드는 그대로예요</small></div></div>'+
+        '<section class="pq-sheet" id="pqAsk" hidden aria-labelledby="pqAskT"><div class="pq-grab"></div><div class="pq-sh-head"><div class="pq-sh-t"><b id="pqAskT">고친 내용을 버리고 닫을까요?</b><small>보관함의 보드는 그대로예요</small></div></div>'+
         '<div class="pq-sh-foot"><button type="button" class="pq-btn" data-pq="ask-stay">계속 고치기</button><button type="button" class="pq-btn pq-pri" data-pq="ask-leave">버리고 닫기</button></div></section>'+
         '<div class="pq-toast" hidden role="status"><span></span><button type="button" data-pq="undo">되돌리기</button></div>';
       doc.body.appendChild(root);
       root.addEventListener('click',onClick);
       /* 작전판 단축키가 입력칸의 글자를 받지 않게 */
       ['keydown','keyup','keypress'].forEach(function(t){root.addEventListener(t,function(e){if(t==='keydown'&&e.key==='Escape'){e.preventDefault();back();}e.stopPropagation();});});
-      $('pqStage').addEventListener('click',function(e){var b=e.target.closest('.pq-slot');if(b)openPos(+b.getAttribute('data-i'));});
+      $('pqStage').addEventListener('click',function(e){if(Date.now()-dragged<450)return;var b=e.target.closest('.pq-slot');if(b)openPos(+b.getAttribute('data-i'));});
+      $('pqStage').addEventListener('pointerdown',dragStart);
+      root.addEventListener('pointermove',dragMove);
+      root.addEventListener('pointerup',function(e){if(drag&&e.pointerId===drag.id)dragEnd(true);});
+      root.addEventListener('pointercancel',function(e){if(drag&&e.pointerId===drag.id)dragEnd(false);});
+      $('pqStage').addEventListener('contextmenu',function(e){if(e.target.closest('.pq-slot'))e.preventDefault();});
       var inp=$('pqInput');
       inp.addEventListener('keydown',function(e){if(e.key!=='Enter'||e.isComposing||e.keyCode===229)return;e.preventDefault();submit();});
       $('pqTitle').addEventListener('input',function(){M.title=this.value;M.dirty=true;});
       $('pqTitle').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){e.preventDefault();this.blur();}});
     }
     function hideSheets(){['pqForm','pqPos','pqPaste','pqAsk'].forEach(function(id){$(id).hidden=true;});root.querySelector('.pq-scrim').hidden=true;M.active=-1;}
+    function place(b,l,t){b.style.left=l+'%';b.style.top=t+'%';b.style.width='min(96px, calc('+(2*Math.min(l,100-l))+'% - 4px))';}
     function stageHTML(box){
       box.innerHTML=LINES;
       slotsOf(M.form).forEach(function(s,i){
-        var names=M.slots[i]||[],m=Math.min(s[1],100-s[1]),b=el('button','pq-slot'+(M.active===i?' pq-on':''));
+        var names=M.slots[i]||[],q=posOf(i),b=el('button','pq-slot'+(M.active===i?' pq-on':''));
         b.type='button';b.setAttribute('data-i',String(i));b.setAttribute('aria-label',META[s[0]][1]+' '+(names.length?names.join(', '):'비어 있음'));
-        b.style.left=s[1]+'%';b.style.top=s[2]+'%';b.style.width='min(96px, calc('+(2*m)+'% - 4px))';
+        place(b,q[0],q[1]);
         b.appendChild(el('span','pq-bdg',META[s[0]][0]));
         if(!names.length)b.appendChild(el('span','pq-nm pq-add','＋ 이름'));
         else{b.appendChild(el('span','pq-nm pq-st',names[0]));names.slice(1,4).forEach(function(n){b.appendChild(el('span','pq-nm pq-bk',n));});if(names.length>4)b.appendChild(el('span','pq-nm pq-bk','+'+(names.length-4)+'명'));}
@@ -353,9 +393,70 @@
       if(doc.activeElement!==$('pqTitle'))$('pqTitle').value=M.title||'';
       var filled=M.slots.filter(function(a){return a.length;}).length;
       $('pqCount').textContent=filled+'/'+M.slots.length+'자리 · 이름 '+count(M.slots);
-      stageHTML($('pqStage'));
+      /* 끄는 중엔 무대를 다시 그리지 않는다(선수단 도착 · 시트) — 놓은 뒤 그린다. 누르기만 한 채(길게 누르기 대기)면 그 누름을 버린다 */
+      if(drag&&!drag.on)dragEnd(false);
+      if(!drag)stageHTML($('pqStage'));
+      $('pqPosReset').hidden=!offForm();
       $('pqPad').style.height=M.active>=0?'55vh':'0';
       var fb=root.querySelector('[data-pq="fill"]');fb.hidden=M.rosterState==='none';
+    }
+    /* ── 자리 옮기기 — 빨간 토큰(touch-action:none)과 마우스는 6px 움직이면 바로, 이름표는 280ms 길게 눌러(그 전에 움직이면 그냥 스크롤 — 선수단 뎁스 판과 같은 규칙).
+       빈 곳에 놓으면 자리가 옮겨지고, 다른 토큰 위(SWAP_PX 안)에 놓으면 두 자리의 이름을 맞바꾼다. 끄는 동안은 비수동 touchmove 로 스크롤을 막는다 ── */
+    function block(e){if(drag&&drag.on)e.preventDefault();}
+    function dragStart(e){
+      if(drag&&Date.now()-drag.t0>8000)dragEnd(false);   /* 끝(pointerup)을 못 받은 옛 누름 */
+      if(drag||M.saving||(e.pointerType==='mouse'&&e.button!==0))return;
+      var b=e.target.closest&&e.target.closest('.pq-slot');if(!b)return;
+      var r=b.getBoundingClientRect();
+      drag={i:+b.getAttribute('data-i'),el:b,id:e.pointerId,x0:e.clientX,y0:e.clientY,ox:e.clientX-(r.left+r.width/2),oy:e.clientY-(r.top+15),on:false,to:-1,l:null,t:null,t0:Date.now(),
+        quick:e.pointerType==='mouse'||!!e.target.closest('.pq-bdg'),hold:0};
+      doc.addEventListener('touchmove',block,{passive:false});
+      if(!drag.quick)drag.hold=win.setTimeout(function(){if(drag&&!drag.on)dragBegin();},HOLD);
+    }
+    function dragBegin(){
+      drag.on=true;drag.el.classList.add('pq-drag');root.querySelector('.pq-toast').hidden=true;
+      try{drag.el.setPointerCapture(drag.id);}catch(_){}
+      try{if(win.navigator.vibrate)win.navigator.vibrate(8);}catch(_){}
+    }
+    function dragMove(e){
+      if(!drag||e.pointerId!==drag.id)return;
+      if(!drag.on){
+        var far=Math.abs(e.clientX-drag.x0)+Math.abs(e.clientY-drag.y0);
+        if(drag.quick){if(far<6)return;dragBegin();}
+        else{if(far>12)dragEnd(false);return;}
+      }
+      var st=$('pqStage'),r=st.getBoundingClientRect(),all=slotsOf(M.form);if(!r.width||!r.height)return;
+      var l=bound((e.clientX-drag.ox-r.left)/r.width*100,LMIN,LMAX),t=bound((e.clientY-drag.oy-r.top)/r.height*100,TMIN,TMAX),hit=-1,best=SWAP_PX;
+      all.forEach(function(s,k){if(k===drag.i)return;var q=posOf(k),d=Math.sqrt(Math.pow((q[0]-l)/100*r.width,2)+Math.pow((q[1]-t)/100*r.height,2));if(d<best){best=d;hit=k;}});
+      if(hit<0){
+        /* 살짝 붙는다 — 가운데 줄, 그리고 가까운 다른 자리와 같은 높이 */
+        if(Math.abs(l-50)<1.6)l=50;
+        for(var k=0;k<all.length;k++){if(k!==drag.i&&Math.abs(posOf(k)[1]-t)<1.2){t=posOf(k)[1];break;}}
+      }
+      if(drag.to!==hit){
+        /* 놓으면 맞바꿀 자리 — 그 토큰에 노란 테, 끄는 토큰 위에 «↔ RW» 꼬리표(끄는 토큰이 그 자리를 덮어 테만으로는 안 보인다) */
+        var o=st.querySelector('.pq-swap');if(o)o.classList.remove('pq-swap');
+        var tag=drag.el.querySelector('.pq-swaptag');
+        if(hit>=0){var n=st.querySelector('.pq-slot[data-i="'+hit+'"]');if(n)n.classList.add('pq-swap');if(!tag){tag=el('span','pq-swaptag');drag.el.appendChild(tag);}tag.textContent='↔ '+META[all[hit][0]][0];}
+        else if(tag)tag.remove();
+      }
+      drag.l=l;drag.t=t;drag.to=hit;place(drag.el,l,t);
+      var body=$('pqBody'),br=body.getBoundingClientRect();
+      if(e.clientY>br.bottom-36)body.scrollTop+=10;else if(e.clientY<br.top+36)body.scrollTop-=10;
+    }
+    function dragEnd(ok){
+      var d=drag;if(!d)return;drag=null;win.clearTimeout(d.hold);doc.removeEventListener('touchmove',block,{passive:false});
+      try{d.el.releasePointerCapture(d.id);}catch(_){}
+      if(!d.on)return;
+      if(d.l==null){render();return;}   /* 길게 누르기만 하고 뗀 것 — 그냥 누름(자리 시트)으로 둔다 */
+      dragged=Date.now();
+      if(ok){
+        var all=slotsOf(M.form),me=META[all[d.i][0]][0];
+        setUndo();M.dirty=true;
+        if(d.to>=0){var a=M.slots[d.i];M.slots[d.i]=M.slots[d.to];M.slots[d.to]=a;render();if(M.active>=0)paintPos();toast(me+' ↔ '+META[all[d.to][0]][0]+' 이름을 맞바꿨어요',true);return;}
+        M.pos[d.i]=[round1(d.l),round1(d.t)];M.moved[d.i]=true;render();toast(me+' 자리를 옮겼어요',true);return;
+      }
+      render();
     }
     /* ── 선수단(읽기만) ── */
     function loadRoster(){
@@ -397,14 +498,14 @@
     }
     function formGo(){
       if(pend.mode==='change'){changeForm(pend.form);hideSheets();render();return;}
-      var go=function(){M.form=pend.form;M.slots=pend.fill==='roster'&&M.roster?fill(M.form,M.roster):blank(M.form);M.title='';M.dirty=true;win.__psQuickDraft=null;hideSheets();render();
+      var go=function(){M.form=pend.form;M.slots=pend.fill==='roster'&&M.roster?fill(M.form,M.roster):blank(M.form);resetPos(M.form);M.title='';M.dirty=true;win.__psQuickDraft=null;hideSheets();render();
         if(pend.fill==='roster'&&!M.roster)toast('선수단을 읽지 못해 빈 자리로 시작했어요');};
       if(pend.fill==='roster'&&M.rosterState==='busy'){root.querySelector('[data-pq="form-go"]').disabled=true;loadRoster().then(function(){root.querySelector('[data-pq="form-go"]').disabled=false;go();});return;}
       go();
     }
     function changeForm(next){
       if(next===M.form)return;
-      setUndo();var r=remap(M.form,M.slots,next);M.form=next;M.slots=r.slots;M.dirty=true;
+      setUndo();var r=remap(M.form,M.slots,next);M.form=next;M.slots=r.slots;resetPos(next,true);M.dirty=true;
       toast(r.lost.length?(next+'에 없는 자리('+r.lost.map(function(x){return x.code+' '+x.n+'명';}).join(' · ')+')는 뺐어요'):(next+'로 바꿨어요'),true);
     }
     /* ── 자리 시트 ── */
@@ -467,15 +568,16 @@
       if(!count(M.slots)){toast('이름을 하나 이상 넣어 주세요');return;}
       if(!canWrite())return;
       M.saving=true;var btn=root.querySelector('[data-pq="save"]');btn.disabled=true;btn.textContent='저장 중…';
-      var editId=M.editing,form=M.form,slots=copy(M.slots),name=M.title,saved=null;
+      if(drag)dragEnd(false);
+      var editId=M.editing,form=M.form,slots=copy(M.slots),pos=movedPos(),name=M.title,saved=null;
       libTurn(function(){return libGet().then(function(lib){
         if(editId){
           var d=null;for(var i=0;i<lib.length;i++){if(lib[i]&&lib[i].libId===editId){d=lib[i];break;}}
           if(!d||!editable(d))throw Object.assign(Error('gone'),{psQuick:'gone'});
           if(typeof canEditItem==='function'&&!canEditItem(d))throw Object.assign(Error('owner'),{psQuick:'owner'});
-          applyEdit(d,form,slots,name);d.thumb=thumb(d.snap);if(d.pages&&d.pages[0])d.pages[0].thumb=d.thumb;saved=d;
+          applyEdit(d,form,slots,name,0,pos);d.thumb=thumb(d.snap);if(d.pages&&d.pages[0])d.pages[0].thumb=d.thumb;saved=d;
         }else{
-          var it=itemFor(form,slots,name);it.thumb=thumb(it.snap);try{if(typeof stampCreator==='function')stampCreator(it);}catch(_){}
+          var it=itemFor(form,slots,name,0,pos);it.thumb=thumb(it.snap);try{if(typeof stampCreator==='function')stampCreator(it);}catch(_){}
           lib.unshift(it);saved=it;
         }
         return libWrite(lib).then(function(){try{if(typeof libTouch==='function')libTouch();}catch(_){}});
@@ -505,18 +607,18 @@
       if(M.rosterState!=='ok')M.rosterState='idle';
       var ready=loadRoster().then(function(){if(!root.hidden){if(!$('pqForm').hidden&&pend.mode==='new')openForm('new');if(M.active>=0)paintPos();render();}});
       if(e.mode==='edit'){
-        var d=win.__vvItem;M.editing=d.libId;M.form=d.quick.form;M.slots=slotsFrom(d);M.title=d.name||'';hideSheets();render();
+        var d=win.__vvItem;M.editing=d.libId;M.form=d.quick.form;M.slots=slotsFrom(d);resetPos(M.form);M.pos=posFrom(d);M.title=d.name||'';hideSheets();render();
       }else{
-        M.editing=null;M.form=DEFAULT_FORM;M.slots=blank(M.form);M.title='';pend.form=DEFAULT_FORM;pend.fill='roster';render();openForm('new');
+        M.editing=null;M.form=DEFAULT_FORM;M.slots=blank(M.form);resetPos(M.form);M.title='';pend.form=DEFAULT_FORM;pend.fill='roster';render();openForm('new');
       }
       win.__psQuickReady=ready;
       return true;
     }
-    function close(){if(!root)return;hideSheets();root.hidden=true;doc.body.classList.remove('ps-quick-on');try{var q=doc.querySelector('#psPhoneBoardNotice [data-quick]');if(q)q.focus();}catch(_){}}
+    function close(){if(!root)return;if(drag)dragEnd(false);hideSheets();root.hidden=true;doc.body.classList.remove('ps-quick-on');try{var q=doc.querySelector('#psPhoneBoardNotice [data-quick]');if(q)q.focus();}catch(_){}}
     function back(){
       if(!$('pqAsk').hidden){hideSheets();return;}
       if(M.editing){if(M.dirty){hideSheets();root.querySelector('.pq-scrim').hidden=false;$('pqAsk').hidden=false;return;}close();return;}
-      if(count(M.slots)&&M.dirty){win.__psQuickDraft={form:M.form,slots:copy(M.slots),title:M.title};boardToast('쓰던 빠른 보드는 남겨 뒀어요 — «＋ 빠른 보드»에서 이어서');}
+      if(count(M.slots)&&M.dirty){win.__psQuickDraft={form:M.form,slots:copy(M.slots),pos:copyPos(M.pos),moved:M.moved.slice(),title:M.title};boardToast('쓰던 빠른 보드는 남겨 뒀어요 — «＋ 빠른 보드»에서 이어서');}
       close();
     }
     function onClick(e){
@@ -531,7 +633,7 @@
         case 'form':openForm('change');break;
         case 'form-close':if(pend.mode==='new'&&!M.dirty&&!M.editing){close();break;}hideSheets();render();break;
         case 'form-go':formGo();break;
-        case 'draft':var d=win.__psQuickDraft;if(d){M.form=d.form;M.slots=copy(d.slots);M.title=d.title||'';M.dirty=true;}hideSheets();render();break;
+        case 'draft':var d=win.__psQuickDraft;if(d){M.form=d.form;M.slots=copy(d.slots);resetPos(M.form);if(d.pos&&d.pos.length===M.slots.length){M.pos=copyPos(d.pos);M.moved=(d.moved||[]).slice();}M.title=d.title||'';M.dirty=true;}hideSheets();render();break;
         case 'fill':
           if(M.rosterState==='busy'){toast('선수단 확인 중…');break;}
           loadRoster().then(function(r){if(!r){toast('팀 운영 › 선수단을 읽지 못했어요 — 팀 자료가 준비된 뒤 다시 눌러 주세요');return;}setUndo();M.slots=fill(M.form,r);M.dirty=true;hideSheets();render();toast('선수단 뎁스 순서로 채웠어요',true);});break;
@@ -539,7 +641,8 @@
         case 'paste-close':hideSheets();render();break;
         case 'paste-go':pasteGo();break;
         case 'clear':if(!count(M.slots))break;setUndo();M.slots=blank(M.form);M.dirty=true;hideSheets();render();toast('모든 자리를 비웠어요',true);break;
-        case 'undo':if(M.undo){M.form=M.undo.form;M.slots=M.undo.slots;M.undo=null;hideSheets();render();}root.querySelector('.pq-toast').hidden=true;break;
+        case 'undo':if(M.undo){M.form=M.undo.form;M.slots=M.undo.slots;M.pos=M.undo.pos;M.moved=M.undo.moved;M.undo=null;hideSheets();render();}root.querySelector('.pq-toast').hidden=true;break;
+        case 'pos-reset':if(!offForm())break;setUndo();resetPos(M.form,true);M.dirty=true;render();toast('포메이션 자리로 돌렸어요',true);break;
         case 'add':submit();break;
         case 'more':M.showAll=!M.showAll;paintPos();break;
         case 'pos-close':hideSheets();render();break;
@@ -562,6 +665,6 @@
   function open(win){win=win||(typeof window!=='undefined'?window:null);var q=win&&(win.__psQuickDepth||install(win));return q?q.open():false;}
 
   return {META:META,FORMS:FORMS,GROUPS:GROUPS,FALLBACK:FALLBACK,famOf:famOf,fill:fill,remap:remap,parse:parse,splitNames:splitNames,at:at,
-    snapFor:snapFor,itemFor:itemFor,editable:editable,slotsFrom:slotsFrom,applyEdit:applyEdit,title:title,decorate:decorate,entry:entry,install:install,open:open,
+    world:world,pct:pct,posFrom:posFrom,snapFor:snapFor,itemFor:itemFor,editable:editable,slotsFrom:slotsFrom,applyEdit:applyEdit,title:title,decorate:decorate,entry:entry,install:install,open:open,
     MAX_NAMES:MAX_NAMES,TAG:TAG};
 });
