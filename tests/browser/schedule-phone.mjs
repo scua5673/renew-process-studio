@@ -34,6 +34,14 @@ const look=f=>f.evaluate(()=>{const vis=el=>!!el&&getComputedStyle(el).display!=
     sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth};});
 // 반투명 색은 아래 바탕(under) 위에 얹은 밝기로 본다
 const lum=(c,under=0)=>{const m=(c.match(/[\d.]+/g)||[]).map(Number);if(m.length<3)return 1;const L=(0.2126*m[0]+0.7152*m[1]+0.0722*m[2])/255,al=m.length>3?m[3]:1;return al*L+(1-al)*under;};
+// Resolve translucent theme surfaces before measuring readable selected text.
+async function yearContrast(frame){return frame.locator('#schedYears button.on').evaluate(el=>{
+  const rgb=s=>(s.match(/[\d.]+/g)||[]).map(Number),chain=[];
+  for(let p=el;p;p=p.parentElement)chain.push(getComputedStyle(p).backgroundColor);
+  let bg=[255,255,255];for(const s of chain.reverse()){const c=rgb(s),a=c.length>3?c[3]:1;bg=c.slice(0,3).map((v,i)=>v*a+bg[i]*(1-a));}
+  const L=c=>c.slice(0,3).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
+  const fg=L(rgb(getComputedStyle(el).color)),back=L(bg);return (Math.max(fg,back)+.05)/(Math.min(fg,back)+.05);
+});}
 try{
   const {page,logs,f}=await openSchedule(size);let stuck=null;
   const a=await look(f);
@@ -114,6 +122,11 @@ try{
     const dk=await look(d.f);
     assert.equal(dk.dark,true,'fmdark');assert.equal(dk.bar,true);
     assert.ok(lum(dk.barBg)<0.3,'다크 막대 바탕 '+dk.barBg);assert.ok(lum(dk.onBg,lum(dk.barBg))<0.5,'다크 켜진 칸 '+dk.onBg);assert.ok(lum(dk.tdBg,lum(dk.barBg))<0.5,'다크 «오늘» '+dk.tdBg);
+    for(const name of ['전체 학년','1학년']){
+      await d.f.locator('#schedYears').getByRole('button',{name,exact:true}).click();
+      const ratio=await yearContrast(d.f);assert.ok(ratio>=4.5,'다크 선택 학년 글자 대비 '+name+' '+ratio);
+    }
+    await d.f.locator('#schedYears').getByRole('button',{name:'전체 학년',exact:true}).click();
     await d.page.screenshot({path:path.join(SHOTS,'phone-dark.png')});
     logs.push(...d.logs);
     if(process.env.PS_SCHEDULE_SHOTS){const i=await openSchedule('ipad');const ia=await look(i.f);assert.equal(ia.bar,false,'아이패드는 그대로');assert.equal(ia.vtoggle,true);await i.page.screenshot({path:path.join(SHOTS,'ipad.png')});logs.push(...i.logs);}
