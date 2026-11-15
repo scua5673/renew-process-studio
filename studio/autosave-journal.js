@@ -129,7 +129,7 @@
           return Promise.all(mine.map(function(k){var id=k.slice(prefix.length);if(!validId(id))fail('AutosaveJournalCorruptError');return get(k,current).then(function(raw){if(raw===null)fail('AutosaveJournalCorruptError');return metadata(archived(raw,c,id));});}));
         }).then(function(rows){current();return rows.sort(function(a,b){return b.at-a.at||a.id.localeCompare(b.id);});});
       });},
-      /* 3.292 — 보관 기록의 id 목록만(키 열거 · 본문은 안 읽는다). list 가 모든 본문을 읽어 해석하는 것과 달리 수백 건이어도 가볍다. 차례는 id 글자순 */
+      /* 3.295 — 보관 기록의 id 목록만(키 열거 · 본문은 안 읽는다). list 가 모든 본문을 읽어 해석하는 것과 달리 수백 건이어도 가볍다. 차례는 id 글자순 */
       ids:function(ctx){return run(ctx,function(c,current){
         var prefix=scope(c)+'archive:';
         if(typeof storage.keys!=='function')fail('AutosaveJournalInputError');

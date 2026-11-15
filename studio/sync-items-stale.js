@@ -46,7 +46,7 @@
   }
   function create(d){
     var loaded=null,loadedPermission,records=[],resolved=new Set(),certificates=new WeakMap(),prepared=new WeakMap(),tail=Promise.resolve(),loadTicket=0,latestLoad=null,captures=new Map(),notice=null,noticeContext=null;
-    var choiceById=new Map(),ignoredIds=new Set();   /* 3.292 — 읽어 둔 해제 표식(id → choice) · 이 모듈과 무관한 보관 기록 id */
+    var choiceById=new Map(),ignoredIds=new Set();   /* 3.295 — 읽어 둔 해제 표식(id → choice) · 이 모듈과 무관한 보관 기록 id */
     function readyNotice(c){
       if(typeof d.notify!=='function')return;noticeContext=c;if(notice!==null)return;
       notice=setTimeout(function(){notice=null;if(same(noticeContext,context())&&ready()&&!capturing())try{d.notify(noticeContext);}catch(_){}},0);
@@ -83,7 +83,7 @@
       p.ids.forEach(function(k){if(!id(k)||!Object.prototype.hasOwnProperty.call(p.expected,k)||!Object.prototype.hasOwnProperty.call(p.authored,k)||!Object.prototype.hasOwnProperty.call(b.values,k)||!raw(p.expected[k])||typeof p.authored[k]!=='string'||!raw(b.values[k]))throw issue('items_stale_archive');});
       return p;
     }
-    /* 3.292 — 보관 기록 읽기를 아낀다(사용자 11/15 «보류 해제 중… 1 / 896» 멈춤 · 그 기기의 선수 저장마다 flush_timeout): 예전 load 는 부를 때마다 모든 기록을
+    /* 3.295 — 보관 기록 읽기를 아낀다(사용자 11/15 «보류 해제 중… 1 / 896» 멈춤 · 그 기기의 선수 저장마다 flush_timeout): 예전 load 는 부를 때마다 모든 기록을
        목록(list — 본문을 다 읽어 해석)으로 한 번, 본문(read)으로 또 한 번 읽었다 — 보류 896건이면 한 번에 1,800번, 항목 하나를 푸는 데 load 가 세 번이라 사실상 멈춤.
        기록은 한 번 쓰면 바뀌지 않는다(저널은 같은 id 를 다시 쓰지 않는다). 그래서 **키 목록(ids)은 매번** 읽어 새 기록 · 지운 기록을 알고, **본문은 id 마다 한 번만** 읽어
        해석한 것을 다시 쓴다(보류 기록 → records · 해제 표식 → choiceById · 이 모듈과 무관한 기록 → ignoredIds). 다른 창이 쓴 기록도 키 목록에 나오므로 바로 줍는다.

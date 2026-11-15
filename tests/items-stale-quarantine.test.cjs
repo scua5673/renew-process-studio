@@ -207,7 +207,7 @@ test('resolving A leaves a separate C archive of the same player pending and ret
 
 test('an older empty load cannot overwrite a newer exact quarantine publication',async()=>{
  const h=fixture(),gate=deferred(),entered=deferred();let reads=0;
- /* 3.292 — load 는 목록(list) 대신 키 목록(ids)을 읽는다. 늦추는 자리만 옮기고 성질은 그대로 */
+ /* 3.295 — load 는 목록(list) 대신 키 목록(ids)을 읽는다. 늦추는 자리만 옮기고 성질은 그대로 */
  h.deps.journal=()=>Object.assign({},h.journal,{async ids(ctx){const result=await h.journal.ids(ctx);if(++reads===1){entered.resolve();await gate.promise;}return result;}});
  const old=h.api.load(),oldResult=old.then(value=>({value}),error=>({error}));await entered.promise;
  const job=h.job();await h.api.capture(job,stale(job));assert.equal(h.api.count(),1);assert.equal(h.api.fenced(ROW),true);
@@ -318,7 +318,7 @@ test('concurrent prepare: an unchanged newer background load cannot cancel a cur
 // A joined read cannot use an older successful snapshot to hide the newest I/O failure.
 test('concurrent load: a failed newest read cannot be replaced by an older valid snapshot',async()=>{
  const {h}=await archivedFixture(),gate=deferred(),entered=deferred();let reads=0;
- h.deps.journal=()=>Object.assign({},h.journal,{async ids(ctx){const result=await h.journal.ids(ctx);if(++reads===1){entered.resolve();await gate.promise;}else throw Error('synthetic newest journal I/O');return result;}});   /* 3.292 — ids */
+ h.deps.journal=()=>Object.assign({},h.journal,{async ids(ctx){const result=await h.journal.ids(ctx);if(++reads===1){entered.resolve();await gate.promise;}else throw Error('synthetic newest journal I/O');return result;}});   /* 3.295 — ids */
  const old=h.api.load().then(value=>({value}),error=>({error}));await entered.promise;
  await assert.rejects(h.api.load(),e=>e.message==='synthetic newest journal I/O');gate.resolve();const result=await old;assert.equal(result.error.message,'synthetic newest journal I/O');assert.ok(h.api.count()>0);assert.equal(h.api.fenced(ROW),true);assert.equal(h.disk.get(ROW),B);
 });

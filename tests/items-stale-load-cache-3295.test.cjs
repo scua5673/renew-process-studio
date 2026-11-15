@@ -1,5 +1,5 @@
 'use strict';
-/* 3.292 — 보관된 선수 입력(보류)의 load 는 키 목록만 매번 읽고 본문은 id 마다 한 번만 읽는다.
+/* 3.295 — 보관된 선수 입력(보류)의 load 는 키 목록만 매번 읽고 본문은 id 마다 한 번만 읽는다.
    예전엔 load 마다 모든 기록을 두 번(list 가 본문을 다 읽고 · read 로 또) 읽어, 보류 896건의 «모두 해제»가 항목 하나에 1,800번 × 3 을 읽어 멈췄다. */
 const test=require('node:test'),assert=require('node:assert/strict');
 const J=require('../studio/autosave-journal.js'),Q=require('../studio/sync-items-stale.js');

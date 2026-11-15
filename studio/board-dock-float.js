@@ -35,7 +35,7 @@
     T + ' .df-h{font-size:11.5px;font-weight:700;color:#646A73;margin:10px 2px 7px}' + T + ' .df-h:first-child{margin-top:0}',
     T + ' .df-hint{font-size:12px;color:#646A73;font-weight:600;margin-top:12px}',
     // 팀 카드(원래 #benchCat 의 팀 알약)
-    T + ' #benchCat{display:grid!important;grid-template-columns:repeat(4,1fr);gap:8px;width:auto!important;height:auto!important;background:transparent!important;padding:0!important;margin:0!important}',
+    T + ' #benchCat{display:grid!important;grid-template-columns:repeat(5,1fr);gap:8px;width:auto!important;height:auto!important;background:transparent!important;padding:0!important;margin:0!important}',
     T + ' #benchCat>:not(.tpill){display:none!important}',
     T + ' #benchCat .tpill{opacity:1!important;width:auto!important;height:auto!important;min-height:0!important;flex-direction:column!important;display:flex!important;align-items:center!important;gap:6px!important;padding:10px 4px 8px!important;border-radius:14px!important;border:0!important;background:rgba(20,33,61,.045)!important;box-shadow:none!important;font-size:0!important;color:transparent!important;position:relative!important}',
     T + ' #benchCat .tpill::before{content:attr(data-df-n);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--df-kit,#1a2f5c);color:var(--df-kit-ink,#fff);font:800 14px/34px Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,.2)}',
@@ -179,7 +179,8 @@
     function giveBack() { Object.keys(homes).forEach(function (id) { var n = doc.getElementById(id), h = homes[id]; if (n && h.parent && n.parentNode !== h.parent) h.parent.insertBefore(n, h.next && h.next.parentNode === h.parent ? h.next : null); }); }
     function labelChips() {
       doc.querySelectorAll('#benchCat .tpill').forEach(function (b) {
-        var c = b.getAttribute('data-cat'); b.setAttribute('data-df-label', TEAMS[c] || ''); b.setAttribute('data-df-n', (TEAMS[c] || '').replace('팀 ', ''));
+        if (b.classList.contains('ps-team-add')) return;   /* 3.294 — «＋ 팀 추가»(board-teams.js)는 제 라벨을 갖고 있다 */
+        var c = b.getAttribute('data-cat'), nm = TEAMS[c] || (win.PSTeams ? win.PSTeams.name(c) : ''); b.setAttribute('data-df-label', nm); b.setAttribute('data-df-n', nm.replace('팀 ', ''));
         // 토큰과 같은 유니폼(주색 · 보조색 · 무늬) — 작전판의 teamChipBG · teamMain
         try { var bgf = typeof win.teamChipBG === 'function' ? win.teamChipBG : null, mf = typeof win.teamMain === 'function' ? win.teamMain : null;
           if (bgf) b.style.setProperty('--df-kit', bgf(c)); var col = mf ? String(mf(c)) : ''; var m = /^#?([0-9a-f]{6})$/i.exec(col);
@@ -188,6 +189,8 @@
       var L = { 'cmd-role-gk': '골키퍼', 'cmd-role-c': '코치', 'cmd-role-n': '중립', 'cmd-role-t': '타깃', 'cmd-role-s': '서버', 'cmd-player-stamp': '번 선수' };
       Object.keys(L).forEach(function (id) { var b = doc.getElementById(id); if (b) b.setAttribute('data-df-label', L[id]); });
     }
+    /* 3.294 — 팀 알약이 늘거나 줄면 board-teams.js 가 다시 부른다. 칸이 열려 있으면 높이가 바뀌므로 도크 위로 다시 놓는다(자리는 열 때 한 번만 잡는다) */
+    win.__psDfLabelChips = function () { labelChips(); try { if (tray.classList.contains('on')) tray.style.top = Math.max(12, dock.getBoundingClientRect().top - tray.offsetHeight - 12) + 'px'; } catch (_) {} };
     function forms() {
       var F = null; try { F = typeof FORM !== 'undefined' ? FORM : null; } catch (_) {}   /* global FORM */ if (!F) return '';
       var h = '';
