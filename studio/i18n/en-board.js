@@ -81,7 +81,7 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "선수단에서":"From squad",
 "붙여넣기":"Paste",
 "비우기":"Clear",
-"자리를 눌러 이름 넣기 · 위가 주전":"Tap a position to add names · top is the starter",
+"보기 전용":"View only",
 "넣기":"Add",
 "‹ 이전 자리":"‹ Previous",
 "한 줄에 한 자리 · 자리 이름 뒤에 이름을 쉼표로":"One position per line · names after the position, separated by commas",
@@ -123,6 +123,7 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "모든 자리를 비웠어요":"Cleared every position"
 },{
 "{} 뎁스 · {}":"{} depth · {}",
+"보기 전용 · {}":"View only · {}",
 "{}/{}자리 · 이름 {}":"{}/{} positions · {} names",
 "{} · 이름 {}개":"{} · {} names",
 "선수단 {}명 · 포지션별 순서 그대로":"{} squad players · in order by position",

@@ -227,8 +227,8 @@
     '#psQuick .pq-tools{flex:none;display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--pq-line);overflow-x:auto;scrollbar-width:none}'+
     '#psQuick .pq-tools .pq-btn{flex:none;min-height:36px;padding:0 11px;border-radius:999px}'+
     '#psQuick .pq-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}'+
-    '#psQuick .pq-hint{display:flex;justify-content:space-between;gap:8px;padding:10px 16px 0;font-size:12px;color:var(--pq-muted)}'+
-    '#psQuick .pq-hint b{color:var(--pq-ink);font-weight:600;font-variant-numeric:tabular-nums}'+
+    '#psQuick .pq-hint{display:flex;justify-content:flex-end;gap:8px;padding:8px 16px 0;font-size:12px;color:var(--pq-muted)}'+
+    '#psQuick .pq-hint b{font-weight:600;font-variant-numeric:tabular-nums}'+
     '#psQuick .pq-wrap{margin:8px 12px 12px;padding:10px 8px 40px;border-radius:10px;background:#2F6629}'+
     '#psQuick .pq-stage{position:relative;width:100%;aspect-ratio:68/105;border-radius:6px;background:repeating-linear-gradient(180deg,#3C7B34 0 7.69%,#35712F 7.69% 15.38%)}'+
     '#psQuick .pq-stage svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}'+
@@ -311,7 +311,7 @@
         '<div class="pq-tools"><button type="button" class="pq-btn" data-pq="form" id="pqFormBtn"></button>'+
         '<button type="button" class="pq-btn" data-pq="fill" aria-label="선수단 순서로 채우기">선수단에서</button>'+
         '<button type="button" class="pq-btn" data-pq="paste">붙여넣기</button><button type="button" class="pq-btn" data-pq="clear">비우기</button></div>'+
-        '<div class="pq-body" id="pqBody"><div class="pq-hint"><span>자리를 눌러 이름 넣기 · 위가 주전</span><b id="pqCount"></b></div>'+
+        '<div class="pq-body" id="pqBody"><div class="pq-hint"><b id="pqCount"></b></div>'+
         '<div class="pq-wrap"><div class="pq-stage" id="pqStage"></div></div><div id="pqPad"></div></div>'+
         '<div class="pq-scrim" hidden></div>'+
         '<section class="pq-sheet" id="pqForm" hidden aria-labelledby="pqFormT"><div class="pq-grab"></div><div class="pq-sh-head"><div class="pq-sh-t"><b id="pqFormT"></b><small id="pqFormS"></small></div><button type="button" class="pq-btn pq-ghost" data-pq="form-close">닫기</button></div><div class="pq-sh-body" id="pqFormBody"></div><div class="pq-sh-foot"><button type="button" class="pq-btn pq-pri" data-pq="form-go"></button></div></section>'+
