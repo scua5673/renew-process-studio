@@ -176,7 +176,7 @@ test('wiring: the module loads before the board script and is cached · the boar
   assert.match(board,/function switchTo\(i\)\{ if\(!pages\|\|i===idx\|\|!pages\[i\]\)return;[^\n]*?restoreAnimBeforeCapture\(\);capture\(\);[^\n]*?persist\(\); \}/);
   assert.match(board,/function persist\(\)\{ try\{ window\.boardSaveLive && window\.boardSaveLive\(\); \}catch\(_\)\{\} \}/);
   assert.match(board,/try\{if\(!_vaultAutoWriting\)window\.__vaultAutoSaveSchedule\(\);\}catch\(_\)\{\}/,'boardSaveLive asks the vault schedule');
-  assert.match(board,/function doViewClose\(\)\{\n    if\(window\.__vaultManualDirty\)\{psConfirm\("저장하지 않은 변경 사항을 버리고 나갈까요\?"/);
+  assert.match(board,/function doViewClose\(\)\{\n    if\(window\.__vaultManualDirty\)\{psConfirm\("저장하지 않은 변경 사항을 버리고 닫을까요\?"/);
   assert.match(board,/var _sig0=\(window\.__vaultEditSig&&window\.__vaultEditSig\(\)\)\|\|null;/,'«저장» takes its fingerprint through window.__vaultEditSig');
   for(const id of ['vCreateCancel','vvClose','vCreateBackMatch'])assert.ok(board.includes('id="'+id+'"'),id);
   assert.match(board,/\nfunction restoreAnimBeforeCapture\(\)\{/); assert.match(board,/\nfunction selectAnimFrame\(i,focus\)\{/); assert.match(board,/\nfunction captureSnap\(\)\{/);

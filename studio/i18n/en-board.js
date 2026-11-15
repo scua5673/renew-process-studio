@@ -12,7 +12,7 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "만들던 작전판 초안을 버렸어요":"Discarded the board draft you were making",
 "열려 있는 편집을 닫은 뒤 «되살리기»를 눌러 주세요":"Close the open editor, then press «Restore»",
 "지금은 되살릴 수 없어요 — 초안은 그대로 있어요":"Can't restore right now — the draft is still on this device",
-"만들던 작전판을 되살렸어요 · «저장하기»를 누르면 보관함에 담겨요":"Restored the board you were making · press «Save» to keep it in the Library"
+"만들던 작전판을 되살렸어요 · «저장»을 누르면 보관함에 담겨요":"Restored the board you were making · press «Save» to keep it in the Library"
 },{
 "보관함에서 만들던 {}이 있어요{} · {}":"An unsaved {} from the Library is on this device{} · {}",
 "{} (되살림)":"{} (restored)"
@@ -66,4 +66,23 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 },{
 "{}개 · 최근 저장 순":"{} · newest first",
 "«{}» 이름의 작전판이 없어요":"No boards named “{}”"
+},{});
+
+/* 3.299 — 보관함↔보드 다리: 편집 띠 말 하나 · 빵부스러기 · «편집 중» 칩 · 초안 띠 «돌아가기 · 저장하고 닫기» · 불러오기 «이어서» */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{
+"돌아가기":"Go back",
+"저장하고 닫기":"Save and close",
+"편집 중":"Editing",
+"보관함 ›":"Library ›",
+"저장하지 않은 변경 사항을 버리고 닫을까요?":"Discard unsaved changes and close?",
+"열려 있는 편집을 닫은 뒤 «돌아가기»를 눌러 주세요":"Close the open editor, then press «Go back»"
+},{
+"편집 중 · 보관함 › {} · 저장 안 한 변경 · {}":"Editing · Library › {} · unsaved changes · {}",
+"«{}»을 다시 열었어요 · 저장 안 한 변경이 그대로 있어요":"Reopened «{}» · your unsaved changes are still here",
+"보관함 · 저장 안 한 변경{}":"Library · unsaved changes{}",
+"보관함 › {} ›":"Library › {} ›"
 },{});

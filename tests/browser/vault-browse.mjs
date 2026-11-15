@@ -48,12 +48,12 @@ try{
   /* 선수 하나를 진짜 마우스로 끈다 — 고친 것 */
   const drag=async(id,dx)=>{ const b=await bf.locator(`#tokenLayer .token[data-id="${id}"]`).first().boundingBox(); assert.ok(b,'token '+id+' on the board');
     const x=b.x+b.width/2,y=b.y+b.height/2; await page.mouse.move(x,y); await page.mouse.down(); for(let i=1;i<=8;i++)await page.mouse.move(x+dx*i/8,y); await page.mouse.up(); await page.waitForTimeout(400); };
-  const asking=()=>bf.evaluate(()=>{ const o=[...document.body.children].find(e=>e.tagName==='DIV'&&/버리고 나갈까요/.test(e.textContent)); return o?o.textContent.replace(/취소|확인/g,'').trim():null; });
-  const answer=label=>bf.evaluate(l=>[...[...document.body.children].find(e=>e.tagName==='DIV'&&/버리고 나갈까요/.test(e.textContent)).querySelectorAll('button')].find(b=>b.textContent===l).click(),label);
+  const asking=()=>bf.evaluate(()=>{ const o=[...document.body.children].find(e=>e.tagName==='DIV'&&/버리고 닫을까요/.test(e.textContent)); return o?o.textContent.replace(/취소|확인/g,'').trim():null; });
+  const answer=label=>bf.evaluate(l=>[...[...document.body.children].find(e=>e.tagName==='DIV'&&/버리고 닫을까요/.test(e.textContent)).querySelectorAll('button')].find(b=>b.textContent===l).click(),label);
   const leave=async()=>{ await bf.click('#vCreateCancel'); await page.waitForTimeout(350); return asking(); };
   const left=()=>bf.waitForFunction(()=>window.__csView==='session'&&!window.__vaultEdit&&!document.body.classList.contains('book-mode'),null,{timeout:12000});
   const stored=id=>bf.evaluate(async id=>{ const d=(await libGet()).find(x=>x.libId===id); return {at:d.savedAt,pages:d.pages.map(p=>[p.name,p.snap.players.map(q=>q.x),((p.anim&&p.anim.frames)||[]).map(f=>f.snap.players[0].x)])}; },id);
-  const ASK='저장하지 않은 변경 사항을 버리고 나갈까요?';
+  const ASK='저장하지 않은 변경 사항을 버리고 닫을까요?';
   const keptBoard=await stored('VBROWSE'),keptBook=await stored('VBROWSEBOOK');
 
   // ── (b) 2쪽에서 선수를 끌고 → 1쪽으로 옮겨도 «변경 있음» → 나가기는 묻는다. «취소»는 남고, «확인»은 버린다 ──
