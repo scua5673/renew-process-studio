@@ -70,13 +70,13 @@ test('대기 줄의 첫 칸(from) — 자리가 없으면 모두 대기 줄, fro
   assert.ok(p.add.every(a=>a.x>0&&a.x<1&&a.y>0&&a.y<1),'운동장 안');
   assert.deepEqual(L.plan(S442,players,{keep:true}).add[0],Object.assign(L.plan(S442,players,{keep:true,from:0}).add[0]),'from 을 안 주면 예전 그대로');
 });
-test('작전판 — 불러오기 창은 팀 넷, 팀 3 · 4 는 판에 없으면 대기 줄(둘째 줄)',()=>{
+test('작전판 — 불러오기 창은 보이는 팀 모두(3.294 팀 10까지), 팀 3 부터는 판에 없으면 대기 줄',()=>{
   const B=require('node:fs').readFileSync(require('node:path').join(__dirname,'../studio/board.html'),'utf8');
-  assert.ok(B.includes('<option value="blue">팀 1</option><option value="red">팀 2</option><option value="yellow">팀 3</option><option value="green">팀 4</option></select>'));
-  assert.ok(B.includes("x34=side==='yellow'||side==='green'"));
+  assert.ok(B.includes("'+PSTeams.shown().map(function(k){return '<option value=\"'+k+'\">'+PSTeams.name(k)+'</option>';}).join('')+'</select>"));
+  assert.ok(B.includes("x34=PSTeams.no(side)>2,"));
   assert.ok(B.includes("cur.length?_sqTokSlots(cur,flip):x34?[]:(FORM[fe&&fe.value]||FORM['433'])"));
-  assert.ok(B.includes("{keep:cur.length>0,from:x34?16:0,code:posCode,base:posBase,group:posGroup}"));
-  assert.ok(B.includes("flip=cur.length?_sqTokFlip(cur):isRightTeam(side)"),'팀 4 는 팀 2 쪽(오른쪽 팀) 구석');
+  assert.ok(B.includes("{keep:cur.length>0,from:PSTeams.benchFrom(side),code:posCode,base:posBase,group:posGroup}"));
+  assert.ok(B.includes("flip=cur.length?_sqTokFlip(cur):isRightTeam(side)"),'짝수 팀은 팀 2 쪽(오른쪽 팀) 구석');
 });
 
 test('판이 비었으면 포메이션 자리에 새로 놓고 빈 자리는 비워 둔다',()=>{
