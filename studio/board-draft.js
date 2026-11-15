@@ -189,7 +189,8 @@
       var x=j&&j.cert;
       return !!(x&&c&&c.borrowed&&same(j)&&(c.current||c.paused&&j.ok)&&!(j.failure&&j.failure.psConflict)&&x.raw===j.raw&&x.owner===j.ownerRaw&&x.seq===j.seq&&x.generation===j.generation&&x.epoch===j.epoch&&source(j));
     }
-    function suspended(j,c){return !!(j&&j.ok&&certified(j,c));}
+    function suspended(j,c){return !!(j&&j.ok&&(certified(j,c)||idleHeld(j,c)));}
+    function idleHeld(j,c){return !!(j&&j.idle&&c&&c.idle&&same(j)&&source(j)&&!(j.failure&&j.failure.psConflict));}   /* 3.291 */
     function sourceReceipt(j,attempt){
       function guard(){if(j.receiptSeq!==attempt)throw error(null,'receipt-superseded');if(!certified(j,d.context()))throw error(null,'view:cert-lost');return true;}
       return Promise.resolve().then(function(){guard();if(!d.storage||!d.storage.peek)throw error(null,'no-idb');return d.storage.peek(j.key);}).then(function(v){
@@ -201,6 +202,23 @@
         return Promise.resolve(iv===j.record?d.verifyIDB(j.key,j.record):true).then(function(){
           guard();if(d.local.getItem(j.key)!==lv)throw changed('local-changed');
           j.store=iv===j.record?'idb':'local';j.ok=true;j.suspended=true;j.deferred=false;j.failure=null;if(d.state)d.state('ok');return true;
+        });
+      }).catch(function(e){if(j.receiptSeq===attempt&&same(j))failed(j,e);throw e;});
+    }
+    /* 3.291 — 보관함 항목을 연 동안(c.idle: 저장됨 · 보기 전용) 작업 보드 초안은 다시 담을 수 없다(판이 그 자료를 보여 준다).
+       떠나기 전에 적은 영수증(job.ok)이 저장소에 그대로 있는지만 읽어 확인한다 — sourceReceipt 와 같은 읽기, 증명서(cert) 대신
+       «지금도 한가한가»를 guard 로 본다. 쓰지 않는다. 그 사이 편집(seq) · 주인 · 초안 치움은 same() 이 막는다. */
+    function idleReceipt(j,attempt){
+      function guard(){if(j.receiptSeq!==attempt)throw error(null,'receipt-superseded');var c=d.context();if(!same(j)||!c.idle)throw error(c,!same(j)?sameWhy(j,c):'idle:busy');return true;}
+      return Promise.resolve().then(function(){guard();if(!d.storage||!d.storage.peek)throw error(null,'no-idb');return d.storage.peek(j.key);}).then(function(v){
+        guard();var lv=d.local.getItem(j.key),iv=v&&v.value;iv=iv==null?null:iv;
+        if(!source(j))throw changed('local-mirror');
+        var a=parse(lv,j),b=parse(iv,j),selected=a&&b?(b.at>a.at?iv:lv):(a?lv:(b?iv:null));
+        if(selected!==j.record)throw changed('not-selected');
+        if(iv===j.record&&!d.verifyIDB)throw error(null,'no-idb');
+        return Promise.resolve(iv===j.record?d.verifyIDB(j.key,j.record):true).then(function(){
+          guard();if(d.local.getItem(j.key)!==lv)throw changed('local-changed');
+          j.store=iv===j.record?'idb':'local';j.ok=true;j.idle=true;j.deferred=false;j.failure=null;if(d.state)d.state('ok');return true;
         });
       }).catch(function(e){if(j.receiptSeq===attempt&&same(j))failed(j,e);throw e;});
     }
@@ -266,7 +284,7 @@
         }catch(_){return Promise.reject(error(null,'capture'));}
       }
       var j=job,attempt=j.receiptSeq;if(!j.work)attempt=j.receiptSeq=(attempt||0)+1;
-      if(j.suspended){j.suspended=false;j.ok=false;}
+      if(j.suspended||j.idle){j.suspended=false;j.idle=false;j.ok=false;}
       if(options&&options.lifecycle&&!j.failure&&(c.view==='board'||c.view==='match'))try{
         current(j,true);j.cert={raw:j.raw,owner:j.ownerRaw,seq:j.seq,generation:j.generation,epoch:j.epoch,view:c.view,target:options.exitTarget||'lifecycle',idb:known&&known.owner===j.ownerRaw?known.idb:j.localBefore};
       }catch(_){}
@@ -291,6 +309,7 @@
         return Promise.resolve(j.work).catch(function(e){if(!e.psDeferred)throw e;}).then(function(){return sourceReceipt(j,attempt);});
       }
       if(c.current&&d.prepare){d.prepare();c=d.context();}
+      if(c.blocked&&c.idle){var k=job;if(k&&same(k)&&source(k)&&!(k.failure&&k.failure.psConflict)){var ia=k.receiptSeq=(k.receiptSeq||0)+1;return Promise.resolve(k.work).catch(function(e){if(!e.psDeferred)throw e;}).then(function(){return idleReceipt(k,ia);});}}   /* 3.291 */
       if(c.blocked)return Promise.reject(error(c,blockWhy(c)));
       if(c.current){var work=write(),j=job,attempt=j&&j.receiptSeq;return work.then(function(){return verify(j,true,attempt);});}
       // The guard permits read-only verification of an unchanged receipt.
@@ -328,9 +347,11 @@
         var why=borrowed?'view':w.__vaultEdit?'vault-edit':w._vaultBoardRestoring?'vault-restoring':w._vaultBoardContext?'vault-ctx':w.__animExport?'export':w.__capLock?'cap-lock':w.__psThumbCapturing?'thumb':b.classList.contains('editing')?'editing':b.classList.contains('comm-viewing')?'comm-view':'';
         if(typeof animPlaying!=='undefined'&&animPlaying){blocked=true;why=why||'playing';}
         if(typeof _bliveApplying!=='undefined'&&_bliveApplying){blocked=true;why=why||'live-apply';}
+        /* 3.291 — 보관함 항목을 연 채 저장할 게 없으면(board.html __psVaultIdle) ready() 가 기존 영수증 읽기 확인으로 지나간다 */
+        var idle=!!(blocked&&(why==='vault-edit'||why==='vault-ctx')&&!(typeof animPlaying!=='undefined'&&animPlaying)&&!(typeof _bliveApplying!=='undefined'&&_bliveApplying)&&typeof w.__psVaultIdle==='function'&&w.__psVaultIdle());
         var paused=false;
         if(!current&&o)try{var session=w.parent.PSSync.session();paused=!!(w.boardPrivateSourcePause&&w.boardPrivateSourcePause(o,String(session&&session.uid||'')));}catch(_){}
-        return {owner:o,seq:seq,generation:w._boardPrivateGeneration,view:view,needed:needed,blocked:blocked,why:why,borrowed:borrowed,current:current,paused:paused};
+        return {owner:o,seq:seq,generation:w._boardPrivateGeneration,view:view,needed:needed,blocked:blocked,why:why,idle:idle,borrowed:borrowed,current:current,paused:paused};
       },
       prepare:function(){
         w.restoreAnimBeforeCapture();
