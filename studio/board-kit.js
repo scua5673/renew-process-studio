@@ -18,7 +18,7 @@
 })(typeof window === 'undefined' ? null : window, function () {
   'use strict';
   var PARTS = ['shorts', 'socks'];
-  /* 3.289 — 팀 목록은 board-teams.js 한 곳(팀 10까지). 창의 팀 칸은 쓰는 팀만 보인다(PSTeams.shown) */
+  /* 3.294 — 팀 목록은 board-teams.js 한 곳(팀 10까지). 창의 팀 칸은 쓰는 팀만 보인다(PSTeams.shown) */
   var PT = (typeof window !== 'undefined' && window.PSTeams) || (typeof require === 'function' ? require('./board-teams.js') : null);
   var TEAMS = PT.KEYS.map(function (k) { return [k, PT.name(k)]; });
   var TEAM_DEF = PT.COL;
@@ -314,7 +314,7 @@
     }
     function close() { if (box) box.classList.remove('on'); }
     win.__psKitOpen = open;
-    win.__psKitDecorate = function () { try { decorateTray(); } catch (_) {} };   /* 3.289 — 새로 보이는 팀 알약에도 ✎(board-teams.js 가 부른다) */
+    win.__psKitDecorate = function () { try { decorateTray(); } catch (_) {} };   /* 3.294 — 새로 보이는 팀 알약에도 ✎(board-teams.js 가 부른다) */
 
     // ── 찾는 곳 ──
     // 1) 하단 도크 «선수» 칸: 팀 칩마다 ✎, 칸 머리에 «유니폼 꾸미기»
@@ -378,7 +378,7 @@
       '#psKitEd .ke-teams button.on,#psKitEd .ke-who button.on,#psKitEd .ke-sub button.on,#psKitEd .ke-parts button.on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.14);color:#14161A}',
       'body.fmdark #psKitEd .on:is(.ke-teams button,.ke-who button,.ke-sub button,.ke-parts button){background:#3a4150;color:#fff}',
       '#psKitEd .ke-teams i{width:14px;height:14px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}',
-      '#psKitEd .ke-teams{flex-wrap:wrap}', '#psKitEd .ke-teams button{flex:1 0 18%}', '#psKitEd .ke-teams button[hidden]{display:none}',   /* 3.289 — 팀이 다섯보다 많으면 다섯씩 줄바꿈 */
+      '#psKitEd .ke-teams{flex-wrap:wrap}', '#psKitEd .ke-teams button{flex:1 0 18%}', '#psKitEd .ke-teams button[hidden]{display:none}',   /* 3.294 — 팀이 다섯보다 많으면 다섯씩 줄바꿈 */
       '#psKitEd .ke-who{margin-top:6px}',
       '#psKitEd .ke-sub small{font-size:10px;opacity:.6;font-weight:600}',
       '#psKitEd .ke-sub:empty{display:none}',

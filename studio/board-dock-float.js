@@ -179,7 +179,7 @@
     function giveBack() { Object.keys(homes).forEach(function (id) { var n = doc.getElementById(id), h = homes[id]; if (n && h.parent && n.parentNode !== h.parent) h.parent.insertBefore(n, h.next && h.next.parentNode === h.parent ? h.next : null); }); }
     function labelChips() {
       doc.querySelectorAll('#benchCat .tpill').forEach(function (b) {
-        if (b.classList.contains('ps-team-add')) return;   /* 3.289 — «＋ 팀 추가»(board-teams.js)는 제 라벨을 갖고 있다 */
+        if (b.classList.contains('ps-team-add')) return;   /* 3.294 — «＋ 팀 추가»(board-teams.js)는 제 라벨을 갖고 있다 */
         var c = b.getAttribute('data-cat'), nm = TEAMS[c] || (win.PSTeams ? win.PSTeams.name(c) : ''); b.setAttribute('data-df-label', nm); b.setAttribute('data-df-n', nm.replace('팀 ', ''));
         // 토큰과 같은 유니폼(주색 · 보조색 · 무늬) — 작전판의 teamChipBG · teamMain
         try { var bgf = typeof win.teamChipBG === 'function' ? win.teamChipBG : null, mf = typeof win.teamMain === 'function' ? win.teamMain : null;
@@ -189,7 +189,7 @@
       var L = { 'cmd-role-gk': '골키퍼', 'cmd-role-c': '코치', 'cmd-role-n': '중립', 'cmd-role-t': '타깃', 'cmd-role-s': '서버', 'cmd-player-stamp': '번 선수' };
       Object.keys(L).forEach(function (id) { var b = doc.getElementById(id); if (b) b.setAttribute('data-df-label', L[id]); });
     }
-    /* 3.289 — 팀 알약이 늘거나 줄면 board-teams.js 가 다시 부른다. 칸이 열려 있으면 높이가 바뀌므로 도크 위로 다시 놓는다(자리는 열 때 한 번만 잡는다) */
+    /* 3.294 — 팀 알약이 늘거나 줄면 board-teams.js 가 다시 부른다. 칸이 열려 있으면 높이가 바뀌므로 도크 위로 다시 놓는다(자리는 열 때 한 번만 잡는다) */
     win.__psDfLabelChips = function () { labelChips(); try { if (tray.classList.contains('on')) tray.style.top = Math.max(12, dock.getBoundingClientRect().top - tray.offsetHeight - 12) + 'px'; } catch (_) {} };
     function forms() {
       var F = null; try { F = typeof FORM !== 'undefined' ? FORM : null; } catch (_) {}   /* global FORM */ if (!F) return '';

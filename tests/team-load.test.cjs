@@ -70,7 +70,7 @@ test('대기 줄의 첫 칸(from) — 자리가 없으면 모두 대기 줄, fro
   assert.ok(p.add.every(a=>a.x>0&&a.x<1&&a.y>0&&a.y<1),'운동장 안');
   assert.deepEqual(L.plan(S442,players,{keep:true}).add[0],Object.assign(L.plan(S442,players,{keep:true,from:0}).add[0]),'from 을 안 주면 예전 그대로');
 });
-test('작전판 — 불러오기 창은 보이는 팀 모두(3.289 팀 10까지), 팀 3 부터는 판에 없으면 대기 줄',()=>{
+test('작전판 — 불러오기 창은 보이는 팀 모두(3.294 팀 10까지), 팀 3 부터는 판에 없으면 대기 줄',()=>{
   const B=require('node:fs').readFileSync(require('node:path').join(__dirname,'../studio/board.html'),'utf8');
   assert.ok(B.includes("'+PSTeams.shown().map(function(k){return '<option value=\"'+k+'\">'+PSTeams.name(k)+'</option>';}).join('')+'</select>"));
   assert.ok(B.includes("x34=PSTeams.no(side)>2,"));

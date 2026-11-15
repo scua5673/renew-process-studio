@@ -1,6 +1,6 @@
 'use strict';
-/* 3.289 — 팀을 넷보다 많이(제보 29c97fc5 «팀 5, 팀 6 등 제한 없이» · 사용자 11/15 «팀 많이 추가할수 있게 해줘»).
-   팀 목록은 studio/board-teams.js(PSTeams) 한 곳 — 작전판 본문 · 유니폼 창 · 떠 있는 도크가 여기서 읽는다. 화면은 tests/browser/board-more-teams-3289. */
+/* 3.294 — 팀을 넷보다 많이(제보 29c97fc5 «팀 5, 팀 6 등 제한 없이» · 사용자 11/15 «팀 많이 추가할수 있게 해줘»).
+   팀 목록은 studio/board-teams.js(PSTeams) 한 곳 — 작전판 본문 · 유니폼 창 · 떠 있는 도크가 여기서 읽는다. 화면은 tests/browser/board-more-teams-3294. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const R=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 const T=require('../studio/board-teams.js');

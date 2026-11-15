@@ -4304,7 +4304,7 @@ const GK_DEF={blue:"#3aa6dc",red:"#d4a017",yellow:"#10b981",green:"#d4a017",pink
 function gkColFor(team){return (state.gkColors&&state.gkColors[team])||GK_DEF[team]||GK_COLOR;}
 const TEAMTXT={yellow:"#1c1300",red:"#ffffff",blue:"#ffffff",green:"#ffffff",pink:"#ffffff",
   home:"#ffffff",away:"#ffffff",neutral:"#1c1300"};
-PSTeams.fill(TEAMCOL,GK_DEF,TEAMTXT);   /* 3.289 — 팀 5~10(board-teams.js) */
+PSTeams.fill(TEAMCOL,GK_DEF,TEAMTXT);   /* 3.294 — 팀 5~10(board-teams.js) */
 function _hex2rgb(h){h=(""+h).replace("#","");if(h.length===3)h=h.split("").map(c=>c+c).join("");const n=parseInt(h,16)||0;return [(n>>16)&255,(n>>8)&255,n&255];}
 function _lum(h){const a=_hex2rgb(h).map(v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);});return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2];}
 function autoTxt(h){return _lum(h)>0.55?"#14161A":"#ffffff";}        // 배경 밝기 기준 글자색 자동 대비
@@ -7550,7 +7550,7 @@ function renderSquadGrpRow(){
     try{ toast((g||"전체 선수")+" "+n+"명 배치"); }catch(_){}
     try{ boardSaveLive(); }catch(_){} }; });
 }
-function addPlayers(team,count){count=Math.max(1,count|0);pushUndo();const mir=isRightTeam(team);const isPos=isPosLabel();const cols=5,gap=46,rowGap=50;const startN=state.players.filter(p=>p.team===team).length;/* 3.289 — 토큰이 이미 있는 칸은 건너뛴다(같은 쪽 팀 · 같은 팀을 한 번 더 놓아도 겹치지 않게). 아래로 일곱 줄, 그다음은 가운데 위로 */const busy=(x,y)=>state.players.some(p=>Math.abs(p.x-x)<20&&Math.abs(p.y-y)<20);for(let i=0,k=0;i<count;k++){const col=k%cols,r=Math.floor(k/cols),row=r<7?r:6-r;const bx=mir?(CX+58+col*gap):(CX-58-col*gap);const by=CY-(rowGap*0.5)+row*rowGap;if(k<130&&busy(bx,by))continue;state.players.push({id:uid++,team,num:isPos?"":(startN+i+1),pos:"",x:bx,y:by});i++;}var _tf=Math.min(0.4,defaultTokenScale());if((state.tokenScale||1)<_tf)state.tokenScale=_tf;renderTokens();if(typeof toast==="function")toast(count+"명 추가됨");}
+function addPlayers(team,count){count=Math.max(1,count|0);pushUndo();const mir=isRightTeam(team);const isPos=isPosLabel();const cols=5,gap=46,rowGap=50;const startN=state.players.filter(p=>p.team===team).length;/* 3.294 — 토큰이 이미 있는 칸은 건너뛴다(같은 쪽 팀 · 같은 팀을 한 번 더 놓아도 겹치지 않게). 아래로 일곱 줄, 그다음은 가운데 위로 */const busy=(x,y)=>state.players.some(p=>Math.abs(p.x-x)<20&&Math.abs(p.y-y)<20);for(let i=0,k=0;i<count;k++){const col=k%cols,r=Math.floor(k/cols),row=r<7?r:6-r;const bx=mir?(CX+58+col*gap):(CX-58-col*gap);const by=CY-(rowGap*0.5)+row*rowGap;if(k<130&&busy(bx,by))continue;state.players.push({id:uid++,team,num:isPos?"":(startN+i+1),pos:"",x:bx,y:by});i++;}var _tf=Math.min(0.4,defaultTokenScale());if((state.tokenScale||1)<_tf)state.tokenScale=_tf;renderTokens();if(typeof toast==="function")toast(count+"명 추가됨");}
 try{window.addPlayers=addPlayers;window.__benchCat=function(){return benchCat;};}catch(_){}
 /* 1.527 — 도구 막대의 팀 색 칩을 운동장으로 끌어다 놓으면 그 자리에 선수 하나가 생긴다.
    addPlayers 는 격자로 여러 명을 놓는 함수라 '떨어뜨린 좌표'에 한 명을 놓을 길이 없었다.
@@ -12111,7 +12111,7 @@ async function openAnalysisTeamLibrary(){
   mask.querySelector('#alLoad').onclick=async function(){if(teamOwner===null||teamStore.owner()!==teamOwner){mask.querySelector('#alError').textContent='계정 또는 팀이 바뀌었습니다. 명단을 다시 열어 주세요.';return;}var t=teams.find(function(t){return t.id===select.value;}),side=mask.querySelector('#alSide').value,list=Array.from(mask.querySelectorAll('#alPlayers input:checked')).map(function(c){return t.players[Number(c.value)];});if(!list.length){mask.querySelector('#alError').textContent='선수를 1명 이상 선택하세요.';return;}   /* 2.903 — 11명 제한 해제(제보 «11명만 불러오게 되어있음») */
     if(this.disabled)return;this.disabled=true;var ims=window.PSTeamPhotos?await PSTeamPhotos.forLoad(window,t.id):{},ph=function(q){return q&&ims[q.id]||'';};if(!mask.isConnected)return;   /* 4116fc54 — 이 기기에만 있는 선수 사진 */
     /* 제보 5400cd9e — 그 쪽 선수가 판에 있으면 위치·id 그대로, 포지션이 맞는 토큰에 이름·번호만(PSTeamLoad). 없을 때만 보드 포메이션(없으면 4-3-3) 자리에 새로 */
-    var cur=state.players.filter(function(p){return p.team===side&&!p.coach;}),x34=PSTeams.no(side)>2,fe=document.getElementById(side==='red'?'formAway':'formHome'),flip=cur.length?_sqTokFlip(cur):isRightTeam(side),pl=PSTeamLoad.plan(cur.length?_sqTokSlots(cur,flip):x34?[]:(FORM[fe&&fe.value]||FORM['433']),list,{keep:cur.length>0,from:PSTeams.benchFrom(side),code:posCode,base:posBase,group:posGroup}),fresh=[];   /* 3.288 · 3.289 — 팀 3~10(제보 29c97fc5): 판에 그 팀이 없으면 포메이션 대신 대기 줄(팀 둘마다 한 줄 위 — 다른 팀의 포메이션 · 대기 줄을 덮지 않는다) */
+    var cur=state.players.filter(function(p){return p.team===side&&!p.coach;}),x34=PSTeams.no(side)>2,fe=document.getElementById(side==='red'?'formAway':'formHome'),flip=cur.length?_sqTokFlip(cur):isRightTeam(side),pl=PSTeamLoad.plan(cur.length?_sqTokSlots(cur,flip):x34?[]:(FORM[fe&&fe.value]||FORM['433']),list,{keep:cur.length>0,from:PSTeams.benchFrom(side),code:posCode,base:posBase,group:posGroup}),fresh=[];   /* 3.288 · 3.294 — 팀 3~10(제보 29c97fc5): 판에 그 팀이 없으면 포메이션 대신 대기 줄(팀 둘마다 한 줄 위 — 다른 팀의 포메이션 · 대기 줄을 덮지 않는다) */
     pushUndo();PSTeamLoad.kit(state,t.kit,side,KIT_PATS);cur.forEach(function(p,i){var q=list[pl.pick[i]];PSTeamLoad.dress(p,q,ph(q));});pl.add.forEach(function(a){var at=n2u(flip?1-a.x:a.x,flip?1-a.y:a.y),p=PSTeamLoad.dress({id:uid++,team:side,num:a.p.no||'',pos:a.p.pos||'',x:at.x,y:at.y},a.p,ph(a.p));state.players.push(p);fresh.push(p);});PSTeamLoad.frames(anim.frames,animActive,cur,fresh);
     sel=null;multiSel=[];renderTokens();renderDrawings();autoSaveAnimFrame();try{if(window.boardSaveLive)window.boardSaveLive();}catch(_){}mask.remove();toast(t.name+' · '+list.length+'명 불러옴'+(cur.length?' · 판의 자리 그대로':'')+(pl.bench?(' · 대기 '+pl.bench+'명'):''));
   };
@@ -15545,7 +15545,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   try{renderSquadGrpRow();}catch(_){}   /* 2.475 — 옛 renderFormLib 호출의 유일한 산 일(보드 설정 '선수' 탭의 선수 불러오기 행)만 직접 부른다 */
   renderBench();
   (function(){const bc=$("benchCat");if(!bc)return;
-    const TEAMS=PSTeams.KEYS,TEAMNO=PSTeams.NO,TEAMDEF=PSTeams.COL;   /* 3.289 — 팀 목록은 board-teams.js 한 곳 */
+    const TEAMS=PSTeams.KEYS,TEAMNO=PSTeams.NO,TEAMDEF=PSTeams.COL;   /* 3.294 — 팀 목록은 board-teams.js 한 곳 */
     const pills=[...bc.querySelectorAll(".tpill")];
     window.syncTeamDots=function(){
       pills.forEach(p=>{const c=teamHex(p.dataset.cat);p.style.background=(typeof teamChipBG==="function")?teamChipBG(p.dataset.cat):c;p.style.color=autoTxt(c);   /* 1.844: 팔레트 알약도 유니폼 무늬 */
