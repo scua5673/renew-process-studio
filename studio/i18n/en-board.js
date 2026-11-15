@@ -67,3 +67,36 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "{}개 · 최근 저장 순":"{} · newest first",
 "«{}» 이름의 작전판이 없어요":"No boards named “{}”"
 },{});
+
+/* 3.299 — 폰 전용 세로 편집(board-phone-edit.js) */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{
+"이동":"Move",
+"글":"Text",
+"선수 이동":"Player run",
+"점선 화살표":"Dashed arrow",
+"직선 화살표":"Straight arrow",
+"물결 화살표":"Wavy arrow",
+"화살촉 없음":"No arrowhead",
+"세로 · 운동장 1":"Portrait · 1 pitch",
+"운동장이 여럿인 보드는 큰 화면에서 고쳐요":"Boards with several pitches are edited on a larger screen",
+"편집 중":"Editing",
+"편집 도구":"Edit tools",
+"선수 올리기":"Add players",
+"칩을 누르면 빈 자리에 하나씩 올라가요":"Tap a chip to add one player to a free spot",
+"한 번에":"All at once",
+"11명 포메이션으로 놓기":"Place 11 in a formation",
+"운동장은 하나 · 세로 고정이에요. 방향과 개수는 아이패드 · 컴퓨터에서 바꿔요.":"One pitch, portrait only. Orientation and pitch count change on iPad or desktop.",
+"고른 종류가 도구 띠에 남아요":"The chosen kind stays on the tool strip",
+"연결선 · 다각형 · 자유선은 아이패드 · 컴퓨터에서.":"Links, polygons and freehand lines are on iPad or desktop.",
+"지금은 폰에서 고칠 수 없어요":"This board can't be edited on a phone right now",
+"지금은 저장할 수 없어요":"Can't save right now",
+"보드에 저장됨 ✓":"Saved to the board ✓",
+"저장하지 못했어요 — 잠시 뒤 다시":"Couldn't save — try again shortly",
+"저장하고 나가기":"Save and leave",
+"나중에 저장":"Save later",
+"계속 편집":"Keep editing"
+},{},{});

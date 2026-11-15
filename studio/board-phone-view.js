@@ -29,7 +29,7 @@
     var s=host.screen||win.screen||{};
     return expandedInfo({phone:phone(win),screenWidth:s.width,screenHeight:s.height,windowWidth:host.innerWidth});
   }
-  function readOnly(win){return phone(win)&&!expanded(win);}
+  function readOnly(win){return phone(win)&&!expanded(win)&&!(win&&win.__psPhoneEditOn===true);}   /* 3.299 — 폰 편집 모드(board-phone-edit.js)가 켜진 동안은 가드를 풀어 판 · 도구가 손에 닿는다 */
   var EDITORS=['#hint','#boardToolbar','#bench','#drawPanel','.sel-ctl','.draw-ctl','#ps-dock','#ps-command-dock','#floatBar','#toolSeg','#cmd-board-settings-pop','#boardManualSave','#vaultSave','#psSaveBar','#emptyHint','#ehDoor','#vCreateSave','#vCreateSaveOnly','#vCreateEdit','#vvEdit','#editorDone','#editorCopy','#bpBoardSettings','#boardPageStrip .bp-head','#boardPageStrip .bpx','#boardPageStrip .bp-add','#bpLinkChip','#animAdd','#animDel','#animDup','#psPhoneHint','#psEditTools','#psEditToolsToggle','#animBar','#ps-tb-menu','#boardPageStrip .tb-mid','#boardPageStrip .tb-right','#boardPageStrip .tb-head'];
   var EDIT_TARGET=EDITORS.concat(['#boardPageStrip input','#ksEd input','#ksEd textarea','#editorPanel input','#editorPanel textarea','#editorPanel select','#epNameTop']).join(',');
   function install(win){
