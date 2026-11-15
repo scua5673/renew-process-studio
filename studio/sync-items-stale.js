@@ -50,6 +50,7 @@
   }
   function create(d){
     var loaded=null,loadedPermission,records=[],resolved=new Set(),certificates=new WeakMap(),prepared=new WeakMap(),tail=Promise.resolve(),loadTicket=0,latestLoad=null,captures=new Map(),notice=null,noticeContext=null;
+    var choiceById=new Map(),ignoredIds=new Set();   /* 3.296 — 읽어 둔 해제 표식(id → choice) · 이 모듈과 무관한 보관 기록 id */
     function readyNotice(c){
       if(typeof d.notify!=='function')return;noticeContext=c;if(notice!==null)return;
       notice=setTimeout(function(){notice=null;if(same(noticeContext,context())&&ready()&&!capturing())try{d.notify(noticeContext);}catch(_){}},0);
@@ -86,27 +87,54 @@
       p.ids.forEach(function(k){if(!id(k)||!Object.prototype.hasOwnProperty.call(p.expected,k)||!Object.prototype.hasOwnProperty.call(p.authored,k)||!Object.prototype.hasOwnProperty.call(b.values,k)||!raw(p.expected[k])||typeof p.authored[k]!=='string'||!raw(b.values[k]))throw issue('items_stale_archive');});
       return p;
     }
+    /* 3.296 — 보관 기록 읽기를 아낀다(사용자 11/15 «보류 해제 중… 1 / 896» 멈춤 · 그 기기의 선수 저장마다 flush_timeout): 예전 load 는 부를 때마다 모든 기록을
+       목록(list — 본문을 다 읽어 해석)으로 한 번, 본문(read)으로 또 한 번 읽었다 — 보류 896건이면 한 번에 1,800번, 항목 하나를 푸는 데 load 가 세 번이라 사실상 멈춤.
+       기록은 한 번 쓰면 바뀌지 않는다(저널은 같은 id 를 다시 쓰지 않는다). 그래서 **키 목록(ids)은 매번** 읽어 새 기록 · 지운 기록을 알고, **본문은 id 마다 한 번만** 읽어
+       해석한 것을 다시 쓴다(보류 기록 → records · 해제 표식 → choiceById · 이 모듈과 무관한 기록 → ignoredIds). 다른 창이 쓴 기록도 키 목록에 나오므로 바로 줍는다.
+       저널 I/O 가 실패하면 예전처럼 닫힌다(키 열거 · 새 본문 읽기가 던진다). 판정 규칙(ingest · settle)은 글자 그대로다. */
+    function ingest(row,value,c,next,choices){
+      if(row.k!=='scout_tool_v1')throw issue('items_stale_archive');
+      if(!value||value.metadata.id!==row.id||value.metadata.reason!==row.reason)throw issue('items_stale_archive');
+      if(row.reason==='items-stale-resolved'){
+        var choice;try{choice=JSON.parse(value.localRaw);}catch(_){throw issue('items_stale_archive');}
+        if(!choice||choice.v!==1||choice.kind!=='items-stale-resolution'||choice.choice!=='keep-current-device'||choice.uid!==c.uid||choice.wid!==c.wid||!text(choice.archiveId)||typeof choice.originalLocalRaw!=='string'||typeof choice.originalRemoteRaw!=='string'||choice.currentRaw!==value.remoteRaw)throw issue('items_stale_archive');
+        choices.push({id:row.id,choice:choice});return;
+      }
+      next.push({id:row.id,payload:decode(value,c),localRaw:value.localRaw,remoteRaw:value.remoteRaw});
+    }
     function load(){
       var c=context(),permission=d.permission(),ticket=++loadTicket;
       var work=(async function(){
       if(!c)throw issue('items_stale_owner');
       if(!same(c,loaded)||permission!==loadedPermission)loaded=null;
       function loadCurrent(){guard(c);if(d.permission()!==permission)throw issue('items_stale_owner');}
-      var journal=d.journal(c.wid),list=await journal.list(c);loadCurrent();
-      var next=[],choices=[];
-      for(var row of list){
-        if(row.reason!==REASON&&row.reason!=='items-stale-resolved')continue;
-        if(row.k!=='scout_tool_v1')throw issue('items_stale_archive');
-        var value=await journal.read(c,row.id);loadCurrent();
-        if(!value||value.metadata.id!==row.id||value.metadata.reason!==row.reason)throw issue('items_stale_archive');
-        if(row.reason==='items-stale-resolved'){
-          var choice;try{choice=JSON.parse(value.localRaw);}catch(_){throw issue('items_stale_archive');}
-          if(!choice||choice.v!==1||choice.kind!=='items-stale-resolution'||choice.choice!=='keep-current-device'||choice.uid!==c.uid||choice.wid!==c.wid||!text(choice.archiveId)||typeof choice.originalLocalRaw!=='string'||typeof choice.originalRemoteRaw!=='string'||choice.currentRaw!==value.remoteRaw)throw issue('items_stale_archive');
-          choices.push(choice);continue;
+      var journal=d.journal(c.wid),next=[],choices=[],seen=new Set();
+      var prev=new Map();records.forEach(function(r){prev.set(r.id,r);});
+      if(typeof journal.ids==='function'){
+        var ids=await journal.ids(c);loadCurrent();
+        for(var id of ids){
+          seen.add(id);
+          if(prev.has(id)){next.push(prev.get(id));continue;}
+          if(choiceById.has(id)){choices.push({id:id,choice:choiceById.get(id)});continue;}
+          if(ignoredIds.has(id))continue;
+          var value=await journal.read(c,id);loadCurrent();
+          if(!value)throw issue('items_stale_archive');
+          if(value.metadata.reason!==REASON&&value.metadata.reason!=='items-stale-resolved'){ignoredIds.add(id);continue;}
+          ingest(value.metadata,value,c,next,choices);
         }
-        next.push({id:row.id,payload:decode(value,c),localRaw:value.localRaw,remoteRaw:value.remoteRaw});
+      }else{
+        var list=await journal.list(c);loadCurrent();
+        for(var row of list){
+          if(row.reason!==REASON&&row.reason!=='items-stale-resolved')continue;
+          seen.add(row.id);
+          if(prev.has(row.id)){next.push(prev.get(row.id));continue;}
+          if(choiceById.has(row.id)){choices.push({id:row.id,choice:choiceById.get(row.id)});continue;}
+          var v2=await journal.read(c,row.id);loadCurrent();
+          ingest(row,v2,c,next,choices);
+        }
       }
-      var retired=new Set();choices.forEach(function(choice){
+      ignoredIds.forEach(function(id){if(!seen.has(id))ignoredIds.delete(id);});
+      var retired=new Set();choices.forEach(function(ch){var choice=ch.choice;
         var r=next.find(function(r){return r.id===choice.archiveId;});
         if(!r||r.localRaw!==choice.originalLocalRaw||r.remoteRaw!==choice.originalRemoteRaw)throw issue('items_stale_archive');
         if(r.payload.intent){var outbox=outboxFor();if(!outbox||!outbox.settled||outbox.settled(choice.settlement,function(){loadCurrent();return true;})!==true)throw issue('items_stale_archive');}
@@ -117,7 +145,7 @@
         var joined;do{joined=latestLoad;await joined;loadCurrent();}while(joined!==latestLoad);
         if(!ready())throw issue('items_stale_changed');return active().length;
       }
-      records=next;resolved=retired;loadedPermission=permission;loaded=c;readyNotice(c);return active().length;
+      records=next;resolved=retired;choiceById=new Map(choices.map(function(ch){return [ch.id,ch.choice];}));loadedPermission=permission;loaded=c;readyNotice(c);return active().length;
       })().catch(function(e){if(ticket===loadTicket&&same(c,context()))loaded=null;throw e;});latestLoad=work;return work;
     }
     function signature(job){return JSON.stringify(payload(job));}
