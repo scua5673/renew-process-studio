@@ -13,7 +13,11 @@ for(const w of [360,390,430])SIZES['phone'+w]={engine:engine==='chromium'?'chrom
 // 오늘 세션에 그 보관함 자료를 붙여 둔다(일정 «세션 채우기 › 보관함에서 가져오기»가 적는 모양 그대로)
 {
   const row=fx.db.get(WT+'|process_coach_v1'),doc=JSON.parse(row.v);
-  const di=(new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'})).getDay()+6)%7,day=doc.weeks[0][di],slot=day.trainings[0].slot;
+  const di=(new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'})).getDay()+6)%7,day=doc.weeks[0][di];
+  /* 합성 팀(team-app.mjs)의 토요일은 경기 날이라 «오늘 훈련»을 넣지 않는다 — 토요일(KST) CI 에서 slot 을 못 읽고 앱을 열기도 전에 떨어졌다(11/14).
+     오늘에 훈련 세션이 없으면 fixture 와 같은 모양으로 하나 둔다 */
+  if(!(day.trainings||[]).length){day.rest=false;day.board={sched:'훈련',theme:''};day.trainings=[{slot:'S'+Math.random().toString(36).slice(2,8),time:'18:00',grp:['A팀'],note:'가상 오늘 훈련',blocks:[]}];}
+  const slot=day.trainings[0].slot;
   day.board=Object.assign(day.board||{},{sched:'훈련',trains:[NAME],trainThemes:[''],trainData:[{minutes:0,thumb:'',snap:null,focus:'',gmPhases:[],gmPhaseNames:[],fromLib:'USELAND',libIdx:0}],trainSlot:[slot],
     libs:[NAME],libData:[{libId:'USELAND',minutes:0,thumb:'',focus:''}],libSlot:[slot]});
   row.v=JSON.stringify(doc);

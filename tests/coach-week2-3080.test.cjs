@@ -6,17 +6,18 @@ const P=read('process.html'),S=read('scout.html'),B=read('board.html'),I=read('i
 function fn(src,name){const a=src.indexOf('function '+name+'(');assert.ok(a>=0,name);let j=src.indexOf('{',a),d=0;for(;j<src.length;j++){if(src[j]==='{')d++;else if(src[j]==='}'&&--d===0)break;}return src.slice(a,j+1);}
 
 test('schedule: one word per match kind, extra matches keep cup',()=>{
-  const c={PSTeamAudience:require('../studio/team-audience.js')};vm.runInNewContext(read('schedule-audience.js')+fn(P,'mxExtraLabel')+fn(P,'mKindLb')+';this.L=mxExtraLabel;this.K=mKindLb;',c);
+  const c={PSTeamAudience:require('../studio/team-audience.js'),PSMatchKind:require('../studio/match-kind.js')};vm.runInNewContext(read('schedule-audience.js')+fn(P,'mxExtraLabel')+fn(P,'mKindLb')+';this.L=mxExtraLabel;this.K=mKindLb;',c);
   assert.equal(c.K(c.L({kind:'cup'}).k),'컵');assert.equal(c.K(c.L({kind:'friendly'}).k),'친선');assert.equal(c.K(c.L({}).k),'리그');
+  assert.equal(c.K(c.L({kind:'tour'}).k),'대회','3.287 — 대회');assert.equal(c.L({kind:'odd'}).k,'official','모르는 값은 리그');
   assert.equal(c.L({kind:'friendly'}).friendly,true);
   assert.ok(!/>경기 ▾</.test(P),'weekly kind button names the kind');assert.ok(!P.includes("'경기일 ▾'"));
-  assert.ok(P.includes('data-mk="cup"'),'month popup offers cup');
-  assert.ok(P.includes("day.match.kind=(matchKind==='friendly'||matchKind==='cup'||matchKind==='official')?matchKind:mMatchKind(day)"),'picking 경기 keeps an existing cup');
+  assert.ok(P.includes('PSMatchKind.LIST.map(function(o){return \'<button class="\'+(initMatchKind===o[0]?\'on\':\'\')+\'" data-mk="\'+o[0]'),'month popup offers every kind (match-kind.js)');
+  assert.ok(P.includes("day.match.kind=PSMatchKind.has(matchKind)?matchKind:mMatchKind(day)"),'picking 경기 keeps an existing cup · 대회');
 });
 
 test('match list: 리그·컵·친선 badges, 공식전 totals, cup survives the schedule merge',()=>{
-  const c={};vm.runInNewContext(fn(S,'matchKindLabel')+';this.f=matchKindLabel;',c);
-  assert.equal(c.f({kind:'official'}),'리그');assert.equal(c.f({kind:'cup'}),'컵');assert.equal(c.f({kind:'friendly'}),'친선');assert.equal(c.f({}),'리그');
+  const c={PSMatchKind:require('../studio/match-kind.js')};vm.runInNewContext(fn(S,'matchKindLabel')+';this.f=matchKindLabel;',c);
+  assert.equal(c.f({kind:'official'}),'리그');assert.equal(c.f({kind:'cup'}),'컵');assert.equal(c.f({kind:'friendly'}),'친선');assert.equal(c.f({}),'리그');assert.equal(c.f({kind:'tour'}),'대회');
   assert.ok(S.includes('var MATCH_KIND_LABEL={official:"공식전",friendly:"친선"};'));
   assert.ok(S.includes("var _nk=_sk;"),'cup is kept on import');
   assert.ok(!/label:"정식경기"/.test(S),'no 정식경기 option left');

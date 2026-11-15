@@ -418,9 +418,9 @@ function yearMatchRows(days){
   days.forEach(x=>{ if(x.kind!=='g')return; const day=x.day;
     let mk='official'; try{ mk=mMatchKind(day); }catch(_){}
     const list=[{opp:String((day.match&&day.match.opp)||(day.board&&day.board.opp)||'').trim(),kind:mk}]
-      .concat(mxExtraList(day).map(a=>{ const L=mxExtraLabel(a); return {opp:L.o==='상대 미정'?'':L.o,kind:L.friendly?'friendly':'official'}; }));
+      .concat(mxExtraList(day).map(a=>{ const L=mxExtraLabel(a); return {opp:L.o==='상대 미정'?'':L.o,kind:L.k}; }));
     list.forEach(o=>{ let doc=null; try{ doc=wkbdMatchDoc(x.iso,o.opp); }catch(_){}
-      const r={dt:x.dt,m:x.m,opp:o.opp||'상대 미정',kind:(doc&&(doc.kind==='friendly'||doc.kind==='cup'))?doc.kind:o.kind,doc:doc,res:'',gf:null,ga:null};
+      const r={dt:x.dt,m:x.m,opp:o.opp||'상대 미정',kind:(doc&&doc.kind!=='official'&&M_KIND_LB[doc.kind])?doc.kind:o.kind,doc:doc,res:'',gf:null,ga:null};
       const a=doc&&doc.scoreUs, b=doc&&doc.scoreThem;
       if(doc&&a!==''&&a!=null&&b!==''&&b!=null&&isFinite(+a)&&isFinite(+b)){ r.gf=+a; r.ga=+b; r.res=r.gf>r.ga?'w':(r.gf<r.ga?'l':'d'); }
       out.push(r); }); });
@@ -477,7 +477,7 @@ function yearReviewPages(Y,team){
   const dlist=drills.length?`<ol class="pyr-dr">${drills.map(d=>`<li><b>${E(d[0])}</b><span>${d[1].n}회${d[1].min?` · ${d[1].min}분`:''}</span><em>마지막 ${d[1].last.getMonth()+1}.${d[1].last.getDate()}</em></li>`).join('')}</ol>`:'<div class="pyr-none">훈련 칩(작전판 · 보관함 훈련)을 넣은 날이 없어요</div>';
   pages.push(yPage(ctxLine,'훈련 내용',`세션 ${T.ses} · ${hrs(T.min)}시간`,`<h3>달마다 고른 주제 <em>세션 수 · 진할수록 많이</em></h3>${heat}<h3>자주 쓴 훈련 <em>횟수 순 · 일정에 넣은 훈련 이름 기준</em></h3>${dlist}`));
   /* ── ④~ 경기 기록 ── */
-  const kinds=['official','cup','friendly'].map(k=>[k,yRec(matches.filter(r=>r.kind===k))]).filter(k=>k[1].n);
+  const kinds=Object.keys(M_KIND_LB).map(k=>[k,yRec(matches.filter(r=>r.kind===k))]).filter(k=>k[1].n);
   const ha=k=>yRec(matches.filter(r=>r.doc&&String(r.doc.homeAway||'')===k));
   const ex=matches.map(r=>+(r.doc&&r.doc.execution)||0).filter(v=>v>0);
   const sumBox=`<div class="pyr-msum">`

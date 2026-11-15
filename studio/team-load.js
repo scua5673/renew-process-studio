@@ -33,7 +33,7 @@ function bench(k){return [0.955-(k%16)*0.058,0.965-Math.floor(k/16)*0.05];}
 function plan(slots,players,opts){
  opts=opts||{};var m=match(slots,players,opts),add=[];
  if(!opts.keep)slots.forEach(function(s,i){if(m.pick[i]>=0)add.push({p:players[m.pick[i]],x:s[0],y:s[1]});});
- m.extra.forEach(function(j,k){var b=bench(k);add.push({p:players[j],x:b[0],y:b[1],bench:true});});
+ m.extra.forEach(function(j,k){var b=bench(k+(+opts.from||0));add.push({p:players[j],x:b[0],y:b[1],bench:true});});   /* from: 대기 줄의 첫 칸(16 = 둘째 줄부터 — 3.288 팀 3 · 4) */
  return {pick:m.pick,add:add,bench:m.extra.length};
 }
 /* 판 위 토큰에 저장 선수를 입힌다 — 위치·id·크기는 그대로. 포지션 표시는 토큰 것이 자리라 비어 있을 때만 채운다. 선수가 없으면 이름만 비운다.

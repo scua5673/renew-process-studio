@@ -14,7 +14,8 @@ function cut(src,from,to){ const a=src.indexOf(from); assert.ok(a>0,'start marke
 const plain=o=>JSON.parse(JSON.stringify(o));
 const PURE=cut(sync,'/* ── 3.005 · 썸네일 정리 순수 구간 시작','/* ── 3.005 · 썸네일 정리 순수 구간 끝 ── */');
 const HASH=cut(sync,'function hash(s){','\n')+'\n'+cut(sync,'function libShareCopy(it){','\nfunction libHash(it)')+'\nfunction libHash(it){return hash(JSON.stringify(libShareCopy(it)));}';
-function pure(){ const c=vm.createContext({}); vm.runInContext(HASH+'\n'+PURE+';this.api={LIB_DIET,libDietHas,libDietItem,libHash};',c); return c.api; }
+/* 3.288 — 규칙은 studio/lib-diet.js 로 옮겼다(페이지 장면까지 · tests/lib-diet-3288). 이 구간은 그 모듈에 맡긴다 */
+function pure(){ const c=vm.createContext({window:{PSLibDiet:require('../studio/lib-diet.js')}}); vm.runInContext(HASH+'\n'+PURE+';this.api={LIB_DIET,libDietHas,libDietItem,libHash};',c); return c.api; }
 const snap=k=>({pitchSpec:'fifa',players:[{id:101,team:'blue',num:'6',x:400+k,y:300}],equipment:[],drawings:[]});
 const frames=n=>Array.from({length:n},(_,k)=>({snap:snap(k),hold:.6,dur:1,cap:'장면 '+k,thumb:'<svg data-k="'+k+'"></svg>'}));
 
@@ -65,5 +66,5 @@ test('sync slims this device only: before judging, on what it pulls, and once pe
   const stage=cut(sync,'function syncLibrary(at,m,now,wid,ownerGuard){','\nfunction _syncLibrary(');
   assert.match(stage,/ls\.sig===sig&&ls\.rev===rev&&ls\.tomb===tombN&&m\.ld===LIB_DIET\) return \{applied:0,pushed:0,ackHash:hash\(revRaw\),libSkipped:true\};/,'정리를 아직 안 한 공간은 한 번 다 본다');
   assert.match(stage,/m\.ld=LIB_DIET;/);
-  assert.equal(pure().LIB_DIET,1);
+  assert.equal(pure().LIB_DIET,2,'3.288 — 페이지 장면까지 한 번 더 본다');
 });

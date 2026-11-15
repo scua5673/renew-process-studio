@@ -129,7 +129,7 @@ test('훈련 편집기 «PDF» — 저장과 같은 직렬화, 보관함과 같�
 
 /* ── 경기 화면(scout) ── */
 function scoutCtx(over){
-  const ctx=vm.createContext(Object.assign({JSON,Math,Date,localStorage:{getItem:()=>null},
+  const ctx=vm.createContext(Object.assign({JSON,Math,Date,localStorage:{getItem:()=>null},PSMatchKind:require('../studio/match-kind.js'),
     matchCarryLines:v=>String(v||'').split('\n').map(x=>x.trim()).filter(Boolean),
     MB2_RV:[['attack','공격 시'],['defense','수비 시'],['attackTransition','수비→공격'],['defenseTransition','공격→수비'],['setPlay','세트피스']],
     data:{players:[{id:'p1',num:1,name:'골키'},{id:'p2',num:7,name:'윙'},{id:'p3',num:12,name:'교체'}]},
