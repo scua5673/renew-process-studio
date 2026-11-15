@@ -254,6 +254,7 @@
     ['ps_elsewhere_back','device','ls','session','one-window.js'],   // 3.276 — 안내 화면에서 돌아갈 app.html 주소(이 탭 sessionStorage)
     ['ps_elsewhere_screen','device','ls','session','one-window.js'],   // 3.276 — 물러날 때 보던 화면(이 탭 sessionStorage)
     ['ps_one_window','device','ls','pref','one-window.js'],   // 3.276 — '0' 이면 한 기기 한 창을 끈다(되돌리기)
+    ['ps_open_chooser_v1','device','ls','pref','board-open-chooser.js'],   // 3.297 — '0' 이면 앱을 열 때 «불러오기» 창을 띄우지 않는다(보드 설정 › 내 화면 › 앱을 열 때)
     ['ps_selpanel_rc_v1','device','ls','pref','board.html'],
     ['ps_shared_view_seen_v1','device','ls','seen','shared-view-observation.js'],
     ['ps_side_folded_v1','device','ls','pref','app.html'],

@@ -125,7 +125,7 @@ export const SIZES={
   desktop:{engine:'chromium',ctx:{viewport:{width:1280,height:800},deviceScaleFactor:1}}
 };
 
-export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false,guest=false,init=null,learning=false,oneWindow=false}={}){
+export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false,guest=false,init=null,learning=false,openChooser=false,oneWindow=false}={}){
   /* 3.276 — 한 기기 한 창(studio/one-window.js)은 시험에서 기본으로 끈다(되돌리기 스위치 localStorage ps_one_window='0' — 운영 기본은 켬, tests/one-window-3276 가 지킨다).
      같은 문맥에 앱 창을 둘 띄우는 시험이 많아(먼저 연 창이 안내 화면으로 물러난다) 켠 채 보는 시험만 oneWindow:true(tests/browser/one-window-3276).
      PS_ONE_WINDOW=1 이면 어느 시험이든 켠 채로 돈다(로그인 · 로그아웃 · 새 판 적용이 창 잠금과 함께 도는지 손으로 볼 때). */
@@ -145,9 +145,10 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
   const browser=browsers[S.engine]||(browsers[S.engine]=await pw[S.engine].launch({headless:true,...(S.engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})}));
   const context=await browser.newContext({...S.ctx,serviceWorkers:'block',timezoneId:'Asia/Seoul',locale:'ko-KR',colorScheme:dark?'dark':'light'});
   const base=fx.base;
-  await context.addInitScript(({A,WT,teams,base,dark,examples,tilt3d,guest,oneWindow})=>{
+  await context.addInitScript(({A,WT,teams,base,dark,examples,tilt3d,guest,oneWindow,openChooser})=>{
     if(location.origin!==base||window.top!==window)return;
     if(!oneWindow){try{localStorage.setItem('ps_one_window','0');}catch(_){}}   /* 문서마다 — 로그아웃 · 계정 전환이 저장소를 비워도 꺼진 채로 */
+    if(!openChooser){try{localStorage.setItem('ps_open_chooser_v1','0');}catch(_){}}   /* 3.297 — 앱을 열 때 «불러오기» 창(board-open-chooser.js)도 시험에선 기본으로 끈다 — 보는 시험만 openChooser:true */
     if(localStorage.getItem('wt_seeded'))return;localStorage.setItem('wt_seeded','1');
     if(guest){if(dark)localStorage.setItem('cs_theme','dark');if(tilt3d!==null)localStorage.setItem('ps_board_tilt3d',tilt3d?'1':'0');return;}
     localStorage.setItem('ps_sync_session',JSON.stringify({uid:A,at:'fixture-access-A',rt:'fixture-refresh-A',exp:Date.now()+36000000,email:'a@example.invalid'}));
@@ -156,7 +157,7 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
     if(dark)localStorage.setItem('cs_theme','dark');
     if(tilt3d!==null)localStorage.setItem('ps_board_tilt3d',tilt3d?'1':'0');   /* 3.027 — 앱은 처음 들어온 기기를 3D 로 연다. 시험은 평면이 기본(null = 처음 들어온 기기 그대로) */
     if(!examples)localStorage.setItem('ps_vault_px_v1',JSON.stringify({[A+'|'+WT]:1}));   /* 3.001 — 보관함 «프로세스» 예시를 이미 받은 사용자(이 판 전과 같은 보관함). 예시 넣기를 보는 시험만 examples:true */
-  },{A,WT,teams:teamsFor(fx_opts),base,dark,examples,tilt3d,guest,oneWindow});
+  },{A,WT,teams:teamsFor(fx_opts),base,dark,examples,tilt3d,guest,oneWindow,openChooser});
   if(init)await context.addInitScript(init.fn,init.arg);
   await context.routeWebSocket('**/*',s=>s.close());
   const blocked=[];
