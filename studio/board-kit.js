@@ -18,8 +18,10 @@
 })(typeof window === 'undefined' ? null : window, function () {
   'use strict';
   var PARTS = ['shorts', 'socks'];
-  var TEAMS = [['blue', '팀 1'], ['red', '팀 2'], ['yellow', '팀 3'], ['green', '팀 4']];
-  var TEAM_DEF = { blue: '#1a2f5c', red: '#d12f38', yellow: '#eeff00', green: '#34a56f' };
+  /* 3.294 — 팀 목록은 board-teams.js 한 곳(팀 10까지). 창의 팀 칸은 쓰는 팀만 보인다(PSTeams.shown) */
+  var PT = (typeof window !== 'undefined' && window.PSTeams) || (typeof require === 'function' ? require('./board-teams.js') : null);
+  var TEAMS = PT.KEYS.map(function (k) { return [k, PT.name(k)]; });
+  var TEAM_DEF = PT.COL;
   var SWATCH = [['#d71920', '빨강'], ['#8b0d1f', '와인'], ['#f26b1d', '주황'], ['#ffd400', '노랑'], ['#1f8f4e', '초록'], ['#0b5d3b', '진초록'], ['#6cc4ee', '하늘'], ['#1e5bc6', '파랑'],
     ['#14213d', '네이비'], ['#6a2c91', '보라'], ['#e85a9b', '분홍'], ['#ffffff', '흰색'], ['#c9ced6', '회색'], ['#1a1a1a', '검정'], ['#c8a24a', '금색'], ['#7a4a2a', '갈색']];
   var PATS = [['solid', '단색'], ['v', '세로 줄무늬'], ['thinv', '가는 세로 줄무늬'], ['h', '가로 줄무늬'], ['half', '반반'], ['quarters', '쿼터'], ['band', '세로 띠'], ['hoop', '가로 띠'], ['sash', '사선 띠'], ['diag', '사선 줄무늬'],
@@ -270,7 +272,8 @@
       var s = style(), e = kitEntry(false) || {}, shorts = hex(e.shorts) || auto('shorts', s.main), socks = hex(e.socks) || auto('socks', s.main);
       var more = { sleeve: hex(e.sleeve), trim: hex(e.trim), collar: e.collar }; s.more = more;
       paintFig(box.querySelector('.ke-fig'), s.main, s.accent, s.pat, shorts, socks, { txt: s.txt || ink(s.main), stroke: s.stroke || 'rgba(0,0,0,.25)' }, false, more);
-      [].forEach.call(box.querySelectorAll('.ke-teams [data-team]'), function (b) { var t = b.getAttribute('data-team'), on = t === ed.team; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); try { b.querySelector('i').style.background = win.teamChipBG ? win.teamChipBG(t) : TEAM_DEF[t]; } catch (_) {} });
+      var teamsOn = PT.shown();
+      [].forEach.call(box.querySelectorAll('.ke-teams [data-team]'), function (b) { var t = b.getAttribute('data-team'), on = t === ed.team; b.hidden = !on && teamsOn.indexOf(t) < 0; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); try { b.querySelector('i').style.background = win.teamChipBG ? win.teamChipBG(t) : TEAM_DEF[t]; } catch (_) {} });
       [].forEach.call(box.querySelectorAll('.ke-who [data-gk]'), function (b) { var on = (b.getAttribute('data-gk') === '1') === ed.gk; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
       [].forEach.call(box.querySelectorAll('[data-part]'), function (b) { b.classList.toggle('on', b.getAttribute('data-part') === ed.part); });
       var fig = box.querySelector('.ke-fig'); fig.setAttribute('data-sel', ed.part);
@@ -311,6 +314,7 @@
     }
     function close() { if (box) box.classList.remove('on'); }
     win.__psKitOpen = open;
+    win.__psKitDecorate = function () { try { decorateTray(); } catch (_) {} };   /* 3.294 — 새로 보이는 팀 알약에도 ✎(board-teams.js 가 부른다) */
 
     // ── 찾는 곳 ──
     // 1) 하단 도크 «선수» 칸: 팀 칩마다 ✎, 칸 머리에 «유니폼 꾸미기»
@@ -374,6 +378,7 @@
       '#psKitEd .ke-teams button.on,#psKitEd .ke-who button.on,#psKitEd .ke-sub button.on,#psKitEd .ke-parts button.on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.14);color:#14161A}',
       'body.fmdark #psKitEd .on:is(.ke-teams button,.ke-who button,.ke-sub button,.ke-parts button){background:#3a4150;color:#fff}',
       '#psKitEd .ke-teams i{width:14px;height:14px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}',
+      '#psKitEd .ke-teams{flex-wrap:wrap}', '#psKitEd .ke-teams button{flex:1 0 18%}', '#psKitEd .ke-teams button[hidden]{display:none}',   /* 3.294 — 팀이 다섯보다 많으면 다섯씩 줄바꿈 */
       '#psKitEd .ke-who{margin-top:6px}',
       '#psKitEd .ke-sub small{font-size:10px;opacity:.6;font-weight:600}',
       '#psKitEd .ke-sub:empty{display:none}',

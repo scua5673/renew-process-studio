@@ -15,7 +15,8 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 function ctx(opts){ opts=opts||{};
   const log={undo:0,stop:0,toast:[],saved:0};
   const state={orientation:'h',spFlip:false,halfSide:'L',players:[],equipment:[],drawings:[],ball:null,press:null,spMarks:null};
-  const c=vm.createContext({Object,Array,JSON,Number,Math,W,H,state,log,
+  const c=vm.createContext({Object,Array,JSON,Number,Math,W,H,state,log,isRightTeam:t=>t==='away'||require('../studio/board-teams.js').right(t),   /* 3.294 — 오른쪽 팀은 board-teams.js(짝수 번호) */
+    
     dc:clone,normPitchView:v=>(v==='q1'||v==='half'||v==='q3')?v:'full',PITCH_SPECS:{fifa:{},u12:{},futsal:{}},captureSnap:()=>clone(state),renderAnimFrames:()=>{},window:{},document:{body:{classList:{contains:k=>!!(opts.cls&&opts.cls[k])}}},
     anim:{frames:[]},animActive:-1,animPlaying:false,editorScenes:null,editorSceneIdx:0,
     _animLive:()=>opts.live!==false,
