@@ -42,7 +42,7 @@
     function guard(e){
       if(!readOnly(win))return;
       var t=e.target;
-      if(closest(t,'#psPhoneBoardNotice,#psVvPlay,#psEyeDialog'))return;
+      if(closest(t,'#psPhoneBoardNotice,#psVvPlay,#psEyeDialog,#psQuick'))return;
       var canvas=closest(t,'#boardStage'),edit=closest(t,EDIT_TARGET);
       // Blocking the canvas default also prevents iframe focus/parent blur.
       if(canvas&&['pointerdown','touchstart','mousedown'].indexOf(e.type)>=0){try{if(win.parent.__psAppMoreClose)win.parent.__psAppMoreClose();}catch(_){}}
@@ -72,12 +72,16 @@
       if(!on||!stage){if(note)note.hidden=true;return;}
       if(!note){
         note=doc.createElement('aside');note.id='psPhoneBoardNotice';note.setAttribute('role','note');
-        note.innerHTML='<div><strong>작은 휴대폰 화면에서는 보기만 가능해요</strong><span>'+MESSAGE+' 폴더블은 넓게 펼친 화면에서 편집할 수 있어요.</span></div><button type="button" class="ps-btn-secondary" hidden>재생</button>';
-        note.querySelector('button').onclick=function(){try{if(playback().playing)win.stopAnim();else win.playAnim();}catch(_){}sync();};
+        note.innerHTML='<div><strong>작은 휴대폰 화면에서는 보기만 가능해요</strong><span>'+MESSAGE+' 폴더블은 넓게 펼친 화면에서 편집할 수 있어요.</span></div><button type="button" class="ps-btn-secondary" data-play hidden>재생</button><button type="button" class="ps-btn-primary" data-quick hidden>＋ 빠른 보드</button>';
+        /* 3.297 — 빠른 보드(board-quick-depth.js): 작업 보드는 «＋ 빠른 보드», 보관함에서 연 내 빠른 보드는 «이름 고치기» */
+        note.querySelector('[data-quick]').onclick=function(){try{if(win.PSQuickDepth)win.PSQuickDepth.open(win);}catch(_){}};
+        note.querySelector('[data-play]').onclick=function(){try{if(playback().playing)win.stopAnim();else win.playAnim();}catch(_){}sync();};
       }
       if(note.parentNode!==stage.parentNode)stage.parentNode.insertBefore(note,stage);
       note.hidden=doc.body.classList.contains('comm-viewing')||(win.__csView==='session'&&!doc.body.classList.contains('editing'));
-      var p=playback(),b=note.querySelector('button');b.hidden=p.count<2||doc.body.classList.contains('ps-vv-phone');b.textContent=p.playing?'정지':'재생';b.setAttribute('aria-label',p.playing?'애니메이션 정지':'애니메이션 재생');
+      var qb=note.querySelector('[data-quick]'),qe=null;try{qe=win.PSQuickDepth&&win.PSQuickDepth.entry(win);}catch(_){}
+      qb.hidden=!qe;if(qe&&qb.textContent!==qe.label)qb.textContent=qe.label;
+      var p=playback(),b=note.querySelector('[data-play]');b.hidden=p.count<2||doc.body.classList.contains('ps-vv-phone');b.textContent=p.playing?'정지':'재생';b.setAttribute('aria-label',p.playing?'애니메이션 정지':'애니메이션 재생');
     }
     function schedule(){if(!queued){queued=true;win.requestAnimationFrame(sync);}}
     function boot(){
@@ -88,7 +92,7 @@
       style.textContent=EDITORS.concat(['#ps-df-tray','#ps-df-opts']).map(function(s){return 'html.ps-page-board body.ps-phone-board-readonly'+priority+' '+s;}).join(',')+'{display:none!important}'+
         'html.ps-page-board body.ps-phone-board-readonly .vc-act.edit{display:none!important}'+
         '#psPhoneBoardNotice{box-sizing:border-box;flex:none;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:var(--c-surface);color:var(--c-ink);border-bottom:1px solid var(--c-line);font:inherit;z-index:150;position:relative;text-align:left;word-break:keep-all}'+
-        '#psPhoneBoardNotice[hidden],#psPhoneBoardNotice button[hidden],body.ps-vv-phone #psPhoneBoardNotice button{display:none!important}'+
+        '#psPhoneBoardNotice[hidden],#psPhoneBoardNotice button[hidden],body.ps-vv-phone #psPhoneBoardNotice [data-play]{display:none!important}'+
         '#psPhoneBoardNotice strong{display:block;font-size:var(--t-5);font-weight:var(--fw-head);line-height:1.5}'+
         '#psPhoneBoardNotice span{display:block;font-size:var(--t-3);line-height:1.5;color:var(--c-muted)}'+
         'html.ps-page-board body.ps-phone-board-readonly #boardPageStrip.on.bp-multi:not(#_){position:relative!important;z-index:6!important}'+
