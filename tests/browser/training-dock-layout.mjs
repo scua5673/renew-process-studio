@@ -49,6 +49,7 @@ try{
   await context.route('**/*',r=>new URL(r.request().url()).origin===base?r.continue():r.abort('blockedbyclient'));
   await context.addInitScript(()=>{
     const uid='11111111-1111-4111-8111-111111111111',wid='22222222-2222-4222-8222-222222222222';
+    try{localStorage.setItem('ps_open_chooser_v1','0');}catch(_){}   /* 3.297 — 앱을 열면 «불러오기» 창(board-open-chooser.js)은 이 자체 fixture 에서도 끈다(창이 도크 단추 클릭을 가렸다 — team-app.mjs 와 같은 스위치) */
     if(!localStorage.getItem('fixture-seeded')){localStorage.setItem('fixture-seeded','1');localStorage.setItem('ps_sync_session',JSON.stringify({uid,at:'fixture-only',rt:'fixture-only',exp:Date.now()+86400000}));localStorage.setItem('ps_active_ws',wid);localStorage.setItem('ps_cache_owner_v1',JSON.stringify({v:1,uid,wid,nonce:'fixture'}));localStorage.setItem('ps_ws_list',JSON.stringify([{id:wid,kind:'team',role:'owner',name:'가상 팀'}]));localStorage.setItem('cs_perms_v1',JSON.stringify({v:1,defaultRole:'player',members:{[uid]:{role:'executive'}}}));localStorage.setItem('cs_lang','ko');localStorage.setItem('cs_theme','light');}
     window.PSSync={session:()=>JSON.parse(localStorage.getItem('ps_sync_session')),activeWs:()=>wid,activeWsObj:()=>({id:wid,kind:'team',role:'owner',name:'가상 팀'}),dataUnlocked:()=>true,keyReady:()=>true,displayName:()=> '가상 코치',state:()=>({status:'ok'}),pendingInfo:()=>({count:0}),act(){},ping(){},event(){},syncNow:()=>Promise.resolve({})};
   });
