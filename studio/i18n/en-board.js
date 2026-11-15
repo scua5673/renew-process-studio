@@ -35,7 +35,40 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "팀 {} 추가":"Add Team {}"
 },{});
 
-/* 3.297 — 휴대폰 빠른 보드(board-quick-depth.js · board-phone-view.js «＋ 빠른 보드») */
+/* 3.297 — 앱을 열면 «불러오기» 창(board-open-chooser.js) */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{
+"빈 보드로 시작":"Start with an empty board",
+"운동장만 있어요":"Only the pitch",
+"이어서":"Continue",
+"작업 보드":"Working board",
+"마지막에 보던 판 그대로":"Right where you left off",
+"지금은 열 수 없어요 — 보관함에서 열어 주세요":"Can't open it right now — open it from the Library",
+"폰에서는 보기로 열어요":"On a phone, boards open in view mode",
+"어느 작전판으로 시작할까요?":"Which board would you like to start with?",
+"닫기 · 이어서":"Close · Continue",
+"새 보드":"New board",
+"빈 운동장에서 시작":"Start from an empty pitch",
+"보관함 작전판":"Library boards",
+"이름으로 찾기":"Search by name",
+"작전판 이름으로 찾기":"Search boards by name",
+"이 폴더에 작전판이 없어요":"No boards in this folder",
+"앱을 열 때 이 창 보기":"Show this when the app opens",
+"· 바깥 누르기 = 이어서":"· click outside = Continue",
+"앱을 열 때":"When the app opens",
+"불러오기 창":"Open dialog",
+"앱을 열면 작업 보드 위에 보관함 작전판을 고르는 창이 떠요":"When the app opens, a dialog over the working board lets you pick a Library board",
+"바로 보드":"Straight to the board",
+"앱을 열면 마지막 작업 보드가 바로 보여요":"When the app opens, the last working board shows right away"
+},{
+"{}개 · 최근 저장 순":"{} · newest first",
+"«{}» 이름의 작전판이 없어요":"No boards named “{}”"
+},{});
+
+/* 3.300 — 휴대폰 빠른 보드(board-quick-depth.js · board-phone-view.js «＋ 빠른 보드») */
 (function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
 for(k in D)(E[k]||(E[k]={})).en=D[k];
 for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);

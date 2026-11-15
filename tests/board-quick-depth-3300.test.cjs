@@ -1,4 +1,4 @@
-// 3.297 휴대폰 빠른 보드(board-quick-depth.js) — 순수 함수 · 배선. 브라우저: tests/browser/board-quick-depth-3297.mjs
+// 3.300 휴대폰 빠른 보드(board-quick-depth.js) — 순수 함수 · 배선. 브라우저: tests/browser/board-quick-depth-3300.mjs
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const Q=require('../studio/board-quick-depth.js');
 const root=path.join(__dirname,'..');

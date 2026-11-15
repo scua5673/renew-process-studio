@@ -37,7 +37,7 @@
     var doc=win.document,note=null,queued=false,lastTip=0;
     win.psPhoneBoardReadOnly=function(){return readOnly(win);};
     win.psPhoneBoardNotice=function(){try{if(win.toast)win.toast(MESSAGE);}catch(_){}return false;};
-    /* 3.297 — 띠에는 «보기 전용»만. 설명은 판 · 편집 단추를 누를 때 알림으로(6초에 한 번) */
+    /* 3.300 — 띠에는 «보기 전용»만. 설명은 판 · 편집 단추를 누를 때 알림으로(6초에 한 번) */
     function tip(){var n=Date.now();if(n-lastTip<6000)return;lastTip=n;win.psPhoneBoardNotice();}
     function closest(t,s){return t&&t.closest&&t.closest(s);}
     function stop(e,scroll){if(!scroll)e.preventDefault();e.stopImmediatePropagation();}
@@ -76,7 +76,7 @@
         note=doc.createElement('aside');note.id='psPhoneBoardNotice';note.setAttribute('role','note');
         note.setAttribute('aria-label','보기 전용 · '+MESSAGE);
         note.innerHTML='<span class="ps-pv-ro">보기 전용</span><span class="ps-pv-fill"></span><button type="button" class="ps-btn-secondary" data-play hidden>재생</button><button type="button" class="ps-btn-primary" data-quick hidden>＋ 빠른 보드</button>';
-        /* 3.297 — 빠른 보드(board-quick-depth.js): 작업 보드는 «＋ 빠른 보드», 보관함에서 연 내 빠른 보드는 «이름 고치기» */
+        /* 3.300 — 빠른 보드(board-quick-depth.js): 작업 보드는 «＋ 빠른 보드», 보관함에서 연 내 빠른 보드는 «이름 고치기» */
         note.querySelector('[data-quick]').onclick=function(){try{if(win.PSQuickDepth)win.PSQuickDepth.open(win);}catch(_){}};
         note.querySelector('[data-play]').onclick=function(){try{if(playback().playing)win.stopAnim();else win.playAnim();}catch(_){}sync();};
       }

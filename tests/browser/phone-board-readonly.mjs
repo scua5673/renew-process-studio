@@ -37,7 +37,7 @@ try{for(const size of ['phone','ipad','desktop']){
  if(size==='phone'){
   assert.deepEqual(await read(),start,'phone pointer drag leaves the board unchanged');
   await f.locator('#psPhoneBoardNotice').waitFor({state:'visible'});
-  // 3.297 — 띠는 «보기 전용» 한 줄(+ 단추), 설명은 판을 누를 때 알림 · 화면 낭독기는 띠의 aria-label
+  // 3.300 — 띠는 «보기 전용» 한 줄(+ 단추), 설명은 판을 누를 때 알림 · 화면 낭독기는 띠의 aria-label
   assert.equal((await f.locator('#psPhoneBoardNotice .ps-pv-ro').innerText()).trim(),'보기 전용');
   assert.match(await f.locator('#psPhoneBoardNotice').getAttribute('aria-label'),/보드 수정은 아이패드나 컴퓨터에서 가능합니다/);
   assert.ok((await f.locator('#psPhoneBoardNotice').boundingBox()).height<=60,'one slim line above the board');
