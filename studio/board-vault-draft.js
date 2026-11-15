@@ -83,7 +83,9 @@
     function write(now){
       if(!editing()||playing())return false;
       var c=sess.ctx,o=c.owner,s=sig();
-      if(sess.base===undefined){sess.base=s;return false;}          /* 연 그대로의 모습 — 이것과 다를 때만 초안 */
+      /* 연 그대로의 모습 — 이것과 다를 때만 초안. 보관함 자료 «편집»은 편집기의 «변경 있음»이 이미 달라졌음을 말하므로 기준이 늦게 잡혀도 적는다
+         (3.298 — 느린 기기: 650ms 뒤에도 불러오는 중이면 기준을 못 잡았고, 첫 손질의 쓰기가 기준만 잡고 끝나 초안이 없었다 — CI 웹킷 vault-board-draft «고치던 초안» 시간 초과) */
+      if(sess.base===undefined){sess.base=s;if(!(!w.__vaultPending&&w.__curVaultId&&w.__vaultManualDirty))return false;}
       /* 보관함 자료 «편집»은 편집기 자신의 «변경 있음»(나갈 때 묻는 그 표시)을 따른다 — 저장한 직후의 판을 초안으로 다시 적지 않는다 */
       if((!w.__vaultPending&&w.__curVaultId)?!w.__vaultManualDirty:s===sess.base)return false;
       var m=meta(),k=key(o),text;
@@ -188,7 +190,13 @@
       try{
         if(g!==null&&w._vaultBoardContext){
           barHide();sess={ctx:w._vaultBoardContext,base:undefined};last=null;
-          var mine=sess;w.setTimeout(function(){if(sess===mine)try{write(false);}catch(_){}},650);   /* 불러오기(420ms)가 끝난 뒤의 모습을 기준으로 */
+          /* 불러오기(420ms)가 끝난 뒤의 모습을 기준으로. 3.298 — 650ms 뒤에도 아직 불러오는 중(느린 기기)이라 기준을 못 잡았으면 잡을 수 있을 때까지 250ms 마다 다시 본다(최대 15초).
+             되살린 판(base=null — 기준 없이 바로 적는다)은 예전처럼 한 번만 쓴다 */
+          var mine=sess;(function arm(n){w.setTimeout(function(){
+            if(sess!==mine)return;
+            if(!editing()||playing()){if(mine.base===undefined&&n<60)arm(n+1);return;}
+            try{write(false);}catch(_){}
+          },n?250:650);})(0);
         }
       }catch(_){}
       return g;
