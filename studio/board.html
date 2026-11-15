@@ -8836,7 +8836,7 @@ async function boardLinkWriteBack(onlyCurrent){
         it.pages[sp].snap=snap; it.pages[sp].thumb=thumb; it.pages[sp].anim=anim;
         if(sp===0){ it.snap=snap; it.thumb=thumb; if(frames)it.frames=frames; else delete it.frames; }
       } else { it.snap=snap; it.thumb=thumb; if(frames)it.frames=frames; else delete it.frames; }
-      it.savedAt=Date.now(); changed=true; out.push({name:it.name||tag.name,ok:true});
+      it.editedAt=it.savedAt=Date.now(); changed=true; out.push({name:it.name||tag.name,ok:true});   /* 3.291 */
     }
     if(changed){ await libWrite(lib); try{ libTouch(); }catch(_){} try{ renderDrillFiles(); }catch(_){} }
     return out;
@@ -18161,7 +18161,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         failed(null,true);return;
       }   /* 팀: 남의 항목은 자동 저장·자동 복사 모두 금지. 복사는 사용자가 보관함에서 명시적으로 선택 */
       if(idx>=0){
-        lib[idx].thumb=thumb; lib[idx].snap=snap; if(slides)lib[idx].slides=slides; if(frames)lib[idx].frames=frames; else delete lib[idx].frames; if(pages)lib[idx].pages=pages; else delete lib[idx].pages; lib[idx].savedAt=Date.now();
+        lib[idx].thumb=thumb; lib[idx].snap=snap; if(slides)lib[idx].slides=slides; if(frames)lib[idx].frames=frames; else delete lib[idx].frames; if(pages)lib[idx].pages=pages; else delete lib[idx].pages; lib[idx].editedAt=lib[idx].savedAt=Date.now();   /* 3.291 — 동기화는 editedAt||savedAt 을 본다: savedAt 만 올리면 이름을 바꾼 적 있는 자료의 내용 수정이 팀 서버에 안 올라갔다 */
         var _upName=lib[idx].name||"";
         return libSet(lib).then(function(){if(!_o.silent){try{toast(onBoard&&_upName?("보관함 ‘"+_upName+"’에 덮어썼어요 ✓"):(pages?("저장됨 ✓ · "+(window.__vaultBook?"시퀀스 ":"페이지 ")+pages.length+"개"):(frames?("저장됨 ✓ · 애니메이션 "+frames.length+"장면"):"저장됨 ✓")));}catch(_){}try{renderDrillFiles();}catch(_){}}if(_o.after)try{_o.after();}catch(_){}},
           function(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");failToast();if(_o.onerror)try{_o.onerror(e);}catch(_){}});
@@ -18275,6 +18275,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   window.__vaultAutoSaveCancel=function(){
     try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=null;_vaultAutoAgain=false;_vaultAutoTries=0;
   };
+  /* 3.291 — 보관함 항목을 연 채 저장할 게 없으면(저장됨 · 보기 전용) 새 판 적용 · 전환 장벽은 작업 보드 초안의 기존 영수증만 다시 확인하고 지나간다(board-draft.js idleReceipt).
+     저장 안 한 변경 · 아직 저장 안 한 새 항목 · 자동 저장 대기 · 재생 중 · 여는 중은 예전처럼 막는다. 운영 기록: 한 기기가 보관함 항목을 연 채 11시간 `blocked:vault-edit`, 사흘 동안 옛 판 */
+  window.__psVaultIdle=function(){try{if(!window.__vaultEdit||window.__vaultHydrating||window.__vaultPending)return false;if(typeof animPlaying!=="undefined"&&animPlaying)return false;if(window.__vaultReadOnly)return true;return !(window.__vaultManualDirty||_vaultAutoWriting||_vaultAutoAgain||_vaultAutoT);}catch(_){return false;}};
   window.__vaultAutoSaveFlush=function(){
     if(curType()==="board"){window.__vaultAutoSaveCancel();return;}
     if(window.__vaultReadOnly){window.__vaultAutoSaveCancel();return;}
@@ -18415,7 +18418,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function meetRenameCur(){
     var fm=window.__vaultFromMatch, id=window.__curVaultId; if(!fm||!id||window.__vaultReadOnly)return;
     psPrompt("미팅 이름",fm.name||"",function(v){ v=String(v||"").trim().slice(0,40); if(!v||v===fm.name)return;
-      meetLibMutate(function(lib){ for(var i=0;i<lib.length;i++){ if(lib[i]&&lib[i].libId===id){ if(!canEditItem(lib[i]))return {ok:false,write:false}; lib[i].name=v; lib[i].savedAt=Date.now(); return {ok:true}; } } return {ok:false,write:false}; })
+      meetLibMutate(function(lib){ for(var i=0;i<lib.length;i++){ if(lib[i]&&lib[i].libId===id){ if(!canEditItem(lib[i]))return {ok:false,write:false}; lib[i].name=v; lib[i].editedAt=lib[i].savedAt=Date.now(); return {ok:true}; } } return {ok:false,write:false}; })
         .then(function(r){ if(r&&r.ok){ fm.name=v; var t=$id("vCreateTitle"); if(t)t.textContent=v; try{toast("이름을 바꿨어요 ✓");}catch(_){} } else { try{toast("이름을 바꾸지 못했어요");}catch(_){} } },function(){ try{toast("이름을 바꾸지 못했어요 — 연결을 확인해 주세요");}catch(_){} });
     });
   }
@@ -18894,7 +18897,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     return ok; }
   function vaultDupItem(d){if(!psVaultRequireLogin())return;var ty=d.type||"train";
     if(ty==="train"||ty==="setpiece"){var cp=dc(d);delete cp.libId;delete cp.savedAt;delete cp.editedAt;delete cp.createdBy;delete cp.createdByEmail;delete cp.createdByName;cp.pin=false;cp.name=(d.name||"드릴")+" 복사";var _p=saveToLib(cp);try{_p&&_p.then&&_p.then(function(){try{renderDrillFiles();}catch(_){}});}catch(_){}}
-    else{libTurn(function(){return libGet().then(function(lib){var cp=JSON.parse(JSON.stringify(d));cp.libId="V"+Date.now().toString(36);cp.name=(d.name||"항목")+" 복사";cp.savedAt=Date.now();cp.pin=false;delete cp.createdBy;delete cp.createdByEmail;delete cp.createdByName;stampCreator(cp);lib.unshift(cp);return libSet(lib).then(function(){renderDrillFiles();try{toast("복사됨 ✓ — 내 훈련");}catch(_){}});});});}}   /* 2.994 — libTurn */
+    else{libTurn(function(){return libGet().then(function(lib){var cp=JSON.parse(JSON.stringify(d));cp.libId="V"+Date.now().toString(36);cp.name=(d.name||"항목")+" 복사";cp.editedAt=cp.savedAt=Date.now();cp.pin=false;delete cp.createdBy;delete cp.createdByEmail;delete cp.createdByName;stampCreator(cp);lib.unshift(cp);return libSet(lib).then(function(){renderDrillFiles();try{toast("복사됨 ✓ — 내 훈련");}catch(_){}});});});}}   /* 2.994 — libTurn */
   /* ══ 2.518 · 자료 하나를 팀과 공유(사용자 "파일별 공유를 쉽게") ═══════════════
      규칙은 1.532 그대로 — **공유는 폴더가 정한다**. 자료마다 따로 공유 표식을 두면 폴더 밖에
      공유된 자료가 생겨 규칙이 두 개가 된다(그때 실제로 겪었다).

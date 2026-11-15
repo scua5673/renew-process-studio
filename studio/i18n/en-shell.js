@@ -2245,7 +2245,7 @@ for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'
 "{} 기록 창을 닫고 다시 열어 주세요.":"{} Close this window and open it again."
 });
 
-/* 3.290 — storage.js 알약: 선수 행 보관 오류(«일부 변경 보관» + 보관된 변경으로 가는 길) */
+/* 3.292 — storage.js 알약: 선수 행 보관 오류(«일부 변경 보관» + 보관된 변경으로 가는 길) */
 (function(w,D,T){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
 for(k in D)(E[k]||(E[k]={})).en=D[k];
 for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);

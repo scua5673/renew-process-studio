@@ -31,7 +31,7 @@ suites.identity.push('update-delivery','update-client-lifecycle','one-window-327
 suites.records.push('multipitch-rotation','board-settings-pitches');
 suites.board.push('board-scout-import','board-roster-import');
 suites.idp.push('squad-group-change');
-suites.idp.push('avail-held-row-3281');suites.idp.push('items-stale-held');   /* 3.290 — 보관된 선수 행(journal + 기기 묶음 영수증)은 새 판 적용 · 화면 떠나기 전 저장 확인을 막지 않는다(held) · 알약 «일부 변경 보관» · 고르면 풀림 */   /* 3.281 — 보관된 선수 행(sq:<id>)이 있는 기기에서 가용인원 기록: 통짜 문서만 기다려 기록 · 보관 그대로 · 멈추면 까닭과 가는 길(e6fc5d26 · de2e508c) */
+suites.idp.push('avail-held-row-3281');suites.idp.push('items-stale-held');   /* 3.292 — 보관된 선수 행(journal + 기기 묶음 영수증)은 새 판 적용 · 화면 떠나기 전 저장 확인을 막지 않는다(held) · 알약 «일부 변경 보관» · 고르면 풀림 */   /* 3.281 — 보관된 선수 행(sq:<id>)이 있는 기기에서 가용인원 기록: 통짜 문서만 기다려 기록 · 보관 그대로 · 멈추면 까닭과 가는 길(e6fc5d26 · de2e508c) */
 suites.records.push('training-toolbar-layout');
 suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
 suites.board2.push('meeting-slide-transition');   /* 3.256 — 미팅 슬라이드 넘김: 같은 팀 · 번호만 잇기 · 넘기는 중 저장 막기 */
@@ -39,7 +39,8 @@ suites.board.push('board-flat-turf-3263');   /* 3.263 — 평면 잔디: 잎결 
 suites.board.push('board-page-thumb-diet-3288');   /* 3.288 — 페이지 장면 썸네일은 저장으로 나가는 사본에서만 뗀다 · 다시 열면 장면 줄이 다시 그린다(제보 de2e508c) */
 suites.board.push('team-load-team34-3288');   /* 3.288 — 저장 팀을 팀 3 · 4 에도(제보 29c97fc5): 자리 그대로 · 남는 선수와 판에 없는 팀은 대기 줄 둘째 줄 · 다른 팀을 덮지 않는다 */
 suites.selection.push('board-vision-carry-3271','board-position-direct-3271');   /* 3.271 — 시야 · 시선은 이 페이지에만 + 이 장면부터 뒤로(756c0a48) · 오른쪽 클릭 창의 포지션(0033117a) */
-suites.board.push('board-page-undo-3271');   /* 3.271 — 페이지 추가 · 복제 · 삭제 되돌리기(1bc9b7d4) — board2 웹킷은 20분 한도에 닿아 board 로 */
+suites.board.push('board-page-undo-3271');
+suites.board.push('vault-edit-update-3291');   /* 3.291 — 보관함 항목을 연 채 저장할 게 없으면 새 판 적용 통과 · 저장 안 한 변경은 blocked:vault-edit · 저장이 editedAt 을 찍어 팀 서버에 올라간다 */   /* 3.271 — 페이지 추가 · 복제 · 삭제 되돌리기(1bc9b7d4) — board2 웹킷은 20분 한도에 닿아 board 로 */
 suites.selection.push('board-shape-delete-carry-3282');   /* 3.282 — 지운 그림은 이 장면부터 뒤 장면에서도(74e59fd4) · 알림의 «이 장면만» */
 suites.entry.push('sync-diagnosis','team-mobile','mobile-navigation');
 suites.entry.push('admin-metrics');
