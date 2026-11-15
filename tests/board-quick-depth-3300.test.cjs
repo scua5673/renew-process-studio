@@ -141,10 +141,47 @@ test('drag wiring: token grabs at once, name labels after a long press, drop on 
   assert.match(q,/M\.pos\[d\.i\]=\[round1\(d\.l\),round1\(d\.t\)\];M\.moved\[d\.i\]=true;/);
   assert.match(q,/pos=movedPos\(\)/,'only moved slots are written');
   assert.match(q,/data-pq="pos-reset" id="pqPosReset" hidden/);
-  assert.match(q,/label:'이름 · 자리 고치기'/);
+  assert.match(q,/label:'고치기'/);
   assert.match(v,/qe\.mode==='edit'/,'viewing my quick board: the tap hint points at the edit button');
+  assert.match(v,/if\(\(e\.type==='click'\|\|tap\)&&!quickTap\(t\)\)tip\(\);/,'a finger tap (no click on a guarded canvas) opens the token sheet or shows the hint');
+  assert.match(v,/id>=1&&id<=F\.n&&Q\.open\(win,\{token:id\}\)/,'only the quick board slot tokens open the sheet');
   const en=read('studio/i18n/en-board.js');
-  for(const k of ['이름 · 자리 고치기','포메이션 자리로','포메이션 자리로 돌렸어요','{} 자리를 옮겼어요','{} ↔ {} 이름을 맞바꿨어요','고친 내용을 버리고 닫을까요?','이름 · 자리는 위의 «{}»에서 바꿔요'])assert.ok(en.includes('"'+k+'":'),k);
+  for(const k of ['고치기','토큰 표시','이 자리에 이미 있는 이름이에요','포메이션 자리로','포메이션 자리로 돌렸어요','{} 자리를 옮겼어요','{} ↔ {} 이름을 맞바꿨어요','고친 내용을 버리고 닫을까요?','토큰을 누르거나 위의 «{}»에서 바꿔요'])assert.ok(en.includes('"'+k+'":'),k);
+});
+
+test('token text: position and number are written only where they were changed, the board label follows the choice',()=>{
+  assert.equal(Q.cleanPos(' lcm '),'LCM');assert.equal(Q.cleanPos('수비형미드'),'수비형미');assert.equal(Q.cleanPos(null),'');
+  assert.equal(Q.cleanNum('7번'),'7');assert.equal(Q.cleanNum('1234'),'123');assert.equal(Q.cleanNum('ab'),'');
+  const s=Q.FORMS['4-2-3-1'].s.map((_,i)=>['선수'+i]),tok=s.map(()=>({pos:null,num:null}));
+  // 새 보드 — 아무것도 안 적으면 포메이션 표시 · 자리 차례, 적으면 그 값
+  let it=Q.itemFor('4-2-3-1',s,'',Date.UTC(2026,10,16),null,tok,'pos');
+  assert.deepEqual(it.snap.players.map(p=>[p.pos,p.num]).slice(0,3),[['GK','1'],['LB','2'],['CB','3']]);assert.equal(it.snap.label,'pos');
+  tok[7]={pos:'lm',num:'11'};tok[0]={pos:null,num:'21'};
+  it=Q.itemFor('4-2-3-1',s,'',Date.UTC(2026,10,16),null,tok,'num');
+  assert.deepEqual([it.snap.players[7].pos,it.snap.players[7].num],['LM','11']);
+  assert.deepEqual([it.snap.players[0].pos,it.snap.players[0].num],['GK','21'],'the keeper keeps GK with any number');
+  assert.equal(it.snap.label,'num','the board shows numbers');
+  // 창으로 읽기 — 포메이션 표시와 다른 포지션만, 번호는 주전 이름(빈 자리는 #i)마다
+  const empty={...it,snap:{...it.snap,players:it.snap.players.map(p=>p.id===3?{...p,name:'',num:'33'}:p)}};
+  const t=Q.tokFrom(empty);
+  assert.equal(t.label,'num');assert.equal(t.posBy[7],'LM');assert.equal(t.posBy[0],null);assert.equal(t.posBy[1],null);
+  assert.equal(t.numBy['선수7'],'11');assert.equal(t.numBy['선수0'],'21');assert.equal(t.numBy['#2'],'33');
+  assert.deepEqual(t.base[7],{name:'선수7',num:'11'});
+  // 고치기 — null 인 칸은 글자 그대로(아이패드에서 적은 글자 번호 · 비운 포지션도), label 을 안 주면 판의 표시 그대로
+  it.snap.players[4].num='RB2';it.snap.players[5].pos='';
+  const keep=s.map(()=>({pos:null,num:null}));keep[9]={pos:'RM',num:null};keep[10]={pos:null,num:'9'};
+  Q.applyEdit(it,'4-2-3-1',s,'',it.savedAt+5,null,keep,null);
+  assert.deepEqual([it.snap.players[9].pos,it.snap.players[9].num],['RM','10']);
+  assert.deepEqual([it.snap.players[10].pos,it.snap.players[10].num],['ST','9']);
+  assert.deepEqual([it.snap.players[4].num,it.snap.players[5].pos,it.snap.players[7].pos],['RB2','','LM']);
+  assert.equal(it.snap.label,'num');
+  Q.applyEdit(it,'4-2-3-1',s,'',it.savedAt+9,null,keep,'pos');assert.equal(it.snap.label,'pos');
+  it.snap.label='fpos';Q.applyEdit(it,'4-2-3-1',s,'',it.savedAt+12,null,keep,'pos');assert.equal(it.snap.label,'fpos','a position label stays the kind it was');
+  const q=read('studio/board-quick-depth.js');
+  assert.match(q,/id="pqPosCode" maxlength="4"/);assert.match(q,/id="pqNum" inputmode="numeric"/);
+  assert.match(q,/data-pq="show-pos">포지션<\/button><button type="button" data-pq="show-num">번호</);
+  assert.match(q,/return \{pos:M\.posDirty\[i\]\?posText\(i\):null,num:keep\?null:numOf\(i\)\};/,'only touched token text is written back');
+  assert.match(q,/\$\('pqList'\)\.addEventListener\('change'/,'names are renamed when the field is left, not while typing (Korean composition)');
 });
 
 test('names are trimmed, capped and never empty',()=>{

@@ -104,7 +104,9 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "공격형 미드":"Attacking mid",
 "빠른 보드":"Quick board",
 "＋ 빠른 보드":"＋ Quick board",
-"이름 · 자리 고치기":"Edit names & spots",
+"고치기":"Edit",
+"토큰 표시":"Token shows",
+"이 자리에 이미 있는 이름이에요":"That name is already in this position",
 "포메이션 자리로":"Back to formation",
 "포메이션 자리로 돌렸어요":"Positions are back on the formation",
 "보드 이름":"Board name",
@@ -175,5 +177,5 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "이름 {}개를 넣었어요{}":"Added {} names{}",
 "{} 자리를 옮겼어요":"Moved {}",
 "{} ↔ {} 이름을 맞바꿨어요":"Swapped the names at {} and {}",
-"이름 · 자리는 위의 «{}»에서 바꿔요":"Change names and spots with «{}» above"
+"토큰을 누르거나 위의 «{}»에서 바꿔요":"Tap a token, or use «{}» above"
 },{});

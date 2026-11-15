@@ -42,10 +42,18 @@
       /* 커뮤니티 글은 어느 기기에서나 보기 전용 — «아이패드에서 고친다»는 말이 맞지 않는다 */
       try{if(doc.body.classList.contains('comm-viewing')||/[?&]community_view=1(&|$)/.test(win.location.search))return;}catch(_){}
       var n=Date.now();if(n-lastTip<6000)return;lastTip=n;
-      /* 내 빠른 보드를 보는 중이면 고칠 길이 띠에 있다 — «아이패드에서» 대신 그 단추를 알린다 */
+      /* 내 빠른 보드를 보는 중이면 고칠 길이 있다 — «아이패드에서» 대신 그 길을 알린다 */
       var qe=null;try{qe=win.PSQuickDepth&&win.PSQuickDepth.entry(win);}catch(_){}
-      if(qe&&qe.mode==='edit'){try{if(win.toast)win.toast('이름 · 자리는 위의 «'+qe.label+'»에서 바꿔요');}catch(_){}return;}
+      if(qe&&qe.mode==='edit'){try{if(win.toast)win.toast('토큰을 누르거나 위의 «'+qe.label+'»에서 바꿔요');}catch(_){}return;}
       win.psPhoneBoardNotice();
+    }
+    /* 내 빠른 보드를 보는 중 — 토큰을 누르면 그 자리의 시트(이름 · 포지션 · 번호)가 바로 열린다. 빠른 보드의 자리 토큰(id 1~n)만 */
+    function quickTap(t){
+      try{
+        var Q=win.PSQuickDepth,qe=Q&&Q.entry(win);if(!qe||qe.mode!=='edit')return false;
+        var g=closest(t,'#tokenLayer [data-id]'),d=win.__vvItem,F=g&&d&&d.quick&&Q.FORMS[d.quick.form],id=g?+g.getAttribute('data-id'):0;
+        return !!(F&&id>=1&&id<=F.n&&Q.open(win,{token:id}));
+      }catch(_){return false;}
     }
     function closest(t,s){return t&&t.closest&&t.closest(s);}
     function stop(e,scroll){if(!scroll)e.preventDefault();e.stopImmediatePropagation();}
@@ -72,7 +80,7 @@
         var tap=e.type==='pointerup'&&down&&down.id===e.pointerId&&Math.abs(e.clientX-down.x)+Math.abs(e.clientY-down.y)<12&&Date.now()-down.t<700;
         if(e.type==='pointerup')down=null;
         stop(e,touch);
-        if(e.type==='click'||tap)tip();
+        if((e.type==='click'||tap)&&!quickTap(t))tip();
       }
     }
     ['pointerdown','pointermove','pointerup','mousedown','mousemove','mouseup','touchstart','touchmove','touchend','click','dblclick','contextmenu','keydown','beforeinput','paste','cut','drop','dragstart'].forEach(function(type){win.addEventListener(type,guard,{capture:true,passive:false});});
@@ -88,7 +96,7 @@
         note=doc.createElement('aside');note.id='psPhoneBoardNotice';note.setAttribute('role','note');
         note.setAttribute('aria-label','보기 전용 · '+MESSAGE);
         note.innerHTML='<span class="ps-pv-ro">보기 전용</span><span class="ps-pv-fill"></span><button type="button" class="ps-btn-secondary" data-play hidden>재생</button><button type="button" class="ps-btn-primary" data-quick hidden>＋ 빠른 보드</button>';
-        /* 3.300 — 빠른 보드(board-quick-depth.js): 작업 보드는 «＋ 빠른 보드», 보관함에서 연 내 빠른 보드는 «이름 · 자리 고치기» */
+        /* 3.300 — 빠른 보드(board-quick-depth.js): 작업 보드는 «＋ 빠른 보드», 보관함에서 연 내 빠른 보드는 «고치기» */
         note.querySelector('[data-quick]').onclick=function(){try{if(win.PSQuickDepth)win.PSQuickDepth.open(win);}catch(_){}};
         note.querySelector('[data-play]').onclick=function(){try{if(playback().playing)win.stopAnim();else win.playAnim();}catch(_){}sync();};
       }
