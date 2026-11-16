@@ -15022,6 +15022,7 @@ function init(){
       +'<linearGradient id="psStGoalSh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".34"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>'
       +'</defs><g transform="'+wt+'">';
     if(ground)o+=PSStadiumGround.paint(ground,turf,md,grain);
+    const gW=ground?S*40:0; if(ground)o+=PSStadiumGround.far({cx:CX,cy:CY,pw:PW,md:md,f:f,x0:L-gx-dT,x1:R+gx+dT,y0:T-gy-dT,y1:B+gy+dT,s:S});   /* 3.303 — 바닥(간단 · 잔디만)은 잔디 한 장: 빛 · 색조 · 노을을 판 밖(gW)까지, 멀수록 어둡게(far · shade). 둘레가 밝은 판으로 떠 보였다 */
     /* 관중석 — 좌석·관중 무늬 위에 계단 턱(줄), 위층은 조금 어둡게 · 3.010 «전체»일 때만 */
     if(deco==="full"){
     o+=ring(dT,dS,crowd?'url(#psStCrowd)':'#1c252e');
@@ -15045,10 +15046,10 @@ function init(){
       +(turf?'<path d="'+rr(0)+'" fill="#1c7a34" fill-opacity=".24"/>':'')   /* 타일의 누런 기를 경기장 잔디 초록으로 */
       +'<path d="'+rr(0)+'" fill="url(#psStMow)"/>'   /* 잔디결(5m)을 중계 화면처럼 또렷하게 */
       +mow.cards+(grain?'<path d="'+rr(0)+'" fill="url(#psStGrain)"/>':'')   /* 3.255 — 여러 운동장은 카드마다 띠 · 그 위에 깎는 방향 잎결 */
-      +'<path d="'+rr(0)+'" fill="url(#psStLight)"/>';
+      +'<path d="'+rr(gW)+'" fill="url(#'+(ground?'psStGlow':'psStLight')+')"/>';
     if(bleed)o+=line(0,'#ffffff',S*.0014,.18);   /* 3.035 — 그리드 판: 판 끝(카드 · 사진에 담기는 범위)을 옅은 줄로 — 잔디가 이어져 끝이 안 보인다 */
-    if(md.tint)o+='<path d="'+rr(0)+'" fill="'+md.tint[0]+'" fill-opacity="'+md.tint[1]+'"/>';   /* 3.029 — 낮은 밝게 · 해질녘은 노을 빛 */
-    if(md.cone>0){ o+='<g clip-path="url(#psStPitchClip)" fill="url(#psStCone)" fill-opacity="'+md.cone+'">'; [[L,T],[R,T],[R,B],[L,B]].forEach(([cx,cy])=>{ o+='<ellipse cx="'+f(cx)+'" cy="'+f(cy)+'" rx="'+f(S*.36)+'" ry="'+f(PH*.5)+'"/>'; }); o+='</g>'; }   /* 3.029 — 야간 · 해질녘 조명탑 네 개의 빛 기둥(잔디 안에서만) */
+    if(md.tint)o+='<path d="'+rr(gW)+'" fill="'+md.tint[0]+'" fill-opacity="'+md.tint[1]+'"/>';   /* 3.029 — 낮은 밝게 · 해질녘은 노을 빛 */
+    if(md.cone>0&&!ground){ o+='<g clip-path="url(#psStPitchClip)" fill="url(#psStCone)" fill-opacity="'+md.cone+'">'; [[L,T],[R,T],[R,B],[L,B]].forEach(([cx,cy])=>{ o+='<ellipse cx="'+f(cx)+'" cy="'+f(cy)+'" rx="'+f(S*.36)+'" ry="'+f(PH*.5)+'"/>'; }); o+='</g>'; }   /* 3.029 — 야간 · 해질녘 조명탑 네 개의 빛 기둥(잔디 안에서만) */
     if(!whole){const wr=(cx,cy,rx,ry)=>'<ellipse cx="'+f(cx)+'" cy="'+f(cy)+'" rx="'+f(rx)+'" ry="'+f(ry)+'" fill="url(#psStWear)"/>';
       o+=wr(L+S*.028,CY,S*.03,PH*.07)+wr(R-S*.028,CY,S*.03,PH*.07)+wr(L+S*.105,CY,S*.02,S*.02)+wr(R-S*.105,CY,S*.02,S*.02)+wr(CX,CY,S*.018,S*.018);}
     /* 골대 그림자 — 골대(#tiltGoals)는 판 위 층이라 그림자는 여기 잔디에 깐다(라인 밑) */
@@ -15079,7 +15080,7 @@ function init(){
       +line(dRo,'#1c2024',S*.004)+line(dRi,'#9aa3ab',S*.0018)
       +'<g fill="url(#psStLamp)" fill-opacity="'+md.lamp+'">'+lamps+'</g>';   /* 3.029 — 낮엔 조명등을 거의 끈다 */
     }
-    o+=(md.warm?'<path d="'+rr(dE)+'" fill="#ff9a3c" fill-opacity="'+md.warm+'"/>':'')+(ground?'':'<path d="'+rr(dE)+'" fill="url(#psStVig)"/>');
+    o+=(md.warm?'<path d="'+rr(ground?gW:dE)+'" fill="#ff9a3c" fill-opacity="'+md.warm+'"/>':'')+(ground?PSStadiumGround.shade(rr(gW)):'<path d="'+rr(dE)+'" fill="url(#psStVig)"/>');
     o+='</g>';
     host.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+[bx0,by0,bx1-bx0,by1-by0].map(f).join(' ')+'" preserveAspectRatio="none">'+o+'</svg>');
   }

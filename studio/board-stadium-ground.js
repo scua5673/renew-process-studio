@@ -96,13 +96,33 @@ function bounds(deco,blank,L,R,T,B,gx,gy,dT,stage,unproject,screenMatrix){
   const box=[Math.floor(x0/10)*10,Math.floor(y0/10)*10,Math.ceil(x1/10)*10,Math.ceil(y1/10)*10];
   return {box:box,key:box.join(','),corners:[[box[0],box[1]],[box[2],box[1]],[box[2],box[3]],[box[0],box[3]]]};
 }
+/* 3.303 — «간단 · 잔디만»의 바닥은 운동장 판과 같은 잔디 한 장(사용자 «잔디만했을 때 3d 화면이 너무 이질감 … 자연스럽게»).
+   예전엔 바닥만 한 톤 어둡게(#071d0b .14) 칠하고, 빛(psStLight) · 색조 · 조명 기둥(네 귀 — 판에서 잘림) · 노을은 운동장 둘레 판(rr(0) · rr(dT)) 안에만 그려
+   둥근 밝은 판이 잔디 위에 떠 보였다. 이제:
+   ① 바닥(paint)은 잔디 · 깎은 줄 · 잎결만 — 판 안과 같은 무늬 · 같은 자리라 이음새가 없다.
+   ② 빛은 가운데의 옅은 밝음(psStGlow) 하나 — 조명탑이 없는 꾸밈이라 네 귀의 조명 기둥 · 모서리 어둠(psStLight)은 쓰지 않는다. 색조 · 노을은 작전판이 판 밖(gW)까지 그린다.
+   ③ 멀수록 어둡게(shade): 운동장 둘레 상자에서 바깥으로 부드럽게(psStEdgeX · psStEdgeY — 가로 · 세로 띠의 곱이라 이음매 없는 한 면) + 가운데에서 둥글게(psStFar).
+      끊기는 테가 없게 번짐의 시작은 느리게(EASE). 세기는 분위기의 vig 에 비례(낮은 옅게 · 야간은 짙게). */
 function paint(ground,turf,md,grain){
   const b=ground.box,rect=fill=>'<rect x="'+b[0]+'" y="'+b[1]+'" width="'+(b[2]-b[0])+'" height="'+(b[3]-b[1])+'" '+fill+'/>';
   return '<g data-ps-ground="1">'+rect('fill="url(#psStGrass)"')
-    +(turf?rect('fill="#1c7a34" fill-opacity=".24"'):'')+rect('fill="url(#psStMow)"')+(grain?rect('fill="url(#psStGrain)"'):'')
-    +(md.tint?rect('fill="'+md.tint[0]+'" fill-opacity="'+md.tint[1]+'"'):'')
-    +rect('fill="#071d0b" fill-opacity=".14"')+'</g>';
+    +(turf?rect('fill="#1c7a34" fill-opacity=".24"'):'')+rect('fill="url(#psStMow)"')+(grain?rect('fill="url(#psStGrain)"'):'')+'</g>';
 }
+/* o = {cx, cy, pw(운동장 길이), md(분위기), f, x0 · x1 · y0 · y1(어둠이 시작하는 상자 — 운동장 둘레 판), s(두께 기준 — 운동장 하나면 길이)}
+   → psStGlow · psStFar · psStEdgeX · psStEdgeY 정의. 작전판은 shade(d) 로 바닥 전체(d = 아주 큰 길)에 칠한다. */
+var FAR_IN=.6,FAR_OUT=1.45,FAR_K=.6,EDGE_K=.35,EDGE_D=.3,EASE=[[0,0],[.2,.104],[.4,.352],[.6,.648],[.8,.896],[1,1]];
+function far(o){
+  const f=o.f||(n=>Math.round(n*10)/10),vig=Math.max(0,+(o.md&&o.md.vig)||0),v=Math.min(.6,vig*FAR_K),e=Math.min(.5,vig*EDGE_K),r2=n=>Math.round(n*100)/100,r4=n=>Math.round(n*10000)/10000;
+  const stop=(off,op)=>'<stop offset="'+r4(off)+'" stop-color="#000" stop-opacity="'+r4(op)+'"/>';
+  const lin=(id,a,b,d,vert)=>{const a0=a-d,b1=b+d,t=d/(b1-a0);let st='';
+    EASE.slice().reverse().forEach(p=>{st+=stop((1-p[0])*t,e*p[1]);});EASE.forEach(p=>{st+=stop(1-t+p[0]*t,e*p[1]);});   /* 왼쪽(위) 번짐 · 가운데 0 · 오른쪽(아래) 번짐 */
+    return '<linearGradient id="'+id+'" gradientUnits="userSpaceOnUse" '+(vert?'x1="0" y1="'+f(a0)+'" x2="0" y2="'+f(b1)+'"':'x1="'+f(a0)+'" y1="0" x2="'+f(b1)+'" y2="0"')+'>'+st+'</linearGradient>';};
+  const d=(+o.s||+o.pw||0)*EDGE_D,in0=FAR_IN/FAR_OUT;
+  return '<radialGradient id="psStGlow" gradientUnits="userSpaceOnUse" cx="'+f(o.cx)+'" cy="'+f(o.cy)+'" r="'+f(o.pw*.7)+'"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></radialGradient>'
+    +'<radialGradient id="psStFar" gradientUnits="userSpaceOnUse" cx="'+f(o.cx)+'" cy="'+f(o.cy)+'" r="'+f(o.pw*FAR_OUT)+'">'+stop(in0,0)+stop(in0+(1-in0)*.35,v*.2)+stop(1,v)+'</radialGradient>'
+    +(d>0?lin('psStEdgeX',o.x0,o.x1,d,false)+lin('psStEdgeY',o.y0,o.y1,d,true):'');
+}
+function shade(d){return '<path d="'+d+'" fill="url(#psStEdgeX)"/><path d="'+d+'" fill="url(#psStEdgeY)"/><path d="'+d+'" fill="url(#psStFar)"/>';}
 function cover(box,mt,visible){
   const det=mt[0]*mt[3]-mt[1]*mt[2];if(!det)return null;
   const b=box.slice();
@@ -134,5 +154,5 @@ function exportView(host,visible){
   exports.set(host,{src:src,key:key,value:value});return value;
   }catch(_){return {src:src,vb:vb.slice()};}
 }
-return {crowdTile:crowdTile,grainTile:grainTile,grainDefs:grainDefs,mowPlan:mowPlan,bands:bands,cardBands:cardBands,BAND:BAND,GRAIN_V:GRAIN_V,viewKey:viewKey,bounds:bounds,paint:paint,cover:cover,exportView:exportView};
+return {crowdTile:crowdTile,grainTile:grainTile,grainDefs:grainDefs,mowPlan:mowPlan,bands:bands,cardBands:cardBands,BAND:BAND,GRAIN_V:GRAIN_V,viewKey:viewKey,bounds:bounds,paint:paint,far:far,shade:shade,cover:cover,exportView:exportView};
 });
