@@ -66,3 +66,14 @@ test('3.304 — vault full screen is the show-it-on-the-TV view: the strip (page
   assert.ok(fs.readFileSync(path.join(__dirname,'browser','run-critical.mjs'),'utf8').includes("'board-tv-clean-3304'"));
 });
 
+/* 3.306 — 사용자 11/16 «하단도구 접기 누르면 상단에 있는 것도 같이 접히는걸로 해줘» */
+test('3.306 — the dock\'s «도구 접기» folds the top bar too: same strength as the bar\'s own rule, phone strips and the vault editor\'s title bar left alone',()=>{
+  const c=tb.css();
+  assert.match(c,/html\.ps-page-board body\.cmd-dock-folded:not\(\.ps-dock\):not\(\.ps-phone-work\) #boardPageStrip\.ps-tb(:not\(#tb\d\)){20}\{display:none!important\}/,'N+N — beats the bar\'s display:flex!important');
+  assert.match(c,/body\.cmd-dock-folded:not\(\.ps-dock\):not\(\.ps-phone-work\) #ps-tb-menu\.on\{display:none\}/,'an open «보드 ▾» menu does not stay behind');
+  assert.doesNotMatch(c,/cmd-dock-folded[^{]*#vCreateBar/,'save · exit of the vault editor stay reachable (the fold persists across reloads)');
+  assert.doesNotMatch(c,/cmd-dock-folded[^{]*#(board|boardStage)\b/,'the pitch itself is never hidden or moved — the bar is an overlay');
+  const b=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
+  assert.match(b,/function apply\(on,save\)\{ document\.body\.classList\.toggle\("cmd-dock-folded",!!on\);/,'one class drives both — the pill «도구 펼치기» · ⌘. bring both back');
+  assert.ok(fs.readFileSync(path.join(__dirname,'browser/run-critical.mjs'),'utf8').includes("'board-fold-top-3306'"));
+});
