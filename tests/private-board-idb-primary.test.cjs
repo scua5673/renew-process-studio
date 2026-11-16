@@ -104,18 +104,45 @@ for(const phase of ['cas','verify'])test('a later edit can advance its own lifec
  const first=h.api.write();first.catch(()=>{});await tick();h.api.write({lifecycle:true}).catch(()=>{});const local=h.local.get(h.key);assert.equal(JSON.parse(local).raw,h.raw);
  h.edit();const latest=h.api.write();gate.resolve();await assert.rejects(first);await latest;assert.equal(h.api.pending(),false);assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);assert.equal(h.local.has(h.key),false);
 });
-test('different unsaved originals and the current edit survive separately, with transition blocked',async()=>{
+/* 3.302 — 부팅 때 본 두 사본이 서로 다른 초안이면 예전엔 손댈 때마다 막았다(영영). 이제 개인 보드 머리와 같은 처방: 둘 다 보관 키에 글자 그대로 옮긴 뒤 이어 쓴다. */
+const split=h=>[...h.idb].filter(([k])=>k.includes(':kept:split-')).map(([,v])=>v);
+test('different unsaved originals are preserved in exact recovery records before the current edit replaces them',async()=>{
  const h=draftHarness(),old=h.record('{"source":"LS"}'),other=h.record('{"source":"IDB"}',2);h.local.set(h.key,old);h.idb.set(h.key,other);h.observe(old,other);
- await assert.rejects(h.api.ready());assert.equal(h.local.get(h.key),old);assert.equal(h.idb.get(h.key),other);assert.equal(h.api.pending(),true);assert.ok([...h.idb].some(([k,v])=>k.includes(':kept:')&&JSON.parse(v).raw===h.raw));
+ await h.api.ready();const kept=split(h);assert.equal(kept.length,2);assert.ok(kept.includes(old));assert.ok(kept.includes(other));
+ assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);assert.ok(JSON.parse(h.idb.get(h.key)).at>2,'the new receipt outranks both originals');assert.equal(h.local.has(h.key),false);
+ assert.equal(h.api.pending(),false);assert.equal(h.api.snapshot().localDurable,true);assert.equal(h.api.snapshot().failed,false);assert.equal(h.states.at(-1),'ok');
+ h.edit();await h.api.ready();assert.equal(split(h).length,2,'later edits use the ordinary path');assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);
 });
-for(const kind of ['different body','malformed original'])test('lifecycle preserves observed divergent '+kind+' sources before keeping the latest input separately',async()=>{
+for(const step of ['cas','verify'])test('divergent unsaved originals stay untouched and the transition stays blocked when their archive '+step+' fails',async()=>{
+ const h=draftHarness(),old=h.record('{"source":"LS"}'),other=h.record('{"source":"IDB"}',2);h.local.set(h.key,old);h.idb.set(h.key,other);h.observe(old,other);
+ h.hooks[step]=k=>{if(k.includes(':kept:split-'))throw Error('synthetic archive failure');};
+ await assert.rejects(h.api.ready(),e=>e.psConflict===true&&e.psWhy==='divergent');assert.equal(h.local.get(h.key),old);assert.equal(h.idb.get(h.key),other);
+ assert.equal(h.api.pending(),true);assert.equal(h.api.snapshot().failed,true);assert.equal(h.states.at(-1),'fail');
+ assert.ok([...h.idb].some(([k,v])=>k.includes(':kept:')&&!k.includes(':kept:split-')&&JSON.parse(v).raw===h.raw),'the current edit is still kept separately');
+ delete h.hooks[step];await h.api.ready();assert.ok(split(h).includes(old));assert.ok(split(h).includes(other));assert.equal(split(h).length,2,'a retry reuses the same archive slots');
+ assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);assert.equal(h.local.has(h.key),false);assert.equal(h.api.pending(),false);
+});
+test('a source that changes while divergent originals are being archived is never replaced',async()=>{
+ const h=draftHarness(),old=h.record('{"source":"LS"}'),other=h.record('{"source":"IDB"}',2),gate=defer();h.local.set(h.key,old);h.idb.set(h.key,other);h.observe(old,other);
+ h.hooks.verify=k=>k.includes(':kept:split-')?gate.promise:null;const work=h.api.ready();work.catch(()=>{});await tick();
+ const foreign=h.record('{"source":"another window"}',50);h.local.set(h.key,foreign);gate.resolve();await assert.rejects(work);
+ assert.equal(h.local.get(h.key),foreign);assert.equal(h.idb.get(h.key),other);assert.equal(h.api.pending(),true);
+});
+for(const kind of ['different body','malformed original'])test('lifecycle preserves observed divergent '+kind+' sources synchronously, then archives them before the latest input replaces them',async()=>{
  const h=draftHarness(),old=h.record('{"source":"LS"}'),other=kind==='different body'?h.record('{"source":"IDB"}',2):'synthetic malformed IDB source';
  h.local.set(h.key,old);h.idb.set(h.key,other);h.observe(old,other);
  const work=h.api.write({lifecycle:true});work.catch(()=>{});
  assert.equal(h.local.get(h.key)===old,true,'synchronous fallback must preserve the observed LS original');assert.equal(h.idb.get(h.key)===other,true);
  assert.ok([...h.local].some(([k,v])=>k.includes(':kept:')&&JSON.parse(v).raw===h.raw),'pagehide keeps the full latest input in a separate slot immediately');
- await assert.rejects(work);assert.equal(h.local.get(h.key)===old,true);assert.equal(h.idb.get(h.key)===other,true);assert.equal(h.api.pending(),true);assert.equal(h.api.snapshot().localDurable,false);
- assert.ok([...h.idb].some(([k,v])=>k.includes(':kept:')&&JSON.parse(v).raw===h.raw));
+ await work;const kept=split(h);assert.ok(kept.includes(old));assert.ok(kept.includes(other));assert.equal(kept.length,2);
+ assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);assert.equal(h.local.has(h.key),false);assert.equal(h.api.pending(),false);assert.equal(h.api.snapshot().localDurable,true);
+});
+test('clearing the draft withdraws an earlier failure notice, and stays silent when nothing had failed',async()=>{
+ const owner={uid:'synthetic-draft',wid:'synthetic-personal'};
+ let h=draftHarness(),old=h.record('{"source":"LS"}'),other=h.record('{"source":"IDB"}',2);h.local.set(h.key,old);h.idb.set(h.key,other);h.observe(old,other);
+ h.hooks.cas=k=>{if(k.includes(':kept:split-'))throw Error('synthetic archive failure');};await assert.rejects(h.api.ready());assert.equal(h.states.at(-1),'fail');
+ delete h.hooks.cas;await h.api.clear(owner);assert.equal(h.states.at(-1),'ok','the stale «저장되지 않았습니다» notice is withdrawn');assert.equal(h.local.has(h.key),false);assert.equal(h.idb.has(h.key),false);
+ h=draftHarness();await h.api.ready();const count=h.states.length;await h.api.clear(owner);assert.equal(h.states.length,count,'no extra state after an ordinary clear');
 });
 test('a synchronous lifecycle recovery does not overwrite a previously unobserved LS original',async()=>{
  const h=draftHarness(),old=h.record('{"source":"unobserved"}'),gate=defer();h.local.set(h.key,old);h.hooks.get=()=>gate.promise;

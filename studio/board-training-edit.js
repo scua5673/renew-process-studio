@@ -67,6 +67,8 @@
     return a.map(v=>({o:v.o,dx:axis==='x'?v.target-v.p.x:0,dy:axis==='y'?v.target-v.p.y:0})).filter(v=>Math.abs(v.dx)+Math.abs(v.dy)>1e-8);
   }
   function snapAllowed(e,enabled,temporary){return !temporary&&(!!(e&&(e.metaKey||e.ctrlKey))||!!enabled);}
+  /* 3.302 — 훈련 편집기의 격자(auto)는 붙는 것이 기본이라 ⌘/Ctrl 이 «이번만 자유롭게»다. 그 밖(작전판 · 격자 없는 훈련 · 편집기에서 끈 때)은 snapAllowed 그대로 */
+  function moveSnap(e,enabled,temporary,auto){return auto&&enabled?!temporary&&!(e&&(e.metaKey||e.ctrlKey)):snapAllowed(e,enabled,temporary);}
   function snapPoint(p, grid, others, pitch, tolerance) {
     var r={x:p.x,y:p.y,gx:null,gy:null};
     if(grid && grid.sx>0 && grid.sy>0) {
@@ -114,10 +116,46 @@
     function context(){return [S(),S().tool].concat(selected());}
     function syncFree(){var b=panel&&panel.querySelector('[data-free]');if(b)b.setAttribute('aria-pressed',String(freeOnce));}
     function resetFree(){freeVersion++;freeOnce=false;freePid=null;freeContext=null;syncFree();if(toggle&&!additive)toggle.textContent='배치 도구';}
-    api.snapEnabled=function(e){return snapAllowed(e,win._dragSnapOn(),freeOnce);};
-    api.pointGridActive=function(e){return !!grid()&&api.snapEnabled(e||pointEvent);};
-    api.snapEditPoint=function(u,e){var g=grid();if(!g||!api.snapEnabled(e||pointEvent))return u;var p=snapPoint(u,g,[],null,7);return {x:p.x,y:p.y};};
-    var anchorEnds=win._anchorEnds;win._anchorEnds=function(d){return grid()&&api.snapEnabled(pointEvent)?false:anchorEnds(d);};
+    /* 3.302 — 훈련 편집기(body.editing)에 격자가 있으면(훈련 피치 · «격자 간격») 선수 · 장비를 놓거나 끌 때 교차점에 붙는 것이 기본이다
+       (사용자 11/16 «훈련만들기로 들어가면 자동으로 훈련격자로 해서 정렬 잘 할 수 있게끔»). 편집기 값은 기기 키 ps_edit_snap_v1
+       (없음 = 켬 · '1' = 켬 + 한 번 알림 · '0' = 끔) — 작전판의 «끌기 자석»(cs_drag_snap_v1 · 기본 끔)과 따로다.
+       보드 설정 › 끌기 자석 줄과 배치 도구의 «격자·안내선에 맞추기»는 지금 문맥의 값을 보이고 바꾼다(_dragSnapOn 을 감싼다).
+       선 끝(패스 · 런 · 직선 …)은 선수에 묶이는 것(2.719)이 먼저라 예전 규칙 그대로 — ⌘/Ctrl 이거나 작전판 자석까지 켠 기기에서만 격자에 붙는다. */
+    var EDIT_SNAP='ps_edit_snap_v1',deviceSnap=win._dragSnapOn,memPref=null,told=false,snapBase=null;
+    function editCtx(){return body.classList.contains('editing')&&!!grid();}
+    function editPref(){if(memPref!==null)return memPref;try{return win.localStorage.getItem(EDIT_SNAP)!=='0';}catch(_){return true;}}
+    win._dragSnapOn=function(){return editCtx()?editPref():deviceSnap();};
+    function pointSnap(e){return snapAllowed(e,deviceSnap()&&(!editCtx()||editPref()),freeOnce);}
+    /* 손가락 기기(아이패드)는 ⌘/Ctrl 이 없다 — 그 말을 뺀 문장으로 */
+    function keysHere(){try{return !(win.matchMedia&&win.matchMedia('(pointer:coarse)').matches);}catch(_){return true;}}
+    function tell(){
+      if(told)return;told=true;
+      try{if(win.localStorage.getItem(EDIT_SNAP)!==null)return;win.localStorage.setItem(EDIT_SNAP,'1');}catch(_){return;}
+      win.setTimeout(function(){win.toast(keysHere()?'훈련 격자 칸에 맞춰 놓여요 — ⌘/Ctrl 을 누른 채 끌면 자유롭게 · 끄기는 보드 설정 › 끌기 자석':'훈련 격자 칸에 맞춰 놓여요 — 끄기는 보드 설정 › 끌기 자석');},350);
+    }
+    function syncSnapUI(){
+      var on=win._dragSnapOn(),seg=doc.getElementById('dragSnapSeg'),hint=doc.getElementById('bsSnapHint');
+      if(seg)Array.from(seg.children).forEach(function(b){b.classList.toggle('on',(b.dataset.ds==='1')===on);});
+      if(hint){if(snapBase===null)snapBase=hint.textContent;var t=editCtx()?(keysHere()?'훈련 편집기는 격자 칸에 붙는 것이 기본이에요 · ⌘/Ctrl 을 누르면 잠깐 풀려요':'훈련 편집기는 격자 칸에 붙는 것이 기본이에요'):snapBase;if(hint.textContent!==t)hint.textContent=t;}
+    }
+    function setSnap(on){
+      if(!editCtx()){var b=doc.querySelector('#dragSnapSeg [data-ds="'+(on?'1':'0')+'"]');if(b)b.click();else try{win.localStorage.setItem('cs_drag_snap_v1',on?'1':'0');}catch(_){}return;}
+      told=true;memPref=null;try{win.localStorage.setItem(EDIT_SNAP,on?'1':'0');}catch(_){memPref=on;}
+      syncSnapUI();win.toast(on?'훈련 편집기 자석 켬 — 놓거나 끌면 격자 칸에 붙어요':keysHere()?'훈련 편집기 자석 끔 — ⌘/Ctrl 로는 언제든 붙어요':'훈련 편집기 자석 끔 — 자유롭게 놓여요');
+    }
+    api.snapEnabled=function(e){var auto=editCtx(),on=moveSnap(e,auto?editPref():deviceSnap(),freeOnce,auto);if(on&&auto&&!told&&editPref())tell();return on;};
+    api.pointGridActive=function(e){return !!grid()&&pointSnap(e||pointEvent);};
+    api.snapEditPoint=function(u,e){var g=grid();if(!g||!pointSnap(e||pointEvent))return u;var p=snapPoint(u,g,[],null,7);return {x:p.x,y:p.y};};
+    var anchorEnds=win._anchorEnds;win._anchorEnds=function(d){return grid()&&pointSnap(pointEvent)?false:anchorEnds(d);};
+    /* 대기 줄에서 끌어 놓기 · 장비 연속 찍기 · 역할 도장은 모두 dropToken 을 지난다 — 편집기 격자에서는 놓는 자리도 교차점으로(작전판은 그대로) */
+    var dropToken=win.dropToken;
+    if(typeof dropToken==='function')win.dropToken=function(cat,val,u){
+      var a=Array.prototype.slice.call(arguments),g=u&&Number.isFinite(u.x)&&Number.isFinite(u.y)&&editCtx()&&editable()&&api.snapEnabled(pointEvent)?grid():null;
+      if(g){var p=snapPoint(u,g,[],null,7);a[2]=Object.assign({},u,{x:p.x,y:p.y});}
+      return dropToken.apply(this,a);
+    };
+    var snapSeg=doc.getElementById('dragSnapSeg');
+    if(snapSeg)snapSeg.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('button[data-ds]');if(!b||!editCtx())return;e.stopPropagation();setSnap(b.dataset.ds==='1');sync();},true);
     ['beginDraw','moveDraw','polyTap','polyPreview'].forEach(function(name){
       var original=win[name];win[name]=function(u){
         var type=name==='moveDraw'&&typeof _draw!=='undefined'&&_draw?_draw.type:S().tool;
@@ -139,8 +177,11 @@
       return snapPoint(u,grid(),others,{x:q.CX,y:q.CY},7);
     };
     api.snapDelta=function(group,anchor,dx,dy,e){
-      if(!api.snapEnabled(e)){win.drawSnapGuides(null,null);return {x:dx,y:dy};}
-      var item=group.find(v=>v.o===anchor)||group.find(v=>!v.locked),c=item&&(item.draw?center({pts:item.pts0}):{x:item.x0,y:item.y0});
+      var item=group.find(v=>v.o===anchor)||group.find(v=>!v.locked);
+      /* 3.302 — 그림(구역 · 선 · 론도 그리드)을 잡고 끄는 것은 선 끝과 같은 예전 규칙(pointSnap): 편집기의 «격자에 붙기» 기본값은 선수 · 장비만.
+         그림은 테두리가 아니라 가운데가 교차점으로 당겨져 포인터를 벗어난다(CI rondo-grid «the grid moves with the pointer»). */
+      if(!(item&&item.draw?pointSnap(e):api.snapEnabled(e))){win.drawSnapGuides(null,null);return {x:dx,y:dy};}
+      var c=item&&(item.draw?center({pts:item.pts0}):{x:item.x0,y:item.y0});
       if(!c)return {x:dx,y:dy};var p=win.snapDrag(anchor,'group',{x:c.x+dx,y:c.y+dy});win.drawSnapGuides(p.gx,p.gy);return {x:p.x-c.x,y:p.y-c.y};
     };
     win.alignMulti=function(mode){
@@ -249,7 +290,7 @@
       panel.querySelector('select').value=win.__editGrid||0;panel.querySelector('[data-snap]').checked=win._dragSnapOn();
       panel.querySelector('[data-pick]').setAttribute('aria-pressed',String(additive));
       panel.querySelectorAll('[data-bib]').forEach(b=>{b.disabled=!players.length;b.setAttribute('aria-pressed',String(!!players.length&&players.every(p=>bibColor(p)===b.dataset.bib)));});
-      toggle.textContent=additive?'선택 마침':freeOnce?'배치 도구 · 자유 이동 대기':'배치 도구';mount();
+      toggle.textContent=additive?'선택 마침':freeOnce?'배치 도구 · 자유 이동 대기':'배치 도구';mount();syncSnapUI();
     }
     panel.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
       if(b.hasAttribute('data-close')){close();return;}if(!editable())return;
@@ -260,7 +301,7 @@
       else if(b.hasAttribute('data-bib'))bibs(b.dataset.bib);
     });
     panel.querySelector('select').onchange=function(){if(!editable())return;win.pushUndo();win.__editGrid=+this.value;paintGrid();win.autoSaveAnimFrame();win.boardSaveLive();};
-    panel.querySelector('[data-snap]').onchange=function(){if(!editable())return;win.localStorage.setItem('cs_drag_snap_v1',this.checked?'1':'0');var b=doc.querySelector('#dragSnapSeg [data-ds="'+(this.checked?'1':'0')+'"]');if(b)b.click();sync();};
+    panel.querySelector('[data-snap]').onchange=function(){if(!editable())return;setSnap(this.checked);sync();};
     function objectAt(target){var t=target;while(t&&t!==doc){if(t.__psD)return t.__psD;if(t.classList&&t.classList.contains('token')){var id=t.getAttribute('data-id'),s=S();return [].concat(s.players,s.equipment,s.ball?[s.ball]:[]).find(o=>String(o.id)===id||(id==='ball'&&o===s.ball));}t=t.parentNode;}return null;}
     doc.addEventListener('pointerdown',function(e){if(!additive||!editable()||S().tool!=='move')return;var o=objectAt(e.target);if(!o)return;e.preventDefault();e.stopImmediatePropagation();if(typeof sel!=='undefined'&&sel&&sel.ref&&!multiSel.length){multiSel=[sel.ref];sel=null;}win.toggleMulti(o);sync();},true);
     doc.addEventListener('keydown',function(e){if(e.key==='Escape'){resetFree();additive=false;close();sync();}});
@@ -272,16 +313,16 @@
     // script, and calling it threw and left this guard holding a dead pointer id,
     // which then swallowed every later empty-area touch until reload.
     ['pointermove','pointerup','pointercancel','lostpointercapture'].forEach(function(type){doc.addEventListener(type,function(e){if(marqueePid===null)return;if(e.pointerId!==marqueePid){if(type!=='lostpointercapture'&&e.target.closest&&e.target.closest('#board'))e.stopImmediatePropagation();return;}if(type==='pointercancel'||type==='lostpointercapture'){marqueePid=null;try{if(typeof win.clearMarquee==='function')win.clearMarquee();}catch(_){}}else if(type==='pointerup')marqueePid=null;},true);});
-    wrap('updateDelUI',sync);wrap('clearGuides',paintGrid);wrap('buildPitch',paintGrid);wrap('loadSnap',function(){if(!win.__psThumbCapturing)resetFree();additive=false;paintGrid();sync();});
+    wrap('updateDelUI',sync);wrap('clearGuides',paintGrid);wrap('buildPitch',function(){paintGrid();syncSnapUI();});wrap('loadSnap',function(){if(!win.__psThumbCapturing)resetFree();additive=false;paintGrid();sync();});
     win.addEventListener('resize',()=>{mount();if(!panel.hidden)place();});
     var strip=doc.getElementById('boardPageStrip');if(strip)new win.MutationObserver(mount).observe(strip,{childList:true});
-    new win.MutationObserver(mount).observe(body,{attributes:true,attributeFilter:['class']});
+    new win.MutationObserver(function(){mount();syncSnapUI();}).observe(body,{attributes:true,attributeFilter:['class']});
     // Repaint only existing bib tokens: a full render at boot would mark the
     // board dirty and could cancel a pending restore from storage.
     (S().players||[]).forEach(function(p){var g=bibColor(p)&&tokenNode(p);if(g)g.replaceWith(win.makeToken(p,'player'));});
     (S().drawings||[]).forEach(function(d){if(d.type!=='text')return;var g=win.PSBoardText.node(d);if(g)g.replaceWith(win.drawingEl(d));});
     mount();paintGrid();sync();
   }
-  var api={center:center,translate:translate,alignPlan:alignPlan,snapAllowed:snapAllowed,snapPoint:snapPoint,textStyle:textStyle,textFamily:textFamily,textPoint:textPoint,bibColor:bibColor,bibPath:bibPath,install:install};
+  var api={center:center,translate:translate,alignPlan:alignPlan,snapAllowed:snapAllowed,moveSnap:moveSnap,snapPoint:snapPoint,textStyle:textStyle,textFamily:textFamily,textPoint:textPoint,bibColor:bibColor,bibPath:bibPath,install:install};
   return api;
 });

@@ -85,3 +85,41 @@ test('one-shot suppression overrides permanent and explicit snapping without cha
   assert.equal(edit.snapAllowed({ctrlKey:true},false,false),true);
   assert.equal(edit.snapAllowed({},false,false),false);
 });
+
+// 3.302 — 사용자 11/16 «훈련만들기로 들어가면 자동으로 훈련격자로 해서 정렬 잘 할 수 있게끔»
+test('training-editor grid snaps by default: the modifier frees one drag there and still snaps everywhere else',()=>{
+  // 편집기 격자(auto) + 켬: 맨손 끌기는 붙고 ⌘/Ctrl 은 이번만 자유
+  for(const e of [{},{altKey:true},{shiftKey:true},null,undefined])assert.equal(edit.moveSnap(e,true,false,true),true);
+  for(const e of [{ctrlKey:true},{metaKey:true}])assert.equal(edit.moveSnap(e,true,false,true),false);
+  // 편집기에서 끈 때 · 작전판 · 격자 없는 훈련은 예전 규칙(snapAllowed) 그대로
+  for(const e of [{},{ctrlKey:true},{metaKey:true},{altKey:true},{shiftKey:true}])for(const enabled of [true,false])for(const temporary of [true,false]){
+    assert.equal(edit.moveSnap(e,enabled,temporary,false),edit.snapAllowed(e,enabled,temporary));
+    if(!enabled)assert.equal(edit.moveSnap(e,false,temporary,true),edit.snapAllowed(e,false,temporary));
+  }
+  // «한 번 자유 이동»은 어디서든 이긴다
+  for(const e of [{},{ctrlKey:true},{metaKey:true}])assert.equal(edit.moveSnap(e,true,true,true),false);
+});
+test('the editor default lives in its own device key and leaves line ends and the board magnet alone',()=>{
+  const fs=require('node:fs'),path=require('node:path'),read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
+  const src=read('studio/board-training-edit.js'),keys=require('../studio/storage-keys.js');
+  assert.deepEqual({sync:keys.info('ps_edit_snap_v1').sync,home:keys.info('ps_edit_snap_v1').home,role:keys.info('ps_edit_snap_v1').role},{sync:'device',home:'ls',role:'pref'});
+  // 편집기 문맥 = 편집 중 + 격자가 있을 때만, 기본 켬('0' 만 끔)
+  assert.match(src,/function editCtx\(\)\{return body\.classList\.contains\('editing'\)&&!!grid\(\);\}/);
+  assert.match(src,/getItem\(EDIT_SNAP\)!=='0'/);
+  // 보드 설정 줄 · 배치 도구가 읽는 값은 문맥의 값, 작전판 키는 편집기 안에서 쓰지 않는다
+  assert.match(src,/win\._dragSnapOn=function\(\)\{return editCtx\(\)\?editPref\(\):deviceSnap\(\);\};/);
+  assert.equal((src.match(/cs_drag_snap_v1/g)||[]).length,2,'the board key is only named in the comment and the no-button fallback');
+  assert.match(src,/if\(!editCtx\(\)\)\{var b=doc\.querySelector\('#dragSnapSeg \[data-ds=/,'outside the editor the board row keeps its own handler');
+  // 선 끝(2.719 선수에 묶기)은 작전판 자석 · ⌘/Ctrl 에만 — 편집기 기본값이 끌어들이지 않는다
+  assert.match(src,/function pointSnap\(e\)\{return snapAllowed\(e,deviceSnap\(\)&&\(!editCtx\(\)\|\|editPref\(\)\),freeOnce\);\}/);
+  for(const name of ['pointGridActive','snapEditPoint'])assert.match(src,new RegExp('api\\.'+name+'=function\\([^)]*\\)\\{[^}]*pointSnap\\('));
+  assert.match(src,/win\._anchorEnds=function\(d\)\{return grid\(\)&&pointSnap\(pointEvent\)\?false:anchorEnds\(d\);\};/);
+  // 그림(구역 · 선 · 론도 그리드)을 잡고 끄는 것도 선 끝과 같은 규칙 — 가운데가 교차점으로 당겨지면 포인터를 벗어난다(CI rondo-grid)
+  assert.match(src,/if\(!\(item&&item\.draw\?pointSnap\(e\):api\.snapEnabled\(e\)\)\)\{win\.drawSnapGuides\(null,null\);return \{x:dx,y:dy\};\}/);
+  // 놓기(dropToken)도 편집기 문맥에서만 교차점으로
+  assert.match(src,/editCtx\(\)&&editable\(\)&&api\.snapEnabled\(pointEvent\)\?grid\(\):null/);
+  // 새 글은 영어 사전에도
+  const en=read('studio/i18n/en-board.js');
+  for(const m of src.matchAll(/'(훈련 (?:격자 칸에 맞춰|편집기는 격자|편집기 자석)[^']*)'/g))assert.ok(en.includes('"'+m[1]+'":'),'no English for: '+m[1]);
+  assert.match(read('tests/browser/run-critical.mjs'),/training-grid-snap-3302/);
+});
