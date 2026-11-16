@@ -3,8 +3,10 @@
    위는 필름 줄(#animBar) — ▶ 재생 · 장면 썸네일(번호 · 시간) · ＋ · 장면 편집 · 속도 · 내보내기, 아래는 도구 줄(#cmd-tool-row).
    - 노드는 옮기지 않는다: #animBar 는 #ps-command-dock 의 바로 아래 자식 그대로(숨김 · 스킨 · 무대 여백 규칙이 그 자리를 본다).
      차례는 묶음(.cmd-cluster)의 CSS order 로만 바꾼다.
-   - 장면 칩(.anim-frame)의 썸네일 칸(.aft)은 보드가 이미 채운다(__afWindow) — 숨겨 두던 것을 보이게 하고,
-     장면마다 확대가 다르지 않게 전체 운동장 viewBox(data-psvb)로 맞춘다. #animFrames 에는 칩 말고 아무것도 넣지 않는다(순서 · 끌기가 자식 번호를 쓴다).
+   - 3.304 — 장면 칩(.anim-frame)은 **번호 칩**이다(사용자 «애니메이션에 썸네일은 필요없고»): 번호 + 시간만, 그림 칸(.aft)은 숨기고 비운다.
+     예전(3.079)엔 보드가 채운 장면 그림을 PNG 로 구워 칩에 깔았다. 그림을 안 보이니 만들지도 않는다 — 보드의 __afWindow(보이는 칸에 SVG 를 넣고,
+     없는 그림은 판을 갈아 끼워 __snapToThumb 로 만든다)를 떠 있는 도크에서는 건너뛴다(판을 잠깐 바꾸는 일이 줄어든다). 떠 있는 도크가 아니면 예전 그대로.
+     #animFrames 에는 칩 말고 아무것도 넣지 않는다(순서 · 끌기가 자식 번호를 쓴다).
    - 시간 표시는 칩 안의 작은 글자(.df-dur): 머무는 시간(animHold) + 다음 장면까지 이동(1 ÷ 속도). 마지막 장면은 머무는 시간만. */
 (function (root, factory) {
   var api = factory();
@@ -18,16 +20,6 @@
     var f = frames[i], s = Math.max(0.1, +hold || 0.6);
     if (i < frames.length - 1) { var sp = speedOf ? +speedOf(f) : (+f.moveSpeed > 0 ? +f.moveSpeed : 1); s += Math.max(0.3, +f.dur || 1) / (sp > 0 ? sp : 1); }
     return Math.round(s * 10) / 10;
-  }
-  // 썸네일 SVG 글: 언제나 전체 운동장(data-psvb, 없으면 제 viewBox) — 가로 판은 칸을 채우고(slice), 세로 판은 잘리지 않게(meet)
-  function fitThumb(markup, w, h) {
-    var m = /^\s*<svg\b[^>]*>/.exec(markup || ''); if (!m) return markup || '';
-    var tag = m[0], vb = (/\sdata-psvb="([^"]+)"/.exec(tag) || [])[1] || (/\sviewBox="([^"]+)"/.exec(tag) || [])[1], q = vb ? vb.split(/[\s,]+/).map(Number) : null, wide = !!(q && q.length === 4 && q[2] >= q[3]);
-    var t = tag.replace(/\spreserveAspectRatio="[^"]*"/, '');
-    if (vb) t = /\sviewBox="[^"]*"/.test(t) ? t.replace(/\sviewBox="[^"]*"/, ' viewBox="' + vb + '"') : t.replace(/^(\s*<svg\b)/, '$1 viewBox="' + vb + '"');
-    t = t.replace(/^(\s*<svg\b)/, '$1 preserveAspectRatio="' + (wide ? 'xMidYMid slice' : 'xMidYMid meet') + '"');
-    if (w > 0 && h > 0) { t = t.replace(/\s(width|height)="[^"]*"/g, '').replace(/^(\s*<svg\b)/, '$1 width="' + w + '" height="' + h + '"'); }
-    return t + markup.slice(tag.length);
   }
   function fmtSecs(s) { return (Math.round(s * 10) / 10).toFixed(1) + '초'; }
 
@@ -64,30 +56,27 @@
       A + ' #animPlay:hover{transform:translateY(-1px)!important}',
       A + ' #animPlay svg{color:var(--df-on-ink)!important;fill:var(--df-on-ink)!important;stroke:none!important}',
       A + ' #animPlay svg{width:15px!important;height:15px!important;max-width:15px!important;max-height:15px!important}',
-      // 장면 썸네일
-      A + ' #animFrames{display:flex!important;align-items:center!important;gap:6px!important;flex:1 1 auto!important;min-width:0!important;max-width:442px!important;width:auto!important;height:44px!important;min-height:44px!important;max-height:44px!important;padding:5px 5px!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;background:transparent!important;box-shadow:none!important;border:0!important}',
+      // 장면 번호 칩(3.304 — 그림 없음)
+      A + ' #animFrames{display:flex!important;align-items:center!important;gap:5px!important;flex:1 1 auto!important;min-width:0!important;max-width:442px!important;width:auto!important;height:44px!important;min-height:44px!important;max-height:44px!important;padding:5px 5px!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;background:transparent!important;box-shadow:none!important;border:0!important}',
       A + ' #animFrames::-webkit-scrollbar{display:none}',
       A + ' #animFrames.df-more-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent)}',
       A + ' #animFrames.df-more-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 26px);mask-image:linear-gradient(90deg,transparent,#000 26px)}',
       A + ' #animFrames.df-more-l.df-more-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 26px,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(90deg,transparent,#000 26px,#000 calc(100% - 26px),transparent)}',
-      A + ' #animFrames>.anim-frame{position:relative!important;flex:0 0 56px!important;width:56px!important;min-width:56px!important;max-width:56px!important;height:34px!important;min-height:34px!important;max-height:34px!important;padding:0!important;border:0!important;border-radius:8px!important;overflow:hidden!important;background:#2f6e3a!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 2px 6px rgba(0,0,0,.28)!important;display:block!important;cursor:pointer!important;transition:transform .15s,box-shadow .15s!important}',
+      A + ' #animFrames>.anim-frame{position:relative!important;flex:0 0 38px!important;width:38px!important;min-width:38px!important;max-width:38px!important;height:34px!important;min-height:34px!important;max-height:34px!important;padding:0!important;border:0!important;border-radius:9px!important;overflow:hidden!important;background:var(--df-well)!important;box-shadow:inset 0 0 0 1px var(--df-line)!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;cursor:pointer!important;transition:transform .15s,box-shadow .15s,background .15s!important}',
       A + ' #animFrames>.anim-frame:hover{transform:translateY(-1px)!important}',
-      A + ' #animFrames>.anim-frame.on{box-shadow:0 0 0 1.5px #fff,0 0 0 3.5px var(--df-accent),0 3px 8px rgba(0,0,0,.3)!important}',
-      A + ' #animFrames>.anim-frame.sel{outline:2px dashed var(--df-accent)!important;outline-offset:3px!important}',
-      A + ' #animFrames>.anim-frame.sel::after{content:"";position:absolute;inset:0;border:2px dashed #fff;border-radius:8px;pointer-events:none;z-index:2}',
-      A + ' #animFrames>.anim-frame.sel:not(.on){box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 2px 6px rgba(0,0,0,.28)!important}',
+      A + ' #animFrames>.anim-frame.on{flex:0 0 58px!important;width:58px!important;min-width:58px!important;max-width:58px!important;align-items:flex-start!important;padding:0 0 0 11px!important;background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,0) 55%,rgba(0,0,0,.12)),var(--df-accent)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 2px 6px rgba(0,0,0,.24)!important}',
+      A + ' #animFrames>.anim-frame.sel{outline:2px dashed var(--df-accent)!important;outline-offset:2px!important}',
       A + ' #animFrames>.anim-frame.dragging{opacity:.45!important}',
-      A + ' #animFrames>.anim-frame.drop{box-shadow:0 0 0 2.5px dashed var(--df-accent)!important;outline:2px dashed var(--df-accent)!important;outline-offset:2px!important}',
-      A + ' #animFrames>.anim-frame .aft{display:block!important;position:absolute!important;inset:0!important;left:0!important;top:0!important;width:100%!important;height:100%!important;border-radius:0!important;background:#2f6e3a!important;overflow:hidden!important;pointer-events:none!important}',
-      A + ' #animFrames>.anim-frame .aft>svg{display:none!important}',
-      A + ' #animFrames>.anim-frame .aft>img.df-thumb{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;border:0!important;pointer-events:none!important}',
-      A + ' #animFrames>.anim-frame .afi{position:absolute!important;left:3px!important;top:3px!important;right:auto!important;width:auto!important;min-width:0!important;height:auto!important;padding:0 4px!important;border-radius:5px!important;background:rgba(0,0,0,.55)!important;color:#fff!important;font:900 9px/12px Pretendard,-apple-system,sans-serif!important;z-index:2!important;pointer-events:none!important;transform:none!important}',
-      A + ' #animFrames>.anim-frame .df-dur{position:absolute!important;right:3px!important;bottom:2px!important;z-index:2!important;font:800 8.5px/1 Pretendard,-apple-system,sans-serif!important;color:#fff!important;background:rgba(0,0,0,.55)!important;padding:1.5px 3px!important;border-radius:4px!important;text-shadow:none!important;pointer-events:none!important}',
+      A + ' #animFrames>.anim-frame.drop{outline:2px dashed var(--df-accent)!important;outline-offset:2px!important}',
+      A + ' #animFrames>.anim-frame .aft{display:none!important}',
+      A + ' #animFrames>.anim-frame .afi{position:static!important;left:auto!important;top:auto!important;right:auto!important;width:auto!important;min-width:0!important;height:auto!important;padding:0!important;border-radius:0!important;background:transparent!important;color:var(--df-ink)!important;font:800 13px/1 Pretendard,-apple-system,sans-serif!important;font-variant-numeric:tabular-nums!important;pointer-events:none!important;transform:none!important}',
+      A + ' #animFrames>.anim-frame .df-dur{position:static!important;right:auto!important;bottom:auto!important;font:700 8.5px/1 Pretendard,-apple-system,sans-serif!important;font-variant-numeric:tabular-nums!important;color:var(--df-dim)!important;background:transparent!important;padding:0!important;border-radius:0!important;text-shadow:none!important;pointer-events:none!important}',
+      A + ' #animFrames>.anim-frame.on .afi{color:var(--df-on-ink)!important}' + A + ' #animFrames>.anim-frame.on .df-dur{color:var(--df-on-ink)!important;opacity:.78!important}',
       A + ' #animFrames>.anim-frame .afm{display:none!important}',
-      A + ' #animFrames>.anim-frame.on .afm,' + A + ' #animFrames>.anim-frame.on .afm *{color:#fff!important}' + A + ' #animFrames>.anim-frame.on .afm{display:inline-flex!important;position:absolute!important;right:2px!important;top:2px!important;left:auto!important;width:18px!important;min-width:18px!important;height:14px!important;min-height:14px!important;max-height:14px!important;padding:0!important;align-items:center!important;justify-content:center!important;border:0!important;border-radius:5px!important;background:rgba(0,0,0,.55)!important;color:#fff!important;font:900 12px/1 Pretendard,-apple-system,sans-serif!important;z-index:3!important}',
-      A + ' #animFrames>.anim-frame .afc{z-index:2!important}',
+      A + ' #animFrames>.anim-frame.on .afm,' + A + ' #animFrames>.anim-frame.on .afm *{color:var(--df-on-ink)!important}' + A + ' #animFrames>.anim-frame.on .afm{display:inline-flex!important;position:absolute!important;right:3px!important;top:50%!important;left:auto!important;transform:translateY(-50%)!important;width:20px!important;min-width:20px!important;height:24px!important;min-height:24px!important;max-height:24px!important;padding:0!important;align-items:center!important;justify-content:center!important;border:0!important;border-radius:6px!important;background:rgba(127,127,127,.28)!important;color:var(--df-on-ink)!important;font:900 13px/1 Pretendard,-apple-system,sans-serif!important;z-index:3!important}',
+      A + ' #animFrames>.anim-frame .afc{position:absolute!important;left:4px!important;top:4px!important;right:auto!important;bottom:auto!important;width:5px!important;height:5px!important;min-width:0!important;padding:0!important;border-radius:50%!important;background:#F5B301!important;box-shadow:none!important;z-index:2!important;pointer-events:none!important}',
       A + ' #animFrames>.anim-frame.sg-start{margin-left:12px!important}',
-      A + ' #animFrames:empty::before{content:"1"!important;display:flex!important;align-items:flex-start!important;justify-content:flex-start!important;flex:0 0 56px!important;width:56px!important;height:34px!important;padding:3px 5px!important;box-sizing:border-box!important;border-radius:8px!important;background:#2f6e3a!important;color:#fff!important;font:900 9px/12px Pretendard,-apple-system,sans-serif!important;box-shadow:0 0 0 2.5px var(--df-accent)!important}',
+      A + ' #animFrames:empty::before{content:"1"!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 38px!important;width:38px!important;height:34px!important;padding:0!important;box-sizing:border-box!important;border-radius:9px!important;background:var(--df-accent)!important;color:var(--df-on-ink)!important;font:800 13px/1 Pretendard,-apple-system,sans-serif!important}',
       A + ' #animFrames:empty::after{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;align-self:center!important;flex:1 1 auto!important;min-width:0!important;overflow:hidden!important;color:var(--df-dim)!important;font:700 11px/1.3 Pretendard,-apple-system,sans-serif!important;margin-left:8px!important;white-space:normal!important}',
       // ＋ 다음 장면: 점선 칸
       A + ' #animAdd{width:34px!important;min-width:34px!important;max-width:34px!important;height:34px!important;min-height:34px!important;max-height:34px!important;flex:0 0 34px!important;border-radius:8px!important;background:transparent!important;border:1.5px dashed var(--df-line)!important;box-shadow:none!important;color:var(--df-dim)!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;margin-right:4px!important}',
@@ -130,46 +119,14 @@
           if (c.__dfTitle == null) c.__dfTitle = c.title || '';
           var tt = '장면 ' + (i + 1) + ' · ' + t + (c.__dfTitle ? ' — ' + c.__dfTitle : ''); if (c.title !== tt) c.title = tt;
         }
-        // 보드가 넣은 SVG(수천 개 노드)는 그리지 않고, 장면마다 한 번 만든 그림(img)으로 바꿔 끼운다 — 줄을 다시 그릴 때마다 SVG 를 배치하지 않게
-        var aft = c.querySelector('.aft'), sv = aft && aft.querySelector(':scope>svg');
-        if (sv && frames && frames[i] && frames[i].thumb) {
-          var url = thumbUrl(frames[i]);
-          if (url) {   // 같은 장면은 같은 img 를 다시 쓴다(새로 만들면 매번 다시 불러온다)
-            var rc = cache.get(frames[i]), im = rc && rc.img;
-            if (!im || im.__u !== url) { im = doc.createElement('img'); im.className = 'df-thumb'; im.alt = ''; im.decoding = 'async'; im.draggable = false; im.src = url; im.__u = url; if (rc) rc.img = im; }
-            else if (im.isConnected) im = im.cloneNode();
-            aft.replaceChildren(im);
-          }
-        }
+        // 3.304 — 번호 칩: 그림 칸은 비운다(부팅 때 보드가 넣어 둔 SVG — 장면마다 수백 노드 — 를 남기지 않는다)
+        var aft = c.querySelector('.aft'); if (aft && aft.firstChild) aft.textContent = '';
       }
-    }
-    // 장면 그림 캐시: 장면 객체 → { thumb 글, blob URL }. 글이 바뀔 때만 다시 만든다(최근 80장만 남긴다)
-    // SVG 그림을 img 로 쓰면 줄을 다시 그릴 때마다 SVG 를 새로 그려 느리다(실측 4장에 ~35ms) — 장면마다 한 번 PNG(156×92)로 구워 둔다
-    var cache = new win.WeakMap(), lru = [], TW = 156, TH = 92;
-    function drop(rec) { if (!rec) return; if (rec.url) { try { win.URL.revokeObjectURL(rec.url); } catch (_) {} } rec.url = null; rec.thumb = null; rec.img = null; }   // thumb 을 비워 다음에 다시 굽게
-    function thumbUrl(f) {
-      var rec = cache.get(f); if (rec && rec.thumb === f.thumb) return rec.url || '';   // 굽는 중이면 ''(잔디색 칸)
-      drop(rec);
-      var mk = ''; try { mk = typeof win.thumbView === 'function' ? win.thumbView(f) : f.thumb; } catch (_) { mk = f.thumb; }
-      rec = { thumb: f.thumb, url: null }; cache.set(f, rec);
-      if (!mk) return '';
-      var svgUrl = ''; try { svgUrl = win.URL.createObjectURL(new win.Blob([fitThumb(mk, TW, TH)], { type: 'image/svg+xml' })); } catch (_) { return ''; }
-      var img = new win.Image();
-      img.onload = function () {
-        var done = function (url) { try { win.URL.revokeObjectURL(svgUrl); } catch (_) {} if (cache.get(f) !== rec) { if (url) try { win.URL.revokeObjectURL(url); } catch (_) {} return; } rec.url = url; for (var q = lru.length - 1; q >= 0; q--) if (!lru[q].url) lru.splice(q, 1); lru.push(rec); while (lru.length > 120) drop(lru.shift()); later(); };
-        try {
-          var cv = doc.createElement('canvas'); cv.width = TW; cv.height = TH; var cx = cv.getContext('2d');
-          cx.fillStyle = '#2f6e3a'; cx.fillRect(0, 0, TW, TH); cx.drawImage(img, 0, 0, TW, TH);
-          cv.toBlob(function (b) { done(b ? win.URL.createObjectURL(b) : ''); }, 'image/png');
-        } catch (_) { done(''); }
-      };
-      img.onerror = function () { try { win.URL.revokeObjectURL(svgUrl); } catch (_) {} };
-      img.src = svgUrl;
-      return '';
     }
     // 떠 있는 도크가 아니면 칩을 보드가 그린 그대로 둔다
     function undecorate(box) {
-      var ds = box.querySelectorAll('.df-dur,.aft>img.df-thumb'); for (var k = 0; k < ds.length; k++) ds[k].remove();
+      var ds = box.querySelectorAll('.df-dur'); for (var k = 0; k < ds.length; k++) ds[k].remove();
+      try { if (typeof win.__afWindow === 'function') win.__afWindow(true); } catch (_) {}   // 예전 줄로 돌아가면 보드가 그림 칸을 다시 채운다
       for (var j = 0; j < box.children.length; j++) { var c = box.children[j]; if (c.__dfTitle != null) { c.title = c.__dfTitle; c.__dfTitle = null; } }
     }
     // 가려진 장면이 있으면 그쪽 가장자리를 흐리게
@@ -202,6 +159,16 @@
       // 카드 높이가 바뀌면 무대 아래 여백을 다시 잰다(보드는 창 크기 바뀜에서 다시 맞춘다)
       win.requestAnimationFrame(function () { try { win.dispatchEvent(new win.Event('resize')); } catch (_) {} });
     }).observe(body, { attributes: true, attributeFilter: ['class'] }); } catch (_) {}
+    /* 3.304 — 번호 칩에는 그림이 없다: 떠 있는 도크에서는 보드의 장면 그림 채우기 · 만들기(__afWindow)를 건너뛴다.
+       아무것도 고치지 않는다(멀리 있는 그림 글 비우기도 안 한다 — 초안 확인 중 판 원문을 바꾸면 안 된다, board-draft thumbGuard).
+       지금 장면의 그림은 보드가 저장할 때 그대로 찍는다(boardThumbSVG — 미팅 · 훈련 저장본의 장면 0 그림). */
+    try {
+      var afOrig = win.__afWindow;
+      if (typeof afOrig === 'function' && !afOrig.__psFilm) {
+        var afSkip = function () { if (on()) return; return afOrig.apply(this, arguments); };
+        afSkip.__psFilm = true; win.__afWindow = afSkip;
+      }
+    } catch (_) {}
     var n = 0; (function tryIt() { if (watch()) return; if (++n < 80) win.setTimeout(tryIt, 250); })();
     return { decorate: decorate };
   }
@@ -209,5 +176,5 @@
     var go = function () { window.__psDockFilm = install(window); };
     if (window.document.readyState === 'loading') window.document.addEventListener('DOMContentLoaded', go); else go();
   }
-  return { sceneSecs: sceneSecs, fmtSecs: fmtSecs, fitThumb: fitThumb, css: css, install: install };
+  return { sceneSecs: sceneSecs, fmtSecs: fmtSecs, css: css, install: install };
 });

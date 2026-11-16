@@ -193,5 +193,6 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "훈련 편집기 자석 끔 — ⌘/Ctrl 로는 언제든 붙어요":"Training editor snap off — ⌘/Ctrl still snaps any time",
 "훈련 편집기 자석 끔 — 자유롭게 놓여요":"Training editor snap off — items go where you put them",
 "방향 표식 — 한 번 더 누르면 시야 부채꼴 · 노란 손잡이로 돌려요":"Direction mark — press again for the vision cone · turn it with the yellow handle",
-"누를 때마다 방향 표식 → 시야 부채꼴 → 끔":"Each press: direction mark → vision cone → off"
+"누를 때마다 방향 표식 → 시야 부채꼴 → 끔":"Each press: direction mark → vision cone → off",
+"도구 · 단추를 모두 접어 운동장만 보이게 — 다시 펴기: 아래 가운데 손잡이 · Esc":"Fold away every tool and button so only the pitch shows — bring them back with the small handle at the bottom centre or Esc"
 },{},{});
