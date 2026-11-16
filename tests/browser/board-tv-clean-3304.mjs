@@ -5,6 +5,8 @@ import {startFixture,openApp} from '../fixtures/team-app.mjs';
 //  ② 보관함 «전체화면»: 위쪽 띠(페이지 탭 · 보기 옵션 · 오른쪽 도구)가 걷힌다 · ‹ n / m › 는 도크와 겹치지 않고 페이지를 넘긴다 · 나오면 띠가 돌아온다
 //     (고치기 전 코드는 전체화면에서도 띠가 보이고 ‹ n / m › 가 도구 줄을 덮는다)
 //  ③ «큰 화면으로 보기»(보기 전용)의 전체화면도 띠 없음
+//  ④ 전체화면 «접기»(사용자 «전체 화면 누르면 아예 안 보이게끔 접고 펴고 할 수 있게»): 닫기 묶음 · 페이지 넘김 · 도크 · 셸의 저장 상태 줄까지 걷히고
+//     운동장이 화면을 다 쓴다 · 아래 가운데 손잡이 · Esc 로 편다(Esc 가 보기를 닫지 않는다) · 전체화면 안의 «도구 접기»도 «모두 접기»
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
 let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}console.log('board-tv-clean-3304 '+s);};
@@ -59,7 +61,12 @@ try{
     const hit=(a,b)=>!(a.r<=b.l||b.r<=a.l||a.b<=b.t||b.b<=a.t);
     return {full:document.body.classList.contains('vault-full'),strip:vis(strip),tabs:[...document.querySelectorAll('#boardPageStrip .bp-tab')].filter(vis).length,view:vis(document.querySelector('#boardPageStrip [data-v="3d"]')),
       pager:vis(pg),pagerBox:pg&&vis(pg)?box(pg):null,cnt:(document.getElementById('vvCnt')||{}).textContent||'',dock:vis(dock),overlap:!!(pg&&vis(pg)&&dock&&vis(dock)&&hit(box(pg),box(dock))),barOverlap:!!(pg&&vis(pg)&&bar&&vis(bar)&&hit(box(pg),box(bar))),
-      vw:innerWidth,page:__psPages.book.idx(),chips:document.querySelectorAll('#animFrames .anim-frame').length};});
+      vw:innerWidth,vh:innerHeight,page:__psPages.book.idx(),chips:document.querySelectorAll('#animFrames .anim-frame').length,
+      folded:document.body.classList.contains('ps-tv-fold'),bar:vis(bar),foldBtn:vis(document.getElementById('vvFold')),handle:vis(document.getElementById('psTvFold')),handleBox:vis(document.getElementById('psTvFold'))?box(document.getElementById('psTvFold')):null,
+      pill:vis(document.getElementById('ps-df-unfold'))||[...document.querySelectorAll('#ps-command-dock *')].some(vis),stagePad:parseFloat(getComputedStyle(document.getElementById('boardStage')).paddingBottom)||0,
+      boardH:Math.round(document.getElementById('board').getBoundingClientRect().height),dockFolded:document.body.classList.contains('cmd-dock-folded')};});
+  const shell=()=>page.evaluate(()=>{const vis=e=>{if(!e)return false;const c=getComputedStyle(e),r=e.getBoundingClientRect();return c.display!=='none'&&c.visibility!=='hidden'&&r.width>0&&r.height>0;};
+    return {vfull:document.body.classList.contains('vfull'),tvfold:document.body.classList.contains('tvfold'),strip:vis(document.getElementById('psSyncStrip')),side:vis(document.getElementById('psSideFold')),frameH:Math.round(document.getElementById('fBoard').getBoundingClientRect().height),vh:innerHeight};});
   const before=await look();
   assert.equal(before.full,false);assert.equal(before.strip,true,'편집 화면에는 띠가 있다');assert.equal(before.tabs,3,'페이지 탭 셋');assert.equal(before.view,true,'보기 옵션');
   await f.locator('#vCreateFull').click();
@@ -74,9 +81,37 @@ try{
   await f.waitForFunction(()=>__psPages.book.idx()===1,null,{timeout:8000});
   assert.equal((await look()).cnt.replace(/\s/g,''),'2/3','페이지가 넘어간다');
   await f.locator('#vvPrev').click();await f.waitForFunction(()=>__psPages.book.idx()===0,null,{timeout:8000});
+
+  step('fold');
+  const open0=await look(),sh0=await shell();
+  assert.equal(open0.foldBtn,true,'닫기 묶음에 «접기»');assert.equal(open0.folded,false,'전체화면은 펴진 채로 시작');assert.equal(open0.handle,false);
+  assert.equal(sh0.vfull,true);assert.equal(sh0.side,false,'전체화면엔 사이드바 손잡이가 없다');assert.equal(sh0.strip,true,'펴진 동안 저장 상태 줄은 그대로');
+  assert.ok(open0.stagePad>60,'펴진 동안 도크 자리 '+open0.stagePad);
+  await f.locator('#vvFold').click();
+  await f.waitForFunction(()=>document.body.classList.contains('ps-tv-fold'),null,{timeout:5000});
+  await page.waitForFunction(()=>document.body.classList.contains('tvfold'),null,{timeout:5000});await page.waitForTimeout(700);
+  const fold=await look(),sh1=await shell();
+  assert.deepEqual([fold.bar,fold.pager,fold.dock,fold.pill,fold.strip],[false,false,false,false,false],'닫기 묶음 · 페이지 넘김 · 도크 · 띠가 모두 걷힌다 '+JSON.stringify(fold));
+  assert.equal(fold.handle,true,'펴기 손잡이');assert.ok(fold.handleBox.b>fold.vh-60&&Math.abs((fold.handleBox.l+fold.handleBox.r)/2-fold.vw/2)<4&&fold.handleBox.r-fold.handleBox.l<=80,'아래 가운데 · 작게 '+JSON.stringify(fold.handleBox));
+  assert.ok(fold.stagePad<=12,'무대 아래의 도크 자리가 걷힌다(판의 기본 여백 12 이하) '+fold.stagePad);assert.ok(fold.boardH>open0.boardH+40,'운동장이 커진다 '+open0.boardH+' → '+fold.boardH);
+  assert.equal(sh1.strip,false,'셸의 저장 상태 줄도 걷힌다');assert.equal(sh1.frameH,sh1.vh,'작전판이 화면을 다 쓴다 '+JSON.stringify(sh1));
+  /* Esc = 펴기(보기를 닫지 않는다) */
+  await f.locator('#board').focus().catch(()=>{});await page.keyboard.press('Escape');
+  await f.waitForFunction(()=>!document.body.classList.contains('ps-tv-fold'),null,{timeout:5000});await page.waitForTimeout(600);
+  const esc=await look(),sh2=await shell();
+  assert.equal(esc.full,true,'Esc 는 펴기만 — 전체화면 · 편집은 그대로');assert.deepEqual([esc.bar,esc.pager,esc.dock],[true,true,true]);assert.equal(esc.handle,false);
+  assert.ok(Math.abs(esc.stagePad-open0.stagePad)<3,'도크 자리가 돌아온다 '+esc.stagePad+' vs '+open0.stagePad);assert.equal(sh2.strip,true);assert.equal(sh2.tvfold,false);
+  /* 전체화면 안의 «도구 접기» = 모두 접기(알약이 남지 않는다) → 손잡이로 편다 */
+  await f.locator('#ps-df-fold').click();
+  await f.waitForFunction(()=>document.body.classList.contains('ps-tv-fold'),null,{timeout:5000});await page.waitForTimeout(500);
+  const fold2=await look();assert.deepEqual([fold2.bar,fold2.pager,fold2.dock,fold2.pill,fold2.dockFolded],[false,false,false,false,false],'«도구 접기»도 모두 접기 — 접힌 알약 없음 '+JSON.stringify(fold2));
+  await f.locator('#psTvFold').click();
+  await f.waitForFunction(()=>!document.body.classList.contains('ps-tv-fold'),null,{timeout:5000});await page.waitForTimeout(500);
+  const open1=await look();assert.deepEqual([open1.bar,open1.pager,open1.dock,open1.chips],[true,true,true,5],'손잡이로 펴면 그대로 돌아온다');
   await f.locator('#vvEdit').click();
   await f.waitForFunction(()=>!document.body.classList.contains('vault-full'),null,{timeout:5000});await page.waitForTimeout(600);
   const back=await look();assert.equal(back.strip,true,'나오면 띠가 돌아온다');assert.equal(back.tabs,3);assert.equal(back.pager,false);
+  assert.equal(back.folded,false);assert.equal(back.handle,false);assert.equal((await shell()).strip,true);
 
   step('full-view');
   await f.evaluate(()=>document.getElementById('vCreateCancel').click());
@@ -86,6 +121,11 @@ try{
   await f.waitForFunction(()=>document.body.classList.contains('vault-full'),null,{timeout:5000});await page.waitForTimeout(900);
   const view=await look();
   assert.equal(view.strip,false,'보기 전용 전체화면도 띠 없음');assert.equal(view.pager,true);assert.equal(view.overlap,false);
+  assert.equal(view.foldBtn,true,'보기 전용에도 «접기»');
+  await f.locator('#vvFold').click();await f.waitForFunction(()=>document.body.classList.contains('ps-tv-fold'),null,{timeout:5000});await page.waitForTimeout(400);
+  const vfold=await look();assert.deepEqual([vfold.bar,vfold.pager,vfold.handle],[false,false,true],'보기 전용: 접으면 운동장만');
+  await f.locator('#psTvFold').click();await f.waitForFunction(()=>!document.body.classList.contains('ps-tv-fold'),null,{timeout:5000});await page.waitForTimeout(300);
+  assert.deepEqual([(await look()).bar,(await look()).pager],[true,true]);
   await f.locator('#vvClose').click();
   await f.waitForFunction(()=>!document.body.classList.contains('vault-full'),null,{timeout:8000});
 

@@ -3442,9 +3442,13 @@ window.psFailAlert=function(lead,e,stage){
       } else if(d.source==='scout' && d.type==='meetFull'){
         /* 2.014 — 경기 준비 '전체 보기': 사이드바(appbar)·팀 상단 탭(teamNav) 숨김. vfull 과 같은 프레임 여백 규칙 + mfull 로 팀 탭까지 */
         document.body.classList.toggle('vfull', !!d.on); document.body.classList.toggle('mfull', !!d.on);
-      } else if(d.source==='board' && d.type==='vaultFull'){
-        /* 보관함 전체보기 — 미팅 포커스(focus)와 별도 클래스: setFocus(false)가 헤더를 되살리지 않게 */
-        document.body.classList.toggle('vfull', !!d.on);
+      } else if(d.source==='board' && (d.type==='vaultFull'||d.type==='tvFold')){
+        /* 보관함 전체보기 — 미팅 포커스(focus)와 별도 클래스: setFocus(false)가 헤더를 되살리지 않게.
+           3.304 — tvFold = 전체화면 «접기»(board-tv-fold.js): 맨 아래 저장 상태 줄까지 걷는다. 전체화면엔 사이드바 손잡이도 없다. 인라인으로 — 셸 스타일에 센 규칙을 늘리지 않는다(스타일 래칫) */
+        var bc=document.body.classList;
+        if(d.type==='vaultFull'){ bc.toggle('vfull', !!d.on); if(!d.on)bc.remove('tvfold'); } else bc.toggle('tvfold', !!d.on);
+        var vf=bc.contains('vfull'),hide=function(id,on){ var el=document.getElementById(id); if(!el)return; if(on)el.style.setProperty('display','none','important'); else el.style.removeProperty('display'); };
+        hide('psSideFold',vf); hide('psSyncStrip',vf&&bc.contains('tvfold'));
       } else if(d.source==='board' && d.type==='vaultViewTab'){
         /* 보관함 항목 '보기'로 열기 — 보관함 탭을 유지한 채 캔버스에 표시 (작전판 탭은 항상 내 작업 보드) */
         try{ [].forEach.call(seg.children,function(x){x.classList.toggle('on',x.dataset.app==='design');}); }catch(_){}
