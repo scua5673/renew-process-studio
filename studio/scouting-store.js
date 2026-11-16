@@ -185,9 +185,17 @@
       if(why)throw fail('후보 자료가 갱신되었습니다. 다시 열어 주세요.',why);
     }
     /* 3.107 — 이 문서를 지금 기준(state.raw)에 저장해도 바뀌는 것이 없는가. 확인 중(check 거절)이어도 판정할 수 있다. */
+    /* 3.305 — 후보 문서가 아직 없는 팀(raw 없음 = 후보를 한 번도 저장하지 않은 팀)도 «쓸 후보가 하나도 없으면» 바뀐 것이 없다.
+       예전엔 raw 가 글이 아니면 늘 «바뀜»이라, 선수단 저장(선수 기준 · 출석 · 메모 …)마다 빈 후보 문서를 쓰려 했고
+       그 순간 후보 자료가 확인 중이면 거절된 실패가 재시도 없이 남았다(3.107 과 같은 길 — CI team-criteria «확인 중» 30초 · 저장 확인과 새 판 적용이 막힘).
+       빈 문서 기준은 read() 가 raw 없음에서 만드는 것과 같은 reconcile(null,{v:1,players:[]}). 후보가 하나라도 있으면 예전처럼 «바뀜». */
     function unchanged(doc){
-      if(!state.doc||typeof state.raw!=='string')return false;
-      try{return sameRaw(reconcile(state.doc,doc),state.raw);}catch(_){return false;}
+      if(!state.doc)return false;
+      try{
+        var next=reconcile(state.doc,doc);
+        if(typeof state.raw==='string')return sameRaw(next,state.raw);
+        return state.raw==null&&sameRaw(next,JSON.stringify(reconcile(null,{v:1,players:[]})));
+      }catch(_){return false;}
     }
     function save(doc){
       check();var next=reconcile(state.doc,doc),raw=JSON.stringify(next),owner=state.owner;
