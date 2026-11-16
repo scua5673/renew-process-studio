@@ -98,6 +98,11 @@
       // (사용자 «보드를 tv로 연결했을 때 페이지나 옵션들 고르는 거 안 보이게»). board.html 의 `body.vault-full #boardPageStrip{display:none}` 이 원래 뜻인데
       // 이 막대의 display:flex!important 가 덮어 전체화면에서도 띠가 남아 있었다. 페이지 넘김은 전체화면의 ‹ n / m ›(#vvPg) · ←→ 키.
       'html.ps-page-board body.vault-full #boardPageStrip' + N + N + '{display:none!important}',
+      // 3.306 — 아래 도크의 «도구 접기»(body.cmd-dock-folded · ⌘.)는 위쪽 띠도 같이 접는다(사용자 11/16 «하단도구 접기 누르면 상단에 있는 것도 같이 접히는걸로»).
+      // 띠는 판 위에 떠 있는 겹(position:absolute)이라 걷어도 판 자리는 그대로다. 펴는 길은 원래의 «도구 펼치기» 알약 · ⌘. 하나 — 새 단추 없음.
+      // 폰 띠(ps-dock · ps-phone-work — «페이지가 늘어도 운동장이 안 움직인다»)는 그대로. 열려 있던 «보드 ▾» 메뉴(#ps-tb-menu)도 같이 걷는다.
+      'html.ps-page-board body.cmd-dock-folded:not(.ps-dock):not(.ps-phone-work) #boardPageStrip.ps-tb' + N + N + '{display:none!important}',
+      'html.ps-page-board body.cmd-dock-folded:not(.ps-dock):not(.ps-phone-work) #ps-tb-menu.on{display:none}',
       // 만들기 · 편집 중 전체화면은 아래에 도크가 남는다(1.992) — 가운데 아래의 ‹ n / m › 가 도구 줄을 덮었다. 왼쪽 위(닫기 묶음 #vvBar 의 맞은편)로
       'html body.vault-full.vcreating #vvPg{left:12px!important;right:auto!important;top:12px!important;bottom:auto!important;transform:none!important}',
       S + ' .tb-tabs{display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}',
@@ -326,7 +331,7 @@
       return true;
     }
     // 띠가 다시 그려질 때 · 떠 있는 도크가 켜지고 꺼질 때 · 3D/카메라가 바뀔 때
-    try { new win.MutationObserver(function () { var s = strip(); if (s && on() !== s.classList.contains('ps-tb')) { var was = s.classList.contains('ps-tb'); if (on()) build(); else unbuild(); if (s.classList.contains('ps-tb') !== was) win.setTimeout(function () { try { win.dispatchEvent(new win.Event('resize')); } catch (_) {} }, 0); }   /* 3.083 — 바뀐 때만 · 다음 차례에(커뮤니티 보기에서 세우지 못하면 resize → 도크 mount → class 가 끝없이 돌았다) */ paintView(); try { clearSelCtl(); } catch (_) {} }).observe(body, { attributes: true, attributeFilter: ['class'] }); } catch (_) {}
+    try { new win.MutationObserver(function () { var s = strip(); if (s && on() !== s.classList.contains('ps-tb')) { var was = s.classList.contains('ps-tb'); if (on()) build(); else unbuild(); if (s.classList.contains('ps-tb') !== was) win.setTimeout(function () { try { win.dispatchEvent(new win.Event('resize')); } catch (_) {} }, 0); }   /* 3.083 — 바뀐 때만 · 다음 차례에(커뮤니티 보기에서 세우지 못하면 resize → 도크 mount → class 가 끝없이 돌았다) */ paintView(); try { clearSelCtl(); } catch (_) {} if (menu.classList.contains('on') && body.classList.contains('cmd-dock-folded')) menu.classList.remove('on');   /* 3.306 — 띠가 같이 접히면 열려 있던 «보드 ▾» 메뉴도 닫는다(펼쳤을 때 다시 뜨지 않게) */ }).observe(body, { attributes: true, attributeFilter: ['class'] }); } catch (_) {}
     win.addEventListener('resize', function () { win.setTimeout(clearSelCtl, 50); win.setTimeout(center, 60); });
     // 가운데 맞추기: 정말 가운데에 두어도 왼쪽 · 오른쪽 덩어리와 10px 이상 떨어질 때만
     function center() {
