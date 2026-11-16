@@ -23,7 +23,8 @@ try{
   const ui=()=>f.evaluate(()=>({on:_dragSnapOn(),seg:[...document.querySelectorAll('#dragSnapSeg button')].filter(b=>b.classList.contains('on')).map(b=>b.dataset.ds),hint:(document.getElementById('bsSnapHint')||{}).textContent||''}));
   const onGrid=p=>f.evaluate(p=>{const g=window.__trainGridSpec,kx=(p.x-g.x0)/g.sx,ky=(p.y-g.y0)/g.sy;return Math.abs(kx-Math.round(kx))<1e-6&&Math.abs(ky-Math.round(ky))<1e-6;},p);
   const cone=()=>f.evaluate(()=>{const c=state.equipment[state.equipment.length-1];return c?{id:c.id,x:c.x,y:c.y}:null;});
-  const toast=()=>f.evaluate(()=>(document.getElementById('cs-ftoast')||{}).textContent||'');
+  // 맥 계열(_PTR_MAC — 웹킷 CI 의 아이패드 UA 도)에서 Ctrl+누름은 오른쪽 클릭(토큰 정보 창, board.html 2.975)이라 끌기가 시작되지 않는다 — 그 기기의 «이번만» 키는 ⌘
+  const MOD=process.env.PS_TEST_MOD||(await f.evaluate(()=>typeof _PTR_MAC!=='undefined'&&!!_PTR_MAC)?'Meta':'Control');
 
   // ── 0. 작전판(편집기 밖): 자석은 기본 꺼짐 그대로 ──
   stage='board-default';
@@ -55,8 +56,8 @@ try{
 
   // ── 3. ⌘/Ctrl 은 이번만 자유롭게 ──
   stage='mod-free';
-  await drag([c.x,c.y],[502,379],'Control');
-  let free=await cone();assert.ok(Math.hypot(free.x-502,free.y-379)<2.5,'Ctrl-drag follows the pointer: '+JSON.stringify(free));assert.equal(await onGrid(free),false);
+  await drag([c.x,c.y],[502,379],MOD);
+  let free=await cone();assert.ok(Math.hypot(free.x-502,free.y-379)<2.5,'a modifier drag ('+MOD+') follows the pointer: '+JSON.stringify(free));assert.equal(await onGrid(free),false);
   await drag([free.x,free.y],[610,415]);
   c=await cone();assert.equal(await onGrid(c),true,'the next plain drag snaps again');
 
@@ -72,20 +73,22 @@ try{
 
   // ── 5. 편집기에서 끄기: 자유 · 작전판 키는 그대로 · ⌘/Ctrl 은 다시 «붙기» ──
   stage='turn-off';
-  await f.evaluate(()=>document.querySelector('#dragSnapSeg [data-ds="0"]').click());
+  // 알림은 누른 그 자리에서 읽는다(뒤늦게 뜨는 다른 알림이 덮기 전에)
+  const press=ds=>f.evaluate(ds=>{document.querySelector('#dragSnapSeg [data-ds="'+ds+'"]').click();return (document.getElementById('cs-ftoast')||{}).textContent||'';},ds);
+  assert.match(await press('0'),/훈련 편집기 자석 끔/);
   assert.deepEqual(await keys(),{edit:'0',board:null},'only the editor value changes');
-  u=await ui();assert.equal(u.on,false);assert.deepEqual(u.seg,['0']);assert.match(await toast(),/훈련 편집기 자석 끔/);
+  u=await ui();assert.equal(u.on,false);assert.deepEqual(u.seg,['0']);
   await drag([c.x,c.y],[502,379]);
   free=await cone();assert.ok(Math.hypot(free.x-502,free.y-379)<2.5,'off: plain drag is free: '+JSON.stringify(free));
   await f.evaluate(()=>dropToken('equip','cone',{x:333,y:287}));
   let raw=await cone();assert.deepEqual({x:raw.x,y:raw.y},{x:333,y:287},'off: dropped where it was dropped');
-  await drag([333,287],[463,342],'Control');
-  raw=await cone();assert.equal(await onGrid(raw),true,'off: Ctrl still snaps: '+JSON.stringify(raw));
+  await drag([333,287],[463,342],MOD);
+  raw=await cone();assert.equal(await onGrid(raw),true,'off: the modifier ('+MOD+') still snaps: '+JSON.stringify(raw));
   // 작전판 자석까지 켠 기기는 선 끝도 예전처럼 격자에(편집기에서 켠 때만)
   assert.deepEqual(await f.evaluate(()=>{localStorage.setItem('cs_drag_snap_v1','1');const off=PSBoardEdit.pointGridActive({});localStorage.setItem('ps_edit_snap_v1','1');const on=PSBoardEdit.pointGridActive({});localStorage.removeItem('cs_drag_snap_v1');localStorage.setItem('ps_edit_snap_v1','0');return [off,on];}),[false,true]);
   stage='turn-on';
-  await f.evaluate(()=>document.querySelector('#dragSnapSeg [data-ds="1"]').click());
-  assert.deepEqual(await keys(),{edit:'1',board:null});u=await ui();assert.equal(u.on,true);assert.deepEqual(u.seg,['1']);assert.match(await toast(),/훈련 편집기 자석 켬/);
+  assert.match(await press('1'),/훈련 편집기 자석 켬/);
+  assert.deepEqual(await keys(),{edit:'1',board:null});u=await ui();assert.equal(u.on,true);assert.deepEqual(u.seg,['1']);
 
   // ── 6. 나가면 작전판은 예전 그대로(훈련 피치여도 자유) ──
   stage='board-unchanged';
