@@ -177,8 +177,11 @@
       return snapPoint(u,grid(),others,{x:q.CX,y:q.CY},7);
     };
     api.snapDelta=function(group,anchor,dx,dy,e){
-      if(!api.snapEnabled(e)){win.drawSnapGuides(null,null);return {x:dx,y:dy};}
-      var item=group.find(v=>v.o===anchor)||group.find(v=>!v.locked),c=item&&(item.draw?center({pts:item.pts0}):{x:item.x0,y:item.y0});
+      var item=group.find(v=>v.o===anchor)||group.find(v=>!v.locked);
+      /* 3.302 — 그림(구역 · 선 · 론도 그리드)을 잡고 끄는 것은 선 끝과 같은 예전 규칙(pointSnap): 편집기의 «격자에 붙기» 기본값은 선수 · 장비만.
+         그림은 테두리가 아니라 가운데가 교차점으로 당겨져 포인터를 벗어난다(CI rondo-grid «the grid moves with the pointer»). */
+      if(!(item&&item.draw?pointSnap(e):api.snapEnabled(e))){win.drawSnapGuides(null,null);return {x:dx,y:dy};}
+      var c=item&&(item.draw?center({pts:item.pts0}):{x:item.x0,y:item.y0});
       if(!c)return {x:dx,y:dy};var p=win.snapDrag(anchor,'group',{x:c.x+dx,y:c.y+dy});win.drawSnapGuides(p.gx,p.gy);return {x:p.x-c.x,y:p.y-c.y};
     };
     win.alignMulti=function(mode){

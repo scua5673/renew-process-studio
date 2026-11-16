@@ -47,16 +47,27 @@ try{
   // 되돌리기 한 번이면 표식이 사라진다 → 다시 켠다
   stage='undo';
   await f.evaluate(()=>{state.players[0].dir=0;renderTokens();autoSaveAnimFrame();});
+  // ③-0 아주 짧은 잔상(지나온 점 둘 · 1.7 단위)도 꼬리 하나 — 고치기 전엔 이 틈(1.5~2 단위)에 예전 선 둘이 그려졌다(웹킷 CI)
+  stage='short-tail';
+  const short=await f.evaluate(()=>{const L=window.__trailLayer,p=state.players[0],x0=p.x;window.__trailLive=1;window.__animSeg=0;trailReset();
+    try{trailTick();p.x=x0+1.7;trailTick();return {tails:L.querySelectorAll('path.ps-trail').length,old:L.querySelectorAll('path:not(.ps-trail)').length};}
+    finally{p.x=x0;window.__trailLive=0;trailReset();}});
+  assert.deepEqual(short,{tails:1,old:0},'a 1.7-unit trail is already a tail, never the old strokes: '+JSON.stringify(short));
   // ③ 재생 — 잔상은 채운 면 하나 · 표식도 따라간다
   stage='playback';
-  await f.evaluate(()=>{multiSel=[];sel=null;renderTokens();updateDelUI();playAnim();});
+  await f.evaluate(()=>{multiSel=[];sel=null;renderTokens();updateDelUI();});
+  // 재생 첫 순간(잔상이 아직 2 단위도 안 될 때)부터 본다 — 그때 예전 선 둘이 그려지던 것을 웹킷 CI 가 잡았다. 판이 그려질 때마다 적어 둔다.
+  await f.evaluate(()=>{window.__oldTrail=0;window.__trailSeen=0;const L=window.__trailLayer;window.__trailObs=new MutationObserver(()=>{window.__trailSeen++;window.__oldTrail+=L.querySelectorAll('path:not(.ps-trail)').length;});window.__trailObs.observe(L,{childList:true});});
+  await f.evaluate(()=>{playAnim();});
   let seen=null;
-  for(let i=0;i<60&&!seen;i++){const t=await f.evaluate(()=>({playing:animPlaying,tails:[...document.querySelectorAll('#trailLayer path')].map(p=>[p.getAttribute('class')||'',p.getAttribute('fill'),p.getAttribute('stroke')||'',/Z$/.test(p.getAttribute('d'))]),marks:document.querySelectorAll('#visionLayer .ps-dirmark').length}));if(t.playing&&t.tails.length>=2&&i>4)seen=t;else await page.waitForTimeout(60);}
+  for(let i=0;i<80&&!seen;i++){const t=await f.evaluate(()=>({playing:animPlaying,tails:[...document.querySelectorAll('#trailLayer path')].map(p=>[p.getAttribute('class')||'',p.getAttribute('fill'),p.getAttribute('stroke')||'',/Z$/.test(p.getAttribute('d'))]),marks:document.querySelectorAll('#visionLayer .ps-dirmark').length}));if(t.playing&&t.tails.length>=2)seen=t;else await page.waitForTimeout(50);}
   assert.ok(seen,'trails appeared while playing');
   assert.deepEqual(seen.tails,[['ps-trail','#ffffff','',true],['ps-trail','#ffffff','',true]],'one filled, closed tail per trailed player — no strokes: '+JSON.stringify(seen.tails));
   assert.equal(seen.marks,2,'marks stay during playback');
   await page.screenshot({path:output+'/playing.png'});
   await f.waitForFunction(()=>!animPlaying,null,{timeout:20000});await page.waitForTimeout(300);
+  const drawn=await f.evaluate(()=>{window.__trailObs.disconnect();return {old:window.__oldTrail,seen:window.__trailSeen};});
+  assert.ok(drawn.seen>3,'the trail layer was redrawn while playing: '+JSON.stringify(drawn));assert.equal(drawn.old,0,'the old two-stroke trail never appears — not even while the tail is still too short');
   await f.evaluate(()=>{selectAnimFrame(0);});await page.waitForTimeout(300);
   // ① 방향 표식 → 시야 → 끔
   stage='cone';

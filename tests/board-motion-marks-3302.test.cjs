@@ -26,7 +26,8 @@ test('잔상 — 점이 많으면 36개로 줄이고, 짧거나 이상한 값이
   const p=pairs(M.taper(many,14));
   assert.equal(p.length,M.MAX_PTS*2);
   assert.ok(p.every(q=>Number.isFinite(q[0])&&Number.isFinite(q[1])));
-  assert.equal(M.taper([{x:0,y:0},{x:1,y:0}],10),'','2 단위 미만');
+  assert.equal(M.taper([{x:0,y:0},{x:.3,y:0}],10),'','0.5 단위 미만');
+  assert.notEqual(M.taper([{x:0,y:0},{x:1.6,y:0}],10),'','지나온 점 둘(1.5 단위 간격)이면 바로 꼬리 — 웹킷 CI 가 이 틈의 예전 선을 잡았다');
   assert.equal(M.taper([{x:0,y:0}],10),'');assert.equal(M.taper(null,10),'');assert.equal(M.taper([{x:0,y:0},{x:50,y:0}],0),'');
   assert.equal(M.taper([{x:0,y:0},{x:NaN,y:1},{x:0,y:0}],10),'','쓸 수 있는 점이 한 자리뿐');
   assert.notEqual(M.taper([{x:0,y:0},{x:NaN,y:1},{x:40,y:0}],10),'');
@@ -81,8 +82,9 @@ test('방향 표식 — 이 장면부터 뒤로: 구간은 _animCarryIds 규칙�
 test('배선 — 본문은 그리기만 맡기고(없으면 예전 선), 모듈은 묶음 · 영어 사전 · 시험에 들어 있다',()=>{
   const b=read('studio/board.html'),sw=read('sw.js'),en=read('studio/i18n/en-board.js'),src=read('studio/board-motion-marks.js');
   assert.match(b,/<script src="board-motion-marks\.js"><\/script>/);
-  assert.match(b,/PSMotionMarks\.taper\(keep,PSMotionMarks\.head\(21\*_tokScaleOf\(p\),p===state\.ball\)\)/);
-  assert.match(b,/if\(_tp\)\{L\.appendChild\(el\("path",\{d:_tp,fill:_gridInk\(\),opacity:"\.3","class":"ps-trail"\}\)\);return;\}/);
+  assert.match(b,/var _mm=window\.PSMotionMarks,_tp=null;try\{if\(_mm\)_tp=_mm\.taper\(keep,_mm\.head\(21\*_tokScaleOf\(p\),p===state\.ball\)\);\}catch\(_\)\{_tp=null;\}/);
+  // 아직 너무 짧은 잔상("")은 아무것도 안 그리고 끝낸다 — 예전 선 둘은 모듈이 없거나 던졌을 때(null)만(웹킷 CI: 재생 첫 순간에 예전 선이 보였다)
+  assert.match(b,/if\(_tp!==null\)\{if\(_tp\)L\.appendChild\(el\("path",\{d:_tp,fill:_gridInk\(\),opacity:"\.3","class":"ps-trail"\}\)\);return;\}/);
   assert.match(b,/"stroke-width":7,"stroke-linecap":"round","stroke-linejoin":"round",opacity:"\.18"/,'모듈이 없을 때의 예전 선이 남아 있다');
   assert.match(sw,/'\/studio\/board-motion-marks\.js'/);
   for(const m of src.matchAll(/toast\('([^']*[가-힣][^']*)'\)/g))assert.ok(en.includes('"'+m[1]+'":'),'no English for: '+m[1]);

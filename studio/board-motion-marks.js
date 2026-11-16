@@ -20,7 +20,7 @@
 
   /* ── ① 가늘어지는 꼬리(순수) ─────────────────────────────────────────────
      points: 지나온 자리(오래된 것 → 지금), head: 지금 자리에서의 반 폭. 폭은 지나온 길이에 비례(0 → head).
-     점이 많으면 길이로 고르게 줄여(최대 36) 한 프레임의 그림 값을 묶는다. 길이가 2 단위 미만이면 '' */
+     점이 많으면 길이로 고르게 줄여(최대 36) 한 프레임의 그림 값을 묶는다. 길이가 0.5 단위 미만이면 '' */
   function taper(points, head) {
     var src = (points || []).filter(fin), i, pts = [];
     for (i = 0; i < src.length; i++) if (!pts.length || Math.hypot(src[i].x - pts[pts.length - 1].x, src[i].y - pts[pts.length - 1].y) > 0.05) pts.push({x: src[i].x, y: src[i].y});
@@ -29,7 +29,7 @@
     var acc = [0];
     for (i = 1; i < pts.length; i++) acc.push(acc[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
     var total = acc[acc.length - 1];
-    if (!(total >= 2)) return '';
+    if (!(total >= 0.5)) return '';   // 지나온 점은 1.5 단위마다 찍힌다 — 둘째 점이 생기면 바로 꼬리(예전 2 단위 기준은 1.5~2 사이의 몇 프레임을 비웠다)
     if (pts.length > MAX_PTS) {
       var out = [], j = 0;
       for (i = 0; i < MAX_PTS; i++) {
