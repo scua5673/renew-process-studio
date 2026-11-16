@@ -58,16 +58,23 @@ try{
   assert.deepEqual(back.x,X[0]);assert.deepEqual(back.caps,['장면 1','장면 2','장면 3','장면 4','장면 5','장면 6']);
   /* 장면 줄이 켜져 있어야 그림을 그린다 — 꺼져 있으면 사람처럼 켠다 */
   if(!back.bar){await f.evaluate(()=>{const b=document.getElementById('animToggle')||document.querySelector('[data-cmd="anim"],#animBtn');if(b)b.click();});await page.waitForTimeout(600);}
-  const strip=()=>f.evaluate(()=>{try{__afWindow(true);}catch(_){}const k=[...document.querySelectorAll('#animFrames .anim-frame')];return {n:k.length,noThumb:k.filter(d=>d.classList.contains('no-thumb')).length,th:anim.frames.filter(x=>x.thumb).length,on:document.getElementById('animBar').classList.contains('on')};});
-  /* 그림은 장면 줄 모양(필름 도크는 <img>, 옛 줄은 inline svg)과 상관없이 장면 자료의 thumb 로 본다 */
-  let st=null;for(let i=0;i<40;i++){st=await strip();if(st.n===6&&st.noThumb===0&&st.th===6)break;await page.waitForTimeout(250);}
-  if(st.on){assert.deepEqual([st.n,st.noThumb,st.th],[6,0,6],'장면 줄의 그림이 다시 그려졌다 '+JSON.stringify(st));}
+  const strip=()=>f.evaluate(()=>{try{__afWindow(true);}catch(_){}const k=[...document.querySelectorAll('#animFrames .anim-frame')];return {n:k.length,noThumb:k.filter(d=>d.classList.contains('no-thumb')).length,th:anim.frames.filter(x=>x.thumb).length,on:document.getElementById('animBar').classList.contains('on'),
+    float:document.body.classList.contains('ps-dock-float'),nums:k.map(d=>(d.querySelector('.afi')||{}).textContent||''),shown:k.filter(d=>{const a=d.querySelector('.aft');return a&&getComputedStyle(a).display!=='none';}).length};});
+  /* 3.304 — 기대를 일부러 고침: 떠 있는 도크의 장면 줄은 번호 칩이라 그림을 다시 만들지 않는다(사용자 «애니메이션에 썸네일은 필요없고»).
+     옛 줄(떠 있는 도크가 아닌 화면)은 예전처럼 보이는 칸의 그림을 다시 그린다 — 장면 자료의 thumb 로 본다 */
+  let st=await strip();
+  if(st.on&&st.float){await page.waitForTimeout(1200);st=await strip();
+    assert.deepEqual([st.n,st.nums.join(''),st.shown],[6,'123456',0],'장면 줄은 번호 칩 여섯 — 그림 칸 없음 '+JSON.stringify(st));
+    assert.ok(st.th<=2,'그림을 다시 만들지 않는다(장면 0 · 지금 장면만 남을 수 있다) '+JSON.stringify(st));}
+  else if(st.on){for(let i=0;i<40;i++){st=await strip();if(st.n===6&&st.noThumb===0&&st.th===6)break;await page.waitForTimeout(250);}
+    assert.deepEqual([st.n,st.noThumb,st.th],[6,0,6],'장면 줄의 그림이 다시 그려졌다 '+JSON.stringify(st));}
   else assert.equal(st.n===0||st.th>=1,true,'장면 줄이 닫힌 화면 — 장면 0 의 그림은 있다 '+JSON.stringify(st));
   /* 다른 페이지로 — 그 페이지 장면도 그대로 */
   await f.locator('#boardPageStrip .bp-tab').nth(1).click();
   await f.waitForFunction(()=>__psPages.book.idx()===1&&anim.frames.length===5,null,{timeout:15000});
   assert.deepEqual(await f.evaluate(()=>anim.frames.map(x=>x.snap.players[0].x)),X[1]);
-  if(st.on){for(let i=0;i<40;i++){st=await strip();if(st.n===5&&st.noThumb===0&&st.th===5)break;await page.waitForTimeout(250);}
+  if(st.on&&st.float){await page.waitForTimeout(600);st=await strip();assert.deepEqual([st.n,st.nums.join(''),st.shown],[5,'12345',0],'둘째 페이지도 번호 칩 '+JSON.stringify(st));}
+  else if(st.on){for(let i=0;i<40;i++){st=await strip();if(st.n===5&&st.noThumb===0&&st.th===5)break;await page.waitForTimeout(250);}
     assert.deepEqual([st.n,st.noThumb,st.th],[5,0,5],'둘째 페이지의 장면 그림도 '+JSON.stringify(st));}
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));assert.deepEqual(errs,[],'no page errors '+JSON.stringify(errs));
   console.log(JSON.stringify({passed:true,engine,fat:seeded.fat,slim:out.liveLen,strip:st}));
