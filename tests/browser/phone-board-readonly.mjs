@@ -45,6 +45,9 @@ try{for(const size of ['phone','ipad','desktop']){
   assert.deepEqual(await read(),start,'keyboard cannot modify the phone board');
   assert.equal(await f.evaluate(()=>__boardSaveExplicit({quiet:true})),false,'explicit board save blocked');
   assert.equal(await f.locator('.sel-ctl').isVisible(),false);
+  /* 손가락 누름이 알림을 띄운다 — 위의 저장 시도 · 마우스 끌기가 남긴 알림을 지우고, 6초 간격이 지난 뒤 누른다(click 이 오지 않는 touch 길) */
+  await page.waitForTimeout(6200);
+  await f.evaluate(()=>{const t=document.getElementById('cs-ftoast');if(t)t.textContent='';});
   await f.locator('#tokenLayer [data-id="9901"] .tok-c').tap();
   assert.deepEqual(await read(),start,'touch tap leaves the board unchanged');
   await f.waitForFunction(()=>/보드 수정은 아이패드나 컴퓨터에서 가능합니다/.test((document.getElementById('cs-ftoast')||{}).textContent||''),null,{timeout:5000});

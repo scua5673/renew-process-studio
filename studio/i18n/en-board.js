@@ -104,7 +104,11 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "공격형 미드":"Attacking mid",
 "빠른 보드":"Quick board",
 "＋ 빠른 보드":"＋ Quick board",
-"이름 고치기":"Edit names",
+"고치기":"Edit",
+"토큰 표시":"Token shows",
+"이 자리에 이미 있는 이름이에요":"That name is already in this position",
+"포메이션 자리로":"Back to formation",
+"포메이션 자리로 돌렸어요":"Positions are back on the formation",
 "보드 이름":"Board name",
 "선수단 순서로 채우기":"Fill in squad order",
 "이름 쓰고 ↵ · 계속 이어서":"Type a name, press ↵ · keep going",
@@ -119,7 +123,7 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "‹ 이전 자리":"‹ Previous",
 "한 줄에 한 자리 · 자리 이름 뒤에 이름을 쉼표로":"One position per line · names after the position, separated by commas",
 "메모에 적어 둔 명단을 그대로 붙여 넣어도 돼요. CB처럼 두 자리면 번갈아 들어가요. 적지 않은 자리는 그대로 둬요.":"You can paste a list straight from your notes. Positions with two places, like CB, take names in turn. Positions you leave out stay as they are.",
-"고친 이름을 버리고 닫을까요?":"Discard your name changes and close?",
+"고친 내용을 버리고 닫을까요?":"Discard your changes and close?",
 "보관함의 보드는 그대로예요":"The board in the Library stays as it was",
 "계속 고치기":"Keep editing",
 "버리고 닫기":"Discard and close",
@@ -170,5 +174,8 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "한 자리에 {}명까지 넣을 수 있어요":"Up to {} names per position",
 "자리를 못 찾았어요: {}":"Position not found: {}",
 "· 못 찾은 자리 {}":"· not found: {}",
-"이름 {}개를 넣었어요{}":"Added {} names{}"
+"이름 {}개를 넣었어요{}":"Added {} names{}",
+"{} 자리를 옮겼어요":"Moved {}",
+"{} ↔ {} 이름을 맞바꿨어요":"Swapped the names at {} and {}",
+"토큰을 누르거나 위의 «{}»에서 바꿔요":"Tap a token, or use «{}» above"
 },{});
