@@ -4228,7 +4228,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.167"></script>
 <script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-rescue.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="lib-diet.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script>
+<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -6087,6 +6087,10 @@ function trailTick(){ var L=window.__trailLayer; if(!L)return;
     var keep=h.filter(function(q){return q.seg>seg-(+p.trail||1);}); _trail[id]=keep; if(keep.length<2)return;
     var col="#ffffff"; try{ if(p.team!=="ball"&&p!==state.ball)col=_tokDiscCol(p)||col; }catch(_){}
     var d="M "+keep.map(function(q){return q.x.toFixed(1)+" "+q.y.toFixed(1);}).join(" L ");
+    /* 3.302 — 가늘어지는 꼬리 하나(board-motion-marks.js taper · head: 지나온 쪽 0 → 지금 자리 · 흰색, 밝은 피치는 짙은 색).
+       아직 너무 짧으면(taper 가 "") 아무것도 안 그린다 — 예전 선 둘은 모듈이 없거나 던졌을 때만(_tp===null) */
+    var _mm=window.PSMotionMarks,_tp=null;try{if(_mm)_tp=_mm.taper(keep,_mm.head(21*_tokScaleOf(p),p===state.ball));}catch(_){_tp=null;}
+    if(_tp!==null){if(_tp)L.appendChild(el("path",{d:_tp,fill:_gridInk(),opacity:".3","class":"ps-trail"}));return;}
     L.appendChild(el("path",{d:d,fill:"none",stroke:col,"stroke-width":7,"stroke-linecap":"round","stroke-linejoin":"round",opacity:".18"}));
     L.appendChild(el("path",{d:d,fill:"none",stroke:col,"stroke-width":3,"stroke-linecap":"round","stroke-linejoin":"round",opacity:".6"})); }); }
 try{ new MutationObserver(function(){ try{ if(window.__trailLive||animPlaying||window.__animExport)return; if(document.body.classList.contains("focus-board"))return;
@@ -9422,7 +9426,9 @@ function renderMotionPaths(){
       g.appendChild(ag);
     }
   });
-  world.appendChild(g);
+  /* 3.302 — 동선 · 곡선 손잡이는 토큰 **아래**에 둔다(사용자 11/16 «작전판 수정을 했는데 적용이 안되는거 같아»). 손잡이(잡는 원 반지름 16)는 동선 한가운데라
+     장면 사이에 1.4~3.2m 만 움직인 선수는 손잡이가 선수를 덮었다 — 끌면 선수 대신 곡선이 휘었다(그 자료는 장면마다 22명 중 8~17명). 긴 동선의 손잡이는 그대로 잡힌다. */
+  var _tl=document.getElementById("tokenLayer"); if(_tl&&_tl.parentNode===world)world.insertBefore(g,_tl); else world.appendChild(g);
   if(shown&&!(window.psPhoneBoardReadOnly&&window.psPhoneBoardReadOnly())&&!csHintSeen("cs_hint_curve_v3")){csHintMark("cs_hint_curve_v3");try{toast("선수·볼 동선의 가운데 점을 끌면 곡선 · 더블탭하면 직선");}catch(_){}}
 }
 function _wireMpHandle(hg,fr,it,smx,smy){

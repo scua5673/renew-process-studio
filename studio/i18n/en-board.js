@@ -179,3 +179,19 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "{} ↔ {} 이름을 맞바꿨어요":"Swapped the names at {} and {}",
 "토큰을 누르거나 위의 «{}»에서 바꿔요":"Tap a token, or use «{}» above"
 },{});
+/* 3.302 — 훈련 편집기: 격자에 붙기가 기본(board-training-edit.js) */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{
+"훈련 격자 칸에 맞춰 놓여요 — ⌘/Ctrl 을 누른 채 끌면 자유롭게 · 끄기는 보드 설정 › 끌기 자석":"Items land on the training grid — hold ⌘/Ctrl while dragging to place freely · turn it off in Board settings › Drag snap",
+"훈련 격자 칸에 맞춰 놓여요 — 끄기는 보드 설정 › 끌기 자석":"Items land on the training grid — turn it off in Board settings › Drag snap",
+"훈련 편집기는 격자 칸에 붙는 것이 기본이에요 · ⌘/Ctrl 을 누르면 잠깐 풀려요":"In the training editor items snap to the grid by default · hold ⌘/Ctrl to place freely once",
+"훈련 편집기는 격자 칸에 붙는 것이 기본이에요":"In the training editor items snap to the grid by default",
+"훈련 편집기 자석 켬 — 놓거나 끌면 격자 칸에 붙어요":"Training editor snap on — dropped or dragged items land on the grid",
+"훈련 편집기 자석 끔 — ⌘/Ctrl 로는 언제든 붙어요":"Training editor snap off — ⌘/Ctrl still snaps any time",
+"훈련 편집기 자석 끔 — 자유롭게 놓여요":"Training editor snap off — items go where you put them",
+"방향 표식 — 한 번 더 누르면 시야 부채꼴 · 노란 손잡이로 돌려요":"Direction mark — press again for the vision cone · turn it with the yellow handle",
+"누를 때마다 방향 표식 → 시야 부채꼴 → 끔":"Each press: direction mark → vision cone → off"
+},{},{});

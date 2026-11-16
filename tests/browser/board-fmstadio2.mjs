@@ -56,7 +56,7 @@ try{
   assert.equal(exp.err,'');assert.ok(exp.bytes>1000,'a GIF was made');
   assert.equal(exp.missing,0,'the trail layer is part of every exported picture');assert.ok(exp.withTrail<exp.total,'the first still frames have no trail yet');
   assert.ok(exp.withTrail>=6,'exported frames carry the trail: '+JSON.stringify(exp));
-  assert.equal(exp.max,6,'three marked tokens × (glow + line)');
+  assert.equal(exp.max,3,'three marked tokens × one tapered tail');   // 3.302 — 잔상은 가늘어지는 꼬리 하나(예전엔 토큰마다 glow + line 둘 = 6)
   assert.equal(exp.segs,'0,1','both moves leave a trail — not only the scene where it was switched on');
   assert.equal(exp.after,0,'the trail layer is cleared after the export');assert.equal(exp.flag,0);
   assert.equal(exp.board,'600,600,600','the board is put back as it was');
