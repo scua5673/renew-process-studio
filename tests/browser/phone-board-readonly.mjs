@@ -37,13 +37,17 @@ try{for(const size of ['phone','ipad','desktop']){
  if(size==='phone'){
   assert.deepEqual(await read(),start,'phone pointer drag leaves the board unchanged');
   await f.locator('#psPhoneBoardNotice').waitFor({state:'visible'});
-  assert.match(await f.locator('#psPhoneBoardNotice').innerText(),/보드 수정은 아이패드나 컴퓨터에서 가능합니다/);
+  // 3.300 — 띠는 «보기 전용» 한 줄(+ 단추), 설명은 판을 누를 때 알림 · 화면 낭독기는 띠의 aria-label
+  assert.equal((await f.locator('#psPhoneBoardNotice .ps-pv-ro').innerText()).trim(),'보기 전용');
+  assert.match(await f.locator('#psPhoneBoardNotice').getAttribute('aria-label'),/보드 수정은 아이패드나 컴퓨터에서 가능합니다/);
+  assert.ok((await f.locator('#psPhoneBoardNotice').boundingBox()).height<=60,'one slim line above the board');
   await page.keyboard.press('Delete');await page.keyboard.press('ControlOrMeta+z');
   assert.deepEqual(await read(),start,'keyboard cannot modify the phone board');
   assert.equal(await f.evaluate(()=>__boardSaveExplicit({quiet:true})),false,'explicit board save blocked');
   assert.equal(await f.locator('.sel-ctl').isVisible(),false);
   await f.locator('#tokenLayer [data-id="9901"] .tok-c').tap();
   assert.deepEqual(await read(),start,'touch tap leaves the board unchanged');
+  await f.waitForFunction(()=>/보드 수정은 아이패드나 컴퓨터에서 가능합니다/.test((document.getElementById('cs-ftoast')||{}).textContent||''),null,{timeout:5000});
   await page.waitForTimeout(2800);
   await page.screenshot({path:path.join(SHOTS,'phone-board-readonly-'+engine+'-portrait.png')});
   await page.setViewportSize({width:852,height:393});

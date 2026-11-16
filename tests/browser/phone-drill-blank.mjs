@@ -107,7 +107,12 @@ try{
     await f.waitForFunction(()=>document.body.classList.contains('editing')&&document.getElementById('editorModal').classList.contains('on'),null,{timeout:20000});
     await page.waitForTimeout(1500);
     const train=await look(f);await shot('3-training');
-    assert.match(await f.evaluate(()=>document.getElementById('editorModal').innerText),/작은 휴대폰 화면에서는 보기만 가능해요/);
+    /* 3.300 — 폰 안내 띠는 «보기 전용» 한 줄(설명은 띠의 aria-label · 편집기 안내 #epRoBanner). 예전엔 띠의 세 줄 문장을 봤다 */
+    const ro=await f.evaluate(()=>{const m=document.getElementById('editorModal'),n=document.getElementById('psPhoneBoardNotice');
+      return {text:m.innerText,note:n&&m.contains(n)&&n.offsetWidth>0?n.innerText:'',label:n?n.getAttribute('aria-label')||'':''};});
+    assert.match(ro.note,/보기 전용/,'훈련 보기 위 띠 '+JSON.stringify(ro.note));
+    assert.match(ro.label,/보드 수정은 아이패드나 컴퓨터에서 가능합니다/);
+    assert.match(ro.text,/보드 수정은 아이패드나 컴퓨터에서 가능합니다/,'편집기 안내에 까닭이 남는다');
     seen(train,w+' 훈련 보기');
     const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
     assert.deepEqual(errs,[],'페이지 오류 없음 '+JSON.stringify(errs));

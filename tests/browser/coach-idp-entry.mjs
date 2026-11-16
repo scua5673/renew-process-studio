@@ -35,7 +35,8 @@ try{
     await bf.waitForFunction(()=>typeof renderTokens==='function'&&document.body.classList.contains('ps-phone-work'));
     await bf.evaluate(()=>{ state.players=[];state.equipment=[];state.drawings=[];renderTokens(); });
     await bf.waitForSelector('#psPhoneBoardNotice',{timeout:8000});
-    assert.match(await bf.locator('#psPhoneBoardNotice').innerText(),/보드 수정은 아이패드나 컴퓨터에서 가능합니다/);
+    assert.match(await bf.locator('#psPhoneBoardNotice').innerText(),/보기 전용/);
+    assert.match(await bf.locator('#psPhoneBoardNotice').getAttribute('aria-label'),/보드 수정은 아이패드나 컴퓨터에서 가능합니다/);
     await bf.evaluate(()=>{ state.players=[{id:1,team:'blue',num:'7',x:300,y:300}];renderTokens(); });
     assert.equal(await bf.locator('#psPhoneBoardNotice').isVisible(),true,'the notice also stays on a populated board');
     await page.evaluate(()=>document.querySelector('#appSeg [data-app="design"]:not([data-train])').click());

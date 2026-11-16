@@ -34,15 +34,17 @@
   var EDIT_TARGET=EDITORS.concat(['#boardPageStrip input','#ksEd input','#ksEd textarea','#editorPanel input','#editorPanel textarea','#editorPanel select','#epNameTop']).join(',');
   function install(win){
     if(win.__psPhoneBoardView)return win.__psPhoneBoardView;
-    var doc=win.document,note=null,queued=false;
+    var doc=win.document,note=null,queued=false,lastTip=0;
     win.psPhoneBoardReadOnly=function(){return readOnly(win);};
     win.psPhoneBoardNotice=function(){try{if(win.toast)win.toast(MESSAGE);}catch(_){}return false;};
+    /* 3.300 — 띠에는 «보기 전용»만. 설명은 판 · 편집 단추를 누를 때 알림으로(6초에 한 번) */
+    function tip(){var n=Date.now();if(n-lastTip<6000)return;lastTip=n;win.psPhoneBoardNotice();}
     function closest(t,s){return t&&t.closest&&t.closest(s);}
     function stop(e,scroll){if(!scroll)e.preventDefault();e.stopImmediatePropagation();}
     function guard(e){
       if(!readOnly(win))return;
       var t=e.target;
-      if(closest(t,'#psPhoneBoardNotice,#psVvPlay,#psEyeDialog'))return;
+      if(closest(t,'#psPhoneBoardNotice,#psVvPlay,#psEyeDialog,#psQuick'))return;
       var canvas=closest(t,'#boardStage'),edit=closest(t,EDIT_TARGET);
       // Blocking the canvas default also prevents iframe focus/parent blur.
       if(canvas&&['pointerdown','touchstart','mousedown'].indexOf(e.type)>=0){try{if(win.parent.__psAppMoreClose)win.parent.__psAppMoreClose();}catch(_){}}
@@ -58,7 +60,7 @@
       if(edit||canvas){
         var touch=canvas&&(e.type==='touchstart'||e.type==='touchmove'||((e.type==='pointerdown'||e.type==='pointermove')&&e.pointerType==='touch'));
         stop(e,touch);
-        if(e.type==='click'&&edit)win.psPhoneBoardNotice();
+        if(e.type==='click')tip();
       }
     }
     ['pointerdown','pointermove','pointerup','mousedown','mousemove','mouseup','touchstart','touchmove','touchend','click','dblclick','contextmenu','keydown','beforeinput','paste','cut','drop','dragstart'].forEach(function(type){win.addEventListener(type,guard,{capture:true,passive:false});});
@@ -72,12 +74,17 @@
       if(!on||!stage){if(note)note.hidden=true;return;}
       if(!note){
         note=doc.createElement('aside');note.id='psPhoneBoardNotice';note.setAttribute('role','note');
-        note.innerHTML='<div><strong>작은 휴대폰 화면에서는 보기만 가능해요</strong><span>'+MESSAGE+' 폴더블은 넓게 펼친 화면에서 편집할 수 있어요.</span></div><button type="button" class="ps-btn-secondary" hidden>재생</button>';
-        note.querySelector('button').onclick=function(){try{if(playback().playing)win.stopAnim();else win.playAnim();}catch(_){}sync();};
+        note.setAttribute('aria-label','보기 전용 · '+MESSAGE);
+        note.innerHTML='<span class="ps-pv-ro">보기 전용</span><span class="ps-pv-fill"></span><button type="button" class="ps-btn-secondary" data-play hidden>재생</button><button type="button" class="ps-btn-primary" data-quick hidden>＋ 빠른 보드</button>';
+        /* 3.300 — 빠른 보드(board-quick-depth.js): 작업 보드는 «＋ 빠른 보드», 보관함에서 연 내 빠른 보드는 «이름 고치기» */
+        note.querySelector('[data-quick]').onclick=function(){try{if(win.PSQuickDepth)win.PSQuickDepth.open(win);}catch(_){}};
+        note.querySelector('[data-play]').onclick=function(){try{if(playback().playing)win.stopAnim();else win.playAnim();}catch(_){}sync();};
       }
       if(note.parentNode!==stage.parentNode)stage.parentNode.insertBefore(note,stage);
       note.hidden=doc.body.classList.contains('comm-viewing')||(win.__csView==='session'&&!doc.body.classList.contains('editing'));
-      var p=playback(),b=note.querySelector('button');b.hidden=p.count<2||doc.body.classList.contains('ps-vv-phone');b.textContent=p.playing?'정지':'재생';b.setAttribute('aria-label',p.playing?'애니메이션 정지':'애니메이션 재생');
+      var qb=note.querySelector('[data-quick]'),qe=null;try{qe=win.PSQuickDepth&&win.PSQuickDepth.entry(win);}catch(_){}
+      qb.hidden=!qe;if(qe&&qb.textContent!==qe.label)qb.textContent=qe.label;
+      var p=playback(),b=note.querySelector('[data-play]');b.hidden=p.count<2||doc.body.classList.contains('ps-vv-phone');b.textContent=p.playing?'정지':'재생';b.setAttribute('aria-label',p.playing?'애니메이션 정지':'애니메이션 재생');
     }
     function schedule(){if(!queued){queued=true;win.requestAnimationFrame(sync);}}
     function boot(){
@@ -87,13 +94,12 @@
       var priority=Array(25).join(':not(#psPhoneReadOnly)');
       style.textContent=EDITORS.concat(['#ps-df-tray','#ps-df-opts']).map(function(s){return 'html.ps-page-board body.ps-phone-board-readonly'+priority+' '+s;}).join(',')+'{display:none!important}'+
         'html.ps-page-board body.ps-phone-board-readonly .vc-act.edit{display:none!important}'+
-        '#psPhoneBoardNotice{box-sizing:border-box;flex:none;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);background:var(--c-surface);color:var(--c-ink);border-bottom:1px solid var(--c-line);font:inherit;z-index:150;position:relative;text-align:left;word-break:keep-all}'+
-        '#psPhoneBoardNotice[hidden],#psPhoneBoardNotice button[hidden],body.ps-vv-phone #psPhoneBoardNotice button{display:none!important}'+
-        '#psPhoneBoardNotice strong{display:block;font-size:var(--t-5);font-weight:var(--fw-head);line-height:1.5}'+
-        '#psPhoneBoardNotice span{display:block;font-size:var(--t-3);line-height:1.5;color:var(--c-muted)}'+
+        '#psPhoneBoardNotice{box-sizing:border-box;flex:none;display:flex;align-items:center;justify-content:space-between;gap:var(--sp-2);padding:6px var(--sp-3);background:var(--c-surface);color:var(--c-ink);border-bottom:1px solid var(--c-line);font:inherit;z-index:150;position:relative;text-align:left;word-break:keep-all}'+
+        '#psPhoneBoardNotice[hidden],#psPhoneBoardNotice button[hidden],body.ps-vv-phone #psPhoneBoardNotice [data-play]{display:none!important}'+
+        '#psPhoneBoardNotice .ps-pv-ro{flex:none;font-size:14px;font-weight:600;line-height:1.4;color:var(--c-muted)}#psPhoneBoardNotice .ps-pv-fill{flex:1;min-width:0}'+
         'html.ps-page-board body.ps-phone-board-readonly #boardPageStrip.on.bp-multi:not(#_){position:relative!important;z-index:6!important}'+
         'html.ps-page-board body.ps-phone-board-readonly #boardPageStrip.on:not(.bp-multi) .bp-tab{pointer-events:none!important}'+
-        '#psPhoneBoardNotice button{flex:none;min-height:44px;padding:0 var(--sp-4);font-size:var(--t-5)}';
+        '#psPhoneBoardNotice button{flex:none;min-height:40px;padding:0 var(--sp-3);font-size:14px}';
       doc.head.appendChild(style);sync();
       new win.MutationObserver(schedule).observe(doc.body,{attributes:true,attributeFilter:['class']});
       new win.MutationObserver(schedule).observe(doc.documentElement,{attributes:true,attributeFilter:['data-csview']});
