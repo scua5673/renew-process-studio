@@ -9,7 +9,7 @@ const CORE = [
   '/studio/mobile-navigation.js', '/studio/mobile-navigation.css',
   '/studio/phone-consistency.css',
   '/studio/team-mobile.css', '/studio/team-mobile.js',
-  '/studio/board-selection-menu.js', '/studio/board-quick-depth.js', '/studio/board-selection-menu.css', '/studio/board-training-edit.js', '/studio/board-training-edit.css',
+  '/studio/board-selection-menu.js', '/studio/board-quick-depth.js', '/studio/board-selection-menu.css', '/studio/board-training-edit.js', '/studio/board-training-edit.css', '/studio/board-motion-marks.js',
   '/studio/learning-focus.css',
   '/studio/player-workspace.js', '/studio/player-workspace.css', '/studio/player-bulk-add.js', '/studio/scouting-position.js',
   '/studio/community-training-catalog.js', '/studio/community-training.js', '/studio/community-training.css', '/studio/community-letters.js', '/studio/community-letters.css', '/studio/community-cards.css', '/studio/letter-social.js', '/studio/letter-social.css',
