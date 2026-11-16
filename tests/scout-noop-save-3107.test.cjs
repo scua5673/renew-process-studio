@@ -94,6 +94,37 @@ test('a left-over failure is healed: refused no-op saves retry by re-verifying, 
   assert.equal(g.st.writes,1,'with a failure on record an unchanged save still writes, so success clears it');assert.equal(g.rows.size,0);
 });
 
+/* 3.305 — 후보 문서가 아직 없는 팀(raw 없음). CI team-criteria 가 «팀의 후보 자료와 권한을 확인 중입니다 [scout_not_ready]» 로 30초를 못 넘겼다:
+   선수 기준을 저장한 순간 후보 키가 확인 중이었고, raw 없음은 늘 «바뀜»이라 빈 후보 문서를 쓰려다 거절된 실패가 재시도 없이 남았다. */
+function emptyTeam(h){h.values.delete(S.KEY);h.st.durable=undefined;return h;}
+test('a team with no candidate document: a roster save with no candidates is unchanged — nothing written or tracked, even mid-verification',async()=>{
+  const f=emptyTeam(fixture());f.client.read();assert.equal(f.client.state.raw,null);
+  assert.equal(f.client.unchanged({v:1,players:[]}),true,'no candidates to write');
+  assert.equal(f.client.unchanged(S.copy(f.client.state.doc)),true,'the empty baseline itself');
+  const one=S.copy(f.client.state.doc);one.players=[{id:'n1',type:'target',name:'새 후보',posId:''}];assert.equal(f.client.unchanged(one),false,'a first candidate is a change');
+  assert.equal(S.createClient(f.win).unchanged({v:1,players:[]}),false,'an unread client still cannot say');
+  const h=emptyTeam(harness());await h.client.prepare();h.st.ready=false;   /* 저장 순간 동기화가 후보 키를 다시 확인하는 중 */
+  assert.equal(h.c.scSaveTargetDoc({v:1,players:[]}),true);await h.settle();
+  assert.equal(h.rows.size,0,'no failure left behind');assert.equal(h.st.writes,0,'and no empty document written');assert.deepEqual(h.warnings,[]);
+  h.st.ready=true;assert.equal(h.c.scSaveTargetDoc({v:1,players:[]}),true);await h.settle();
+  assert.equal(h.st.writes,0,'ready and unchanged also writes nothing');assert.equal(h.values.has(S.KEY),false);
+});
+
+test('a team with no candidate document: the first real candidate is written when ready, refused without a retry when not',async()=>{
+  const first={v:1,players:[{id:'n1',type:'target',name:'새 후보',posId:''}]};
+  const h=emptyTeam(harness());await h.client.prepare();
+  assert.equal(h.c.scSaveTargetDoc(first),true);await h.settle();
+  assert.equal(h.st.writes,1);assert.equal(JSON.parse(h.values.get(S.KEY)).players.length,1);assert.equal(h.rows.size,0);
+  assert.equal(h.client.unchanged(S.copy(h.client.state.doc)),true,'from here the stored text is the baseline');
+  const k=emptyTeam(harness());await k.client.prepare();k.st.ready=false;
+  assert.equal(k.c.scSaveTargetDoc(first),false);await k.settle();
+  const row=k.rows.get(S.KEY);assert.ok(row&&row.error);assert.equal(row.error.psCode,'scout_not_ready');assert.equal(row.retry,undefined,'a changed save is never replayed');assert.equal(k.st.writes,0);
+  /* 남은 실패가 있으면 빈 저장도 예전처럼 쓴다(성공하면 실패가 풀린다) — 거절되면 «쓸 것 없던 저장»의 재시도(다시 확인)가 달린다 */
+  assert.equal(k.c.scSaveTargetDoc({v:1,players:[]}),false,'still not ready');await k.settle();
+  const again=k.rows.get(S.KEY);assert.equal(typeof again.retry,'function');
+  k.st.ready=true;assert.equal(await again.retry(),true);assert.equal(k.st.writes,0,'the retry only re-verifies');
+});
+
 test('the update flush tags a repeated failure once, so the cause and key survive the 80-character record',async()=>{
   const e=new Error('후보 자료가 갱신되었습니다. 다시 열어 주세요.');e.psCode='scout_unverified';e.psKey=S.KEY;
   const c=vm.createContext({window:{},Promise,Error,String,
