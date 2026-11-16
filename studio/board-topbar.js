@@ -94,6 +94,12 @@
       // 3.130 — 미팅 발표(슬라이드쇼, body.focus-board)에서는 띠를 걷는다: 가운데 «평면 · 3D»가 슬라이드 제목 띠(#ksHead)를,
       // 왼쪽 «보드 ▾»가 메모 첫 줄(#ksOv)을 덮었다. 발표에서 띠의 단추(페이지 · 보기 · 내보내기)는 쓰지 않는다 — 나가면 그대로.
       'html.ps-page-board body.focus-board #boardPageStrip' + N + N + '{display:none!important}',
+      // 3.304 — 보관함 «전체화면»(body.vault-full)은 보여 주는 화면(TV 연결): 띠(페이지 탭 · 보기 옵션 · 오른쪽 도구)를 걷는다
+      // (사용자 «보드를 tv로 연결했을 때 페이지나 옵션들 고르는 거 안 보이게»). board.html 의 `body.vault-full #boardPageStrip{display:none}` 이 원래 뜻인데
+      // 이 막대의 display:flex!important 가 덮어 전체화면에서도 띠가 남아 있었다. 페이지 넘김은 전체화면의 ‹ n / m ›(#vvPg) · ←→ 키.
+      'html.ps-page-board body.vault-full #boardPageStrip' + N + N + '{display:none!important}',
+      // 만들기 · 편집 중 전체화면은 아래에 도크가 남는다(1.992) — 가운데 아래의 ‹ n / m › 가 도구 줄을 덮었다. 왼쪽 위(닫기 묶음 #vvBar 의 맞은편)로
+      'html body.vault-full.vcreating #vvPg{left:12px!important;right:auto!important;top:12px!important;bottom:auto!important;transform:none!important}',
       S + ' .tb-tabs{display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}',
       S + ' .tb-tabs::-webkit-scrollbar{display:none}',
       S + ' .tb-sep{width:1px;height:16px;margin:0 3px;flex:none}',

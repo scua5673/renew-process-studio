@@ -57,3 +57,12 @@ test('3.083 — the floating dock is hidden on the vault list (no board, editor,
   assert.match(fs.readFileSync(path.join(__dirname,'../studio/board-dock-float.js'),'utf8'),/body\.ps-dock-float:not\(\.board-view\):not\(\.editing\):not\(\.vcreating\):not\(\.meet-mode\):not\(\.focus-board\) /);
   void css;
 });
+test('3.304 — vault full screen is the show-it-on-the-TV view: the strip (page tabs · view options · right tools) is taken away, the pager moves off the dock',()=>{
+  const css=tb.css();
+  assert.match(css,/html\.ps-page-board body\.vault-full #boardPageStrip(:not\(#tb\d\)){20}\{display:none!important\}/,'as strong as the bar\'s own display:flex!important — the plain board.html rule lost to it');
+  assert.match(css,/html body\.vault-full\.vcreating #vvPg\{left:12px!important;right:auto!important;top:12px!important;bottom:auto!important;transform:none!important\}/,'while creating · editing the dock stays (1.992) — the pager must not sit on it');
+  assert.doesNotMatch(css,/body\.vault-full:not\(\.vcreating\) #vvPg/,'the read-only view keeps its bottom pager (no dock there)');
+  assert.match(fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8'),/body\.vault-full #boardPageStrip\{display:none;\}/,'the original intent is still written in the board');
+  assert.ok(fs.readFileSync(path.join(__dirname,'browser','run-critical.mjs'),'utf8').includes("'board-tv-clean-3304'"));
+});
+
