@@ -29,15 +29,9 @@ test('세는 규칙 — 설정 키는 빼고, 내용 키와 글자 그대로가 
 });
 
 // 화면마다 따로 적어 둔 «IndexedDB 에 사는 키» 목록은 키 표와 같은 말을 해야 한다.
-// 아래는 2026-11-05 에 이미 어긋나 있던 것 — 고치면 이 목록에서 지운다. 새 어긋남은 여기 더하지 말고 표나 목록을 고친다.
-const KNOWN=[
-  'studio/app.html KNOWN_IDB: 표에 없는 키 cs_board_stash_v1',
-  'studio/app.html KNOWN_IDB: 표에 없는 키 cs_snap_match_v1',
-  'studio/app.html KNOWN_IDB: 표에서는 localStorage 정본 cs_editor_draft_v1',
-  'studio/app.html KNOWN_IDB: 표에서는 localStorage 정본 cs_editor_work_v1',
-  'studio/app.html KNOWN_IDB: 표에서는 localStorage 정본 training_session_cur_v1',
-  'studio/storage-keys.js: 선수별 행 접두사 sq: 가 표에 없음'
-];
+// 2026-11-05 에 어긋나 있던 여섯(sq: 미등록 · 옛 키 cs_board_stash_v1 · cs_snap_match_v1 미등록 · 작전판 편집 키 셋이 표에 ls 로 적힘 — 실제는 boardStore 의 IndexedDB)은
+// 11/17 에 표를 고쳐 없앴다(0단계 ②). 새 어긋남은 여기 더하지 말고 표나 목록을 고친다.
+const KNOWN=[];
 test('정본 목록 = 키 표 — scout.html SHARED_IDB · team-files.js IDB_MIRROR · app.html KNOWN_IDB · MIRRORED_IDB',()=>{
   for(const L of G.truthLists())assert.ok(L.keys&&L.keys.length,L.file+' 의 '+L.name+' 을 읽었다');
   assert.deepEqual(G.gaps(),KNOWN.slice().sort(),'목록과 표가 새로 어긋났거나, 알려진 어긋남을 고쳤다(고쳤으면 KNOWN 에서 지운다)');
@@ -53,6 +47,18 @@ test('설정 쓰기는 허용하고 자료·변수 키의 직접 쓰기와 빈 c
   assert.deepEqual(G.countSource('try{x()}catch(e){}; p.catch(function(){}); q.catch(()=>{});'),{direct:0,silent:3});
   assert.deepEqual(G.countSource('try{x()}catch(e){report(e)}; p.catch(()=>{return false;});'),{direct:0,silent:0});
   assert.deepEqual(G.countSource('/* '+data+' try{x()}catch(e){} */'),{direct:0,silent:0});
+});
+
+// 11/17 — 모듈은 키를 대문자 상수에 담는다(board-open-chooser PREF · board-scout-import MEM · board-training-edit EDIT_SNAP …).
+// 같은 파일에서 한 값으로만 정한 상수면 그 글자의 구실로 가른다. 두 값이거나 소문자 변수면 모르는 것으로 보고 센다.
+test('대문자 상수에 담은 키는 그 글자로 가른다 — 설정이면 세지 않고, 내용이면 센다, 모르면 센다',()=>{
+  assert.deepEqual(G.countSource("var PREF='ps_tm_view';\n  win.localStorage.setItem(PREF,'0');"),{direct:0,silent:0},'상수에 담은 설정 키');
+  assert.deepEqual(G.countSource("var MEM='scout_tool_v1';\n  localStorage.setItem(MEM,json);"),{direct:1,silent:0},'상수에 담은 내용 키');
+  assert.deepEqual(G.countSource("var K='ps_tm_view'; K='scout_tool_v1'; localStorage.setItem(K,x);"),{direct:1,silent:0},'두 값이면 모른다');
+  assert.deepEqual(G.countSource("var pref='ps_tm_view'; localStorage.setItem(pref,'1');"),{direct:1,silent:0},'소문자 변수는 풀지 않는다');
+  assert.deepEqual(G.countSource("localStorage.setItem(KEY+':x',v);"),{direct:1,silent:0},'접두사 + 변수는 센다');
+  assert.equal(G.constOf("var A='x_v1',B='y_v1';",'B'),'y_v1');
+  assert.equal(G.constOf("A='x_v1'; A='z_v1';",'A'),null);
 });
 
 test('파일마다 비교한다 — 다른 파일 감소로 새 파일의 증가를 상쇄하지 않는다',()=>{

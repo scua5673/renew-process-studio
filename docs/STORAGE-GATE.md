@@ -1,34 +1,127 @@
-# 저장 계층 검사 — 2026-11-09 이어받기
+# 저장 계층 검사(문) — 2026-11-17 · 3.313 기준
 
-저장 구조 정리 0단계 중 첫 조각이다. 앱 실행 파일, 저장 형식, 서버는 변경하지 않는다.
+저장 계층 정리 **0단계**(설계: 문서 저장소 `processstudio-문서/저장계층-정리-설계-2026-11-05.md` 6절)의 세 조각이 이 판으로 끝났다.
+앱의 저장 형식 · 서버 스키마는 바꾸지 않았다. 사용자 화면 변화는 없다.
+
+| 조각 | 무엇 | 어디 |
+|---|---|---|
+| ① 문 | 내용 자료의 직접 `localStorage.setItem` 과 빈 `catch` 가 파일마다 기준에서 **늘면 실패** | `scripts/storage-gate-scan.cjs` · `tests/storage-gate.test.cjs` · `tests/storage-gate.baseline.json` |
+| ② 정본 목록 = 키 표 | 화면마다 따로 적은 «IndexedDB 에 사는 키» 목록 넷이 `studio/storage-keys.js` 와 같은 말을 한다(어긋남 0) | 같은 시험 · 키 표 |
+| ③ 사용량 보고 | 로그인한 기기가 하루 한 번 `ps_events storage_usage` 에 «누가 얼마나»(키 표 이름 · KB) | `studio/storage.js` `usageReport` + 파일 끝 예약 · `tests/storage-usage-report.test.cjs` |
 
 ## 사용
 
-- `node scripts/storage-gate-scan.cjs`: 파일별 직접 자료 쓰기와 빈 catch 증가를 확인한다.
-- `node --test tests/storage-gate.test.cjs`: 증가 검사와 정본 목록 비교를 실행한다.
-- `node scripts/storage-gate-scan.cjs --write`: 줄어든 기준만 갱신한다. 한 파일이라도 증가했으면 종료 코드 1로 끝내며 기준 파일을 변경하지 않는다.
-- 전체 검사에는 `npm test`를 사용한다.
+- `node scripts/storage-gate-scan.cjs` — 지금 숫자와 기준의 차이, 정본 목록의 어긋남(막는다), 살펴볼 곳(막지 않는다).
+- `node scripts/storage-gate-scan.cjs --write` — 줄어든 기준만 고쳐 쓴다. 한 파일이라도 늘었으면 종료 코드 1, 기준 파일은 그대로.
+- `node --test tests/storage-gate.test.cjs` — 문 + 정본 목록 비교. 전체는 `npm test`.
 
-설정 키는 키 표의 구실을 기준으로 제외한다. 변수 키는 내용 자료일 수 있어 센다. 파일마다 비교하므로 다른 파일에서 줄인 수로 새 파일의 증가를 상쇄할 수 없다.
+## 세는 규칙
 
-## 기존 PR #777과 현재 코드의 차이
+- **직접 쓰기(direct)**: `localStorage.setItem(` 가운데 키가 내용 자료(키 표 구실 data · draft · queue · recovery)이거나 모르는 것.
+  키가 글자 그대로이거나, **같은 파일에서 한 값으로만 정한 대문자 상수**(`PREF` · `MEM` · `EDIT_SNAP` …)면 그 글자의 구실로 가른다(11/17 — 모듈이 설정 키를 상수에 담는 관례라 60곳이 오탐이었다).
+  소문자 변수(`k` · `key` — 함수 인자일 때가 많다) · 두 값으로 정한 상수 · 접두사 + 변수는 모르는 것으로 보고 **센다**.
+- **빈 catch(silent)**: `catch(e){}` · `.catch(function(){})` · `.catch(()=>{})`. 블록 주석 속 글자는 세지 않는다(주석을 넣어도 빈 catch 는 빈 catch 다 — 할 일을 코드로 적는다).
+- 파일마다 견준다 — 다른 파일에서 줄인 수로 새 파일의 증가를 상쇄할 수 없다.
+- 정규식이다. JavaScript 구문 분석기가 아니다.
 
-기준은 PR #777의 3a12c784에서 시작했다. 그 PR이 합쳐지기 전에 staging이 f480ed7b까지 진행됐다. 기존 실행 코드에 이미 들어간 아래 차이를 검토해 초기 도입 기준에만 반영했다. 이 수치를 맞췄다는 것은 해당 빈 catch를 해결했다는 뜻이 아니다.
+## 기준의 역사
 
-| 종류 | 파일 | 이전 | 현재 | 기존 변경의 용도 |
+| 날 | 코드 | 직접 쓰기 | 빈 catch | 비고 |
 |---|---|---:|---:|---|
-| 직접 쓰기 | studio/sync.js | 70 | 71 | 경기 거울 재시도 실패 시 기존 일정 거울 복원 |
-| 빈 catch | studio/board.html | 2363 | 2365 | 보드 스타일 적용·저장과 게스트 보드 시작 |
-| 빈 catch | studio/perms.js | 10 | 11 | 권한 확인 중 안내 갱신 |
-| 빈 catch | studio/process.html | 515 | 520 | 일정 복사·훈련 종류·경기 시각 편집 |
-| 빈 catch | studio/schedule-match-time.js | 0 | 7 | 경기 시각 편집 모듈 |
-| 빈 catch | studio/sync.js | 555 | 557 | 일정 거울 정리·복원 |
-| 빈 catch | sw.js | 9 | 10 | 필수 파일 설치 실패 알림 |
+| 11/5 | 3.262 | 209 | 6,277 | PR #777 첫 기준 |
+| 11/9 | f480ed7b | 210 | 6,295 | staging 통합 — 7개 파일의 증가를 검토해 반영 |
+| 11/17 | 3.313 | **160** | **6,572** | 검사기 상수 풀기(−60 오탐) · 8일 동안 들어온 코드(+289) |
 
-초기 합계는 직접 쓰기 210곳, 빈 catch 6,295곳이다. 이후 증가를 자동 허용하지 않는다. 증가가 필요한 예외는 변경 근거와 코드 검토를 별도로 남겨야 한다.
+### 11/17 재설정 — 11/9 이후 늘어난 것
 
-## 검증 범위와 다음 작업
+PR #777 이 11/5 에 열린 채 합쳐지지 않아 **문이 없던 8일**(3.263 ~ 3.312) 동안 새 모듈 서른 남짓이 들어왔다.
+그 사이 늘어난 빈 catch 는 **낱낱이 검토하지 않고 새 출발선으로** 받았다 — 문의 값은 앞으로 늘지 않게 하는 데 있고, 이미 실사용에 나간 6,500곳을 되돌아보는 것은 이 판의 일이 아니다(설계 6절: 빈 catch 는 손대는 함수에서 줄여 간다).
+교훈: 문은 열자마자 합쳐야 한다. 열린 채 두면 그 사이 들어온 것이 전부 기준이 된다.
 
-실제 문자열 입력으로 설정/내용/변수 키, 빈 catch/처리 있는 catch, 블록 주석을 구분한다. 격리된 임시 사본에서 CLI 증가 거부·파일 바이트 보존·감소 반영을 확인한다. 검사 도구는 정규식 기반이며 JavaScript 전체 구문 분석기는 아니다. 기존 정본 목록 불일치 6건은 그대로 기록한다.
+**직접 쓰기** — 검사기 오탐을 걷은 뒤 실제로 늘어난 것은 두 파일 네 곳:
 
-다음 조각은 `sq:` 키 등록과 기기별 사용량 보고다. 열린 PR #770이 storage-keys.js와 셸을 수정하므로 여기서는 해당 실행 파일을 건드리지 않는다. 그 다음은 저장 공용 함수를 건너뛰는 경로의 수정이다. 실제 자료 복구와 실기기 확인은 별도다.
+| 파일 | 이전 | 지금 | 무엇 |
+|---|---:|---:|---|
+| `board-rescue.js` | 0 | 2 | 3.278 작업 보드 구조 사본 — IndexedDB 쓰기가 실패했거나 닫히는 중일 때 1.5MB 이하면 `localStorage` 에 한 벌(`ps_private_board_draft_v1:…:rescue:`) |
+| `board-vault-draft.js` | 0 | 2 | 3.273 보관함 작전판 미저장 초안 — 수명 주기(pagehide)의 동기 사본 |
+
+둘 다 «IndexedDB 가 못 받을 때의 마지막 사본»으로 일부러 둔 길이다. 2단계(거울 실패 시 IndexedDB 기준)에서 같이 본다.
+
+검사기가 오탐으로 세던 곳(이제 안 센다): sync.js 71→47 · board.html 34→23 · scout.html 20→17 · storage.js 12→9 · process.html 12→10 · app.html 7→4 · community.html 4→0 · board-edit-view.js · install-door.js · release-notes.js · sync-stall-report.js 1→0.
+
+**빈 catch** — 44파일 +289(파일 · 이전 · 지금):
+
+| 파일 | 이전 | 지금 | | 파일 | 이전 | 지금 |
+|---|---:|---:|---|---|---:|---:|
+| board-vault-draft.js | 0 | 33 | | board-tv-fold.js | 0 | 4 |
+| crash-breadcrumb.js | 0 | 27 | | data-lock-guard.js | 0 | 4 |
+| board-rescue.js | 0 | 24 | | learning-off.js | 0 | 4 |
+| i18n.js | 0 | 18 | | schedule-fill-team.js | 0 | 4 |
+| board-quick-depth.js | 0 | 17 | | avail-table.js | 0 | 3 |
+| board-motion-marks.js | 0 | 16 | | board-shortcuts.js | 0 | 3 |
+| board-open-chooser.js | 0 | 16 | | lib-diet.js | 0 | 3 |
+| note-picture.js | 0 | 11 | | profile-app.js | 0 | 3 |
+| oauth-gate.js | 0 | 10 | | schedule-del-undo.js | 0 | 3 |
+| scout.html | 762 | 769 | | schedule-syncline-steady.js | 0 | 3 |
+| storage.js | 111 | 118 | | autosave-recovery.js | 3 | 5 |
+| board-scout-import.js | 0 | 7 | | board-training-edit.js | 3 | 5 |
+| board-teams.js | 0 | 7 | | board-vault-lazy.js | 7 | 9 |
+| one-window.js | 0 | 7 | | board.html | 2365 | 2367 |
+| schedule-lib-slim.js | 0 | 6 | | schedule-fill-autosave.js | 0 | 2 |
+| board-phone-view.js | 5 | 10 | | board-dock-float.js | 8 | 9 |
+| account-hygiene.js | 0 | 5 | | board-draft.js | 19 | 20 |
+| elsewhere.html | 0 | 5 | | board-kit.js | 19 | 20 |
+| board-topbar.js | 12 | 16 | | board-shape-menu.js | 9 | 10 |
+| board-tweaks.js | 33 | 37 | | player-workspace.js | 8 | 9 |
+| | | | | sync.js | 557 | 558 |
+| | | | | items-stale-nudge.js · match-kind.js · profile.html | 0 | 1 |
+
+줄어든 것: app.html 592→584 · board-dock-film.js 10→8 · community.html 61→59.
+
+## ② 정본 목록 = 키 표 (11/17 끝)
+
+11/5 에 어긋나 있던 여섯을 **표를 고쳐** 없앴다(시험의 `KNOWN` 은 비었다). 목록(app.html · scout.html · team-files.js)은 손대지 않았다.
+
+- `sq:` — 선수별 행(선수 한 명이 IndexedDB 한 행 · sync.js `ITEMP` · ps_items 표)을 동기화 종류 `item` 으로 등록. 표에 없어 `fullName` 이 «other» 로 뭉치던 것이 `sq:` 로 보인다.
+- `cs_board_stash_v1` · `cs_snap_match_v1` — 옛 키(device · idb · cache). 공간 전환 청소 목록(sync.js `IDB_CONTENT`)과 내보내기 목록(app.html)에만 남아 있다.
+- `cs_editor_draft_v1` · `cs_editor_work_v1` · `training_session_cur_v1` — 표에 `ls` 로 적혀 있었는데 실제는 `boardStore`(IndexedDB 먼저 · localStorage 는 실패 때만, 거울 아님). `idb` 로.
+
+«살펴볼 곳»(막지 않는다) 10줄이 남아 있다 — 표에서 «IndexedDB 정본 + 거울»인 키를 그 파일이 글자 그대로 다루는데 목록에는 없다. 읽기만일 수도 있고, 쓰는 곳이면 거울만 고치고 IndexedDB 를 건너뛰는 길이다(예: team-files.js `IDB_MIRROR` 에 `scout_tool_v1` · `cs_gamemodel_v1` 없음). **1단계의 일**이다.
+
+## ③ 기기별 사용량 보고 (11/17 끝)
+
+«저장공간 부족» 제보 넷(10/20 a4d77bba · 10/26 095358c2 · 10/28 419fead1 · 11/3 e6fc5d26)은 매번 작은 저장소를 채운 주인이 달랐다. `storage_full`(3.126)은 가득 찬 **뒤에야** 남아 «누가 채워 가는지»를 미리 볼 수 없었다.
+
+- `studio/storage.js` `usageReport` — `storage_full` 과 **같은 셈**(`localSummary` — 키 표 이름 `fullName` 별 바이트 합)으로 `PSSync.event('storage_usage', {status:'ok', feature:'storage', meta})`.
+  meta: `ls`(KB 전체) · `n`(키 수) · `k:<표 이름>`(가장 큰 여섯 · KB) · `useMb`/`quotaMb`(`navigator.storage.estimate` — 3초 안에 답이 없으면 빼고) · `standalone`.
+  보내는 것은 `storage_full` 과 같다: **키 표의 이름과 KB 뿐**. 내용 · 키 전체 이름(선수 id · 계정 id)은 없다(접두사 키는 표의 이름으로 뭉친다 — `sq:` · `ps_private_board_draft_v1:unsaved`).
+- 파일 끝 예약: 맨 위 창에서만(3.124 와 같은 까닭 — 화면마다 iframe 이 이 글을 읽는다) · 로그인한 기기만(`ps_sync_session` — ps_events 는 계정이 있어야 받는다, 세션이 없으면 표시도 안 적는다) · 부팅 20초 뒤 · 표시 `ps_storage_usage_at` 가 하루 안이면 안 보냄 · 표시를 못 적으면(가득 찬 기기) 안 보냄 — 그 기기는 `storage_full` 이 말한다.
+- 새 키 `ps_storage_usage_at`(device · ls · diag)은 `warnFull` 의 예외(telemetry 표시가 저장 실패 경고를 걸지 않는다).
+
+보는 법(운영 DB 읽기):
+
+```sql
+-- 최근 줄
+select created_at, device, app_version, meta
+from public.ps_events where event_name='storage_usage' order by created_at desc limit 50;
+
+-- 주인별 — 기기마다 마지막 줄만(최근 7일): 몇 기기가 · 평균 · 최대 KB
+select m.k, count(*) devices, round(avg(m.kb::int)) avg_kb, max(m.kb::int) max_kb, sum(m.kb::int) sum_kb
+from (select distinct on (user_id, device) user_id, device, meta
+      from public.ps_events where event_name='storage_usage' and created_at > now() - interval '7 days'
+      order by user_id, device, created_at desc) e,
+     jsonb_each_text(e.meta) as m(k, kb)
+where m.k like 'k:%' group by m.k order by sum_kb desc;
+
+-- 많이 찬 기기(3MB 넘게)
+select user_id, device, app_version, (meta->>'ls')::int ls_kb, meta
+from (select distinct on (user_id, device) * from public.ps_events where event_name='storage_usage' order by user_id, device, created_at desc) e
+where (meta->>'ls')::int > 3072 order by ls_kb desc;
+```
+
+## 다음(설계 6절)
+
+- **1단계 구멍 막기** — IndexedDB 를 건너뛰는 쓰기 넷을 공용 함수로: `gamemodel.html` `saveDoc` · `team-files.js` `IDB_MIRROR`(scout_tool_v1 없음) · `storage.js` `PSImg.migrate` 의 `writeJSON` · `board.html` `squadSave`. 끝났다는 증거: 선수 DB «사본 불일치» 이벤트 감소.
+- 2단계: 거울 쓰기가 실패하면 옛 거울을 지우고 IndexedDB 를 기준으로(일정의 `scheduleMirrorDrop` 을 거울 키 전체로) · `storage.get` 이 읽으면서 쓰는 것을 멈춘다.
+- ③ 의 숫자를 본 뒤 3단계(거울 걷어내기)의 첫 키를 고른다 — 가장 큰 `k:` 부터.
+- 실제 자료 복구 · 실기기 확인은 따로.

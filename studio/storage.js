@@ -548,6 +548,12 @@
     if(r)return r.key==='ps_private_board_draft_v1:'?r.key+(k.indexOf(':kept:')>0?'kept':/:unsaved$/.test(k)?'unsaved':'head'):r.key;
     return /^[a-z][a-z0-9_]{1,30}$/.test(k)?k:'other';
   }
+  /* 작은 저장소를 키 표 이름(fullName)별로 더한 것 — storage_full(가득 찬 뒤)과 storage_usage(하루 한 번)가 같은 셈을 쓴다. 이름 · 바이트 수뿐, 내용은 없다 */
+  function localSummary(){
+    var sum={},n=0,tot=0;
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i),v=localStorage.getItem(k)||'',b=(String(k).length+v.length)*2,nm=fullName(k);sum[nm]=(sum[nm]||0)+b;tot+=b;n++;}
+    return {sum:sum,n:n,tot:tot};
+  }
   function fullReport(key,r){
     try{
       var top=window.top||window,now=Date.now(),last=0;
@@ -555,9 +561,8 @@
       try{last=+localStorage.getItem('ps_full_report_at')||0;}catch(_){}
       if(now-last<21600000)return;
       try{localStorage.setItem('ps_full_report_at',String(now));}catch(_){}
-      var sum={},n=0,tot=0,meta={stage:fullName(key)};
-      for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i),v=localStorage.getItem(k)||'',b=(String(k).length+v.length)*2,nm=fullName(k);sum[nm]=(sum[nm]||0)+b;tot+=b;n++;}
-      meta.ls=Math.round(tot/1024);meta.n=n;meta.was=r?Math.round((+r.before||0)/1024):-1;
+      var us=localSummary(),sum=us.sum,meta={stage:fullName(key)};
+      meta.ls=Math.round(us.tot/1024);meta.n=us.n;meta.was=r?Math.round((+r.before||0)/1024):-1;
       try{meta.standalone=!!(window.PSStorage&&window.PSStorage.isInstalled());}catch(_){}
       var sent=false;
       function send(e){
@@ -569,6 +574,25 @@
       var p=null;try{p=navigator.storage&&navigator.storage.estimate&&navigator.storage.estimate();}catch(_){}
       if(p&&p.then){p.then(send,function(){send(null);});setTimeout(function(){send(null);},3000);}else send(null);
     }catch(_){}
+  }
+  /* 저장 계층 정리 0단계 ③ «기기별 사용량 보고» — ps_events storage_usage 한 줄: 작은 저장소 전체(ls KB · n 개) · 가장 큰 여섯 주인(k:<표 이름> KB) ·
+     기기 전체 사용량(useMb/quotaMb) · 설치 앱 여부. storage_full 은 가득 찬 뒤에야 남아 «누가 채워 가는지»를 미리 보지 못했다(10월 이후 저장공간 제보 넷 — 매번 다른 주인).
+     보내는 것은 storage_full 과 같다: 키 표의 이름과 KB 뿐, 내용 · 키 전체 이름(선수 id 등)은 없다. 하루 한 번 · 맨 위 창 · 로그인한 기기 거르기는 파일 끝의 예약이 한다 */
+  function usageReport(){
+    var us=null,meta={};
+    try{us=localSummary();}catch(e){return false;}
+    meta.ls=Math.round(us.tot/1024);meta.n=us.n;
+    try{meta.standalone=!!(window.PSStorage&&window.PSStorage.isInstalled());}catch(e){meta.standalone=false;}
+    Object.keys(us.sum).sort(function(a,b){return us.sum[b]-us.sum[a];}).slice(0,6).forEach(function(nm){meta['k:'+nm]=Math.round(us.sum[nm]/1024);});
+    var top=window,sent=false;try{top=window.top||window;}catch(e){top=window;}
+    function send(e){
+      if(sent)return;sent=true;
+      if(e&&e.quota){meta.useMb=Math.round((+e.usage||0)/1048576);meta.quotaMb=Math.round(e.quota/1048576);}
+      var S=top.PSSync||window.PSSync;if(S&&S.event)S.event('storage_usage',{status:'ok',feature:'storage',meta:meta});
+    }
+    var p=null;try{p=navigator.storage&&navigator.storage.estimate&&navigator.storage.estimate();}catch(e){p=null;}
+    if(p&&p.then){p.then(send,function(){send(null);});setTimeout(function(){send(null);},3000);}else send(null);
+    return true;
   }
   function fullReadContext(){return migrationOwner(true)===null?null:sharedReadContext();}
   function fullCurrent(job){return !!job&&job===fullJob&&job.owner===fullReadContext();}
@@ -610,7 +634,7 @@
   function warnFull(key,raw){
     // Failing to save the warning's own telemetry or cleanup timestamp is not
     // an additional failed user document and must not keep its warning latched.
-    if(key==='ps_full_report_at'||key==='ps_opt_auto_at'||key==='ps_opt_build_v1')return;
+    if(key==='ps_full_report_at'||key==='ps_storage_usage_at'||key==='ps_opt_auto_at'||key==='ps_opt_build_v1')return;
     key=String(key);var owner=fullReadContext();
     if(fullOwner!==owner){
       var hadFailure=warned||Object.keys(fullFailures).length>0;
@@ -1259,6 +1283,7 @@
     mirrorSchedule:mirrorSchedule,
     auxGet:auxGet,
     reportFull:function(k){ fullReport(k,null); },   /* 3.131 — 동기화의 일정 거울 쓰기가 용량으로 실패해도 같은 storage_full 한 줄(키 이름 · 크기 · 한도만) */
+    reportUsage:function(){ return usageReport(); },   /* 저장 계층 0단계 ③ — 하루 한 번 storage_usage(파일 끝의 예약이 부른다) */
     auxSet:auxSet,
     auxReady:sharedReady,
     localBytes:function(){
@@ -1720,6 +1745,24 @@
       }).catch(function(){}).then(function(){ try{ if(b)localStorage.setItem(B,b); }catch(_){} }); }catch(_){}
     },12000);
   }catch(_){}
+})();
+
+/* 저장 계층 정리 0단계 ③ — 하루 한 번 작은 저장소 사용량(storage_usage)을 보낸다. 맨 위 창에서만(화면마다 iframe 이 이 글을 읽는다 — 3.124 와 같은 까닭) ·
+   로그인한 기기만(ps_events 는 계정이 있어야 받는다 — 표시를 먼저 적어 두면 로그인 뒤 하루가 비므로 세션이 없으면 표시도 안 적는다) · 부팅이 가라앉은 20초 뒤.
+   표시(ps_storage_usage_at)를 못 적으면 보내지 않는다 — 가득 찬 기기는 storage_full 이 말한다. */
+(function(){
+  var K='ps_storage_usage_at',DAY=86400000;
+  try{
+    var top=false;try{top=window.top===window;}catch(e){top=false;}
+    if(!top)return;
+    setTimeout(function(){
+      var last=0,sess=null;
+      try{last=+localStorage.getItem(K)||0;sess=localStorage.getItem('ps_sync_session');}catch(e){return;}
+      if(!sess||Date.now()-last<DAY)return;
+      var now=Date.now();try{localStorage.setItem(K,String(now));if(localStorage.getItem(K)!==String(now))return;}catch(e){return;}
+      try{window.PSStorage.reportUsage();}catch(e){console.warn('[PS] storage usage',e);}
+    },20000);
+  }catch(e){console.warn('[PS] storage usage',e);}
 })();
 
 /* PROCESS STUDIO — 저장 상태(PSSaveState)

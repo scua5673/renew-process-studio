@@ -18,7 +18,9 @@ const BASELINE=path.join(root,'tests','storage-gate.baseline.json');
 
 /* 내용 자료로 치는 구실. 나머지 구실의 키는 localStorage 에 직접 써도 된다. */
 const CONTENT={data:1,draft:1,queue:1,recovery:1};
-const SET=/localStorage\s*\.\s*setItem\(\s*(?:(['"])([A-Za-z0-9_:.\-]+)\1)?/g;
+/* 키가 글자 그대로이거나, 같은 파일에서 한 값으로만 정한 대문자 상수(PREF · MEM · EDIT_SNAP …)면 표의 구실로 가른다.
+   소문자 변수(k · key)는 함수 인자일 때가 많아 풀지 않는다 — 내용 자료일 수 있으므로 센다. */
+const SET=/localStorage\s*\.\s*setItem\(\s*(?:(['"])([A-Za-z0-9_:.\-]+)\1|([A-Z][A-Z0-9_]*)\s*,)?/g;
 const SILENT=[
   /catch\s*\(\s*[\w$]*\s*\)\s*\{\s*\}/g,
   /\.catch\(\s*function\s*\(\s*[\w$]*\s*\)\s*\{\s*\}\s*\)/g,
@@ -27,12 +29,20 @@ const SILENT=[
 const read=f=>fs.readFileSync(path.join(root,f),'utf8');
 const code=s=>s.replace(/\/\*[\s\S]*?\*\//g,'');   /* 주석 속 글자는 세지 않는다 */
 
+/* 같은 파일에서 NAME='글자' 로 정한 값. 서로 다른 두 값이면 모른다(null → 센다) */
+function constOf(s,name){
+  const re=new RegExp('\\b'+name+'\\s*=\\s*([\'"])([A-Za-z0-9_:.\\-]+)\\1','g');
+  const vals=new Set();let m;while((m=re.exec(s)))vals.add(m[2]);
+  return vals.size===1?[...vals][0]:null;
+}
+
 function countSource(source){
   const s=code(source);
   let direct=0, silent=0, m;
   SET.lastIndex=0;
   while((m=SET.exec(s))){
-    const row=m[2]?K.info(m[2]):null;
+    const lit=m[2]||(m[3]?constOf(s,m[3]):null);
+    const row=lit?K.info(lit):null;
     if(!row||CONTENT[row.role])direct++;
   }
   for(const re of SILENT){ re.lastIndex=0; silent+=(s.match(re)||[]).length; }
@@ -130,4 +140,4 @@ if(require.main===module){
   for(const g of hints())console.log('  '+g);
   process.exit(rows.length?1:0);
 }
-module.exports={countSource,counts,baseline,over,truthLists,gaps,hints,CONTENT};
+module.exports={countSource,counts,baseline,over,truthLists,gaps,hints,constOf,CONTENT};
