@@ -11,7 +11,7 @@
   if(root)root.PSStorageKeys=api;
 })(typeof window!=='undefined'?window:null,function(){
   'use strict';
-  var SYNC={team:'팀과 동기화',personal:'개인 공간 기기끼리',member:'팀 · 사람별 문서',library:'보관함 표',board:'작전판 통로',pdoc:'개인 문서 통로(학습 기록 · 개인 게임모델)',blob:'큰 그림',device:'이 기기만'};
+  var SYNC={team:'팀과 동기화',personal:'개인 공간 기기끼리',member:'팀 · 사람별 문서',library:'보관함 표',board:'작전판 통로',pdoc:'개인 문서 통로(학습 기록 · 개인 게임모델)',blob:'큰 그림',item:'선수별 행(ps_items 표 · 선수 한 명씩)',device:'이 기기만'};
   var HOME={idb:'IndexedDB',ls:'localStorage'};
   var ROLE={data:'자료',recovery:'복구 사본',queue:'보낼 것 · 대기',draft:'작성 중 초안',pref:'화면 설정',seen:'안내 본 표시',session:'계정 · 공간 상태',cache:'다시 만들 수 있는 사본',diag:'진단 기록',probe:'저장 확인용 임시'};
   var ROWS=[
@@ -66,6 +66,8 @@
     ['cs_learn_sync_v1','pdoc','ls','data','sync.js'],
     /* ── 큰 그림 — ps_blob 로 따로 올린다 ── */
     ['ps_blob:','blob','ls','data','sync.js',{prefix:1}],
+    /* ── 선수별 행 — 선수 한 명이 IndexedDB 한 행(sync.js ITEMP · ps_items 표). 통짜 문서 scout_tool_v1 과 겹쳐 읽는다(1.631 · 3.199). 저장 계층 0단계 ② 에서 등록 ── */
+    ['sq:','item','idb','data','sync.js',{prefix:1}],
     /* ── 이 기기에만 — 서버로 가지 않는다 ── */
     ['ck_sf_open','device','ls','pref','scout.html'],
     ['cs__vaulttest_tmp','device','ls','probe','board.html'],
@@ -80,6 +82,7 @@
     ['cs_board_default_v1','device','ls','pref','board.html'],
     ['cs_board_lookdef_v1','device','ls','pref','board.html'],
     ['cs_board_recovery_v1','device','ls','recovery','sync.js',{of:'cs_board_live_v1'}],
+    ['cs_board_stash_v1','device','idb','cache','sync.js'],   /* 옛 키 — 작전판 스태시(미팅 세트). 지금은 공간 전환 청소 목록(sync.js IDB_CONTENT) · 내보내기 목록(app.html)에만 */
     ['cs_chip3d','device','ls','pref','board.html'],
     ['cs_comm_view','device','ls','pref','community.html'],
     ['cs_custom_equipment_v1','device','ls','pref','board.html'],
@@ -87,8 +90,8 @@
     ['cs_dist_drag_v1','device','ls','pref','board.html'],
     ['cs_drag_snap_v1','device','ls','pref','board.html'],
     ['cs_drill_form_v1','device','ls','draft','board.html'],
-    ['cs_editor_draft_v1','device','ls','draft','board.html'],
-    ['cs_editor_work_v1','device','ls','draft','board.html'],
+    ['cs_editor_draft_v1','device','idb','draft','board.html'],   /* boardStore — IndexedDB 먼저, localStorage 는 실패 때만(거울 아님). 11/17 표를 고침(ls 로 잘못 적혀 있었다) */
+    ['cs_editor_work_v1','device','idb','draft','board.html'],
     ['cs_emblem','device','ls','pref','board.html'],
     ['cs_errlog_v1','device','ls','diag','storage.js'],
     ['cs_gamemodel_personal_v1','pdoc','idb','data','gamemodel.html',{mirror:1}],   /* 3.080 — 계정(개인 공간)의 같은 이름 키와 맞춘다(PSSync.gmPersonal) */
@@ -124,6 +127,7 @@
     ['cs_schedule_view','device','ls','pref','process.html'],
     ['cs_scoutdb_v1','device','ls','data','scout.html'],
     ['cs_snap_board_v1','device','idb','cache','sync.js'],
+    ['cs_snap_match_v1','device','idb','cache','sync.js'],   /* 옛 키(실제 키는 v2) — 옛 기기 청소용으로 sync.js IDB_CONTENT · app.html 목록에만 남아 있다 */
     ['cs_snap_match_v2','device','idb','cache','sync.js'],
     ['cs_theme','device','ls','pref','app.html'],
     ['cs_tokscale_v4','device','ls','pref','board.html'],
@@ -225,6 +229,7 @@
     ['ps_opt_board_recovery_v1','device','ls','recovery','storage.js',{of:'cs_board_live_v1'}],
     ['ps_opt_build_v1','device','ls','cache','storage.js'],   /* 3.126 — 새 판 첫 부팅 정리를 한 판에 한 번 */
     ['ps_full_report_at','device','ls','diag','storage.js'],   /* 3.126 — 저장 공간이 찬 기기의 «무엇이 찼나» 기록(6시간에 한 번) */
+    ['ps_storage_usage_at','device','ls','diag','storage.js'],   /* 저장 계층 0단계 ③ — 하루 한 번 storage_usage(키 표 이름 · KB)를 보낸 시각 */
     ['ps_pack_pending_v1','device','ls','queue','app.html'],
     ['ps_pad_scale_v1','device','ls','pref','app.html'],
     ['ps_pdf_per_page','device','ls','pref','board.html'],
@@ -295,7 +300,7 @@
     ['ps_ws_switch_epoch_v1','device','ls','session','storage.js'],
     ['ps_ws_switch_guard_v1','device','ls','session','app.html'],
     ['ps_ws_switched_v1','device','ls','session','sync.js'],
-    ['training_session_cur_v1','device','ls','draft','board.html']
+    ['training_session_cur_v1','device','idb','draft','board.html']   /* boardStore(IndexedDB) — 11/17 표를 고침 */
   ];
   var exact={},prefixes=[];
   var list=ROWS.map(function(r){
