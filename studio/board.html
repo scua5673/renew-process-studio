@@ -3548,7 +3548,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
           <hr class="menudiv"><div class="menusec">구성</div>
           <!-- 1.853 — 구성 3버튼 한 줄(사용자 승인 백로그): 불러오기(주) · 선수단 · 명단 -->
           <div class="menurow menurow-3" style="gap:6px"><button class="btn primary" id="loadSquadBtn" style="flex:1.4 1 0;justify-content:center;min-width:0" title="선택한 포메이션에 맞춰 선발 11명만 작전판에 배치"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M8 10l4 4 4-4"/><path d="M5 21h14"/></svg>선발 11명</button><button class="btn" id="squadBtn" style="flex:1 1 0;justify-content:center;min-width:0" title="선수단 등록·수정"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="8" r="2.4"/><path d="M2.5 20a6 6 0 0 1 12 0M15 14.5a5.5 5.5 0 0 1 6.5 5.5"/></svg>선수단</button><button class="btn" id="rosterBtn" style="flex:1 1 0;justify-content:center;min-width:0" title="명단 (이름·번호)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3 3 0 0 1 0 5.6M17.5 20a5.5 5.5 0 0 0-3-4.9"/></svg>명단</button></div>
-          <hr class="menudiv"><div class="menusec">지우기</div><div class="menurow"><button class="btn ghost danger" id="clearDrawBtn" style="flex:1 1 auto;justify-content:center">선 지우기</button>
+          <hr class="menudiv"><div class="menusec">지우기</div><div class="menurow"><button class="btn ghost danger" id="clearDrawBtn" style="flex:1 1 auto;justify-content:center" title="이 장면의 선 · 화살표 · 구역 · 글을 모두 지웁니다 · 선수는 그대로">그림 모두 지우기</button>
             <button class="btn ghost danger" id="clearPlayersBtn" style="flex:1 1 auto;justify-content:center">필드 비우기</button></div>
           <div class="menurow"><button class="btn ghost danger" id="resetBtn" style="flex:1 1 auto;justify-content:center">초기화</button></div>
         </div>
@@ -4225,10 +4225,10 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.167"></script>
+<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.311"></script>
 <script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-rescue.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-tv-fold.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.167"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script>
+<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.311"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -6839,7 +6839,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
     if(pts.length>=2){
       const dd="M "+pts.map(p=>p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" L ")+(d.closed?" Z":"");
       if(isSel)g.appendChild(el("path",{d:dd,fill:"none",stroke:"#ffd60a","stroke-width":9,opacity:".55","stroke-linejoin":"round","stroke-linecap":"round"}));
-      if(d.closed){const darkPitch=document.documentElement.dataset.pitch!=="white";g.appendChild(el("path",{d:dd,fill:(d.fillStyle==="dots"||d.fillStyle==="hatch")?_fillPattern(d.fillStyle,C):hexA(C,darkPitch?.22:.16),stroke:"none","pointer-events":"none"}));}
+      if(d.closed){const darkPitch=document.documentElement.dataset.pitch!=="white";g.appendChild(el("path",{d:dd,fill:d.fillStyle==="none"?"none":(d.fillStyle==="dots"||d.fillStyle==="hatch")?_fillPattern(d.fillStyle,C):hexA(C,darkPitch?.22:.16),stroke:"none","pointer-events":"none"}));}
       const at={d:dd,fill:"none",stroke:C,"stroke-width":4*LW,"stroke-linejoin":"round","stroke-linecap":"round"};
       if(d.dot)at["stroke-dasharray"]="0.1 "+(12*LW).toFixed(1);
       else if(d.dash)at["stroke-dasharray"]=(11*LW)+" "+(8*LW);
@@ -6862,12 +6862,12 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
     const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
     if(d.type==="rect"||d.type==="ellipse"){
       const darkPitch=document.documentElement.dataset.pitch!=="white";
-      const _fillV=(d.fillStyle==="dots"||d.fillStyle==="hatch")?_fillPattern(d.fillStyle,C):hexA(C,darkPitch?.34:.24);   /* 2.681 — 점·빗금 채움 */
+      const _fillV=d.fillStyle==="none"?"none":(d.fillStyle==="dots"||d.fillStyle==="hatch")?_fillPattern(d.fillStyle,C):hexA(C,darkPitch?.34:.24);   /* 2.681 — 점·빗금 채움 · 3.311 — «없음»(제보 43d6b2af 속을 채우지 않는 원) */
       if(d.type==="ellipse")g.appendChild(el("ellipse",{cx:x+w/2,cy:y+h/2,rx:Math.max(1,w/2),ry:Math.max(1,h/2),fill:_fillV,stroke:"none","pointer-events":"none"}));   /* 2.683 — 원형 구역 */
       else g.appendChild(el("rect",{x,y,width:w,height:h,rx:4,fill:_fillV,stroke:"none","pointer-events":"none"}));
       /* 3.254 — 구역 · 원형 구역은 실선이면 채움만(예전 그대로), 점선 · 둥근 점선이면 그 모양의 테두리를 두른다(제보 2456db8e «원 도형도 점선») */
       const _zls=_lsOf(d),_zda=_zls==="solid"?null:_lsDash(_zls,LW);
-      if(_zda){ const zs={fill:"none",stroke:C,"stroke-width":(4*LW).toFixed(1),"stroke-dasharray":_zda,"stroke-linecap":_zls==="dot"?"round":"butt","pointer-events":"none","class":"zone-edge"};
+      if(_zda||d.fillStyle==="none"){ const zs={fill:"none",stroke:C,"stroke-width":(4*LW).toFixed(1),"stroke-linecap":_zls==="dot"?"round":"butt","pointer-events":"none","class":"zone-edge"}; if(_zda)zs["stroke-dasharray"]=_zda;   /* 3.311 — 채움 «없음»이면 실선 테두리 */
         if(d.type==="ellipse")g.appendChild(el("ellipse",Object.assign({cx:x+w/2,cy:y+h/2,rx:Math.max(1,w/2),ry:Math.max(1,h/2)},zs)));
         else g.appendChild(el("rect",Object.assign({x,y,width:w,height:h,rx:4},zs))); }
     }else{
@@ -6931,7 +6931,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       const dd="M "+pts.map(p=>`${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" L ")+(d.closed?" Z":"");
       if(isSel)g.appendChild(el("path",{d:dd,fill:"none",stroke:"#ffd60a","stroke-width":9,opacity:".55","stroke-linejoin":"round","stroke-linecap":"round"}));
       if(d.closed){const darkPitch=document.documentElement.dataset.pitch!=="white";
-        g.appendChild(el("path",{d:dd,fill:(d.fillStyle==="dots"||d.fillStyle==="hatch")?_fillPattern(d.fillStyle,C):hexA(C,darkPitch?.3:.22),stroke:"none","pointer-events":"none","class":"poly-fill"}));}
+        g.appendChild(el("path",{d:dd,fill:d.fillStyle==="none"?"none":(d.fillStyle==="dots"||d.fillStyle==="hatch")?_fillPattern(d.fillStyle,C):hexA(C,darkPitch?.3:.22),stroke:"none","pointer-events":"none","class":"poly-fill"}));}
       const at={d:dd,fill:"none",stroke:C,"stroke-width":4*LW,"stroke-linejoin":"round","stroke-linecap":"round"};
       if(d.dot)at["stroke-dasharray"]="0.1 "+(12*LW).toFixed(1);
       else if(d.dash)at["stroke-dasharray"]=(11*LW)+" "+(8*LW);
@@ -6982,10 +6982,15 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       rh.appendChild(el("circle",{cx:x0+B.boxW,cy:p.y,r:9,fill:"#fff",stroke:"#ffd60a","stroke-width":3}));
       enableTextResize(rh,d);g.appendChild(rh);}
   }else{_anchorPt(d,0);_anchorPt(d,1);   /* 2.719 — 토큰에 묶인 끝점은 토큰의 지금 자리 */
-    const a=d.pts[0],b=d.pts[1]||d.pts[0],type=d.type;
+    const a0=d.pts[0],b0=d.pts[1]||d.pts[0],type=d.type;
     const canCurve=(type==="pass"||type==="run"||type==="line"||type==="dashline");
     const _lob=(type==="pass"&&!!d.lob);                                // 2.902 — 로빙: 공중 곡선 + 바닥 그림자
-    const cpt=canCurve?(d.pts[2]||(_lob?_lobCtrl(a,b):null)):null;      // 커브 제어점(있으면 곡선)
+    const cpt=canCurve?(d.pts[2]||(_lob?_lobCtrl(a0,b0):null)):null;      // 커브 제어점(있으면 곡선)
+    /* 2.902 — 끝 모양(FmStadio 참고): 화살 · 막기(T자) · 원 · 없음. 지정이 없으면 직선·점선은 없음, 나머지는 화살(옛 자료 그대로). */
+    const _hd=d.head||((type==="line"||type==="dashline")?"none":"arrow");
+    /* 3.311 — 머리가 있는 끝이 토큰에 묶였거나(d.tk) 토큰 안이면 토큰 가장자리까지만 그린다(제보 dd59a8b4 «화살표 머리가 가려진다»). d.pts 는 그대로 — 핸들은 원래 자리. */
+    const _tp=(i,pt,fr)=>{ if(_hd==="none"||!window.PSShapeMenu||!PSShapeMenu.trimTip)return pt; var id=d.tk&&d.tk[i],P=state.players||[],p=(id!=null)?P.find(q=>q.id===id):null; if(!p)p=P.find(q=>Math.hypot(q.x-pt.x,q.y-pt.y)<21*_tokScaleOf(q)+3); return p?PSShapeMenu.trimTip(pt,fr,p,21*_tokScaleOf(p),3):pt; };
+    const b=_tp(1,b0,cpt||a0),a=d.head2?_tp(0,a0,cpt||b0):a0;
     const _pd=cpt?`M ${a.x} ${a.y} Q ${cpt.x} ${cpt.y} ${b.x} ${b.y}`:`M ${a.x} ${a.y} L ${b.x} ${b.y}`;
     const _tan=cpt||a;                                                 // 끝 화살표 각도: 곡선이면 제어점→끝점 접선
     if(isSel)g.appendChild(el("path",{d:_pd,fill:"none",stroke:"#ffd60a","stroke-width":9,opacity:".55","stroke-linecap":"round","stroke-linejoin":"round"}));
@@ -7004,13 +7009,11 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       else if(d.dash&&type!=="dashline"&&type!=="run"){at["stroke-dasharray"]=(11*LW)+" "+(8*LW);}
       g.appendChild(el("path",at));}
     /* 화살촉 크기·각도를 선 굵기와 분리한다. 굵기를 바꾸거나 길게 그려도 같은 모양을 유지한다. */
-    /* 2.902 — 끝 모양(FmStadio 참고): 화살 · 막기(T자) · 원 · 없음. 지정이 없으면 직선·점선은 없음, 나머지는 화살(옛 자료 그대로). */
-    const _hd=d.head||((type==="line"||type==="dashline")?"none":"arrow");
     _drawHeadAt(g,_hd,b,_tan,C,LW);
     if(d.head2)_drawHeadAt(g,_hd,a,cpt||b,C,LW);   /* 2.980 — 양쪽: 시작 쪽에도 같은 모양(↔ · ├─┤) */
     g.appendChild(el("path",{d:_pd,fill:"none",stroke:"#000","stroke-width":22,opacity:"0","pointer-events":"stroke"}));
     if(isSel){                                   // 끝점 핸들 — 끌어서 기울기·길이 조절
-      [a,b].forEach((pt,idx)=>{
+      [a0,b0].forEach((pt,idx)=>{   /* 3.311 — 핸들은 자료의 끝점(토큰 가운데)에 */
         const hg=el("g");
         hg.appendChild(el("circle",{cx:pt.x,cy:pt.y,r:24,fill:"transparent","pointer-events":"all"}));
         hg.appendChild(el("circle",{cx:pt.x,cy:pt.y,r:10,fill:(d.tk&&d.tk[idx]!=null)?"#3a6df0":"#fff",stroke:"#ffd60a","stroke-width":3}));   /* 2.719 — 파란 점 = 토큰에 묶임 */
@@ -7447,7 +7450,7 @@ try{ window.addEventListener("keydown",function(e){   /* Enter = 다각형으로
 function beginDraw(u){
   _draw={type:state.tool,color:state.color,lw:(state.drawLw||1),op:(state.drawOp==null?1:state.drawOp),pts:state.tool==="free"?[u]:[u,{x:u.x,y:u.y}],
     dot:(state.drawLineStyle==="dot")||undefined,dash:(state.drawLineStyle==="dash")||undefined,fillStyle:(state.drawFillStyle&&state.drawFillStyle!=="solid")?state.drawFillStyle:undefined,
-    lob:(state.tool==="pass"&&state.drawLob)||undefined,head:(state.drawHead&&/^(pass|run|dribble|shot|line|dashline)$/.test(state.tool))?state.drawHead:undefined,
+    lob:(state.tool==="pass"&&state.drawLob)||undefined,head:(/^(pass|run|dribble|shot|line|dashline)$/.test(state.tool)&&window.PSShapeMenu)?PSShapeMenu.headDefault(state,state.tool):undefined,   /* 3.311 — 화살표 · 선 집안 따로(b2007df6) */
     head2:(state.drawHead2&&/^(pass|run|dribble|shot|line|dashline)$/.test(state.tool))||undefined};   /* 2.980 양쪽 */   /* 2.681 · 2.902 로빙 기본값 */
   _drawTmp=drawingEl(_draw);drawLayer.appendChild(_drawTmp);}
 function moveDraw(u){if(!_draw)return;
@@ -15298,6 +15301,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     function outside(e){ if(pop&&!pop.contains(e.target)&&e.target!==lsBtn&&!lsBtn.contains(e.target))close(); }
     function open(){
       var ds=selDraws(); var base=ds.length?ds[0]:null;
+      var selOnly=!!(window.__psLsSelOnly&&ds.length);   /* 3.311 — 오른쪽 클릭 › «점선 · 선 스타일…»로 열면 고른 그림에만, 새로 그릴 기본값은 그대로(제보 f2b9c41a) */
       var lw=base?(base.lw||1):(state.drawLw||1);
       var op=base?(base.op==null?1:base.op):(state.drawOp==null?1:state.drawOp);
       pop=document.createElement("div"); pop.id="lsPop";
@@ -15309,7 +15313,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
           +'<div class="ls-row"><span class="ls-lb">방향</span><div class="ls-seg" id="lsHead2"><button type="button" data-v="one" title="끝에만">한쪽</button><button type="button" data-v="both" title="시작과 끝 양쪽에 — 양방향 화살 ↔ · 막기와 함께면 간격 표시 ├─┤">양쪽</button></div><span></span></div>':'')   /* 2.980 열린 화살 · 양쪽 */   /* 2.902 끝 모양 */
         +((base&&(/^(rect|rectline|rectdash|ellipse)$/.test(base.type)||(base.type==="poly"&&base.closed)))?'<div class="ls-row"><span class="ls-lb">이름</span><input type="text" id="lsZoneName" maxlength="24" placeholder="예: 압박 함정" autocomplete="off" value="'+String(base.label||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];})+'"><span></span></div>':'')   /* 2.902 구역 이름 */
         +((!ds.length||ds.some(function(d){return d.type==="pass";}))?'<div class="ls-row"><span class="ls-lb">패스</span><div class="ls-seg" id="lsLob"><button type="button" data-v="ground">땅볼</button><button type="button" data-v="lob">로빙</button></div><span></span></div>':'')   /* 2.902 — 패스를 골랐거나 아무것도 안 골랐을 때(새로 그릴 기본값) */
-        +'<div class="ls-row"><span class="ls-lb">채움</span><div class="ls-seg" id="lsFill"><button type="button" data-v="solid">반투명</button><button type="button" data-v="dots">점</button><button type="button" data-v="hatch">빗금</button></div><span></span></div>'
+        +'<div class="ls-row"><span class="ls-lb">채움</span><div class="ls-seg" id="lsFill"><button type="button" data-v="solid">반투명</button><button type="button" data-v="dots">점</button><button type="button" data-v="hatch">빗금</button><button type="button" data-v="none">없음</button></div><span></span></div>'
         +'<button class="ls-apply" id="lsAll">그린 선 전체에 적용</button>'
         +'<button class="ls-apply ls-apply2" id="lsClearNext" title="다음 장면을 만들고 그 장면에서 화살표·선만 뺍니다. 재생하면 서서히 사라져요.">새 장면에서 화살표 모두 지우기</button>';   /* 2.902 */
       document.body.appendChild(pop);
@@ -15321,7 +15325,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
       pop.style.setProperty("--ls-arrow",Math.max(16,Math.min(pw-16,r.left+r.width/2-left))+"px");
       var wR=pop.querySelector("#lsW"),oR=pop.querySelector("#lsO"),wV=pop.querySelector("#lsWv"),oV=pop.querySelector("#lsOv"),pv=pop.querySelector("#lsPrev");
       function refresh(){ var w=+wR.value,o=+oR.value; wV.textContent=w.toFixed(1); oV.textContent=Math.round(o*100); pv.innerHTML=preview(w,o,state.color);
-        state.drawLw=w; state.drawOp=o;
+        if(!selOnly){ state.drawLw=w; state.drawOp=o; }
         var sd=selDraws(); if(sd.length){ sd.forEach(function(d){ d.lw=w; d.op=o; }); renderDrawings(); try{boardSaveLive();}catch(_){} } }
       wR.addEventListener("input",refresh); oR.addEventListener("input",refresh);
       /* 2.681 — 선 모양(실선·점선·둥근 점선)과 채움(반투명·점·빗금). 선택한 그림에 바로 적용하고, 새로 그릴 때의 기본값으로도 남긴다. */
@@ -15331,19 +15335,19 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
           if(sd.length){ ls=_lsOf(sd[0]); fs=sd[0].fillStyle||"solid"; }   /* 3.254 — 점선 도구로 그린 것은 «점선»으로 보인다 */
           shapeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.v===ls);});
           fillSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.v===fs);}); }
-        shapeSeg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var v=b.dataset.v; state.drawLineStyle=v; var sd=selDraws();
+        shapeSeg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var v=b.dataset.v; if(!selOnly)state.drawLineStyle=v; var sd=selDraws();
           if(sd.length){ pushUndo(); sd.forEach(function(d){ _lsSet(d,v); }); renderDrawings(); try{autoSaveAnimFrame();}catch(_){} try{boardSaveLive();}catch(_){} }   /* 3.254 — 모든 그림 같은 규칙(구역 · 원 · 그리드 · 점선 도구) */
           mark(); }; });
-        fillSeg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var v=b.dataset.v; state.drawFillStyle=v; var sd=selDraws();
+        fillSeg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var v=b.dataset.v; if(!selOnly)state.drawFillStyle=v; var sd=selDraws();
           if(sd.length){ pushUndo(); sd.forEach(function(d){ if(v==="solid")delete d.fillStyle; else d.fillStyle=v; }); renderDrawings(); try{boardSaveLive();}catch(_){} }
           mark(); }; });
         mark();
       })();
       /* 2.902 — 끝 모양: 고른 선(자유선 제외)에 바로, 없으면 새로 그릴 기본값. */
       (function(){ var seg=pop.querySelector("#lsHead"); if(!seg)return; var LT=/^(pass|run|dribble|shot|line|dashline)$/;
-        function cur(){ var sd=selDraws().filter(function(d){return LT.test(d.type);}); if(sd.length)return sd[0].head||((sd[0].type==="line"||sd[0].type==="dashline")?"none":"arrow"); return state.drawHead||"arrow"; }
+        function cur(){ var sd=selDraws().filter(function(d){return LT.test(d.type);}); if(sd.length)return sd[0].head||((sd[0].type==="line"||sd[0].type==="dashline")?"none":"arrow"); return window.PSShapeMenu?PSShapeMenu.headShown(state,state.tool):(state.drawHead||"arrow"); }   /* 3.311 — 지금 도구의 집안(화살표 · 선) */
         function mark(){ var v=cur(); seg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.v===v);}); }
-        seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var v=b.dataset.v; state.drawHead=v; var sd=selDraws().filter(function(d){return LT.test(d.type);});
+        seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var v=b.dataset.v; if(!selOnly){ if(window.PSShapeMenu)PSShapeMenu.setHeadDefault(state,state.tool,v); else state.drawHead=v; } var sd=selDraws().filter(function(d){return LT.test(d.type);});
           if(sd.length){ pushUndo(); sd.forEach(function(d){ d.head=v; }); renderDrawings(); try{boardSaveLive();}catch(_){} }
           mark(); }; });
         mark(); })();
@@ -15351,7 +15355,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
       (function(){ var seg=pop.querySelector("#lsHead2"); if(!seg)return; var LT=/^(pass|run|dribble|shot|line|dashline)$/;
         function cur(){ var sd=selDraws().filter(function(d){return LT.test(d.type);}); if(sd.length)return sd[0].head2?"both":"one"; return state.drawHead2?"both":"one"; }
         function mark(){ var v=cur(); seg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.v===v);}); }
-        seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var both=b.dataset.v==="both"; state.drawHead2=both; var sd=selDraws().filter(function(d){return LT.test(d.type);});
+        seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var both=b.dataset.v==="both"; if(!selOnly)state.drawHead2=both; var sd=selDraws().filter(function(d){return LT.test(d.type);});
           if(sd.length){ pushUndo(); sd.forEach(function(d){ if(both)d.head2=true; else delete d.head2; }); renderDrawings(); try{boardSaveLive();}catch(_){} }
           mark(); }; });
         mark(); })();
@@ -15372,7 +15376,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
         var seg=pop.querySelector("#lsLob"); if(!seg)return;
         function mark(){ var sd=selDraws().filter(function(d){return d.type==="pass";}); var v=sd.length?(sd[0].lob?"lob":"ground"):(state.drawLob?"lob":"ground");
           seg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.v===v);}); }
-        seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var on=b.dataset.v==="lob"; state.drawLob=on;
+        seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var on=b.dataset.v==="lob"; if(!selOnly)state.drawLob=on;
           var sd=selDraws().filter(function(d){return d.type==="pass";});
           if(sd.length){ pushUndo(); sd.forEach(function(d){ if(on)d.lob=true; else delete d.lob; }); renderDrawings(); try{boardSaveLive();}catch(_){} }
           else if(selDraws().length){ try{toast("로빙은 패스 화살표에만 적용돼요");}catch(_){} }

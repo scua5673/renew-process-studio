@@ -196,3 +196,27 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "누를 때마다 방향 표식 → 시야 부채꼴 → 끔":"Each press: direction mark → vision cone → off",
 "도구 · 단추를 모두 접어 운동장만 보이게 — 다시 펴기: 아래 가운데 손잡이 · Esc":"Fold away every tool and button so only the pitch shows — bring them back with the small handle at the bottom centre or Esc"
 },{},{});
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{
+"선 스타일 열기·닫기":"Open · close line style",
+"선 모양 — 점선 ↔ 실선":"Line shape — dashed ↔ solid",
+"패스 — 로빙 ↔ 땅볼":"Pass — lob ↔ ground",
+"선수 놓기 열기·닫기":"Open · close player palette",
+"저장 팀 불러오기":"Load saved team",
+"이 장면의 그림 모두 지우기":"Clear every drawing in this scene",
+"이 장면의 그림을 모두 지웠어요 — 되돌리기는 ⌘Z":"Cleared every drawing in this scene — undo with ⌘Z",
+"점선으로 그려요 · 고른 그림도 점선":"New lines are dashed · selected drawings too",
+"점선으로 그려요":"New lines are dashed",
+"실선으로 그려요 · 고른 그림도 실선":"New lines are solid · selected drawings too",
+"실선으로 그려요":"New lines are solid",
+"로빙 패스로 그려요 · 고른 패스도 로빙":"New passes are lobbed · selected passes too",
+"로빙 패스로 그려요":"New passes are lobbed",
+"땅볼 패스로 그려요 · 고른 패스도 땅볼":"New passes are on the ground · selected passes too",
+"땅볼 패스로 그려요":"New passes are on the ground",
+"그림 모두 지우기":"Clear all drawings",
+"이 장면의 선 · 화살표 · 구역 · 글을 모두 지웁니다 · 선수는 그대로":"Clears every line · arrow · zone · text in this scene · players stay",
+"없음":"None"
+},{},{});
