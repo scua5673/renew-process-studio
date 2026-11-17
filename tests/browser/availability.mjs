@@ -119,13 +119,13 @@ try{
     });assert.ok(perf.reads<=3,'a render reads common/A/B schedules at most once: '+JSON.stringify(perf));
     const initialRuns=await frame.evaluate(()=>JSON.stringify(data.meta.statusRuns.p2));
     await page.screenshot({path:path.join(out,width+'-days.png')});
-    // 2.939 — 폰은 «운동» / «참여 못 함» 두 덩어리(조별), 데스크톱은 조마다 쉼 상자 그대로
+    // 2.939 — 폰은 «운동» / «참여 못 함» 두 덩어리(조별) · 3.308 — 표: 데스크톱은 표 하나에 쉼 줄(tr.av-pl.rest)이 제 학년 아래, 폰은 조마다 표
     const split=await frame.evaluate(()=>{const ok=document.querySelector('#avDailyCard .av-split-ok'),rest=document.querySelector('#avDailyCard .av-split-rest');
       const ids=el=>el?[...el.querySelectorAll('[data-av-st]')].map(b=>b.dataset.avSt).sort():null;
       return {ok:ids(ok),rest:ids(rest),okHead:ok&&ok.querySelector('.av-sec-h').textContent.replace(/\s+/g,' ').trim(),restHead:rest&&rest.querySelector('.rh').textContent.replace(/\s+/g,' ').trim(),
-        groupBoxes:document.querySelectorAll('#avDailyCard .av-grp>.rows>.av-restbox').length,buttons:document.querySelectorAll('#avDailyCard [data-av-st]').length};});
-    if(width<600)assert.deepEqual(split,{ok:['p1','p4','p5'],rest:['p2','p3'],okHead:'운동 3명',restHead:'참여 못 함 2명',groupBoxes:0,buttons:5},'phone separates training and absent players');
-    else assert.deepEqual(split,{ok:null,rest:null,okHead:null,restHead:null,groupBoxes:2,buttons:5},'desktop keeps the per-group rest boxes');
+        restRows:document.querySelectorAll('#avDailyCard tr.av-pl.rest').length,tables:document.querySelectorAll('#avDailyCard table.av-day-table').length,chips:document.querySelectorAll('#avDailyCard [data-av-grp]').length,buttons:document.querySelectorAll('#avDailyCard [data-av-st]').length};});
+    if(width<600)assert.deepEqual(split,{ok:['p1','p4','p5'],rest:['p2','p3'],okHead:'운동 3명',restHead:'참여 못 함 2명',restRows:2,tables:4,chips:5,buttons:5},'phone separates training and absent players — a table per group');
+    else assert.deepEqual(split,{ok:null,rest:null,okHead:null,restHead:null,restRows:2,tables:1,chips:5,buttons:5},'desktop: one table, rest rows tinted in place');
     // 2.940 — «오늘» 가용인원 카드도 폰은 두 덩어리(색 타일 없음) · 2.979 — 데스크톱은 조 상자 + 막대 하나(색 타일 다섯은 걷었다)
     const ck=await frame.evaluate(()=>{setView('home');try{renderCkHome();}catch(_){}
       const card=document.querySelector('#ckHome .avail-pn'),t=el=>el?el.textContent.replace(/\s+/g,' ').trim():null;
