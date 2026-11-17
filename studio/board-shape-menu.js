@@ -5,7 +5,9 @@
    - 선택 패널(.sel-ctl)의 «맨 앞» 옆에 «맨 뒤»(#backSelBtn) — 터치 기기(아이패드)의 길. 보이고 숨는 건 «맨 앞»과 같이(updateDelUI 를 감싼다),
      도크 배치의 «더보기» 규칙도 «맨 앞»과 같은 선택자로 따라간다.
    - 그림 요소 ↔ 자료는 drawingEl 을 감싸 g.__psD 로 잇는다(drawLayer 의 자식 차례에 기대지 않는다).
-   - 본문보다 먼저 읽히고 DOMContentLoaded 에 건다. renderTokens 는 부르지 않는다(3.120 함정). board.html 은 <script> 한 줄. */
+   - 본문보다 먼저 읽히고 DOMContentLoaded 에 건다. renderTokens 는 부르지 않는다(3.120 함정). board.html 은 <script> 한 줄.
+   - 3.311 — 그리기 도구 제보 묶음(같은 제보자 11/17): 끝 모양 기본값을 화살표 · 선 집안으로(headDefault …, b2007df6) · 토큰 안의 화살 머리는 가장자리에(trimTip, dd59a8b4)
+     · «점선 · 선 스타일…»로 연 창은 고른 그림에만(__psLsSelOnly, f2b9c41a). 채움 «없음»(43d6b2af)은 board.html 의 그리기 · 창. */
 (function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -65,6 +67,31 @@
   }
   // 그림에 쓸 stroke-dasharray(굵기 배수 lw) — 없으면 실선. 연결선 · 다각형이 2.681 부터 쓰던 값과 같다.
   function dashArray(style, lw) { lw = +lw || 1; return style === 'dot' ? '0.1 ' + (12 * lw).toFixed(1) : style === 'dash' ? (11 * lw) + ' ' + (8 * lw) : null; }
+  // 3.311 — 끝 모양 기본값은 도구 집안마다(제보 b2007df6 «화살표에서 끝 모양을 고르면 직선 · 점선에도 화살표가 나온다»).
+  // 화살표 집안(pass · run · dribble · shot)은 state.drawHead(예전 그대로 — 없으면 화살), 선 집안(line · dashline)은 state.drawHeadLine(없으면 없음).
+  // 저장본에는 그림마다 d.head 로 적히므로(2.902) 옛 자료 · 다른 기기는 그대로 읽는다.
+  var HEAD_LINE = /^(line|dashline)$/;
+  function headFamily(tool) { return HEAD_LINE.test(String(tool || '')) ? 'line' : 'arrow'; }
+  function headDefault(state, tool) { if (!state) return undefined; var v = headFamily(tool) === 'line' ? state.drawHeadLine : state.drawHead; return v || undefined; }
+  function headShown(state, tool) { return headDefault(state, tool) || (headFamily(tool) === 'line' ? 'none' : 'arrow'); }
+  function setHeadDefault(state, tool, v) { if (!state) return; if (headFamily(tool) === 'line') state.drawHeadLine = v; else state.drawHead = v; }
+  // 3.311 — 토큰에 묶였거나 토큰 안에 든 끝의 화살 머리는 토큰 가장자리에(제보 dd59a8b4 «화살표로 토큰과 토큰을 이으면 머리가 가려진다»).
+  // tip = 끝점, from = 그 끝으로 들어오는 쪽(곡선이면 제어점), center · radius = 토큰. 끝이 토큰 밖이면 그대로. 자료(d.pts)는 안 바꾼다 — 그릴 때만.
+  function trimTip(tip, from, center, radius, gap) {
+    if (!tip || !center || !(radius > 0)) return tip; gap = +gap || 0;
+    var R = radius + gap, px = tip.x - center.x, py = tip.y - center.y, pl = Math.hypot(px, py);
+    if (pl > R) return tip;
+    var dx = from ? tip.x - from.x : 0, dy = from ? tip.y - from.y : 0, len = Math.hypot(dx, dy);
+    if (!(len > 1e-6)) {                                     // 들어오는 쪽을 모르면 중심에서 끝 쪽으로 밀어낸다
+      if (!(pl > 1e-6)) return { x: center.x + R, y: center.y };
+      return { x: center.x + px / pl * R, y: center.y + py / pl * R };
+    }
+    var ux = dx / len, uy = dy / len;                        // 선이 들어오는 방향(단위)
+    var b = px * ux + py * uy, c = pl * pl - R * R, disc = b * b - c;   // |tip − u·t − center| = R 의 t
+    var t = disc >= 0 ? b + Math.sqrt(disc) : 0;
+    if (!(t > 0)) return { x: center.x + ux * R, y: center.y + uy * R };
+    return { x: tip.x - ux * t, y: tip.y - uy * t };
+  }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   // 창 자리: 누른 점 오른쪽 아래, 화면을 벗어나면 안쪽으로
   function place(x, y, w, h, vw, vh) {
@@ -299,7 +326,7 @@
           if(act==='reset'){resetSelection(ts);return;}
           if(act==='position-all'){applyPositions(ts);return;}
           if (act === 'front' || act === 'back') { call('zOrderItems', ts.slice(), act === 'front'); call('updateDelUI'); close(); return; }
-          if (act === 'more') { close(); var lb = doc.getElementById('lineStyleBtn'); if (lb) lb.click(); return; }
+          if (act === 'more') { close(); var lb = doc.getElementById('lineStyleBtn'); if (lb) { win.__psLsSelOnly = 1; try { lb.click(); } finally { win.__psLsSelOnly = 0; } } return; }   // 3.311 — 이 길로 연 «선 스타일» 창은 고른 그림에만, 새로 그릴 기본값은 그대로(제보 f2b9c41a)
           if (act === 'dup' || act === 'lock' || act === 'edit') { close(); press(act === 'dup' ? 'dupSelBtn' : act === 'lock' ? 'lockSelBtn' : 'textEditBtn'); return; }   // 선택 패널의 단추를 대신 누른다 — 동작 · 되돌리기는 그대로
           if (act === 'del') {
             close();
@@ -462,7 +489,7 @@
     return api;
   }
 
-  var api = { lineStyleOf: lineStyleOf, setLineStyle: setLineStyle, dashArray: dashArray, positionTexts:positionTexts,resetDrawings: resetDrawings, removeDrawings: removeDrawings, name: name, clampLw: clampLw, clampOp: clampOp, isRightClick: isRightClick, findDrawing: findDrawing, targets: targets, place: place, css: css, install: install };
+  var api = { lineStyleOf: lineStyleOf, setLineStyle: setLineStyle, dashArray: dashArray, headFamily: headFamily, headDefault: headDefault, headShown: headShown, setHeadDefault: setHeadDefault, trimTip: trimTip, positionTexts:positionTexts,resetDrawings: resetDrawings, removeDrawings: removeDrawings, name: name, clampLw: clampLw, clampOp: clampOp, isRightClick: isRightClick, findDrawing: findDrawing, targets: targets, place: place, css: css, install: install };
   if (typeof window !== 'undefined' && window.document) { try { install(window); } catch (_) {} }
   return api;
 });

@@ -68,10 +68,10 @@ try{
   await f.evaluate(pad=>{const s=document.querySelector('#boardStage').style;if(pad[0])s.setProperty('padding-bottom',pad[0],pad[1]);else s.removeProperty('padding-bottom');},pad);
   await page.waitForTimeout(650);
   if(engine==='chromium'){
-    await f.locator('#boardPageStrip [data-v="3d"]').click();
+    await f.evaluate(()=>document.querySelector('#tiltSeg button[data-t="1"]').click());   /* 3.309 — 띠의 평면/3D 단추는 걷었다: 보드 설정의 #tiltSeg 로 */
     await f.waitForFunction(()=>document.body.classList.contains('bc-tilt3d'));
     await page.waitForTimeout(350);
-    await f.locator('#boardPageStrip [data-v="flat"]').click();
+    await f.evaluate(()=>document.querySelector('#tiltSeg button[data-t="0"]').click());
     await f.waitForFunction(()=>!document.body.classList.contains('bc-tilt3d'));
     await page.waitForTimeout(350);
     const back=await settled(f,'3D to flat');assert.equal(back.vb,flat.vb,'switching views does not accumulate inset');
@@ -82,7 +82,10 @@ try{
   await f.evaluate(()=>{state.players=[{id:9001,team:'blue',num:7,x:300,y:300}];renderTokens();window.__setBoardOrient('v');});
   await page.waitForTimeout(500);
   const occupied=await settled(f,'board with players');
-  assert.ok(Math.min(...occupied.goals.map(g=>g.top))<Math.min(...flat.goals.map(g=>g.top))-20,'hidden formation door no longer reserves space');
+  /* 3.309 — 띠는 무대 위 제 줄(예약 0)이고 빈 판의 «포메이션으로 시작» 문(#ehDoor)도 헤더 안이라 예약은 늘 0: 선수를 놓아 문이 숨어도 골대 자리는 그대로(첫 3.309 는 문 높이만 예약했다 — 사용자 «포메이션으로 시작도 헤더로») */
+  assert.equal(occupied.fit.inset,0,'선수가 놓인 판 예약 0');assert.equal(flat.fit.inset,0,'빈 세로 판도 예약 0 — 문은 헤더에');
+  assert.ok(Math.abs(Math.min(...occupied.goals.map(g=>g.top))-Math.min(...flat.goals.map(g=>g.top)))<=2,'문이 숨어도 골대 자리 그대로(헤더에 있으니 예약이 없다) '+JSON.stringify([flat.goals,occupied.goals]));
+  assert.ok(await f.evaluate(()=>{const d=document.getElementById('ehDoor'),s=document.getElementById('boardPageStrip');return !!d&&!!s&&s.contains(d);}),'문은 헤더 안');
   if(engine==='webkit'){
     const {page:phone}=await openApp(fx,'phone',{browsers});
     await phone.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());

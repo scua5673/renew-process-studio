@@ -51,3 +51,46 @@ test('team context rejects a changed owner and player role without requiring sco
  const f=win();Object.assign(f.raw,{ps_sync_session:'{"uid":"u"}',ps_active_ws:'team',ps_cache_owner_v1:'{"uid":"u","wid":"team"}',ps_ws_list:'[{"id":"team","kind":"team"}]'});f.w.PSSync={dataUnlocked:()=>true};f.w.PSPerms={role:()=> 'staff'};
  const r=await API.read(f.w,'team');r.check();f.w.PSPerms.role=()=> 'player';assert.throws(r.check,/권한/);f.w.PSPerms.role=()=> 'staff';f.raw.ps_active_ws='another';assert.throws(r.check,/권한/);
 });
+/* 3.312 — 조건 칩 · 그날 상태 · 기기 기억 */
+const P=require('../studio/participation.js');
+test('day state follows the availability model — today is the current status, a future day its covering record or run, else current',()=>{
+ const meta={participationDays:{'2026-11-18':{vp5:{s:'out',kind:'train',at:1,n:'개인 사정'}}},statusRuns:{vp6:[{s:'injury',from:'2026-11-17',to:'2026-11-22'}]}};
+ const row=id=>({id,availability:'ok',until:''});
+ assert.deepEqual(API.dayState(meta,row('vp5'),'2026-11-18','2026-11-17',P),{s:'out',label:'불참',note:'개인 사정'});
+ assert.equal(API.dayState(meta,row('vp6'),'2026-11-18','2026-11-17',P).s,'injury');
+ assert.equal(API.dayState(meta,row('vp6'),'2026-11-17','2026-11-17',P).s,'ok','today: current availability wins over a run');
+ assert.equal(API.dayState(meta,{id:'vp7',availability:'rest',until:'2026-11-10'},'2026-11-17','2026-11-17',P).s,'ok','an expired daily state is available again');
+ assert.equal(API.dayState(meta,{id:'vp8',availability:'rehab'},'2026-11-18','2026-11-17',P).s,'rehab','future day without record: current status');
+ assert.equal(API.dayState(meta,{id:'vp8',availability:'rehab'},'2026-11-18','2026-11-17',null).s,'rehab','no participation module: current status');
+ assert.equal(API.dayState(meta,{id:'vp9',availability:'weird'},'2026-11-17','2026-11-17',P).s,'ok','unknown status reads as available');
+});
+test('conditions narrow the pool and decide the default checks; training counts split chosen and left-out players',()=>{
+ const list=[
+  {id:'a',name:'가',pos:'GK',positions:['GK'],status:'A팀',year:'1',availability:'ok',kind:'team'},
+  {id:'b',name:'나',pos:'CB',positions:['CB'],status:'A팀',year:'2',availability:'injury',kind:'team'},
+  {id:'c',name:'다',pos:'CM',positions:['CM'],status:'B팀',year:'1',availability:'rehab',kind:'team'},
+  {id:'d',name:'라',pos:'CF',positions:['CF'],status:'',year:'',availability:'ok',kind:'team'},
+  {id:'e',name:'마',pos:'CF',positions:['CF'],status:'go',kind:'scout',availability:'ok'}];
+ const base={src:'team',grp:'',stage:'',avail:'ok',pos:'',years:[]},ids=l=>l.map(p=>p.id);
+ assert.deepEqual(ids(API.select(list,base).on),['a','d']);assert.equal(API.select(list,base).off,2);
+ assert.deepEqual(ids(API.pool(list,{...base,grp:'A팀'})),['a','b']);
+ assert.deepEqual(ids(API.pool(list,{...base,grp:'__none'})),['d']);
+ assert.deepEqual(ids(API.pool(list,{...base,years:['1']})),['a','c']);
+ assert.deepEqual(ids(API.pool(list,{...base,pos:'GK'})),['a']);
+ assert.deepEqual(ids(API.pool(list,{...base,pos:'FIELD',src:'both'})),['b','c','d','e']);
+ assert.deepEqual(API.pool(list,{...base,src:'scout',stage:'rep'}),[]);
+ assert.deepEqual(ids(API.pool(list,{...base,src:'scout',stage:'go'})),['e']);
+ assert.deepEqual(ids(API.select(list,{...base,src:'both',avail:'all'}).on),['a','b','c','d','e']);
+ assert.deepEqual(API.poolCounts(API.pool(list,base),new Set(['a','d'])),{gk:1,field:1,rehab:1,out:1});
+ assert.deepEqual(API.poolCounts(API.pool(list,base),new Set(['a','b'])),{gk:1,field:0,rehab:1,out:2},'a hand-checked injured player and an unchecked healthy one are both out');
+ assert.deepEqual(API.groupsOf(list),['A팀','B팀','__none']);assert.deepEqual(API.yearsOf(list),['1','2']);
+});
+test('device memory keeps only known condition values',()=>{
+ assert.deepEqual(API.memory(null),{src:'team',grp:'',stage:'',avail:'ok',pos:'',years:[]});
+ assert.deepEqual(API.memory('{"src":"both","grp":"A팀","avail":"all","pos":"GK","years":[1,"3","9"],"stage":"go"}'),{src:'both',grp:'A팀',stage:'',avail:'all',pos:'GK',years:['1','3']});
+ assert.deepEqual(API.memory('{"src":"x","avail":"maybe","pos":"CB","years":"1"}'),API.memory('garbage'));
+});
+test('team rows carry the school year and the daily-state expiry without leaking other fields',()=>{
+ const r=API.teamRows({players:[{id:'a',name:'선수',schoolYear:2,status:'rest',statusUntil:'2026-11-10',memo:'비공개'}]},{},L.code);
+ assert.equal(r[0].year,'2');assert.equal(r[0].until,'2026-11-10');assert.equal(r[0].availability,'rest');assert.equal(r[0].memo,undefined);
+});

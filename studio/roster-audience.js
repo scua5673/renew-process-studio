@@ -48,18 +48,18 @@ function avYearOrder(players){
   var out=[];['1','2','3',''].forEach(function(y){players.forEach(function(p){if(avYearKey(p)===y)out.push(p);});});return out;
 }
 /* 학년 줄 — 그 학년의 첫 선수 앞에 한 번. 날짜별 명단은 «가능 n / m명»(조 머리와 같은 셈 — 데스크톱은 참여로 기록한 선수, 폰 «운동»은 쉼이 아닌 선수), 누적 표(cols)는 «m명» */
-function avYearLead(group,p,cols){
+function avYearLead(group,p,cols,daily){   /* 3.308 — daily: 날짜별 표(tr.av-ysub · «가능 n / m명») */
   if(!avYearOn()||!group||!group.players.some(avYearKey))return '';
   var y=avYearKey(p);if(group.avYearDone===y)return '';group.avYearDone=y;
   var same=group.players.filter(function(q){return avYearKey(q)===y;}),text;
-  if(cols)text=same.length+'명';
+  if(cols&&!daily)text=same.length+'명';
   else{
     var day=(typeof availDay!=='undefined'&&availDay)||stYmd(),phone=typeof tmPhoneRows==='function'&&tmPhoneRows();
     var ok=same.filter(function(q){var s=avResolve(q,day).s;return phone?!(s&&s!=='ok'):s==='ok';}).length;
     text='가능 '+ok+' / '+same.length+'명';
   }
   var body=avYearLabel(y)+' <span class="n">'+text+'</span>';
-  return cols?'<tr class="av-table-year"><th colspan="'+cols+'" scope="rowgroup">'+body+'</th></tr>':'<div class="av-ysub">'+body+'</div>';
+  return cols?'<tr class="'+(daily?'av-ysub':'av-table-year')+'"><th colspan="'+cols+'" scope="rowgroup">'+body+'</th></tr>':'<div class="av-ysub">'+body+'</div>';
 }
 /* 학년 줄 아래가 아닌 자리(쉼 상자 · 폰 «참여 못 함»)의 선수 — 자리 옆 학년. 학년 줄 아래 행은 CSS 가 숨긴다 */
 function avYearTag(p){var y=avYearOn()?avYearKey(p):'';return y?'<small class="av-yr">'+y+'학년</small>':'';}

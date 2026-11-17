@@ -44,13 +44,18 @@ test('3.083 — no resize loop when the bar cannot build (community viewer), cle
   assert.match(src,/if \(s\.classList\.contains\('ps-tb'\) !== was\) win\.setTimeout\(function \(\) \{ try \{ win\.dispatchEvent\(new win\.Event\('resize'\)\)/);
   assert.doesNotMatch(src,/else unbuild\(\); try \{ win\.dispatchEvent/);
   const css=tb.css();
-  assert.match(css,/body\.ps-dock-float\.vcreating #boardPageStrip\.ps-tb[^{]*\{top:56px!important\}/);
-  assert.match(css,/body\.ps-dock-float #ehDoor\{top:58px!important\}/);
+  /* 3.309 — 띠는 무대 위 제 줄: vcreating 의 top:56px 는 걷었고(#boardView padding-top 56), 문(#ehDoor)은 헤더 안의 주 단추(무대 안 top 규칙은 없다) */
+  assert.doesNotMatch(css,/body\.ps-dock-float\.vcreating #boardPageStrip\.ps-tb[^{]*\{top:56px!important\}/);
+  assert.doesNotMatch(css,/body\.ps-dock-float #ehDoor\{top:14px!important\}/);
+  assert.match(css,/#boardPageStrip\.ps-tb(:not\(#tb\d\)){10} #ehDoor\{position:static!important;/);
 });
-test('3.083 — centre group truly centred when it fits',()=>{
+test('3.309 — no centre group any more (평면 · 3D · 선수 모양 · 실제 크기 · 선수 시점 live in 보드 설정 — user «평면과 3d 설정이 밖에 나올 필요 있을까»); «보드 설정» is a text button',()=>{
   const css=tb.css(),src=fs.readFileSync(path.join(__dirname,'../studio/board-topbar.js'),'utf8');
-  assert.match(css,/\.tb-mid>\.tb-c\{position:absolute;left:50%;top:8px;transform:translateX\(-50%\)\}/);
-  assert.match(src,/var ok = mid - cw \/ 2 >= lr \+ 10 && mid \+ cw \/ 2 <= rl - 10;/);
+  assert.doesNotMatch(css,/\.tb-mid>\.tb-c/);assert.doesNotMatch(css,/\.tb-seg/);assert.doesNotMatch(css,/\.tb-grip/);
+  assert.doesNotMatch(src,/mk\('div', 'tb-g tb-c'\)/);assert.doesNotMatch(src,/function draggableToolbar/);assert.doesNotMatch(src,/data-v="flat"/);assert.doesNotMatch(src,/class="tb-rsize"/);assert.doesNotMatch(src,/PSPlayerEye\.button\(\)/);
+  assert.match(src,/s\.appendChild\(L\); s\.appendChild\(R\);/,'왼쪽 · 오른쪽 덩어리만');
+  assert.match(css,/body:not\(\.bc-tilt3d\) #shapeSeg button\[data-s="person"\]\{display:none!important\}/,'보드 설정의 «사람»은 3D 에서만 — 그대로');
+  assert.match(css,/#bpBoardSettings svg\{display:none!important\}/);assert.match(css,/#bpBoardSettings>span\{display:inline!important\}/);assert.doesNotMatch(css,/#bpBoardSettings\{width:28px!important/);
 });
 test('3.083 — the floating dock is hidden on the vault list (no board, editor, creation or meeting on screen)',()=>{
   const df=require('../studio/board-dock-float.js');const css=(df.css?df.css():fs.readFileSync(path.join(__dirname,'../studio/board-dock-float.js'),'utf8'));
