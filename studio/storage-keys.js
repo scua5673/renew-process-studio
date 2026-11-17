@@ -185,7 +185,8 @@
     ['ps_display_name','device','ls','session','gamemodel.html'],
     ['ps_dock_folded_v1','device','ls','pref','board.html'],
     ['ps_dock_tip_hint_v1','device','ls','seen','board.html'],
-    ['ps_edit_snap_v1','device','ls','pref','board-training-edit.js'],   // 3.302 — 훈련 편집기의 «격자에 붙기»(없음 · '1' = 켬, '0' = 끔 — 작전판의 cs_drag_snap_v1 과 따로)
+    ['ps_edit_snap_v1','device','ls','pref','board-training-edit.js'],
+    ['ps_roster_pick_v1','device','ls','pref','board-scout-import.js'],   // 3.310 — «명단 불러오기» 창의 조건(출처 · 조 · 상태 · 포지션 · 학년) 기억   // 3.302 — 훈련 편집기의 «격자에 붙기»(없음 · '1' = 켬, '0' = 끔 — 작전판의 cs_drag_snap_v1 과 따로)
     ['ps_editor_flat_told','device','ls','seen','board.html'],
     ['ps_event_queue_v2','device','ls','queue','sync.js'],
     ['ps_event_seen_v1','device','ls','queue','sync.js'],

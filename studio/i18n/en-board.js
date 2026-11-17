@@ -196,3 +196,63 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "누를 때마다 방향 표식 → 시야 부채꼴 → 끔":"Each press: direction mark → vision cone → off",
 "도구 · 단추를 모두 접어 운동장만 보이게 — 다시 펴기: 아래 가운데 손잡이 · Esc":"Fold away every tool and button so only the pitch shows — bring them back with the small handle at the bottom centre or Esc"
 },{},{});
+/* 3.310 — 명단 불러오기 창(board-scout-import.js): 조건 칩 · 훈련 인원 카드의 빠른 칩 */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{
+"A팀":"Team A",
+"B팀":"Team B",
+"C팀":"Team C",
+"팀의 선수단과 권한을 확인 중입니다.":"Checking the team roster and your permissions.",
+"명단 자료를 다시 불러와 주세요.":"Please reload the roster data.",
+"명단이 바뀌었습니다. 창을 닫고 다시 열어 주세요.":"The roster changed. Close this window and open it again.",
+"명단 불러오기":"Import roster",
+"선수단 명단 불러오기":"Import the team roster",
+"스카우팅 명단 불러오기":"Import the scouting list",
+"등록된 모든 선수를 팀 1 에 올리고 인원을 채웁니다 — 부상 · 재활 · 불참을 뺄지는 «고르기…»의 상태 조건을 따라요":"Puts every registered player on Team 1 and fills the headcount — whether injured, rehab and absent players are left out follows the status condition in «Choose…»",
+"스카우팅 후보를 모두 팀 1 에 올립니다":"Puts every scouting candidate on Team 1",
+"고르기…":"Choose…",
+"출처 · 조 · 상태 · 포지션 · 학년을 골라 불러옵니다":"Pick source, group, status, position and year, then import",
+"스카우팅 명단을 확인하지 못했어요. 팀 자료가 준비된 뒤 다시 눌러 주세요.":"Couldn't check the scouting list. Try again once the team data is ready.",
+"선수단 명단을 확인하지 못했어요. 팀 자료가 준비된 뒤 다시 눌러 주세요.":"Couldn't check the team roster. Try again once the team data is ready.",
+"스카우팅에 등록된 후보가 없어요":"No candidates registered in scouting",
+"선수단에 선수가 없어요 — 팀 탭에서 선수를 추가하세요":"The roster is empty — add players in the Team tab",
+"훈련 가능한 선수가 없어요 — «고르기…»에서 상태를 «전부»로 두면 모두 올라와요":"No players available for training — set status to «All» in «Choose…» to bring everyone",
+"팀 · 권한 또는 명단이 바뀌어 불러오지 않았어요. 다시 눌러 주세요.":"The team, permissions or roster changed, so nothing was imported. Please try again.",
+"명단을 확인하지 못했어요. 팀 자료가 준비된 뒤 다시 열어 주세요.":"Couldn't check the roster. Open it again once the team data is ready.",
+"배치할 팀":"Place on team",
+"명단 불러오기 닫기":"Close roster import",
+"이름·소속팀·등번호 검색":"Search name, club or number",
+"명단 검색":"Search roster",
+"모두":"All",
+"작업 보드 · 상태는 오늘 가용인원 기준":"Work board · status follows today's availability",
+"체크한 명단으로 훈련 인원을 채웁니다 — 조건 안에서 체크하지 않은 선수는 재활 · 부상·불참으로 셉니다. 보드의 선택한 팀 자리에 이름 · 등번호를 입히고, 자리가 부족하면 대기 줄에 둡니다.":"Fills the training headcount with the checked players — unchecked players within the conditions count as rehab or injured/absent. Names and numbers go onto the chosen team's existing spots on the board; extra players wait on the bench line.",
+"선택한 팀의 기존 자리에 이름 · 등번호를 입힙니다. 자리가 부족하면 대기 줄에 두고, 기존 선수 불러오기처럼 다른 장면 · 페이지에도 반영됩니다.":"Names and numbers go onto the chosen team's existing spots. Extra players wait on the bench line, and other scenes and pages follow as with the existing player import.",
+"출처":"Source",
+"그날 가용인원 기준":"by that day's availability",
+"둘 다":"Both",
+"가능만 — 부상 · 재활 · 불참 제외":"Available only — no injured, rehab or absent",
+"전부":"All",
+"이름 미등록":"No name",
+"후보":"Candidate",
+"조건에 맞는 선수가 없어요.":"No players match the conditions.",
+"등록된 선수가 없어요.":"No players registered.",
+"팀·권한 또는 명단이 바뀌어 불러오기 창을 닫았어요. 다시 열어 주세요.":"The team, permissions or roster changed, so the import window was closed. Please open it again.",
+"지금은 이 보드를 편집할 수 없어요.":"This board can't be edited right now.",
+"명단을 다시 열어 주세요.":"Please open the roster again."
+},{
+"{}월 {}일":"{}/{}",
+"{} 선수를 팀 1 에 올리고 인원을 채웁니다":"Puts the {} players on Team 1 and fills the headcount",
+"{}에 등록된 선수가 없습니다":"No players registered in {}",
+"{} 선수가 없어요 — 팀 탭에서 조를 지정하세요":"No {} players — assign groups in the Team tab",
+"{} 훈련 · 상태는 그날 가용인원 기준":"{} training · status follows that day's availability",
+"· 조건 밖 {}명은 체크 해제됨":"· {} outside the conditions unchecked",
+"{}명 선택 / 전체 {}명{}":"{} selected / {} total{}",
+"{}명 불러오기":"Import {}",
+"{} 선택":"Select {}",
+"· 대기 {}명":"· {} on the bench",
+"· 제외 {}명":"· {} left out",
+"{} · {}명 불러옴{}{}":"{} · {} imported{}{}"
+},{});
