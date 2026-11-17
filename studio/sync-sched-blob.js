@@ -18,13 +18,15 @@
   var INLINE=/"thumb":\s*"(?:[^"\\]|\\.){512,}"/;
   var last=null;      /* {from,v|null} — 마지막으로 뗀 원문 */
   var known={};       /* wid → {h:1} 서버에 있다고 확인한 그림 */
+  var diag={last:null,n:0};   /* 캐시 쓰기 실패 — 그림은 다음 회차 · 다음 올리기에 다시 */
+  function note(e){ diag.last=e; diag.n++; return null; }
   function inline(raw){ return typeof raw==='string'&&raw.length>=512&&INLINE.test(raw); }
   function diet(raw,strip,cacheSet){
     if(!inline(raw))return Promise.resolve(null);
     if(last&&last.from===raw)return Promise.resolve(last.v?last:null);
     return Promise.resolve().then(function(){ return strip(raw); }).then(function(res){
       if(!res||typeof res.v!=='string'||res.v===raw||!res.blobs||!res.blobs.length){ last={from:raw,v:null}; return null; }
-      return Promise.all(res.blobs.map(function(b){ return Promise.resolve().then(function(){ return cacheSet(b.h,b.v); }).catch(function(){}); })).then(function(){
+      return Promise.all(res.blobs.map(function(b){ return Promise.resolve().then(function(){ return cacheSet(b.h,b.v); }).catch(note); })).then(function(){
         last={from:raw,v:res.v}; return last;
       });
     }).catch(function(){ return null; });
@@ -44,6 +46,6 @@
       });
     });
   }
-  function reset(){ last=null; known={}; }
-  return {inline:inline,diet:diet,ensure:ensure,reset:reset};
+  function reset(){ last=null; known={}; diag.last=null; diag.n=0; }
+  return {inline:inline,diet:diet,ensure:ensure,reset:reset,diag:diag};
 });

@@ -3133,7 +3133,7 @@ function loadState(opt){
     seasonPlan=(data.seasonPlan&&typeof data.seasonPlan==='object'&&!Array.isArray(data.seasonPlan))?data.seasonPlan:{};   /* 3.073 — 시즌 계획(없으면 빈 것: 지운 것도 따라온다) */
     __schedSavedRaw=raw;
     saveCursor();
-    try{if(window.__schedAfterLoad)__schedAfterLoad();}catch(_){}   /* 3.315 참조만 든 그림 채우기 */
+    try{if(window.__schedAfterLoad)__schedAfterLoad();}catch(e){window.__schedAfterLoadError=e;}   /* 3.315 참조만 든 그림 채우기 */
   }catch(e){}
 }
 

@@ -6696,7 +6696,7 @@ function syncNowCore(reason){
       .then(function(pre){
       var metaRows=pre[0], idbVals=pre[1];
       var m0=meta(), needV=[],metaKeys={},dietSrc=null;
-      try{var sl=localStorage.getItem(SCHEDULE_KEY);if(sl==null)sl=idbVals[SCHEDULE_KEY];if(typeof PSSchedBlob!=='undefined'&&PSSchedBlob.inline(sl))dietSrc=sl;}catch(_){}   /* 3.315 그림을 품은 옛 일정 사본 */
+      try{var sl=localStorage.getItem(SCHEDULE_KEY);if(sl==null)sl=idbVals[SCHEDULE_KEY];if(typeof PSSchedBlob!=='undefined'&&PSSchedBlob.inline(sl))dietSrc=sl;}catch(e){dietSrc=null;}   /* 3.315 그림을 품은 옛 일정 사본 */
       metaRows.forEach(function(r0){if(r0&&r0.k)metaKeys[r0.k]=1;});
       lastServerKeys={wid:wid,at:Date.now(),keys:metaKeys};   /* 2.916 — «서버에 아예 없는 문서»와 «못 받은 문서»를 가르려고(IDP 선수 문서) */
       /* 2.750 — 전체 메타 목록에 없는 일정도 키를 직접 조회한다.

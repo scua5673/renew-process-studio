@@ -18,6 +18,8 @@
 })(typeof window!=='undefined'?window:null,function(){
   'use strict';
   var MIN=512,REF=/^[0-9a-f]{16,64}$/,PREFIX='ps_blob:',DEPTH=14,SHORT=86;   /* SHORT: 86자 미만은 이스케이프해도 512 에 못 미친다(\uXXXX 6배) */
+  var diag={last:null,n:0};   /* 캐시 · 채우기 실패 — 화면은 그림 없이, 다음 읽기에 다시 */
+  function note(e){ diag.last=e; diag.n++; return null; }
   function seg(s){ return JSON.stringify(s).slice(1,-1); }
   function unseg(x){ try{ var v=JSON.parse('"'+x+'"'); return typeof v==='string'?v:null; }catch(_){ return null; } }
   function hex8(n){ return ('00000000'+(n>>>0).toString(16)).slice(-8); }
@@ -37,7 +39,7 @@
     function storage(){ try{ return typeof opt.storage==='function'?opt.storage():opt.storage; }catch(_){ return null; } }
     function sync(){ try{ return typeof opt.sync==='function'?opt.sync():opt.sync; }catch(_){ return null; } }
     function remember(h,s){ if(validRef(h)&&typeof s==='string'&&s&&segs[h]==null)segs[h]=s; }
-    function cachePut(h,s){ var st=storage(); if(!st||!st.set)return; try{ var p=st.set(PREFIX+h,s); if(p&&p.catch)p.catch(function(){}); }catch(_){} }
+    function cachePut(h,s){ var st=storage(); if(!st||!st.set)return; try{ var p=st.set(PREFIX+h,s); if(p&&p.catch)p.catch(note); }catch(e){ note(e); } }
     function cacheGet(h){
       var st=storage(); if(!st||!st.get)return Promise.resolve(null);
       try{ return Promise.resolve(st.get(PREFIX+h)).then(function(r){ return r&&typeof r.value==='string'?r.value:null; },function(){ return null; }); }
@@ -108,19 +110,19 @@
         if(typeof W.__schedEditorActive==='function'&&W.__schedEditorActive()){ if(tries++<120)W.setTimeout(render,500); return; }
         tries=0;
         if(typeof W.syncViews==='function')W.syncViews(false);
-      }catch(_){}
+      }catch(e){ note(e); }
     }
     function roots(){
       var r=[];
-      try{ if(typeof weeksMap!=='undefined'&&weeksMap)r.push(weeksMap); }catch(_){}
-      try{ if(typeof myTemplates!=='undefined'&&myTemplates)r.push(myTemplates); }catch(_){}
+      try{ if(typeof weeksMap!=='undefined'&&weeksMap)r.push(weeksMap); }catch(e){ note(e); }
+      try{ if(typeof myTemplates!=='undefined'&&myTemplates)r.push(myTemplates); }catch(e){ note(e); }
       return r;
     }
     W.__schedAfterLoad=function(){
-      try{ var p=inst.hydrate(roots(),render); if(p&&p.catch)p.catch(function(){}); }catch(_){}
+      try{ var p=inst.hydrate(roots(),render); if(p&&p.catch)p.catch(note); }catch(e){ note(e); }
     };
     W.__schedAfterLoad();
     return inst;
   }
-  return {create:create,mount:mount,seg:seg,unseg:unseg,hashSync:hashSync,walk:walk,MIN:MIN};
+  return {create:create,mount:mount,seg:seg,unseg:unseg,hashSync:hashSync,walk:walk,MIN:MIN,diag:diag};
 });
