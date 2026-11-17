@@ -37,8 +37,9 @@ try{
   assert.equal(fold.tabs,0);assert.equal(fold.save,false,'띠의 단추(페이지 탭 · «저장»)도 안 보인다');assert.equal(fold.menu,false,'열려 있던 «보드 ▾» 메뉴도 남지 않는다');
   assert.equal(await f.evaluate(()=>document.getElementById('ps-tb-menu').classList.contains('on')),false,'메뉴는 닫힌 것이다(펼쳤을 때 다시 뜨지 않는다)');
   assert.equal(fold.tools,false,'아래 도구 줄은 원래대로 접힌다');assert.ok(fold.handle,'«도구 펼치기» 알약은 보인다');
-  assert.ok(fold.board&&fold.board.t===open0.board.t&&fold.board.l===open0.board.l&&fold.board.w===open0.board.w,'판은 제자리(띠는 떠 있는 겹) '+JSON.stringify([open0.board,fold.board]));
-  assert.ok(fold.board.h>=open0.board.h,'판이 줄지 않는다');
+  /* 3.309 — 띠는 무대 위 제 줄(헤더)이라 걷히면 그 줄이 사라져 운동장이 위로 커진다(예전 «판은 제자리»는 떠 있는 겹일 때의 기대) */
+  assert.ok(fold.board&&fold.board.t<open0.board.t&&fold.board.l===open0.board.l&&fold.board.w>=open0.board.w,'접으면 판이 띠 자리까지 올라온다 '+JSON.stringify([open0.board,fold.board]));
+  assert.ok(fold.board.h>open0.board.h,'판이 커진다');
 
   step('button');
   /* 단추(«도구 접기»)로도 같다 */
@@ -90,7 +91,7 @@ try{
   await f.waitForFunction(()=>document.body.classList.contains('cmd-dock-folded'),null,{timeout:5000});await page.waitForTimeout(400);
   const v1=await look(f);
   assert.equal(v1.strip,false,'편집기에서도 띠가 같이 접힌다');assert.ok(v1.vbar,'맨 위 줄(이름 · 전체화면 · 나가기 · 저장)은 남는다 — 저장 · 나가기는 늘 보인다');
-  assert.equal(v1.vbar.h,v0.vbar.h);assert.equal(v1.board.t,v0.board.t,'판은 제자리');
+  assert.equal(v1.vbar.h,v0.vbar.h);assert.ok(v1.board.t<v0.board.t,'3.309 — 띠 줄이 사라져 판이 올라온다(맨 위 줄 바로 아래) '+JSON.stringify([v0.board,v1.board]));
   await f.evaluate(()=>document.querySelector('#cmd-dock-handle .open').click());await page.waitForTimeout(400);
   const v2=await look(f);assert.ok(v2.strip&&v2.tools&&v2.vbar,'펼치면 돌아온다');
 

@@ -95,8 +95,8 @@ try{
     await addPage(2); await page.waitForTimeout(600);
     const s=await strip(); console.log(size,JSON.stringify(s));
     assert.equal(s.phoneWork,false); assert.equal(s.multi,true); assert.notEqual(s.z,'6','the phone rule stays on the phone');
-    if(s.tb){   // 3.078 — 떠 있는 도크면 띠는 위쪽 막대 세 덩어리: 보드 ▾(미팅 세트 · 보드 가져오기는 메뉴) · 보기 · 저장
-      assert.deepEqual(s.groups,['tb-l','tb-c','tb-r'],'three groups'); assert.ok(s.addShown>=1,'＋ 페이지 stays beside the tabs');
+    if(s.tb){   // 3.078 — 떠 있는 도크면 띠는 위쪽 막대: 보드 ▾(미팅 세트 · 보드 가져오기는 메뉴) · 저장 — 3.309 부터 가운데(보기) 덩어리는 없다(보드 설정에)
+      assert.deepEqual(s.groups,['tb-l','tb-r'],'two groups (3.309 — no centre group)'); assert.ok(s.addShown>=1,'＋ 페이지 stays beside the tabs');
       assert.ok(s.menu.includes('미팅 세트')&&s.menu.includes('bpImportBoard'),'미팅 세트 · 보드 가져오기 in the «보드 ▾» menu '+JSON.stringify(s.menu));
     }else{ assert.ok(s.shown.includes('bp-head'),'the head stays'); assert.ok(s.shown.filter(k=>k==='bp-add').length>=2,'＋ 페이지 · 미팅 세트 stay'); assert.ok(s.shown.includes('bpImportBoard'),'보드 가져오기 stays'); }
     assert.ok(s.bpx>=3,'rename · duplicate · menu handles stay: '+s.bpx); assert.equal(s.onIdx,2);

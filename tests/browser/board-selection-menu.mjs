@@ -18,5 +18,5 @@ try{for(const size of ['desktop','ipad','phone']){
  await f.waitForFunction(()=>state.players[0]?.name==='저장 후 메뉴');
  assert.deepEqual(await f.evaluate(()=>({num:String(state.players[0].num),foot:state.players[0].foot})),{num:'17',foot:'R'});
  assert.equal(await f.locator('.sel-ctl').isVisible(),false,'opening a saved board does not display an empty menu');
- assert.deepEqual(logs.filter(l=>l.type==='pageerror'),[]);await context.close();
+ assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!((process.env.PS_BROWSER_ENGINE||'chromium')==='webkit'&&l.text==='ResizeObserver loop completed with undelivered notifications.')),[]);await context.close();   /* 3.309 — 띠가 제 줄이 되어 무대와 크기를 주고받으니 CI 리눅스 웹킷이 «ResizeObserver loop …» 알림을 낸다(3.193 과 같은 처방: 웹킷의 그 문장만 따로 두고 다른 오류는 그대로 막는다 — 맥 웹킷 · 크로미움에선 안 난다) */
 }}finally{for(const b of Object.values(browsers))await b.close();await fx.close();}
