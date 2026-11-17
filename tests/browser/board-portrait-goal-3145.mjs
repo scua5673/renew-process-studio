@@ -82,6 +82,8 @@ try{
   await f.evaluate(()=>{state.players=[{id:9001,team:'blue',num:7,x:300,y:300}];renderTokens();window.__setBoardOrient('v');});
   await page.waitForTimeout(500);
   const occupied=await settled(f,'board with players');
+  /* 3.309 — 띠는 무대 위 제 줄(예약 0)이고 남는 예약은 빈 판의 문(#ehDoor)뿐: 선수가 놓여 문이 숨으면 예약도 0 이라 골대가 올라온다 */
+  assert.equal(occupied.fit.inset,0,'문이 숨으면 예약 0');assert.ok(flat.fit.inset>0,'빈 세로 판은 문 높이만 예약: '+flat.fit.inset);
   assert.ok(Math.min(...occupied.goals.map(g=>g.top))<Math.min(...flat.goals.map(g=>g.top))-20,'hidden formation door no longer reserves space');
   if(engine==='webkit'){
     const {page:phone}=await openApp(fx,'phone',{browsers});

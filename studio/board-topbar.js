@@ -1,5 +1,7 @@
 /* PROCESS STUDIO — 위쪽 막대 정리(3.078, 레이아웃 1단계). 사용자 «레이아웃도 잘 설계하고 싶어» → 목업 «네 1단계부터».
-   떠 있는 하단 도크(body.ps-dock-float)일 때 페이지 띠(#boardPageStrip)를 경기장 위에 뜬 세 덩어리로 바꾼다.
+   떠 있는 하단 도크(body.ps-dock-float)일 때 페이지 띠(#boardPageStrip)를 세 덩어리(왼쪽 «어디 › 몇 쪽» · 탭 · 가운데 보기 · 오른쪽 내보내기 · 저장)로 바꾼다.
+   3.309 — 띠는 경기장 위에 뜬 겹이 아니라 **무대 위 제 줄(헤더 52px)** 이다(사용자 11/17 «도구들을 운동장과 겹치지 않게»): 운동장 SVG 는 그 아래부터 시작하고(실측 1280×800 에서 위 46px 가 단추 밑에 들어갔다),
+   «도구 접기»(3.306)로 띠를 걷으면 그 줄이 사라져 운동장이 그만큼 커진다. 왼쪽 «어디»는 보관함 연결(#bpLinkChip) · 훈련 · 미팅 · 보관함 편집 · 작업 보드, «몇 쪽»은 __psPages.book.
    - 왼쪽: «보드 ▾»(미팅 세트 · 보드 가져오기 · 새 보드를 이 메뉴로) + 페이지 탭 + ＋
    - 가운데: 보기 전환 — 평면 · 3D
    - 오른쪽: 보관함 연결 · 보드 저장 · 보드 설정(아이콘) · 보관함 저장
@@ -31,24 +33,18 @@
   // 지금 보기: 평면 · 3D (3.096 — 중계는 뺐다. 옛 tv 값도 3D)
   function viewOf(tilt) { return !tilt ? 'flat' : '3d'; }
 
-  // 세로 평면의 위쪽 골대가 보기 버튼에 가리지 않도록 실제 높이를 예약한다.
-  // SVG 크기는 그대로 두고 applyView가 이 몫을 위쪽 잔디 여백으로 바꾼다.
+  // 3.309 — 띠는 무대 위 제 줄이라 운동장과 겹치지 않는다: 띠 몫의 예약은 없다(3.078 은 세로 판의 위쪽 골대가 떠 있는 단추 밑에 들어가 그만큼 잔디 여백으로 예약했다).
+  // 남는 것은 빈 판의 «포메이션으로 시작» 문(#ehDoor — 무대 안 위 가운데)뿐: 세로 판에서 위쪽 골대를 덮으니 그 높이만 예약한다(선수가 놓이면 문이 숨고 예약도 0).
+  // 함수 이름 · 인자는 applyView(board.html 4900)가 그대로 부르므로 지킨다.
   function topInset(svg, orientation) {
     if (!svg || orientation !== 'v') return 0;
-    var doc = svg.ownerDocument, body = doc.body, win = doc.defaultView;
-    if (!body.classList.contains('ps-dock-float') || body.classList.contains('bc-tilt3d') || body.classList.contains('editing')) return 0;
-    var stage = svg.parentElement, strip = doc.getElementById('boardPageStrip');
-    if (!stage || !strip || !strip.classList.contains('ps-tb')) return 0;
-    var r = stage.getBoundingClientRect(), cs = win.getComputedStyle(stage);
-    var top = r.top + (parseFloat(cs.paddingTop) || 0), bottom = top;
-    var controls = Array.prototype.slice.call(strip.querySelectorAll(':scope>.tb-g'));
-    var door = doc.getElementById('ehDoor'); if (door) controls.push(door);
-    controls.forEach(function (g) {
-      if (g.classList.contains('tb-moved')) return;
-      var b = g.getBoundingClientRect();
-      if (b.width && b.height && b.right > r.left && b.left < r.right) bottom = Math.max(bottom, b.bottom + 8);
-    });
-    return Math.max(0, Math.ceil(bottom - top));
+    var doc = svg.ownerDocument, body = doc && doc.body, win = doc && doc.defaultView;
+    if (!body || !win || !body.classList.contains('ps-dock-float') || body.classList.contains('bc-tilt3d') || body.classList.contains('editing')) return 0;
+    var stage = svg.parentElement, door = doc.getElementById('ehDoor');
+    if (!stage || !door) return 0;
+    var r = stage.getBoundingClientRect(), cs = win.getComputedStyle(stage), top = r.top + (parseFloat(cs.paddingTop) || 0), b = door.getBoundingClientRect();
+    if (!(b.width && b.height && b.right > r.left && b.left < r.right)) return 0;
+    return Math.max(0, Math.ceil(b.bottom + 8 - top));
   }
 
   var N = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (i) { return ':not(#tb' + i + ')'; }).join('');
@@ -75,16 +71,17 @@
     ];
     // 3.083 — 사용자 «클로드처럼 작게»(B안): 덩어리 높이 50 → 36, 단추 · 글자 · 그림자를 줄였다
     var out = [
-      // 띠 자체는 투명한 겹(경기장 위) — 덩어리만 누를 수 있다
+      // 3.309 — 띠는 무대 위 제 줄(헤더): 바탕이 있고(스킨 · 다크는 아래), 운동장 SVG 는 그 아래부터. 보관함 편집(vcreating)은 #boardView 의 padding-top 56 이 고정 막대 아래로 내려 준다 — 3.083 의 top:56px 규칙은 걷었다
       'html.ps-page-board body.ps-dock-float #boardStage' + N + '{}',
-      S + '{display:flex!important;position:absolute!important;left:0!important;right:0!important;top:0!important;z-index:60!important;height:auto!important;padding:8px 10px!important;gap:8px!important;background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important;pointer-events:none!important;justify-content:space-between!important;align-items:flex-start!important}',
-      // 3.083 — 보관함에서 연 편집(위에 고정된 #vCreateBar 56px)에서는 그 아래로 · 빈 보드의 «포메이션으로 시작» 문은 막대 아래로
-      'html.ps-page-board body.ps-dock-float.vcreating #boardPageStrip.ps-tb' + N + '{top:56px!important}',
-      'html.ps-page-board body.ps-dock-float #ehDoor{top:58px!important}',
+      S + '{display:flex!important;position:relative!important;left:auto!important;right:auto!important;top:auto!important;z-index:60!important;flex:0 0 auto!important;width:100%!important;height:52px!important;box-sizing:border-box!important;padding:8px 10px!important;gap:8px!important;background:var(--panel,#fff)!important;border:0!important;border-bottom:1px solid var(--line,#E3E6EA)!important;box-shadow:none!important;overflow:visible!important;pointer-events:auto!important;justify-content:space-between!important;align-items:center!important}',
+      // 빈 보드의 «포메이션으로 시작» 문은 이제 띠 아래 무대 안이라 작은 여백만
+      'html.ps-page-board body.ps-dock-float #ehDoor{top:14px!important}',
+      S + ' .tb-where{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      S + ' .tb-page{font-weight:600;opacity:.6;margin-left:2px;font-variant-numeric:tabular-nums}',
       S + '>.tb-g{pointer-events:auto;display:flex;align-items:center;gap:2px;height:36px;padding:0 4px;border-radius:12px;-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);flex:0 1 auto;min-width:0;font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}',
       S + '>.tb-l{overflow:hidden}',
       // 3.083 — 가운데 덩어리(보기 · 모양)는 화면 가운데에(왼쪽 덩어리가 넓어도) — 양옆과 겹치지 않을 때만(tb-mid, JS 가 잰다)
-      S + '.tb-mid>.tb-c{position:absolute;left:50%;top:8px;transform:translateX(-50%)}',
+      S + '.tb-mid>.tb-c{position:absolute;left:50%;top:8px;transform:translateX(-50%)}',   // 띠가 position:relative 라 그 안 가운데
       S + '>.tb-c.tb-moved{position:absolute!important;transform:none!important;margin:0!important;z-index:2}',
       S + ' .tb-grip{display:flex;align-items:center;justify-content:center;width:24px;height:30px;padding:0;border:0;background:transparent;color:inherit;flex:none;cursor:grab;touch-action:none;user-select:none}',
       S + ' .tb-grip:active{cursor:grabbing}',
@@ -161,6 +158,12 @@
         X + ' .tb-brand{color:' + ink + '}'
       );
     });
+    // 3.309 — 제 줄(헤더)에서는 덩어리의 유리 · 그림자 · 테두리를 걷고 띠 바탕이 스킨을 따른다(유리 · 다크 = 어두운 띠, 그 외 = 흰 띠). 글자 · 단추 색은 스킨 규칙 그대로(어두운 스킨은 밝은 글자)
+    out.push(
+      S + '>.tb-g{background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}',
+      Bk('.ps-skin-glass') + '{background:rgba(24,28,38,.98)!important;border-bottom-color:rgba(255,255,255,.08)!important}',
+      Bk('.ps-skin-bevel.fmdark') + ',' + Bk('.ps-skin-flat.fmdark') + '{background:#1B1E23!important;border-bottom-color:#2E333A!important}'
+    );
     return out.join('\n');
   }
 
@@ -193,7 +196,22 @@
       win.setTimeout(paintView, 120);
     }
     function curShape() { var t = ''; try { t = typeof tokShape !== 'undefined' ? tokShape : ''; } catch (_) {}   /* global tokShape */ return shapeShown(t, body.classList.contains('bc-tilt3d')); }
+    // 3.309 — 왼쪽 «어디»: 훈련 편집 · 미팅 · 보관함 편집(위 막대가 이름을 말하니 «편집»만) · 보관함 연결(#bpLinkChip 의 aria-label «보관함 연결: 이름») · 그 밖엔 작업 보드. «몇 쪽»은 페이지가 둘 이상일 때 n / m
+    function whereLabel() {
+      try {
+        if (body.classList.contains('editing')) return '훈련';
+        if (body.classList.contains('meet-mode')) return '미팅';
+        if (body.classList.contains('vcreating')) return '보관함 편집';
+        var lk = doc.getElementById('bpLinkChip'), lt = lk ? String(lk.getAttribute('aria-label') || '').replace(/^보관함 연결:\s*/, '').trim() : '';
+        if (lt) return '보관함 › ' + lt;
+      } catch (_) {}
+      return '작업 보드';
+    }
+    function pageLabel() { try { var P = win.__psPages, bk = P && P.book; if (!bk || body.classList.contains('meet-mode')) return ''; var n = bk.count(), i = bk.idx(); return n > 1 ? (i + 1) + ' / ' + n : ''; } catch (_) { return ''; } }
+    function paintBrand() { var b = doc.getElementById('tbBrand'); if (!b) return; var w = b.querySelector('.tb-where'), p = b.querySelector('.tb-page'); if (w) w.textContent = whereLabel(); if (p) p.textContent = pageLabel(); }
+    win.__psTopBarPaintBrand = paintBrand;
     function paintView() {
+      paintBrand();
       var s = strip(), v = curView(), sh = curShape(); if (!s) return;
       s.querySelectorAll('.tb-seg button').forEach(function (b) { var k = b.getAttribute('data-v'), o = k ? k === v : b.getAttribute('data-shape') === sh; b.classList.toggle('on', o); b.setAttribute('aria-pressed', o ? 'true' : 'false'); });
       // 보드 설정의 «선수 모양»도 평면에서는 «사람» 보드를 유니폼으로 보이게
@@ -259,8 +277,7 @@
       try {
         var g = sortStrip(kids); saved = g;
         var L = mk('div', 'tb-g tb-l'), C = mk('div', 'tb-g tb-c'), R = mk('div', 'tb-g tb-r');
-        var title = g.head ? (g.head.querySelector('.bp-t') || {}).textContent || '보드' : '보드';
-        var brand = mk('button', 'tb-brand', '<span class="tb-logo">PS</span><span>' + title + '</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>');
+        var brand = mk('button', 'tb-brand', '<span class="tb-logo">PS</span><span class="tb-where"></span><span class="tb-page"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>');   // 3.309 — 글은 paintBrand 가 textContent 로(자료 이름은 사용자 글)
         brand.type = 'button'; brand.id = 'tbBrand'; brand.title = '보드 메뉴 — 미팅 세트 · 보드 가져오기 · 새 보드'; brand.setAttribute('aria-haspopup', 'menu');
         L.appendChild(brand);
         var tabs = mk('div', 'tb-tabs');
@@ -328,6 +345,8 @@
       var s = strip(); if (!s || s.__psTbObs) return !!s;
       s.__psTbObs = true;
       try { obs = new win.MutationObserver(function () { if (!busy) build(); }); obs.observe(s, { childList: true }); } catch (_) {}
+      try { new win.MutationObserver(function () { paintBrand(); }).observe(s, { attributes: true, subtree: true, attributeFilter: ['class', 'aria-label'] }); } catch (_) {}   /* 3.309 — 페이지를 옮기면(탭 .on) · 연결이 바뀌면 «몇 쪽 · 어디» */
+      try { new win.MutationObserver(function () { paintBrand(); }).observe(body, { attributes: true, attributeFilter: ['class'] }); } catch (_) {}
       return true;
     }
     // 띠가 다시 그려질 때 · 떠 있는 도크가 켜지고 꺼질 때 · 3D/카메라가 바뀔 때
