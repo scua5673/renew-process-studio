@@ -119,9 +119,24 @@ from (select distinct on (user_id, device) * from public.ps_events where event_n
 where (meta->>'ls')::int > 3072 order by ls_kb desc;
 ```
 
+## 1단계 — IndexedDB 를 건너뛰는 쓰기 넷 (3.314)
+
+조사(11/5 · 3.262)에서 `scout_tool_v1` 에 쓰는 함수 10개 · 파일 6개 가운데 셋이 IndexedDB 를 건너뛰었고, 작전판의 선수단 거울은 두 저장소에 따로 썼다. 넷 다 **정본을 먼저 읽고 공용 길(`psSaveSharedAsync` — 거울 + IndexedDB 확인)로 쓴다.**
+
+| 자리 | 예전 | 지금 |
+|---|---|---|
+| `team-files.js` `IDB_MIRROR` | `scout_tool_v1` · `cs_gamemodel_v1` 이 없어 선수 · 스카우팅 · 게임모델 가져오기가 거울에만 썼다 | 목록에 더함 — `getRaw` 는 IndexedDB 먼저, `setRaw` 는 `psSaveSharedAsync` + 되읽기, 되돌리기는 IndexedDB 도 비운다 |
+| `gamemodel.html` 포지션별 요구 `saveDoc` | 거울(`localStorage`)만 읽고 거울에만 썼다 | `saveIdeal(posId, field, value)` — IndexedDB 정본을 읽어 그 위에 고치고(낡은 거울의 옛 명단을 되살리지 않게) `psSaveSharedAsync`. 실패는 `console.warn` + `PSSaveState.fail('gm-ideal')`. 그리기(`render`)는 아직 거울(3단계) |
+| `storage.js` `PSImg.migrate` | 셋 다 거울에서 읽어 사진을 참조로 바꾼 뒤 거울에만 썼다(`writeJSON`) | 키 표에서 IndexedDB 정본인 키(`scout_tool_v1` · `process_coach_v1`)는 정본에서 읽고 `psSaveSharedAsync` 로 쓴다. «같은 원문인가»(`current`)도 읽은 곳에서 본다. `cs_team_v1`(거울 정본) · 남의 IDP 는 그대로. 키 표가 없는 창은 예전 길 |
+| `board.html` `squadLoad` · `squadSave` | 거울을 먼저 읽고(scout 와 반대) `boardStore` 와 `localStorage` 에 따로 썼다 | `boardStore`(IndexedDB) 먼저, 쓰기는 `psSaveSharedAsync` 하나(실패 `storeFailure`). 보기 전용은 `boardStore` 의 메모리 길 그대로 |
+
+직접 쓰기 160 → 158(gamemodel 6→5 · board 23→22). 시험 `tests/storage-stage1-3314.test.cjs`(가짜 저장소 — 정본 · 거울이 다를 때 어느 쪽을 읽고 쓰는지).
+**끝났다는 증거**(설계 6절): 선수 DB «사본 불일치» 이벤트(`roster_copies_differ` · `*_copies_differ`)가 줄어든다 — 승격 뒤 일주일을 본다.
+
+아직 남은 «살펴볼 곳» 8줄(막지 않는다) — 전부 **백업 · 내보내기 목록**(app.html `KNOWN_IDB` · `MIRRORED_IDB` 에 `cs_drill_lib_v1` · `cs_perms_v1` · `scout_tool_v1` 없음 — 그 키는 다른 길(MERGED · restore 전용)로 다룬다)과 scout.html `SHARED_IDB`(`cs_drill_lib_v1` · `cs_gamemodel_v1` — 읽기만). 쓰기를 건너뛰는 길은 아니라 두었다.
+
 ## 다음(설계 6절)
 
-- **1단계 구멍 막기** — IndexedDB 를 건너뛰는 쓰기 넷을 공용 함수로: `gamemodel.html` `saveDoc` · `team-files.js` `IDB_MIRROR`(scout_tool_v1 없음) · `storage.js` `PSImg.migrate` 의 `writeJSON` · `board.html` `squadSave`. 끝났다는 증거: 선수 DB «사본 불일치» 이벤트 감소.
-- 2단계: 거울 쓰기가 실패하면 옛 거울을 지우고 IndexedDB 를 기준으로(일정의 `scheduleMirrorDrop` 을 거울 키 전체로) · `storage.get` 이 읽으면서 쓰는 것을 멈춘다.
-- ③ 의 숫자를 본 뒤 3단계(거울 걷어내기)의 첫 키를 고른다 — 가장 큰 `k:` 부터.
+- 2단계: 거울 쓰기가 실패하면 옛 거울을 지우고 IndexedDB 를 기준으로(일정의 `scheduleMirrorDrop` 을 거울 키 전체로) · `storage.get` 이 읽으면서 쓰는 것을 멈춘다. `board-rescue.js` · `board-vault-draft.js` 의 «마지막 사본» 길도 여기서 같이 본다.
+- ③ 의 숫자를 본 뒤 3단계(거울 걷어내기)의 첫 키를 고른다 — 가장 큰 `k:` 부터. `gamemodel.html` 의 `render` · `board.html` 의 `loadTeamToBoard` 같은 «거울을 동기로 읽는 곳»이 그때 바뀐다.
 - 실제 자료 복구 · 실기기 확인은 따로.

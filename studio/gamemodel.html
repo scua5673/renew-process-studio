@@ -3243,8 +3243,25 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
             ["soc","사회성","Social","팀 안에서의 역할 · 동료와의 관계 · 리더십"]];   /* 1.865 — 5번째 축(사용자) */
   var sel="";
   function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
-  function load(){try{return JSON.parse(localStorage.getItem("scout_tool_v1")||"null");}catch(_){return null;}}
-  function saveDoc(d){try{localStorage.setItem("scout_tool_v1",JSON.stringify(d));}catch(_){}}
+  function load(){try{return JSON.parse(localStorage.getItem("scout_tool_v1")||"null");}catch(_){return null;}}   /* 그리기는 거울(동기) — 저장 계층 3단계에서 정본 읽기로 */
+  /* 저장 계층 1단계 — 쓰기는 공용 길 하나: IndexedDB 정본을 먼저 읽어 그 위에 고치고(거울이 낡았을 때 옛 명단을 되살리지 않게) psSaveSharedAsync(거울 + IndexedDB 확인).
+     예전 saveDoc 은 거울(localStorage)에만 써서 IndexedDB 와 갈라졌다(설계 2절 «IndexedDB 를 건너뛰는 쓰기 셋»). 실패는 삼키지 않고 저장 상태(PSSaveState)로 알린다. */
+  function readDoc(){
+    if(!(window.storage&&window.storage.get))return Promise.resolve(load());
+    return Promise.resolve().then(function(){return window.storage.get("scout_tool_v1");}).then(function(r){
+      if(r&&r.value!=null){try{return JSON.parse(r.value);}catch(e){return load();}}
+      return load();
+    },function(){return load();});
+  }
+  function saveIdeal(posId,field,value){
+    return readDoc().then(function(d){
+      if(!d||!Array.isArray(d.positions))throw new Error("선수단 자료를 읽지 못했습니다");
+      var p=d.positions.find(function(x){return x&&x.id===posId;}); if(!p)throw new Error("포지션을 찾지 못했습니다");
+      if(!window.psSaveSharedAsync)throw new Error("저장 길(storage.js)이 없습니다");
+      p.ideal=p.ideal||{}; p.ideal[field]=value;
+      return window.psSaveSharedAsync("scout_tool_v1",JSON.stringify(d));
+    });
+  }
   function abbr(n){n=String(n||"").trim();var m=n.match(/^[A-Za-z]{1,4}/);return m?m[0].toUpperCase():n.slice(0,3);}
   function render(){
     var body=document.getElementById("gmIdealBody"),prev=document.getElementById("gmIdealPrev");
@@ -3268,10 +3285,9 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
       t.oninput=function(){ fit(this); };
       try{ fit(t); }catch(_){}
       t.onchange=function(){
-        var d2=load(); if(!d2||!d2.positions)return;
-        var p2=d2.positions.find(function(x){return x.id===t.dataset.pos;}); if(!p2)return;
-        p2.ideal=p2.ideal||{}; p2.ideal[this.dataset.gmis]=this.value; saveDoc(d2);
-        try{ t.closest(".gmi-pos").classList.toggle("has",SECS.some(function(sc){return (p2.ideal[sc[0]]||"").trim();})); }catch(_){}
+        var sec=t.closest(".gmi-pos");
+        saveIdeal(t.dataset.pos,this.dataset.gmis,this.value).catch(function(e){ console.warn("[PS] gm ideal save",e); if(window.PSSaveState)PSSaveState.fail("gm-ideal",e); });
+        try{ if(sec)sec.classList.toggle("has",SECS.some(function(sc){var el=sec.querySelector('[data-gmis="'+sc[0]+'"]');return !!(el&&el.value.trim());})); }catch(_){}
       };
     });
   }
