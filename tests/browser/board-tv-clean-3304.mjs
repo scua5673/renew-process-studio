@@ -59,7 +59,7 @@ try{
   const look=()=>f.evaluate(()=>{const vis=e=>{if(!e)return false;const c=getComputedStyle(e),r=e.getBoundingClientRect();return c.display!=='none'&&c.visibility!=='hidden'&&r.width>0&&r.height>0;},box=e=>{const r=e.getBoundingClientRect();return {l:r.left,t:r.top,r:r.right,b:r.bottom};};
     const strip=document.getElementById('boardPageStrip'),pg=document.getElementById('vvPg'),dock=document.getElementById('ps-command-dock'),bar=document.getElementById('vvBar');
     const hit=(a,b)=>!(a.r<=b.l||b.r<=a.l||a.b<=b.t||b.b<=a.t);
-    return {full:document.body.classList.contains('vault-full'),strip:vis(strip),tabs:[...document.querySelectorAll('#boardPageStrip .bp-tab')].filter(vis).length,view:vis(document.querySelector('#boardPageStrip [data-v="3d"]')),
+    return {full:document.body.classList.contains('vault-full'),strip:vis(strip),tabs:[...document.querySelectorAll('#boardPageStrip .bp-tab')].filter(vis).length,view:vis(document.getElementById('tbExport')),   /* 3.309 — 띠의 평면/3D 단추는 걷었다: 오른쪽 도구(내보내기)로 띠의 도구가 보이는지 본다 */
       pager:vis(pg),pagerBox:pg&&vis(pg)?box(pg):null,cnt:(document.getElementById('vvCnt')||{}).textContent||'',dock:vis(dock),overlap:!!(pg&&vis(pg)&&dock&&vis(dock)&&hit(box(pg),box(dock))),barOverlap:!!(pg&&vis(pg)&&bar&&vis(bar)&&hit(box(pg),box(bar))),
       vw:innerWidth,vh:innerHeight,page:__psPages.book.idx(),chips:document.querySelectorAll('#animFrames .anim-frame').length,
       folded:document.body.classList.contains('ps-tv-fold'),bar:vis(bar),foldBtn:vis(document.getElementById('vvFold')),handle:vis(document.getElementById('psTvFold')),handleBox:vis(document.getElementById('psTvFold'))?box(document.getElementById('psTvFold')):null,
@@ -68,7 +68,7 @@ try{
   const shell=()=>page.evaluate(()=>{const vis=e=>{if(!e)return false;const c=getComputedStyle(e),r=e.getBoundingClientRect();return c.display!=='none'&&c.visibility!=='hidden'&&r.width>0&&r.height>0;};
     return {vfull:document.body.classList.contains('vfull'),tvfold:document.body.classList.contains('tvfold'),strip:vis(document.getElementById('psSyncStrip')),side:vis(document.getElementById('psSideFold')),frameH:Math.round(document.getElementById('fBoard').getBoundingClientRect().height),vh:innerHeight};});
   const before=await look();
-  assert.equal(before.full,false);assert.equal(before.strip,true,'편집 화면에는 띠가 있다');assert.equal(before.tabs,3,'페이지 탭 셋');assert.equal(before.view,true,'보기 옵션');
+  assert.equal(before.full,false);assert.equal(before.strip,true,'편집 화면에는 띠가 있다');assert.equal(before.tabs,3,'페이지 탭 셋');assert.equal(before.view,true,'오른쪽 도구(내보내기)');
   await f.locator('#vCreateFull').click();
   await f.waitForFunction(()=>document.body.classList.contains('vault-full'),null,{timeout:5000});await page.waitForTimeout(900);
   const full=await look();

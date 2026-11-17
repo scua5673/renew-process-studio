@@ -96,9 +96,9 @@ try{
  await f.locator('#editorCancel').click();await page.waitForFunction(()=>window.__toolbarExit>0);
  await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
  await f.waitForFunction(()=>!document.body.classList.contains('editing')&&document.getElementById('boardPageStrip').getBoundingClientRect().width>0);
- assert.equal(await f.locator('#boardPageStrip').evaluate(e=>getComputedStyle(e).position),'absolute','normal board keeps its floating toolbar');
+ assert.equal(await f.locator('#boardPageStrip').evaluate(e=>getComputedStyle(e).position),'relative','3.309 — normal board header is its own row above the pitch');
  assert.ok(await f.locator('#psEditToolsToggle').isVisible(),'normal board placement tools restored');
- assert.ok(await f.locator('#boardPageStrip [data-v="flat"]').isVisible(),'normal board view controls restored');
+ assert.ok(await f.locator('#boardPageStrip .bp-tab').first().isVisible(),'normal board page tabs restored (3.309 — 평면/3D 단추는 띠에 없다)');
  assert.ok(await f.locator('#tbExport').isVisible(),'normal board export restored');
  assert.ok(await f.locator('#bpBoardSettings').isVisible(),'normal board settings restored');
  assert.equal(await f.locator('#editorModal .modal-head #editorPdf').count(),1,'original PDF restored after editor exit');

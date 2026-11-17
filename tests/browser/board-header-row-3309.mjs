@@ -6,6 +6,7 @@ import {startFixture,openApp} from '../fixtures/team-app.mjs';
 //  ② «도구 접기» → 띠 줄이 사라져 운동장이 위로 커진다 → «도구 펼치기» → 제자리
 //  ③ 왼쪽 글: 빈 작업 보드는 «작업 보드», 페이지를 더하면 «2 / 2»
 //  ④ 빈 판의 «포메이션으로 시작» 문(#ehDoor)은 헤더 안(운동장 예약 0 — 세로 판도) · 누르면 보드 설정 › 배치(포메이션 칩 .eh-f — 2.277) · 선수가 놓이면 숨고 운동장 자리는 그대로
+//  ⑤ 가운데 덩어리(평면 · 3D · 선수 모양)는 없다 · 오른쪽 «보드 설정»은 글자 단추(톱니 숨김)
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
 let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}console.log('board-header-row-3309 '+s);};
@@ -20,7 +21,8 @@ const look=f=>f.evaluate(()=>{
   const brand=document.getElementById('tbBrand');
   return {folded:document.body.classList.contains('cmd-dock-folded'),strip:box(strip),pos:getComputedStyle(strip).position,svg:box(svg),pitch,overlap,inset:window.PSTopBar.topInset(svg,state.orientation||'h'),doorInset:window.PSTopBar.topInset(svg,'v'),
     where:brand?brand.querySelector('.tb-where').textContent:null,page:brand?brand.querySelector('.tb-page').textContent:null,tabs:[...strip.querySelectorAll('.bp-tab')].filter(e=>e.getClientRects().length).length,
-    door:(()=>{const d=document.getElementById('ehDoor');return {inStrip:!!d&&strip.contains(d),box:box(d)};})()};});
+    door:(()=>{const d=document.getElementById('ehDoor');return {inStrip:!!d&&strip.contains(d),box:box(d)};})(),
+    centre:!!strip.querySelector(':scope>.tb-c'),settings:(()=>{const b=document.getElementById('bpBoardSettings');if(!b)return null;const sp=b.querySelector('span'),sv=b.querySelector('svg');return {text:sp?sp.textContent:'',textShown:!!sp&&getComputedStyle(sp).display!=='none',svgShown:!!sv&&getComputedStyle(sv).display!=='none',w:Math.round(b.getBoundingClientRect().width)};})()};});
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
   await page.waitForFunction(READY,null,{timeout:60000});
@@ -40,6 +42,8 @@ try{
   assert.ok(open0.door.inStrip&&open0.door.box,'빈 판의 문은 헤더 안에 보인다 '+JSON.stringify(open0.door));
   assert.ok(open0.door.box.t>=open0.strip.t&&open0.door.box.b<=open0.strip.b,'문이 헤더 줄 안에 '+JSON.stringify([open0.strip,open0.door.box]));
   assert.equal(open0.where,'작업 보드');assert.equal(open0.page,'','페이지 하나면 n / m 없음');
+  assert.equal(open0.centre,false,'가운데 덩어리(평면 · 3D · 선수 모양)는 없다');
+  assert.ok(open0.settings&&open0.settings.text==='보드 설정'&&open0.settings.textShown&&!open0.settings.svgShown&&open0.settings.w>=50,'«보드 설정»은 글자 단추(톱니 숨김) '+JSON.stringify(open0.settings));
 
   step('fold');
   await f.evaluate(()=>window.__psDockFold('close'));

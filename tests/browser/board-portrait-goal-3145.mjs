@@ -68,10 +68,10 @@ try{
   await f.evaluate(pad=>{const s=document.querySelector('#boardStage').style;if(pad[0])s.setProperty('padding-bottom',pad[0],pad[1]);else s.removeProperty('padding-bottom');},pad);
   await page.waitForTimeout(650);
   if(engine==='chromium'){
-    await f.locator('#boardPageStrip [data-v="3d"]').click();
+    await f.evaluate(()=>document.querySelector('#tiltSeg button[data-t="1"]').click());   /* 3.309 — 띠의 평면/3D 단추는 걷었다: 보드 설정의 #tiltSeg 로 */
     await f.waitForFunction(()=>document.body.classList.contains('bc-tilt3d'));
     await page.waitForTimeout(350);
-    await f.locator('#boardPageStrip [data-v="flat"]').click();
+    await f.evaluate(()=>document.querySelector('#tiltSeg button[data-t="0"]').click());
     await f.waitForFunction(()=>!document.body.classList.contains('bc-tilt3d'));
     await page.waitForTimeout(350);
     const back=await settled(f,'3D to flat');assert.equal(back.vb,flat.vb,'switching views does not accumulate inset');

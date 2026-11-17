@@ -81,11 +81,8 @@
       S + ' .tb-page{font-weight:600;opacity:.6;margin-left:2px;font-variant-numeric:tabular-nums}',
       S + '>.tb-g{pointer-events:auto;display:flex;align-items:center;gap:2px;height:36px;padding:0 4px;border-radius:12px;-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);flex:0 1 auto;min-width:0;font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}',
       S + '>.tb-l{overflow:hidden}',
-      // 3.083 — 가운데 덩어리(보기 · 모양)는 화면 가운데에(왼쪽 덩어리가 넓어도) — 양옆과 겹치지 않을 때만(tb-mid, JS 가 잰다)
-      S + '.tb-mid>.tb-c{position:absolute;left:50%;top:8px;transform:translateX(-50%)}',   // 띠가 position:relative 라 그 안 가운데
-      S + '>.tb-c.tb-moved{position:absolute!important;transform:none!important;margin:0!important;z-index:2}',
-      S + ' .tb-grip{display:flex;align-items:center;justify-content:center;width:24px;height:30px;padding:0;border:0;background:transparent;color:inherit;flex:none;cursor:grab;touch-action:none;user-select:none}',
-      S + ' .tb-grip:active{cursor:grabbing}',
+      // 3.309 — 가운데 덩어리(.tb-c: 평면 · 3D · 선수 모양 · 실제 크기 · 선수 시점 · 끌기 손잡이)는 걷었다(사용자 11/17 «평면과 3d 설정이 밖에 나올 필요 있을까? 우측에 보드 설정 있잖아»).
+      // 같은 설정은 보드 설정(평면/3D `#tiltSeg` · 선수 모양 `#shapeSeg` · 실제 크기 줄 · 3D 묶음의 «선수 시점»)과 선택 패널(«N번 시점으로 보기»)에 있다.
       S + '>.bp-head{display:none!important}',
       // 3.079 — 패턴북(book-mode)은 왼쪽 기둥이 시퀀스 목록이라 띠를 접는다(board.html 의 접기 규칙과 같은 조건) — 막대가 그 규칙을 덮지 않게
       'html.ps-page-board body.book-mode:not(.focus-board):not(.vault-full):not(.ps-phone-work):not(.ps-dock) #boardPageStrip.ps-tb' + N + N + '{display:none!important}',
@@ -116,21 +113,16 @@
       S + ' .bp-tab:not(.on) .bpx{display:none!important}',
       S + ' .tb-add{width:26px!important;min-width:26px!important;height:26px!important;padding:0!important;border:0!important;border-radius:7px!important;background:transparent!important;font:700 0/0 a!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:none!important;cursor:pointer}',
       S + ' .tb-add:before{content:"＋";font:800 14px/1 Pretendard,-apple-system,sans-serif}',
-      // 보기 전환
-      S + ' .tb-seg{display:flex;gap:1px;padding:2px;border-radius:9px}',
-      S + ' .tb-rs button{padding:0 7px!important;display:inline-flex;align-items:center;justify-content:center}',
-      S + ' .tb-shape button{padding:0 7px!important;display:inline-flex;align-items:center;justify-content:center}',
-      S + ' .tb-seg button{height:26px;padding:0 10px;border:0;border-radius:7px;background:transparent;font:700 11.5px/1 Pretendard,-apple-system,sans-serif;cursor:pointer}',
       // 오른쪽
       S + '>.tb-r>*{flex:none}',
       S + '>.tb-r button:not(#vaultSave){height:28px!important;min-height:0!important;border-radius:8px!important;font:700 12px/1 Pretendard,-apple-system,sans-serif!important;border:0!important;align-items:center!important;gap:5px!important;padding:0 10px!important;white-space:nowrap!important;vertical-align:middle!important}',   // display 은 두지 않는다 — 첨부 · 편집 · 미팅 모드의 숨김 규칙이 이기게
-      S + ' #bpBoardSettings{width:28px!important;padding:0!important;justify-content:center!important}',
-      S + ' #bpBoardSettings>span{display:none!important}',
-      S + ' #bpBoardSettings svg{width:16px!important;height:16px!important}',
+      // 3.309 — «보드 설정»은 글자 단추(사용자 11/17 «우측에 보드설정은 텍스트로»): 톱니를 숨기고 board.html 의 <span>보드 설정</span> 을 보인다 — «저장» · «배치 도구»와 같은 글자 줄
+      S + ' #bpBoardSettings svg{display:none!important}',
+      S + ' #bpBoardSettings>span{display:inline!important}',
       S + ' #bpLinkChip{height:26px!important}',
       S + ' #vaultSave{position:static!important;right:auto!important;bottom:auto!important;top:auto!important;left:auto!important;transform:none!important;margin:0 0 0 2px!important}',
       // 선수 모양: «사람»은 3D 에서만(평면은 유니폼으로 그린다)
-      'html body:not(.bc-tilt3d) #boardPageStrip .tb-shape button[data-shape="person"],html body:not(.bc-tilt3d) #shapeSeg button[data-s="person"]{display:none!important}',
+      'html body:not(.bc-tilt3d) #shapeSeg button[data-s="person"]{display:none!important}',
       // 메뉴
       '#ps-tb-menu{position:fixed;z-index:430;display:none;min-width:200px;padding:6px;border-radius:14px;background:rgba(255,255,255,.98);box-shadow:0 14px 34px rgba(8,12,24,.28);border:1px solid rgba(20,22,26,.07);font-family:Pretendard,-apple-system,sans-serif;color:#14161A}',
       '#ps-tb-menu.on{display:block}',
@@ -144,9 +136,9 @@
       var ink = dark ? '#E8ECF4' : '#1A2233';
       out.push(
         X + '>.tb-g{' + t[1] + '}',
-        X + ' .bp-tab,' + X + ' .tb-add,' + X + ' .tb-seg button,' + X + '>.tb-r button:not(#vaultSave):not(#boardManualSave){color:' + t[4] + '!important;background:transparent!important;box-shadow:none!important}',
-        X + ' .bp-tab.on,' + X + ' .tb-seg button.on{' + t[2] + '}',
-        X + ' .bp-tab:hover:not(.on),' + X + ' .tb-add:hover,' + X + ' .tb-seg button:hover:not(.on),' + X + '>.tb-r button:not(#vaultSave):not(#boardManualSave):hover{color:' + ink + '!important;background:' + (dark ? 'rgba(255,255,255,.08)' : 'rgba(20,33,61,.06)') + '!important}',
+        X + ' .bp-tab,' + X + ' .tb-add,' + X + '>.tb-r button:not(#vaultSave):not(#boardManualSave){color:' + t[4] + '!important;background:transparent!important;box-shadow:none!important}',
+        X + ' .bp-tab.on{' + t[2] + '}',
+        X + ' .bp-tab:hover:not(.on),' + X + ' .tb-add:hover,' + X + '>.tb-r button:not(#vaultSave):not(#boardManualSave):hover{color:' + ink + '!important;background:' + (dark ? 'rgba(255,255,255,.08)' : 'rgba(20,33,61,.06)') + '!important}',
         X + ' #bpBoardSettings{color:' + ink + '!important}',
         X + ' #bpBoardSettings[aria-expanded="true"]{background:' + t[5] + '!important}',
         // 3.115 — «내보내기»는 글자까지 진하게(사용자 «잘 보이게»). 위 흐린 단추 규칙(:not(#…) 둘)을 이기려고 id 를 하나 더
@@ -156,7 +148,6 @@
         X + ' .tb-logo{' + t[3] + '}',
         X + ' #ehDoor{' + t[3] + '}',   // 3.309 — 빈 판의 «포메이션으로 시작» 문은 주 단추
         X + ' #ehDoor:hover{filter:brightness(1.07)}',
-        X + ' .tb-seg{background:' + t[5] + ';box-shadow:inset 0 1px 3px rgba(0,0,0,' + (dark ? '.45' : '.12') + ')}',
         X + ' .tb-sep{background:' + (dark ? 'rgba(255,255,255,.12)' : 'rgba(20,33,61,.12)') + '}',
         X + ' .tb-brand{color:' + ink + '}'
       );
@@ -176,7 +167,7 @@
     body.__psTopBar = true;
     var st = doc.createElement('style'); st.id = 'ps-topbar-css'; st.textContent = css(); doc.head.appendChild(st);
     var menu = doc.createElement('div'); menu.id = 'ps-tb-menu'; menu.setAttribute('role', 'menu'); doc.body.appendChild(menu);
-    var lastCam = 'mid', obs = null, busy = false, saved = null, lastInset = -1;
+    var obs = null, busy = false, saved = null, lastInset = -1;
     function refit() {
       var svg = doc.getElementById('board');
       if (!svg || typeof win.__getBoardOrient !== 'function') return;
@@ -187,17 +178,7 @@
     }
     function on() { return body.classList.contains('ps-dock-float'); }
     function strip() { return doc.getElementById('boardPageStrip'); }
-    function curView() { var t = body.classList.contains('bc-tilt3d'), c = ''; try { c = (win.__tilt3d && win.__tilt3d.cam) || ''; } catch (_) {} if (c) lastCam = c; return viewOf(t); }
-    function clickSeg(sel) { var b = doc.querySelector(sel); if (b) b.click(); return !!b; }
-    function setView(v) {
-      var tilt = body.classList.contains('bc-tilt3d');
-      if (v === 'flat') { if (tilt) clickSeg('#tiltSeg button[data-t="0"]'); }
-      else {
-        if (!tilt) clickSeg('#tiltSeg button[data-t="1"]');
-        win.setTimeout(function () { clickSeg('#tiltCamSeg button[data-cam="' + lastCam + '"]'); paintView(); }, tilt ? 0 : 60);
-      }
-      win.setTimeout(paintView, 120);
-    }
+    function curView() { return viewOf(body.classList.contains('bc-tilt3d')); }
     function curShape() { var t = ''; try { t = typeof tokShape !== 'undefined' ? tokShape : ''; } catch (_) {}   /* global tokShape */ return shapeShown(t, body.classList.contains('bc-tilt3d')); }
     // 3.309 — 왼쪽 «어디»: 훈련 편집 · 미팅 · 보관함 편집(위 막대가 이름을 말하니 «편집»만) · 보관함 연결(#bpLinkChip 의 aria-label «보관함 연결: 이름») · 그 밖엔 작업 보드. «몇 쪽»은 페이지가 둘 이상일 때 n / m
     function whereLabel() {
@@ -215,62 +196,12 @@
     win.__psTopBarPaintBrand = paintBrand;
     function paintView() {
       paintBrand();
-      var s = strip(), v = curView(), sh = curShape(); if (!s) return;
-      s.querySelectorAll('.tb-seg button').forEach(function (b) { var k = b.getAttribute('data-v'), o = k ? k === v : b.getAttribute('data-shape') === sh; b.classList.toggle('on', o); b.setAttribute('aria-pressed', o ? 'true' : 'false'); });
+      var sh = curShape(); if (!strip()) return;   // 3.309 — 띠에 보기 · 모양 단추는 없다(보드 설정의 «선수 모양» 동기화만 남는다)
       // 보드 설정의 «선수 모양»도 평면에서는 «사람» 보드를 유니폼으로 보이게
       try { var seg = doc.getElementById('shapeSeg'); if (seg && !body.classList.contains('bc-tilt3d')) seg.querySelectorAll('button[data-s]').forEach(function (b) { if (b.getAttribute('data-s') === 'shirt' && sh === 'shirt') b.classList.add('on'); }); } catch (_) {}
       refit();
     }
     function mk(tag, cls, html) { var e = doc.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
-    var toolbarPosition = null;
-    function placeToolbar(C, x, y) {
-      var s = strip(), stage = doc.getElementById('boardStage');
-      if (!s || !stage || !C.offsetWidth || !stage.clientHeight) return;
-      var sr = s.getBoundingClientRect(), br = stage.getBoundingClientRect();
-      var left = Math.max(br.left, 0) + 4, top = Math.max(br.top, sr.top, 0) + 4;
-      x = Math.max(left, Math.min(x, Math.min(br.right, win.innerWidth) - C.offsetWidth - 4));
-      y = Math.max(top, Math.min(y, Math.min(br.bottom, win.innerHeight) - C.offsetHeight - 4));
-      toolbarPosition = { x: x, y: y };
-      C.classList.add('tb-moved');
-      C.style.setProperty('left', (x - sr.left) + 'px', 'important');
-      C.style.setProperty('top', (y - sr.top) + 'px', 'important');
-    }
-    function draggableToolbar(C) {
-      var grip = mk('button', 'tb-grip', '<svg aria-hidden="true" width="16" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>');
-      grip.type = 'button'; grip.title = '드래그하여 보기 막대 이동 · 방향키로 이동 · Home으로 원위치'; grip.setAttribute('aria-label', '보기 막대 이동'); C.prepend(grip);
-      var drag = null;
-      grip.addEventListener('pointerdown', function (e) {
-        if (e.button !== 0 || e.isPrimary === false) return;
-        e.preventDefault(); e.stopPropagation();
-        var r = C.getBoundingClientRect();
-        drag = { id: e.pointerId, x: e.clientX - r.left, y: e.clientY - r.top };
-        grip.setPointerCapture(e.pointerId);
-      });
-      grip.addEventListener('pointermove', function (e) {
-        if (!drag || drag.id !== e.pointerId) return;
-        e.preventDefault(); e.stopPropagation(); placeToolbar(C, e.clientX - drag.x, e.clientY - drag.y);
-      });
-      function end(e) {
-        if (!drag || drag.id !== e.pointerId) return;
-        drag = null;
-        if (grip.hasPointerCapture(e.pointerId)) grip.releasePointerCapture(e.pointerId);
-        refit();
-      }
-      ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (name) { grip.addEventListener(name, end); });
-      grip.addEventListener('click', function (e) { e.stopPropagation(); });
-      grip.addEventListener('keydown', function (e) {
-        var steps = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }, step = steps[e.key];
-        if (!step && e.key !== 'Home') return;
-        e.preventDefault(); e.stopPropagation();
-        if (e.key === 'Home') {
-          toolbarPosition = null; C.classList.remove('tb-moved'); C.style.removeProperty('left'); C.style.removeProperty('top'); center();
-        } else {
-          var r = C.getBoundingClientRect(), amount = e.shiftKey ? 32 : 8;
-          placeToolbar(C, r.left + step[0] * amount, r.top + step[1] * amount);
-        }
-        refit();
-      });
-    }
     // 3.309 — 빈 판의 «포메이션으로 시작» 문(#ehDoor — board.html 은 무대 안 위 가운데에 세운다)을 헤더 «어디» 옆(구분선 앞)으로(사용자 11/17). 단추 · 클릭(__psOpenFormation) · 보임(updateEmptyHint 의 인라인 display)은 board.html 그대로 — 자리만 옮긴다. 되돌릴 자리는 doorHome(unbuild → restoreDoor).
     // ⚠ 띠는 board.html 이 페이지를 그릴 때마다 innerHTML 로 다시 그린다(그래서 build 가 childList 감시자에 매달려 있다) — 띠 안의 덩어리와 함께 문도 버려지므로 노드를 doorNode 에 붙들어 두고 세울 때마다 다시 넣는다(클릭 처리기 · 글은 그 노드에 있다). 떨어져 있던 사이 놓친 보임 · 숨김은 updateEmptyHint 를 한 번 불러 맞춘다
     var doorHome = null, doorNode = null;
@@ -294,7 +225,7 @@
       busy = true;
       try {
         var g = sortStrip(kids); saved = g;
-        var L = mk('div', 'tb-g tb-l'), C = mk('div', 'tb-g tb-c'), R = mk('div', 'tb-g tb-r');
+        var L = mk('div', 'tb-g tb-l'), R = mk('div', 'tb-g tb-r');   // 3.309 — 가운데 덩어리(.tb-c)는 없다
         var brand = mk('button', 'tb-brand', '<span class="tb-logo">PS</span><span class="tb-where"></span><span class="tb-page"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>');   // 3.309 — 글은 paintBrand 가 textContent 로(자료 이름은 사용자 글)
         brand.type = 'button'; brand.id = 'tbBrand'; brand.title = '보드 메뉴 — 미팅 세트 · 보드 가져오기 · 새 보드'; brand.setAttribute('aria-haspopup', 'menu');
         L.appendChild(brand); adoptDoor(L);
@@ -307,12 +238,9 @@
         var kit = doc.createElement('button'); kit.type = 'button'; kit.className = 'tb-kit'; kit.setAttribute('data-ps-kit-open', 'menu'); kit.setAttribute('role', 'menuitem'); kit.textContent = '팀 유니폼'; menu.appendChild(kit);
         brand.style.display = '';
         g.other.forEach(function (n) { L.appendChild(n); });
-        C.innerHTML = '<div class="tb-seg" role="group" aria-label="보기"><button type="button" data-v="flat" title="평면 작전판">평면</button><button type="button" data-v="3d" title="3D 경기장">3D</button></div><span class="tb-sep"></span><div class="tb-seg tb-shape" role="group" aria-label="선수 모양"><button type="button" data-shape="shirt" title="선수 모양 — 유니폼" aria-label="유니폼"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 3l-5 3 2 5 2-1v11h10V10l2 1 2-5-5-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z"/></svg></button><button type="button" data-shape="circle" title="선수 모양 — 원형" aria-label="원형"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg></button><button type="button" data-shape="person" title="선수 모양 — 사람(3D · 중계에서 서 있는 선수)" aria-label="사람"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4.5" r="2.6"/><path d="M8.5 8.5h7l1 7h-2l-.6 7h-3.8l-.6-7h-2z"/></svg></button></div><div class="tb-seg tb-rs"><button type="button" class="tb-rsize" title="실제 비율 크기 — 선수 · 공을 몇 배로" aria-label="실제 비율 크기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20L20 4M14 4h6v6M10 20H4v-6"/></svg></button></div>';
-        if (win.PSPlayerEye) C.querySelector('.tb-seg').appendChild(win.PSPlayerEye.button());
-        draggableToolbar(C);
         g.right.forEach(function (n) { R.appendChild(n); });
         exportBtn(R);
-        s.appendChild(L); s.appendChild(C); s.appendChild(R);
+        s.appendChild(L); s.appendChild(R);
         s.classList.add('ps-tb');
         paintView(); win.setTimeout(clearSelCtl, 0); win.setTimeout(function () { try { center(); } catch (_) {} }, 0);
       } finally { busy = false; }
@@ -353,8 +281,6 @@
     function placeMenu() { var b = doc.getElementById('tbBrand'); if (!b) return; var r = b.getBoundingClientRect(); menu.style.left = Math.max(8, r.left) + 'px'; menu.style.top = (r.bottom + 10) + 'px'; }
     doc.addEventListener('click', function (e) {
       var b = e.target.closest && e.target.closest('#tbBrand'); if (b) { e.stopPropagation(); if (!menu.children.length) return; menu.classList.toggle('on'); placeMenu(); return; }
-      var v = e.target.closest && e.target.closest('#boardPageStrip .tb-seg button[data-v]'); if (v) { e.stopPropagation(); setView(v.getAttribute('data-v')); return; }
-      var sb = e.target.closest && e.target.closest('#boardPageStrip .tb-shape button[data-shape]'); if (sb) { e.stopPropagation(); var o = doc.querySelector('#shapeSeg button[data-s="' + sb.getAttribute('data-shape') + '"]'); if (o) o.click(); win.setTimeout(paintView, 30); return; }
       if (menu.classList.contains('on') && !menu.contains(e.target)) menu.classList.remove('on');
     }, true);
     menu.addEventListener('click', function () { win.setTimeout(function () { menu.classList.remove('on'); }, 0); });
@@ -370,16 +296,12 @@
     // 띠가 다시 그려질 때 · 떠 있는 도크가 켜지고 꺼질 때 · 3D/카메라가 바뀔 때
     try { new win.MutationObserver(function () { var s = strip(); if (s && on() !== s.classList.contains('ps-tb')) { var was = s.classList.contains('ps-tb'); if (on()) build(); else unbuild(); if (s.classList.contains('ps-tb') !== was) win.setTimeout(function () { try { win.dispatchEvent(new win.Event('resize')); } catch (_) {} }, 0); }   /* 3.083 — 바뀐 때만 · 다음 차례에(커뮤니티 보기에서 세우지 못하면 resize → 도크 mount → class 가 끝없이 돌았다) */ paintView(); try { clearSelCtl(); } catch (_) {} if (menu.classList.contains('on') && body.classList.contains('cmd-dock-folded')) menu.classList.remove('on');   /* 3.306 — 띠가 같이 접히면 열려 있던 «보드 ▾» 메뉴도 닫는다(펼쳤을 때 다시 뜨지 않게) */ }).observe(body, { attributes: true, attributeFilter: ['class'] }); } catch (_) {}
     win.addEventListener('resize', function () { win.setTimeout(clearSelCtl, 50); win.setTimeout(center, 60); });
-    // 가운데 맞추기: 정말 가운데에 두어도 왼쪽 · 오른쪽 덩어리와 10px 이상 떨어질 때만
+    // 3.309 — 가운데 덩어리가 없으니 «가운데 맞추기»(3.083 tb-mid)는 할 일이 없다: 덩어리 · 문의 크기 변화를 지켜보고 refit 만
     function center() {
       var s = strip(); if (!s || !s.classList.contains('ps-tb')) return;
-      var L = s.querySelector(':scope>.tb-l'), C = s.querySelector(':scope>.tb-c'), R = s.querySelector(':scope>.tb-r'); if (!L || !C) return;
-      if (toolbarPosition) placeToolbar(C, toolbarPosition.x, toolbarPosition.y);
-      if (ro) [L, C, R, doc.getElementById('ehDoor')].forEach(function (g) { if (g && !g.__tbRO) { g.__tbRO = 1; ro.observe(g); } });   // 탭이나 빈 보드의 시작 단추가 바뀌어도 다시 잰다
-      var sr = s.getBoundingClientRect(); if (!sr.width) return;
-      var lr = L.getBoundingClientRect().left - sr.left + Math.max(L.offsetWidth, L.scrollWidth), rl = R ? R.getBoundingClientRect().left - sr.left : sr.width, cw = C.offsetWidth, mid = sr.width / 2;
-      var ok = mid - cw / 2 >= lr + 10 && mid + cw / 2 <= rl - 10;
-      if (s.classList.contains('tb-mid') !== ok) s.classList.toggle('tb-mid', ok);
+      var L = s.querySelector(':scope>.tb-l'), R = s.querySelector(':scope>.tb-r'); if (!L) return;
+      if (ro) [L, R, doc.getElementById('ehDoor')].forEach(function (g) { if (g && !g.__tbRO) { g.__tbRO = 1; ro.observe(g); } });   // 탭이나 빈 보드의 시작 단추가 바뀌어도 다시 잰다
+      if (s.classList.contains('tb-mid')) s.classList.remove('tb-mid');
       refit();
     }
     win.__psTopBarCenter = center;
@@ -399,7 +321,7 @@
       var w = function () { var r = orig.apply(this, arguments); try { clearSelCtl(); } catch (_) {} return r; }; w.__psTb = true; win.positionSelCtl = w; return true;
     }
     var n = 0; (function tryIt() { var ok = watch(); wrapSel(); if (ok) { build(); if (!wrapSel()) win.setTimeout(wrapSel, 1500); return; } if (++n < 80) win.setTimeout(tryIt, 250); })();
-    return { build: build, unbuild: unbuild, setView: setView, view: curView };
+    return { build: build, unbuild: unbuild, view: curView };
   }
   if (typeof window !== 'undefined' && window.document) {
     var go = function () { window.__psTopBar = install(window); };

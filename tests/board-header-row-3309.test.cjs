@@ -50,7 +50,7 @@ test('the brand says where (link · training · meeting · vault edit · work bo
 });
 
 test('3.309 release note, build pins, browser test registered',()=>{
-  const notes=require('../studio/release-notes.js'),e=notes.entries().find(x=>x.id==='2026-11-17-v3-309-board-header');assert.ok(e);assert.match(e.title,/v3\.309/);assert.equal(e.changes.length,4);
+  const notes=require('../studio/release-notes.js'),e=notes.entries().find(x=>x.id==='2026-11-17-v3-309-board-header');assert.ok(e);assert.match(e.title,/v3\.309/);assert.equal(e.changes.length,5);
   const build=fs.readFileSync(path.join(root,'studio/app.html'),'utf8').match(/window\.PS_BUILD='([0-9.]+)'/)[1];assert.ok(Number(build)>=3.309);
   assert.match(fs.readFileSync(path.join(root,'sw.js'),'utf8'),new RegExp("const CACHE = 'process-"+build.replace(/\./g,'\\.')+"';"));
   assert.ok(fs.readFileSync(path.join(__dirname,'browser','run-critical.mjs'),'utf8').includes("'board-header-row-3309'"));
