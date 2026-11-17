@@ -15,9 +15,9 @@ test('avProfileLink: a button that names the player, carries data-av-player-edit
 });
 
 test('daily roster rows use the profile link; the totals table keeps the cumulative link',()=>{
-  const daily=fn('renderAvailDaily'),players=fn('renderAvailPlayers');
-  assert.ok(daily.includes('<span class="nm">\'+avProfileLink(p)+\'<small>'),'날짜별 명단 행 = 프로필 링크');
-  assert.ok(!daily.includes('avPlayerLink(p)'),'날짜별 명단에는 누적 링크가 없다');
+  const daily=fn('renderAvailDaily'),players=fn('renderAvailPlayers'),AT=fs.readFileSync(path.join(__dirname,'../studio/avail-table.js'),'utf8');   /* 3.308 — 행은 표 모듈 */
+  assert.ok(AT.includes('name=avProfileLink(p)+avYearTag(p)'),'날짜별 명단 행 = 프로필 링크');
+  assert.ok(!daily.includes('avPlayerLink(p)')&&!AT.includes('avPlayerLink(p)'),'날짜별 명단에는 누적 링크가 없다');
   assert.ok(players.includes('avPlayerLink(p)')&&!players.includes('avProfileLink('),'선수별 누적 표의 이름 = 누적 선택 그대로');
   assert.ok(daily.includes('상태를 눌러 기록 · 이름을 눌러 프로필 수정'),'바닥 안내가 새 동작을 말한다');
 });
