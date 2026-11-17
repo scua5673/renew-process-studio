@@ -22,7 +22,7 @@ function gm({idb,mirror,shared=true}){
   const writes=[],local=new Map(mirror?[['scout_tool_v1',JSON.stringify(mirror)]]:[]);
   const c=vm.createContext({Promise,JSON,Array,localStorage:{getItem:k=>local.get(k)??null,setItem:(k,v)=>{writes.push(['ls',k,v]);local.set(k,v);}}});
   c.window=c;
-  if(idb!==undefined)c.storage={get:async k=>idb&&k==='scout_tool_v1'?{value:JSON.stringify(idb)}:null};
+  if(idb!==undefined){const read=async k=>idb&&k==='scout_tool_v1'?{value:JSON.stringify(idb)}:null;c.storage={peek:read,get:async k=>{writes.push(['get',k]);return read(k);}};}
   if(shared)c.psSaveSharedAsync=async(k,raw)=>{writes.push(['shared',k,raw]);return true;};
   vm.runInContext(code,c);
   return {c,writes,local};
@@ -34,6 +34,7 @@ test('gamemodel — 고친 값은 IndexedDB 정본 위에 얹어 psSaveSharedAsy
   assert.equal(h.writes.length,1);const [how,k,raw]=h.writes[0];assert.equal(how,'shared');assert.equal(k,'scout_tool_v1');
   const w=JSON.parse(raw);assert.equal(w.players.length,2,'정본의 선수 둘');assert.equal(w.positions[0].ideal.tac,'압박 먼저');
   assert.equal(h.local.get('scout_tool_v1'),JSON.stringify(doc([{id:'a'}])),'거울에 직접 쓰지 않는다(공용 길이 쓴다)');
+  assert.ok(!h.writes.some(w=>w[0]==='get'),'정본 읽기는 peek — get(읽으며 IndexedDB 에 심는 길)을 부르지 않는다');
 });
 test('gamemodel — 정본이 비어 있으면 거울을, 어댑터가 없으면 거울을 읽는다 · 모르는 포지션 · 자료 없음 · 공용 길 없음은 거부한다',async()=>{
   let h=gm({idb:null,mirror:doc([{id:'m'}])});await h.c.saveIdeal('p1','tech','x');assert.equal(JSON.parse(h.writes[0][2]).players[0].id,'m');
@@ -52,16 +53,16 @@ function img({idbDocs,lsDocs,table=true}){
   /* PSImg IIFE — 기준점은 이름(window.PSImg= · window.PSSafe.img=safe)으로, 주석으로 자르지 않는다(code-budget-3043 래칫) */
   const source=R('studio/storage.js'),tail=source.indexOf('window.PSSafe.img=safe'),start=source.indexOf('(function(){',source.indexOf('사진 보관소(PSImg)'));
   const code=source.slice(start,source.indexOf('})();',tail)+5).replace('  try{ ready().then(function(){ return migrate(); }).catch(function(){}); }catch(_){}','');
-  const picture='data:image/png;base64,SYNTHETIC',local=new Map(Object.entries({ps_sync_session:'{"uid":"coach"}',ps_active_ws:'A',ps_cache_owner_v1:'{"uid":"coach","wid":"A","nonce":"one"}'})),idb=new Map(),disk=new Map(),shared=[],lsWrites=[],hooks={};
+  const picture='data:image/png;base64,SYNTHETIC',local=new Map(Object.entries({ps_sync_session:'{"uid":"coach"}',ps_active_ws:'A',ps_cache_owner_v1:'{"uid":"coach","wid":"A","nonce":"one"}'})),idb=new Map(),disk=new Map(),shared=[],lsWrites=[],peeks=[],gets=[],hooks={};
   for(const [k,v]of Object.entries(lsDocs||{}))local.set(k,JSON.stringify(v).replace(/PIC/g,picture));
   for(const [k,v]of Object.entries(idbDocs||{}))idb.set(k,JSON.stringify(v).replace(/PIC/g,picture));
   const c={Promise,JSON,Math,Date,CustomEvent:function(type,o){this.type=type;this.detail=o&&o.detail;},dispatchEvent(){},
     localStorage:{getItem:k=>local.get(k)??null,setItem(k,v){lsWrites.push(k);local.set(k,String(v));},key:i=>[...local.keys()][i]??null,get length(){return local.size;}},
-    storage:{async keys(){return [];},async set(k,v){if(hooks.put)await hooks.put(k,v);disk.set(k,v);return true;},async get(k){if(idb.has(k))return {value:idb.get(k)};return disk.has(k)?{value:disk.get(k)}:null;}},
+    storage:{async keys(){return [];},async set(k,v){if(hooks.put)await hooks.put(k,v);disk.set(k,v);return true;},async peek(k){peeks.push(k);if(idb.has(k))return {value:idb.get(k)};return disk.has(k)?{value:disk.get(k)}:null;},async get(k){gets.push(k);if(idb.has(k))return {value:idb.get(k)};return disk.has(k)?{value:disk.get(k)}:null;}},
     psSaveSharedAsync:async(k,raw)=>{if(hooks.shared)await hooks.shared(k,raw);shared.push([k,raw]);local.set(k,raw);idb.set(k,raw);return true;}};
   if(table)c.PSStorageKeys=K;
   c.window=c;vm.createContext(c);vm.runInContext(code,c);
-  return {c,picture,local,idb,disk,shared,lsWrites,hooks};
+  return {c,picture,local,idb,disk,shared,lsWrites,peeks,gets,hooks};
 }
 test('PSImg.migrate — 선수단 · 일정은 IndexedDB 정본에서 읽어 참조로 바꾸고 psSaveSharedAsync 로 쓴다, 팀(cs_team_v1 — 거울 정본)은 거울대로',async()=>{
   const h=img({idbDocs:{scout_tool_v1:{players:[{id:'a',profile:{photo:'PIC'}}]},process_coach_v1:{weeks:{0:[{match:{logo:'PIC'}}]}}},lsDocs:{scout_tool_v1:{players:[{id:'old',profile:{photo:'PIC'}}]},cs_team_v1:{logo:'PIC'}}});
@@ -71,6 +72,8 @@ test('PSImg.migrate — 선수단 · 일정은 IndexedDB 정본에서 읽어 참
   assert.equal(h.local.get('scout_tool_v1'),h.idb.get('scout_tool_v1'),'거울은 공용 길이 같이 맞춘다');
   assert.deepEqual(h.lsWrites,['cs_team_v1'],'거울 정본(cs_team_v1)만 writeJSON');
   assert.equal(h.c.PSImg.src(sc.players[0].profile.photo),h.picture);
+  assert.deepEqual(h.gets.filter(k=>k==='scout_tool_v1'||k==='process_coach_v1'),[],'문서 정본 읽기는 peek — get 은 사진 참조(psimg:)에만');
+  assert.ok(h.peeks.includes('scout_tool_v1')&&h.peeks.includes('process_coach_v1'));
 });
 test('PSImg.migrate — 옮기는 사이 정본이 바뀌면 그 문서는 쓰지 않는다 · 공용 길이 거부하면 실패로 센다',async()=>{
   let h=img({idbDocs:{scout_tool_v1:{players:[{id:'a',profile:{photo:'PIC'}}]}}});

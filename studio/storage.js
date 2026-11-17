@@ -1654,6 +1654,8 @@
      거울이 낡았으면 옛 명단이 되살아났다(설계 2절). 키 표가 없는 창(옛 판 · 시험)은 예전대로 거울. «같은 원문인가»(current)도 읽은 곳에서 본다. */
   function sharedHome(k){ try{ var T=window.PSStorageKeys||(window.top&&window.top.PSStorageKeys); var r=T&&T.info(k); return !!(r&&r.home==='idb'); }catch(e){ return false; } }
   function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  /* 정본 읽기는 peek(심지 않는 읽기) — get 은 IndexedDB 에 없고 거울에 있으면 거울 값을 IndexedDB 에 심는다(설계 2절 «읽는 함수가 쓴다»). 부팅 때 모든 창이 도는 이 길이 그 쓰기를 내면 안 된다 */
+  function idbRead(k){ var S=window.storage,f=S&&(S.peek||S.get); return f?Promise.resolve().then(function(){ return f.call(S,k); }):Promise.reject(new Error('no storage adapter')); }
 
   function migrate(){
     var owner=imageMigrationOwner();if(owner===null)return Promise.resolve({moved:0,failed:0});
@@ -1661,15 +1663,15 @@
       if(imageMigrationOwner()!==owner)return {moved:0,failed:0};
       var jobs=[],sources={};
       function rootRaw(k){
-        if(!(sharedHome(k)&&window.storage&&window.storage.get))return Promise.resolve({raw:lsGet(k),idb:false});
-        return Promise.resolve().then(function(){ return window.storage.get(k); }).then(function(r){ return r&&r.value!=null?{raw:r.value,idb:true}:{raw:lsGet(k),idb:false}; },function(){ return {raw:lsGet(k),idb:false}; });
+        if(!(sharedHome(k)&&window.storage&&(window.storage.peek||window.storage.get)))return Promise.resolve({raw:lsGet(k),idb:false});
+        return idbRead(k).then(function(r){ return r&&r.value!=null?{raw:r.value,idb:true}:{raw:lsGet(k),idb:false}; },function(){ return {raw:lsGet(k),idb:false}; });
       }
       function root(k){ return rootRaw(k).then(function(s){ sources[k]=s; try{ return mayHaveImage(s.raw)?JSON.parse(s.raw):null; }catch(e){ return null; } }); }
       function current(k){
         var s=sources[k];
         if(imageMigrationOwner()!==owner||!s)return Promise.resolve(false);
         if(!s.idb)return Promise.resolve(lsGet(k)===s.raw);
-        return Promise.resolve().then(function(){ return window.storage.get(k); }).then(function(r){ return !!r&&r.value===s.raw; },function(){ return false; });
+        return idbRead(k).then(function(r){ return !!r&&r.value===s.raw; },function(){ return false; });
       }
       function writeRoot(k,data){
         var s=sources[k];
