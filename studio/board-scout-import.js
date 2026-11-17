@@ -1,5 +1,5 @@
 /* Read the current team's roster and scouting candidates; copy only board labels through the existing team-load path.
-   3.310 — one «명단 불러오기» window (사용자 11/17 «전체 · 조별 · 부상 제외 · 스카우팅만 … 선택해서 다양하게» → 목업 A «창 하나»):
+   3.312 — one «명단 불러오기» window (사용자 11/17 «전체 · 조별 · 부상 제외 · 스카우팅만 … 선택해서 다양하게» → 목업 A «창 하나»):
    condition chips (출처 · 조 · 영입 단계 · 상태 · 포지션 · 학년) decide the default checks and single checks are the exceptions.
    The training card's two rows become one «불러오기» row: quick chips (전체 · 조 · 스카우팅 → 팀 1 at once, with the remembered
    상태 rule) + «고르기…» (this window). 상태 is the day's availability (session.date · PSParticipation — the 가용인원 rules);

@@ -51,7 +51,7 @@ test('team context rejects a changed owner and player role without requiring sco
  const f=win();Object.assign(f.raw,{ps_sync_session:'{"uid":"u"}',ps_active_ws:'team',ps_cache_owner_v1:'{"uid":"u","wid":"team"}',ps_ws_list:'[{"id":"team","kind":"team"}]'});f.w.PSSync={dataUnlocked:()=>true};f.w.PSPerms={role:()=> 'staff'};
  const r=await API.read(f.w,'team');r.check();f.w.PSPerms.role=()=> 'player';assert.throws(r.check,/권한/);f.w.PSPerms.role=()=> 'staff';f.raw.ps_active_ws='another';assert.throws(r.check,/권한/);
 });
-/* 3.310 — 조건 칩 · 그날 상태 · 기기 기억 */
+/* 3.312 — 조건 칩 · 그날 상태 · 기기 기억 */
 const P=require('../studio/participation.js');
 test('day state follows the availability model — today is the current status, a future day its covering record or run, else current',()=>{
  const meta={participationDays:{'2026-11-18':{vp5:{s:'out',kind:'train',at:1,n:'개인 사정'}}},statusRuns:{vp6:[{s:'injury',from:'2026-11-17',to:'2026-11-22'}]}};
