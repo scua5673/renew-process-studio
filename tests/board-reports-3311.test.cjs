@@ -122,7 +122,8 @@ test('board.html 배선 — 채움 «없음» · 메뉴 길은 고른 그림에�
   assert.ok(h.includes('[a0,b0].forEach((pt,idx)=>{'),'핸들은 자료의 끝점');
   assert.ok(h.includes('21*_tokScaleOf(p),3)'),'토큰 반지름 21 × 배율 + 틈 3');
   assert.ok(h.includes('>그림 모두 지우기</button>')&&!h.includes('>선 지우기</button>'));
-  assert.ok(h.includes('board-shortcuts.js?v=3.311')&&h.includes('board-shape-menu.js?v=3.311'),'모듈 ?v=');
+  const V=(read('sw.js').match(/process-(\d\.\d{3})/)||[])[1];   // 판 번호는 sw.js CACHE 에서(시험에 박지 않는다 — code-budget-3043)
+  assert.ok(V&&h.includes('board-shortcuts.js?v='+V)&&h.includes('board-shape-menu.js?v='+V),'고친 모듈 둘의 ?v= 는 지금 판');
   const sm=read('studio/board-shape-menu.js');
   assert.ok(sm.includes("win.__psLsSelOnly = 1; try { lb.click(); } finally { win.__psLsSelOnly = 0; }"),'메뉴가 표식을 세우고 누른다');
   const en=read('studio/i18n/en-board.js');
