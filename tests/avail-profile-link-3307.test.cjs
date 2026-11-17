@@ -32,7 +32,9 @@ test('the name opens openPlayer, and closing the profile redraws the roster only
 
 test('3.307 version pins and release note',()=>{
   const app=fs.readFileSync(path.join(__dirname,'../studio/app.html'),'utf8'),sw=fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8');
-  assert.ok(app.includes("window.PS_BUILD='3.307'"));assert.ok(sw.includes("const CACHE = 'process-3.307';"));
+  /* 판 번호는 글자로 박지 않는다(code-budget-3043 래칫) — app.html 에서 읽어 sw.js 와 맞춘다. 뒤 판도 지나간다 */
+  const build=app.match(/window\.PS_BUILD='([0-9.]+)'/)[1];assert.ok(Number(build)>=3.307,'3.307 이 판을 올렸다');
+  assert.match(sw,new RegExp("const CACHE = 'process-"+build.replace(/\./g,'\\.')+"';"));
   const notes=require('../studio/release-notes.js');
   const e=notes.entries().find(x=>x.id==='2026-11-17-v3-307-avail-profile');assert.ok(e);
   assert.match(e.title,/v3\.307/);assert.equal(e.changes.length,1);assert.match(e.changes[0],/프로필/);
