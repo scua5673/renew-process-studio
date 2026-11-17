@@ -15,6 +15,9 @@ try{
     return f;
   }
   let f=await board();
+  /* 3.309 — 헤더(떠 있는 도크)에서는 «배치 도구»가 «보드 ▾» 메뉴 안(좁은 창 · 폰은 예전 자리). 새로고침 직후엔 헤더가 서기 전 무대 위 임시 자리에 잠깐 보이다 메뉴로 들어가므로, 헤더가 서고 단추가 제자리에 든 뒤에 누른다(누르는 사이 옮겨지면 클릭이 운동장에 떨어진다) */
+  async function openTools(){await f.waitForFunction(()=>{const s=document.getElementById('boardPageStrip'),t=document.getElementById('psEditToolsToggle');if(!t||!s)return false;if(!document.body.classList.contains('ps-dock-float'))return true;return s.classList.contains('ps-tb')&&!!t.closest('#ps-tb-menu,#boardPageStrip');},null,{timeout:20000});
+    const t=f.locator('#psEditToolsToggle');if(!await t.isVisible())await f.locator('#tbBrand').click();await t.click();}
   await f.addScriptTag({path:fileURLToPath(new URL('../fixtures/board-training-checks.js',import.meta.url))});
   const results=await f.evaluate(()=>PSBoardEditChecks.run());
   console.log(JSON.stringify(results));assert.deepEqual(results.filter(r=>!r.pass),[]);
@@ -22,7 +25,7 @@ try{
   async function at(x,y){return f.evaluate(({x,y})=>{const p=svg.createSVGPoint();p.x=x;p.y=y;const q=p.matrixTransform(world.getScreenCTM()),r=frameElement.getBoundingClientRect();return {x:r.left+q.x*r.width/innerWidth,y:r.top+q.y*r.height/innerHeight};},{x,y});}
   async function drag(from,to,mod){const a=await at(...from),b=await at(...to);if(mod)await page.keyboard.down(mod);await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(b.x,b.y,{steps:5});await page.mouse.up();if(mod)await page.keyboard.up(mod);}
   await f.evaluate(()=>{PSBoardEditChecks.seed();sel=null;multiSel=[];state.drawings=[];state.players=state.players.slice(0,1);state.equipment=[];state.players[0].x=400;state.players[0].y=300;window.__editGrid=5;localStorage.setItem('cs_drag_snap_v1','1');renderTokens();renderDrawings();updateDelUI();});
-  await f.locator('#psEditToolsToggle').click();await f.locator('[data-free]').click();
+  await openTools();await f.locator('[data-free]').click();
   assert.equal(await f.locator('[data-free]').getAttribute('aria-pressed'),'true');
   await f.getByRole('button',{name:'배치 도구 닫기',exact:true}).click();
   await drag([400,300],[463,342]);
@@ -88,7 +91,7 @@ try{
   await f.evaluate(()=>{beginDraw=__testBegin;moveDraw=__testMove;delete window.__testBegin;delete window.__testMove;delete window.__snapInputs;__setTilt(false);state.orientation='h';state.spFlip=false;applyView();_activateMoveTool();});
 
   await f.evaluate(()=>PSBoardEditChecks.seed());
-  await f.getByRole('button',{name:'배치 도구',exact:true}).click();
+  await openTools();
   await f.getByRole('button',{name:'훈련 조끼 주황',exact:true}).click();
   await f.getByLabel('편집 격자 간격',{exact:true}).selectOption('3');
   await f.getByLabel('격자·안내선에 맞추기',{exact:true}).check();
@@ -100,7 +103,7 @@ try{
   await f.getByRole('button',{name:'완료',exact:true}).click();
   for(const width of [375,393,768,1280]){
     await page.setViewportSize({width,height:900});
-    await f.getByRole('button',{name:'배치 도구',exact:true}).click();
+    await openTools();
     const bounds=await f.locator('#psEditTools').evaluate(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,width:innerWidth,overflow:el.scrollWidth-el.clientWidth};});
     assert.ok(bounds.left>=0&&bounds.right<=bounds.width+1&&bounds.overflow<=1,JSON.stringify(bounds));
     const free=await f.locator('[data-free]').boundingBox();console.log(JSON.stringify({width,bounds,free}));assert.ok(free.height>=43.9,'free move touch target');

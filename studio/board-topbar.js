@@ -3,8 +3,8 @@
    3.309 — 띠는 경기장 위에 뜬 겹이 아니라 **무대 위 제 줄(헤더 52px)** 이다(사용자 11/17 «도구들을 운동장과 겹치지 않게»): 운동장 SVG 는 그 아래부터 시작하고(실측 1280×800 에서 위 46px 가 단추 밑에 들어갔다),
    «도구 접기»(3.306)로 띠를 걷으면 그 줄이 사라져 운동장이 그만큼 커진다. 왼쪽 «어디»는 보관함 연결(#bpLinkChip) · 훈련 · 미팅 · 보관함 편집 · 작업 보드, «몇 쪽»은 __psPages.book.
    - 왼쪽: «보드 ▾»(미팅 세트 · 보드 가져오기 · 새 보드를 이 메뉴로) + 페이지 탭 + ＋
-   - 가운데: 보기 전환 — 평면 · 3D
-   - 오른쪽: 보관함 연결 · 보드 저장 · 보드 설정(아이콘) · 보관함 저장
+   - 가운데: 없음(3.309 — 평면 · 3D · 선수 모양은 보드 설정에)
+   - 오른쪽: 보관함 연결 · 내보내기 · 보드 저장 · 보드 설정(3.309 글자) · 보관함 저장 — «배치 도구»(board-training-edit.js)는 3.309 부터 «보드 ▾» 메뉴 안
    띠는 그릴 때마다 비우고 새로 채우므로(board.html render) 다 그린 뒤 원래 단추를 그대로 옮겨 담는다 — 누르는 동작 · 권한은 단추에 붙은 그대로다.
    경기장은 위 흰 띠 없이 화면 끝까지 채운다. 모양은 도크 스타일(board-dock-skin.js: 글래스 · 베벨 · 기본, 다크 모드)을 따른다. */
 (function (root, factory) {
@@ -128,6 +128,7 @@
       '#ps-tb-menu.on{display:block}',
       '#ps-tb-menu>button{display:flex!important;width:100%!important;align-items:center;height:38px!important;padding:0 12px!important;border:0!important;border-radius:9px!important;background:transparent!important;color:inherit!important;font:700 13px/1 Pretendard,-apple-system,sans-serif!important;text-align:left;cursor:pointer;box-shadow:none!important}',
       '#ps-tb-menu>button:hover{background:rgba(20,33,61,.07)!important}',
+      '#ps-tb-menu>button[hidden]{display:none!important}',   // 3.309 — «배치 도구»(board-training-edit.js 가 메뉴에 둔다)는 편집할 수 없을 때 hidden — 위 display:flex!important 가 이기지 않게
       'body.fmdark #ps-tb-menu,body.ps-skin-glass #ps-tb-menu{background:rgba(28,32,42,.97);color:#E8ECF4;border-color:rgba(255,255,255,.08)}',
       'body.fmdark #ps-tb-menu>button:hover,body.ps-skin-glass #ps-tb-menu>button:hover{background:rgba(255,255,255,.08)!important}'
     ];
@@ -305,7 +306,7 @@
       refit();
     }
     win.__psTopBarCenter = center;
-    var ro = null; try { if (win.ResizeObserver) ro = new win.ResizeObserver(function () { center(); }); } catch (_) {}
+    var ro = null; try { if (win.ResizeObserver) ro = new win.ResizeObserver(function () { win.requestAnimationFrame(center); }); } catch (_) {}   // 3.309 — RO 콜백 안에서 바로 레이아웃을 바꾸지 않는다(다음 프레임에): 띠가 제 줄이 되어 무대와 크기를 주고받으니 웹킷 «ResizeObserver loop …» 알림을 덜 만든다
     // 선택 패널(.sel-ctl)이 위쪽 막대와 겹치면 막대 아래로 내린다 — 예전에는 띠 아래 무대 안이라 겹칠 일이 없었다
     function clearSelCtl() {
       var s = strip(), c = doc.querySelector('.sel-ctl'); if (!c) return;

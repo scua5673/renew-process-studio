@@ -16,6 +16,12 @@ test('the strip is a row of its own: relative, 52px, opaque, clickable — not a
   assert.doesNotMatch(css,/body\.ps-dock-float #ehDoor\{top:14px!important\}/,'문은 무대 안이 아니라 헤더에');
   assert.match(css,/#boardPageStrip\.ps-tb(:not\(#tb\d\)){10} #ehDoor\{position:static!important;[^}]*display:inline-flex;/,'문은 헤더의 단추 — display 는 !important 없이');
   assert.match(css,/\.ps-skin-glass #boardPageStrip\.ps-tb(:not\(#tb\d\)){10} #ehDoor\{background:linear-gradient/,'문은 주 단추 모양');
+  /* «배치 도구»(board-training-edit.js)는 헤더가 아니라 «보드 ▾» 메뉴에 — 편집 못 할 때의 hidden 이 메뉴 단추 규칙(display:flex!important)에 지지 않게 */
+  assert.match(css,/#ps-tb-menu>button\[hidden\]\{display:none!important\}/);
+  const te=fs.readFileSync(path.join(root,'studio/board-training-edit.js'),'utf8');
+  assert.match(te,/var host=\(menu&&!additive&&!freeOnce\)\?menu:\(doc\.querySelector\('#boardPageStrip \.tb-r'\)\|\|doc\.getElementById\('boardStage'\)\);/,'헤더면 메뉴 · 선택 마침 · 자유 이동 대기 중엔 헤더 오른쪽');
+  assert.match(te,/observe\(menu,\{childList:true\}\)/,'띠를 다시 세워 메뉴가 비면 되돌아온다');
+  assert.match(te,/var anchor=\(toggle\.classList\.contains\('pe-menu'\)&&!toggle\.offsetParent\)\?\(doc\.getElementById\('tbBrand'\)\|\|toggle\):toggle;/,'패널은 닫힌 메뉴 안 단추 대신 «보드 ▾» 아래');
   /* 스킨 규칙 뒤에서 덩어리 꾸밈을 걷고 띠 바탕이 스킨을 따른다 */
   const glass=css.indexOf("body.ps-dock-float.ps-skin-glass #boardPageStrip.ps-tb"),strip=css.lastIndexOf('>.tb-g{background:transparent!important;border:0!important;box-shadow:none!important');
   assert.ok(glass>0&&strip>glass,'덩어리 걷기는 스킨 규칙 뒤에');

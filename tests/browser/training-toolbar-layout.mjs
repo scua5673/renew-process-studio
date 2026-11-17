@@ -97,7 +97,7 @@ try{
  await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
  await f.waitForFunction(()=>!document.body.classList.contains('editing')&&document.getElementById('boardPageStrip').getBoundingClientRect().width>0);
  assert.equal(await f.locator('#boardPageStrip').evaluate(e=>getComputedStyle(e).position),'relative','3.309 — normal board header is its own row above the pitch');
- assert.ok(await f.locator('#psEditToolsToggle').isVisible(),'normal board placement tools restored');
+ assert.equal(await f.evaluate(()=>{const t=document.getElementById('psEditToolsToggle');return !!t&&!!t.closest('#ps-tb-menu')&&!t.hidden;}),true,'3.309 — normal board placement tools live in the «보드 ▾» menu, not in the header');
  assert.ok(await f.locator('#boardPageStrip .bp-tab').first().isVisible(),'normal board page tabs restored (3.309 — 평면/3D 단추는 띠에 없다)');
  assert.ok(await f.locator('#tbExport').isVisible(),'normal board export restored');
  assert.ok(await f.locator('#bpBoardSettings').isVisible(),'normal board settings restored');

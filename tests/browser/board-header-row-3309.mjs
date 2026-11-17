@@ -7,6 +7,7 @@ import {startFixture,openApp} from '../fixtures/team-app.mjs';
 //  ③ 왼쪽 글: 빈 작업 보드는 «작업 보드», 페이지를 더하면 «2 / 2»
 //  ④ 빈 판의 «포메이션으로 시작» 문(#ehDoor)은 헤더 안(운동장 예약 0 — 세로 판도) · 누르면 보드 설정 › 배치(포메이션 칩 .eh-f — 2.277) · 선수가 놓이면 숨고 운동장 자리는 그대로
 //  ⑤ 가운데 덩어리(평면 · 3D · 선수 모양)는 없다 · 오른쪽 «보드 설정»은 글자 단추(톱니 숨김)
+//  ⑥ «배치 도구»는 헤더가 아니라 «보드 ▾» 메뉴 안 · 누르면 패널이 뜨고 메뉴는 닫힌다
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
 let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}console.log('board-header-row-3309 '+s);};
@@ -22,7 +23,7 @@ const look=f=>f.evaluate(()=>{
   return {folded:document.body.classList.contains('cmd-dock-folded'),strip:box(strip),pos:getComputedStyle(strip).position,svg:box(svg),pitch,overlap,inset:window.PSTopBar.topInset(svg,state.orientation||'h'),doorInset:window.PSTopBar.topInset(svg,'v'),
     where:brand?brand.querySelector('.tb-where').textContent:null,page:brand?brand.querySelector('.tb-page').textContent:null,tabs:[...strip.querySelectorAll('.bp-tab')].filter(e=>e.getClientRects().length).length,
     door:(()=>{const d=document.getElementById('ehDoor');return {inStrip:!!d&&strip.contains(d),box:box(d)};})(),
-    centre:!!strip.querySelector(':scope>.tb-c'),settings:(()=>{const b=document.getElementById('bpBoardSettings');if(!b)return null;const sp=b.querySelector('span'),sv=b.querySelector('svg');return {text:sp?sp.textContent:'',textShown:!!sp&&getComputedStyle(sp).display!=='none',svgShown:!!sv&&getComputedStyle(sv).display!=='none',w:Math.round(b.getBoundingClientRect().width)};})()};});
+    centre:!!strip.querySelector(':scope>.tb-c'),tools:(()=>{const t=document.getElementById('psEditToolsToggle');return {inHeader:!!t&&!!t.closest('#boardPageStrip'),inMenu:!!t&&!!t.closest('#ps-tb-menu'),visible:!!t&&t.getClientRects().length>0};})(),settings:(()=>{const b=document.getElementById('bpBoardSettings');if(!b)return null;const sp=b.querySelector('span'),sv=b.querySelector('svg');return {text:sp?sp.textContent:'',textShown:!!sp&&getComputedStyle(sp).display!=='none',svgShown:!!sv&&getComputedStyle(sv).display!=='none',w:Math.round(b.getBoundingClientRect().width)};})()};});
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
   await page.waitForFunction(READY,null,{timeout:60000});
@@ -43,6 +44,7 @@ try{
   assert.ok(open0.door.box.t>=open0.strip.t&&open0.door.box.b<=open0.strip.b,'문이 헤더 줄 안에 '+JSON.stringify([open0.strip,open0.door.box]));
   assert.equal(open0.where,'작업 보드');assert.equal(open0.page,'','페이지 하나면 n / m 없음');
   assert.equal(open0.centre,false,'가운데 덩어리(평면 · 3D · 선수 모양)는 없다');
+  assert.ok(open0.tools.inMenu&&!open0.tools.inHeader&&!open0.tools.visible,'«배치 도구»는 헤더가 아니라 «보드 ▾» 메뉴에 '+JSON.stringify(open0.tools));
   assert.ok(open0.settings&&open0.settings.text==='보드 설정'&&open0.settings.textShown&&!open0.settings.svgShown&&open0.settings.w>=50,'«보드 설정»은 글자 단추(톱니 숨김) '+JSON.stringify(open0.settings));
 
   step('fold');
@@ -77,6 +79,16 @@ try{
   const placed=await look(f);
   assert.equal(placed.door.box,false,'선수가 놓이면 문이 숨는다 '+JSON.stringify(placed.door));assert.equal(placed.doorInset,0);assert.equal(placed.overlap,0);
   assert.deepEqual(placed.svg,open0.svg,'문이 숨어도 운동장 자리 · 크기 그대로(예약이 없으니) '+JSON.stringify([open0.svg,placed.svg]));
+
+  step('tools');
+  await f.locator('#tbBrand').click();await f.waitForFunction(()=>document.getElementById('ps-tb-menu').classList.contains('on'),null,{timeout:5000});
+  assert.equal(await f.locator('#ps-tb-menu #psEditToolsToggle').isVisible(),true,'메뉴 안에 «배치 도구»');
+  await f.locator('#ps-tb-menu #psEditToolsToggle').click();await page.waitForTimeout(300);
+  assert.equal(await f.evaluate(()=>{const p=document.getElementById('psEditTools');return !!p&&!p.hidden&&p.getClientRects().length>0;}),true,'누르면 배치 도구 패널');
+  assert.equal(await f.evaluate(()=>document.getElementById('ps-tb-menu').classList.contains('on')),false,'메뉴는 닫힌다');
+  assert.equal((await look(f)).overlap,0);
+  await f.locator('#psEditTools [data-close]').click();await page.waitForTimeout(200);
+  assert.equal(await f.evaluate(()=>document.getElementById('psEditTools').hidden),true,'닫힌다');
 
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],JSON.stringify(errs));
