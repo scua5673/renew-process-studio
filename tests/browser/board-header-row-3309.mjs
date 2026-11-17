@@ -5,6 +5,7 @@ import {startFixture,openApp} from '../fixtures/team-app.mjs';
 //     (고치기 전 코드(3.078 겹)는 svg 가 띠 밑 6px 부터라 ① 에서 떨어진다)
 //  ② «도구 접기» → 띠 줄이 사라져 운동장이 위로 커진다 → «도구 펼치기» → 제자리
 //  ③ 왼쪽 글: 빈 작업 보드는 «작업 보드», 페이지를 더하면 «2 / 2»
+//  ④ 빈 판의 «포메이션으로 시작» 문(#ehDoor)은 헤더 안(운동장 예약 0 — 세로 판도) · 누르면 보드 설정 › 배치(포메이션 칩 .eh-f — 2.277) · 선수가 놓이면 숨고 운동장 자리는 그대로
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
 let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}console.log('board-header-row-3309 '+s);};
@@ -18,7 +19,8 @@ const look=f=>f.evaluate(()=>{
   const overlap=controls.filter(r=>r.left<pitch.r&&r.right>pitch.l&&r.top<pitch.b&&r.bottom>pitch.t).length;
   const brand=document.getElementById('tbBrand');
   return {folded:document.body.classList.contains('cmd-dock-folded'),strip:box(strip),pos:getComputedStyle(strip).position,svg:box(svg),pitch,overlap,inset:window.PSTopBar.topInset(svg,state.orientation||'h'),doorInset:window.PSTopBar.topInset(svg,'v'),
-    where:brand?brand.querySelector('.tb-where').textContent:null,page:brand?brand.querySelector('.tb-page').textContent:null,tabs:[...strip.querySelectorAll('.bp-tab')].filter(e=>e.getClientRects().length).length};});
+    where:brand?brand.querySelector('.tb-where').textContent:null,page:brand?brand.querySelector('.tb-page').textContent:null,tabs:[...strip.querySelectorAll('.bp-tab')].filter(e=>e.getClientRects().length).length,
+    door:(()=>{const d=document.getElementById('ehDoor');return {inStrip:!!d&&strip.contains(d),box:box(d)};})()};});
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
   await page.waitForFunction(READY,null,{timeout:60000});
@@ -34,7 +36,9 @@ try{
   assert.ok(open0.svg&&open0.svg.t>=open0.strip.b,'운동장 SVG 는 띠 아래부터 '+JSON.stringify([open0.strip,open0.svg]));
   assert.ok(open0.pitch.t>=open0.strip.b,'운동장 윗선이 띠 아래 '+JSON.stringify([open0.strip,open0.pitch]));
   assert.equal(open0.overlap,0,'띠 안 단추가 운동장과 겹치지 않는다');
-  assert.equal(open0.inset,0,'가로 판은 예약 0');assert.ok(open0.doorInset>0&&open0.doorInset<80,'세로 판이라면 빈 판의 «포메이션으로 시작» 문 높이만 예약(3.078 의 띠 몫은 없다): '+open0.doorInset);
+  assert.equal(open0.inset,0,'가로 판은 예약 0');assert.equal(open0.doorInset,0,'세로 판도 예약 0 — 빈 판의 «포메이션으로 시작» 문이 헤더 안이라(3.078 의 띠 몫 · 첫 3.309 의 문 몫 둘 다 없다)');
+  assert.ok(open0.door.inStrip&&open0.door.box,'빈 판의 문은 헤더 안에 보인다 '+JSON.stringify(open0.door));
+  assert.ok(open0.door.box.t>=open0.strip.t&&open0.door.box.b<=open0.strip.b,'문이 헤더 줄 안에 '+JSON.stringify([open0.strip,open0.door.box]));
   assert.equal(open0.where,'작업 보드');assert.equal(open0.page,'','페이지 하나면 n / m 없음');
 
   step('fold');
@@ -59,6 +63,16 @@ try{
   await f.evaluate(()=>document.querySelectorAll('#boardPageStrip .bp-tab')[0].click());await page.waitForTimeout(400);
   assert.equal((await look(f)).page,'1 / 2','탭을 옮기면 따라온다');
   assert.equal((await look(f)).overlap,0);
+
+  step('door');
+  await f.locator('#ehDoor').click();
+  await f.locator('.eh-f',{hasText:'4-3-3'}).first().waitFor({state:'visible',timeout:5000});   /* 문을 누르면 보드 설정 › 배치(2.277 — 패널이 서 있으면 그 탭, 아니면 떠 있는 카드)의 포메이션 칩 */
+  await f.evaluate(()=>{try{if(window.__psToggleBoardSettings)window.__psToggleBoardSettings('force-close');}catch(_){}try{hideEmptyHint();}catch(_){}});await page.waitForTimeout(300);
+  assert.equal(await f.evaluate(()=>{const e=document.querySelector('.eh-f');return !!e&&e.getClientRects().length>0;}),false,'닫힌다');
+  await f.evaluate(()=>{state.players=[{id:9001,team:'blue',num:7,x:300,y:300}];renderTokens();});await page.waitForTimeout(500);
+  const placed=await look(f);
+  assert.equal(placed.door.box,false,'선수가 놓이면 문이 숨는다 '+JSON.stringify(placed.door));assert.equal(placed.doorInset,0);assert.equal(placed.overlap,0);
+  assert.deepEqual(placed.svg,open0.svg,'문이 숨어도 운동장 자리 · 크기 그대로(예약이 없으니) '+JSON.stringify([open0.svg,placed.svg]));
 
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],JSON.stringify(errs));

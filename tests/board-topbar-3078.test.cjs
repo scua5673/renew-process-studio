@@ -44,9 +44,10 @@ test('3.083 — no resize loop when the bar cannot build (community viewer), cle
   assert.match(src,/if \(s\.classList\.contains\('ps-tb'\) !== was\) win\.setTimeout\(function \(\) \{ try \{ win\.dispatchEvent\(new win\.Event\('resize'\)\)/);
   assert.doesNotMatch(src,/else unbuild\(\); try \{ win\.dispatchEvent/);
   const css=tb.css();
-  /* 3.309 — 띠는 무대 위 제 줄: vcreating 의 top:56px 는 걷었고(#boardView padding-top 56), 문은 띠 아래 무대 안 14px */
+  /* 3.309 — 띠는 무대 위 제 줄: vcreating 의 top:56px 는 걷었고(#boardView padding-top 56), 문(#ehDoor)은 헤더 안의 주 단추(무대 안 top 규칙은 없다) */
   assert.doesNotMatch(css,/body\.ps-dock-float\.vcreating #boardPageStrip\.ps-tb[^{]*\{top:56px!important\}/);
-  assert.match(css,/body\.ps-dock-float #ehDoor\{top:14px!important\}/);
+  assert.doesNotMatch(css,/body\.ps-dock-float #ehDoor\{top:14px!important\}/);
+  assert.match(css,/#boardPageStrip\.ps-tb(:not\(#tb\d\)){10} #ehDoor\{position:static!important;/);
 });
 test('3.083 — centre group truly centred when it fits',()=>{
   const css=tb.css(),src=fs.readFileSync(path.join(__dirname,'../studio/board-topbar.js'),'utf8');

@@ -82,9 +82,10 @@ try{
   await f.evaluate(()=>{state.players=[{id:9001,team:'blue',num:7,x:300,y:300}];renderTokens();window.__setBoardOrient('v');});
   await page.waitForTimeout(500);
   const occupied=await settled(f,'board with players');
-  /* 3.309 — 띠는 무대 위 제 줄(예약 0)이고 남는 예약은 빈 판의 문(#ehDoor)뿐: 선수가 놓여 문이 숨으면 예약도 0 이라 골대가 올라온다 */
-  assert.equal(occupied.fit.inset,0,'문이 숨으면 예약 0');assert.ok(flat.fit.inset>0,'빈 세로 판은 문 높이만 예약: '+flat.fit.inset);
-  assert.ok(Math.min(...occupied.goals.map(g=>g.top))<Math.min(...flat.goals.map(g=>g.top))-20,'hidden formation door no longer reserves space');
+  /* 3.309 — 띠는 무대 위 제 줄(예약 0)이고 빈 판의 «포메이션으로 시작» 문(#ehDoor)도 헤더 안이라 예약은 늘 0: 선수를 놓아 문이 숨어도 골대 자리는 그대로(첫 3.309 는 문 높이만 예약했다 — 사용자 «포메이션으로 시작도 헤더로») */
+  assert.equal(occupied.fit.inset,0,'선수가 놓인 판 예약 0');assert.equal(flat.fit.inset,0,'빈 세로 판도 예약 0 — 문은 헤더에');
+  assert.ok(Math.abs(Math.min(...occupied.goals.map(g=>g.top))-Math.min(...flat.goals.map(g=>g.top)))<=2,'문이 숨어도 골대 자리 그대로(헤더에 있으니 예약이 없다) '+JSON.stringify([flat.goals,occupied.goals]));
+  assert.ok(await f.evaluate(()=>{const d=document.getElementById('ehDoor'),s=document.getElementById('boardPageStrip');return !!d&&!!s&&s.contains(d);}),'문은 헤더 안');
   if(engine==='webkit'){
     const {page:phone}=await openApp(fx,'phone',{browsers});
     await phone.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());

@@ -34,14 +34,15 @@
   function viewOf(tilt) { return !tilt ? 'flat' : '3d'; }
 
   // 3.309 — 띠는 무대 위 제 줄이라 운동장과 겹치지 않는다: 띠 몫의 예약은 없다(3.078 은 세로 판의 위쪽 골대가 떠 있는 단추 밑에 들어가 그만큼 잔디 여백으로 예약했다).
-  // 남는 것은 빈 판의 «포메이션으로 시작» 문(#ehDoor — 무대 안 위 가운데)뿐: 세로 판에서 위쪽 골대를 덮으니 그 높이만 예약한다(선수가 놓이면 문이 숨고 예약도 0).
+  // 빈 판의 «포메이션으로 시작» 문(#ehDoor)도 헤더로 올렸다(사용자 11/17 «포메이션으로 시작도 헤더로 올리면 되지 않을까» — 아래 adoptDoor): 떠 있는 도크에선 예약이 늘 0.
+  // 문이 아직 무대 안 위 가운데에 서 있을 때만(옮기기 전 · 좁은 창에서 되돌린 뒤) 세로 판의 위쪽 골대를 덮으니 그 높이만 예약한다(선수가 놓이면 문이 숨고 예약도 0).
   // 함수 이름 · 인자는 applyView(board.html 4900)가 그대로 부르므로 지킨다.
   function topInset(svg, orientation) {
     if (!svg || orientation !== 'v') return 0;
     var doc = svg.ownerDocument, body = doc && doc.body, win = doc && doc.defaultView;
     if (!body || !win || !body.classList.contains('ps-dock-float') || body.classList.contains('bc-tilt3d') || body.classList.contains('editing')) return 0;
     var stage = svg.parentElement, door = doc.getElementById('ehDoor');
-    if (!stage || !door) return 0;
+    if (!stage || !door || !stage.contains(door)) return 0;
     var r = stage.getBoundingClientRect(), cs = win.getComputedStyle(stage), top = r.top + (parseFloat(cs.paddingTop) || 0), b = door.getBoundingClientRect();
     if (!(b.width && b.height && b.right > r.left && b.left < r.right)) return 0;
     return Math.max(0, Math.ceil(b.bottom + 8 - top));
@@ -74,8 +75,8 @@
       // 3.309 — 띠는 무대 위 제 줄(헤더): 바탕이 있고(스킨 · 다크는 아래), 운동장 SVG 는 그 아래부터. 보관함 편집(vcreating)은 #boardView 의 padding-top 56 이 고정 막대 아래로 내려 준다 — 3.083 의 top:56px 규칙은 걷었다
       'html.ps-page-board body.ps-dock-float #boardStage' + N + '{}',
       S + '{display:flex!important;position:relative!important;left:auto!important;right:auto!important;top:auto!important;z-index:60!important;flex:0 0 auto!important;width:100%!important;height:52px!important;box-sizing:border-box!important;padding:8px 10px!important;gap:8px!important;background:var(--panel,#fff)!important;border:0!important;border-bottom:1px solid var(--line,#E3E6EA)!important;box-shadow:none!important;overflow:visible!important;pointer-events:auto!important;justify-content:space-between!important;align-items:center!important}',
-      // 빈 보드의 «포메이션으로 시작» 문은 이제 띠 아래 무대 안이라 작은 여백만
-      'html.ps-page-board body.ps-dock-float #ehDoor{top:14px!important}',
+      // 빈 판의 «포메이션으로 시작» 문(#ehDoor)은 헤더 왼쪽 «어디» 옆의 주 단추(adoptDoor 가 옮긴다). display 에 !important 를 두지 않는다 — board.html updateEmptyHint 의 인라인 display:none(선수가 놓이면)이 이기게
+      S + ' #ehDoor{position:static!important;top:auto!important;left:auto!important;transform:none!important;z-index:auto!important;height:28px!important;min-height:0!important;padding:0 11px!important;margin:0 0 0 2px!important;border:0!important;border-radius:8px!important;font:700 12px/1 Pretendard,-apple-system,sans-serif!important;letter-spacing:0!important;display:inline-flex;align-items:center;white-space:nowrap;flex:none;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;cursor:pointer}',
       S + ' .tb-where{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       S + ' .tb-page{font-weight:600;opacity:.6;margin-left:2px;font-variant-numeric:tabular-nums}',
       S + '>.tb-g{pointer-events:auto;display:flex;align-items:center;gap:2px;height:36px;padding:0 4px;border-radius:12px;-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);flex:0 1 auto;min-width:0;font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}',
@@ -153,6 +154,8 @@
         X + '>.tb-r button#tbExport:not(#vaultSave):not(#boardManualSave):hover,' + X + '>.tb-r button#tbExport:not(#vaultSave):not(#boardManualSave)[aria-expanded="true"]{background:' + t[5] + '!important}',
         X + ' #vaultSave,' + X + ' #boardManualSave{' + t[3] + '}',   // 3.083 — 저장 단추는 «저장» 하나(staging 3.077) — 주 단추로
         X + ' .tb-logo{' + t[3] + '}',
+        X + ' #ehDoor{' + t[3] + '}',   // 3.309 — 빈 판의 «포메이션으로 시작» 문은 주 단추
+        X + ' #ehDoor:hover{filter:brightness(1.07)}',
         X + ' .tb-seg{background:' + t[5] + ';box-shadow:inset 0 1px 3px rgba(0,0,0,' + (dark ? '.45' : '.12') + ')}',
         X + ' .tb-sep{background:' + (dark ? 'rgba(255,255,255,.12)' : 'rgba(20,33,61,.12)') + '}',
         X + ' .tb-brand{color:' + ink + '}'
@@ -268,10 +271,25 @@
         refit();
       });
     }
+    // 3.309 — 빈 판의 «포메이션으로 시작» 문(#ehDoor — board.html 은 무대 안 위 가운데에 세운다)을 헤더 «어디» 옆(구분선 앞)으로(사용자 11/17). 단추 · 클릭(__psOpenFormation) · 보임(updateEmptyHint 의 인라인 display)은 board.html 그대로 — 자리만 옮긴다. 되돌릴 자리는 doorHome(unbuild → restoreDoor).
+    // ⚠ 띠는 board.html 이 페이지를 그릴 때마다 innerHTML 로 다시 그린다(그래서 build 가 childList 감시자에 매달려 있다) — 띠 안의 덩어리와 함께 문도 버려지므로 노드를 doorNode 에 붙들어 두고 세울 때마다 다시 넣는다(클릭 처리기 · 글은 그 노드에 있다). 떨어져 있던 사이 놓친 보임 · 숨김은 updateEmptyHint 를 한 번 불러 맞춘다
+    var doorHome = null, doorNode = null;
+    function adoptDoor(L) {
+      var d = doc.getElementById('ehDoor') || doorNode; if (!d || !L || d.parentNode === L) return;
+      doorNode = d;
+      if (!doorHome && d.parentNode) doorHome = { parent: d.parentNode, next: d.nextSibling };
+      L.insertBefore(d, L.querySelector(':scope>.tb-sep'));
+      try { if (typeof win.updateEmptyHint === 'function') win.updateEmptyHint(); } catch (_) {}
+    }
+    function restoreDoor() {
+      var d = doc.getElementById('ehDoor') || doorNode, h = doorHome; doorHome = null;
+      if (!d || !h || !h.parent || d.parentNode === h.parent) return;
+      try { h.parent.insertBefore(d, h.next && h.next.parentNode === h.parent ? h.next : null); } catch (_) {}
+    }
     function build() {
       var s = strip(); if (!s || busy) return;
       if (!on()) { unbuild(); return; }
-      if (s.querySelector(':scope>.tb-g')) { adoptStrays(s); paintView(); return; }   // 이미 정리됨 — 늦게 들어온 단추만 제자리로
+      if (s.querySelector(':scope>.tb-g')) { adoptStrays(s); adoptDoor(s.querySelector(':scope>.tb-l')); paintView(); return; }   // 이미 정리됨 — 늦게 들어온 단추만 제자리로
       var kids = Array.prototype.slice.call(s.children); if (!kids.length) return;
       busy = true;
       try {
@@ -279,7 +297,7 @@
         var L = mk('div', 'tb-g tb-l'), C = mk('div', 'tb-g tb-c'), R = mk('div', 'tb-g tb-r');
         var brand = mk('button', 'tb-brand', '<span class="tb-logo">PS</span><span class="tb-where"></span><span class="tb-page"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>');   // 3.309 — 글은 paintBrand 가 textContent 로(자료 이름은 사용자 글)
         brand.type = 'button'; brand.id = 'tbBrand'; brand.title = '보드 메뉴 — 미팅 세트 · 보드 가져오기 · 새 보드'; brand.setAttribute('aria-haspopup', 'menu');
-        L.appendChild(brand);
+        L.appendChild(brand); adoptDoor(L);
         var tabs = mk('div', 'tb-tabs');
         if (g.tabs.length) { L.appendChild(mk('span', 'tb-sep')); g.tabs.forEach(function (t) { tabs.appendChild(t); }); L.appendChild(tabs); }
         if (g.add) { g.add.classList.add('tb-add'); g.add.setAttribute('aria-label', g.add.title || '페이지 추가'); L.appendChild(g.add); }
@@ -302,7 +320,7 @@
     // 떠 있는 도크가 꺼지면(좁은 창) 띠를 원래 차례로 되돌린다
     function unbuild() {
       var s = strip(); if (!s) return;
-      s.classList.remove('ps-tb'); menu.classList.remove('on');
+      s.classList.remove('ps-tb'); menu.classList.remove('on'); restoreDoor();
       if (!saved || !s.querySelector(':scope>.tb-g')) return;
       busy = true;
       try {
