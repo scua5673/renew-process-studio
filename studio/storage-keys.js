@@ -239,7 +239,8 @@
     ['ps_personal_review_v1','device','ls','pref','sync.js'],
     ['ps_phone_board_hint_v1','device','ls','seen','board.html'],
     ['ps_pitch_photo:','device','idb','data','board-pitch-photo.js',{prefix:1}],   /* 3.100 — 운동장 사진(판에는 @photo: 참조만 · 서버로 가지 않는다) */
-    ['ps_private_board_draft_v1:','device','ls','draft','storage.js',{prefix:1}],
+    ['ps_private_board_draft_v1:','device','idb','draft','board-draft.js',{prefix:1}],   /* 작업 보드 머리 레코드(<uid>) · 초안(<uid>:unsaved) · 3.278 구조 사본(:rescue:) · 3.273 보관함 초안(:vault-unsaved:). IndexedDB 먼저(3.190), localStorage 는 수명 주기 · 실패 때의 사본(거울 아님 — 갈리면 3.302 settle 이 보관 자리로). 11/18 표를 고침(ls 로 적혀 있었다) */
+    ['ps_private_board_draft_v1:*:kept:','device','idb','recovery','board-draft.js',{of:'ps_private_board_draft_v1:',prefix:1}],   /* 갈린 · 진 원문의 보관 사본(keepHead · archiveHeads · settle · recover — * 자리는 계정 id). 되읽는 화면은 없다(백업 파일에만 실린다) — storage-kept.js 가 optimize 때 경계 밖(주인마다 최신 8 · 14일)을 지우고 localStorage 사본은 IndexedDB 로 옮긴다. 보고 이름(storage_usage · storage_full)은 ps_private_board_draft_v1:kept */
     ['ps_profiles_v1:','device','idb','data','profile-app.js',{prefix:1}],   // 3.280 — «프로필» 앱의 선수 · 코치 프로필(계정마다 · 이 기기에만 · 동기화 없음)
     ['ps_private_board_rev_v1','device','ls','cache','app.html'],
     ['ps_push_log_v1','device','ls','diag','sync.js'],
@@ -311,11 +312,15 @@
     return o;
   });
   prefixes.sort(function(a,b){return b.key.length-a.key.length;});
-  /* 키 하나의 줄. 접두사 키(cs_idp_v1_<uid> 같은)는 가장 긴 접두사 줄 */
+  /* 키 하나의 줄. 접두사 키(cs_idp_v1_<uid> 같은)는 가장 긴 접두사 줄. 와일드카드 줄(ps_private_board_draft_v1:*:kept:)은 * 앞이 접두사, * 뒤가 그 다음 어딘가에(사이에 계정 id) */
   function info(k){
     k=String(k||'');
     if(Object.prototype.hasOwnProperty.call(exact,k))return exact[k];
-    for(var i=0;i<prefixes.length;i++)if(k.indexOf(prefixes[i].key)===0)return prefixes[i];
+    for(var i=0;i<prefixes.length;i++){
+      var p=prefixes[i],star=p.key.indexOf('*');
+      if(star<0){if(k.indexOf(p.key)===0)return p;continue;}
+      if(k.indexOf(p.key.slice(0,star))===0&&k.indexOf(p.key.slice(star+1),star)>=0)return p;
+    }
     return null;
   }
   /* 사람에게 보이는 한 줄 — «복구 사본 · 이 기기만» */
