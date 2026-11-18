@@ -85,7 +85,8 @@ test('boards touched on a bigger screen are view-only on the phone',()=>{
 test('the home list shows phone boards only, newest first',()=>{
   const a=P.itemFor(P.docNew('11','4-3-3'),'a',10),b=P.itemFor(P.docNew('11','4-3-3'),'b',30),c={libId:'x',type:'board',savedAt:99,snap:{}},d={libId:'y',type:'train',phone:{v:1,n:'11'},savedAt:98};
   b.editedAt=5;b.savedAt=5;a.editedAt=40;
-  assert.deepEqual(P.mine([c,b,null,d,a]).map(x=>x.name),['a','b']);assert.deepEqual(P.mine(null),[]);
+  const q={libId:'q',type:'board',name:'q',quick:{v:1,form:'4-3-3'},savedAt:20,snap:{}};
+  assert.deepEqual(P.mine([c,b,null,d,a,q]).map(x=>x.name),['a','q','b'],'depth charts (quick boards) are phone boards too');assert.deepEqual(P.mine(null),[]);
 });
 
 test('hit-testing picks tokens before arrows and names are escaped in the drawing',()=>{
@@ -106,7 +107,7 @@ test('wiring: board script, vault chip, phone guard, service worker, shell tab',
   const board=read('studio/board.html'),sw=read('sw.js'),app=read('studio/app.html'),nav=read('studio/mobile-navigation.js'),view=read('studio/board-phone-view.js'),mod=read('studio/board-phone-board.js'),tab=read('studio/board-phone-nav.js');
   assert.equal(board.split('<script src="board-phone-board.js"></script>').length,2);
   assert.ok(board.indexOf('board-quick-depth.js')<board.indexOf('board-phone-board.js'));
-  assert.ok(board.includes(`if(d.phone)_edc+='<span class="vc-phone">폰보드</span>'`),'vault rows carry the chip');
+  assert.ok(board.includes(`if(d.phone||d.quick)_edc+='<span class="vc-phone">폰보드</span>'`),'vault rows carry the chip');
   assert.ok(sw.includes("'/studio/board-phone-board.js'")&&sw.includes("'/studio/board-phone-nav.js'"));
   assert.ok(app.indexOf('board-phone-nav.js')>0&&app.indexOf('board-phone-nav.js')<app.indexOf('<script src="mobile-navigation.js">'),'the tab module loads before the phone menu');
   assert.ok(nav.includes('PSPhoneBoardNav.button(seg)')&&nav.includes('primary.splice(1,0,phoneBoard)'),'the tab sits right after «보드»');

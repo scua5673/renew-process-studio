@@ -335,7 +335,12 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "이 판은 아이패드 · 컴퓨터에서 열어 주세요":"Open this board on an iPad or computer",
 "만든 사람만 고칠 수 있어요. 보기로 열었어요":"Only the person who made it can edit. Opened for viewing",
 "아이패드 · 컴퓨터에서 손본 판이라 폰에서는 보기만 돼요":"This board was edited on an iPad or computer, so it is view-only on the phone",
-"«버리기»를 누르면 이 판은 사라져요.":"If you tap «Discard», this board is gone."
+"«버리기»를 누르면 이 판은 사라져요.":"If you tap «Discard», this board is gone.",
+"종류":"Type",
+"뎁스 차트":"Depth chart",
+"포지션마다 선수 이름을 순서대로 넣는 판이에요. 다음 화면에서 포메이션을 골라요.":"A board where you list player names in order for each position. Pick the formation on the next screen.",
+"뎁스 차트를 열지 못했어요. 잠시 뒤 다시 눌러 주세요":"Could not open the depth chart. Try again in a moment",
+"쓰던 뎁스 차트는 남겨 뒀어요 — «＋ 새 폰보드 › 뎁스 차트»에서 이어서":"Your depth chart draft is kept — continue from «＋ New phone board › Depth chart»"
 },{
 "내 폰보드 {}개":"My phone boards · {}",
 "콘은 {}개까지 놓을 수 있어요":"You can place up to {} cones",
