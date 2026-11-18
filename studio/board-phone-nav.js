@@ -1,4 +1,4 @@
-/* PROCESS STUDIO — 3.322 폰 아래 메뉴의 «폰보드» 탭(셸 쪽). 편집기는 작전판 틀 안의 덮개(board-phone-board.js)다.
+/* PROCESS STUDIO — 3.325 폰 아래 메뉴의 «폰보드» 탭(셸 쪽). 편집기는 작전판 틀 안의 덮개(board-phone-board.js)다.
    · 단추는 폰(html[data-ps-device=phone])에서만 만든다 — 아이패드 · 컴퓨터의 메뉴(DOM)는 그대로. mobile-navigation.js 가 `button(seg)` 로 받아 «보드» 다음 칸에 세운다.
    · 누르면 원래 «보드» 단추를 대신 눌러(저장 장벽 · 권한은 그 처리기 그대로) 작전판 틀을 띄운 뒤 `phoneBoard open` 신호를 보낸다.
    · 다른 화면으로 가면(showApp 이 body[data-ps-app] 을 다시 적는다) 덮개를 닫는다. 켜짐은 `__psPhoneBoardWant` — 작전판 틀이 다시 읽혀도 이어 연다. */

@@ -1,4 +1,4 @@
-// 3.322 폰보드 — 순수 규칙(좌표 · 판 만들기 · 다시 고칠 수 있는 판 · 고치면 다른 칸은 그대로)과 배선.
+// 3.325 폰보드 — 순수 규칙(좌표 · 판 만들기 · 다시 고칠 수 있는 판 · 고치면 다른 칸은 그대로)과 배선.
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const P=require('../studio/board-phone-board.js');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');

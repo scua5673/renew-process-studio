@@ -300,7 +300,7 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "보관함 › {} ›":"Library › {} ›"
 },{});
 
-/* 3.322 — 폰보드(board-phone-board.js · board-phone-nav.js): 폰 아래 메뉴 탭 · 목록 · 새 폰보드 · 편집 도구 · 저장 알림 */
+/* 3.325 — 폰보드(board-phone-board.js · board-phone-nav.js): 폰 아래 메뉴 탭 · 목록 · 새 폰보드 · 편집 도구 · 저장 알림 */
 (function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
 for(k in D)(E[k]||(E[k]={})).en=D[k];
 for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);

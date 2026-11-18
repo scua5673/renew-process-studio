@@ -41,7 +41,7 @@ suites.board.push('board-page-thumb-diet-3288');   /* 3.288 — 페이지 장면
 suites.board.push('team-load-team34-3288');   /* 3.288 — 저장 팀을 팀 3 · 4 에도(제보 29c97fc5): 자리 그대로 · 남는 선수와 판에 없는 팀은 대기 줄 둘째 줄 · 다른 팀을 덮지 않는다 */
 suites.selection.push('board-more-teams-3294');   /* 3.294 — 팀 추가: 팀 넷 + «팀 추가» → 팀 10까지 두 줄 · 쓰는 만큼만(저장 → 새로고침) · 새 팀 색 · 유니폼 · 그림 · 저장 팀 불러오기 · «한 번에 놓기»가 겹치지 않는다 */
 suites.selection.push('board-quick-depth-3300');   /* 3.300 — 휴대폰 빠른 보드: 포메이션 · 선수단 순서 · 자리 시트 · 붙여넣기 → 보관함 작전판(뒤 순번 depth) → 보기 · 이름 고치기 · 쓰던 보드 이어서 · 아이패드 같은 판 */
-suites.selection.push('board-phone-board-3322');   /* 3.320 — 폰보드: 폰 아래 메뉴 탭 · 세로 편집기 · 보관함 작전판(phone 표시 · «폰보드» 칩) · 다시 고치기 · 아이패드엔 탭 없음 */
+suites.selection.push('board-phone-board-3325');   /* 3.320 — 폰보드: 폰 아래 메뉴 탭 · 세로 편집기 · 보관함 작전판(phone 표시 · «폰보드» 칩) · 다시 고치기 · 아이패드엔 탭 없음 */
 suites.selection.push('board-vision-carry-3271','board-position-direct-3271');   /* 3.271 — 시야 · 시선은 이 페이지에만 + 이 장면부터 뒤로(756c0a48) · 오른쪽 클릭 창의 포지션(0033117a) */
 suites.board.push('board-page-undo-3271');
 suites.board.push('board-draft-divergent-3302');   /* 3.302 — 초안의 두 사본이 달라도 편집이 저장되고 알약이 뜨지 않는다 · 두 사본은 보관 키에 그대로 · 보관 실패면 예전처럼 막음 · 저장 뒤 알약 걷힘 */
