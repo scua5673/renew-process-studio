@@ -67,7 +67,7 @@ suites.storage.push('community-youtube');
 suites.storage.push('roster-pending-quota');
 suites.storage.push('roster-mirror-after-diet-3315');   /* 3.315 — 그림을 품은 옛 일정 사본(8MB 급)으로 가득 찬 작은 저장소: 회차가 사본을 서버 원문(참조만)으로 바꾼 뒤 선수단 거울 쓰기가 성공한다(scout_mirror_write 0건 · 51명 · 선수단 화면) */
 suites.boardperf.push('roster-outbox-full');
-suites.boardperf.push('roster-mirror-write-order');   /* 3.323 — 같은 회차 안에서 일정 다이어트 쓰기(8MB → 참조만)가 내려앉은 뒤 선수단 거울을 쓴다(PR #888 CI 가 잡은 경합 — storage 묶음은 20분 한도에 가까워 여기) */   /* 3.253 — 선수 변경 묶음으로 가득 찬 작은 저장소에서 부팅 · 저장(제보 e6fc5d26) */
+suites.boardperf.push('roster-mirror-write-order');   /* 3.327 — 같은 회차 안에서 일정 다이어트 쓰기(8MB → 참조만)가 내려앉은 뒤 선수단 거울을 쓴다(PR #888 CI 가 잡은 경합 — storage 묶음은 20분 한도에 가까워 여기) */   /* 3.253 — 선수 변경 묶음으로 가득 찬 작은 저장소에서 부팅 · 저장(제보 e6fc5d26) */
 suites.boardperf.push('xss-synced-docs');   /* 3.271 — 팀원이 동기화로 보낸 IDP · 일정 문서가 코치 화면에서 실행되지 않는다(끼워 넣은 값 탐침) */
 suites.identity.push('sched-fill-team');   /* «일정 ＋» 시트의 «팀 공통»이 «훈련»을 누르면 A팀이 되던 것 — 팀 공통 · 한 팀 · 여러 팀 */
 suites.records.push('sched-day-kind');   /* 한 팀을 OFF 로 돌린 날은 일정 칸 · 요약 · 팀 «오늘» · 주간 PDF 가 모두 OFF(PSSchedule.dayKind) */
