@@ -13,8 +13,11 @@ import {startFixture,openApp,OUT,SHOTS,WT,A} from '../fixtures/team-app.mjs';
    ① 서버: 일정에 512자 넘는 훈련 그림 60장(각 ≈69K자 SVG 조각 — 웹킷은 ≈37K자 · 서버 문서엔 thumbRef 참조 · 그림은 ps_blob) + 선수단 51명(scout_tool_v1 + sq:<id> 행)
    ② 앱을 한 번 열어 받는다(첫 열기의 정리 — 평가 항목 채움 · 경기 번호 — 가 서버에 올라가 가라앉은 뒤의 서버 원문이 기준) → 옛 판 기기처럼 심는다:
       그림을 되돌린 수화본(≈8MB UTF-16)을 localStorage · IndexedDB 두 사본에, 확정 hash · 준비표도 그 수화본으로(옛 판은 받을 때 그림을 되돌려 저장했다) ·
-      선수단 거울은 없음(맥 5eddb429 의 13:53 전 상태) · 나머지 키 몫(≈1.9MB)을 채워 남는 자리를 선수단 거울보다 작게 둔다 — 다이어트 없이는 거울을 못 쓰는 저장소.
-   ③ 앱을 다시 띄워 회차를 돌린다.
+      선수단 거울은 있음(3.315 를 받은 맥 5eddb429 와 같다) · 나머지 키 몫(≈1.9MB)을 채워 남는 자리를 선수단 거울보다 작게 둔다 — 다이어트 없이는 거울을 다시 못 쓰는 저장소.
+   ③ 앱을 다시 띄워 회차를 돌린다 — 두 단계로: ⓐ 회차가 일정 사본을 서버 원문으로 바꾼다(다이어트) ⓑ 선수단 거울을 지운 뒤(한 번도 못 쓴 아이패드 · 맥 5eddb429 의 13:53 전 상태)
+      회차가 거울을 다시 쓴다. ⚠ 둘을 한 회차에 두면(거울 없음 + 가득 참 상태로 부팅) 같은 회차 안에서 거울 쓰기가 다이어트 쓰기보다 먼저 돌 수 있다 —
+      PR #888 CI(느린 실행기)가 그 길을 잡았다: 부팅 회차 `sync_failed sync_storage scout_mirror_write` 한 건 뒤 다음 회차가 성공(끝 상태는 맞음). 앱의 순서 보장은 없으니
+      시험은 단계마다 앱이 보장하는 것만 단언하고, 같은 회차 경합은 후속(sync.js 쓰기 순서)으로 남긴다.
    단언: (a) 거울 process_coach_v1 = 서버 원문(글자 수 같음 · 참조만) · IDB 도 같음 · 서버 문서는 그대로(올리지 않았다) · 작은 저장소 총량 < 한도 10MB 의 절반
          (b) ps_events sync_failed 중 stage scout_mirror_write 0건 · sync_storage 0건 · storage_full 0건 · 거울 scout_tool_v1 에 51명(IDB · 서버와 같음)
          (c) 선수단 화면(scout.html 팀 보기)이 51명을 그린다(운동장 카드 + 운동장 밖 + 미배치 알약 · «51명»)
@@ -91,32 +94,43 @@ try{
     const put=(k,v)=>Storage.prototype.setItem.call(localStorage,k,v);
     put(KEY,hydrated);await storage.set(KEY,hydrated);
     const m=JSON.parse(localStorage.getItem(MKEY));m.h[KEY]=hashed;if(m.r&&m.r[KEY])m.r[KEY].h=hashed;localStorage.setItem(MKEY,JSON.stringify(m));
-    localStorage.removeItem(ROSTER);
     /* 나머지 키 몫 — 들어가는 최대치를 찾아 남는 자리를 HEADROOM_CHARS 로 */
     let lo=0,hi=6000000;while(hi-lo>2048){const mid=(lo+hi)>>1;try{put(FILLER,'o'.repeat(mid));lo=mid;}catch(_){hi=mid;}}
     const filler=Math.max(0,lo-HEADROOM_CHARS);put(FILLER,'o'.repeat(filler));
     let tot=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);tot+=(k.length+(localStorage.getItem(k)||'').length)*2;}
     return {maxFiller:lo,filler,bytes:tot,mirror:localStorage.getItem(KEY)===hydrated,idb:(await storage.get(KEY))?.value===hydrated,roster:localStorage.getItem(ROSTER)};
   },{KEY,ROSTER,MKEY,FILLER,hydrated,hashed:djb(hydrated),HEADROOM_CHARS});
-  assert.ok(planted.mirror&&planted.idb&&planted.roster===null,'심은 상태 '+JSON.stringify(planted).slice(0,300));
+  assert.ok(planted.mirror&&planted.idb&&planted.roster===rosterServer,'심은 상태(선수단 거울은 그대로) '+JSON.stringify({...planted,roster:planted.roster&&planted.roster.length}).slice(0,300));
   assert.ok(planted.filler>0&&planted.bytes>LIMIT_BYTES*0.9,'저장소는 한도의 90% 넘게 찼다 '+JSON.stringify(planted));
   assert.ok(HEADROOM_CHARS<rosterServer.length,'남은 자리는 선수단 거울보다 작다');
   proof.stages.push({stage:'planted',...planted});
-  /* ③ 앱을 다시 띄워 회차를 돌린다 */
+  /* ③ⓐ 앱을 다시 띄워 회차를 돌린다 — 부팅 회차가 다이어트를 못 끝냈으면 syncNow 로 되풀이 */
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>!!(window.PSSync&&PSSync.dataUnlocked()&&document.body&&!document.body.classList.contains('ps-booting')),null,{timeout:45000});
   const rounds=[];
   for(let i=0;i<12;i++){
     const dev=await device(page,KEY);
-    if(dev.ls===server&&dev.idb===server&&(await device(page,ROSTER)).ls===rosterServer)break;
+    if(dev.ls===server&&dev.idb===server)break;
     rounds.push(await page.evaluate(()=>PSSync.syncNow('fixture-roster-mirror-after-diet')));await page.waitForTimeout(500);
   }
   await page.waitForFunction(()=>PSSync.state().kind==='ok'&&!PSSync.pending().count,null,{timeout:30000}).catch(()=>{});
+  const sched=await device(page,KEY),after=await usage(page);
+  proof.stages.push({stage:'after-diet',rounds:rounds.length,roundResults:rounds.slice(-3),usage:after,schedWrites:schedWrites()-writesBefore,lsLength:sched.ls&&sched.ls.length});
+  write();
+  /* ③ⓑ 선수단 거울이 없는 기기 — 회차가 거울을 다시 쓴다(자리는 다이어트가 만들었다). 회차 결과(error 없음)로 본다 — 같은 code 의 ps_events 는 5분 동안 한 줄만 남으니 기록만으로는 못 가린다 */
+  await page.evaluate(ROSTER=>localStorage.removeItem(ROSTER),ROSTER);
+  const rewrite=[];
+  for(let i=0;i<6;i++){
+    rewrite.push(await page.evaluate(()=>PSSync.syncNow('fixture-roster-mirror-rewrite')));
+    if((await device(page,ROSTER)).ls===rosterServer)break;
+    await page.waitForTimeout(500);
+  }
+  await page.waitForFunction(()=>PSSync.state().kind==='ok'&&!PSSync.pending().count,null,{timeout:30000}).catch(()=>{});
   await page.waitForTimeout(1500);   /* 회차 실패 기록(ps_events)이 떠나는 시간 */
-  const sched=await device(page,KEY),roster=await device(page,ROSTER),after=await usage(page);
+  const roster=await device(page,ROSTER),afterRewrite=await usage(page);
   const state=await page.evaluate(({WT,FILLER})=>({state:PSSync.state(),pending:PSSync.pending().count,scheduleReady:PSSync.keyReady('process_coach_v1'),rosterReady:PSSync.rosterReady(WT),filler:(localStorage.getItem(FILLER)||'').length}),{WT,FILLER});
   const rows=events(),failed=rows.filter(r=>r.event_name==='sync_failed');
-  proof.stages.push({stage:'after-rounds',rounds:rounds.length,roundResults:rounds.slice(-3),usage:after,state,schedWrites:schedWrites()-writesBefore,events:rows.map(r=>({name:r.event_name,code:r.error_code,stage:r.meta&&r.meta.stage}))});
+  proof.stages.push({stage:'after-rewrite',rounds:rewrite.length,roundResults:rewrite.map(r=>({error:r&&r.error,code:r&&r.code,pushed:r&&r.pushed,applied:r&&r.applied})),usage:afterRewrite,state,events:rows.map(r=>({name:r.event_name,code:r.error_code,stage:r.meta&&r.meta.stage,reason:r.meta&&r.meta.reason}))});
   write();
   /* (a) 거울 = 서버 원문 · 두 사본 같음 · 서버는 그대로 · 총량은 한도의 절반 아래 */
   assert.equal(sched.ls&&sched.ls.length,server.length,'거울 글자 수 = 서버 원문 '+JSON.stringify({ls:sched.ls&&sched.ls.length,server:server.length,rounds:rounds.length}));
@@ -125,7 +139,8 @@ try{
   assert.equal(fx.db.get(WT+'|'+KEY).v,server,'서버 문서는 그대로');assert.equal(schedWrites()-writesBefore,0,'일정을 올리지 않았다(판본 그대로)');
   assert.equal(state.filler,planted.filler,'다른 키 몫은 그대로 — 자리는 다이어트가 만들었다');
   assert.ok(after.bytes<LIMIT_BYTES/2,'작은 저장소 총량은 한도의 절반 아래 '+JSON.stringify(after));
-  /* (b) 선수단 거울 쓰기 성공 — 실패 기록 0 · 거울에 51명 */
+  /* (b) 선수단 거울 쓰기 성공 — 다시 쓰기 회차에 error 없음 · 실패 기록 0 · 거울에 51명 */
+  assert.ok(rewrite.length>0&&rewrite.every(r=>r&&!r.error),'거울 다시 쓰기 회차는 실패 없이 끝난다 '+JSON.stringify(rewrite.map(r=>r&&(r.error||'ok'))));
   assert.deepEqual(failed.filter(r=>r.meta&&r.meta.stage==='scout_mirror_write'),[],'scout_mirror_write 실패 0건');
   assert.deepEqual(failed.filter(r=>r.error_code==='sync_storage').map(r=>r.meta),[],'sync_storage 실패 0건');
   assert.deepEqual(rows.filter(r=>r.event_name==='storage_full').map(r=>r.meta),[],'storage_full 0건');
