@@ -5,6 +5,8 @@
    ② 살아 있음: 탭이 Web Lock `ps-crash-alive:<탭>` 을 쥔다. 렌더러가 죽으면 잠금이 풀리고 표식만 남는다 — 다음 부팅(같은 탭 · 새 창 모두)이
       잠금 없는 표식을 «죽은 탭»으로 읽어 ps_events boot_after_crash 한 줄(가장 최근 것 하나)을 보내고 표식을 지운다. 탭 버림(document.wasDiscarded)은 죽음이 아니다.
       잠금이 없는 브라우저 · 가득 찬 작은 저장소는 sessionStorage(같은 탭을 다시 열 때만).
+      3.321 — «표식 있음 · 잠금 없음»은 2초 뒤 한 번 더 읽고 그때도 그런 것만 보낸다(기다리는 잠금도 살아 있는 창). 떠나는 창은 표식을 지우고 잠금을 놓는데(disarm),
+      잠금은 브라우저가 바로 보여 주고 저장소 삭제는 다른 탭(다른 프로세스)의 사본에 늦게 닿는다 — 3.276 넘겨받기의 새 창이 그 사이에 읽으면 떠난 창을 죽은 탭으로 보냈다(CI 크로미움 one-window-3276).
    ③ meta 는 sync.js safeEventMeta 가 받는 12칸: 숫자 age · min · heap · peak · lim · n · kb · maxKb, 문자열은 stage · reason · msg · mode 만.
    ⚠ 표식 · age 만으로 메모리 종료 · 강제 닫기 · 전원 꺼짐을 가를 수 없다(CLAUDE.md «폰 강제 종료 · 메모리»). performance.memory 는 크로미움만, 값은 굵게 묶이고 늦게 바뀐다.
    판정 · 꾸리기는 순수 함수(pick · meta · codeOf · scan)로 나눠 시험이 그대로 부른다. */
@@ -12,7 +14,7 @@
   try{if(root&&root.top===root&&root.document&&(root.document.documentElement.getAttribute('data-ps-device')||'desktop')==='desktop')api.mount(root);}catch(_){}
 })(typeof window!=='undefined'?window:null,function(){
   'use strict';
-  var KEY='ps_crash_crumb_v1',PRE='ps_crash_crumb_v1:',LOCK='ps-crash-alive:',LIB='cs_drill_lib_v1',BEAT=30000,WRITE_GAP=1000,KEEP_MS=7*86400000,HIDE_MS=600000,ACTS=6;
+  var KEY='ps_crash_crumb_v1',PRE='ps_crash_crumb_v1:',LOCK='ps-crash-alive:',LIB='cs_drill_lib_v1',BEAT=30000,WRITE_GAP=1000,KEEP_MS=7*86400000,HIDE_MS=600000,ACTS=6,CONFIRM_MS=2000;
   function num(v){v=+v;return Number.isFinite(v)?v:0;}
   function word(v,n){return String(v==null?'':v).replace(/[^a-zA-Z0-9_-]/g,'').slice(0,n||16);}
   function dot(v,n){return String(v==null?'':v).replace(/[^a-zA-Z0-9_.-]/g,'').slice(0,n||22);}   /* 틀.단추 */
@@ -38,7 +40,7 @@
     out.n=n;out.kb=Math.round(raw.length/1024);out.maxKb=Math.round(max/1024);return out;
   }
   function parse(raw){try{var m=JSON.parse(raw);return m&&typeof m==='object'&&num(m.t)>0?m:null;}catch(_){return null;}}
-  /* 죽은 표식 고르기: entries=[{id,m}], held=쥐고 있는 잠금 이름들(null=잠금을 못 읽음 → 판정하지 않는다), skip=버려진 탭 · 내 탭 */
+  /* 죽은 표식 고르기: entries=[{id,m}], held=쥐었거나 기다리는 잠금 이름들(null=잠금을 못 읽음 → 판정하지 않는다), skip=버려진 탭 · 내 탭 */
   function pick(entries,held,now,skip){
     var dead=[],stale=[],live={};(held||[]).forEach(function(n){live[n]=1;});skip=skip||{};
     (entries||[]).forEach(function(e){
@@ -170,9 +172,14 @@
       var own=null;try{own=parse(SS&&SS.getItem(KEY));if(SS)SS.removeItem(KEY);}catch(_){}   /* 가득 찬 저장소의 같은 탭 표식 */
       if(discarded){if(prevTab){skip[prevTab]=1;try{LS.removeItem(PRE+prevTab);}catch(_){}}own=null;}
       var L=nav.locks,can=L&&typeof L.query==='function'&&typeof L.request==='function';
-      function names(){return L.query().then(function(r){return (r&&r.held||[]).map(function(x){return String(x&&x.name||'');});},function(){return null;});}
+      /* 쥔 잠금 + 기다리는 잠금(disarm 뒤 다시 쥐려는 창도 살아 있다) */
+      function names(){return L.query().then(function(r){return [].concat(r&&r.held||[],r&&r.pending||[]).map(function(x){return String(x&&x.name||'');});},function(){return null;});}
+      /* 3.321 — «표식 있음 · 잠금 없음»이 보이면 CONFIRM_MS 뒤 한 번 더 읽고 두 번째 읽기로 판정한다: 방금 떠난 창의 표식 삭제(localStorage)는 잠금 해제보다 늦게 이 탭에 닿는다.
+         실제 종료(강제 닫기 · 메모리 종료 · 전원)는 표식이 그대로라 두 번째 읽기에서도 잡힌다. 잠금을 못 읽으면(null) 전처럼 바로 */
+      function doubt(h){return !!h&&pick(entries(),h,bootAt,skip).dead.length>0;}
+      function twice(){return names().then(function(h){if(!doubt(h))return settle(h);return new Promise(function(r){win.setTimeout(r,CONFIRM_MS);}).then(names).then(settle);});}
       /* 함께 열린 창들(브라우저가 통째로 죽었다 다시 연 창 여럿)이 같은 표식을 두 번 보내지 않게 한 줄로 선다 */
-      var q=can?new Promise(function(res){try{L.request('ps-crash-check',function(){return names().then(function(h){return settle(h);});}).then(res,function(){res(null);});}catch(_){res(settle(null));}}):Promise.resolve().then(function(){return settle(null);});
+      var q=can?new Promise(function(res){try{L.request('ps-crash-check',function(){return twice();}).then(res,function(){res(null);});}catch(_){res(settle(null));}}):Promise.resolve().then(function(){return settle(null);});
       return q;
       function settle(held){
         var list=entries(),r=pick(list,held,bootAt,skip);

@@ -28,6 +28,7 @@ const suites={
   records:['team-criteria','idp-player-matches','idp-start','idp-weekly-growth','match-lineup','personal-large-upload','roster-history-review','roster-projection','roster-recovery','save-status-layout','storage-commit','team-position-delete','training-context','training-dock-layout','coach-idp-entry','invite-link-export','board-reports-3155','board-rotation-fade','board-feedback-3163','board-page-history','squad-cards','schedule-group-visibility']
 };
 suites.identity.push('update-delivery','update-client-lifecycle','one-window-3276');   /* 3.275 한 기기 한 창 */
+suites.identity.push('crash-crumb-lag-3321');   /* 3.321 — 데스크톱 탭 종료 기록: 방금 떠난 창(잠금은 놓였는데 표식 삭제가 늦게 닿음)은 죽은 탭이 아니다 · 남은 표식은 그대로 보낸다 — one-window-3276 흔들림의 까닭 */
 suites.records.push('multipitch-rotation','board-settings-pitches');
 suites.board.push('board-scout-import','board-roster-import');
 suites.idp.push('squad-group-change');
