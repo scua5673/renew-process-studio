@@ -9,7 +9,9 @@
   var TYPE='process-studio-section',SCHEMA=2,MAX_FILE=120*1024*1024,MAX_RAW=1500000,MAX_MATCH_IDS=1000,MAX_POSITION_TARGETS=200;
   var LABEL={schedule:'일정',match:'경기',players:'선수',scouting:'스카우팅',idp:'IDP',gamemodel:'게임모델'};
   var NAV={today:'schedule',training:'schedule',match:'match',players:'players',scouting:'scouting',idp:'idp',settings:'gamemodel'};
-  var IDB_MIRROR={process_coach_v1:1,cs_team_matches_v1:1,cs_scout_targets_v1:1,cs_squad_v1:1};
+  /* 저장 계층 1단계 — IndexedDB 정본 + 거울인 키는 정본을 먼저 읽고(getRaw) 공용 길 psSaveSharedAsync 로 쓴다(setRaw). 키 표(storage-keys.js)의 idb · mirror 줄과 같아야 한다(tests/storage-gate 가 견준다).
+     scout_tool_v1 · cs_gamemodel_v1 이 빠져 있어 선수 · 스카우팅 · 게임모델 가져오기가 거울(localStorage)에만 써 IndexedDB 와 갈라졌다(설계 2절). */
+  var IDB_MIRROR={process_coach_v1:1,cs_team_matches_v1:1,cs_scout_targets_v1:1,cs_squad_v1:1,scout_tool_v1:1,cs_gamemodel_v1:1};
   var SCHEDULE_KEYS=['process_coach_v1','cs_themes_v1','cs_psched_v1','cs_pmeet_v1','cs_pwarm_v1','cs_ptrain_v1','cs_team_v1'];
   var MATCH_KEYS=['cs_team_matches_v1','cs_assign_v1','cs_match_del_v1'];
   var EMPTY_RAW={
