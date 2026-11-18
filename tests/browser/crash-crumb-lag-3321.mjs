@@ -15,10 +15,11 @@ const events=()=>fx.calls.filter(c=>c.p==='/rest/v1/ps_events').flatMap(c=>[].co
 try{
   const init={fn:()=>{
     if(window.top!==window||!/\/studio\/app\.html$/.test(location.pathname))return;
-    /* 잠금 읽기 세기 · 첫 읽기 뒤 300ms 에 lefttab 삭제 — 문서마다 건다(셸이 부팅 중 한 번 더 열려도 세고 지운다), 표식 심기는 한 번만 */
+    /* 잠금 읽기 세기 · 읽기 뒤 300ms 에 lefttab 삭제 — 문서마다 건다: 셸은 부팅 중 한 번 더 열리는데(첫 문서가 300ms 전에 사라지면 그 문서의 예약은 죽는다 — 3.328 합침 뒤 #898 이 부팅 시각을 바꿔 한 번 그랬다)
+       표식이 아직 남아 있으면 어느 문서의 읽기 뒤든 예약한다. 표식 심기는 한 번만 */
     const L=navigator.locks,q=L.query.bind(L),K='ps_crash_lag_queries_v1';
     L.query=function(){const n=+(localStorage.getItem(K)||0)+1;localStorage.setItem(K,String(n));
-      if(n===1)setTimeout(function(){localStorage.removeItem('ps_crash_crumb_v1:lefttab');},300);return q();};
+      if(localStorage.getItem('ps_crash_crumb_v1:lefttab')!=null)setTimeout(function(){localStorage.removeItem('ps_crash_crumb_v1:lefttab');},300);return q();};
     if(localStorage.getItem('ps_crash_lag_test_v1'))return;localStorage.setItem('ps_crash_lag_test_v1','1');
     const now=Date.now(),mark=o=>JSON.stringify(Object.assign({t:now-800,b:now-20000,l:1,s:'load',w:2,x:10,hid:0,v:'lagtest f:fBoard fr3',a:[],h:35,p:35,q:4192,n:null,k:null,g:null,d:'browser 1280x800@1 c4 m16 linux cr151'},o));
     localStorage.setItem('ps_crash_crumb_v1:lefttab',mark({}));
@@ -31,7 +32,7 @@ try{
   while(Date.now()-t0<20000&&!events().length)await A.waitForTimeout(300);
   await A.waitForTimeout(1500);   /* 둘째 줄이 더 오지 않는지 */
   const ev=events();
-  console.log('crash-crumb-lag-3321 boot_after_crash '+JSON.stringify(ev.map(r=>[r.error_code,r.meta.stage,r.meta.age,r.meta.msg])));
+  console.log('crash-crumb-lag-3321 boot_after_crash '+JSON.stringify(ev.map(r=>[r.error_code,r.meta.stage,r.meta.age,r.meta.msg]))+' reads='+await A.evaluate(()=>localStorage.getItem('ps_crash_lag_queries_v1'))+' nav='+await A.evaluate(()=>performance.getEntriesByType('navigation')[0]?.type));
   assert.equal(ev.length,1,'죽은 탭 한 줄만 '+JSON.stringify(ev.map(r=>r.error_code)));
   assert.equal(ev[0].error_code,'D:deadtest','삭제가 늦게 닿은 표식(lagtest)이 아니라 남은 표식');
   assert.equal(ev[0].meta.stage,'loadw2t10','떠난 창을 세지 않는다(.x2 없음)');
