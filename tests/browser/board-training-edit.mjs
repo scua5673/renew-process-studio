@@ -15,9 +15,24 @@ try{
     return f;
   }
   let f=await board();
-  /* 3.309 — 헤더(떠 있는 도크)에서는 «배치 도구»가 «보드 ▾» 메뉴 안(좁은 창 · 폰은 예전 자리). 새로고침 직후엔 헤더가 서기 전 무대 위 임시 자리에 잠깐 보이다 메뉴로 들어가므로, 헤더가 서고 단추가 제자리에 든 뒤에 누른다(누르는 사이 옮겨지면 클릭이 운동장에 떨어진다) */
-  async function openTools(){await f.waitForFunction(()=>{const s=document.getElementById('boardPageStrip'),t=document.getElementById('psEditToolsToggle');if(!t||!s)return false;if(!document.body.classList.contains('ps-dock-float'))return true;return s.classList.contains('ps-tb')&&!!t.closest('#ps-tb-menu,#boardPageStrip');},null,{timeout:20000});
-    const t=f.locator('#psEditToolsToggle');if(!await t.isVisible())await f.locator('#tbBrand').click();await t.click();}
+  /* 3.309 — 헤더(떠 있는 도크)에서는 «배치 도구»가 «보드 ▾» 메뉴 안(좁은 창 · 폰은 예전 자리). 새로고침 직후엔 헤더가 서기 전 무대 위 임시 자리에 잠깐 보이다 메뉴로 들어간다.
+     3.312(시험) — 폭을 바꾼 직후에도 같은 일이 난다: iframe 이 먼저 좁아져 떠 있는 도크가 꺼지고(헤더 풀림 · 단추는 무대로 나와 보임) 약 1초 뒤 앱 배치가 틀을 768 로 되돌리며 헤더가 다시 서고 단추가 닫힌 메뉴로 돌아간다.
+     느린 기계(CI)에서는 그 사이에 «보임»을 판단해 메뉴를 열지 않고 단추를 누르다 45초를 기다렸다(11/17 staging push CI board2). 그래서 단추의 자리 · 도크 상태가 0.5초 동안 그대로일 때까지 기다리고, 누른 뒤 패널이 정말 열렸는지(aria-expanded) 보며 세 번까지 다시 한다. */
+  async function openTools(){
+    for(let attempt=0;attempt<3;attempt++){
+      await f.evaluate(()=>{window.__peSettle=null;});
+      await f.waitForFunction(()=>{const s=document.getElementById('boardPageStrip'),t=document.getElementById('psEditToolsToggle');if(!t||!s)return false;
+        const float=document.body.classList.contains('ps-dock-float'),key=[float,s.classList.contains('ps-tb'),t.parentNode&&t.parentNode.id,innerWidth,innerHeight].join('|'),w=window.__peSettle||(window.__peSettle={});
+        if(w.key!==key){w.key=key;w.at=performance.now();return false;}
+        if(performance.now()-w.at<500)return false;
+        if(!float)return true;return s.classList.contains('ps-tb')&&!!t.closest('#ps-tb-menu,#boardPageStrip');},null,{timeout:20000});
+      const t=f.locator('#psEditToolsToggle');
+      if(!await t.isVisible()){await f.locator('#tbBrand').click();await f.waitForFunction(()=>document.getElementById('ps-tb-menu')?.classList.contains('on'),null,{timeout:5000}).catch(()=>{});}
+      try{await t.click({timeout:5000});}catch(e){if(attempt===2)throw e;continue;}
+      if(await t.getAttribute('aria-expanded')==='true')return;
+    }
+    throw new Error('openTools: «배치 도구» 패널이 열리지 않았다');
+  }
   await f.addScriptTag({path:fileURLToPath(new URL('../fixtures/board-training-checks.js',import.meta.url))});
   const results=await f.evaluate(()=>PSBoardEditChecks.run());
   console.log(JSON.stringify(results));assert.deepEqual(results.filter(r=>!r.pass),[]);
