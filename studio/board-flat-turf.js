@@ -44,7 +44,7 @@ function read(win){
   var cards=[];
   if(n>1){try{cards=[].map.call(d.querySelectorAll('#board #ps-multipitch [data-pitch-rect]'),function(g){return g.getAttribute('data-pitch-rect').split(',').map(Number);});}catch(_){}}
   return {pitch:(d.documentElement.dataset&&d.documentElement.dataset.pitch)||'',img:(st&&st.pitchImg)||'',n:n,L:L0,T:T0,mpp:M0,grassM:+win.__grassM||0,
-    pr:pr||{L:L0,T:T0,PW:105*M0},len:(sp&&sp.len)||105,cards:cards};
+    pr:pr||{L:L0,T:T0,PW:105*M0,PH:68*M0},len:(sp&&sp.len)||105,cards:cards};
 }
 function tile(win){try{return win.PSStadiumGround?(win.PSStadiumGround.grainTile(TILE)||''):'';}catch(_){return '';}}
 function mk(d,tag,a){var e=d.createElementNS(NS,tag);for(var k in a)e.setAttribute(k,a[k]);return e;}
@@ -81,29 +81,36 @@ function turfSync(win,o){
 /* ③ 깎은 줄 — 3D 의 psStMow · 카드 띠(3.255)를 평면에 더 옅게. 잔디 피치(실사 잔디 포함, 운동장 사진 제외).
    자리: #world 바로 밑 id 없는 rect(3D · 3D 영상 · 운동장 사진이 숨긴다) — 비네트 바로 위, 구역 · 라인 아래 */
 var DK=0.035,LT=0.03;
-/* 실사 잔디가 아닌 잔디에서 «잔디 줄무늬»(5 · 10m)를 직접 켰으면 그 줄을 쓴다 — 두 겹이 되지 않게 */
-function wantMow(o){return !!o&&o.pitch==='grass'&&(o.img==='@real'||(!o.img&&!(o.grassM>0)));}
+/* 3.326 — 무늬는 보드 설정 «잔디 무늬»(board-mow.js — 평면 · 3D 같은 값). «없음»이면 줄 없이 사진 그대로.
+   사진 없는 잔디(실사를 못 그리는 기기)는 무늬를 .grass-stripes(두 색)로 그린다 — 여기서 또 그리지 않는다(두 겹 금지).
+   예전(3.263)엔 «잔디 줄무늬 없음»에도 옅은 4m 띠를 깔았다 — 이제 «없음»은 없음이다. */
+var MOW=G&&(function(){try{return (typeof window!=='undefined'&&window.PSBoardMow)||(typeof require==='function'?require('./board-mow.js'):null);}catch(_){return null;}})();
+function kindOf(o){var Mw=(typeof window!=='undefined'&&window.PSBoardMow)||MOW;return Mw?Mw.kindOf(o&&o.grassM):((o&&o.grassM>0)?'band':'none');}
+function wantMow(o){return !!o&&o.pitch==='grass'&&o.img==='@real'&&kindOf(o)!=='none';}
 function mowSync(win,o){
   var d=win.document,world=d.getElementById('world');if(!world)return null;
   var old=world.querySelectorAll(':scope>.ps-flat-mow');
   if(!wantMow(o)){[].forEach.call(old,function(e){e.remove();});return null;}
   var base=null;for(var c=world.firstElementChild;c;c=c.nextElementSibling){if(c.tagName==='rect'&&!c.id&&!c.classList.contains('ps-flat-grain')&&!c.classList.contains('ps-flat-mow')){base=c;break;}}
   if(!base)return null;
-  var p=turfPlan({L:o.pr.L,T:o.pr.T,PW:o.pr.PW,len:o.len,cards:o.n>1?o.cards:[]});
-  var key=JSON.stringify([p.base,p.cards,base.getAttribute('x'),base.getAttribute('width')]);
+  var p=turfPlan({L:o.pr.L,T:o.pr.T,PW:o.pr.PW,len:o.len,cards:o.n>1?o.cards:[]}),k=kindOf(o),Mw=(typeof window!=='undefined'&&window.PSBoardMow)||MOW;
+  var cs=o.n>1&&o.cards&&o.cards.length?G.cardBands(o.cards,o.len):[];
+  var key=JSON.stringify([k,p.base,p.cards,base.getAttribute('x'),base.getAttribute('width')]);
   var defs=world.querySelector(':scope>defs.ps-flat-mow');
   if(!defs||defs.getAttribute('data-k')!==key){
     [].forEach.call(old,function(e){e.remove();});
     defs=mk(d,'defs',{'class':'ps-flat-mow','data-k':key});
-    var band=function(id,x,y,size,rot){var b=size/2,pt=mk(d,'pattern',{id:id,patternUnits:'userSpaceOnUse',x:x,y:y,width:size,height:size});
-      if(rot)pt.setAttribute('patternTransform','rotate(90 '+x+' '+y+')');
-      pt.appendChild(mk(d,'rect',{width:f(b),height:size,fill:'#000','fill-opacity':DK}));pt.appendChild(mk(d,'rect',{x:f(b),width:f(b),height:size,fill:'#fff','fill-opacity':LT}));
-      defs.appendChild(pt);};
-    var rects=[];
-    if(!p.cards.length){band('psFlatMow',p.base.x,p.base.y,p.base.size,0);
+    /* 띠 · 넓은 띠는 3.263 그대로 옅게(.035 · .03), 다른 무늬는 한 겹이라 조금 짙게 */
+    var s1=(k==='band'||k==='wide')?1:1.4,g0={dk:['#000',DK*s1],lt:['#fff',LT*s1],x2:.62,f:f};
+    var paint=function(id,g){var o2={};for(var q in g0)o2[q]=g0[q];for(q in g)o2[q]=g[q];
+      if(Mw)return Mw.paint(id,k,o2);
+      var b=g.len/G.bands(g.lenM),sz=2*b;return '<pattern id="'+id+'" patternUnits="userSpaceOnUse" x="'+f(g.x)+'" y="'+f(g.y)+'" width="'+f(sz)+'" height="'+f(sz)+'"'+(g.rot?' patternTransform="rotate(90 '+f(g.x)+' '+f(g.y)+')"':'')+'><rect width="'+f(b)+'" height="'+f(sz)+'" fill="#000" fill-opacity="'+DK+'"/><rect x="'+f(b)+'" width="'+f(b)+'" height="'+f(sz)+'" fill="#fff" fill-opacity="'+LT+'"/></pattern>';};
+    var rects=[],html='';
+    if(!cs.length){html=paint('psFlatMow',{x:o.pr.L,y:o.pr.T,len:o.pr.PW,wid:o.pr.PH||o.pr.PW*68/105,lenM:o.len,cx:o.pr.CX,cy:o.pr.CY});
       rects.push(mk(d,'rect',{'class':'ps-flat-mow',x:base.getAttribute('x'),y:base.getAttribute('y'),width:base.getAttribute('width'),height:base.getAttribute('height'),fill:'url(#psFlatMow)','pointer-events':'none'}));}
-    else p.cards.forEach(function(c,i){band('psFlatMowC'+i,c.x,c.y,c.size,90);
-      rects.push(mk(d,'rect',{'class':'ps-flat-mow',x:c.box[0],y:c.box[1],width:c.box[2],height:c.box[3],fill:'url(#psFlatMowC'+i+')','pointer-events':'none'}));});
+    else cs.forEach(function(c,i){html+=paint('psFlatMowC'+i,{x:c.r[0],y:c.r[1],len:c.r[3],wid:c.r[2],lenM:o.len,rot:90});
+      rects.push(mk(d,'rect',{'class':'ps-flat-mow',x:f(c.box[0]),y:f(c.box[1]),width:f(c.box[2]),height:f(c.box[3]),fill:'url(#psFlatMowC'+i+')','pointer-events':'none'}));});
+    defs.innerHTML=html;
     old=[defs].concat(rects);
   }else old=[].slice.call(old);
   /* 비네트 바로 위(없으면 구역 · 라인 앞) — renderPitchImg 는 사진을 비네트 앞에, redrawGrass 는 줄무늬 · 비네트를 구역 앞에 다시 넣는다 */
@@ -131,5 +138,5 @@ function install(win){
   try{sync(win);}catch(_){}
   return true;
 }
-return {want:want,wantMow:wantMow,plan:plan,turfPlan:turfPlan,sync:sync,install:install,OP:OP,TILE:TILE,DK:DK,LT:LT};
+return {want:want,wantMow:wantMow,kindOf:kindOf,plan:plan,turfPlan:turfPlan,sync:sync,install:install,OP:OP,TILE:TILE,DK:DK,LT:LT};
 });
