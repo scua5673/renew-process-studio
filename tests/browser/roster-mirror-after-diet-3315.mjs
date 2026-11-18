@@ -11,7 +11,8 @@ import {startFixture,openApp,OUT,SHOTS,WT,A} from '../fixtures/team-app.mjs';
    기존 schedule-thumb-ref-3315(참조 · 캐시 · 다이어트) · match-large-schedule(기기 사본 < 3.5MB)은 기기 사본 크기까지만 본다 — 여기서는 그 뒤의 선수단 거울 쓰기를 직접 단언한다.
    시나리오(합성 팀 fixture 만 · 실계정 · 운영 DB 없음):
    ① 서버: 일정에 512자 넘는 훈련 그림 60장(각 ≈69K자 SVG 조각 — 웹킷은 ≈37K자 · 서버 문서엔 thumbRef 참조 · 그림은 ps_blob) + 선수단 51명(scout_tool_v1 + sq:<id> 행)
-   ② 앱을 한 번 열어 받는다(첫 열기의 정리 — 평가 항목 채움 · 경기 번호 — 가 서버에 올라가 가라앉은 뒤의 서버 원문이 기준) → 옛 판 기기처럼 심는다:
+   ② 앱을 한 번 열어 받는다(첫 열기의 정리 — 평가 항목 채움 · 경기 번호 — 가 서버에 올라가 가라앉은 뒤의 서버 원문이 기준; 선수단 문서는 느린 기계에서 평가 항목 채움이
+      그 뒤에도 한 번 더 올라오므로(PR #888 CI 둘째 판) 선수단은 늘 «그 순간의 서버 원문»과 견준다) → 옛 판 기기처럼 심는다:
       그림을 되돌린 수화본(≈8MB UTF-16)을 localStorage · IndexedDB 두 사본에, 확정 hash · 준비표도 그 수화본으로(옛 판은 받을 때 그림을 되돌려 저장했다) ·
       선수단 거울은 있음(3.315 를 받은 맥 5eddb429 와 같다) · 나머지 키 몫(≈1.9MB)을 채워 남는 자리를 선수단 거울보다 작게 둔다 — 다이어트 없이는 거울을 다시 못 쓰는 저장소.
    ③ 앱을 다시 띄워 회차를 돌린다 — 두 단계로: ⓐ 회차가 일정 사본을 서버 원문으로 바꾼다(다이어트) ⓑ 선수단 거울을 지운 뒤(한 번도 못 쓴 아이패드 · 맥 5eddb429 의 13:53 전 상태)
@@ -100,7 +101,7 @@ try{
     let tot=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);tot+=(k.length+(localStorage.getItem(k)||'').length)*2;}
     return {maxFiller:lo,filler,bytes:tot,mirror:localStorage.getItem(KEY)===hydrated,idb:(await storage.get(KEY))?.value===hydrated,roster:localStorage.getItem(ROSTER)};
   },{KEY,ROSTER,MKEY,FILLER,hydrated,hashed:djb(hydrated),HEADROOM_CHARS});
-  assert.ok(planted.mirror&&planted.idb&&planted.roster===rosterServer,'심은 상태(선수단 거울은 그대로) '+JSON.stringify({...planted,roster:planted.roster&&planted.roster.length}).slice(0,300));
+  assert.ok(planted.mirror&&planted.idb&&planted.roster!=null&&ours(planted.roster)===51,'심은 상태(선수단 거울은 그대로 · 51명) '+JSON.stringify({...planted,roster:planted.roster&&planted.roster.length}).slice(0,300));
   assert.ok(planted.filler>0&&planted.bytes>LIMIT_BYTES*0.9,'저장소는 한도의 90% 넘게 찼다 '+JSON.stringify(planted));
   assert.ok(HEADROOM_CHARS<rosterServer.length,'남은 자리는 선수단 거울보다 작다');
   proof.stages.push({stage:'planted',...planted});
@@ -122,12 +123,12 @@ try{
   const rewrite=[];
   for(let i=0;i<6;i++){
     rewrite.push(await page.evaluate(()=>PSSync.syncNow('fixture-roster-mirror-rewrite')));
-    if((await device(page,ROSTER)).ls===rosterServer)break;
+    if((await device(page,ROSTER)).ls===serverNow().roster)break;
     await page.waitForTimeout(500);
   }
   await page.waitForFunction(()=>PSSync.state().kind==='ok'&&!PSSync.pending().count,null,{timeout:30000}).catch(()=>{});
   await page.waitForTimeout(1500);   /* 회차 실패 기록(ps_events)이 떠나는 시간 */
-  const roster=await device(page,ROSTER),afterRewrite=await usage(page);
+  const roster=await device(page,ROSTER),afterRewrite=await usage(page),rosterSrv=serverNow().roster;   /* 선수단은 그 순간의 서버 원문(배경의 평가 항목 채움이 늦게 올라올 수 있다) */
   const state=await page.evaluate(({WT,FILLER})=>({state:PSSync.state(),pending:PSSync.pending().count,scheduleReady:PSSync.keyReady('process_coach_v1'),rosterReady:PSSync.rosterReady(WT),filler:(localStorage.getItem(FILLER)||'').length}),{WT,FILLER});
   const rows=events(),failed=rows.filter(r=>r.event_name==='sync_failed');
   proof.stages.push({stage:'after-rewrite',rounds:rewrite.length,roundResults:rewrite.map(r=>({error:r&&r.error,code:r&&r.code,pushed:r&&r.pushed,applied:r&&r.applied})),usage:afterRewrite,state,events:rows.map(r=>({name:r.event_name,code:r.error_code,stage:r.meta&&r.meta.stage,reason:r.meta&&r.meta.reason}))});
@@ -144,8 +145,8 @@ try{
   assert.deepEqual(failed.filter(r=>r.meta&&r.meta.stage==='scout_mirror_write'),[],'scout_mirror_write 실패 0건');
   assert.deepEqual(failed.filter(r=>r.error_code==='sync_storage').map(r=>r.meta),[],'sync_storage 실패 0건');
   assert.deepEqual(rows.filter(r=>r.event_name==='storage_full').map(r=>r.meta),[],'storage_full 0건');
-  assert.equal(roster.ls,rosterServer,'선수단 거울 = 서버 원문');assert.equal(roster.idb,rosterServer,'선수단 IDB = 서버 원문');
-  assert.equal(ours(roster.ls),51,'거울에 51명');
+  assert.equal(roster.ls,rosterSrv,'선수단 거울 = 서버 원문');assert.equal(roster.idb,rosterSrv,'선수단 IDB = 서버 원문');
+  assert.equal(ours(roster.ls),51,'거울에 51명');assert.equal(ours(rosterSrv),51,'서버에 51명');
   assert.equal(state.state.kind,'ok',JSON.stringify(state.state));assert.equal(state.scheduleReady,true);assert.equal(state.rosterReady,true,'선수단 준비표');
   /* (c) 선수단 화면이 51명을 그린다 */
   await page.locator('[data-team-hub="1"]:visible').click();
