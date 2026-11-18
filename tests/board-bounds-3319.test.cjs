@@ -1,6 +1,6 @@
 'use strict';
-/* 3.318 — ① 토큰이 작전판(보이는 판 · 여백 포함) 밖으로 나가지 않는다(board-bounds.js). ② 훈련 편집기 «선수 불러오기» 토큰 세 칸 더 · 장비도.
-   화면 흐름은 tests/browser/board-bounds-3318. 여기서는 모듈 수학과 board.html 배선을 본다. */
+/* 3.319 — ① 토큰이 작전판(보이는 판 · 여백 포함) 밖으로 나가지 않는다(board-bounds.js). ② 훈련 편집기 «선수 불러오기» 토큰 세 칸 더 · 장비도.
+   화면 흐름은 tests/browser/board-bounds-3319. 여기서는 모듈 수학과 board.html 배선을 본다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const B=require('../studio/board-bounds.js');
 const board=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8'),sw=fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8');

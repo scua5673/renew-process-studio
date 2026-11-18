@@ -1,4 +1,4 @@
-/* 3.318 — ① 토큰(선수 · 공 · 장비)은 보이는 판(운동장 + 여백) 밖으로 나가지 않는다 — 끌기 · 묶음 끌기 · 방향키, 가로 · 세로 보기.
+/* 3.319 — ① 토큰(선수 · 공 · 장비)은 보이는 판(운동장 + 여백) 밖으로 나가지 않는다 — 끌기 · 묶음 끌기 · 방향키, 가로 · 세로 보기.
    ② 훈련 편집기(body.editing)의 «선수 불러오기»(개인 선수단 applySquadToBoard · 팀 공간 PSBoardScoutImport.apply)는 토큰 사다리 [5](세 칸 더), 장비 놓기도 [5].
    고치기 전 코드는 첫 끌기(토큰 원이 판 밖)에서 떨어진다. 폰(375)은 보기 전용이라 판 상자만 본다. */
 import fs from 'node:fs';
@@ -8,7 +8,7 @@ import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
-const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/board-bounds-3318');
+const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/board-bounds-3319');
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',base='https://board-bounds-fixture.invalid';
 const UID='11111111-1111-4111-8111-111111111111',WID='22222222-2222-4222-8222-222222222222';
 const EPS=1e-6,TOUCH=1,RO='ResizeObserver loop completed with undelivered notifications';   /* 3.193 — 웹킷의 그 문장만 따로 */
@@ -137,7 +137,7 @@ try{
       assert.deepEqual(real,[],'페이지 오류 '+JSON.stringify(errors));
       log.passed=true;log.resizeObserverNotices=errors.length-real.length;
       fs.writeFileSync(path.join(out,viewport.width+'.json'),JSON.stringify(log,null,2));
-      console.log(JSON.stringify({test:'board-bounds-3318',engine,width:viewport.width,passed:true,steps:log.steps.length}));
+      console.log(JSON.stringify({test:'board-bounds-3319',engine,width:viewport.width,passed:true,steps:log.steps.length}));
     }finally{await context.close();}
   }
 }catch(e){console.error(e);process.exitCode=1;}
