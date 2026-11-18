@@ -702,7 +702,7 @@
     function back(){
       if(!$('pqAsk').hidden){hideSheets();return;}
       if(M.editing){if(M.dirty){hideSheets();root.querySelector('.pq-scrim').hidden=false;$('pqAsk').hidden=false;return;}close();return;}
-      if(count(M.slots)&&M.dirty){win.__psQuickDraft={form:M.form,slots:copy(M.slots),pos:copyPos(M.pos),moved:M.moved.slice(),tok:{posBy:M.posBy.slice(),posDirty:M.posDirty.slice(),numBy:Object.assign({},M.numBy),numDirty:Object.assign({},M.numDirty),label:M.label},title:M.title};(host&&typeof host.say==='function'?host.say:boardToast)('쓰던 뎁스 차트는 남겨 뒀어요 — «＋ 새 폰보드 › 뎁스 차트»에서 이어서');}
+      if(count(M.slots)&&M.dirty){win.__psQuickDraft={form:M.form,slots:copy(M.slots),pos:copyPos(M.pos),moved:M.moved.slice(),tok:{posBy:M.posBy.slice(),posDirty:M.posDirty.slice(),numBy:Object.assign({},M.numBy),numDirty:Object.assign({},M.numDirty),label:M.label},title:M.title};(host&&typeof host.say==='function'?host.say:boardToast)('쓰던 뎁스 차트는 남겨 뒀어요 — «＋ 뎁스 차트»에서 이어서');}
       close();
     }
     function onClick(e){

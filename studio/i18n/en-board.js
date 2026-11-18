@@ -309,8 +309,9 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "폰보드":"Phone",
 "폰보드 이름":"Phone board name",
 "세로 운동장":"Portrait pitch",
-"＋ 새 폰보드":"＋ New phone board",
-"새 폰보드":"New phone board",
+"＋ 작전판":"＋ Tactics board",
+"＋ 뎁스 차트":"＋ Depth chart",
+"새 작전판":"New tactics board",
 "우리 팀 포메이션":"Our formation",
 "상대 포메이션":"Opponent formation",
 "저장하지 않은 판이 있어요":"This board is not saved",
@@ -319,7 +320,7 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "폰보드는 세로로만 써요. 폰을 세로로 돌려 주세요.":"Phone board works in portrait only. Turn your phone upright.",
 "보관함을 읽지 못했어요. 로그인되어 있는지 확인해 주세요.":"Could not read the library. Check that you are signed in.",
 "다시 불러오기":"Reload",
-"아직 없어요. 위 단추로 첫 판을 만들어 보세요.":"Nothing yet. Use the button above to make your first board.",
+"아직 없어요. 위에서 작전판이나 뎁스 차트를 골라 첫 판을 만들어 보세요.":"Nothing yet. Pick a tactics board or a depth chart above to make your first one.",
 "빈 판":"Empty board",
 "옮기기":"Move",
 "놓기":"Place",
@@ -336,11 +337,9 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "만든 사람만 고칠 수 있어요. 보기로 열었어요":"Only the person who made it can edit. Opened for viewing",
 "아이패드 · 컴퓨터에서 손본 판이라 폰에서는 보기만 돼요":"This board was edited on an iPad or computer, so it is view-only on the phone",
 "«버리기»를 누르면 이 판은 사라져요.":"If you tap «Discard», this board is gone.",
-"종류":"Type",
 "뎁스 차트":"Depth chart",
-"포지션마다 선수 이름을 순서대로 넣는 판이에요. 다음 화면에서 포메이션을 골라요.":"A board where you list player names in order for each position. Pick the formation on the next screen.",
 "뎁스 차트를 열지 못했어요. 잠시 뒤 다시 눌러 주세요":"Could not open the depth chart. Try again in a moment",
-"쓰던 뎁스 차트는 남겨 뒀어요 — «＋ 새 폰보드 › 뎁스 차트»에서 이어서":"Your depth chart draft is kept — continue from «＋ New phone board › Depth chart»"
+"쓰던 뎁스 차트는 남겨 뒀어요 — «＋ 뎁스 차트»에서 이어서":"Your depth chart draft is kept — continue from «＋ Depth chart»"
 },{
 "내 폰보드 {}개":"My phone boards · {}",
 "콘은 {}개까지 놓을 수 있어요":"You can place up to {} cones",

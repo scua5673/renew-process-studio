@@ -48,9 +48,10 @@ try{
   assert.match(await f.locator('#phbList').innerText(),/아직 없어요/);
   await shot(page,'1-home');
   /* 새 폰보드 — 8인제로 바꿨다가 11인제 4-4-2 · 상대도 */
+  assert.deepEqual((await f.locator('#phbHome .phb-two button').allInnerTexts()).map(t=>t.trim()),['＋ 작전판','＋ 뎁스 차트'],'two separate ways to start');
+  for(const b2 of await f.locator('#phbHome .phb-two button').all()){const r=await b2.boundingBox();assert.ok(r.height>=44&&r.width>=120,'start buttons are finger-sized');}
   await f.locator('[data-phb="new"]').tap();
   await f.locator('#phbNew').waitFor({state:'visible'});
-  assert.deepEqual(await f.locator('#phbKind .phb-opt').allInnerTexts(),['작전판','뎁스 차트'],'the depth chart (old quick board) is a kind of phone board');
   await f.locator('#phbSpec [data-v="8"]').tap();
   assert.deepEqual(await f.locator('#phbForm .phb-opt').allInnerTexts(),['3-3-1','2-4-1','빈 판']);
   await f.locator('#phbSpec [data-v="11"]').tap();await f.locator('#phbForm [data-v="4-4-2"]').tap();

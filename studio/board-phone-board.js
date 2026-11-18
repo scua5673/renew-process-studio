@@ -196,6 +196,7 @@
     '#psPhoneBoard .phb-btn:disabled{opacity:.5;cursor:default}'+
     '#psPhoneBoard .phb-pri{background:var(--phb-act);border-color:var(--phb-act);color:var(--phb-act-ink)}'+
     '#psPhoneBoard .phb-big{width:100%;min-height:52px;font-size:16px;font-weight:700}'+
+    '#psPhoneBoard .phb-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#psPhoneBoard .phb-two .phb-btn{padding:0 8px}'+
     '#psPhoneBoard .phb-txt{border-color:transparent;background:transparent;padding:0 8px}'+
     '#psPhoneBoard .phb-cap{margin:0;font-size:12px;font-weight:600;color:var(--phb-dim)}'+
     '#psPhoneBoard .phb-rows{display:flex;flex-direction:column;background:var(--phb-surface);border:1px solid var(--phb-line);border-radius:10px;overflow:hidden}'+
@@ -260,7 +261,7 @@
 
   function make(win){
     var doc=win.document,root=null,toastT=null,G=null;
-    var M={kind:'board',scr:'home',list:null,listState:'idle',spec:'11',form:'4-3-3',opp:'',doc:null,editing:null,title:'',tool:'move',put:'us',line:'run',hist:[],dirty:false,saving:false,tokId:0,ask:null};
+    var M={scr:'home',list:null,listState:'idle',spec:'11',form:'4-3-3',opp:'',doc:null,editing:null,title:'',tool:'move',put:'us',line:'run',hist:[],dirty:false,saving:false,tokId:0,ask:null};
     function $(id){return doc.getElementById(id);}
     function gfn(name){try{var f=win[name];return typeof f==='function'?f:null;}catch(e){return note(e);}}
     function tell(on){try{if(win.parent&&win.parent!==win)win.parent.postMessage({source:'board',type:'phoneBoard',on:!!on},win.location.origin);}catch(e){note(e);}}
@@ -270,7 +271,8 @@
       root=doc.createElement('div');root.id='psPhoneBoard';root.hidden=true;root.setAttribute('role','dialog');root.setAttribute('aria-label',TAG);
       root.innerHTML=
         '<div class="phb-scr" id="phbHome"><div class="phb-bar"><h2 class="phb-h">폰보드</h2></div>'+
-          '<div class="phb-body"><button type="button" class="phb-btn phb-pri phb-big" data-phb="new">＋ 새 폰보드</button>'+
+          '<div class="phb-body"><div class="phb-two"><button type="button" class="phb-btn phb-pri phb-big" data-phb="new">＋ 작전판</button>'+
+          '<button type="button" class="phb-btn phb-pri phb-big" data-phb="new-depth">＋ 뎁스 차트</button></div>'+
           '<p class="phb-cap" id="phbCount"></p><div id="phbList"></div></div></div>'+
         '<div class="phb-scr" id="phbEdit" hidden><div class="phb-bar">'+
           '<button type="button" class="phb-ico" data-phb="back" aria-label="나가기">'+svgIcon('back')+'</button>'+
@@ -279,13 +281,10 @@
           '<button type="button" class="phb-btn phb-pri" data-phb="save">저장</button></div>'+
           '<div class="phb-pw"><svg id="phbPitch" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="세로 운동장"></svg></div>'+
           '<div class="phb-sub" id="phbSub"></div><div class="phb-tools" id="phbTools"></div></div>'+
-        '<div class="phb-shade" id="phbNew" hidden><div class="phb-sheet"><h3>새 폰보드</h3>'+
-          '<div><p class="phb-cap">종류</p><div class="phb-opts" id="phbKind"></div></div>'+
-          '<p class="phb-hint" id="phbKindNote" hidden>포지션마다 선수 이름을 순서대로 넣는 판이에요. 다음 화면에서 포메이션을 골라요.</p>'+
-          '<div id="phbBoardOpts"><div style="display:flex;flex-direction:column;gap:14px"><div><p class="phb-cap">인원</p><div class="phb-opts" id="phbSpec"></div></div>'+
+        '<div class="phb-shade" id="phbNew" hidden><div class="phb-sheet"><h3>새 작전판</h3>'+
+          '<div><p class="phb-cap">인원</p><div class="phb-opts" id="phbSpec"></div></div>'+
           '<div><p class="phb-cap">우리 팀 포메이션</p><div class="phb-opts" id="phbForm"></div></div>'+
           '<div><p class="phb-cap">상대 포메이션</p><div class="phb-opts" id="phbOppForm"></div></div>'+
-          '</div></div>'+
           '<div class="phb-end"><button type="button" class="phb-btn" data-phb="new-cancel">취소</button><button type="button" class="phb-btn phb-pri" data-phb="new-go">만들기</button></div></div></div>'+
         '<div class="phb-shade" id="phbTok" hidden><div class="phb-sheet"><h3>선수</h3>'+
           '<label class="phb-fld"><span>번호</span><input id="phbNum" type="text" inputmode="numeric" maxlength="3" autocomplete="off"></label>'+
@@ -318,7 +317,7 @@
       if(M.listState==='fail'){cnt.textContent='';box.innerHTML='<p class="phb-blank">보관함을 읽지 못했어요. 로그인되어 있는지 확인해 주세요.</p><button type="button" class="phb-btn phb-big" data-phb="reload">다시 불러오기</button>';return;}
       var list=M.list||[];
       cnt.textContent=list.length?('내 폰보드 '+list.length+'개'):'';
-      if(!list.length){box.innerHTML='<p class="phb-blank">아직 없어요. 위 단추로 첫 판을 만들어 보세요.</p>';return;}
+      if(!list.length){box.innerHTML='<p class="phb-blank">아직 없어요. 위에서 작전판이나 뎁스 차트를 골라 첫 판을 만들어 보세요.</p>';return;}
       box.innerHTML='<div class="phb-rows">'+list.map(function(d,i){
         return '<button type="button" class="phb-row" data-phb="open" data-i="'+i+'">'+thumbHTML(d)+'<span><span class="phb-nm">'+esc(d.name||TAG)+'</span>'+
           '<span class="phb-mt"><span class="phb-chip">폰보드</span>'+(d.quick?'<span>뎁스 차트</span>':'')+'<span>'+esc(when(d))+'</span></span></span></button>';
@@ -340,10 +339,6 @@
       return Q.open(win,{host:true,item:d||null,say:toast,done:function(saved,edited){show('home');toast(edited?'폰보드를 고쳤어요':'보관함에 저장했어요 · 폰보드');loadList();}});
     }
     function renderNew(){
-      var kinds=[['board','작전판']];if(quick())kinds.push(['depth','뎁스 차트']);
-      if(M.kind==='depth'&&!quick())M.kind='board';
-      $('phbKind').innerHTML=kinds.map(function(x){return '<button type="button" class="phb-opt" data-phb="kind" data-v="'+x[0]+'" aria-pressed="'+(x[0]===M.kind)+'">'+x[1]+'</button>';}).join('');
-      $('phbBoardOpts').hidden=M.kind!=='board';$('phbKindNote').hidden=M.kind!=='depth';
       $('phbSpec').innerHTML=[['11','11인제'],['8','8인제'],['5','풋살']].map(function(x){return '<button type="button" class="phb-opt" data-phb="spec" data-v="'+x[0]+'" aria-pressed="'+(x[0]===M.spec)+'">'+x[1]+'</button>';}).join('');
       var f=specOf(M.spec).forms;if(f.indexOf(M.form)<0)M.form=f[0];
       $('phbForm').innerHTML=f.map(function(k){return '<button type="button" class="phb-opt" data-phb="form" data-v="'+k+'" aria-pressed="'+(k===M.form)+'">'+(k||'빈 판')+'</button>';}).join('');
@@ -476,8 +471,8 @@
       else if(k==='spec'){M.spec=v;renderNew();}
       else if(k==='form'){M.form=v;renderNew();}
       else if(k==='opp'){M.opp=v;renderNew();}
-      else if(k==='kind'){M.kind=v;renderNew();}
-      else if(k==='new-go'){if(M.kind==='depth'){$('phbNew').hidden=true;if(!openQuick(null))toast('뎁스 차트를 열지 못했어요. 잠시 뒤 다시 눌러 주세요');return;}startEditor(null);}
+      else if(k==='new-depth'){if(!openQuick(null))toast('뎁스 차트를 열지 못했어요. 잠시 뒤 다시 눌러 주세요');}
+      else if(k==='new-go')startEditor(null);
       else if(k==='reload')loadList();
       else if(k==='open'){var d=(M.list||[])[+b.getAttribute('data-i')];if(d)openItem(d);}
       else if(k==='back')leaveEditor();
@@ -501,7 +496,7 @@
       if(!root)build();
       if(!root.hidden)return true;
       root.hidden=false;doc.body.classList.add('ps-phoneboard-on');root.classList.toggle('phb-land',landscape(win));
-      hideSheets();
+      hideSheets();root.querySelector('[data-phb="new-depth"]').hidden=!quick();
       if(M.doc)show('edit');else{show('home');loadList();}
       tell(true);
       return true;

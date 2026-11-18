@@ -17,14 +17,11 @@ async function boardFrame(page){
   await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&!window.__boardRestoring&&window.PSQuickDepth&&window.__psQuickTokWrap);
   return f;
 }
-// 3.320 — 새로 만들기는 «폰보드» 탭 안으로: 폰보드 › ＋ 새 폰보드 › 종류 «뎁스 차트» › 만들기
+// 3.320 — 새로 만들기는 «폰보드» 탭 안으로: 폰보드 › «＋ 뎁스 차트»
 async function openDepth(page,f){
   await page.locator('#psPhoneBoardBtn').tap();
   await f.locator('#psPhoneBoard').waitFor({state:'visible'});
-  await f.locator('#psPhoneBoard [data-phb="new"]').tap();
-  await f.locator('#phbKind [data-v="depth"]').tap();
-  assert.equal(await f.locator('#phbBoardOpts').isVisible(),false,'board options are hidden for a depth chart');
-  await f.locator('#psPhoneBoard [data-phb="new-go"]').tap();
+  await f.locator('#psPhoneBoard [data-phb="new-depth"]').tap();
   await f.locator('#pqForm').waitFor({state:'visible'});
 }
 const quickItems=()=>[...fx.lib.values()].map(r=>r&&r.item||r).filter(d=>d&&d.quick);
@@ -222,8 +219,7 @@ try{
   await f.locator('#psQuick [data-pq="back"]').tap();
   await f.waitForFunction(()=>document.getElementById('psQuick').hidden);
   assert.match(await f.locator('#phbToast').innerText(),/쓰던 뎁스 차트는 남겨 뒀어요/,'the draft notice shows on the phone board');
-  await f.locator('#psPhoneBoard [data-phb="new"]').tap();
-  await f.locator('#psPhoneBoard [data-phb="new-go"]').tap();
+  await f.locator('#psPhoneBoard [data-phb="new-depth"]').tap();
   await f.locator('#pqForm [data-pq="draft"]').waitFor({state:'visible'});
   await f.locator('#pqForm [data-pq="draft"]').tap();
   s=await slots(f);assert.deepEqual(s[0],['골키퍼 하나','골키퍼 둘']);
