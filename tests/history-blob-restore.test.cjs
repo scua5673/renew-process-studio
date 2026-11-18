@@ -50,11 +50,19 @@ for(const [name,run] of Object.entries(RESTORES)){
     assert.equal(h.blobs.get('ps_blob:'+H),segment(LOGO),'받은 그림은 캐시에 남는다');
     if(name==='histRestore'){assert.equal(h.ls.get('ps_push_ok_scout_tool_v1'),h.c.hash(local),'승인 도장은 실제로 쓴 값 기준');assert.deepEqual(h.base,[{k:'scout_tool_v1',v:local}]);}
   });
-  test(name+' restores a schedule thumbnail from this device cache without the network',async()=>{
+  /* 3.315 — 일정은 기기 사본도 참조만: 되돌린 문서를 쓰지 않고 그림은 캐시에만 둔다(화면이 schedule-thumb-ref.js 로 채운다) */
+  test(name+' keeps a schedule history body stripped when the picture is already in this device cache',async()=>{
     const h=harness({cache:[[G,segment(THUMB)]]});
     assert.equal(await run(h,'process_coach_v1',schedRaw),true);
+    assert.equal(h.ls.get('process_coach_v1'),schedRaw,'서버 모양 그대로');
     const cell=JSON.parse(h.ls.get('process_coach_v1')).weeks['0']['1'][0];
-    assert.equal(cell.thumb,THUMB);assert.equal(cell.thumbRef,undefined);assert.equal(cell.title,'훈련');assert.equal(h.calls.length,0);
+    assert.equal(cell.thumb,'');assert.equal(cell.thumbRef,G);assert.equal(cell.title,'훈련');assert.equal(h.calls.length,0);
+  });
+  test(name+' fetches a missing schedule picture into this device cache and still writes the stripped body',async()=>{
+    const h=harness({server:[[G,segment(THUMB)]]});
+    assert.equal(await run(h,'process_coach_v1',schedRaw),true);
+    assert.equal(h.ls.get('process_coach_v1'),schedRaw);assert.equal(h.calls.length,1);assert.equal(h.blobs.get('ps_blob:'+G),segment(THUMB),'그림은 캐시에');
+    assert.equal(h.written.length,1);assert.equal(h.written[0].v,schedRaw);
   });
   test(name+' writes the stripped body unchanged, without error, when the image cannot be found',async()=>{
     for(const opts of [{},{serverFails:true},{token:null},{token:new Error('auth down')}]){
@@ -63,13 +71,19 @@ for(const [name,run] of Object.entries(RESTORES)){
       assert.equal(h.ls.get('scout_tool_v1'),scoutRaw,'원문 그대로 — 예전 동작');assert.equal(h.written.length,1);
     }
   });
-  test(name+' keeps cached images when the server fetch fails and leaves only the missing reference',async()=>{
+  test(name+' keeps cached images when the server fetch fails and leaves only the missing reference (roster)',async()=>{
+    const raw=JSON.stringify({meta:{emblem:'',emblemRef:H,other:[{thumb:'',thumbRef:G}]},players:[]});
+    const h=harness({cache:[[G,segment(THUMB)]],serverFails:true});
+    assert.equal(await run(h,'scout_tool_v1',raw),true);
+    const doc=JSON.parse(h.ls.get('scout_tool_v1'));
+    assert.equal(doc.meta.other[0].thumb,THUMB);assert.equal(doc.meta.emblem,'');assert.equal(doc.meta.emblemRef,H);
+    assert.ok(h.diagnostics.includes('hist-hydrate'));
+  });
+  test(name+' writes a schedule history body unchanged when the server fetch fails (pictures stay references)',async()=>{
     const raw=JSON.stringify({meta:{emblem:'',emblemRef:H},weeks:{'0':{'2':[{thumb:'',thumbRef:G}]}}});
     const h=harness({cache:[[G,segment(THUMB)]],serverFails:true});
     assert.equal(await run(h,'process_coach_v1',raw),true);
-    const doc=JSON.parse(h.ls.get('process_coach_v1'));
-    assert.equal(doc.weeks['0']['2'][0].thumb,THUMB);assert.equal(doc.meta.emblem,'');assert.equal(doc.meta.emblemRef,H);
-    assert.ok(h.diagnostics.includes('hist-hydrate'));
+    assert.equal(h.ls.get('process_coach_v1'),raw);assert.ok(h.diagnostics.includes('hist-hydrate'));
   });
   test(name+' leaves keys outside BLOB_KEYS byte-identical and never looks up images',async()=>{
     const h=harness({cache:[[H,segment(LOGO)]],server:[[H,segment(LOGO)]]});
