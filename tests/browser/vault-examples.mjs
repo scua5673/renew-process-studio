@@ -21,7 +21,7 @@ try{
   const openVault=async()=>{ await page.evaluate(()=>document.querySelector('#appSeg button[data-app="design"]:not([data-train])').click()); await bf.waitForFunction(()=>window.__csView==='session'&&document.getElementById('dfNew'),null,{timeout:12000}); };
   /* 나가기 — 예시는 열어 보고 시퀀스·페이지를 넘겨 보기만 한다. 둘러보기는 고친 것이 아니다 — «버리고 나갈까요?»를 묻지 않는다(board-vault-browse.js · 예전엔 넘겨 보기만 해도 물었다) */
   const exitBoard=async()=>{ await bf.evaluate(()=>document.getElementById('vCreateCancel').click()); await page.waitForTimeout(500);
-    assert.equal(await bf.evaluate(()=>!![...document.body.children].find(e=>e.tagName==='DIV'&&/버리고 나갈까요/.test(e.textContent))),false,'browsing an example asks nothing when leaving');
+    assert.equal(await bf.evaluate(()=>!![...document.body.children].find(e=>e.tagName==='DIV'&&/버리고 닫을까요/.test(e.textContent))),false,'browsing an example asks nothing when leaving');
     await bf.waitForFunction(()=>window.__csView==='session'&&!document.body.classList.contains('book-mode'),null,{timeout:12000}); await page.waitForTimeout(400); };
   const dirty=()=>bf.evaluate(()=>({manual:!!window.__vaultManualDirty,sub:(document.getElementById('vCreateSub')||{}).textContent||''}));
   const openCard=async name=>{ await bf.waitForFunction(n=>[...document.querySelectorAll('#drillFiles .vcard')].some(c=>c.textContent.includes(n)),name,{timeout:12000});

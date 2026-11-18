@@ -57,7 +57,7 @@ test('보관함 편집기 — 경기 준비 안이면 닫기가 경기 준비로
   assert.match(close,/meetMatchDonePost\(_fm,false\); return; \}/);
   assert.match(close,/window\.__vaultAutoSaveFlush&&window\.__vaultAutoSaveFlush\(\)/,'자동 저장을 마무리하고 닫는다');
   const bar=fnAt(board,'function matchBarSync(inp,fm)');
-  assert.match(bar,/cb\.textContent=window\.__vaultReadOnly\?"닫기":\(manual\?"나가기":"완료"\)/,'미팅은 «완료», 작전판은 저장 버튼이 따로');
+  assert.match(bar,/cb\.textContent=window\.__vaultReadOnly\?"닫기":\(manual\?"닫기":"완료"\)/,'미팅은 «완료», 작전판은 저장 버튼이 따로');
   assert.match(fnAt(board,'function hideCreateBar()'),/classList\.remove\("vc-match"\)/);
   const fm=fnAt(board,'window.__meetingFromMatch=function(p)');
   assert.match(fm,/inplace:_inp,parts:Array\.isArray\(p\.parts\)\?p\.parts:null,name:item\.name/);
