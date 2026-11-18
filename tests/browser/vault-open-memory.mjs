@@ -59,7 +59,7 @@ try{
     return {n:c.length,anim:c.some(d=>d&&Array.isArray(d.pages)&&d.pages.some(p=>p&&p.anim)),pages:c[0].pages.length,page0:Object.keys(c[0].pages[0]).sort().join(),chars:JSON.stringify(c).length,defer:!!w.__psLibDefer};});
   assert.equal(sched.n,N,'the schedule still lists every vault item');
   assert.equal(sched.anim,false,'without per-page scene lists');
-  assert.equal(sched.page0,'name,snap,thumb','pages keep what the schedule reads: '+sched.page0);
+  assert.equal(sched.page0,'animN,name,snap,thumb','pages keep what the schedule reads (3.325 — scene count animN for the ▶): '+sched.page0);
   assert.ok(sched.chars<total*0.45,'the schedule copy is well under half the vault text: '+sched.chars+' of '+total);
   assert.equal(sched.defer,true,'hidden-refresh deferral installed');
 
