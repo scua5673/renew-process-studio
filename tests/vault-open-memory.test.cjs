@@ -66,7 +66,8 @@ test('schedule copy drops per-page scene lists only, and nothing the schedule re
     pages:[{name:'p1',thumb:'<svg/>',snap:{players:[2]},anim:{frames:[{snap:{},thumb:'x'.repeat(70000)}]}},{name:'p2',snap:{}},null]});
   const list=[item(),{libId:'b',name:'plain'},null,{libId:'c',pages:'odd'}],out=Sched.slim(list);
   assert.equal(out,list,'in place');
-  const want=item();want.pages.forEach(p=>{if(p)delete p.anim;});
+  /* 3.325 — 떼는 페이지엔 장면 수(animN)만 남긴다(일정 줄의 ▶ — schedule-board-play.js) */
+  const want=item();want.pages.forEach(p=>{if(p&&p.anim){p.animN=p.anim.frames.length;delete p.anim;}});
   assert.deepEqual(list[0],want);assert.equal('anim' in list[0].pages[0],false);
   assert.deepEqual(list.slice(1),[{libId:'b',name:'plain'},null,{libId:'c',pages:'odd'}]);
   assert.equal(Sched.slim(null),null);assert.equal(Sched.slim('x'),'x');
