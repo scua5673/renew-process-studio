@@ -108,7 +108,8 @@ try{
   /* ③ 새로고침 — 부팅 회차가 다이어트 + 선수단 거울 쓰기를 같이 한다. 둘 다 서버 원문이 될 때까지 기다리고, 안 되면 syncNow 로 되풀이(회차 결과를 적는다) */
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>!!(window.PSSync&&PSSync.dataUnlocked()&&document.body&&!document.body.classList.contains('ps-booting')),null,{timeout:45000});
-  const both=async()=>{const s=await device(page,KEY),r=await device(page,ROSTER);return s.ls===server&&s.idb===server&&r.ls===rosterServer&&r.idb===rosterServer;};
+  /* 선수단은 늘 «그 순간의 서버 원문»과 견준다 — 느린 기계에선 앱의 배경 작업(평가 항목 채움 · _items.n)이 가라앉은 뒤에도 선수단 문서를 한 번 더 올린다(PR #888 CI 둘째 판, d1e37f63) */
+  const both=async()=>{const s=await device(page,KEY),r=await device(page,ROSTER),rs=serverNow().roster;return s.ls===server&&s.idb===server&&r.ls===rs&&r.idb===rs;};
   await page.waitForFunction(()=>PSSync.state().kind!=='busy',null,{timeout:30000}).catch(()=>{});
   let bootDone=false;for(let i=0;i<40&&!bootDone;i++){bootDone=await both();if(!bootDone)await page.waitForTimeout(500);}
   const rounds=[];
@@ -136,8 +137,9 @@ try{
   assert.deepEqual(failed.filter(r=>r.error_code==='sync_storage').map(r=>r.meta),[],'sync_storage 실패 0건');
   assert.deepEqual(rows.filter(r=>r.event_name==='storage_full').map(r=>r.meta),[],'storage_full 0건');
   assert.ok(rounds.every(r=>r&&!r.error),'되풀이 회차에 실패 없음 '+JSON.stringify(rounds.map(r=>r&&(r.error||'ok'))));
-  assert.equal(roster.ls,rosterServer,'선수단 거울 = 서버 원문');assert.equal(roster.idb,rosterServer,'선수단 IDB = 서버 원문');
-  assert.equal(ours(roster.ls),51,'거울에 51명');
+  const rosterSrv=serverNow().roster;   /* 그 순간의 서버 원문(위 both 와 같은 까닭) */
+  assert.equal(roster.ls,rosterSrv,'선수단 거울 = 서버 원문');assert.equal(roster.idb,rosterSrv,'선수단 IDB = 서버 원문');
+  assert.equal(ours(roster.ls),51,'거울에 51명');assert.equal(ours(rosterSrv),51,'서버에 51명');
   assert.equal(state.state.kind,'ok',JSON.stringify(state.state));assert.equal(state.scheduleReady,true);assert.equal(state.rosterReady,true,'선수단 준비표');
   /* (c) 선수단 화면이 51명을 그린다 */
   await page.locator('[data-team-hub="1"]:visible').click();
