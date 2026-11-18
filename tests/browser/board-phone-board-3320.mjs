@@ -54,12 +54,14 @@ try{
   await f.locator('#phbSpec [data-v="8"]').tap();
   assert.deepEqual(await f.locator('#phbForm .phb-opt').allInnerTexts(),['3-3-1','2-4-1','빈 판']);
   await f.locator('#phbSpec [data-v="11"]').tap();await f.locator('#phbForm [data-v="4-4-2"]').tap();
-  await f.locator('#phbOpp').check();
+  assert.deepEqual(await f.locator('#phbOppForm .phb-opt').allInnerTexts(),['없음','4-3-3','4-4-2','3-5-2'],'opponent formation choices');
+  await f.locator('#phbOppForm [data-v="3-5-2"]').tap();
   await shot(page,'2-new');
   await f.locator('[data-phb="new-go"]').tap();
   await f.locator('#phbEdit').waitFor({state:'visible'});
   let m=await model(f);
   assert.equal(m.doc.players.length,22);assert.equal(m.doc.n,'11');
+  assert.equal(m.doc.players.filter(p=>p.team==='op'&&p.y<20&&p.y>12).length,3,'the opponent back line is a back three (3-5-2)');
   const pitch=await f.locator('#phbPitch').boundingBox();
   assert.ok(pitch.height>pitch.width*1.2,'the pitch is portrait '+JSON.stringify(pitch));assert.ok(pitch.height>380,'and big enough to work on');
   for(const sel of ['#phbTools .phb-tool','[data-phb="save"]','[data-phb="back"]','[data-phb="undo"]']){for(const b of await f.locator(sel).all()){const r=await b.boundingBox();assert.ok(r.height>=44&&r.width>=44,sel+' is finger-sized');}}

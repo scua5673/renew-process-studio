@@ -24,6 +24,12 @@ test('every start layout fits its pitch and two teams stay in their own halves',
     assert.equal(new Set(two.players.map(p=>p.id)).size,k*2,'ids are unique');
     assert.equal(!!one.ball,k>0);
   }
+  const mix=P.docNew('11','4-3-3','3-5-2');
+  assert.equal(mix.players.filter(p=>p.team==='us').length,11);assert.equal(mix.players.filter(p=>p.team==='op').length,11);
+  assert.deepEqual(mix.players.filter(p=>p.team==='op').map(p=>[p.x,p.y]),P.docNew('11','3-5-2',true).players.filter(p=>p.team==='op').map(p=>[p.x,p.y]),'the opponent stands in its own formation');
+  assert.notDeepEqual(mix.players.filter(p=>p.team==='op').map(p=>p.x),P.docNew('11','4-3-3',true).players.filter(p=>p.team==='op').map(p=>p.x));
+  const only=P.docNew('8','','2-4-1');assert.equal(only.players.length,8);assert.ok(only.players.every(p=>p.team==='op'),'an empty own side with an opponent formation');
+  assert.equal(P.docNew('11','4-3-3','').players.length,11);assert.equal(P.docNew('11','4-3-3','9-9-9').players.length,11,'an unknown opponent formation places nobody');
 });
 
 test('a new item is a portrait board marked as a phone board',()=>{

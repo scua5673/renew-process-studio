@@ -43,17 +43,18 @@
   function inside(n,p){var sp=specOf(n);return {x:r2(bound(+p.x||0,0,sp.w)),y:r2(bound(+p.y||0,0,sp.h))};}
 
   /* 새 판 — 우리 팀만, 또는 상대도(두 팀을 제 진영으로 좁혀 겹치지 않게) */
-  function docNew(n,form,withOpp){
-    var sp=specOf(n),slots=FORMS[form]||[],d={n:sp.n,players:[],ball:null,cones:[],lines:[]},id=1;
+  /* opp: 상대 포메이션 이름(없으면 우리 팀만) — true 는 우리와 같은 포메이션 */
+  function docNew(n,form,opp){
+    var sp=specOf(n),slots=FORMS[form]||[],oslots=opp===true?slots:(FORMS[opp]||[]),withOpp=oslots.length>0,d={n:sp.n,players:[],ball:null,cones:[],lines:[]},id=1;
     slots.forEach(function(s,i){
       var t=withOpp?54+(s[1]-26)*(41/68):s[1];
       d.players.push({id:id++,team:'us',num:String(i+1),name:'',x:r2(sp.w*s[0]/100),y:r2(sp.h*t/100)});
     });
-    if(withOpp)slots.forEach(function(s,i){
+    oslots.forEach(function(s,i){
       var t=100-(54+(s[1]-26)*(41/68));
       d.players.push({id:id++,team:'op',num:String(i+1),name:'',x:r2(sp.w*(100-s[0])/100),y:r2(sp.h*t/100)});
     });
-    if(slots.length)d.ball={x:sp.w/2,y:sp.h/2};
+    if(slots.length||withOpp)d.ball={x:sp.w/2,y:sp.h/2};
     return d;
   }
   function nextId(doc){var m=0;doc.players.forEach(function(p){if(+p.id>m)m=+p.id;});return m+1;}
@@ -259,7 +260,7 @@
 
   function make(win){
     var doc=win.document,root=null,toastT=null,G=null;
-    var M={kind:'board',scr:'home',list:null,listState:'idle',spec:'11',form:'4-3-3',opp:false,doc:null,editing:null,title:'',tool:'move',put:'us',line:'run',hist:[],dirty:false,saving:false,tokId:0,ask:null};
+    var M={kind:'board',scr:'home',list:null,listState:'idle',spec:'11',form:'4-3-3',opp:'',doc:null,editing:null,title:'',tool:'move',put:'us',line:'run',hist:[],dirty:false,saving:false,tokId:0,ask:null};
     function $(id){return doc.getElementById(id);}
     function gfn(name){try{var f=win[name];return typeof f==='function'?f:null;}catch(e){return note(e);}}
     function tell(on){try{if(win.parent&&win.parent!==win)win.parent.postMessage({source:'board',type:'phoneBoard',on:!!on},win.location.origin);}catch(e){note(e);}}
@@ -282,8 +283,9 @@
           '<div><p class="phb-cap">종류</p><div class="phb-opts" id="phbKind"></div></div>'+
           '<p class="phb-hint" id="phbKindNote" hidden>포지션마다 선수 이름을 순서대로 넣는 판이에요. 다음 화면에서 포메이션을 골라요.</p>'+
           '<div id="phbBoardOpts"><div style="display:flex;flex-direction:column;gap:14px"><div><p class="phb-cap">인원</p><div class="phb-opts" id="phbSpec"></div></div>'+
-          '<div><p class="phb-cap">시작 배치</p><div class="phb-opts" id="phbForm"></div></div>'+
-          '<label class="phb-sw"><input type="checkbox" id="phbOpp"><span>상대도 같이 놓기</span></label></div></div>'+
+          '<div><p class="phb-cap">우리 팀 포메이션</p><div class="phb-opts" id="phbForm"></div></div>'+
+          '<div><p class="phb-cap">상대 포메이션</p><div class="phb-opts" id="phbOppForm"></div></div>'+
+          '</div></div>'+
           '<div class="phb-end"><button type="button" class="phb-btn" data-phb="new-cancel">취소</button><button type="button" class="phb-btn phb-pri" data-phb="new-go">만들기</button></div></div></div>'+
         '<div class="phb-shade" id="phbTok" hidden><div class="phb-sheet"><h3>선수</h3>'+
           '<label class="phb-fld"><span>번호</span><input id="phbNum" type="text" inputmode="numeric" maxlength="3" autocomplete="off"></label>'+
@@ -345,6 +347,8 @@
       $('phbSpec').innerHTML=[['11','11인제'],['8','8인제'],['5','풋살']].map(function(x){return '<button type="button" class="phb-opt" data-phb="spec" data-v="'+x[0]+'" aria-pressed="'+(x[0]===M.spec)+'">'+x[1]+'</button>';}).join('');
       var f=specOf(M.spec).forms;if(f.indexOf(M.form)<0)M.form=f[0];
       $('phbForm').innerHTML=f.map(function(k){return '<button type="button" class="phb-opt" data-phb="form" data-v="'+k+'" aria-pressed="'+(k===M.form)+'">'+(k||'빈 판')+'</button>';}).join('');
+      if(f.indexOf(M.opp)<0)M.opp='';
+      $('phbOppForm').innerHTML=[''].concat(f.filter(Boolean)).map(function(k){return '<button type="button" class="phb-opt" data-phb="opp" data-v="'+k+'" aria-pressed="'+(k===M.opp)+'">'+(k||'없음')+'</button>';}).join('');
     }
     function startEditor(d){
       if(d){M.editing=d.libId;M.doc=docFrom(d);M.title=d.name||'';}
@@ -467,12 +471,13 @@
       var b=e.target.closest&&e.target.closest('[data-phb]');
       if(!b){if(e.target.classList&&e.target.classList.contains('phb-shade')&&e.target.id!=='phbAsk')e.target.hidden=true;return;}
       var k=b.getAttribute('data-phb'),v=b.getAttribute('data-v');
-      if(k==='new'){renderNew();$('phbOpp').checked=M.opp;$('phbNew').hidden=false;}
+      if(k==='new'){renderNew();$('phbNew').hidden=false;}
       else if(k==='new-cancel')$('phbNew').hidden=true;
       else if(k==='spec'){M.spec=v;renderNew();}
       else if(k==='form'){M.form=v;renderNew();}
+      else if(k==='opp'){M.opp=v;renderNew();}
       else if(k==='kind'){M.kind=v;renderNew();}
-      else if(k==='new-go'){if(M.kind==='depth'){$('phbNew').hidden=true;if(!openQuick(null))toast('뎁스 차트를 열지 못했어요. 잠시 뒤 다시 눌러 주세요');return;}M.opp=$('phbOpp').checked;startEditor(null);}
+      else if(k==='new-go'){if(M.kind==='depth'){$('phbNew').hidden=true;if(!openQuick(null))toast('뎁스 차트를 열지 못했어요. 잠시 뒤 다시 눌러 주세요');return;}startEditor(null);}
       else if(k==='reload')loadList();
       else if(k==='open'){var d=(M.list||[])[+b.getAttribute('data-i')];if(d)openItem(d);}
       else if(k==='back')leaveEditor();
