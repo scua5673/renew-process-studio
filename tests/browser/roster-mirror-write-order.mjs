@@ -106,6 +106,9 @@ try{
   assert.ok(HEADROOM_CHARS<rosterServer.length,'남은 자리는 선수단 거울보다 작다');
   proof.stages.push({stage:'planted',...planted});
   /* ③ 새로고침 — 부팅 회차가 다이어트 + 선수단 거울 쓰기를 같이 한다. 둘 다 서버 원문이 될 때까지 기다리고, 안 되면 syncNow 로 되풀이(회차 결과를 적는다) */
+  /* 심는 동안에도 옛 앱(아직 떠 있는 창)은 돈다 — 가득 찬 저장소에서 선수단 화면이 ps_sync_meta 바뀜(storage 이벤트)에 기기 보관 사본(ps_roster_keep_v2:)을 다시 쓰다
+     storage_full 한 줄을 남긴다(PR #894 CI 크롬 storage · 심기의 차례에 따라 가끔). 시험의 대상은 새로고침 뒤의 앱이라 실패 기록은 그 뒤에 만든 것(created_at)만 본다 */
+  const reloadAt=await page.evaluate(()=>Date.now());
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>!!(window.PSSync&&PSSync.dataUnlocked()&&document.body&&!document.body.classList.contains('ps-booting')),null,{timeout:45000});
   /* 선수단은 늘 «그 순간의 서버 원문»과 견준다 — 느린 기계에선 앱의 배경 작업(평가 항목 채움 · _items.n)이 가라앉은 뒤에도 선수단 문서를 한 번 더 올린다(PR #888 CI 둘째 판, d1e37f63) */
@@ -118,7 +121,8 @@ try{
   await page.waitForTimeout(1500);   /* 회차 실패 기록(ps_events)이 떠나는 시간 */
   const sched=await device(page,KEY),roster=await device(page,ROSTER),after=await usage(page);
   const state=await page.evaluate(({WT,FILLER})=>({state:PSSync.state(),pending:PSSync.pending().count,scheduleReady:PSSync.keyReady('process_coach_v1'),rosterReady:PSSync.rosterReady(WT),filler:(localStorage.getItem(FILLER)||'').length,writeLog:window.__psWriteLog,slow:storage.__psSlow}),{WT,FILLER});
-  const rows=events(),failed=rows.filter(r=>r.event_name==='sync_failed');
+  const allRows=events(),rows=allRows.filter(r=>!r.created_at||Date.parse(r.created_at)>=reloadAt),failed=rows.filter(r=>r.event_name==='sync_failed');   /* 새로고침 뒤 기록만(위) */
+  proof.preReload=allRows.filter(r=>rows.indexOf(r)<0).map(r=>({name:r.event_name,code:r.error_code,stage:r.meta&&r.meta.stage}));   /* 뺀 기록도 증거 파일에 남긴다 */
   const log=state.writeLog||[],dietAt=log.findIndex(e=>e.k===KEY&&e.len===server.length),rosterAt=log.findIndex(e=>e.k===ROSTER);
   proof.stages.push({stage:'after-boot',bootDone,manualRounds:rounds.length,roundResults:rounds.map(r=>({error:r&&r.error,code:r&&r.code,pushed:r&&r.pushed,applied:r&&r.applied})),usage:after,
     state:{...state,writeLog:undefined},writeLog:log,order:{dietAt,rosterAt},schedWrites:schedWrites()-writesBefore,events:rows.map(r=>({name:r.event_name,code:r.error_code,stage:r.meta&&r.meta.stage,reason:r.meta&&r.meta.reason}))});
