@@ -1,4 +1,4 @@
-// 3.325 폰보드: 폰 아래 메뉴 «폰보드» 탭(보드 다음 칸) → 덮개 목록 → «＋ 새 폰보드»(인원 · 시작 배치 · 상대도) → 끌어 옮기기 · 선수 번호/이름 · 콘 · 화살 · 지우기 · 되돌리기
+// 3.327 폰보드: 폰 아래 메뉴 «폰보드» 탭(보드 다음 칸) → 덮개 목록 → «＋ 새 폰보드»(인원 · 시작 배치 · 상대도) → 끌어 옮기기 · 선수 번호/이름 · 콘 · 화살 · 지우기 · 되돌리기
 // → «저장» = 보관함 작전판 하나(phone 표시 · 세로) → 보관함 목록에 «폰보드» 칩 → 다시 열어 고치면 같은 항목 → 다른 탭으로 가면 덮개가 닫히고 쓰던 판은 남는다.
 // 큰 화면에서 손본 판은 폰에서 보기만. 아이패드에는 탭이 없고 보관함 칩은 보인다.
 import assert from 'node:assert/strict';
@@ -169,6 +169,6 @@ try{
   await f.waitForFunction(()=>[...document.querySelectorAll('#drillFiles .vcard')].some(c=>c.textContent.includes('토요일 4-4-2')&&c.querySelector('.vc-phone')),null,{timeout:40000});
   await shot(page,'6-ipad-vault');
  }
- console.log(JSON.stringify({test:'board-phone-board-3325',engine,passed:true}));
+ console.log(JSON.stringify({test:'board-phone-board-3327',engine,passed:true}));
 }catch(e){console.error(e);process.exitCode=1;}
 finally{for(const b of Object.values(browsers))await b.close();await fx.close();}

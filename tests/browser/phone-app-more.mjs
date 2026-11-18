@@ -14,7 +14,7 @@ try{
     assert.deepEqual(await bar(),['보드','보관함','팀 운영','IDP','커뮤니티','프로필'],'데스크톱 사이드바는 그대로 — 더보기 없음(«학습»은 learning-off.js 로 뺐다)');
     console.log(JSON.stringify({engine,size,passed:true}));
   }else{
-    assert.deepEqual(await bar(),['보드','폰보드','보관함','커뮤니티','팀 운영','더보기'],'폰 하단 여섯 메뉴(3.325 «폰보드»가 «보드» 다음 칸 — «프로필»은 더보기 안으로)');
+    assert.deepEqual(await bar(),['보드','폰보드','보관함','커뮤니티','팀 운영','더보기'],'폰 하단 여섯 메뉴(3.327 «폰보드»가 «보드» 다음 칸 — «프로필»은 더보기 안으로)');
     const more=page.locator('#psMoreBtn'),sheet=page.locator('#appMoreSheet');
     await more.tap();await wait(200);
     assert.equal(await sheet.isVisible(),true,'더보기 → 시트');
