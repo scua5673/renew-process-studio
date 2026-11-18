@@ -52,6 +52,25 @@ test('가짜 창 — toast 를 감싸 띠가 보이면 알림을 그 위로, 띠
   assert.equal(P.install(win),null,'두 번 설치하지 않는다');
 });
 
+test('3.319 — 띠 위로 올릴 땐 top:auto 도 같이 적고, 내리면 둘 다 처음 값으로(훈련 편집의 위쪽 알림이 긴 상자로 늘어나지 않게)',()=>{
+  const opts={disp:'flex',top:585,obs:null};
+  const toastEl={id:'cs-ftoast',style:{bottom:'84px',top:'',props:{},setProperty(k,v,p){this[k]=v;this.props[k]=p||'';}}};
+  const byId={'ps-df-opts':{getBoundingClientRect:()=>({top:opts.top,width:300,height:50}),id:'ps-df-opts'},'cs-ftoast':toastEl};
+  const doc={readyState:'complete',head:{appendChild(){}},documentElement:{clientHeight:800},getElementById:id=>byId[id]||null,createElement(){return {style:{}};},addEventListener(){}};
+  const win={document:doc,innerHeight:800,getComputedStyle:e=>({display:opts.disp,visibility:'visible'}),MutationObserver:function(fn){opts.obs=fn;this.observe=()=>{};},toast(){}};
+  P.install(win);
+  win.toast('끌어서 구역(채워진 박스)을 그리세요');
+  assert.equal(toastEl.style.bottom,(800-585+12)+'px');
+  assert.equal(toastEl.style.top,'auto','올릴 땐 top:auto');assert.equal(toastEl.style.props.top,'important','body.editing 의 top:16px!important 를 이긴다');
+  opts.disp='none';opts.obs();
+  assert.equal(toastEl.style.bottom,'84px');assert.equal(toastEl.style.props.bottom,'');
+  assert.equal(toastEl.style.top,'','띠가 닫히면 top 은 처음 값(없음)으로');assert.equal(toastEl.style.props.top,'');
+  /* 처음부터 인라인 top 이 있던 알림은 그 값으로 */
+  toastEl.style.top='20px';toastEl.style.props.top='';opts.disp='flex';opts.obs();
+  assert.equal(toastEl.style.top,'auto');opts.disp='none';opts.obs();assert.equal(toastEl.style.top,'20px');
+  assert.ok(/top:16px!important;bottom:auto!important/.test(read('studio/board.html')),'board.html 의 훈련 편집 규칙은 그대로(이 시험이 지키는 전제)');
+});
+
 test('배포 묶음 — sw.js CORE · board.html <script> 한 줄 · 크기 예산 · 중요 시험 목록',()=>{
   assert.ok(read('sw.js').includes("'/studio/board-popups.js'"),'sw.js CORE');
   const b=read('studio/board.html');

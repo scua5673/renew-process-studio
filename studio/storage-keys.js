@@ -154,6 +154,8 @@
     ['ps_admin_support_reply_v1:','device','ls','draft','admin-support.js',{prefix:1}],
     ['ps_anim_export_fit_v1','device','ls','pref','board.html'],
     ['ps_anim_export_scope_v1','device','ls','pref','board.html'],
+    ['ps_anim_export_height_v1','device','ls','pref','board.html'],   /* 3.316 — 영상 화질(720 · 1080 · 2160) */
+    ['ps_anim_export_fps_v1','device','ls','pref','board.html'],   /* 3.316 — 초당 장면(15 · 30 · 60) */
     ['ps_anim_export_cap_v1','device','ls','pref','board-tweaks.js'],   // 3.085 여러 페이지 영상 — 페이지 이름 자막 넣기 · 빼기
     ['ps_anim_speed_all_v1','device','ls','pref','board-tweaks.js'],   // 3.085 속도를 모든 장면에 같이(«전체»)
     ['ps_app_settings_tab_v1','device','ls','pref','app.html'],

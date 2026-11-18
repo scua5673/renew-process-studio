@@ -70,6 +70,6 @@ test('작전판 배선 — 카드 · 규격 · 잎결 판이 그림 서명에, �
   assert.match(b,/fill="url\(#psStMow\)"\/>'   \/\* 잔디결\(5m\)을 중계 화면처럼 또렷하게 \*\/\n      \+mow\.cards\+\(grain\?'<path d="'\+rr\(0\)\+'" fill="url\(#psStGrain\)"\/>':''\)/);
   assert.match(b,/if\(ground\)o\+=PSStadiumGround\.paint\(ground,turf,md,grain\);/);
   assert.doesNotMatch(b,/id="psStMow" patternUnits="userSpaceOnUse" x="'\+f\(L\)/,'psStMow 는 모듈 한 곳에서');
-  assert.match(b,/\+\(multi\?'':'<rect width="'\+f\(per\/2\)\+'" height="'\+f\(per\)\+'" fill="'\+md\.gb\+'"\/>'\)/,'사진 없는 기기의 x 줄은 운동장 하나에서만');
+  assert.match(b,/\+\(multi\?'':'<rect width="'\+f\(per\/2\)\+'" height="'\+f\(per\)\+'" fill="'\+pk\.gb\+'"\/>'\)/,'사진 없는 기기의 x 줄은 운동장 하나에서만(3.316 — 색은 피치 pk)');
   assert.ok(read('tests/browser/run-critical.mjs').includes("'board-grass-mow-3255'"));
 });
