@@ -64,7 +64,8 @@ test('scan: vault size from the text already read — count, total KB, largest i
   assert.ok(!/JSON\.parse\(raw\)|\.split\(/.test(Crumb.scan.toString()),'no second copy of a 20MB vault');
 });
 
-/* 가짜 창으로 부팅을 돌려 본다: 죽은 탭 표식 → 한 줄, 정상 종료 → 표식 없음 */
+/* 가짜 창으로 부팅을 돌려 본다: 죽은 탭 표식 → 한 줄, 정상 종료 → 표식 없음
+   3.321 — 타이머는 실제로 돈다(최대 10ms 로 줄여서): «표식 있음 · 잠금 없음»의 두 번째 읽기(CONFIRM_MS)를 기다리는 checked 가 끝나야 한다. ms 는 timers 에 남는다 */
 function fakeWindow({ls=new Map(),ss=new Map(),held=[],discarded=false,session=true,locks=true}={}){
   const events=[],listeners={},docL={},timers=[];
   const store=m=>({getItem:k=>m.has(k)?m.get(k):null,setItem(k,v){m.set(k,String(v));},removeItem(k){m.delete(k);},key:i=>[...m.keys()][i]??null,get length(){return m.size;}});
@@ -74,7 +75,7 @@ function fakeWindow({ls=new Map(),ss=new Map(),held=[],discarded=false,session=t
     document:{hidden:false,wasDiscarded:discarded,documentElement:{getAttribute:()=>'desktop'},body:{getAttribute:k=>k==='data-ps-app'?'board':null,classList:{contains:()=>false}},getElementsByTagName:()=>[],getElementById:()=>null,
       addEventListener(t,f){(docL[t]=docL[t]||[]).push(f);}},
     addEventListener(t,f){(listeners[t]=listeners[t]||[]).push(f);},
-    setTimeout(f,ms){timers.push({f,ms});return timers.length;},clearTimeout(){},setInterval(){return 1;},clearInterval(){},
+    setTimeout(f,ms){timers.push({f,ms});return global.setTimeout(f,Math.min(ms,10));},clearTimeout(id){global.clearTimeout(id);},setInterval(){return 1;},clearInterval(){},
     matchMedia:q=>({matches:/fullscreen/.test(q)}),screen:{width:2560,height:1440},devicePixelRatio:2,performance:{memory:{usedJSHeapSize:900*1048576,jsHeapSizeLimit:4096*1048576}},
     getComputedStyle:()=>({visibility:'visible'}),localStorage:store(ls),sessionStorage:store(ss),
     PSSync:{session:()=>session?{uid:'u'}:null,event:(name,o)=>events.push({name,...o})}};
@@ -117,6 +118,29 @@ test('self reload, a discarded tab and a signed-out boot are not reported',async
   /* 로그인 전: 보내지 않는다(세션을 기다린다) */
   const c=fakeWindow({ls:new Map([['ps_crash_crumb_v1:d',JSON.stringify(mark({t:Date.now()-5000}))]]),session:false}),CC=fresh();CC.mount(c.win);await CC.checked;await tick();
   assert.equal(c.events.length,0);
+});
+
+/* 3.321 — 떠나는 창은 표식을 지우고 잠금을 놓는데 잠금은 바로, 저장소 삭제는 다른 탭의 사본에 늦게 닿는다(CI 크로미움 one-window-3276 흔들림).
+   첫 읽기에서 «표식 있음 · 잠금 없음»이면 2초 뒤 한 번 더 읽고, 그때도 그런 것만 보낸다 */
+test('3.321 a marker whose lock is gone but whose deletion has not arrived yet is not a dead tab — only what is still there at the second read is sent',async()=>{
+  const ls=new Map([['ps_crash_crumb_v1:left',JSON.stringify(mark({t:Date.now()-500,v:'board f:fBoard fr3'}))],['ps_crash_crumb_v1:dead',JSON.stringify(mark({t:Date.now()-40000}))]]);
+  const h=fakeWindow({ls}),C=fresh();
+  const q=h.win.navigator.locks.query;let n=0;
+  h.win.navigator.locks.query=async()=>{n++;if(n===1)global.setTimeout(()=>ls.delete('ps_crash_crumb_v1:left'),3);return q();};   /* 첫 읽기 뒤에야 «다른 창의 삭제»가 닿는다 */
+  C.mount(h.win);const r=await C.checked;await tick();
+  assert.equal(n,2,'표식 있음 · 잠금 없음 → 한 번 더 읽는다');
+  assert.ok(h.timers.some(t=>t.ms===2000),'두 번째 읽기는 2초 뒤');
+  assert.deepEqual(r,{dead:1,stale:0});
+  assert.equal(h.events.length,1);assert.equal(h.events[0].error_code,'D:design','떠난 창(board)이 아니라 남은 표식(design)');
+  assert.ok(!/\.x2$/.test(h.events[0].meta.stage),'떠난 창은 세지 않는다: '+h.events[0].meta.stage);
+  assert.ok(!ls.has('ps_crash_crumb_v1:dead')&&!ls.has('ps_crash_crumb_v1:left'));
+});
+test('3.321 a clean boot reads the locks once; a pending alive lock (a window re-arming) is a live window',async()=>{
+  const ls=new Map([['ps_crash_crumb_v1:rearm',JSON.stringify(mark({t:Date.now()-1000}))]]);
+  const h=fakeWindow({ls}),C=fresh();let n=0;
+  h.win.navigator.locks.query=async()=>{n++;return {held:[],pending:[{name:'ps-crash-alive:rearm'}]};};
+  C.mount(h.win);const r=await C.checked;await tick();
+  assert.equal(n,1,'살아 있는 창뿐이면 한 번');assert.deepEqual(r,{dead:0,stale:0});assert.equal(h.events.length,0);assert.ok(ls.has('ps_crash_crumb_v1:rearm'),'남의 표식은 그대로');
 });
 
 test('a full small storage falls back to sessionStorage, read by the next document of the same tab',async()=>{
