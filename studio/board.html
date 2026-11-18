@@ -1878,6 +1878,7 @@
     /* 보관함 리스트 밀도(사용자: 카드 더 작게) */
     body #drillFiles.vlist .vcard, body #drillFiles .vx-items.vx-list .vcard{min-height:38px;padding:4px 8px;border-radius:10px;gap:8px;}
     body .vcard .vc-nm{font-size:12px;}
+    .vcard .vc-editing{display:inline-block;margin-left:6px;padding:0 8px;height:18px;line-height:18px;border-radius:999px;background:#ffd24a;color:#14213D;font-size:11px;font-weight:700;vertical-align:1px;}   /* 3.317 */
     body .vcard .vc-mt, body .vcard .vc-owner{font-size:10px!important;}
     body .vcard .vc-badge{font-size:10px;padding:2px 7px;}
     body .vcard .vc-act .btn, body .vcard .vc-act button{min-height:24px;padding:0 8px;font-size:11px;}
@@ -4226,10 +4227,10 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.315"></script>
+<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.318"></script>
 <script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-rescue.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-tv-fold.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.315"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script>
+<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.318"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -11901,8 +11902,12 @@ function posCode(v){ var t=String(v||"").trim(); if(!t)return ""; var K=t.toUppe
 function posBase(v){ v=posCode(v); if(/^(L|R)?CB$/.test(v))return"CB"; if(/^(L|R)?CM$/.test(v))return"CM"; if(/^(L|R)?DM$/.test(v))return"DM";
   if(v==="CF")return"ST"; if(v==="LWB")return"LB"; if(v==="RWB")return"RB"; return v; }
 function posGroup(v){ v=posCode(v); if(!v)return""; if(v==="GK")return"GK"; if(/CB|LB|RB|WB|FB/.test(v))return"DF"; if(/DM|CM|AM|LM|RM/.test(v))return"MF"; return"FW"; }
-async function squadLoad(){try{var ls=localStorage.getItem("cs_squad_v1");if(ls){var o=JSON.parse(ls);if(o&&Array.isArray(o.players)){squad=o;return;}}}catch(_){}try{const s=await boardStore.get(TEAM_KEY);if(s&&Array.isArray(s.players))squad=s;}catch(_){}}
-function squadSave(){try{boardStore.set(TEAM_KEY,squad);}catch(_){}try{localStorage.setItem("cs_squad_v1",JSON.stringify(squad));}catch(_){}if($("squadCount"))$("squadCount").textContent=(squad.players.length)+"명";}
+/* 저장 계층 1단계 — 선수단 거울(cs_squad_v1)은 IndexedDB 정본(boardStore — 없으면 localStorage)을 먼저 읽고, 쓰기는 공용 길 psSaveSharedAsync(거울 + IndexedDB 확인) 하나로. 예전엔 두 저장소에 따로 쓰고 읽는 차례는 scout 와 반대였다(설계 2절). 보기 전용은 boardStore 의 메모리 길 그대로 */
+async function squadLoad(){try{const s=await boardStore.get(TEAM_KEY);if(s&&Array.isArray(s.players)){squad=s;return;}}catch(_){}try{var ls=localStorage.getItem("cs_squad_v1");if(ls){var o=JSON.parse(ls);if(o&&Array.isArray(o.players))squad=o;}}catch(_){}}
+function squadSave(){var raw=JSON.stringify(squad),ro=false;try{ro=document.body.classList.contains("ps-viewonly");}catch(_){ro=false;}
+  if(!ro&&window.psSaveSharedAsync){psSaveSharedAsync(TEAM_KEY,raw).catch(function(e){storeFailure(TEAM_KEY,e);});}
+  else{try{boardStore.set(TEAM_KEY,squad);}catch(_){}}
+  if($("squadCount"))$("squadCount").textContent=(squad.players.length)+"명";}
 function renderSquad(){const box=$("squadList");if(!box)return;box.innerHTML="";
   if($("squadName"))$("squadName").value=squad.name||"";
   if($("squadCount"))$("squadCount").textContent=(squad.players.length)+"명";
@@ -17984,7 +17989,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       if(_mup&&_mup.changed){ try{toast(window.__meetUpgradeText(_mup));}catch(_){} try{if(window.__vaultAutoSaveSchedule)window.__vaultAutoSaveSchedule();}catch(_){} }   /* 2.974 — 바꾼 것은 말하고 저장한다 */
       return;
     }
-    try{showViewBar(d.name||"작전판",ro);}catch(_){}   // 뷰 전환 전에 바를 먼저 붙여 스테이지 높이를 확정 — 바 때문에 viewBox가 한 번 더 출렁이는 중간 단계 제거(멀티피치 깜빡임 완화)
+    try{showViewBar(d.name||"작전판",ro,d.folder);}catch(_){}   // 뷰 전환 전에 바를 먼저 붙여 스테이지 높이를 확정 — 바 때문에 viewBox가 한 번 더 출렁이는 중간 단계 제거(멀티피치 깜빡임 완화)
     try{var _ovt=(ty==="setpiece"?"board":ty);window.__viewSnaps=window.__viewSnaps||{};window.__vaultEdit=true;
       if(window.__csView!==_ovt){window.__vaultStarting=true;setView(_ovt);window.__vaultStarting=false;}
       try{if(window.__animReset)window.__animReset();}catch(_){}   /* 이전 파일의 장면을 먼저 비운다 */
@@ -18317,6 +18322,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       +"#vCreateBar.on{display:flex;}"
       +"#vCreateBar b{font-size:14px;font-weight:800;color:var(--txt,#14161A);}"
       +"#vCreateBar .vcb-sub{font-size:12px;color:var(--txt-dim,#646A73);}"
+      +"#vCreateBar .vcb-crumb{font-size:12px;color:var(--txt-dim,#646A73);font-weight:500;white-space:nowrap;}#vCreateBar .vcb-crumb:empty{display:none;}"   /* 3.317 — 어느 자료인지: 보관함 › 폴더 › */
       +"#vCreateBar .vcb-sp{flex:1;}"
       +"#vCreateBar .btn{padding:7px 17px;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;border:1px solid var(--line,#E3E6EA);font-family:inherit;}"
       +"#vCreateBar .btn.ghost{background:var(--panel2,#F1F2F4);color:var(--txt,#14161A);}"
@@ -18375,7 +18381,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     document.head.appendChild(st); }
   function ensureCreateBar(){ ensureCreateBarCss(); var bar=$id("vCreateBar"); if(bar)return bar;
     bar=document.createElement("div"); bar.id="vCreateBar";
-    bar.innerHTML='<b id="vCreateTitle"></b><span class="vcb-sub" id="vCreateSub"></span><span class="vcb-flow" id="vCreateFlow"><i class="on">1 만들기</i><span>›</span><i>2 이름·폴더</i><span>›</span><i>3 저장</i></span><span class="vcb-sp"></span><button class="btn ghost" id="vCreateBackMatch" type="button" style="display:none">‹ 경기 준비로</button><button class="btn ghost" id="vCreateParts" type="button" style="display:none">경기 자료 넣기</button><button class="btn ghost" id="vCreateEdit" style="display:none">편집</button><button class="btn ghost" id="vCreateFull" style="display:none">전체화면</button><button class="btn ghost" id="vCreateCancel">나가기</button><button class="btn ghost" id="vCreateSaveOnly" type="button" style="display:none" title="저장하고 계속 편집 (⌘S)">저장</button><button class="btn primary" id="vCreateSave">저장하기</button>';
+    bar.innerHTML='<span class="vcb-crumb" id="vCreateCrumb"></span><b id="vCreateTitle"></b><span class="vcb-sub" id="vCreateSub"></span><span class="vcb-flow" id="vCreateFlow"><i class="on">1 만들기</i><span>›</span><i>2 이름·폴더</i><span>›</span><i>3 저장</i></span><span class="vcb-sp"></span><button class="btn ghost" id="vCreateBackMatch" type="button" style="display:none">‹ 경기 준비로</button><button class="btn ghost" id="vCreateParts" type="button" style="display:none">경기 자료 넣기</button><button class="btn ghost" id="vCreateEdit" style="display:none">편집</button><button class="btn ghost" id="vCreateFull" style="display:none">전체화면</button><button class="btn ghost" id="vCreateCancel">나가기</button><button class="btn ghost" id="vCreateSaveOnly" type="button" style="display:none" title="저장하고 계속 편집 (⌘S)">저장</button><button class="btn primary" id="vCreateSave">저장하기</button>';
     document.body.appendChild(bar);
     $id("vCreateSave").onclick=function(e){e.stopPropagation();doCreateSave();};
     $id("vCreateSaveOnly").onclick=function(e){e.stopPropagation();doViewSaveOnly();};   /* 2.975 — 그냥 저장(사용자 "저장하고 나가기가 있는데 그냥 저장도") */
@@ -18393,7 +18399,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       setTimeout(function(){if(it.type==='board'&&(generation!==_vaultBoardGeneration||!vaultBoardSameOwner(owner)))return;try{openItemEdit(it);}catch(_){}},80);};
     return bar; }
   function showCreateBar(type, editing){ var bar=ensureCreateBar();
-    try{window.__vaultViewMode=false;window.__vaultReadOnly=false;var _sb=$id("vCreateSave");if(_sb){_sb.style.display="";_sb.textContent="저장하기";}var _so0=$id("vCreateSaveOnly");if(_so0)_so0.style.display="none";var _cb=$id("vCreateCancel");if(_cb)_cb.textContent="나가기";var _fl=$id("vCreateFlow");if(_fl)_fl.style.display="";}catch(_){}
+    try{window.__vaultViewMode=false;window.__vaultReadOnly=false;var _sb=$id("vCreateSave");if(_sb){_sb.style.display="";_sb.textContent="저장";}var _so0=$id("vCreateSaveOnly");if(_so0)_so0.style.display="none";var _cb=$id("vCreateCancel");if(_cb)_cb.textContent="닫기";var _cr0=$id("vCreateCrumb");if(_cr0)_cr0.textContent="";var _fl=$id("vCreateFlow");if(_fl)_fl.style.display="";}catch(_){}
     try{var _fb0=$id("vCreateFull"); if(_fb0)_fb0.style.display="none";}catch(_){}
     var names={board:"작전판",match:"경기",meeting:"미팅",setpiece:"세트피스",train:"훈련",analysis:"경기 분석"};   /* 2.285 — train·analysis 가 빠져 '항목 만들기'로 떨어지던 것 */
     $id("vCreateTitle").textContent=(window.__vaultBook?"패턴북":(names[type]||"항목"))+(editing?" 수정":" 만들기");
@@ -18421,8 +18427,8 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var ph=false; try{ ph=matchMedia("(max-width:600px)").matches; }catch(_){}   /* 폰은 한 줄에 들게 짧게 — 두 줄로 접히면 편집기 도구줄을 덮는다 */
     var bk=$id("vCreateBackMatch"); if(bk&&ph)bk.textContent="‹ 경기 준비"; if(pb)pb.textContent=ph?"＋ 자료":"경기 자료 넣기"; if(pb)pb.title="경기 자료 넣기 — 표지·상대 분석·게임플랜·예전 경기 준비 보드";
     if(t){ t.textContent=(fm&&fm.name)||t.textContent; t.title=window.__vaultReadOnly?"":"눌러서 이름 바꾸기"; }
-    if(cb){ var manual=(curType()==="board")&&!window.__vaultReadOnly;   /* 작전판은 «저장하고 나가기»가 따로 있다 */
-      cb.textContent=window.__vaultReadOnly?"닫기":(manual?"나가기":"완료"); cb.classList.toggle("primary",!manual); cb.classList.toggle("ghost",!!manual); }
+    if(cb){ var manual=(curType()==="board")&&!window.__vaultReadOnly;   /* 작전판은 «저장하고 닫기»가 따로 있다 */
+      cb.textContent=window.__vaultReadOnly?"닫기":(manual?"닫기":"완료"); cb.classList.toggle("primary",!manual); cb.classList.toggle("ghost",!!manual); }
   }
   function meetMatchReadyPost(){ try{parent.postMessage({source:"board",type:"matchEditReady"},"*");}catch(_){} }
   /* 이름 — 보관함 항목의 이름만 바꾼다(자동 저장은 이름을 건드리지 않는다: vaultSaveCurrent 는 썸네일·슬라이드만 고쳐 쓴다) */
@@ -18475,9 +18481,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   (function(){ try{ new MutationObserver(function(){ var fm=window.__vaultFromMatch; if(!fm||!fm.showReturn)return;
       if(document.body.classList.contains("focus-board")){ fm.showSeen=true; return; }
       if(fm.showSeen&&meetMatchInplaceNow()){ fm.showReturn=false; doViewClose(); } }).observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(_){} })();
-  function showViewBar(name,readOnly){ window.__vaultManualDirty=false;var bar=ensureCreateBar();   /* 보관함 항목 열기 — 보기와 편집을 분리하고 작업 보드는 보존 */
+  function showViewBar(name,readOnly,folder){ window.__vaultManualDirty=false;var bar=ensureCreateBar();   /* 보관함 항목 열기 — 보기와 편집을 분리하고 작업 보드는 보존 */
     var ro=!!readOnly||psPhoneBoardReadOnly();
-    try{window.__vaultViewMode=true;window.__vaultReadOnly=ro;var _sb=$id("vCreateSave");if(_sb){_sb.style.display=ro?"none":"";_sb.textContent="저장하고 나가기";}var _so=$id("vCreateSaveOnly");if(_so)_so.style.display=ro?"none":"";var _cb=$id("vCreateCancel");if(_cb)_cb.textContent=ro?"닫기":"나가기";var _fl=$id("vCreateFlow");if(_fl)_fl.style.display="none";}catch(_){}
+    try{window.__vaultViewMode=true;window.__vaultReadOnly=ro;var _sb=$id("vCreateSave");if(_sb){_sb.style.display=ro?"none":"";_sb.textContent="저장하고 닫기";}var _so=$id("vCreateSaveOnly");if(_so)_so.style.display=ro?"none":"";var _cb=$id("vCreateCancel");if(_cb)_cb.textContent="닫기";var _cr=$id("vCreateCrumb");if(_cr)_cr.textContent="보관함 › "+(folder?folderLeaf(folder)+" › ":"");   /* 3.317 — 말 하나(저장 · 저장하고 닫기 · 닫기) · 어느 자료인지 */var _fl=$id("vCreateFlow");if(_fl)_fl.style.display="none";}catch(_){}
     $id("vCreateTitle").textContent=(name||"작전판");
     $id("vCreateSub").textContent=ro?"· 보기 전용 · 저장 안 함":"· 저장 버튼을 눌러야 저장됩니다";
     try{window.__vaultEdit=true;}catch(_){}bar.classList.add("on"); document.body.classList.add("vcreating");
@@ -18539,7 +18545,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function meetMatchInplaceNow(){ var fm=window.__vaultFromMatch; return !!(fm&&fm.inplace&&document.body.classList.contains("vc-match")); }
   function meetMatchDonePost(fm,fail){ try{parent.postMessage({source:"board",type:"matchEditDone",libId:(fm&&fm.libId)||"",mid:(fm&&fm.ref&&fm.ref.mid)||"",fail:!!fail},"*");}catch(_){} }
   function doViewClose(){
-    if(window.__vaultManualDirty){psConfirm("저장하지 않은 변경 사항을 버리고 나갈까요?",function(){window.__vaultManualDirty=false;doViewClose();});return;}
+    if(window.__vaultManualDirty){psConfirm("저장하지 않은 변경 사항을 버리고 닫을까요?",function(){window.__vaultManualDirty=false;doViewClose();});return;}
     /* 2.966 — 경기 준비 안 편집: 저장(자동 저장 마무리)하고 닫은 뒤 경기 준비의 같은 자리로 */
     var _toMatch=meetMatchInplaceNow(), _fm=window.__vaultFromMatch;
     if(_toMatch){ document.body.classList.remove("vc-match"); try{ var _px=$id("mpPartsOv"); if(_px)_px.remove(); }catch(_){} }
@@ -18826,6 +18832,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if((ty==="meeting"||ty==="board")&&d.matchRef){ try{ meta+=" · ⚽ "+meetMatchShort(d.matchRef,meetLiveMatch(d.matchRef)); }catch(_){} }   /* 2.928 · 2.965 작전판도 */
     if(d.folder)meta+=" · "+folderLeaf(d.folder);
     var canEdit=canEditItem(d), team=psIsTeamWs();
+    var _edc=(window.__psVaultDraft&&window.__psVaultDraft.editingId&&window.__psVaultDraft.editingId()===d.libId)?'<span class="vc-editing">편집 중</span>':'';   /* 3.317 — 보드에서 고치다 둔 자료(저장 안 한 변경이 기기 초안에 있음) */
     var ownerHtml=(team&&d.createdBy)?('<div class="vc-owner"'+(canEdit?' style="color:var(--blue,var(--ps-navy,#14213D))"':'')+'><svg style=\"width:12px;height:12px;vertical-align:-2px\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"7\" r=\"4\"/><path d=\"M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2\"/></svg> '+esc(itemCreatorLabel(d))+'</div>'):"";
     /* 1.532 — 공유 여부는 폴더가 정한다. 배지도 "어느 폴더에서 공유 중"인지 말한다. */
     var _bk=psLibBackedUp(), _shf=team?folderSharedPath(d.folder):"";
@@ -18842,10 +18849,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var _st=(team?(_shf?('☁ '+folderLeaf(_shf)+'에서 공유 중'+(_mine?'':' · 받은 자료')):(_bk?'▣ 내 자료 · 백업됨':'▣ 이 기기에만')):"");
       if(_st)_sub.push(_st);
       if(team&&d.createdBy){ try{ var _ow=itemCreatorLabel(d); if(_ow)_sub.push(_ow); }catch(_){} }
-      bd.innerHTML='<div class="vc-txt two"><div class="vc-nm">'+esc(d.name||"항목")+'</div>'
+      bd.innerHTML='<div class="vc-txt two"><div class="vc-nm">'+esc(d.name||"항목")+_edc+'</div>'
         +'<div class="vc-mt">'+esc(_sub.filter(Boolean).join(" · "))+'</div></div>';
     }else{
-    bd.innerHTML='<div class="vc-txt"><div class="vc-nm">'+esc(d.name||"항목")+'</div><div class="vc-mt">'+esc(meta)+'</div>'+storageHtml+ownerHtml+((d.tags&&d.tags.length)?'<div class="vc-tags">'+d.tags.map(function(_t){return '<span class="vc-tag">#'+esc(_t)+'</span>';}).join("")+'</div>':"")+'</div>';
+    bd.innerHTML='<div class="vc-txt"><div class="vc-nm">'+esc(d.name||"항목")+_edc+'</div><div class="vc-mt">'+esc(meta)+'</div>'+storageHtml+ownerHtml+((d.tags&&d.tags.length)?'<div class="vc-tags">'+d.tags.map(function(_t){return '<span class="vc-tag">#'+esc(_t)+'</span>';}).join("")+'</div>':"")+'</div>';
     }
     var more=document.createElement("button");more.className="vc-more";more.textContent="\u22ef";more.title="더보기";
     more.onclick=function(e){e.stopPropagation();vaultItemMenu(e,d);};

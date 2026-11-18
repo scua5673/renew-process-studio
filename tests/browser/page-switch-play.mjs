@@ -31,7 +31,7 @@ try{
     await bf.waitForFunction(()=>window.__csView==='board'&&window.__vaultEdit&&!window.__vaultHydrating&&document.querySelectorAll('#boardPageStrip .bp-tab').length===3,null,{timeout:12000}); await page.waitForTimeout(800); };
   const now=()=>bf.evaluate(()=>({idx:window.__psPages.pageInfo().idx,x:state.players[0]&&state.players[0].x,playing:animPlaying}));
   const pageA=()=>bf.evaluate(()=>{ const p=window.__psPages.exportList(); return p&&p[0].frames.map(f=>f.snap.players[0].x); });
-  const asking=()=>bf.evaluate(()=>!![...document.body.children].find(e=>e.tagName==='DIV'&&/버리고 나갈까요/.test(e.textContent)));
+  const asking=()=>bf.evaluate(()=>!![...document.body.children].find(e=>e.tagName==='DIV'&&/버리고 닫을까요/.test(e.textContent)));
   const left=()=>bf.waitForFunction(()=>window.__csView==='session'&&!window.__vaultEdit,null,{timeout:12000});
   for(const [tab,name,x,scenes] of [[2,'C',300,0],[1,'B',600,2]]){
     await open();
