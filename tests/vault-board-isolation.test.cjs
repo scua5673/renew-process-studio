@@ -28,7 +28,7 @@ function harness({empty=false,view='board',withPages=true}={}){
    undoStack:[{board:snap(3),anim:{frames:copy(frames),active:0}}],redoStack:[{board:snap(4)}],_bliveT:null,
    captureSnap(){return copy(c.state);},loadSnap(s){c.state=copy(s);events.push('load:'+((s.players||[])[0]||{}).x);},dc:copy,
    boardFlushLive(){writes.push({snap:copy(c.state),frames:copy(c.anim.frames)});return writes.at(-1);},
-   restoreAnimBeforeCapture(){events.push('stop-playback');},renderTokens(){},renderDrawings(){},updateDelUI(){},renderAnimFrames(){},renderOnion(){},syncLoopUI(){},syncAnimTiming(){},_animFitPad(){},clearHistory(){c.undoStack=[];c.redoStack=[];},render(){},_clone:copy,
+   restoreAnimBeforeCapture(){events.push('stop-playback');},renderTokens(){},renderDrawings(){},updateDelUI(){},renderAnimFrames(){},renderOnion(){},syncLoopUI(){},syncAnimTiming(){},_animFitPad(){},clearHistory(){c.undoStack=[];c.redoStack=[];},render(){},_clone:copy,_cloneLean:copy,
    pages:withPages?[{snap:snap(2),name:'첫 작업 페이지'},{snap:copy(original),name:'마지막 작업 페이지'}]:null,idx:withPages?1:0,_inVault:false,_livePages:null,
    setView(v){events.push('view:'+v);c.__csView=v;},showViewBar(name,ro){c.__vaultEdit=true;c.__vaultReadOnly=ro;c.__vaultViewMode=true;},
    hideCreateBar(){c.__vaultEdit=false;c.__vaultReadOnly=false;},exitVaultFull(){events.push('exit-full');},libFilter:{folder:'__all'},toggleSave(){},
