@@ -4227,10 +4227,10 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.327"></script>
-<script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-bounds.js"></script><script src="board-rescue.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>
+<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.328"></script>
+<script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-bounds.js"></script><script src="board-rescue.js"></script><script src="board-mow.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-tv-fold.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.327"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script>
+<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.328"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -4824,24 +4824,13 @@ function buildPitch(){
   const SX=1600;   // 운동장 카드 밖 여백까지 피치 표면(잔디결 포함) 연장 — 라인은 그대로
   world.appendChild(el("rect",{x:-SX,y:-SX,width:W+2*SX,height:H+2*SX,fill:PBG}));
   {
-    const ga=getCss("--grass-a")||"#239150",gb=getCss("--grass-b")||"#1b8044";
     const defs=el("defs");const cp=el("clipPath",{id:"pitchClip"});
     cp.appendChild(el("rect",{x:-SX,y:-SX,width:W+2*SX,height:H+2*SX}));defs.appendChild(cp);
     const rg=el("radialGradient",{id:"grassVig",cx:"50%",cy:"50%",r:"72%"});
     rg.appendChild(el("stop",{offset:"52%","stop-color":"#000","stop-opacity":"0"}));
     rg.appendChild(el("stop",{offset:"100%","stop-color":"#000","stop-opacity":"0.20"}));
     defs.appendChild(rg);world.appendChild(defs);
-    var _gm=(typeof window.__grassM==="number")?window.__grassM:5;
-    if(_gm>0){
-    /* 운동장 개수(열)에 맞춰 줄무늬 폭 축소 — 멀티피치에서 각 운동장의 잔디결이 적절한 굵기로 보이게 */
-    var _pcols=(state.pitchN>1)?(state.pitchN>3?3:state.pitchN):1;
-    const sw=(_gm*MPP)/_pcols,sg=el("g",{"clip-path":"url(#pitchClip)","class":"grass-stripes"});
-    const startX=L-64*sw, endX=W+64*sw;   // 세로 줄무늬: 위상 골라인(L) 정렬, 폭 _gm/열 m
-    let i=0;
-    for(let x=startX; x<endX; x+=sw,i++)
-      sg.appendChild(el("rect",{x:x,y:-SX,width:sw+0.6,height:H+2*SX,fill:i%2?ga:gb}));
-    world.appendChild(sg);
-    }
+    {const sg=window.PSBoardMow&&PSBoardMow.flat(window,SX);if(sg)world.appendChild(sg);}   /* 3.326 잔디 무늬 — board-mow.js(운동장 여럿이면 열 수만큼 잘게) */
     if(document.documentElement.dataset.pitch!=="white"&&document.documentElement.dataset.pitch!=="train")world.appendChild(el("rect",{x:-SX,y:-SX,width:W+2*SX,height:H+2*SX,fill:"url(#grassVig)","clip-path":"url(#pitchClip)"}));
   }
   try{ world.__tgSig=null; buildTrainGrid(); }catch(_){}   /* 2.989 — 모눈을 제 함수로 뺐다(규격이 바뀌면 모눈만 다시) */
@@ -8062,13 +8051,8 @@ window.__getPitchLines=function(){return state.lines!==false;};
 window.__getPitchSpec=function(){ try{ return pitchSpec(); }catch(_){ return null; } };   /* 2.658 — 멀티피치 카드(셸 applyPitches)가 규격을 따라 그린다(풋살이면 풋살장) */
 /* 잔디 줄무늬만 현재 운동장 개수에 맞춰 다시 그림(토큰·라인 유지, 원자 교체) */
 function __rescaleGrass(){ try{
-  if(!world)return; var old=world.querySelector(".grass-stripes"); if(!old)return;
-  var _gm=(typeof window.__grassM==="number")?window.__grassM:5; if(!(_gm>0))return;
-  var ga=getCss("--grass-a")||"#239150", gb=getCss("--grass-b")||"#1b8044", SX=1600;
-  var _pcols=(state.pitchN>1)?(state.pitchN>3?3:state.pitchN):1, sw=(_gm*MPP)/_pcols;
-  var sg=el("g",{"clip-path":"url(#pitchClip)","class":"grass-stripes"});
-  for(var x=L-64*sw,i=0; x<W+64*sw; x+=sw,i++) sg.appendChild(el("rect",{x:x,y:-SX,width:sw+0.6,height:H+2*SX,fill:i%2?ga:gb}));
-  old.parentNode.replaceChild(sg,old);
+  if(!world)return; var old=world.querySelector(".grass-stripes"),sg=old&&window.PSBoardMow&&PSBoardMow.flat(window,1600);
+  if(sg)old.parentNode.replaceChild(sg,old);
 }catch(_){}}
 window.__setPitchN=function(n){var _nn=(+n>0?+n:1);try{if(_nn>1&&isBlankSpec())window.__setPitchSpec("fifa");}catch(_){}   /* 2.989 — 운동장 여러 개는 운동장 바탕에서(그리드 판은 한 판) */if((state.pitchN||1)!==_nn){try{pushUndo();}catch(_){}}   /* 2.983 — 개수도 ⌘Z 한 걸음(범위·규격·방향과 같게) */state.pitchN=_nn;try{__rescaleGrass();}catch(_){}try{_viewScenesToast(_viewScenesMatch("count"),"운동장 개수를");}catch(_){}   /* 2.982 */try{boardSaveLive();}catch(_){}};
 /* 운동장 범위: 전체 / 1·2·3분기. 2/4는 기존 하프와 호환하고, 옛 스냅의 area=half도 그대로 읽는다. */
@@ -14771,14 +14755,8 @@ function redrawGrass(){
     var old=world.querySelector('.grass-stripes'); if(old) old.remove();
     var ov=world.querySelector('rect[fill="url(#grassVig)"]'); if(ov) ov.remove();
     var ref=world.querySelector('#gridLayer')||world.querySelector('#lineLayer')||null;
-    var _SX=1600, _gm=(typeof window.__grassM==="number")?window.__grassM:5;
-    if(_gm>0){
-      var ga=getCss("--grass-a")||"#239150",gb=getCss("--grass-b")||"#1b8044";
-      var sw=_gm*MPP, sg=el("g",{"clip-path":"url(#pitchClip)","class":"grass-stripes"});
-      var startX=L-32*sw, endX=W+32*sw, i=0;
-      for(var x=startX; x<endX; x+=sw,i++) sg.appendChild(el("rect",{x:x,y:-_SX,width:sw+0.6,height:H+2*_SX,fill:i%2?ga:gb}));
-      if(ref) world.insertBefore(sg, ref); else world.appendChild(sg);
-    }
+    var _SX=1600, sg=window.PSBoardMow&&PSBoardMow.flat(window,_SX);
+    if(sg){ if(ref) world.insertBefore(sg, ref); else world.appendChild(sg); }
     if(document.documentElement.dataset.pitch!=="white"){ var vig=el("rect",{x:-_SX,y:-_SX,width:W+2*_SX,height:H+2*_SX,fill:"url(#grassVig)","clip-path":"url(#pitchClip)"}); if(ref) world.insertBefore(vig, ref); else world.appendChild(vig); }
   }catch(e){}
 }
@@ -15030,10 +15008,10 @@ function init(){
       corners.forEach(([cx,cy,a])=>{for(let i=1;i<cornerN;i++){const t=(a+90*i/cornerN)*Math.PI/180;out.push([cx+Math.cos(t)*(r0+d),cy+Math.sin(t)*(r0+d)]);}});
       return out;};
     const crowd=deco==="full"?crowdTile(brand?tcol:""):'',ct=S*.046;
-    const mow=PSStadiumGround.mowPlan({multi:multi,cards:cards,len:sp.len,L:L,T:T,m:m,pw:PW,f:f}),grain=!!PSStadiumGround.grainTile(),per=mow.per;   /* 3.255 — 깎은 줄(운동장마다) · 잎결 · 3.263 약 4m(per = 밝은 띠 + 어두운 띠) */
+    const mow=PSStadiumGround.mowPlan({multi:multi,cards:cards,len:sp.len,L:L,T:T,m:m,pw:PW,ph:PH,f:f}),grain=!!PSStadiumGround.grainTile(),per=mow.per;   /* 3.255 — 깎은 줄(운동장마다) · 잎결 · 3.263 약 4m(per = 밝은 띠 + 어두운 띠) */
     let o='<defs>'
       +(turf?'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(per)+'" height="'+f(per)+'"><image href="'+turf+'" width="'+f(per)+'" height="'+f(per)+'" preserveAspectRatio="none"'+(pk.tone?' filter="url(#psStTone)"':'')+'/></pattern>'+(pk.tone?'<filter id="psStTone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="'+pk.tone+'"/></filter>':'')
-            :'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(per)+'" height="'+f(per)+'"><rect width="'+f(per)+'" height="'+f(per)+'" fill="'+pk.ga+'"/>'+(multi?'':'<rect width="'+f(per/2)+'" height="'+f(per)+'" fill="'+pk.gb+'"/>')+'</pattern>')   /* 3.255 — 사진을 못 그리는 기기의 두 색 줄(x)은 운동장 하나에서만 — 여러 운동장은 카드 띠가 줄이다 */
+            :mow.grass(pk.ga,pk.gb))   /* 3.255 — 사진을 못 그리는 기기의 두 색 줄(x)은 운동장 하나에서만 — 여러 운동장은 카드 띠가 줄이다 */
       +mow.defs+PSStadiumGround.grainDefs({m:m,L:L,T:T,f:f,rot:mow.rot})
       +(crowd?'<pattern id="psStCrowd" patternUnits="userSpaceOnUse" width="'+f(ct)+'" height="'+f(ct*.96)+'"><image href="'+crowd+'" width="'+f(ct)+'" height="'+f(ct*.96)+'" preserveAspectRatio="none"/></pattern>':'')
       +'<radialGradient id="psStLight" gradientUnits="userSpaceOnUse" cx="'+f(CX)+'" cy="'+f(CY)+'" r="'+f(PW*.7)+'"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></radialGradient>'
@@ -15117,7 +15095,7 @@ function init(){
        사파리는 3D 판 전체를 다시 그렸다(웹킷 끌기 시험 120초 → 208초, 한 번은 240초 초과). 상자 크기·여백·보기·운동장 상태가
        그대로면 결과도 그대로이므로 재지 않고 끝낸다. ⚠ 이 열쇠에 들어가지 않는 것으로 판의 자리가 바뀌는 길이 생기면 여기에 더한다. */
     const gkey=PSStadiumGround.viewKey(tiltDecoNow(),!!pitchSpec().blank);
-    const pre=[stage.clientWidth,stage.clientHeight,stage.scrollLeft,stage.scrollTop,stage.getAttribute('style')||'',svg.clientWidth,svg.clientHeight,(svg.getAttribute('style')||'').replace(/(transition|transform)\s*:[^;]*;?/g,''),svg.getAttribute('viewBox'),svg.getAttribute('preserveAspectRatio'),world&&world.getAttribute('transform'),state.orientation,state.spFlip,state.pitchSpec,state.lines,state.pitchN,svg.querySelector('#ps-multipitch')?.getAttribute('data-layout'),pitchViewKey(),state.halfSide,state.pitchImg,document.documentElement.dataset.pitch,!!window.__ballImgOK,gkey,getCss('--pitchbg'),window.__grassTone||''].join('|');
+    const pre=[stage.clientWidth,stage.clientHeight,stage.scrollLeft,stage.scrollTop,stage.getAttribute('style')||'',svg.clientWidth,svg.clientHeight,(svg.getAttribute('style')||'').replace(/(transition|transform)\s*:[^;]*;?/g,''),svg.getAttribute('viewBox'),svg.getAttribute('preserveAspectRatio'),world&&world.getAttribute('transform'),state.orientation,state.spFlip,state.pitchSpec,state.lines,state.pitchN,svg.querySelector('#ps-multipitch')?.getAttribute('data-layout'),pitchViewKey(),state.halfSide,state.pitchImg,document.documentElement.dataset.pitch,!!window.__ballImgOK,gkey,getCss('--pitchbg'),window.__grassTone||'',window.__grassM].join('|');
     if(host.__pre===pre&&host.style.display==='block')return;
     host.__pre=pre;
     // SVG uses xMidYMid meet: use one scale and account for letterboxing in both orientations.
@@ -15128,7 +15106,7 @@ function init(){
     if(!vb.width||!vb.height||!r.width||!r.height)return;
     const scale=Math.min(r.width/vb.width,r.height/vb.height),ox=(r.width-vb.width*scale)/2,oy=(r.height-vb.height*scale)/2;
     [host,surface].forEach(h=>{h.style.display='block';h.style.left=(r.left-sr.left+stage.scrollLeft-stage.clientLeft)+'px';h.style.top=(r.top-sr.top+stage.scrollTop-stage.clientTop)+'px';h.style.width=r.width+'px';h.style.height=r.height+'px';});
-    const signature=[r.width,r.height,r.left-sr.left,r.top-sr.top,vb.x,vb.y,vb.width,vb.height,state.orientation,state.spFlip,state.pitchSpec,state.lines,state.pitchN,svg.querySelector('#ps-multipitch')?.getAttribute('data-layout'),pitchViewKey(),state.halfSide,state.pitchImg,document.documentElement.dataset.pitch,!!window.__ballImgOK,gkey,getCss('--pitchbg'),window.__grassTone||''].join('|');
+    const signature=[r.width,r.height,r.left-sr.left,r.top-sr.top,vb.x,vb.y,vb.width,vb.height,state.orientation,state.spFlip,state.pitchSpec,state.lines,state.pitchN,svg.querySelector('#ps-multipitch')?.getAttribute('data-layout'),pitchViewKey(),state.halfSide,state.pitchImg,document.documentElement.dataset.pitch,!!window.__ballImgOK,gkey,getCss('--pitchbg'),window.__grassTone||'',window.__grassM].join('|');
     if(host.__projectionSignature===signature)return;host.__projectionSignature=signature;
     const turf=surface.firstElementChild,key=String(state.pitchImg||'').replace(/^@/,''),pu=key===state.pitchImg?key:'';
     const texture=String(state.pitchImg||'').startsWith('@')&&window.PITCH_IMG&&window.PITCH_IMG[key];
