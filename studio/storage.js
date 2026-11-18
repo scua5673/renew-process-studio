@@ -545,6 +545,7 @@
   function fullName(k){
     k=String(k||'');var T=null,r=null;
     try{T=window.PSStorageKeys||(window.top&&window.top.PSStorageKeys);r=T&&T.info(k);}catch(_){}
+    if(r&&r.key.indexOf('*')>=0)return r.key.replace(':*:',':').replace(/:$/,'');   /* 와일드카드 줄(ps_private_board_draft_v1:*:kept:) → ps_private_board_draft_v1:kept — 예전 보고 이름 그대로 */
     if(r)return r.key==='ps_private_board_draft_v1:'?r.key+(k.indexOf(':kept:')>0?'kept':/:unsaved$/.test(k)?'unsaved':'head'):r.key;
     return /^[a-z][a-z0-9_]{1,30}$/.test(k)?k:'other';
   }
@@ -1219,6 +1220,22 @@
     return sharedSet(k,raw);
   };
 
+  /* 작업 보드 «보관 사본»(ps_private_board_draft_v1:<uid>:kept:…) 정리 — 규칙 · 셈은 studio/storage-kept.js(PSStorageKept.run), 여기는 저장소 I/O 와 기록만.
+     optimize 가 부른다(맨 위 창 · 하루 한 번 · 가득 찬 뒤 · 설정의 «정리»). 모듈이 없는 창(직접 연 속 화면)은 건너뛴다. 로그인한 계정(owner 의 uid)의 키만 본다 —
+     다른 계정이 남긴 것은 로그아웃 정리(account-hygiene)의 몫. 지우기는 전부 «읽었던 값일 때만»(idbDelIfValue · getItem 대조), 지우기 전 ps_events storage_kept_pruned(이름 · 개수 · KB 만). */
+  function keptPrune(owner,current){
+    var M=null;try{M=window.PSStorageKept||(window.top&&window.top.PSStorageKept)||null;}catch(e){M=null;}
+    if(!M||typeof M.run!=='function')return Promise.resolve(null);
+    var uid='';try{uid=String(JSON.parse(owner)[0]||'');}catch(e){uid='';}
+    if(!uid)return Promise.resolve(null);
+    var io={uid:uid,current:current,
+      localKeys:localKeys,localGet:function(k){return localStorage.getItem(k);},localRemove:function(k){localStorage.removeItem(k);},
+      idbKeys:idbKeys,idbGet:function(k){return idbGet(k).then(function(v){return v==null?null:v;});},
+      idbReplaceIfValue:function(k,expected,value){return idbReplaceIfValue(k,expected,value,current);},
+      idbDelIfValue:function(k,value){return idbDelIfValue(k,value,current);},
+      event:function(meta){var top=window;try{top=window.top||window;}catch(e){top=window;}var S=top.PSSync||window.PSSync;if(S&&S.event)S.event('storage_kept_pruned',{status:'ok',feature:'storage',meta:meta});}};
+    return M.run(io).catch(function(e){if(e&&e.name==='StorageOwnerChangedError')throw e;console.warn('[PS] kept prune',e);return null;});
+  }
   /* v369 — 팀 전환 전체 백업은 localStorage의 작은 한도를 가장 빨리 소진한다.
      기존 백업을 IDB로 옮겨 다시 읽어 확인한 뒤에만 로컬 사본을 제거한다. */
   afterMigrate(function(){
@@ -1312,7 +1329,7 @@
       if(prev&&prev.owner===owner)return prev.promise;
       var job={owner:owner};self._optimization=job;
       var run=(prev?prev.promise.catch(function(){}):Promise.resolve()).then(function(){
-      var before=self.localBytes(),moved=[],kept=[],imgMoved=0;
+      var before=self.localBytes(),moved=[],kept=[],imgMoved=0,keptPruned=null;
       function current(){if(owner===null||migrationOwner()!==owner){var e=new Error('storage optimization owner changed');e.name='StorageOwnerChangedError';throw e;}}
       /* 1.535 — 정리 버튼이 **사진 이전까지** 수행한다.
          부팅 때도 migrate()가 돌지만, 그때 실패했거나(용량·IDB 지연) 그 뒤에 새 사진이
@@ -1387,13 +1404,17 @@
         }));
       }).then(function(){
         current();
+        /* 작업 보드 보관 사본(…:kept:…) — 경계 밖은 지우고 작은 저장소 사본은 IndexedDB 로(규칙 · 셈은 storage-kept.js, 로그인한 계정의 키만 · 지우기 전 ps_events 한 줄) */
+        return keptPrune(owner,current).then(function(r){ if(r){keptPruned=r.stat;moved.push.apply(moved,r.moved);} });
+      }).then(function(){
+        current();
         return requestPersist().catch(function(){return false;});
       }).then(function(){
         current();
         var after=self.localBytes();
         try{window.dispatchEvent(new CustomEvent('ps-storage-optimized',{detail:{before:before,after:after,freed:Math.max(0,before-after),moved:moved,kept:kept,imgMoved:imgMoved}}));}catch(_){}
         return {before:before,after:after,freed:Math.max(0,before-after),moved:moved,kept:kept,imgMoved:imgMoved,
-                thumbSlimmed:thumbStat.n,thumbSaved:thumbStat.saved,largest:self.largestLocal(3)};
+                thumbSlimmed:thumbStat.n,thumbSaved:thumbStat.saved,largest:self.largestLocal(3),keptPruned:keptPruned};
       });
       });
       });
