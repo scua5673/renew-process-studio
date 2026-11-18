@@ -175,9 +175,58 @@ select created_at, device, app_version, meta from public.ps_events where event_n
 
 **안 한 것**: 초안 본체(`:unsaved` · 머리 레코드) 정리 · 다른 계정이 남긴 보관 사본 · 2단계(거울 쓰기 실패 시 IndexedDB 기준).
 
+## 2단계 — 첫 판은 «재기»(판 번호는 올릴 때 · 11/19)
+
+설계 6절의 2단계는 두 조각이다. 코드와 운영 숫자를 보니 둘 다 **설계 그대로 하면 위험하고, 지금 받을 사람이 없다.**
+
+**숫자(11/18 13시 이후 KST · `ps_events`)** — `storage_full` 은 3.313 이후 판에서 **0건**이다(3.313 · 3.315 · 3.317~3.321 을 쓴 사용자 130명 넘게). 같은 기간 13건은 전부 옛 3.306 창(1건 3.303)에서 났다.
+3.315(일정 사본 그림 참조)와 3.321(보관 사본 정리)이 큰 주인 둘을 걷었다. 새 판 기기 중 작은 저장소 2MB 넘는 곳은 둘(최대 3.5MB · 그중 2.8MB 가 작업 보드 초안 `:unsaved`).
+`*_copies_differ` 는 7일 동안 0건이다. «용량이 찬 기기에서 저장 안 됨»이라는 2단계의 받는 사람이 지금은 없다.
+
+**조각 ① 거울 쓰기 실패 → 옛 거울을 지우고 IndexedDB 기준** — 키마다 «그 화면이 거울이 없을 때 IndexedDB 를 읽는가»에 달렸다.
+일정(`process_coach_v1`)은 이미 그렇다(`scoutStore.get` · `PSSchedule.raw` · 3.131 `scheduleMirrorDrop` · scout.html `set` 의 `fallback`).
+나머지 공유 키(`scout_tool_v1` · `cs_team_matches_v1` · `cs_perms_v1` · `cs_squad_v1` · `cs_scout_targets_v1` …)는 화면이 `localStorage.getItem` 으로 바로 읽는다(scout.html `scoutStore.get`).
+거울을 지우면 그 화면은 빈 문서를 본다 — 3.315 «선수단이 지워졌어»와 같은 모양이고, 빈 문서를 저장하면 2.948 사고다.
+그래서 이 조각은 **키마다 3단계(화면이 IndexedDB 를 읽게)와 같이** 해야 한다. 2단계만 따로 할 수 있는 키는 일정뿐이고 이미 되어 있다.
+
+**조각 ② `storage.get` 의 읽으면서 쓰기를 멈춤** — 그냥 걷으면 동기화가 깨질 수 있다.
+동기화의 받기 쓰기(`sync.js` 의 kv 받기 — `storage.get` 으로 읽고 `replaceIfValue(k, 기대값, 새 값)`)는 «기대값»을 `currentValueForKey` → `storage.get` 에서 얻는다.
+IndexedDB 가 비고 거울만 있으면 지금은 get 이 거울 값을 IndexedDB 에 심어 비교 저장이 맞는다. 심기를 걷으면 get 은 거울 값을 돌려주는데 IndexedDB 는 비어 있어 `kv_write_idb_changed` 가 회차마다 되풀이될 수 있다.
+부팅 때 한 번 옮기는 길(`MIGRATE` 처럼)로 바꿔도 실행 중에 IndexedDB 만 지워지는 길(캐시 정리 · `storage.del`)에서는 같지 않다.
+
+**첫 판(이 판)** — 동작은 그대로 두고 심기가 실제로 일어나는지 잰다.
+`storage.get` 의 거울 폴백 길을 지날 때 `ps_events storage_seed` 한 줄(storage.js `seedNote`):
+
+| 칸 | 뜻 |
+|---|---|
+| `error_code` | `seed` 심음 · `race` 그 사이 다른 쪽이 채움 · `owner` 주인 확인 전이라 읽기만 · `fail` 심기 실패 |
+| `stage` | 키 표 이름(`fullName` — 사람별 id 는 뗀다) |
+| `source` | 화면 파일(`scout.html` …) |
+| `msg` | 부른 곳 — storage.js 밖 첫 스택 줄의 `파일:줄`(주소 · 쿼리 없음) |
+| `kb` · `top` | 거울 크기 · 맨 위 창인가 |
+
+창마다 (이름, 일)당 한 번 · 여섯 줄까지. `PSSync` 가 아직 없으면(셸은 동기화 본체를 storage.js 뒤에 싣는다) 5초마다 일곱 번 더 본다. 내용 · 키 전체 이름은 보내지 않는다.
+`get` 은 부를 때마다 `new Error()` 하나를 만든다(스택은 심기 길에서만 읽는다).
+시험 `tests/storage-seed-note.test.cjs`(get 본문을 그대로 돌린다 — 심음 · 정본 있음 · 없음 · owner · race · fail · 접두사 키 · 부른 곳 · 여섯 줄 · PSSync 늦음 · 원격 기록 실패).
+
+보는 법:
+
+```sql
+select error_code, meta->>'stage' k, meta->>'msg' caller, meta->>'source' screen, count(*) n, count(distinct user_id) users, max(app_version) ver
+from public.ps_events where event_name='storage_seed' and created_at > now() - interval '3 days'
+group by 1,2,3,4 order by n desc;
+```
+
+**다음 판을 고르는 규칙** — 새 판 사흘 뒤:
+- `seed` 가 0(또는 옛 판만)이면 조각 ② 를 걷는다 — 심기가 실제로 안 일어나니 동기화의 비교 저장 전제가 바뀌지 않는다. `owner` · `race` · `fail` 줄은 그대로 읽기만.
+- `seed` 가 있으면 그 `msg`(부른 곳)와 `stage` 가 «IndexedDB 는 비고 거울만 남는 길»이다. 그 길을 고친다(대개 IndexedDB 를 지우고 거울을 남기는 곳).
+- 조각 ① 은 3단계와 함께 키마다. 첫 키는 ③ 숫자에서 가장 큰 거울 키 — 지금 새 판 기기에선 `scout_tool_v1`(태블릿 303KB)이다.
+
+**같이 본 것** — 태블릿 한 대의 작은 저장소 2.9MB 중 1.8MB 가 `cs_emblem`(작전판 엠블럼 그림 data URL — 표에는 `pref` 로 적혀 있다). 다섯째 주인 후보다. 고치면 엠블럼을 `ps_blob:` 이나 IndexedDB 로.
+
 ## 다음(설계 6절)
 
 - 보관 사본 정리(3.321)의 효과를 본다 — 승격 뒤 이틀 `storage_kept_pruned` 와 ③ 의 `k:ps_private_board_draft_v1:kept`. 다른 계정이 남긴 보관 사본 · 초안 본체(`:unsaved` · 머리)는 2단계와 같이.
-- 2단계: 거울 쓰기가 실패하면 옛 거울을 지우고 IndexedDB 를 기준으로(일정의 `scheduleMirrorDrop` 을 거울 키 전체로) · `storage.get` 이 읽으면서 쓰는 것을 멈춘다. `board-rescue.js` · `board-vault-draft.js` 의 «마지막 사본» 길도 여기서 같이 본다.
+- 2단계: 첫 판(재기)의 `storage_seed` 숫자를 사흘 본 뒤 위 «다음 판을 고르는 규칙»대로. 거울 실패 시 IndexedDB 기준은 키마다 3단계와 함께.
 - ③ 의 숫자를 본 뒤 3단계(거울 걷어내기)의 첫 키를 고른다 — 가장 큰 `k:` 부터. `gamemodel.html` 의 `render` · `board.html` 의 `loadTeamToBoard` 같은 «거울을 동기로 읽는 곳»이 그때 바뀐다.
 - 실제 자료 복구 · 실기기 확인은 따로.
