@@ -109,7 +109,7 @@ test('불러오기 창의 «이어서»: 고치다 둔 보관함 자료가 있�
   assert.deepEqual(OC.workMeta({empty:true}),{label:'이어서',name:'빈 보드로 시작',meta:'운동장만 있어요'});
   assert.deepEqual(OC.workMeta({pages:1,frames:0}),{label:'이어서',name:'작업 보드',meta:'마지막에 보던 판 그대로'});
   const src=fs.readFileSync(path.join(__dirname,'../studio/board-open-chooser.js'),'utf8');
-  assert.match(src,/vd\.pending\(\)\.then\(function \(rec\)/);assert.match(src,/cont\.onclick = function \(\) \{ close\(win\); try \{ vd\.restore\(\); \}/);
+  assert.match(src,/vd\.pending\(\)\.then\(function \(rec\)/);assert.match(src,/cont\.onclick = function \(\) \{ close\(win\); vd\.restore\(\); \}/);
   const vd=fs.readFileSync(path.join(__dirname,'../studio/board-vault-draft.js'),'utf8');
   assert.match(vd,/body:has\(#psOpenChooser\) #psVaultDraftBar\{display:none!important\}/,'창이 떠 있는 동안 초안 띠는 숨긴다');
 });

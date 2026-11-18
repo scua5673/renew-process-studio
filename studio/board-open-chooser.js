@@ -253,15 +253,13 @@
     cont.onclick = function () { close(win); };
     tiles.appendChild(cont);
     /* 3.317 — 보관함 자료를 고치다 둔 초안(기기)이 있으면 «이어서»는 그 자료로 돌아간다(board-vault-draft.js pending · restore) */
-    try {
-      var vd = win.__psVaultDraft;
-      if (vd && typeof vd.pending === 'function') vd.pending().then(function (rec) {
-        if (!rec || !rec.libId || !open || open.root !== root) return;
-        var m = workMeta({ draft: { name: rec.name, folder: rec.folder } });
-        cLbl.textContent = m.label; cNm.textContent = m.name; cMt.textContent = m.meta; cont.classList.add('draft');
-        cont.onclick = function () { close(win); try { vd.restore(); } catch (_) {} };
-      }).catch(function () {});
-    } catch (_) {}
+    var vd = win.__psVaultDraft;
+    if (vd && typeof vd.pending === 'function') vd.pending().then(function (rec) {
+      if (!rec || !rec.libId || !open || open.root !== root) return;
+      var m = workMeta({ draft: { name: rec.name, folder: rec.folder } });
+      cLbl.textContent = m.label; cNm.textContent = m.name; cMt.textContent = m.meta; cont.classList.add('draft');
+      cont.onclick = function () { close(win); vd.restore(); };
+    }).catch(function (e) { if (win.console && win.console.warn) win.console.warn('[open-chooser] draft', e); });
     var nb = doc.getElementById('bpNewBoard');
     if (nb && !isPhone && !wi.empty) {
       var nw = el(doc, 'button', 'oc-tile new'); nw.type = 'button'; nw.id = ID + 'New';

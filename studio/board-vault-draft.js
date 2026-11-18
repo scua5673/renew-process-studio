@@ -47,11 +47,13 @@
     try{if(new w.URLSearchParams(w.location.search).get('community_view')==='1')return null;}catch(_){}   /* 커뮤니티 뷰어는 남의 글을 보는 판 — 초안을 묻지 않는다 */
     var doc=w.document,sess=null,timer=null,last=null,bar=null,offered=null,refreshT=null,refreshSeq=0,known=null;   /* known: 마지막으로 읽은 초안(목록 칩 · 이어서) */
     /* 보관함 목록은 자료가 안 바뀌면 다시 그리지 않으므로, 그려진 행에 «편집 중» 칩을 직접 붙이고 뗀다(새로 그릴 때는 vaultRow 의 _edc 가 단다) */
-    function markList(){try{var id=editingId();[].forEach.call(doc.querySelectorAll('#drillFiles .vcard'),function(c){var nm=c.querySelector('.vc-nm');if(!nm)return;var chip=nm.querySelector('.vc-editing'),on=!!id&&c.__libId===id;if(on&&!chip){chip=doc.createElement('span');chip.className='vc-editing';chip.textContent='편집 중';nm.appendChild(chip);}else if(!on&&chip)chip.parentNode.removeChild(chip);});}catch(_){}}
+    function markList(){var id=editingId(),rows;try{rows=doc.querySelectorAll('#drillFiles .vcard');}catch(e){rows=[];}   /* 목록이 없으면 할 일이 없다 */
+      [].forEach.call(rows,function(c){var nm=c.querySelector('.vc-nm');if(!nm)return;var chip=nm.querySelector('.vc-editing'),on=!!id&&c.__libId===id;if(on&&!chip){chip=doc.createElement('span');chip.className='vc-editing';chip.textContent='편집 중';nm.appendChild(chip);}else if(!on&&chip)chip.parentNode.removeChild(chip);});}
     function redraw(){markList();}
     function setKnown(rec){var a=known&&known.libId||null,b=rec&&rec.libId||null;known=rec||null;if(a!==b)redraw();}
-    function editingId(){try{if(sess&&w.__curVaultId)return w.__curVaultId;}catch(_){}return known&&known.libId?known.libId:null;}
+    function editingId(){var id=null;try{if(sess&&w.__curVaultId)id=w.__curVaultId;}catch(e){id=null;}return id||(known&&known.libId)||null;}
     function owner(){try{var o=w.vaultBoardOwner();return o&&o.uid&&o.wid?o:null;}catch(_){return null;}}
+    function say(m){if(typeof w.toast==='function')w.toast(m);}
     function sameOwner(a){var b=owner();return !!a&&!!b&&a.uid===b.uid&&a.wid===b.wid&&a.seal===b.seal;}
     function cls(n){try{return doc.body.classList.contains(n);}catch(_){return false;}}
     function playing(){try{return typeof animPlaying!=='undefined'&&!!animPlaying;}catch(_){return false;}}
@@ -184,7 +186,7 @@
     /* 3.317 — 보관함 자료를 고치다 둔 초안은 **그 자료를 다시 열어**(편집 길) 초안 내용을 입힌다. 자료는 사람이 «저장»을 눌러야 바뀐다. opts.save 면 열자마자 «저장하고 닫기» */
     function restoreInto(x,opts){
       var rec=x.rec,d=rec.doc,o=x.owner;
-      if(busy()){try{w.toast('열려 있는 편집을 닫은 뒤 «돌아가기»를 눌러 주세요');}catch(_){}return false;}
+      if(busy()){say('열려 있는 편집을 닫은 뒤 «돌아가기»를 눌러 주세요');return false;}
       Promise.resolve().then(async function(){
         var item=null;try{var lib=await w.libGet();item=(lib||[]).filter(function(i){return i&&i.libId===rec.libId;})[0]||null;}catch(_){item=null;}
         if(!sameOwner(o)||busy())return;
@@ -197,12 +199,12 @@
         try{w.__psVaultOpenItem(copy,false);}catch(_){return;}
         var n=0;(function wait(){
           if(w.__curVaultId!==rec.libId||!w._vaultBoardContext||w.__vaultHydrating){if(++n<40)w.setTimeout(wait,100);return;}
-          w.__vaultManualDirty=true;try{if(typeof w.__vaultAutoSaveSchedule==='function')w.__vaultAutoSaveSchedule();}catch(_){}
+          w.__vaultManualDirty=true;if(typeof w.__vaultAutoSaveSchedule==='function')w.__vaultAutoSaveSchedule();
           if(sess&&sess.ctx===w._vaultBoardContext)schedule();
           if(opts&&opts.save){var b=doc.getElementById('vCreateSave');if(b)b.click();return;}
-          try{w.toast('«'+(rec.name||'작전판')+'»을 다시 열었어요 · 저장 안 한 변경이 그대로 있어요');}catch(_){}
+          say('«'+(rec.name||'작전판')+'»을 다시 열었어요 · 저장 안 한 변경이 그대로 있어요');
         })();
-      }).catch(function(){});
+      }).catch(function(e){if(w.console&&w.console.warn)w.console.warn('[board-vault-draft] restore',e);});
       return true;
     }
     function restoreNew(x){
