@@ -5423,7 +5423,7 @@ function wksLibCard(id){
 function wksLibTrainOf(td,name){
   if(!td||!td.fromLib)return null;
   var card=wksLibCard(td.fromLib); if(!card)return null;
-  var ty=card.type||'train'; if(ty==='board')return window.PSSchedBoardPlay?PSSchedBoardPlay.target(card,td,name):null;   /* 3.325 작전판 — schedule-board-play.js */
+  var ty=card.type||'train'; if(ty==='board')return window.PSSchedBoardPlay?PSSchedBoardPlay.target(card,td,name):null;   /* 3.329 작전판 — schedule-board-play.js */
   if(ty!=='train'&&ty!=='setpiece')return null;
   var trs=Array.isArray(card.trainings)?card.trainings:[], nm=String(name||'').trim(), idx=-1;
   function tn(t){ return String((t&&t.name)||'').trim(); }
@@ -10498,7 +10498,7 @@ html body .wks .wks-fill:not(#_):hover{border-color:var(--c-act,var(--ps-navy,#1
 @media (max-width:600px){ html body .wks .wks-fill:not(#_){height:40px} }
 </style>
 
-<link rel="stylesheet" href="team-mobile.css?v=3.328">
+<link rel="stylesheet" href="team-mobile.css?v=3.330">
 <script src="schedule-match-time.js"></script><script src="schedule-fill-team.js"></script><script src="schedule-day-kind.js"></script><script src="schedule-fill-autosave.js"></script><script src="schedule-del-undo.js"></script><script src="schedule-syncline-steady.js"></script><script src="schedule-thumb-ref.js"></script>
 
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">

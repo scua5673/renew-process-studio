@@ -35,7 +35,7 @@ suites.idp.push('squad-group-change');
 suites.idp.push('avail-held-row-3281');suites.idp.push('items-stale-held');suites.idp.push('avail-table-3308');   /* 3.295 — 보관된 선수 행(journal + 기기 묶음 영수증)은 새 판 적용 · 화면 떠나기 전 저장 확인을 막지 않는다(held) · 알약 «일부 변경 보관» · 고르면 풀림 */   /* 3.281 — 보관된 선수 행(sq:<id>)이 있는 기기에서 가용인원 기록: 통짜 문서만 기다려 기록 · 보관 그대로 · 멈추면 까닭과 가는 길(e6fc5d26 · de2e508c) */
 suites.records.push('training-toolbar-layout');
 suites.records.push('schedule-thumb-ref-3315');
-suites.records.push('sched-board-play-3325');   /* 3.325 — 일정에 가져온 작전판 줄의 ▶ → 보기 전용 슬라이드쇼(그 페이지부터 · 재생) → 닫으면 일정 · 보관함 · 작업 보드 그대로 */   /* 3.315 — 일정 사본의 그림은 참조만(화면 · 저장 · 새로고침 · 옛 사본 다이어트) */
+suites.records.push('sched-board-play-3329');   /* 3.329 — 일정에 가져온 작전판 줄의 ▶ → 보기 전용 슬라이드쇼(그 페이지부터 · 재생) → 닫으면 일정 · 보관함 · 작업 보드 그대로 */   /* 3.315 — 일정 사본의 그림은 참조만(화면 · 저장 · 새로고침 · 옛 사본 다이어트) */
 suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
 suites.board2.push('meeting-slide-transition');   /* 3.256 — 미팅 슬라이드 넘김: 같은 팀 · 번호만 잇기 · 넘기는 중 저장 막기 */
 suites.board.push('board-flat-turf-3263');   /* 3.263 — 평면 잔디: 잎결 · 실사 잔디 줄 약 4m · 가로 · 세로 · 운동장 카드마다(board2 웹킷은 20분 한도에 닿아 board 로) */

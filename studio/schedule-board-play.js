@@ -1,6 +1,6 @@
-/* 3.325 — 일정에 가져온 작전판(보관함 type:"board") 줄에도 ▶ (제보 5d215b74 «만들어 둔 작전판을 새 일정에» · 10/20 bf084b34 에 한 약속).
+/* 3.329 — 일정에 가져온 작전판(보관함 type:"board") 줄에도 ▶ (제보 5d215b74 «만들어 둔 작전판을 새 일정에» · 10/20 bf084b34 에 한 약속).
    2.946 의 훈련 ▶ 와 같은 규칙: 일정 문서에는 장면을 복사하지 않고, 줄이 카드의 «몇 번째»인지만 안다.
-   작전판은 페이지마다 훈련 줄이 하나씩 생긴다(process.html wkbdSetLibItem 1.900) — 줄 ↔ 페이지는 번호(libIdx, 3.325 부터 페이지 번호) · 이름(페이지 이름 또는 «페이지 N»)으로 맞춘다.
+   작전판은 페이지마다 훈련 줄이 하나씩 생긴다(process.html wkbdSetLibItem 1.900) — 줄 ↔ 페이지는 번호(libIdx, 3.329 부터 페이지 번호) · 이름(페이지 이름 또는 «페이지 N»)으로 맞춘다.
    장면 «수»는 일정이 들고 있는 줄인 사본에서 읽는다 — schedule-lib-slim.js 가 pages[].anim 을 떼며 animN 을 남긴다(떼지 않은 사본이면 anim 을 센다).
    여는 일은 작전판 쪽(board-sched-show.js)이 한다 — 보기 전용 슬라이드쇼. */
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSSchedBoardPlay=api;
