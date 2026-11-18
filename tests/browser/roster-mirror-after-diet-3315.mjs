@@ -106,6 +106,9 @@ try{
   assert.ok(HEADROOM_CHARS<rosterServer.length,'남은 자리는 선수단 거울보다 작다');
   proof.stages.push({stage:'planted',...planted});
   /* ③ⓐ 앱을 다시 띄워 회차를 돌린다 — 부팅 회차가 다이어트를 못 끝냈으면 syncNow 로 되풀이 */
+  /* 심는 동안에도 옛 앱(아직 떠 있는 창)은 돈다 — 가득 찬 저장소에서 선수단 화면이 ps_sync_meta 바뀜(storage 이벤트)에 기기 보관 사본(ps_roster_keep_v2:)을 다시 쓰다
+     storage_full 한 줄을 남긴다(PR #894 CI 크롬 storage · 심기의 차례에 따라 가끔). 시험의 대상은 새로고침 뒤의 앱이라 실패 기록은 그 뒤에 만든 것(created_at)만 본다 */
+  const reloadAt=await page.evaluate(()=>Date.now());
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>!!(window.PSSync&&PSSync.dataUnlocked()&&document.body&&!document.body.classList.contains('ps-booting')),null,{timeout:45000});
   const rounds=[];
@@ -130,7 +133,8 @@ try{
   await page.waitForTimeout(1500);   /* 회차 실패 기록(ps_events)이 떠나는 시간 */
   const roster=await device(page,ROSTER),afterRewrite=await usage(page),rosterSrv=serverNow().roster;   /* 선수단은 그 순간의 서버 원문(배경의 평가 항목 채움이 늦게 올라올 수 있다) */
   const state=await page.evaluate(({WT,FILLER})=>({state:PSSync.state(),pending:PSSync.pending().count,scheduleReady:PSSync.keyReady('process_coach_v1'),rosterReady:PSSync.rosterReady(WT),filler:(localStorage.getItem(FILLER)||'').length}),{WT,FILLER});
-  const rows=events(),failed=rows.filter(r=>r.event_name==='sync_failed');
+  const allRows=events(),rows=allRows.filter(r=>!r.created_at||Date.parse(r.created_at)>=reloadAt),failed=rows.filter(r=>r.event_name==='sync_failed');   /* 새로고침 뒤 기록만(위) */
+  proof.preReload=allRows.filter(r=>rows.indexOf(r)<0).map(r=>({name:r.event_name,code:r.error_code,stage:r.meta&&r.meta.stage}));   /* 뺀 기록도 증거 파일에 남긴다 */
   proof.stages.push({stage:'after-rewrite',rounds:rewrite.length,roundResults:rewrite.map(r=>({error:r&&r.error,code:r&&r.code,pushed:r&&r.pushed,applied:r&&r.applied})),usage:afterRewrite,state,events:rows.map(r=>({name:r.event_name,code:r.error_code,stage:r.meta&&r.meta.stage,reason:r.meta&&r.meta.reason}))});
   write();
   /* (a) 거울 = 서버 원문 · 두 사본 같음 · 서버는 그대로 · 총량은 한도의 절반 아래 */
