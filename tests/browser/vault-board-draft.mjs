@@ -141,7 +141,8 @@ try{
   await until(f,s=>!!s.rec&&!!s.rec.libId,'고치던 초안');
   await page.reload({waitUntil:'domcontentloaded'});await ready(page);f=await board();
   await f.waitForSelector('#psVaultDraftBar',{state:'attached',timeout:20000});
-  assert.match(await f.evaluate(()=>document.querySelector('#psVaultDraftBar .vd-tx').textContent),/보관함에서 만들던 작전판이 있어요/);
+  assert.match(await f.evaluate(()=>document.querySelector('#psVaultDraftBar .vd-tx').textContent),/편집 중 · 보관함 › 가상 되살린 작전판 · 저장 안 한 변경/);   /* 3.299 — 보관함 자료를 고치다 둔 초안은 «돌아가기» 띠 */
+  assert.equal(await f.evaluate(()=>!!document.querySelector('#psVaultDraftBar .vd-save')),true,'«저장하고 닫기»도 있다');
   assert.equal(await f.evaluate(async()=>((await libGet())||[]).find(x=>x.name==='가상 되살린 작전판').snap.players[0].x),611,'보관함 자료는 저장한 그대로');
   await f.evaluate(()=>document.querySelector('#psVaultDraftBar .vd-drop').click());await until(f,gone,'버리기');
 
