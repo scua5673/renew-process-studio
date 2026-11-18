@@ -12,6 +12,7 @@ import {startFixture,openApp,ready} from '../fixtures/team-app.mjs';
 //  · 서버 기록 window_elsewhere
 //  · 보관함에서 만들던 작전판(3.273 board-vault-draft)이 열린 창이 물러나도 — 저장 확인은 blocked:vault-edit 로 거절되지만 방금 손질까지 기기에 남는다
 //  · 물러난 창은 «죽은 탭»(3.271 crash-breadcrumb boot_after_crash)으로 보고되지 않는다
+//    (3.321 — CI 크로미움에서 이 단정이 흔들린 까닭: 새 창의 첫 검사가 떠난 창의 잠금 해제는 봤는데 표식 삭제는 아직 못 본 사이. 고침은 crash-breadcrumb.js 두 번째 읽기 · 결정적 재현은 crash-crumb-lag-3321)
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
 let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}console.log('one-window-3276 '+s);};
@@ -75,10 +76,16 @@ try{
   assert.equal(await B.locator('#psElsewhereCover').count(),0,'새로고침한 창에 덮개가 없다');
 
   step('event');
+  /* 3.321 — 뺏긴 창 둘(A · B)의 stolen 줄만 센다. 숨은 창 H 의 hidden_busy 줄은 H 가 떠나는 순간 PSSync(문서 끝 sync.js)가 이미 있었을 때만 서버에 온다
+     (잠금 응답이 파싱보다 늦은 느린 실행기 — 로컬 부하에서 10번 중 1번) — 오면 stage skip · hidden 이어야 하고, 다른 코드는 없어야 한다 */
+  const elsewhere=()=>fx.calls.filter(c=>c.p==='/rest/v1/ps_events').flatMap(c=>[].concat(c.body||[])).filter(r=>r&&r.event_name==='window_elsewhere');
   const t0=Date.now();let ev=[];
-  while(Date.now()-t0<15000){ev=fx.calls.filter(c=>c.p==='/rest/v1/ps_events').flatMap(c=>[].concat(c.body||[])).filter(r=>r&&r.event_name==='window_elsewhere');if(ev.length>=2)break;await B.waitForTimeout(500);}
-  assert.ok(ev.length>=2,'window_elsewhere '+ev.length);
-  assert.ok(ev.every(r=>r.error_code==='stolen'&&/^(ok|none|timeout|fail:)/.test(r.meta.stage)),JSON.stringify(ev.map(r=>[r.error_code,r.meta])));
+  while(Date.now()-t0<15000){ev=elsewhere().filter(r=>r.error_code==='stolen');if(ev.length>=2)break;await B.waitForTimeout(500);}
+  assert.ok(ev.length>=2,'window_elsewhere stolen '+ev.length);
+  assert.ok(ev.every(r=>/^(ok|none|timeout|fail:)/.test(r.meta.stage)),JSON.stringify(ev.map(r=>[r.error_code,r.meta])));
+  const busy=elsewhere().filter(r=>r.error_code==='hidden_busy');
+  assert.ok(busy.every(r=>r.meta.stage==='skip'&&r.meta.hidden===true),'숨은 창은 저장 확인 없이(skip) 물러난다 '+JSON.stringify(busy.map(r=>r.meta)));
+  assert.deepEqual([...new Set(elsewhere().map(r=>r.error_code))].sort(),busy.length?['hidden_busy','stolen']:['stolen']);
 
   step('vault-draft');
   /* B(쥔 창)에서 보관함 «＋ 만들기 › 작전판»으로 장면을 만들고, 마지막 손질 직후(0.8초 예약이 돌기 전) 새 창 C 가 가져간다 */
@@ -108,7 +115,7 @@ try{
   for(const x of [400,460]){await fb.evaluate(x=>{pushUndo();state.players[0].x=x;renderTokens();autoSaveAnimFrame();document.getElementById('animAdd').click();},x);await B.waitForTimeout(220);}
   for(let i=0;i<40;i++){const d=await draft(fb);if(d&&d.frames===3)break;await B.waitForTimeout(250);}
   assert.equal((await draft(fb))?.frames,3,'장면 셋이 먼저 기기에');
-  const evBefore=fx.calls.filter(c=>c.p==='/rest/v1/ps_events').flatMap(c=>[].concat(c.body||[])).filter(r=>r&&r.event_name==='window_elsewhere').length;
+  const evBefore=elsewhere().filter(r=>r.error_code==='stolen').length;
   await fb.evaluate(()=>{pushUndo();state.players[0].x=580;renderTokens();autoSaveAnimFrame();document.getElementById('animAdd').click();});   /* 마지막 손질 — 기다리지 않는다 */
   const C=await context.newPage();C.setDefaultTimeout(45000);watch(C,'C');
   await C.goto(fx.base+'/studio/app.html',{waitUntil:'domcontentloaded'});
@@ -120,7 +127,7 @@ try{
   assert.equal(await fc.evaluate(async k=>(await storage.peek(k))?.value??null,workKey),work,'작업 보드 초안도 그대로');
   await fc.waitForSelector('#psVaultDraftBar',{state:'attached',timeout:20000});   /* 새 창이 «되살리기»를 묻는다 */
   let ev2=[];const t1=Date.now();
-  while(Date.now()-t1<15000){ev2=fx.calls.filter(c=>c.p==='/rest/v1/ps_events').flatMap(c=>[].concat(c.body||[])).filter(r=>r&&r.event_name==='window_elsewhere').slice(evBefore);if(ev2.length)break;await C.waitForTimeout(500);}
+  while(Date.now()-t1<15000){ev2=elsewhere().filter(r=>r.error_code==='stolen').slice(evBefore);if(ev2.length)break;await C.waitForTimeout(500);}
   assert.equal(ev2.length,1,'물러난 기록 한 줄');
   assert.equal(ev2[0].meta.stage,'fail:fBoard:board_draft_storage:blocked:vault-edit','저장 확인이 거절된 까닭이 남는다');
 

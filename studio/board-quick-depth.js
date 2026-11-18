@@ -41,7 +41,7 @@
   var FALLBACK={GK:[],CB:[],LB:['FB','RB'],RB:['FB','LB'],DM:['CM'],CM:['DM','AM'],AM:['CM'],LW:['W','RW'],RW:['W','LW'],ST:[]};
   var FAM_KO={GK:'골키퍼',LB:'왼쪽 수비',RB:'오른쪽 수비',FB:'풀백',CB:'센터백',DM:'수비형 미드',CM:'중앙 미드',AM:'공격형 미드',LW:'왼쪽 윙',RW:'오른쪽 윙',W:'윙',ST:'공격수'};
   var MAX_NAMES=12,NAME_LEN=20,TOK=0.8,DEPTH_SHOW=4;
-  var DEFAULT_FORM='4-2-3-1',TAG='빠른 보드';
+  var DEFAULT_FORM='4-2-3-1',TAG='폰보드';   /* 3.320 — 빠른 보드는 폰보드의 한 종류(«뎁스 차트»)다. 옛 항목의 태그 «빠른 보드»는 그대로 둔다 — 표시는 quick 칸이 한다 */
   /* 창의 운동장 안에서 토큰이 설 수 있는 범위(왼쪽 % · 위 %) · 길게 누르기 · 맞바꾸기 거리(px) */
   var LMIN=6,LMAX=94,TMIN=3,TMAX=95,HOLD=280,SWAP_PX=20;
 
@@ -349,12 +349,12 @@
     if(b.classList.contains('comm-viewing')||b.classList.contains('editing')||b.classList.contains('meet-mode')||win.__csView==='session')return null;
     if(viewing(win)){var d=win.__vvItem;try{if(editable(d)&&(typeof canEditItem!=='function'||canEditItem(d)))return {mode:'edit',label:'고치기'};}catch(_){}return null;}
     if(b.classList.contains('vcreating'))return null;
-    return {mode:'new',label:'＋ 빠른 보드'};
+    return null;   /* 3.320 — 새로 만들기는 «폰보드» 탭 안으로(board-phone-board.js 가 open(win,{host:true}) 로 연다). 보드 탭 띠에는 «고치기»만 남는다 */
   }
 
   function make(win){
     var doc=win.document,M={form:DEFAULT_FORM,slots:blank(DEFAULT_FORM),pos:[],moved:[],posBy:[],posDirty:[],numBy:{},numDirty:{},base:null,label:'pos',labelDirty:false,title:'',active:-1,showAll:false,editing:null,roster:null,rosterState:'idle',undo:null,dirty:false,saving:false};
-    var pend={form:DEFAULT_FORM,fill:'roster'},root=null,tmr=null,drag=null,dragged=0;
+    var pend={form:DEFAULT_FORM,fill:'roster'},root=null,tmr=null,drag=null,dragged=0,host=null;   /* host: 폰보드 덮개가 열었을 때의 {item,done,say} */
     function el(tag,cls,txt){var e=doc.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
     function $(id){return doc.getElementById(id);}
     function boardToast(t){try{if(win.toast)win.toast(t);}catch(_){}}
@@ -388,7 +388,7 @@
     function where(name){for(var i=0;i<M.slots.length;i++){if(M.slots[i].indexOf(name)>=0)return i;}return -1;}
     function build(){
       if(!$('psQuickStyle')){var st=el('style');st.id='psQuickStyle';st.textContent=CSS;doc.head.appendChild(st);}
-      root=el('div');root.id='psQuick';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');root.setAttribute('aria-label','빠른 보드');
+      root=el('div');root.id='psQuick';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');root.setAttribute('aria-label','뎁스 차트');
       root.innerHTML='<div class="pq-bar"><button type="button" class="pq-btn pq-ghost pq-icon" data-pq="back" aria-label="닫기">‹</button>'+
         '<input class="pq-title" id="pqTitle" aria-label="보드 이름" autocomplete="off" maxlength="60" enterkeyhint="done">'+
         '<button type="button" class="pq-btn pq-pri" data-pq="save">저장</button></div>'+
@@ -535,7 +535,7 @@
     /* ── 포메이션 시트 ── */
     function openForm(mode){
       hideSheets();pend.mode=mode;if(mode==='change')pend.form=M.form;
-      $('pqFormT').textContent=mode==='change'?'포메이션 바꾸기':'빠른 보드';
+      $('pqFormT').textContent=mode==='change'?'포메이션 바꾸기':'뎁스 차트';
       $('pqFormS').textContent=mode==='change'?'넣은 이름은 같은 자리로 따라가요':'포메이션을 고르면 자리가 놓여요';
       root.querySelector('[data-pq="form-go"]').textContent=mode==='change'?'바꾸기':'시작';
       var body=$('pqFormBody');body.textContent='';
@@ -663,10 +663,10 @@
         }
         return libWrite(lib).then(function(){try{if(typeof libTouch==='function')libTouch();}catch(_){}});
       });}).then(function(){
-        M.saving=false;win.__psQuickDraft=null;close();
-        boardToast(editId?'빠른 보드를 고쳤어요':'보관함 › 보드에 저장했어요');
+        var h=host;M.saving=false;win.__psQuickDraft=null;close();
+        if(!h)boardToast(editId?'폰보드를 고쳤어요':'보관함 › 보드에 저장했어요');
         try{if(typeof renderDrillFiles==='function')renderDrillFiles();}catch(_){}
-        showSaved(saved,!!editId);
+        if(h){if(typeof h.done==='function')h.done(saved,!!editId);}else showSaved(saved,!!editId);
       },function(e){
         M.saving=false;btn.disabled=false;btn.textContent='저장';
         toast(e&&e.psVaultLocked?'보관함을 쓰려면 먼저 로그인해 주세요':(e&&e.psQuick==='gone'?'이 보드를 보관함에서 찾지 못했어요 — 지워졌거나 아직 이 기기에 오지 않았어요':(e&&e.psQuick==='owner'?'만든 사람만 고칠 수 있어요':'저장하지 못했어요 — 이름은 그대로 있어요. 다시 눌러 주세요')));
@@ -682,14 +682,15 @@
     /* ── 열기 · 닫기 ── */
     function open(o){
       if(root&&!root.hidden)return true;   /* 이미 열려 있다(마우스는 pointerup 뒤 click 이 한 번 더 온다) */
-      var e=entry(win);if(!e)return false;
+      host=o&&o.host?o:null;
+      var e=host?(isPhoneView(win)&&(!host.item||editable(host.item))?{mode:host.item?'edit':'new'}:null):entry(win);if(!e){host=null;return false;}
       if(!root)build();root.hidden=false;doc.body.classList.add('ps-quick-on');
       M.active=-1;M.showAll=false;M.undo=null;M.saving=false;M.dirty=false;
       var sb=root.querySelector('[data-pq="save"]');sb.disabled=false;sb.textContent='저장';
       if(M.rosterState!=='ok')M.rosterState='idle';
       var ready=loadRoster().then(function(){if(!root.hidden){if(!$('pqForm').hidden&&pend.mode==='new')openForm('new');if(M.active>=0)paintPos();render();}});
       if(e.mode==='edit'){
-        var d=win.__vvItem;M.editing=d.libId;M.form=d.quick.form;M.slots=slotsFrom(d);resetPos(M.form);M.pos=posFrom(d);resetTok();var tk=tokFrom(d);M.posBy=tk.posBy;M.numBy=tk.numBy;M.base=tk.base;M.label=tk.label;M.title=d.name||'';hideSheets();render();
+        var d=host?host.item:win.__vvItem;M.editing=d.libId;M.form=d.quick.form;M.slots=slotsFrom(d);resetPos(M.form);M.pos=posFrom(d);resetTok();var tk=tokFrom(d);M.posBy=tk.posBy;M.numBy=tk.numBy;M.base=tk.base;M.label=tk.label;M.title=d.name||'';hideSheets();render();
         if(o&&o.token>=1&&o.token<=M.slots.length)openPos(o.token-1);
       }else{
         M.editing=null;M.form=DEFAULT_FORM;M.slots=blank(M.form);resetPos(M.form);resetTok();M.title='';pend.form=DEFAULT_FORM;pend.fill='roster';render();openForm('new');
@@ -701,7 +702,7 @@
     function back(){
       if(!$('pqAsk').hidden){hideSheets();return;}
       if(M.editing){if(M.dirty){hideSheets();root.querySelector('.pq-scrim').hidden=false;$('pqAsk').hidden=false;return;}close();return;}
-      if(count(M.slots)&&M.dirty){win.__psQuickDraft={form:M.form,slots:copy(M.slots),pos:copyPos(M.pos),moved:M.moved.slice(),tok:{posBy:M.posBy.slice(),posDirty:M.posDirty.slice(),numBy:Object.assign({},M.numBy),numDirty:Object.assign({},M.numDirty),label:M.label},title:M.title};boardToast('쓰던 빠른 보드는 남겨 뒀어요 — «＋ 빠른 보드»에서 이어서');}
+      if(count(M.slots)&&M.dirty){win.__psQuickDraft={form:M.form,slots:copy(M.slots),pos:copyPos(M.pos),moved:M.moved.slice(),tok:{posBy:M.posBy.slice(),posDirty:M.posDirty.slice(),numBy:Object.assign({},M.numBy),numDirty:Object.assign({},M.numDirty),label:M.label},title:M.title};(host&&typeof host.say==='function'?host.say:boardToast)('쓰던 뎁스 차트는 남겨 뒀어요 — «＋ 뎁스 차트»에서 이어서');}
       close();
     }
     function onClick(e){

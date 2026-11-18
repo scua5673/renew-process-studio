@@ -28,6 +28,7 @@ const suites={
   records:['team-criteria','idp-player-matches','idp-start','idp-weekly-growth','match-lineup','personal-large-upload','roster-history-review','roster-projection','roster-recovery','save-status-layout','storage-commit','team-position-delete','training-context','training-dock-layout','coach-idp-entry','invite-link-export','board-reports-3155','board-rotation-fade','board-feedback-3163','board-page-history','squad-cards','schedule-group-visibility']
 };
 suites.identity.push('update-delivery','update-client-lifecycle','one-window-3276');   /* 3.275 한 기기 한 창 */
+suites.identity.push('crash-crumb-lag-3321');   /* 3.321 — 데스크톱 탭 종료 기록: 방금 떠난 창(잠금은 놓였는데 표식 삭제가 늦게 닿음)은 죽은 탭이 아니다 · 남은 표식은 그대로 보낸다 — one-window-3276 흔들림의 까닭 */
 suites.records.push('multipitch-rotation','board-settings-pitches');
 suites.board.push('board-scout-import','board-roster-import');
 suites.idp.push('squad-group-change');
@@ -42,6 +43,7 @@ suites.board.push('board-page-thumb-diet-3288');   /* 3.288 — 페이지 장면
 suites.board.push('team-load-team34-3288');   /* 3.288 — 저장 팀을 팀 3 · 4 에도(제보 29c97fc5): 자리 그대로 · 남는 선수와 판에 없는 팀은 대기 줄 둘째 줄 · 다른 팀을 덮지 않는다 */
 suites.selection.push('board-more-teams-3294');   /* 3.294 — 팀 추가: 팀 넷 + «팀 추가» → 팀 10까지 두 줄 · 쓰는 만큼만(저장 → 새로고침) · 새 팀 색 · 유니폼 · 그림 · 저장 팀 불러오기 · «한 번에 놓기»가 겹치지 않는다 */
 suites.selection.push('board-quick-depth-3300');   /* 3.300 — 휴대폰 빠른 보드: 포메이션 · 선수단 순서 · 자리 시트 · 붙여넣기 → 보관함 작전판(뒤 순번 depth) → 보기 · 이름 고치기 · 쓰던 보드 이어서 · 아이패드 같은 판 */
+suites.selection.push('board-phone-board-3327');   /* 3.320 — 폰보드: 폰 아래 메뉴 탭 · 세로 편집기 · 보관함 작전판(phone 표시 · «폰보드» 칩) · 다시 고치기 · 아이패드엔 탭 없음 */
 suites.selection.push('board-vision-carry-3271','board-position-direct-3271');   /* 3.271 — 시야 · 시선은 이 페이지에만 + 이 장면부터 뒤로(756c0a48) · 오른쪽 클릭 창의 포지션(0033117a) */
 suites.board.push('board-page-undo-3271');
 suites.board.push('board-draft-divergent-3302');   /* 3.302 — 초안의 두 사본이 달라도 편집이 저장되고 알약이 뜨지 않는다 · 두 사본은 보관 키에 그대로 · 보관 실패면 예전처럼 막음 · 저장 뒤 알약 걷힘 */
@@ -67,7 +69,9 @@ suites.entry.push('i18n-english-shell');   /* 영어 모드 셸: 한글이 남�
    3~5분에 끝나는 boardperf 묶음에서 돈다 */
 suites.storage.push('community-youtube');
 suites.storage.push('roster-pending-quota');
-suites.boardperf.push('roster-outbox-full');   /* 3.253 — 선수 변경 묶음으로 가득 찬 작은 저장소에서 부팅 · 저장(제보 e6fc5d26) */
+suites.storage.push('roster-mirror-after-diet-3315');   /* 3.315 — 그림을 품은 옛 일정 사본(8MB 급)으로 가득 찬 작은 저장소: 회차가 사본을 서버 원문(참조만)으로 바꾼 뒤 선수단 거울 쓰기가 성공한다(scout_mirror_write 0건 · 51명 · 선수단 화면) */
+suites.boardperf.push('roster-outbox-full');
+suites.boardperf.push('roster-mirror-write-order');   /* 3.327 — 같은 회차 안에서 일정 다이어트 쓰기(8MB → 참조만)가 내려앉은 뒤 선수단 거울을 쓴다(PR #888 CI 가 잡은 경합 — storage 묶음은 20분 한도에 가까워 여기) */   /* 3.253 — 선수 변경 묶음으로 가득 찬 작은 저장소에서 부팅 · 저장(제보 e6fc5d26) */
 suites.boardperf.push('xss-synced-docs');   /* 3.271 — 팀원이 동기화로 보낸 IDP · 일정 문서가 코치 화면에서 실행되지 않는다(끼워 넣은 값 탐침) */
 suites.identity.push('sched-fill-team');   /* «일정 ＋» 시트의 «팀 공통»이 «훈련»을 누르면 A팀이 되던 것 — 팀 공통 · 한 팀 · 여러 팀 */
 suites.records.push('sched-day-kind');   /* 한 팀을 OFF 로 돌린 날은 일정 칸 · 요약 · 팀 «오늘» · 주간 PDF 가 모두 OFF(PSSchedule.dayKind) */

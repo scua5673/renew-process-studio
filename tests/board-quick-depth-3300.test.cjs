@@ -214,7 +214,7 @@ test('wired into the board: one script line, vault open hook, phone notice butto
   assert.match(b,/window\.__vaultOpenView=openItemView;/);
   assert.ok(Buffer.byteLength(b)<=2560000,'board.html budget '+Buffer.byteLength(b));
   const v=read('studio/board-phone-view.js');
-  assert.match(v,/data-quick hidden>＋ 빠른 보드</);assert.match(v,/#psPhoneBoardNotice,#psVvPlay,#psEyeDialog,#psQuick'/);
+  assert.match(v,/data-quick hidden>＋ 빠른 보드</);assert.match(v,/#psPhoneBoardNotice,#psVvPlay,#psEyeDialog,#psQuick[,']/);   /* 3.320 — 폰보드 덮개가 목록에 더해졌다 */
   assert.match(v,/PSQuickDepth\.entry\(win\)/);
   assert.match(read('sw.js'),/'\/studio\/board-quick-depth\.js'/);
 });
