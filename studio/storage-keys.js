@@ -30,7 +30,7 @@
     ['cs_psched_v1','team','ls','data','sync.js'],
     ['cs_ptrain_v1','team','ls','data','sync.js'],
     ['cs_pwarm_v1','team','ls','data','sync.js'],
-    ['cs_scout_targets_v1','team','idb','data','sync.js'],
+    ['cs_scout_targets_v1','team','idb','data','sync.js',{mirror:1}],   /* scout.html SHARED_IDB · team-files IDB_MIRROR · app.html MIRRORED_IDB 가 거울을 쓴다 — 표에 mirror 가 빠져 있었다(3.314) */
     ['cs_squad_v1','team','idb','data','scout.html',{mirror:1}],
     ['cs_team_attrs_v1','team','ls','data','idp.html'],
     ['cs_team_photos_v1','device','idb','data','team-photos.js'],   /* 저장 팀 선수 → 사진(PSImg 참조). 기기마다 따로 — 동기화하지 않는다 */

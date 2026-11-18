@@ -1649,21 +1649,44 @@
     }catch(_){return null;}
   }
 
+  /* 저장 계층 1단계 — IndexedDB 정본인 키(키 표 home idb: scout_tool_v1 · process_coach_v1)는 **정본을 읽고 정본에 쓴다**(psSaveSharedAsync — 거울 + IndexedDB 확인).
+     예전엔 셋 다 거울(localStorage)만 읽고 거울에만 써서(writeJSON) 사진을 참조로 바꾼 문서가 IndexedDB 와 갈라졌다 — 다음 회차가 거울을 버리면 사진을 다시 옮기고,
+     거울이 낡았으면 옛 명단이 되살아났다(설계 2절). 키 표가 없는 창(옛 판 · 시험)은 예전대로 거울. «같은 원문인가»(current)도 읽은 곳에서 본다. */
+  function sharedHome(k){ try{ var T=window.PSStorageKeys||(window.top&&window.top.PSStorageKeys); var r=T&&T.info(k); return !!(r&&r.home==='idb'); }catch(e){ return false; } }
+  function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  /* 정본 읽기는 peek(심지 않는 읽기) — get 은 IndexedDB 에 없고 거울에 있으면 거울 값을 IndexedDB 에 심는다(설계 2절 «읽는 함수가 쓴다»). 부팅 때 모든 창이 도는 이 길이 그 쓰기를 내면 안 된다 */
+  function idbRead(k){ var S=window.storage,f=S&&(S.peek||S.get); return f?Promise.resolve().then(function(){ return f.call(S,k); }):Promise.reject(new Error('no storage adapter')); }
+
   function migrate(){
     var owner=imageMigrationOwner();if(owner===null)return Promise.resolve({moved:0,failed:0});
     return ready().then(function(){
       if(imageMigrationOwner()!==owner)return {moved:0,failed:0};
       var jobs=[],sources={};
-      function root(k){try{var raw=localStorage.getItem(k);sources[k]=raw;return mayHaveImage(raw)?JSON.parse(raw):null;}catch(_){return null;}}
-      function current(k){try{return imageMigrationOwner()===owner&&localStorage.getItem(k)===sources[k];}catch(_){return false;}}
-      var sc=root('scout_tool_v1');
+      function rootRaw(k){
+        if(!(sharedHome(k)&&window.storage&&(window.storage.peek||window.storage.get)))return Promise.resolve({raw:lsGet(k),idb:false});
+        return idbRead(k).then(function(r){ return r&&r.value!=null?{raw:r.value,idb:true}:{raw:lsGet(k),idb:false}; },function(){ return {raw:lsGet(k),idb:false}; });
+      }
+      function root(k){ return rootRaw(k).then(function(s){ sources[k]=s; try{ return mayHaveImage(s.raw)?JSON.parse(s.raw):null; }catch(e){ return null; } }); }
+      function current(k){
+        var s=sources[k];
+        if(imageMigrationOwner()!==owner||!s)return Promise.resolve(false);
+        if(!s.idb)return Promise.resolve(lsGet(k)===s.raw);
+        return idbRead(k).then(function(r){ return !!r&&r.value===s.raw; },function(){ return false; });
+      }
+      function writeRoot(k,data){
+        var s=sources[k];
+        if(s&&s.idb&&window.psSaveSharedAsync)return Promise.resolve().then(function(){ return window.psSaveSharedAsync(k,JSON.stringify(data)); }).then(function(){ return true; },function(){ return false; });
+        return Promise.resolve(writeJSON(k,data));
+      }
+      return Promise.all([root('scout_tool_v1'),root('process_coach_v1'),root('cs_team_v1')]).then(function(docs){
+      if(imageMigrationOwner()!==owner)return {moved:0,failed:0};
+      var sc=docs[0],pc=docs[1],tm=docs[2];
       if(sc&&Array.isArray(sc.players)){
         sc.players.forEach(function(pl){
           var pf=pl&&pl.profile;
           if(pf&&isData(pf.photo)) jobs.push({o:pf,k:'photo',v:pf.photo,root:'scout_tool_v1',data:sc});
         });
       }
-      var pc=root('process_coach_v1');
       if(pc&&pc.weeks&&typeof pc.weeks==='object'){
         Object.keys(pc.weeks).forEach(function(wk){
           var arr=pc.weeks[wk]; if(!Array.isArray(arr)) return;
@@ -1673,7 +1696,6 @@
           });
         });
       }
-      var tm=root('cs_team_v1');
       if(tm&&isData(tm.logo)) jobs.push({o:tm,k:'logo',v:tm.logo,root:'cs_team_v1',data:tm});
       /* 2.463 — 이미 쌓여 있는 남의 IDP 문서 사진(위 stripIdp 참조). 재읽기 검증이 있는
          stripIdp 를 키마다 직렬로 돌린다 — jobs 파이프라인의 '읽고 한참 뒤 통째로 다시
@@ -1689,24 +1711,29 @@
       var moved=0, failed=0, roots={};
       return jobs.reduce(function(chain,j){
         return chain.then(function(){
-          if(!current(j.root)){failed++;return;}
-          return put(j.v).then(function(ref){
-            if(!current(j.root)){failed++;return;}
-            j.o[j.k]=ref;
-            if(!roots[j.root])roots[j.root]={data:j.data,n:0};roots[j.root].n++;   /* 확인된 뒤에만 참조로 바꾼다 */
-          }).catch(function(){ failed++; });
+          return current(j.root).then(function(ok){
+            if(!ok){failed++;return;}
+            return put(j.v).then(function(ref){
+              return current(j.root).then(function(still){
+                if(!still){failed++;return;}
+                j.o[j.k]=ref;
+                if(!roots[j.root])roots[j.root]={data:j.data,n:0};roots[j.root].n++;   /* 확인된 뒤에만 참조로 바꾼다 */
+              });
+            }).catch(function(){ failed++; });
+          });
         });
       }, Promise.resolve()).then(function(){
-        Object.keys(roots).forEach(function(k){
-          /* 부모 셸도 사진을 옮긴다. iframe을 내려도 남는 늦은 작업이
-             새 팀이나 같은 팀의 후속 편집 원문을 되감지 않게 한다. */
-          if(!current(k)||!writeJSON(k,roots[k].data))failed+=roots[k].n;
-          else moved+=roots[k].n;
-        });
+        /* 부모 셸도 사진을 옮긴다. iframe을 내려도 남는 늦은 작업이
+           새 팀이나 같은 팀의 후속 편집 원문을 되감지 않게 한다 — 쓰기 직전에 한 번 더 같은 원문인지 본다. */
+        return Object.keys(roots).reduce(function(ch,k){ return ch.then(function(){
+          return current(k).then(function(ok){ return ok?writeRoot(k,roots[k].data):false; }).then(function(ok){ if(ok)moved+=roots[k].n; else failed+=roots[k].n; });
+        }); }, Promise.resolve());
+      }).then(function(){
         return idpChain.then(function(){ moved+=idpMoved;
           try{ if(moved) window.dispatchEvent(new CustomEvent('ps-img-migrated',{detail:{moved:moved,failed:failed}})); }catch(_){}
           return {moved:moved,failed:failed};
         });
+      });
       });
     });
   }
