@@ -48,6 +48,7 @@ suites.selection.push('training-grid-snap-3302');   /* 3.302 — 훈련 편집�
 suites.board.push('anim-token-over-handle-3302');   /* 3.302 — 장면 사이에 조금 움직인 선수: 곡선 손잡이가 덮어도 토큰이 잡혀 끌린다 · 긴 동선의 손잡이는 그대로 */
 suites.selection.push('board-motion-marks-3302');   /* 3.302 — 잔상은 가늘어지는 꼬리 하나 · «시야» 단추가 끔 → 방향 표식 → 시야 → 끔 · 뒤 장면까지 · 재생 · 내보내기 */
 suites.selection.push('board-grass-natural-3303');
+suites.selection.push('board-mow-3326');   /* 3.326 — 잔디 무늬 여덟 칸 · 평면과 3D 가 같은 값 · «없음»이면 3D 도 줄 없이 */
 suites.selection.push('board-toast-editing-3319');   /* 3.319 — 훈련 편집에서 도구 옵션 띠가 열린 채 뜬 알림은 띠 위 한 줄(위 · 아래 고정으로 늘어난 632px 상자 아님) */
 suites.selection.push('board-3d-pitch-3316');   /* 3.316 — 3D 잔디 색은 평면 피치(네이비 · 화이트 · 딥그린 · 직접 색 · 실사 + 밝기/연하기)를 따른다 */   /* 3.303 — 3D «잔디만 · 간단»: 바닥은 잔디 한 장(판 테두리 안팎 밝기 같음 · 조명 기둥 · 따로 칠한 어둠 없음 · 멀수록 어둡게) · 전체 경기장 · 그리드 판은 그대로 */
 suites.selection.push('board-tv-clean-3304');   /* 3.304 — 장면 줄은 번호 칩(그림 없음 · 그림을 만들지 않음) · 보관함 «전체화면»은 위쪽 띠(페이지 탭 · 보기 옵션)를 걷고 ‹ n / m › 가 도크를 덮지 않는다 */

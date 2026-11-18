@@ -929,6 +929,37 @@
       .then(function(){ return stat; });
   }
   function afterMigrate(fn){ return migrated.then(fn,fn); }
+  /* 저장 계층 정리 2단계 첫 판 — «읽는 함수가 쓴다»(설계 2절: window.storage.get 이 IndexedDB 에 없고 거울(localStorage)에 있는 키를 IndexedDB 에 심는다)를 걷기 전에 잰다.
+     그냥 걷으면 동기화의 받기 쓰기(replaceIfValue 의 «기대값»이 get 이 돌려준 거울 값)가 빈 IndexedDB 와 어긋나 kv_write_idb_changed 를 되풀이할 수 있다 — 심기가 실제로 일어나는지부터 본다.
+     ps_events storage_seed 한 줄: error_code = 무슨 일(seed 심음 · race 그 사이 다른 쪽이 채움 · owner 주인 확인 전이라 읽기만 · fail 심기 실패) · stage = 키 표 이름 ·
+     source = 화면 파일 · msg = 부른 곳(파일:줄 — 주소 · 내용 없음) · kb · top. 창마다 (이름, 일)당 한 번 · 여섯 줄까지. 동작은 바꾸지 않는다 */
+  var seedSeen=Object.create(null),seedSent=0;
+  function seedCaller(origin){
+    var st='';try{st=String(origin&&origin.stack||'');}catch(e){return '';}
+    var lines=st.split('\n');
+    for(var i=0;i<lines.length;i++){
+      var m=/\/([A-Za-z0-9_.-]+\.(?:js|html))(?:\?[^:\s)]*)?:(\d+)(?::\d+)?/.exec(lines[i]);
+      if(m&&m[1]!=='storage.js')return m[1]+':'+m[2];
+    }
+    return '';
+  }
+  function seedNote(k,what,raw,origin){
+    try{
+      var nm=fullName(k),key=nm+'|'+what;
+      if(seedSeen[key]||seedSent>=6)return false;
+      seedSeen[key]=1;seedSent++;
+      var top=window;try{top=window.top||window;}catch(e){top=window;}
+      var meta={stage:nm,kb:Math.round(String(raw==null?'':raw).length*2/1024),top:top===window,msg:seedCaller(origin)};
+      try{meta.source=String(location.pathname||'').split('/').pop().slice(0,40);}catch(e){meta.source='';}
+      var tries=0;
+      (function send(){
+        var S=null;try{S=top.PSSync||window.PSSync;}catch(e){S=window.PSSync;}
+        if(S&&S.event){S.event('storage_seed',{status:'ok',feature:'storage',error_code:what,meta:meta});return;}
+        if(++tries<8)setTimeout(send,5000);   /* 셸은 동기화 본체를 storage.js 뒤에 싣는다 — 부팅 중 심기는 PSSync 가 생길 때까지 기다린다 */
+      })();
+      return true;
+    }catch(e){ if(typeof diagnostic==='function')diagnostic('storage-seed-note',e); return false; }
+  }
 
   window.storage={
     conditionalGuardVersion:1,
@@ -939,7 +970,7 @@
       return Promise.resolve().then(function(){current();return idbGet(k);}).then(function(v){current();return v==null?null:{value:v};});
     },
     get:function(k){
-      var reader=sharedReadContext();
+      var reader=sharedReadContext(),origin=new Error('storage.get');   /* 2단계 재기 — 심기가 일어날 때만 이 스택에서 «부른 곳»을 읽는다(seedNote) */
       function readCurrent(){if(reader===null||sharedReadContext()!==reader){var e=new Error('storage read owner changed');e.name='StorageOwnerChangedError';throw e;}}
       return afterMigrate(function(){
         readCurrent();
@@ -952,13 +983,14 @@
           var capture=sharedCapture(k);function current(){readCurrent();sharedCurrent(k,capture);}
           /* 로그인 준비 중 소유자 미확인 cache는 읽기만 한다. 정본이 없다는
              첫 조회 뒤 다른 창이 채운 행도 폴백 사본으로 덮지 않는다. */
-          if(capture.owner===null)return {value:lv};
+          if(capture.owner===null){seedNote(k,'owner',lv,origin);return {value:lv};}
           return idbReplaceIfValue(k,null,lv,current).then(function(changed){
             current();
-            if(!changed)return idbGet(k).then(function(latest){readCurrent();return latest==null?{value:lv}:{value:latest};});
+            if(!changed){seedNote(k,'race',lv,origin);return idbGet(k).then(function(latest){readCurrent();return latest==null?{value:lv}:{value:latest};});}
+            seedNote(k,'seed',lv,origin);
             if(DEVICE_LOCAL[k]||IDB_LEFT[k]){try{current();localStorage.removeItem(k);}catch(e){if(e.name==='StorageOwnerChangedError')throw e;}}
             return {value:lv};
-          }).catch(function(e){readCurrent();if(e&&e.name==='StorageOwnerChangedError')throw e;return {value:lv};});
+          }).catch(function(e){readCurrent();if(e&&e.name==='StorageOwnerChangedError')throw e;seedNote(k,'fail',lv,origin);return {value:lv};});
         });
       });
     },

@@ -16,6 +16,7 @@ try{
   await page.waitForTimeout(800);
   const look=(n,o)=>f.evaluate(async ([n,o])=>{
     const s=captureSnap();s.pitchTheme='grass';s.pitchImg='@real';s.orientation=o;s.spFlip=false;s.players=[];s.drawings=[];s.pitchView='full';s.pitchSpec='fifa';loadSnap(s);
+    window.__setGrassM(5);   /* 3.326 — 3D 도 보드의 «잔디 무늬»를 따른다(기본 없음) — 여기서는 띠 */
     window.__setPitchN(n);window.__setTilt(true);
     const t0=Date.now();let h=null,src='';
     while(Date.now()-t0<15000){h=document.querySelector('#tiltSurface .tilt-stadium');src=h?decodeURIComponent(h.getAttribute('src')||''):'';
