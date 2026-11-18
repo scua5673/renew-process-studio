@@ -1,7 +1,7 @@
 'use strict';
-/* 3.299 — 보관함↔보드 다리(B안). 편집 띠 말 하나(저장 · 저장하고 닫기 · 닫기) · 빵부스러기 · 목록 «편집 중» 칩 ·
+/* 3.317 — 보관함↔보드 다리(B안). 편집 띠 말 하나(저장 · 저장하고 닫기 · 닫기) · 빵부스러기 · 목록 «편집 중» 칩 ·
    초안 띠 «돌아가기 · 저장하고 닫기 · 버리기»가 그 자료를 다시 열어 초안을 입힌다 · 불러오기 «이어서»가 그 초안을 본다.
-   화면 흐름은 tests/browser/vault-bridge-3299. 여기서는 소스 모양과 모듈을 가짜 창으로 본다. */
+   화면 흐름은 tests/browser/vault-bridge-3317. 여기서는 소스 모양과 모듈을 가짜 창으로 본다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const D=require('../studio/board-vault-draft.js'),OC=require('../studio/board-open-chooser.js');
 const OWNER={uid:'synthetic-coach',wid:'synthetic-team',seal:'s'};

@@ -94,7 +94,7 @@ try{
     assert.ok(!g2.opts&&g2.toast[0]>g1.toast[0],'띠가 닫히면 알림은 다시 아래로 '+JSON.stringify([g1,g2]));
   } else console.log('도구 옵션 띠가 없는 배치 — 알림 자리 건너뜀',size);
 
-  const errs=logs.filter(l=>l.type==='pageerror');
+  const errs=logs.filter(l=>l.type==='pageerror'&&!((process.env.PS_BROWSER_ENGINE||'chromium')==='webkit'&&l.text==='ResizeObserver loop completed with undelivered notifications.'));   /* 3.309 — 띠가 제 줄이 되어 무대와 크기를 주고받으니 CI 리눅스 웹킷이 «ResizeObserver loop …» 알림을 낸다(3.193 과 같은 처방: 웹킷의 그 문장만 따로 두고 다른 오류는 그대로 막는다 — 맥 웹킷 · 크로미움에선 안 난다) */
   assert.deepEqual(errs,[],'페이지 오류 없음');
   console.log('board-popups-3141 ok',engine,size);
 }catch(e){console.error('실패 단계:',cur);throw e;}finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close?.();}

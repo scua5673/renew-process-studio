@@ -1,4 +1,4 @@
-/* 3.299 — 보관함↔보드 다리(B안). 보관함 자료를 «편집»으로 고치다 보드 탭으로 가도 편집이 남는다:
+/* 3.317 — 보관함↔보드 다리(B안). 보관함 자료를 «편집»으로 고치다 보드 탭으로 가도 편집이 남는다:
    작업 보드 위 띠 «편집 중 · 보관함 › 이름 · 저장 안 한 변경 — 돌아가기 · 저장하고 닫기 · 버리기» · 보관함 목록의 «편집 중» 칩 ·
    «돌아가기»는 그 자료를 다시 열어 초안을 입힌다(«(되살림)» 새 자료가 아니다) · «저장»은 그 자료에 · 불러오기 창의 «이어서»도 그 자료.
    편집 띠의 말은 하나(새 자료 «저장 · 닫기» · 편집 «저장 · 저장하고 닫기 · 닫기») · 띠 앞에 «보관함 › 폴더 ›». */
@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {startFixture,openApp,ready,SIZES} from '../fixtures/team-app.mjs';
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',out=process.env.PS_TEST_OUTPUT||'/tmp/ps-vault-bridge-3299';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',out=process.env.PS_TEST_OUTPUT||'/tmp/ps-vault-bridge-3317';
 fs.mkdirSync(out,{recursive:true});
 const browsers={},fx=await startFixture();
 SIZES.vb={engine,ctx:{viewport:{width:1280,height:860},deviceScaleFactor:1}};

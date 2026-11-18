@@ -13,14 +13,14 @@ const suites={
     'board-player-eye','vault-browse','patternbook','textbook-midfield'],
   /* 2.991 — board 가 25개로 늘어 WebKit 잡이 14~15분 걸렸고, release-gate 를 12분만 기다리는 Netlify 게시(scripts/verify-release.mjs)가
      staging 마다 멈췄다. 같은 테스트를 시간(WebKit 실측)으로 둘에 나눠 CI 가 나란히 돌린다 — board: 판·보관함 / board2: 애니메이션·내보내기·미팅·패턴북 등. */
-  board:['gamemodel-sync','board-depth','board-palette-colors','vault-board-isolation','vault-board-draft','vault-bridge-3299','board-rescue-3278','board-fmstadio','board-fmstadio2','board-jersey','board-edit-view','board-kit-preview','board-kit-more','board-savebar','board-vault-save','vault-folder-delete','vault-folder-visibility','team-library-load','gamemodel-vault-import','board-new-board','board-settings-strip','board-look-per-work','board-3d-default','board-3d-look','board-stadium-ground','board-3d-marquee','board-3d-ipad-safe','board-editor-flat','board-settings-hierarchy','board-full-name','team-load-position','team-photo-crop','shape-menu-3141','board-popups-3141'],
+  board:['gamemodel-sync','board-depth','board-palette-colors','vault-board-isolation','vault-board-draft','vault-bridge-3317','board-rescue-3278','board-fmstadio','board-fmstadio2','board-jersey','board-edit-view','board-kit-preview','board-kit-more','board-savebar','board-vault-save','vault-folder-delete','vault-folder-visibility','team-library-load','gamemodel-vault-import','board-new-board','board-settings-strip','board-look-per-work','board-3d-default','board-3d-look','board-stadium-ground','board-3d-marquee','board-3d-ipad-safe','board-editor-flat','board-settings-hierarchy','board-full-name','team-load-position','team-photo-crop','shape-menu-3141','board-popups-3141'],
   board2:['board-pitch-all-pages','player-eye-renderer','meeting-work-pages','meeting-formation','meeting-new-look','meeting-view-3130','meeting-pitch-pick','board-quick-export','board-pdf-save-3204','board-import-safe-3123','board-vault-pages-3137','team-load-all-scenes','page-switch-play','anim-erase-export','anim-export-once','meeting-names-video','meeting-upgrade','gamemodel-anim','gamemodel-attach-pages','board-feedback-2975','anim-all-pages','anim-photo-pages','anim-photo-missing','anim-export-fit','anim-orient','shaper-ball','phone-page-strip','vault-phone-view-3134','rondo-grid','board-pitch-photo','board-shortcuts-3143','board-text-polish','board-reports-3254','board-grass-mow-3255'],
   identity:['board-open-chooser-3297','session-team-picker','month-quick-detail','admin-content-play','admin-user-made','admin-safety','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','workspace-held-review-3146','workspace-guard-storage','workspace-late-save','workspace-board-draft','mobile-oauth-recovery','schedule-phone','phone-app-more','board-settings-manual','year-weekdays'],
   storage:['storage-conditional','items-stale-round-block','storage-optimize-coalesce','svg-guard','storage-safety','personal-docs-sync','library-insert-ack','library-read-revision','team-library','private-board-isolation','board-guest-save','roster-main-save','scout-unread-roster','roster-storage-failure-3144','autosave-journal-recovery','letter-pack','vault-file-import','community-process','letter-social','community-quality','community-elmiha','community-board','community-view-look','community-library','community-detail','community-cards','vault-examples','warm-tabs','thumb-diet','phone-boot-vault','vault-open-memory','match-wait-schedule-quota','match-mirror-quota-recovery','process-save-quota','sync-stall-report','crash-breadcrumb'],
   idp:['match-board-tools','match-formats-8','match-fmt-3118','match-ob-tray','match-board-vault','match-meet-parts','match-lock-3137','match-large-schedule','match-board-show','availability','avail-year-split','idp-recovery','idp-story-dedup','support','support-image','squad-phone','player-workspace','player-bulk-depth','squad-depth-drag','scouting-integration','review-training','idp-coach-goals','team-heads','learn-gm-loop','idp-update-reload','idp-pub-wipe','idp-cache-source'],
   /* 3.012 — 보드 끌기 성능은 WebKit 에서 혼자 149~223초(테스트 하나 240초 한도)였다. 느린 러너 하나가 board 잡 전체와 배포(release-gate)를 막지 않게
      자기 묶음으로 떼고, 이 테스트만 한도를 360초로 둔다(PER_TEST_MS) — 묶음이 혼자라 잡은 7분 안쪽, Netlify 의 12분 대기 안이다. */
-  boardperf:['board-view-toolbar-move','board-portrait-goal-3145','board-drag-performance','board-pencil'],   /* 3.025 — 펜슬 그리기(손바닥 · 중간 점 · 프레임당 한 번 · 3D 투영 · 호버) */
+  boardperf:['board-portrait-goal-3145','board-drag-performance','board-pencil'],   /* 3.025 — 펜슬 그리기(손바닥 · 중간 점 · 프레임당 한 번 · 3D 투영 · 호버) */
   /* 3.012 — CI 밖에 있던 브라우저 시험 22개(저장·복구·로그인·안내·IDP·선수단·훈련). CI 에 없어서 넷이 조용히 낡아 있었다(dock-white 는 2.614 CSS 사본과
      비교하는 일회용 점검이라 넣지 않는다). Chromium 실측 합 7분 남짓이라 둘로 나눠 다른 묶음과 나란히 돈다 — entry: 진입·계정·안내 / records: 기록·저장·선수단·훈련.
      first-work 는 guidance.mjs 를 import 만 하는 옛 이름이라 넣지 않는다(같은 시험이 두 번 돈다). */
@@ -31,16 +31,26 @@ suites.identity.push('update-delivery','update-client-lifecycle','one-window-327
 suites.records.push('multipitch-rotation','board-settings-pitches');
 suites.board.push('board-scout-import','board-roster-import');
 suites.idp.push('squad-group-change');
-suites.idp.push('avail-held-row-3281');suites.idp.push('items-stale-held');   /* 3.295 — 보관된 선수 행(journal + 기기 묶음 영수증)은 새 판 적용 · 화면 떠나기 전 저장 확인을 막지 않는다(held) · 알약 «일부 변경 보관» · 고르면 풀림 */   /* 3.281 — 보관된 선수 행(sq:<id>)이 있는 기기에서 가용인원 기록: 통짜 문서만 기다려 기록 · 보관 그대로 · 멈추면 까닭과 가는 길(e6fc5d26 · de2e508c) */
+suites.idp.push('avail-held-row-3281');suites.idp.push('items-stale-held');suites.idp.push('avail-table-3308');   /* 3.295 — 보관된 선수 행(journal + 기기 묶음 영수증)은 새 판 적용 · 화면 떠나기 전 저장 확인을 막지 않는다(held) · 알약 «일부 변경 보관» · 고르면 풀림 */   /* 3.281 — 보관된 선수 행(sq:<id>)이 있는 기기에서 가용인원 기록: 통짜 문서만 기다려 기록 · 보관 그대로 · 멈추면 까닭과 가는 길(e6fc5d26 · de2e508c) */
 suites.records.push('training-toolbar-layout');
+suites.records.push('schedule-thumb-ref-3315');   /* 3.315 — 일정 사본의 그림은 참조만(화면 · 저장 · 새로고침 · 옛 사본 다이어트) */
 suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
 suites.board2.push('meeting-slide-transition');   /* 3.256 — 미팅 슬라이드 넘김: 같은 팀 · 번호만 잇기 · 넘기는 중 저장 막기 */
 suites.board.push('board-flat-turf-3263');   /* 3.263 — 평면 잔디: 잎결 · 실사 잔디 줄 약 4m · 가로 · 세로 · 운동장 카드마다(board2 웹킷은 20분 한도에 닿아 board 로) */
 suites.board.push('board-page-thumb-diet-3288');   /* 3.288 — 페이지 장면 썸네일은 저장으로 나가는 사본에서만 뗀다 · 다시 열면 장면 줄이 다시 그린다(제보 de2e508c) */
 suites.board.push('team-load-team34-3288');   /* 3.288 — 저장 팀을 팀 3 · 4 에도(제보 29c97fc5): 자리 그대로 · 남는 선수와 판에 없는 팀은 대기 줄 둘째 줄 · 다른 팀을 덮지 않는다 */
 suites.selection.push('board-more-teams-3294');   /* 3.294 — 팀 추가: 팀 넷 + «팀 추가» → 팀 10까지 두 줄 · 쓰는 만큼만(저장 → 새로고침) · 새 팀 색 · 유니폼 · 그림 · 저장 팀 불러오기 · «한 번에 놓기»가 겹치지 않는다 */
+suites.selection.push('board-quick-depth-3300');   /* 3.300 — 휴대폰 빠른 보드: 포메이션 · 선수단 순서 · 자리 시트 · 붙여넣기 → 보관함 작전판(뒤 순번 depth) → 보기 · 이름 고치기 · 쓰던 보드 이어서 · 아이패드 같은 판 */
 suites.selection.push('board-vision-carry-3271','board-position-direct-3271');   /* 3.271 — 시야 · 시선은 이 페이지에만 + 이 장면부터 뒤로(756c0a48) · 오른쪽 클릭 창의 포지션(0033117a) */
 suites.board.push('board-page-undo-3271');
+suites.board.push('board-draft-divergent-3302');   /* 3.302 — 초안의 두 사본이 달라도 편집이 저장되고 알약이 뜨지 않는다 · 두 사본은 보관 키에 그대로 · 보관 실패면 예전처럼 막음 · 저장 뒤 알약 걷힘 */
+suites.selection.push('training-grid-snap-3302');   /* 3.302 — 훈련 편집기는 격자에 붙는 것이 기본: 놓기 · 끌기 · ⌘/Ctrl 로 한 번 자유 · 선 끝은 선수에 묶임 · 끄기 · 나가면 작전판 그대로 */
+suites.board.push('anim-token-over-handle-3302');   /* 3.302 — 장면 사이에 조금 움직인 선수: 곡선 손잡이가 덮어도 토큰이 잡혀 끌린다 · 긴 동선의 손잡이는 그대로 */
+suites.selection.push('board-motion-marks-3302');   /* 3.302 — 잔상은 가늘어지는 꼬리 하나 · «시야» 단추가 끔 → 방향 표식 → 시야 → 끔 · 뒤 장면까지 · 재생 · 내보내기 */
+suites.selection.push('board-grass-natural-3303');   /* 3.303 — 3D «잔디만 · 간단»: 바닥은 잔디 한 장(판 테두리 안팎 밝기 같음 · 조명 기둥 · 따로 칠한 어둠 없음 · 멀수록 어둡게) · 전체 경기장 · 그리드 판은 그대로 */
+suites.selection.push('board-tv-clean-3304');   /* 3.304 — 장면 줄은 번호 칩(그림 없음 · 그림을 만들지 않음) · 보관함 «전체화면»은 위쪽 띠(페이지 탭 · 보기 옵션)를 걷고 ‹ n / m › 가 도크를 덮지 않는다 */
+suites.selection.push('board-fold-top-3306');suites.selection.push('board-header-row-3309');
+suites.selection.push('board-reports-3311');   /* 3.311 — 그리기 도구 제보 묶음: 토큰 안의 화살 머리는 가장자리에 · 끝 모양은 집안마다 · 우클릭 창은 고른 그림에만 · 채움 없음 · 단축키 여섯 */   /* 3.306 — 아래 도크의 «도구 접기»(단추 · ⌘.)는 위쪽 띠도 같이 접고 «도구 펼치기»로 같이 편다 · 판은 제자리 · 새로고침 뒤에도 같이 · 보관함 편집기의 맨 위 줄(저장 · 나가기)은 남는다 */
 suites.board.push('vault-edit-update-3291');   /* 3.291 — 보관함 항목을 연 채 저장할 게 없으면 새 판 적용 통과 · 저장 안 한 변경은 blocked:vault-edit · 저장이 editedAt 을 찍어 팀 서버에 올라간다 */   /* 3.271 — 페이지 추가 · 복제 · 삭제 되돌리기(1bc9b7d4) — board2 웹킷은 20분 한도에 닿아 board 로 */
 suites.selection.push('board-shape-delete-carry-3282');   /* 3.282 — 지운 그림은 이 장면부터 뒤 장면에서도(74e59fd4) · 알림의 «이 장면만» */
 suites.entry.push('sync-diagnosis','team-mobile','mobile-navigation');

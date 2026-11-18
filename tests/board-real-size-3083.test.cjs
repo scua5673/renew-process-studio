@@ -14,7 +14,8 @@ test('wiring: the board multiplies real size by __rk, loads the module, caches i
   assert.match(b,/return m\/REAL_TOK_M\*k\(0\); \}/);
   assert.match(b,/<script src="board-real-size\.js"><\/script>/);
   assert.match(fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8'),/'\/studio\/board-real-size\.js'/);
-  assert.match(fs.readFileSync(path.join(__dirname,'../studio/board-topbar.js'),'utf8'),/class="tb-rsize"/);
+  assert.doesNotMatch(fs.readFileSync(path.join(__dirname,'../studio/board-topbar.js'),'utf8'),/class="tb-rsize"/,'3.309 — 위쪽 막대의 «크기» 단추는 걷었다: 실제 크기는 보드 설정의 «실제 크기» 줄');
+  assert.match(fs.readFileSync(path.join(__dirname,'../studio/board-real-size.js'),'utf8'),/mine\.id = 'realSizeRow'/,'보드 설정 › «실제 크기» 줄이 남은 길');
 });
 test('3.087 default: 선수 ×1.5 · 공 ×6 — old untouched "1|1" reads as the new default, a chosen real size is kept',()=>{
   assert.strictEqual(rs.DEF,'1.5|6');

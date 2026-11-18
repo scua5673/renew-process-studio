@@ -27,7 +27,10 @@ try{
   const other=()=>f.evaluate(()=>JSON.stringify((__psPages.pg()||[]).map((p,i)=>i===__psPages.book.idx()?null:{snap:p.snap.players,frames:(p.anim&&p.anim.frames||[]).map(fr=>fr.snap.players)})));
   const scene=k=>f.evaluate(k=>{selectAnimFrame(k);},k);
   const press=async id=>{await f.evaluate(id=>{const p=state.players.find(p=>p.id===id);sel={type:'player',ref:p};multiSel=[];renderTokens();updateDelUI();},id);
-    await f.evaluate(()=>document.getElementById('visBtn').click());};
+    /* 3.302 — «시야» 단추는 끔 → 방향 표식 → 시야 부채꼴 → 끔 으로 돈다(board-motion-marks.js). 이 시험의 «누름»은 부채꼴을 켜고 끄는 것 —
+       꺼진 선수는 두 번(표식을 지나 부채꼴), 켜진 선수는 한 번. */
+    const n=await f.evaluate(id=>{const p=state.players.find(p=>p.id===id);return (!p.vis&&!p.dirMark)?2:1;},id);
+    for(let i=0;i<n;i++)await f.evaluate(()=>document.getElementById('visBtn').click());};
   const undoN=()=>f.evaluate(()=>undoStack.length);
 
   step('look-at-this-page-only');
@@ -55,7 +58,7 @@ try{
   step('carry-forward');
   assert.equal(await visNow(7),'00011111','장면 4에서 켜면 4~8 이 켜진다(앞 장면은 그대로)');
   assert.equal(await visNow(8),'00000000','고르지 않은 토큰은 그대로');
-  assert.equal(await undoN(),u0+1,'되돌리기 기록 하나');
+  assert.equal(await undoN(),u0+2,'되돌리기 기록 둘 — 방향 표식 · 시야(3.302)');
   await f.evaluate(()=>undoLast());
   assert.equal(await visNow(7),'00000000','⌘Z 한 번에 모든 장면이 돌아온다');
   assert.equal(await other(),before,'되돌린 뒤에도 다른 페이지는 그대로');

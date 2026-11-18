@@ -37,7 +37,7 @@ try{for(const size of ['desktop','ipad']){
  assert.equal(await f.evaluate(()=>_tokClip.length),1);
  await page.reload({waitUntil:'domcontentloaded'});f=await board();
  await f.waitForFunction(()=>state.players.length===2);
- assert.deepEqual(logs.filter(l=>l.type==='pageerror'),[]);
+ assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!((process.env.PS_BROWSER_ENGINE||'chromium')==='webkit'&&l.text==='ResizeObserver loop completed with undelivered notifications.')),[]);   /* 3.309 — 띠가 제 줄이 되어 무대와 크기를 주고받으니 CI 리눅스 웹킷이 «ResizeObserver loop …» 알림을 낸다(3.193 과 같은 처방: 웹킷의 그 문장만 따로 두고 다른 오류는 그대로 막는다 — 맥 웹킷 · 크로미움에선 안 난다) */
  console.log(JSON.stringify({engine,size,crossPage:true,undoRedo:true,independentCopies:true,savedReload:true}));
  await context.close();
 }}finally{for(const b of Object.values(browsers))await b.close();await fx.close();}

@@ -26,16 +26,17 @@ try{
   await f.waitForSelector('#boardScoutDialog[open]');
  }
  await open();assert.equal(await f.locator('.bsi-candidate').count(),14,'deduplicated and deletion-filtered roster including unplaced candidates');
- assert.ok(await f.evaluate(()=>Array.from(document.querySelectorAll('#boardScoutDialog select')).every(s=>s.getBoundingClientRect().height>=44)),'filters retain tablet touch targets in both engines');
+ assert.ok(await f.evaluate(()=>Array.from(document.querySelectorAll('#boardScoutDialog .bsi-cond:not([hidden]) .bsi-chip')).every(b=>b.getBoundingClientRect().height>=40)),'condition chips retain tablet touch targets in both engines');
+ assert.deepEqual(await f.locator('#boardScoutDialog [aria-label="출처"] [aria-pressed="true"]').allTextContents(),['스카우팅'],'the scouting button opens the window on the scouting source');
  assert.match(await f.locator('#boardScoutDialog [data-count]').textContent(),/14명 선택/);
- await f.getByRole('searchbox',{name:'후보 검색'}).fill('김민준');assert.equal(await f.locator('.bsi-candidate').count(),1);
- await f.getByRole('searchbox',{name:'후보 검색'}).press('Enter');assert.equal(await f.locator('#boardScoutDialog[open]').count(),1,'search Enter never imports the selection');
- await f.getByRole('searchbox',{name:'후보 검색'}).fill('');
- await f.getByRole('combobox',{name:'영입 단계',exact:true}).selectOption('go');assert.equal(await f.locator('.bsi-candidate').count(),5);
- await f.getByRole('button',{name:'전체 해제',exact:true}).click();assert.equal(await f.locator('#boardScoutDialog [data-load]').isDisabled(),true);await f.getByRole('button',{name:'표시된 후보 선택',exact:true}).click();
+ await f.getByRole('searchbox',{name:'명단 검색'}).fill('김민준');assert.equal(await f.locator('.bsi-candidate').count(),1);
+ await f.getByRole('searchbox',{name:'명단 검색'}).press('Enter');assert.equal(await f.locator('#boardScoutDialog[open]').count(),1,'search Enter never imports the selection');
+ await f.getByRole('searchbox',{name:'명단 검색'}).fill('');
+ await f.locator('#boardScoutDialog [aria-label="영입 단계"]').getByRole('button',{name:'영입대상',exact:true}).click();assert.equal(await f.locator('.bsi-candidate').count(),5);
+ await f.getByRole('button',{name:'없음',exact:true}).click();assert.equal(await f.locator('#boardScoutDialog [data-load]').isDisabled(),true);await f.getByRole('button',{name:'모두',exact:true}).click();
  assert.match(await f.locator('#boardScoutDialog [data-count]').textContent(),/5명 선택/);
- await f.getByRole('combobox',{name:'영입 단계',exact:true}).selectOption('');
- await f.getByRole('button',{name:'표시된 후보 선택',exact:true}).click();
+ await f.locator('#boardScoutDialog [aria-label="영입 단계"]').getByRole('button',{name:'모든 단계',exact:true}).click();
+ await f.getByRole('button',{name:'모두',exact:true}).click();
  await page.screenshot({path:path.join(SHOTS,'scout-import-'+engine+'.png')});
  // Cancel is read-only for both board and scouting source.
  const untouched=await f.evaluate(()=>JSON.stringify(state.players));await f.getByRole('button',{name:'취소',exact:true}).click();

@@ -74,8 +74,9 @@ test('배선 — 가용인원 두 화면 · 선수 추가 시트 · 선수 편�
   const fn=name=>{const a=SC.indexOf('function '+name+'(');const b=SC.indexOf('\nfunction ',a+10);assert.ok(a>=0,name);return SC.slice(a,b);};
   assert.ok(fn('avGrouping').includes("+'</span>'+avYearToggleHTML();"),'묶기 단추 옆 토글');
   assert.ok(fn('avGroups').includes('players:avYearOrder(rows[g].slice().sort('),'조 안 차례');
-  const daily=fn('renderAvailDaily');
-  assert.ok(daily.includes('else okRows+=avYearLead(group,p)+row;'),'날짜별 학년 줄');assert.ok(daily.includes("'</small>'+avYearTag(p)+(r.note?"),'쉼 상자 선수의 학년 꼬리표');
+  const daily=fn('renderAvailDaily'),AT=fs.readFileSync(path.join(root,'studio/avail-table.js'),'utf8');   /* 3.308 — 몸통은 표 모듈 */
+  assert.ok(daily.includes('var built=avTableBody(ours,day)'),'날짜별 몸통은 avail-table.js');
+  assert.ok(AT.includes('avYearLead(group,p,cols,true)+row'),'날짜별 학년 줄(표 · «가능 n / m명»)');assert.ok(AT.includes('name=avProfileLink(p)+avYearTag(p)'),'학년 꼬리표');
   assert.ok(fn('renderAvailPlayers').includes('h+=avYearLead(group,p,cols);'),'누적 표 학년 줄');
   assert.ok(SC.includes('options:posOpts,value:""}].concat(tmAudienceFields()),'),'선수 추가 시트 칸');
   assert.ok(SC.includes('data.players.push(tmAudienceApply({id:uid("pl"),name:v.name,'),'선수 추가 시트 값');

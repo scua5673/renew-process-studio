@@ -8,7 +8,7 @@
    · 읽기: 보드가 열리면 같은 계정 · 같은 팀의 초안만 띠로 묻는다 «보관함에서 만들던 작전판이 있어요 — 되살리기 / 버리기».
      보관함 자료가 초안보다 나중에 저장됐으면(저장하고 나간 것) 낡은 초안으로 보고 지운다.
    · 되살리기: 늘 «새 작전판 만들기»로 연다 — 보관함의 원래 자료를 덮지 않는다(저장은 사람이 «저장»으로).
-     3.299 — 보관함 자료(libId)를 고치다 둔 초안은 **그 자료를 다시 열어** 초안을 입힌다(띠 «편집 중 · 보관함 › 이름 — 돌아가기 · 저장하고 닫기 · 버리기»);
+     3.317 — 보관함 자료(libId)를 고치다 둔 초안은 **그 자료를 다시 열어** 초안을 입힌다(띠 «편집 중 · 보관함 › 이름 — 돌아가기 · 저장하고 닫기 · 버리기»);
      새로 만들던 것만 새 작전판으로. 보관함 목록은 editingId() 로 그 자료에 «편집 중» 칩을 단다. 불러오기 창의 «이어서»도 pending() 으로 같은 초안을 본다.
    키: ps_private_board_draft_v1:<uid>:vault-unsaved:<wid>(기기 전용 · 표 storage-keys.js 의 같은 머리). */
 (function(root,factory){
@@ -139,7 +139,7 @@
       try{
         css();
         var el=doc.createElement('div'),n=scenes(rec.doc);el.id='psVaultDraftBar';el.setAttribute('role','status');
-        if(rec.libId){   /* 3.299 — 보관함 자료를 고치다 둔 것: 그 자료로 돌아간다 */
+        if(rec.libId){   /* 3.317 — 보관함 자료를 고치다 둔 것: 그 자료로 돌아간다 */
           el.innerHTML='<span class="vd-tx"></span><button type="button" class="vd-keep">돌아가기</button><button type="button" class="vd-save">저장하고 닫기</button><button type="button" class="vd-drop">버리기</button>';
           el.querySelector('.vd-tx').textContent='편집 중 · 보관함 › '+(rec.name||'작전판')+' · 저장 안 한 변경 · '+ago(rec.at,Date.now());
           el.querySelector('.vd-keep').onclick=function(){restore();};
@@ -181,7 +181,7 @@
       if(x.rec.libId&&typeof w.__psVaultOpenItem==='function')return restoreInto(x,opts||{});
       return restoreNew(x);
     }
-    /* 3.299 — 보관함 자료를 고치다 둔 초안은 **그 자료를 다시 열어**(편집 길) 초안 내용을 입힌다. 자료는 사람이 «저장»을 눌러야 바뀐다. opts.save 면 열자마자 «저장하고 닫기» */
+    /* 3.317 — 보관함 자료를 고치다 둔 초안은 **그 자료를 다시 열어**(편집 길) 초안 내용을 입힌다. 자료는 사람이 «저장»을 눌러야 바뀐다. opts.save 면 열자마자 «저장하고 닫기» */
     function restoreInto(x,opts){
       var rec=x.rec,d=rec.doc,o=x.owner;
       if(busy()){try{w.toast('열려 있는 편집을 닫은 뒤 «돌아가기»를 눌러 주세요');}catch(_){}return false;}
@@ -228,7 +228,7 @@
     }
     /* ── 편집기 드나듦 ── */
     var begin=w.vaultBoardBegin,end=w.vaultBoardRestore,leave=w.__vaultBoardLeave,undo=w.pushUndo,sv=w.setView;
-    if(typeof sv==='function')w.setView=function(v){var out=sv.apply(this,arguments);if(v==='session'){redraw();w.setTimeout(redraw,400);w.setTimeout(redraw,1500);}return out;};   /* 3.299 — 보관함 목록을 열 때(목록은 뒤늦게 그려진다) «편집 중» 칩을 맞춘다 */
+    if(typeof sv==='function')w.setView=function(v){var out=sv.apply(this,arguments);if(v==='session'){redraw();w.setTimeout(redraw,400);w.setTimeout(redraw,1500);}return out;};   /* 3.317 — 보관함 목록을 열 때(목록은 뒤늦게 그려진다) «편집 중» 칩을 맞춘다 */
     w.vaultBoardBegin=function(){
       var g=begin.apply(this,arguments);
       try{

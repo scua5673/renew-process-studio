@@ -126,6 +126,31 @@
        서른 곳 중 어디서 났는지 알 수 없었다. 판정 · 던지는 차례는 그대로이고 까닭 글자만 붙는다(영문 소문자 · 숫자 · - · :). */
     function error(c,why){var e=new Error('작전판 초안을 기기에 보관하지 못했습니다. 다시 시도해 주세요');e.psCode='board_draft_storage';e.psWhy=String(why||'unknown').replace(/[^a-z0-9:-]/g,'').slice(0,40)||'unknown';if(c&&c.borrowed&&c.blocked)e.psDeferred=true;return e;}
     function changed(why){var e=error(null,why);e.psConflict=true;return e;}
+    /* 3.302 — 마지막으로 알린 상태. 초안을 치운 뒤(«보드 저장» 성공 · «버리기»)에도 앞선 실패 알약 «저장되지 않았습니다»가 남던 것을 걷는 데 쓴다 */
+    var shown='';
+    function say(next,e){shown=next;if(d.state)d.state(next,e);}
+    /* 3.302 — 부팅 때 본 두 사본(작은 저장소 · IDB)이 서로 다른 초안이면 예전엔 손댈 때마다 'divergent' 로 실패했고, «보드 저장»이나 «버리기» 전까지 영영 그랬다
+       (운영 기록: 아이패드 한 대가 나흘 동안 편집마다 «저장되지 않았습니다» · 새 판 적용도 그때마다 미뤄짐). 아이패드는 손댄 직후 앱을 바꾸면 수명 주기 사본(작은 저장소)만
+       새로 남고 IDB 는 앞 초안인 채 탭이 정리되는 일이 흔하다. 개인 보드 머리(archiveHeads)와 같은 처방 — 두 사본을 보관 키(…:kept:unsaved-split-<지문>)에 글자 그대로
+       옮겨 되읽어 확인한 뒤(둘 다 남는다) 평소 길로 이어 쓴다. 보관을 못 하면 예전처럼 막는다. 수명 주기의 동기 길(local)은 그대로다 — 비동기 보관을 기다릴 수 없다. */
+    function mark(raw){var h=5381,i=0;raw=String(raw);for(;i<raw.length;i++)h=((h<<5)+h+raw.charCodeAt(i))|0;return (h>>>0).toString(36)+'-'+raw.length.toString(36);}
+    function settle(j){
+      var n=known;if(!n||!divergent(j))return Promise.resolve(false);
+      if(!d.storage||!d.storage.get||!d.storage.replaceIfValue||!d.verifyIDB)return Promise.reject(changed('divergent'));
+      var base=(d.recoveryKey?d.recoveryKey(j.owner):j.key+':kept:')+'split-';
+      function guard(){current(j);if(known!==n||d.local.getItem(j.key)!==n.local)throw changed('divergent');return true;}
+      function keep(raw){
+        var key=base+mark(raw);
+        return Promise.resolve(d.storage.get(key)).then(function(v){
+          guard();var old=v&&v.value;old=old==null?null:old;
+          if(old===raw)return true;if(old!==null)throw changed('divergent');
+          return d.storage.replaceIfValue(key,null,raw,guard).then(function(ok){if(!ok)throw changed('divergent');return true;});
+        }).then(function(){return d.verifyIDB(key,raw);}).then(guard);
+      }
+      return Promise.resolve().then(function(){guard();return keep(n.local);}).then(function(){return keep(n.idb);}).then(function(){
+        guard();known={owner:n.owner,local:n.local,idb:n.idb,own:true};return true;
+      }).catch(function(e){throw e&&e.psCode==='board_draft_storage'?e:changed('divergent');});   /* 보관 중 저장소 오류 = 예전처럼 막는다 · 작업이 바뀐 까닭(seq …)은 그대로 */
+    }
     function sameWhy(j,c){return !j?'no-job':j!==job?'superseded':j.epoch!==cancelEpoch?'cleared':!c?'no-ctx':!c.needed?'not-needed':c.seq!==j.seq?'seq':c.generation!==j.generation?'generation':'owner';}
     function blockWhy(c){return 'blocked:'+(c.why||(c.borrowed?'view':'x'));}
     function ownerWhy(c){return c.paused?'paused':'not-current';}
@@ -183,7 +208,7 @@
         if(j.receiptSeq===attempt&&same(j))failed(j,e);throw e;
       });
     }
-    function failed(j,e){j.ok=false;j.deferred=!!(e&&e.psDeferred);if(!j.deferred)j.failure=e;if(d.state&&same(j))d.state(j.deferred?'begin':'fail',e);}
+    function failed(j,e){j.ok=false;j.deferred=!!(e&&e.psDeferred);if(!j.deferred)j.failure=e;if(same(j))say(j.deferred?'begin':'fail',e);}
     function keepFailure(work,e){return work.catch(function(next){throw next&&next.psDeferred?e:next;});}
     function certified(j,c){
       var x=j&&j.cert;
@@ -201,7 +226,7 @@
         if(iv===j.record&&!d.verifyIDB)throw error(null,'no-idb');
         return Promise.resolve(iv===j.record?d.verifyIDB(j.key,j.record):true).then(function(){
           guard();if(d.local.getItem(j.key)!==lv)throw changed('local-changed');
-          j.store=iv===j.record?'idb':'local';j.ok=true;j.suspended=true;j.deferred=false;j.failure=null;if(d.state)d.state('ok');return true;
+          j.store=iv===j.record?'idb':'local';j.ok=true;j.suspended=true;j.deferred=false;j.failure=null;say('ok');return true;
         });
       }).catch(function(e){if(j.receiptSeq===attempt&&same(j))failed(j,e);throw e;});
     }
@@ -218,7 +243,7 @@
         if(iv===j.record&&!d.verifyIDB)throw error(null,'no-idb');
         return Promise.resolve(iv===j.record?d.verifyIDB(j.key,j.record):true).then(function(){
           guard();if(d.local.getItem(j.key)!==lv)throw changed('local-changed');
-          j.store=iv===j.record?'idb':'local';j.ok=true;j.idle=true;j.deferred=false;j.failure=null;if(d.state)d.state('ok');return true;
+          j.store=iv===j.record?'idb':'local';j.ok=true;j.idle=true;j.deferred=false;j.failure=null;say('ok');return true;
         });
       }).catch(function(e){if(j.receiptSeq===attempt&&same(j))failed(j,e);throw e;});
     }
@@ -236,7 +261,7 @@
       var work=Promise.resolve().then(function(){
         current(j);if(!j.localOwned)throw changed('local-foreign');
         if(!d.storage||!d.storage.get||!d.storage.replaceIfValue)throw error(null,'no-idb');
-        return d.storage.get(j.key).then(function(v){
+        return settle(j).then(function(){return d.storage.get(j.key);}).then(function(v){
           current(j);var before=v&&v.value;before=before==null?null:before;
           if(!j.idbSeen){j.idbSeen=true;j.idbBefore=known&&known.owner===j.ownerRaw?known.idb:j.localBefore;}
           if(divergent(j))throw changed('divergent');
@@ -268,7 +293,7 @@
         // IDB contents still fail the ordinary reload-selection check below.
         try{local(j);}catch(_){return keepFailure(recover(j).then(function(){throw e;}),e);}
         return keepFailure(check(j,true).then(function(){return d.recoverLocal?d.recoverLocal(j.key,j.record,function(){return current(j,true);}):true;}).then(function(){known={owner:j.ownerRaw,local:j.record,idb:j.checkedIDB,own:true};return true;}),e);
-      }).then(function(){current(j,true);j.ok=true;j.deferred=false;j.failure=null;if(d.state)d.state('ok');return true;});
+      }).then(function(){current(j,true);j.ok=true;j.deferred=false;j.failure=null;say('ok');return true;});
     }
     function write(options){
       var c=d.context();
@@ -293,7 +318,7 @@
       if(options&&options.lifecycle&&!j.ok)try{local(j);}catch(_){try{localRecovery(j);}catch(__){} }
       if(j.work)return j.work;
       if(j.ok)return verify(j,true,attempt);
-      if(d.state)d.state('begin');
+      say('begin');
       var work=tail.catch(function(){}).then(function(){return persist(j);});tail=work;
       j.work=work.then(function(v){j.work=null;return v;},function(e){j.work=null;failed(j,e);throw e;});
       return j.work;
@@ -325,7 +350,9 @@
       job=null;known=null;
       function guard(){var now=d.context();if(cancelEpoch!==epoch||job!==null||!now||!now.current||now.seq!==seq||now.generation!==generation||JSON.stringify(now.owner)!==ownerRaw)throw error(null,'clear');return true;}
       guard();var local=d.local.getItem(k);if(local!==null&&lv.indexOf(local)>=0)d.local.removeItem(k);
-      return iv.filter(function(v,i){return v!==null&&v!==undefined&&iv.indexOf(v)===i;}).reduce(function(p,v){return p.then(function(){guard();return d.storage&&d.storage.delIfValue?d.storage.delIfValue(k,v,guard):false;});},Promise.resolve(true));
+      var failedBefore=shown==='fail';
+      return iv.filter(function(v,i){return v!==null&&v!==undefined&&iv.indexOf(v)===i;}).reduce(function(p,v){return p.then(function(){guard();return d.storage&&d.storage.delIfValue?d.storage.delIfValue(k,v,guard):false;});},Promise.resolve(true))
+        .then(function(v){try{guard();if(failedBefore&&shown==='fail')say('ok');}catch(_){}return v;});   /* 3.302 — 치운 초안의 실패 알약을 남기지 않는다(새 작업이 시작됐으면 그 작업이 말한다) */
     }
     return {write:write,ready:ready,pending:pending,observe:observe,clear:clear,snapshot:function(){var c=d.context();return {owner:c&&JSON.stringify(c.owner),seq:c&&c.seq,generation:c&&c.generation,needed:!!(c&&c.needed),blocked:!!(c&&c.blocked),pending:pending(),localDurable:!!(job&&job.ok&&same(job)),sourceSuspended:suspended(job,c),store:job&&job.store,failed:!!(job&&same(job)&&!job.ok&&!job.work&&!job.deferred),unsaved:!!(c&&c.needed),serverConfirmed:false};}};
   }

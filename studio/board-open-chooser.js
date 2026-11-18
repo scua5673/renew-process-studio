@@ -91,7 +91,7 @@
   /* 작업 보드 타일의 글 */
   function workMeta(info) {
     info = info || {};
-    if (info.draft) {   /* 3.299 — 보관함 자료를 고치다 둔 초안이 있으면 «이어서»는 그 자료다 */
+    if (info.draft) {   /* 3.317 — 보관함 자료를 고치다 둔 초안이 있으면 «이어서»는 그 자료다 */
       var f = info.draft.folder ? String(info.draft.folder).split('/').filter(Boolean).pop() : '';
       return { label: '이어서', name: info.draft.name || '보관함 작전판', meta: '보관함 · 저장 안 한 변경' + (f ? ' · ' + f : '') };
     }
@@ -252,7 +252,7 @@
     var ctx = el(doc, 'span', 'oc-tx'), cLbl = el(doc, 'span', 'oc-lbl', wm.label), cNm = el(doc, 'span', 'oc-nm', wm.name), cMt = el(doc, 'span', 'oc-mt', wm.meta); ctx.appendChild(cLbl); ctx.appendChild(cNm); ctx.appendChild(cMt); cont.appendChild(ctx);
     cont.onclick = function () { close(win); };
     tiles.appendChild(cont);
-    /* 3.299 — 보관함 자료를 고치다 둔 초안(기기)이 있으면 «이어서»는 그 자료로 돌아간다(board-vault-draft.js pending · restore) */
+    /* 3.317 — 보관함 자료를 고치다 둔 초안(기기)이 있으면 «이어서»는 그 자료로 돌아간다(board-vault-draft.js pending · restore) */
     try {
       var vd = win.__psVaultDraft;
       if (vd && typeof vd.pending === 'function') vd.pending().then(function (rec) {
