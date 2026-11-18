@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
-// 3.318 — 훈련 편집(body.editing)에서 도구 옵션 띠(#ps-df-opts)가 열린 채 알림이 뜨면 알림은 띠 위의 한 줄이다(합성 팀 fixture 에서만).
+// 3.319 — 훈련 편집(body.editing)에서 도구 옵션 띠(#ps-df-opts)가 열린 채 알림이 뜨면 알림은 띠 위의 한 줄이다(합성 팀 fixture 에서만).
 // 사용자 11/18 «구역 설정하는데 이렇게 떠»: 편집은 알림을 위쪽(top:16px!important)에 두고 board-popups 는 띠 위로 올리려 bottom 을 인라인 !important 로
 // 적어 위 · 아래가 함께 고정 → 알림이 운동장을 덮는 632px 상자가 됐다. 이제 올릴 땐 top:auto 도 같이 적고, 띠가 닫히면 둘 다 처음 값으로.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
-let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}console.log('board-toast-editing-3318 '+s);};
+let cur='';const step=s=>{cur=s;try{fx.setStep(s);}catch(_){}console.log('board-toast-editing-3319 '+s);};
 try{
   const {page}=await openApp(fx,size,{browsers});
   await page.waitForTimeout(1500);
@@ -39,6 +39,6 @@ try{
   step('closed');
   const c=await close();
   assert.deepEqual([c.on,c.top],[false,''],'띠가 닫히면 top 은 처음 값(없음)으로: '+JSON.stringify(c));
-  console.log(JSON.stringify({test:'board-toast-editing-3318',engine,size,passed:true,editing:e,board:b,closed:c}));
-}catch(e){console.error('board-toast-editing-3318 failed at '+cur);console.error(e);process.exitCode=1;}
+  console.log(JSON.stringify({test:'board-toast-editing-3319',engine,size,passed:true,editing:e,board:b,closed:c}));
+}catch(e){console.error('board-toast-editing-3319 failed at '+cur);console.error(e);process.exitCode=1;}
 finally{try{for(const b of Object.values(browsers))await b.close();}catch(_){}try{await fx.close();}catch(_){}}

@@ -52,7 +52,7 @@ test('가짜 창 — toast 를 감싸 띠가 보이면 알림을 그 위로, 띠
   assert.equal(P.install(win),null,'두 번 설치하지 않는다');
 });
 
-test('3.318 — 띠 위로 올릴 땐 top:auto 도 같이 적고, 내리면 둘 다 처음 값으로(훈련 편집의 위쪽 알림이 긴 상자로 늘어나지 않게)',()=>{
+test('3.319 — 띠 위로 올릴 땐 top:auto 도 같이 적고, 내리면 둘 다 처음 값으로(훈련 편집의 위쪽 알림이 긴 상자로 늘어나지 않게)',()=>{
   const opts={disp:'flex',top:585,obs:null};
   const toastEl={id:'cs-ftoast',style:{bottom:'84px',top:'',props:{},setProperty(k,v,p){this[k]=v;this.props[k]=p||'';}}};
   const byId={'ps-df-opts':{getBoundingClientRect:()=>({top:opts.top,width:300,height:50}),id:'ps-df-opts'},'cs-ftoast':toastEl};
