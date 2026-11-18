@@ -4,8 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {startFixture,openApp,OUT,SHOTS,WT,A} from '../fixtures/team-app.mjs';
 
-// Synthetic images reproduce a schedule whose screen copy exceeds the wire
-// limit. The server document and separately stored images remain small.
+// Synthetic images reproduce a schedule with 65 pictures. The server document
+// and separately stored images remain small. 3.315 — the device copy also keeps
+// only references (schedule-thumb-ref.js · sync-sched-blob.js): a picture is
+// inline on this device only between a local edit and its push.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',browsers={},faults={},fx=await startFixture(faults);
 const KEY='process_coach_v1',MATCH='cs_team_matches_v1';
 // Node's seed and the Seoul browser can be on different weeks. Normalization
@@ -80,7 +82,7 @@ try{
   const edit=await sf.evaluate(trainingAt,{KEY,slot,date,append:newImages.map((thumb,i)=>({id:'fixture-drill-'+(60+i),name:'가상 새 훈련 '+i,thumb}))});
   checkImages(check(edit.raw,'raw-edited',64),64);
   const sizes={before:edit.before,after:edit.after};
-  assert.ok(sizes.before<3500000&&sizes.after>3500000,JSON.stringify(sizes));
+  assert.ok(sizes.before<3500000&&sizes.after<3500000&&sizes.after-sizes.before>4*56000,'device copy holds references; only the four new pictures are inline until pushed '+JSON.stringify(sizes));
   const rounds=[];
   for(let i=0;i<3;i++)rounds.push(await page.evaluate(()=>PSSync.syncNow('fixture-large-schedule')));
   const status=await page.evaluate(()=>({ready:PSSync.keyReady('cs_team_matches_v1'),scheduleReady:PSSync.keyReady('process_coach_v1'),skipped:localStorage.getItem('ps_sync_skipped'),state:PSSync.state()}));
@@ -130,20 +132,21 @@ try{
   assert.ok(fx.db.get(WT+'|'+KEY).v.length<3500000);
   checkImages(savedBlocks,64,true);
   assert.notEqual(fx.db.get(WT+'|'+KEY).v,originalServer);
-  // If the image service is unavailable, the oversized fallback must never be
-  // uploaded or acknowledged. Keep the exact pending local edit for recovery.
+  // If the image service is unavailable the edit is still small (references +
+  // one inline picture): it is sent as the designed whole-document fallback and
+  // never as an oversized body. The exact local edit survives either way.
   const beforeFailure=fx.db.get(WT+'|'+KEY).v;
   faults.blobStatus=403;
   const pending=await sf.evaluate(trainingAt,{KEY,slot,date,append:[{id:'fixture-drill-64',name:'가상 보존할 훈련',thumb:image(64)}]});
   const pendingRaw=pending.raw;
   const failed=await page.evaluate(()=>PSSync.syncNow('fixture-blob-unavailable'));
-  assert.ok(failed.error||failed.skipped?.includes(KEY),JSON.stringify(failed));
-  assert.equal(fx.db.get(WT+'|'+KEY).v,beforeFailure,'oversized raw fallback never reaches the server');
+  assert.equal(failed.error,undefined,JSON.stringify(failed));
+  const after403=fx.db.get(WT+'|'+KEY).v;assert.notEqual(after403,beforeFailure);assert.ok(after403.length<3500000,'never an oversized body');
+  const srv403=check(after403,'server-after-403',65);checkImages(srv403.slice(0,64),64,true);assert.equal(srv403[64].thumb,image(64),'the one new picture travels inline while ps_blob is unavailable');
   checkImages(check(await page.evaluate(async KEY=>(await storage.get(KEY)).value,KEY),'pending-idb',65),65);
   const pendingBlocks=check(pendingRaw,'pending-exact-edit',65);
   checkImages(pendingBlocks,65);
   assert.equal(pendingBlocks[64].thumb,image(64));
-  check(fx.db.get(WT+'|'+KEY).v,'server-after-403',64);
   faults.blobStatus=0;
   const imagePulls=()=>fx.calls.filter(x=>x.p==='/rest/v1/ps_blob'&&x.m==='GET'&&new URLSearchParams(x.q).get('select')==='h,v').length;
   const readsBefore=imagePulls();
@@ -154,7 +157,7 @@ try{
   const reloadFrame=await (await page.waitForSelector('#fScout')).contentFrame();
   await reloadFrame.waitForFunction(()=>typeof matchLoad==='function'&&!matchDocPending());
   assert.equal(await reloadFrame.evaluate(()=>matchLoad().matches.find(m=>m.id==='fixture-review').reviewGood),'가상 리뷰 입력 저장 확인');
-  checkImages(check(fx.db.get(WT+'|'+KEY).v,'server-recovered',65),65,true);
+  checkImages(check(fx.db.get(WT+'|'+KEY).v,'server-recovered',65),65);   /* 64 references + the inline picture sent while ps_blob was unavailable */
   await reloadFrame.waitForFunction(slot=>{
     if(PSSchedule.raw()==null)return false;
     const matches=Object.values(JSON.parse(PSSchedule.raw()).weeks).flatMap(days=>days.flatMap(day=>(day.trainings||[]).filter(t=>t.slot===slot)));
@@ -164,7 +167,7 @@ try{
   checkImages(check(await page.evaluate(async KEY=>(await storage.get(KEY)).value,KEY),'idb-reloaded',65),65);
   assert.equal(imagePulls(),readsBefore,'cached images need no repeat download');
   assert.deepEqual(logs.filter(x=>x.type==='pageerror'),[]);
-  Object.assign(proof,{passed:true,sizes,rounds,status,reviewPreserved:true,pending403Preserved:true,exactImages:65,imageReadsBeforeReload:readsBefore,imageReadsAfterReload:imagePulls()});
+  Object.assign(proof,{passed:true,sizes,rounds,status,reviewPreserved:true,pending403Sent:true,exactImages:65,imageReadsBeforeReload:readsBefore,imageReadsAfterReload:imagePulls()});
   console.log('match-large-schedule OK',engine);
   await context.close();
 }catch(error){proof.error={name:error.name,message:error.message,stack:error.stack};throw error;

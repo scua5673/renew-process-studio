@@ -3023,17 +3023,13 @@ function bulkPush(){
 }
 
 /* ══ 2.622 · 일정 그림(thumb) 분리 전송 ═══════════════════════════════════════════
-   일정 문서 무게의 대부분이 thumb 였다(9/6).
-   설계 — **전송 경계에서만** 바꾼다. 기기 안(localStorage 거울·IDB·base·날짜 병합·해시)은 그림이 든 원래 모양 그대로.
-     보낼 때: "thumb":"<svg…>" → "thumb":"","thumbRef":"<해시>" 로 바꾸고 그림은 ps_blob(workspace_id,h,v) 행으로 한 번만 올린다(내용 주소).
-     받을 때: thumbRef 를 IDB 캐시(ps_blob:<h>)에서, 없으면 ps_blob 에서 묶어 받아 되돌린다.
-   ⚠ 바이트 정확 — 잘라낸 조각은 JSON 이스케이프된 문자열 그대로 저장·복원한다. 되돌린 문서가 원문과 같아야 base·해시·날짜 병합이 흔들리지 않는다.
-   ⚠ 옛 앱판은 그림 없는 문서를 받아 썸네일만 안 보이고, 저장하면 thumbRef 를 그대로 다시 올린다(손실 없음). 서버 검사(1644)는 잎 문자열을 안 본다.
-   ⚠ 서버에 ps_blob 이 없거나(404) 권한이 없으면(403·401) 이 세션에서 끄고 예전처럼 통째로 보낸다 — SQL·배포 순서에 안전. */
+   보낼 때 "thumb":"<svg…>" → "thumb":"","thumbRef":"<해시>", 그림은 ps_blob(workspace_id,h,v) 에 한 번만(내용 주소). 받을 때 IDB 캐시(ps_blob:<h>) → ps_blob 차례로 되돌린다(2.630 엠블럼도 · BLOB_KEYS 1).
+   3.315 — 일정(BLOB_KEYS 2)은 기기 사본도 참조만: 받을 때 그림은 캐시에만(schedHydrate keep), 화면은 schedule-thumb-ref.js 가 메모리에서 되돌리고 저장 때 다시 뗀다.
+     그림을 품은 옛 기기 사본(11/17 풋볼A 맥 8MB — 작은 저장소 가득)은 회차가 PSSchedBlob.diet 로 뗀 같은 문서로 바꾼다.
+   ⚠ 조각은 JSON 이스케이프된 그대로 저장·복원(바이트 정확) · 2.623 콜론 뒤 공백(\s*)도 보존(SQL jsonb::text 복구 문서). 옛 앱판은 썸네일만 안 보이고 저장하면 Ref 를 그대로 올린다(손실 없음).
+   ⚠ ps_blob 이 없거나(404) 권한이 없으면(403·401) 세션에서 끄고 통째 전송 — SQL·배포 순서에 안전. */
 var BLOB_MIN=512, BLOB_PREFIX='ps_blob:', BLOB_IN=40, BLOB_UP_BYTES=900000, blobOff=false;
-/* 2.623 — 콜론 뒤 공백(\s*)을 잡아 그대로 보존한다: 서버 SQL 복구(jsonb::text)로 쓴 문서는 `"thumb": "<svg…>"` 꼴이라 공백 없는 정규식이 0장을 잡았다 */
-/* 2.630 — 키를 넓힌다: thumb(작전판 SVG) + emblem(팀 엠블럼 data:). 옛 엠블럼 원본(최대 1.2M자)이 남은 팀이 있었다. 참조 키 이름은 «키+Ref»(thumbRef·emblemRef). 대상 키는 BLOB_KEYS. */
-var BLOB_KEYS={process_coach_v1:1,scout_tool_v1:1};
+var BLOB_KEYS={process_coach_v1:2,scout_tool_v1:1};
 var BLOB_RE_STRIP=/"(thumb|emblem)":(\s*)"((?:[^"\\]|\\.){512,})"/g;    /* JSON 문자열 내용(이스케이프 포함), 512자 이상만 */
 function blobHash(s){
   try{ if(window.crypto&&crypto.subtle&&window.TextEncoder){ return crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)).then(function(b){ var a=new Uint8Array(b),h=''; for(var i=0;i<12;i++)h+=('0'+a[i].toString(16)).slice(-2); return h; }); } }catch(_){}
@@ -3042,8 +3038,7 @@ function blobHash(s){
 function blobCacheGet(h){ if(!window.storage)return Promise.resolve(null); return window.storage.get(BLOB_PREFIX+h).then(function(r){return r&&typeof r.value==='string'?r.value:null;}).catch(function(){return null;}); }
 function blobCacheSet(h,v){ if(!window.storage)return Promise.resolve(); return window.storage.set(BLOB_PREFIX+h,v).catch(function(){}); }
 /* 문서에서 그림을 떼어 낸다 → {v:떼어 낸 문서, blobs:[{h,v}]}. 떼어 낼 게 없으면 원문 그대로. 두 번 적용해도 같다(멱등). */
-/* 2.903 — 분리 전 정리: 원본 그림(thumb·emblem, 512자 이상 = 이번에 떼어 낼 값) 옆에 옛 *Ref 가 남아 있으면 그 Ref 를 지운다.
-   남기면 떼어 낸 뒤 한 객체에 Ref 가 둘이 되어(schedRefParts 가 거부) 모든 기기에서 빈 그림이 된다. 그런 객체가 있을 때만 다시 직렬화한다(평소 문서는 바이트 그대로). */
+/* 2.903 — 떼어 낼 원본 그림 옆에 남은 옛 *Ref 를 지운다(남기면 Ref 둘 → schedRefParts 거부 → 모든 기기 빈 그림). 그런 객체가 있을 때만 다시 직렬화 */
 function schedDropStaleRefs(raw){
   raw=String(raw); if(raw.indexOf('Ref"')<0)return raw;
   var doc; try{ doc=JSON.parse(raw); }catch(_){ return raw; }
@@ -3078,8 +3073,7 @@ function schedRefParts(raw){
       end=t.index+1;next();
       fields.forEach(function(f,i){if(f.name==='thumb'||f.name==='emblem'||f.name==='thumbRef'||f.name==='emblemRef'){if(seen[f.name]===undefined)seen[f.name]=i;else seen[f.name]=-1;}});
       ['thumb','emblem'].forEach(function(name){var a=seen[name],b=seen[name+'Ref'],extra=[];if(a===undefined||b===undefined||a<0)return;
-        /* 2.903 — Ref 가 겹쳐도 빈 값 «바로 다음» Ref(schedStrip 이 만드는 모양)는 믿는다. 서버 jsonb 는 중복 키를 못 가지므로 겹침은 이 모양으로만 생긴다.
-           나머지(옛) Ref 는 복원 때 함께 지워, 이미 오염된 문서가 받는 순간 스스로 고쳐진다. 값 필드가 겹친 경우는 여전히 거부. */
+        /* 2.903 — Ref 가 겹쳐도 빈 값 «바로 다음» Ref(schedStrip 모양)는 믿고 나머지 옛 Ref 는 복원 때 지운다(값 필드가 겹치면 거부) */
         if(b<0){ if(!(fields[a+1]&&fields[a+1].name===name+'Ref'))return; b=a+1; fields.forEach(function(f,i){ if(f.name===name+'Ref'&&i!==b)extra.push(i); }); }
         var h=fields[b].value.text;
         if(fields[a].value.text===''&&typeof h==='string'&&/^[0-9a-f]{16,64}$/.test(h))parts.push({fields:fields,value:a,ref:b,h:h,extra:extra});});
@@ -3132,11 +3126,13 @@ function blobPrepRows(at,rows){
       return Promise.all(res.blobs.map(function(b){return blobCacheSet(b.h,b.v);})).then(function(){
         return blobEnsure(at,r.workspace_id,res.blobs).then(function(ok){ if(ok)r.v=res.v; });
       });
+    }).then(function(){   /* 3.315 — 이 기기에서 만든 참조의 그림(캐시에만 있다)을 서버에 */
+      if(BLOB_KEYS[r.k]>1&&typeof PSSchedBlob!=='undefined')return PSSchedBlob.ensure(at,r,{refs:schedRefs,get:blobCacheGet,ensure:blobEnsure,parts:schedRefParts,restore:schedRestore});
     });
   }); },Promise.resolve());
 }
-/* 받은 직후: thumbRef 를 그림으로 되돌린다. 못 받은 참조는 그대로 둔다(썸네일만 비고, 다음에 다시 받는다). */
-function schedHydrate(at,wid,raw){
+/* 받은 직후: thumbRef 를 그림으로 되돌린다(keep 이면 캐시만 채우고 원문 그대로). 못 받은 참조는 그대로 둔다(썸네일만 비고, 다음에 다시 받는다). */
+function schedHydrate(at,wid,raw,keep){
   var parts=schedRefParts(raw),seen={};parts.forEach(function(p){seen[p.h]=1;});var refs=Object.keys(seen); if(!refs.length)return Promise.resolve(raw);
   var map={};
   return Promise.all(refs.map(function(h){ return blobCacheGet(h).then(function(v){ if(v!=null)map[h]=v; }); })).then(function(){
@@ -3148,32 +3144,27 @@ function schedHydrate(at,wid,raw){
         .then(function(rows){ return Promise.all((rows||[]).map(function(x){ if(x&&typeof x.v==='string'){ map[x.h]=x.v; return blobCacheSet(x.h,x.v); } })); });
     }); },Promise.resolve());
   }).then(function(){
-    return schedRestore(raw,parts,map);
+    return keep?raw:schedRestore(raw,parts,map);
   });
 }
-/* 2.904 — 서버 이력(ps_kv_history) 원문은 전송 모양(그림이 "emblem":"","emblemRef":"<해시>" 로 빠진 문서)이다.
-   되돌리기로 로컬에 쓰기 전에 그림을 되돌린다 — 안 그러면 로고가 빈 채로 보이고 옛 Ref 가 기기 문서에 들어온다.
-   서버에서 못 받으면(오프라인·권한·오류) 이 기기 캐시로만 되돌리고, 그래도 없으면 원문 그대로(예전과 같은 동작). 거부하지 않는다.
-   BLOB_KEYS 가 아닌 키·참조 없는 문서는 바이트 그대로 돌려준다. */
+/* 2.904 — 이력(ps_kv_history) 원문은 전송 모양 — 되돌리기로 쓰기 전에 그림을 되돌린다(일정은 3.315 캐시만). 서버에서 못 받으면 캐시로만, 그래도 없으면 원문 그대로.
+   BLOB_KEYS 밖 · 참조 없는 문서는 바이트 그대로. */
 function histHydrate(k,raw,wid){
   if(!BLOB_KEYS[k]||typeof raw!=='string')return Promise.resolve(raw);
-  var parts=[]; try{ parts=schedRefParts(raw); }catch(_){}
+  var parts=[],keep=BLOB_KEYS[k]>1; try{ parts=schedRefParts(raw); }catch(_){}
   if(!parts.length)return Promise.resolve(raw);
-  function cacheOnly(e){ try{ syncDiagnostic('hist-hydrate',e); }catch(_){} return schedHydrate(null,wid,raw); }
+  function cacheOnly(e){ try{ syncDiagnostic('hist-hydrate',e); }catch(_){} return schedHydrate(null,wid,raw,keep); }
   return Promise.resolve().then(function(){ return ensureToken(); }).catch(function(){ return null; }).then(function(at){
-    return at?schedHydrate(at,wid,raw).catch(cacheOnly):schedHydrate(null,wid,raw);
+    return at?schedHydrate(at,wid,raw,keep).catch(cacheOnly):schedHydrate(null,wid,raw,keep);
   }).then(function(out){
     if(typeof out!=='string'||!out||out===raw)return raw;
     try{ JSON.parse(out); }catch(_){ return raw; }   /* 되돌린 문서가 JSON 이 아니면 원문 */
     return out;
   },function(){ return raw; });
 }
-/* ══ 2.727 · 보관함 사진 분리(사용자 «갑시다», 백엔드 점검 2026-09-09) ═══════════════════════════════════════
-   data:image 든 행이 ps_library 의 절반이었다.
-   일정 그림(2.622)과 같은 방식: 올리기 직전 항목 JSON 안의 «값 전체가 data:image…base64» 인 문자열(512자 이상, 1.9MB 이하)을 ps_blob(내용 주소)로
-   떼어 내고 자리에 "psblob:<해시>" 를 남긴다. 받을 때 캐시(IDB ps_blob:<h>) → 서버 순으로 되돌린다. 기기 안 보관함 모양은 그대로다.
-   정규식은 JSON 값 시작(:·[·, 뒤)만 잡는다 — 썸네일 SVG 문자열 «안»의 href=\"data:image…\" 는 앞이 \ 라 안 잡힌다(잡으면 SVG 를 삼킨다).
-   ⚠ 옛 앱판은 psblob: 문자열을 받아 그 사진만 안 보인다(썸네일과 같은 손실 없는 퇴행, 새 판으로 열면 돌아온다). ps_blob 이 없거나 막히면(blobOff) 통째 전송. */
+/* ══ 2.727 · 보관함 사진 분리(사용자 «갑시다», 2026-09-09 — data:image 행이 ps_library 의 절반) ═══════════
+   2.622 와 같은 방식: 올리기 직전 «값 전체가 data:image…base64»(512자~1.9MB)를 ps_blob 로 떼고 자리에 "psblob:<해시>". 받을 때 캐시 → 서버. 기기 안 보관함 모양은 그대로.
+   정규식은 JSON 값 시작(:·[·, 뒤)만 — SVG «안»의 href=\"data:image…\" 는 앞이 \ 라 안 잡힌다. 옛 앱판은 그 사진만 안 보인다(손실 없음). blobOff 면 통째 전송. */
 var LIB_BLOB_RE_STRIP=/([:\[,]\s*)"(data:image\/[\w.+-]+;base64,[A-Za-z0-9+\/=]{512,})"/g;
 var LIB_BLOB_RE_REF=/"psblob:([0-9a-f]{16,64})"/g;
 var LIB_BLOB_MAX=1900000;   /* ps_blob v 상한 2,000,000 — 그보다 큰 사진은 그냥 둔다 */
@@ -3293,22 +3284,16 @@ function kvPullValues(at,wid,keys,valueRound){
       .then(function(rows){
         try{syncValueObserve(valueRound,wid,rows,ch,'pull');}catch(_){}
         return Promise.all((rows||[]).map(function(r0){
-        /* 2.622 — 일정 행은 그림 참조를 되돌린 뒤에 엔진에 준다(엔진 안은 늘 그림이 든 모양) */
-        if(r0&&BLOB_KEYS[r0.k]&&typeof r0.v==='string'&&/"(?:thumb|emblem)Ref"\s*:/.test(r0.v)){ return schedHydrate(at,wid,r0.v).then(function(v){ r0.v=v; out.push(r0); }); }
+        /* 2.622 — 그림 참조를 되돌린 뒤 엔진에(3.315 일정은 캐시만 채우고 참조 그대로) */
+        if(r0&&BLOB_KEYS[r0.k]&&typeof r0.v==='string'&&/"(?:thumb|emblem)Ref"\s*:/.test(r0.v)){ return schedHydrate(at,wid,r0.v,BLOB_KEYS[r0.k]>1).then(function(v){ r0.v=v; out.push(r0); }); }
         out.push(r0);
       })); });
   }); },Promise.resolve()).then(function(){ return out; });
 }
 /* 청크 하나가 올라갈 때마다 onOk(그 청크)를 부른다 — 중간에 실패하면 **올라간 것만** 기록한다.
    전부 성공한 뒤에 한꺼번에 적으면, 실패한 회차가 "올렸다"고 거짓으로 남는다(추적이 안 된다). */
-/* ══ 1.633 · 누가 마지막으로 고쳤나 ══════════════════════════════════════════
-   서버 ps_kv.updated_by(supabase-updated-by.sql)를 함께 받아 화면에 "○○ 코치 · 2분 전"
-   을 보여준다. 시각은 따로 안 받는다 — cupd 가 이미 그 값이고 이미 받고 있다.
-
-   ⚠ 컬럼이 없는 서버(=SQL 미설치)에서 select 에 updated_by 를 넣으면 **400 이 나고
-     동기화 전체가 멈춘다.** 그건 '이름이 안 보인다'가 아니라 '팀 백업이 멈춘다'다.
-     그래서 한 번 실패하면 끄고 예전 질의로 되돌아간다 — 보관함이 private 컬럼에
-     쓰는 방법과 같다(libPullList). 다시 켜는 건 새로고침 때. */
+/* ══ 1.633 · 누가 마지막으로 고쳤나 — ps_kv.updated_by(supabase-updated-by.sql)를 함께 받아 "○○ 코치 · 2분 전"(시각은 cupd).
+   ⚠ 컬럼 없는 서버(SQL 미설치)에서 select 에 넣으면 400 → 동기화 전체가 멈춘다. 한 번 실패하면 끄고 예전 질의로(libPullList 와 같음). 다시 켜는 건 새로고침 때. */
 var kvWho=true;
 function kvMetaFetch(at,wid){
   var cols=kvWho?'k,cupd,updated_by':'k,cupd';
@@ -6710,7 +6695,8 @@ function syncNowCore(reason){
       return permsPrime().then(kvPreload).then(function(idbVals){ return [metaRows||[],idbVals]; }); })
       .then(function(pre){
       var metaRows=pre[0], idbVals=pre[1];
-      var m0=meta(), needV=[],metaKeys={};
+      var m0=meta(), needV=[],metaKeys={},dietSrc=null;
+      try{var sl=localStorage.getItem(SCHEDULE_KEY);if(sl==null)sl=idbVals[SCHEDULE_KEY];if(typeof PSSchedBlob!=='undefined'&&PSSchedBlob.inline(sl))dietSrc=sl;}catch(e){dietSrc=null;}   /* 3.315 그림을 품은 옛 일정 사본 */
       metaRows.forEach(function(r0){if(r0&&r0.k)metaKeys[r0.k]=1;});
       lastServerKeys={wid:wid,at:Date.now(),keys:metaKeys};   /* 2.916 — «서버에 아예 없는 문서»와 «못 받은 문서»를 가르려고(IDP 선수 문서) */
       /* 2.750 — 전체 메타 목록에 없는 일정도 키를 직접 조회한다.
@@ -6766,7 +6752,7 @@ function syncNowCore(reason){
           var effectiveLoc=(mirrorLoc!=null?mirrorLoc:idbLoc);
           var split=(mirrorLoc!=null&&idbLoc!=null&&mirrorLoc!==idbLoc);
           var sameSrv=(r0.cupd===(m0.c[k]||0));
-          if(!keyReady(k,wid)||!sameSrv||mirrorLoc==null||idbLoc==null||split){ needV.push(k); return; }
+          if(!keyReady(k,wid)||!sameSrv||mirrorLoc==null||idbLoc==null||split||dietSrc===effectiveLoc){ needV.push(k); return; }   /* 3.315 다이어트는 서버 원문과 같을 때만 */
           if(hash(effectiveLoc)!==(m0.h[k]||'')){
             /* 2.607 — 편집 중(로컬 dirty)에 서버 cupd 가 지난 확정과 같으면 서버 원문 = 마지막 확정 base(1.658, IDB). 그 base 의 hash 가
                확정 hash(m.h) 와 같을 때만 base 를 서버 원문으로 쓰고 다시 받지 않는다(가드는 수락 시 v 를 고쳐 쓰지 않는다 — lineage-guard 확인).
@@ -6810,19 +6796,20 @@ function syncNowCore(reason){
            cupd가 같아도 v를 생략하면 CAS rebase를 시작할 수 없어 영구 대기가 된다. */
         else if(importApproved(k,loc)) needV.push(k);
       });
-      return kvPullValues(at,wid,needV,valueRound).then(function(full){
-        var fv={}; (full||[]).forEach(function(r0){ fv[r0.k]=r0; });
+      return Promise.all([kvPullValues(at,wid,needV,valueRound),dietSrc?PSSchedBlob.diet(dietSrc,schedStrip,blobCacheSet):null]).then(function(fp){
+        var full=fp[0],fv={}; (full||[]).forEach(function(r0){ fv[r0.k]=r0; });
         /* meta 조회 뒤 해당 행이 지워지면 full 조회에서 빠질 수 있다.
            그때 meta-only 행을 원문으로 오해하지 않도록 요청 여부를 다음 단계에 건네준다. */
         var complete=metaRows.map(function(r0){ return fv[r0.k]||r0; });
         needV.forEach(function(k){if(!metaKeys[k]&&fv[k]){complete.push(fv[k]);metaKeys[k]=1;}});
-        return [complete,idbVals,needV.indexOf(MATCH_KEY)>=0,needV.indexOf(SCHEDULE_KEY)>=0,needV.indexOf(SCOUT_KEY)>=0];
+        return [complete,idbVals,needV.indexOf(MATCH_KEY)>=0,needV.indexOf(SCHEDULE_KEY)>=0,needV.indexOf(SCOUT_KEY)>=0,fp[1]];
       });
     }).then(function(pair){
       var rows=pair[0], idbVals=pair[1];
       var matchFullRequested=!!pair[2];
       var scheduleFullRequested=!!pair[3];
       var scoutFullRequested=!!pair[4];
+      var scheduleDiet=pair[5]||null;   /* 3.315 {from:옛 사본, v:참조만 남긴 같은 문서} */
       var srv={}; (rows||[]).forEach(function(r0){ srv[r0.k]=r0; });
       var libraryRoundStarted=false;   /* 3.056 — 이 회차가 보관함 단계에 들어갔나(실패 뒤 보관함만 따로 돌릴지 판정) */
       var m=meta(), pushRows=[], teamPushCandidates={},confirmedPushKeys={}, idpBaseNext={},idpPushCandidate={},idpPushConfirmed={},idpLocalStage={},idpCommitDone=false, applied=0, skippedBig=0, skippedKeys=[], heldKeys=itemsStaleAPI().keys(), dependencyDeferredKeys=[], permDeniedKeys=[], now=Date.now(), writes=[], itemsApplied=0,itemsObservedChanged=false,matchReadyBlocked=false;
@@ -7223,6 +7210,11 @@ function syncNowCore(reason){
             applied++;scheduleAppliedPlanned++;m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);syncBaseSet(k,row.v);
           }
           importApprovalClear(k);
+          return;
+        }
+        /* 3.315 — 그림을 품은 옛 기기 사본 → 참조만 남긴 같은 문서(PSSchedBlob.diet) = 서버 원문일 때만(준비표가 그 원문으로 확인된다). 편집이 없을 때, 판본 그대로 */
+        if(k===SCHEDULE_KEY&&scheduleDiet&&row&&typeof row.v==='string'&&row.v===scheduleDiet.v&&loc===scheduleDiet.from&&!dirty&&!scheduleHeld()){
+          if(roundKvWrite(k,row.v,writes,loc,scheduleGuard)){applied++;scheduleAppliedPlanned++;m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);syncBaseSet(k,row.v);}
           return;
         }
         if(loc==null&&row){ if(roundKvWrite(k,row.v,writes,loc,k===SCHEDULE_KEY?scheduleGuard:null)){ applied++;if(k===SCHEDULE_KEY)scheduleAppliedPlanned++; m.h[k]=hash(row.v); m.c[k]=row.cupd; nSet(m,k,row.v); syncBaseSet(k,row.v); } return; }
@@ -11115,7 +11107,8 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
   rt:{connected:rtConnected,connect:rtConnect,last:function(){return rtLast;},hits:function(){return rtHits;}},   /* 2.628 실시간 */
   merge:{notes:mergeNoteList,revert:mergeNoteRevert,dismiss:mergeNoteDismiss},   /* 2.629 항목 단위 병합 알림 */
   bulk:{pull:bulkPull,push:bulkPush,keys:bulkKeys,guard:bulkGuard},   /* 2.352 — 팀 자료 통째로 가져오기/올리기 */
-  /* 2.622 — 서버에서 받은 일정 원문(시점 복구 등)의 그림 참조를 되돌린다. 못 되돌리면 원문 그대로 */
-  blob:{hydrate:function(raw){ return ensureToken().then(function(at){ return schedHydrate(at,activeWs(),String(raw||'')); }).catch(function(){ return raw; }); }, strip:schedStrip, refs:schedRefs, off:function(){return blobOff;}}};
+  /* 2.622 — 서버 원문(시점 복구)의 그림 참조 되돌리기 — 3.315 일정(thumbRef)은 캐시만 채우고 원문 그대로 · fetch/hash 는 schedule-thumb-ref.js 가 쓴다 */
+  blob:{hydrate:function(raw){ raw=String(raw||''); return ensureToken().then(function(at){ return schedHydrate(at,activeWs(),raw,/"thumbRef"\s*:/.test(raw)); }).catch(function(){ return raw; }); },
+    fetch:function(hs){ return ensureToken().then(function(at){ return blobFetchMap(at,activeWs(),hs); }).catch(function(){ return {}; }); }, hash:blobHash, strip:schedStrip, refs:schedRefs, off:function(){return blobOff;}}};
 syncObservationStart();
 })();

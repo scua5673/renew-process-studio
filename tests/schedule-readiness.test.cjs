@@ -284,3 +284,33 @@ test('another server writer wins the CAS race over automatic anchor normalizatio
  h.hooks.fetch=stage=>{if(stage==='kv_push_cas')h.server.set(KEY,{workspace_id:'team-a',k:KEY,v:fresh,cupd:99});};
  const result=await h.run();assert.ok(result.error);assert.equal(h.server.get(KEY).v,fresh);assert.equal(h.ready(),false);
 });
+
+/* 3.315 — 그림을 품은 옛 기기 사본(2.622 이전 모양 · 8MB)은 회차가 참조만 남긴 같은 문서로 바꾼다(PSSchedBlob.diet). 편집도 서버 변경도 없을 때만, 판본 그대로 */
+const PSSchedBlob=require('../studio/sync-sched-blob.js');
+const THUMB='<svg viewBox="0 0 10 10">'+'<circle r="1"/>'.repeat(60)+'</svg>',REF='0123456789abcdef01234567';
+const docThumb=(label='server')=>JSON.stringify({anchorMonday:'2026-09-07',weeks:{0:Array.from({length:7},(_,i)=>({trainings:i===1?[{id:label,title:label,thumb:THUMB}]:[]}))}});
+const stripped=raw=>raw.split(JSON.stringify(THUMB)).join('"","thumbRef":"'+REF+'"');
+function dietHarness(opt){
+  PSSchedBlob.reset();
+  const h=harness(opt);h.c.PSSchedBlob=PSSchedBlob;h.c.schedHydrate=async(_at,_wid,raw)=>raw;   /* 받은 행의 그림 참조 — 이 harness 는 캐시만 흉내 낸다 */
+  h.hooks.strip=raw=>raw.includes(JSON.stringify(THUMB).slice(1,-1))?{v:stripped(raw),blobs:[{h:REF,v:THUMB}]}:{v:raw,blobs:[]};
+  return h;
+}
+test('a confirmed hydrated device copy is replaced by its stripped form without a push and stays ready',async()=>{
+  const hyd=docThumb(),h=dietHarness({server:stripped(hyd),mirror:hyd,idb:hyd});h.baseline(hyd);
+  const result=await h.run();assert.equal(result.error,undefined,JSON.stringify(result));
+  assert.equal(h.local.get(KEY),stripped(hyd));assert.equal(h.idb.get(KEY),stripped(hyd));
+  assert.equal(h.c.meta().h[KEY],h.c.hash(stripped(hyd)));assert.equal(h.base.get(KEY),stripped(hyd));
+  assert.equal(h.requests.some(r=>r.stage.startsWith('kv_push')),false,'서버에는 올리지 않는다');assert.equal(h.ready(),true);
+  assert.equal(h.read().weeks[0][1].trainings[0].thumbRef,REF);
+  const again=await h.run();assert.equal(again.error,undefined);assert.equal(h.local.get(KEY),stripped(hyd));
+});
+test('a hydrated copy is left alone while an editor holds the schedule, and when local edits are unsent it is pushed first and stripped on the next round',async()=>{
+  const hyd=docThumb(),held=dietHarness({server:stripped(hyd),mirror:hyd,idb:hyd});held.baseline(hyd);held.hold(true);
+  assert.equal((await held.run()).error,undefined);assert.equal(held.local.get(KEY),hyd);assert.equal(held.idb.get(KEY),hyd);
+  const edited=docThumb('edited'),h=dietHarness({server:stripped(hyd),mirror:edited,idb:edited});h.baseline(hyd);
+  assert.equal((await h.run()).error,undefined);
+  assert.ok(h.requests.some(r=>r.stage.startsWith('kv_push')),'편집은 먼저 올라간다');const sent=JSON.parse(h.server.get(KEY).v).weeks[0][1].trainings[0];assert.equal(sent.thumb,'');assert.equal(sent.thumbRef,REF);
+  const after1=h.local.get(KEY);assert.ok(after1.includes(JSON.stringify(THUMB).slice(1,-1)),'이 회차의 기기 사본은 그림을 품은 채');
+  assert.equal((await h.run()).error,undefined);assert.equal(h.local.get(KEY),stripped(after1));assert.equal(h.idb.get(KEY),stripped(after1));assert.equal(h.ready(),true);
+});
