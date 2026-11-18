@@ -1,4 +1,4 @@
-/* 3.325 — 일정 줄의 ▶ 가 작전판(보관함 type:"board")이면 보기 전용 슬라이드쇼로 연다(제보 5d215b74 · 10/20 bf084b34 에 한 약속).
+/* 3.329 — 일정 줄의 ▶ 가 작전판(보관함 type:"board")이면 보기 전용 슬라이드쇼로 연다(제보 5d215b74 · 10/20 bf084b34 에 한 약속).
    일정(process.html)은 훈련 ▶ 와 같은 문(openDrillEditor · readonly · play · reason 'anim')을 두드리고, 셸은 그대로 `__openScheduleDrillView` 를 부른다.
    그 첫 줄이 여기(route)를 묻는다 — 보관함에서 자료를 찾아 작전판이면 맡고, 훈련 · 세트피스 · 못 찾음은 예전 길(openLibDrawEditor)로 돌려보낸다.
    여는 길은 3.031 경기 준비 «▶ 슬라이드쇼»와 같다: 페이지를 장으로(장면 그대로 — `__meetSlidesFromBoard`) 한 **보기 전용 미팅**.

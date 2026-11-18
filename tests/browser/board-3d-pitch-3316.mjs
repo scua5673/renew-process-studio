@@ -18,6 +18,7 @@ try{
   /* 피치를 고르고 경기장 그림(서명에 pk.sig)이 그 모습으로 안정될 때까지 기다린 뒤 그림을 푼다 */
   const look=(pick)=>f.evaluate(async (pick)=>{
     const s=captureSnap();s.players=[];s.equipment=[];s.drawings=[];s.gridType='off';s.pitchView='full';s.pitchSpec='fifa';s.orientation='h';s.spFlip=false;loadSnap(s);
+    window.__setGrassM(5);   /* 3.326 — 3D 도 «잔디 무늬»를 따른다(기본 없음 = 한 색) — 두 색을 보려고 띠 */
     window.__setPitchN(1);window.__setTilt(true,{quiet:true});window.__setTilt3dOpt('cam','high');window.__setTilt3dOpt('deco','full');window.__setTilt3dOpt('mood','night');
     if(pick.custom){ try{window.__clearPitchImg();}catch(_){} const inp=document.getElementById('pitchColPick'); inp.value=pick.custom; inp.dispatchEvent(new Event('input',{bubbles:true})); }
     else { const b=document.querySelector('#pitchSeg button[data-p="'+pick.p+'"]'); window.__psUserClick=1; try{b.click();}finally{window.__psUserClick=0;} }

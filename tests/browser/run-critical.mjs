@@ -34,7 +34,7 @@ suites.idp.push('squad-group-change');
 suites.idp.push('avail-held-row-3281');suites.idp.push('items-stale-held');suites.idp.push('avail-table-3308');   /* 3.295 — 보관된 선수 행(journal + 기기 묶음 영수증)은 새 판 적용 · 화면 떠나기 전 저장 확인을 막지 않는다(held) · 알약 «일부 변경 보관» · 고르면 풀림 */   /* 3.281 — 보관된 선수 행(sq:<id>)이 있는 기기에서 가용인원 기록: 통짜 문서만 기다려 기록 · 보관 그대로 · 멈추면 까닭과 가는 길(e6fc5d26 · de2e508c) */
 suites.records.push('training-toolbar-layout');
 suites.records.push('schedule-thumb-ref-3315');
-suites.records.push('sched-board-play-3325');   /* 3.325 — 일정에 가져온 작전판 줄의 ▶ → 보기 전용 슬라이드쇼(그 페이지부터 · 재생) → 닫으면 일정 · 보관함 · 작업 보드 그대로 */   /* 3.315 — 일정 사본의 그림은 참조만(화면 · 저장 · 새로고침 · 옛 사본 다이어트) */
+suites.records.push('sched-board-play-3329');   /* 3.329 — 일정에 가져온 작전판 줄의 ▶ → 보기 전용 슬라이드쇼(그 페이지부터 · 재생) → 닫으면 일정 · 보관함 · 작업 보드 그대로 */   /* 3.315 — 일정 사본의 그림은 참조만(화면 · 저장 · 새로고침 · 옛 사본 다이어트) */
 suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
 suites.board2.push('meeting-slide-transition');   /* 3.256 — 미팅 슬라이드 넘김: 같은 팀 · 번호만 잇기 · 넘기는 중 저장 막기 */
 suites.board.push('board-flat-turf-3263');   /* 3.263 — 평면 잔디: 잎결 · 실사 잔디 줄 약 4m · 가로 · 세로 · 운동장 카드마다(board2 웹킷은 20분 한도에 닿아 board 로) */
@@ -49,6 +49,7 @@ suites.selection.push('training-grid-snap-3302');   /* 3.302 — 훈련 편집�
 suites.board.push('anim-token-over-handle-3302');   /* 3.302 — 장면 사이에 조금 움직인 선수: 곡선 손잡이가 덮어도 토큰이 잡혀 끌린다 · 긴 동선의 손잡이는 그대로 */
 suites.selection.push('board-motion-marks-3302');   /* 3.302 — 잔상은 가늘어지는 꼬리 하나 · «시야» 단추가 끔 → 방향 표식 → 시야 → 끔 · 뒤 장면까지 · 재생 · 내보내기 */
 suites.selection.push('board-grass-natural-3303');
+suites.selection.push('board-mow-3326');   /* 3.326 — 잔디 무늬 여덟 칸 · 평면과 3D 가 같은 값 · «없음»이면 3D 도 줄 없이 */
 suites.selection.push('board-toast-editing-3319');   /* 3.319 — 훈련 편집에서 도구 옵션 띠가 열린 채 뜬 알림은 띠 위 한 줄(위 · 아래 고정으로 늘어난 632px 상자 아님) */
 suites.selection.push('board-3d-pitch-3316');   /* 3.316 — 3D 잔디 색은 평면 피치(네이비 · 화이트 · 딥그린 · 직접 색 · 실사 + 밝기/연하기)를 따른다 */   /* 3.303 — 3D «잔디만 · 간단»: 바닥은 잔디 한 장(판 테두리 안팎 밝기 같음 · 조명 기둥 · 따로 칠한 어둠 없음 · 멀수록 어둡게) · 전체 경기장 · 그리드 판은 그대로 */
 suites.selection.push('board-tv-clean-3304');   /* 3.304 — 장면 줄은 번호 칩(그림 없음 · 그림을 만들지 않음) · 보관함 «전체화면»은 위쪽 띠(페이지 탭 · 보기 옵션)를 걷고 ‹ n / m › 가 도크를 덮지 않는다 */

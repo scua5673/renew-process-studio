@@ -63,13 +63,15 @@ test('작전판 배선 — 카드 · 규격 · 잎결 판이 그림 서명에, �
   assert.match(b,/let cards=\[\];   \/\* 3\.255/);
   assert.match(b,/cards=rs; if\(rs\.length\)\{/);
   assert.match(b,/turf\?1:0,cards\.join\(';'\),sp\.len,PSStadiumGround\.GRAIN_V,deco,ad,md\.key,brand\?1:0,tcol,bleed\?1:0\]\.join\('\|'\);/);
-  assert.match(b,/const mow=PSStadiumGround\.mowPlan\(\{multi:multi,cards:cards,len:sp\.len,L:L,T:T,m:m,pw:PW,f:f\}\),grain=!!PSStadiumGround\.grainTile\(\),per=mow\.per;/);
+  assert.match(b,/const mow=PSStadiumGround\.mowPlan\(\{multi:multi,cards:cards,len:sp\.len,L:L,T:T,m:m,pw:PW,ph:PH,f:f\}\),grain=!!PSStadiumGround\.grainTile\(\),per=mow\.per;/,'3.326 — 폭(ph)은 바둑판 · 원 · 5레인이 쓴다');
   assert.match(b,/<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'\+f\(L\)\+'" y="'\+f\(T\)\+'" width="'\+f\(per\)\+'" height="'\+f\(per\)\+'"><image href="'\+turf\+'" width="'\+f\(per\)\+'" height="'\+f\(per\)\+'"/,'잔디 사진 칸 = 깎은 줄 한 쌍(3.263)');
   assert.doesNotMatch(b,/f\(10\*m\)/,'10m 칸은 남지 않는다');
   assert.match(b,/\+mow\.defs\+PSStadiumGround\.grainDefs\(\{m:m,L:L,T:T,f:f,rot:mow\.rot\}\)/);
   assert.match(b,/fill="url\(#psStMow\)"\/>'   \/\* 잔디결\(5m\)을 중계 화면처럼 또렷하게 \*\/\n      \+mow\.cards\+\(grain\?'<path d="'\+rr\(0\)\+'" fill="url\(#psStGrain\)"\/>':''\)/);
   assert.match(b,/if\(ground\)o\+=PSStadiumGround\.paint\(ground,turf,md,grain\);/);
   assert.doesNotMatch(b,/id="psStMow" patternUnits="userSpaceOnUse" x="'\+f\(L\)/,'psStMow 는 모듈 한 곳에서');
-  assert.match(b,/\+\(multi\?'':'<rect width="'\+f\(per\/2\)\+'" height="'\+f\(per\)\+'" fill="'\+pk\.gb\+'"\/>'\)/,'사진 없는 기기의 x 줄은 운동장 하나에서만(3.316 — 색은 피치 pk)');
+  assert.match(b,/:mow\.grass\(pk\.ga,pk\.gb\)\)/,'사진 없는 기기의 x 줄은 운동장 하나에서만(3.316 — 색은 피치 pk · 3.326 무늬는 mowPlan)');
+  const one=G.mowPlan({multi:false,L:30,T:30,m:10,len:105,pw:1050,kind:'band'}).grass('#111111','#222222'),many=G.mowPlan({multi:true,cards:[[0,0,300,450]],len:105,L:0,T:0,m:4,kind:'band'}).grass('#111111','#222222');
+  assert.ok(one.includes('fill="#222222"')&&!many.includes('#222222'),'두 색 줄은 운동장 하나에서만');
   assert.ok(read('tests/browser/run-critical.mjs').includes("'board-grass-mow-3255'"));
 });

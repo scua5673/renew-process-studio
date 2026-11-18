@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import {startFixture,openApp,SIZES,SHOTS} from '../fixtures/team-app.mjs';
-// 3.325 — 일정에 가져온 작전판(보관함 type:"board")도 ▶ (제보 5d215b74 «만들어 둔 작전판을 새 일정에» · 10/20 bf084b34 의 약속).
+// 3.329 — 일정에 가져온 작전판(보관함 type:"board")도 ▶ (제보 5d215b74 «만들어 둔 작전판을 새 일정에» · 10/20 bf084b34 의 약속).
 // 합성 팀(셸 전체)에서: 보관함에 3페이지 작전판(장면 4 · 3 · 1)을 두고 → 일정 › 세션 채우기 › «보관함에서 가져오기»를 실제로 눌러 넣고 →
 // 페이지 줄 셋 · ▶ 둘(장면 둘 이상인 페이지만) → «페이지 2» ▶ → 작전판이 보기 전용 슬라이드쇼로 그 페이지부터 →
 // «발표 종료» → 보기가 닫히고 셸은 일정으로. 보관함 원본 · 작업 보드는 그대로(쓰기 없음). 실제 서버는 건드리지 않는다.
@@ -110,7 +110,7 @@ try{
   out.passed=true;
   console.log(JSON.stringify(out));
 }catch(e){
-  console.error('[sched-board-play-3325] failure',JSON.stringify(out));console.error(e);process.exitCode=1;
+  console.error('[sched-board-play-3329] failure',JSON.stringify(out));console.error(e);process.exitCode=1;
 }finally{
   for(const b of Object.values(browsers))await b.close().catch(()=>{});
   await fx.close();

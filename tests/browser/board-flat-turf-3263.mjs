@@ -18,7 +18,7 @@ try{
   const f=await (await page.waitForSelector('#fBoard')).contentFrame();
   await f.waitForFunction(()=>typeof renderTokens==='function'&&window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&boardPrivateCurrent(_boardPrivateOwner)&&window.PSFlatTurf&&window.__psFlatTurf,null,{timeout:30000});
   await page.waitForTimeout(600);
-  const set=(look,n,o,spec)=>f.evaluate(async([look,n,o,spec])=>{const s=captureSnap();Object.assign(s,look);s.orientation=o||'h';s.spFlip=false;s.pitchView='full';s.pitchSpec=spec||'fifa';s.players=[];s.drawings=[];loadSnap(s);window.__setPitchN(n);
+  const set=(look,n,o,spec)=>f.evaluate(async([look,n,o,spec])=>{const s=captureSnap();Object.assign(s,look);s.orientation=o||'h';s.spFlip=false;s.pitchView='full';s.pitchSpec=spec||'fifa';s.players=[];s.drawings=[];loadSnap(s);window.__setGrassM(look.grassM||0);window.__setPitchN(n);
     if(n>1){const t0=Date.now();while(Date.now()-t0<8000&&document.querySelectorAll('#ps-multipitch [data-pitch-rect]').length!==n)await new Promise(r=>setTimeout(r,100));}
     await new Promise(r=>setTimeout(r,300));},[look,n,o,spec]);
   const st=()=>f.evaluate(async()=>{
@@ -39,7 +39,7 @@ try{
 
   for(const o of ['h','v']){
     step('real-'+o);
-    await set({pitchTheme:'grass',pitchImg:'@real'},1,o);
+    await set({pitchTheme:'grass',pitchImg:'@real',grassM:5},1,o);   /* 3.326 — 무늬 «띠»(기본 «없음»은 줄 없이) */
     const r=await st(),per=2*r.pr.PW/27;
     assert.ok(r.tile,'실사 잔디 사진');near(r.tile.w,per,'사진 칸 = 깎은 줄 한 쌍');near(r.tile.iw,per,'사진 크기');assert.equal(r.tile.t,null,'가로 · 세로 모두 돌리지 않는다('+o+')');
     near(r.tile.x,r.pr.L,'골라인에서');
@@ -49,20 +49,20 @@ try{
     assert.equal(r.grain,null,'실사 잔디엔 잎결 없음');
   }
   step('real-u12');
-  await set({pitchTheme:'grass',pitchImg:'@real'},1,'v','u12');
+  await set({pitchTheme:'grass',pitchImg:'@real',grassM:5},1,'v','u12');
   let r=await st();near(r.single.x,r.pr.L,'8인제 실제 골라인');near(r.single.w,2*r.pr.PW/17,'8인제 17개 띠');near(r.tile.w,2*r.pr.PW/17,'사진 칸도');
 
   for(const o of ['h','v']){
     step('five-'+o);
-    await set({pitchTheme:'grass',pitchImg:'@real'},5,o);
+    await set({pitchTheme:'grass',pitchImg:'@real',grassM:5},5,o);
     r=await st();
     assert.equal(r.cards.length,5,'카드 다섯');assert.equal(r.mow.length,5,'카드마다 깎은 줄');assert.equal(r.single,null,'운동장 하나 무늬는 없다');
     assert.equal(r.tile.t,'rotate(90 '+r.tile.x+' '+r.tile.y+')','사진은 카드의 골라인과 나란히(90°)');
-    r.cards.forEach((c,i)=>{const p=r.cardPats[i];assert.ok(p,'카드 '+i);near(p.x,c[0],'카드 x');near(p.y,c[1],'카드 위 골라인에서');near(p.w,2*c[3]/27,'카드마다 27개 띠');assert.equal(p.t,'rotate(90 '+p.x+' '+p.y+')');});
+    r.cards.forEach((c,i)=>{const p=r.cardPats[i];assert.ok(p,'카드 '+i);near(p.x,c[0],'카드 x');near(p.y,c[1],'카드 위 골라인에서');near(p.w,2*c[3]/27,'카드마다 27개 띠');assert.equal(p.t,null,'3.326 — 카드 띠는 3D 카드와 같은 글자(띠가 y 로 — 돌리지 않는다)');});
   }
 
   step('3d');
-  await set({pitchTheme:'grass',pitchImg:'@real'},1,'h');
+  await set({pitchTheme:'grass',pitchImg:'@real',grassM:5},1,'h');
   await f.evaluate(()=>window.__setTilt(true));await f.waitForFunction(()=>document.body.classList.contains('bc-tilt3d'));
   r=await st();assert.ok(r.mow.every(m=>m.vis==='hidden'),'3D 에선 숨는다');
   await f.evaluate(()=>window.__setTilt(false));await f.waitForFunction(()=>!document.body.classList.contains('bc-tilt3d'));
@@ -76,17 +76,17 @@ try{
   await set({pitchTheme:'grass',pitchImg:''},1,'h');
   r=await st();
   assert.ok(r.grain,'잎결');assert.equal(r.grain.id,'');assert.equal(r.grain.belowVig,true);assert.equal(r.grain.size,80,'8m 칸');assert.deepEqual(r.grain.tile,[128,128],'평면 128 타일');
-  assert.equal(r.mow.length,1,'깎은 줄');assert.equal(r.tile,null);
+  assert.equal(r.mow.length,0,'3.326 — 무늬 «없음»이면 줄 없이(예전엔 옅은 4m 띠)');assert.equal(r.tile,null);
   await f.evaluate(()=>window.__setGrassM(5));
   r=await st();assert.equal(r.mow.length,0,'«잔디 줄무늬»를 켜면 그 줄만');assert.equal(r.grain.aboveStripes,true,'잎결은 줄무늬 위');
   await f.evaluate(()=>window.__setGrassM(0));
-  r=await st();assert.equal(r.mow.length,1,'끄면 다시');
+  r=await st();assert.equal(r.mow.length,0,'끄면 줄 없이');assert.equal(await f.evaluate(()=>!!document.querySelector('#world>.grass-stripes')),false,'줄무늬도 없다');
 
   step('others');
   for(const look of [{pitchTheme:'',pitchImg:''},{pitchTheme:'white',pitchImg:''}]){
     await set(look,1,'h');r=await st();assert.equal(r.mow.length,0,JSON.stringify(look));assert.equal(r.grain,null);
     assert.equal(await f.evaluate(()=>!!document.getElementById('psFlatMow')||!!document.getElementById('psFlatGrain')),false,'무늬도 걷는다');}
-  await set({pitchTheme:'grass',pitchImg:'@real'},1,'h');r=await st();assert.equal(r.mow.length,1,'잔디로 돌아오면 다시');
+  await set({pitchTheme:'grass',pitchImg:'@real',grassM:5},1,'h');r=await st();assert.equal(r.mow.length,1,'잔디로 돌아오면 다시');
 
   step('errors');
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));

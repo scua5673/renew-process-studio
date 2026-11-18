@@ -40,7 +40,7 @@ test('① board.html 배선 — 사진은 실사일 때만 · 두 색 줄은 pk 
   assert.match(st,/const turf=\(tiltPitchKey\(\)==="real"&&window\.__ballImgOK&&window\.PITCH_IMG&&window\.PITCH_IMG\.real\)\|\|'';/);
   assert.match(st,/md=TILT_MOOD\[t3\.mood\]\|\|TILT_MOOD\.night,brand=!!t3\.brand,/,'분위기 줄은 그대로(3.029 시험)');
   assert.match(st,/const pk=tiltPitchLook\(md,turf\);/);
-  assert.match(st,/<rect width="'\+f\(per\)\+'" height="'\+f\(per\)\+'" fill="'\+pk\.ga\+'"\/>'\+\(multi\?'':'<rect width="'\+f\(per\/2\)\+'" height="'\+f\(per\)\+'" fill="'\+pk\.gb\+'"\/>'\)/);
+  assert.match(st,/:mow\.grass\(pk\.ga,pk\.gb\)\)/,'3.326 — 두 색 줄은 mowPlan 이 무늬에 맞춰(색은 그대로 pk)');
   assert.doesNotMatch(st,/fill="'\+md\.ga\+'"/,'분위기 색을 직접 칠하는 곳은 없다');
   assert.match(st,/preserveAspectRatio="none"'\+\(pk\.tone\?' filter="url\(#psStTone\)"':''\)\+'\/><\/pattern>'\+\(pk\.tone\?'<filter id="psStTone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="'\+pk\.tone\+'"\/><\/filter>':''\)/);
   assert.match(st,/if\(!whole&&pk\.grass\)\{const wr=/);
@@ -50,7 +50,7 @@ test('① board.html 배선 — 사진은 실사일 때만 · 두 색 줄은 pk 
   assert.match(board,/function tiltPitchKey\(\)\{ return PSBoardLook\.pitchKey\(state\.pitchImg,document\.documentElement\.dataset\.pitch\); \}/);
   assert.match(board,/function tiltPitchLook\(md,turf\)\{ return PSBoardLook\.pitchLook\(md,turf,\{key:tiltPitchKey\(\),css:getCss,tone:\(typeof grassToneKey==="function"\)\?grassToneKey\(\):"0\|0",matrix:window\.__grassToneMatrix\}\); \}/);
   const gs=cut('  window.tiltGoalsSync=function(){','    const turf=surface.firstElementChild');
-  assert.equal((gs.match(/gkey,getCss\('--pitchbg'\),window\.__grassTone\|\|''\]\.join\('\|'\)/g)||[]).length,2,'pre 열쇠와 signature 둘 다');
+  assert.equal((gs.match(/gkey,getCss\('--pitchbg'\),window\.__grassTone\|\|'',window\.__grassM\]\.join\('\|'\)/g)||[]).length,2,'pre 열쇠와 signature 둘 다(3.326 — 잔디 무늬 __grassM 도)');
   assert.match(board,/css\.textContent=_t3BoardCss\(!!t3st,false\);/);assert.doesNotMatch(board,/_t3BoardCss\(!!t3st,\['white','train'\]/);
   assert.ok(board.includes('<script src="board-pitch-look.js"></script>'),'모듈을 싣는다');
   assert.ok(fs.readFileSync(path.join(__dirname,'..','sw.js'),'utf8').includes("'/studio/board-pitch-look.js'"),'sw CORE');
