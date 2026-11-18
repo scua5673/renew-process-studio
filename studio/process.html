@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="data-lock-guard.js"></script>
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
-<script src="storage.js"></script><script src="schedule-lib-slim.js"></script><script src="match-kind.js"></script><script src="training-intensity.js"></script>
+<script src="storage.js"></script><script src="schedule-lib-slim.js"></script><script src="schedule-board-play.js"></script><script src="match-kind.js"></script><script src="training-intensity.js"></script>
 <link rel="stylesheet" href="team-audience.css"><script src="team-audience.js"></script><script src="schedule-audience.js"></script>
 <script src="review-training.js"></script>
 <script src="daily-effort.js"></script>
@@ -5306,7 +5306,7 @@ window.wkbdSetLibItem=function(di,li,d){
     var drills=Array.isArray(d.drills)?d.drills.filter(function(x){return x&&String(x.name||'').trim();}):[];
     /* 1.900 — 여러 페이지 작전판(pages:[{snap,thumb,name}])이면 페이지 제목들을 훈련 칩으로(사용자). 이름 없는 페이지는 '페이지 N' */
     if(!drills.length&&Array.isArray(d.pages)&&d.pages.length>1){
-      drills=d.pages.map(function(pg,i){ return {name:(pg&&String(pg.name||'').trim())||('페이지 '+(i+1)),thumb:(pg&&pg.thumb)||'',snap:(pg&&pg.snap)||null,focus:d.focus,_card:1}; });
+      drills=d.pages.map(function(pg,i){ return {name:(pg&&String(pg.name||'').trim())||('페이지 '+(i+1)),thumb:(pg&&pg.thumb)||'',snap:(pg&&pg.snap)||null,focus:d.focus,_card:1,_pg:i}; });
     }
     if(!drills.length&&d.name)drills=[{name:d.name,minutes:d.minutes,sets:d.sets,thumb:d.thumb,focus:d.focus,_card:1}];
     if(!b.trains)b.trains=[]; if(!b.trainThemes)b.trainThemes=[]; if(!b.trainData)b.trainData=[]; if(!b.trainSlot)b.trainSlot=[];
@@ -5320,7 +5320,7 @@ window.wkbdSetLibItem=function(di,li,d){
          (옛 2.303: minutes 는 0 으로 비워서 들어왔다.)
          국면은 훈련의 것만 쓴다. 카드 합집합(2.182)은 **카드가 곧 훈련 하나일 때(_card)** 만 폴백으로 —
          훈련 여러 개로 펼쳐질 때 합집합을 얹으면 국면을 비워 둔 웜업까지 수비 조직으로 잡혀 배분이 부풀려진다(실측). */
-      var ti=b.trains.length; b.trains[ti]=nm; b.trainSlot[ti]=(__pendSlot||''); b.trainThemes[ti]=FOCUS2THEME[x.focus||d.focus]||''; b.trainData[ti]={minutes:Math.min(600,Math.max(0,parseInt(x.minutes,10)||0)),thumb:x.thumb||'',snap:x.snap||null,focus:x.focus||d.focus||'',gmPhases:(Array.isArray(x.gmPhases)&&x.gmPhases.length?x.gmPhases:((x._card&&Array.isArray(d.gmPhases))?d.gmPhases:[])),gmPhaseNames:(Array.isArray(x.gmPhaseNames)&&x.gmPhaseNames.length?x.gmPhaseNames:((x._card&&Array.isArray(d.gmPhaseNames))?d.gmPhaseNames:[])),fromLib:d.libId||''}; if(d.drillsFrom==='trainings')b.trainData[ti].libIdx=xi; else if(x._card)b.trainData[ti].libIdx=0;   /* 2.946 — 카드의 몇 번째 훈련인지(그 훈련의 애니메이션을 바로 열려고) */ var _ls=parseInt(x.sets,10)||1; if(b.trainData[ti].minutes&&_ls>1)b.trainData[ti].sets=Math.min(20,_ls); if(b.trainData[ti].minutes)timed++; added++; });
+      var ti=b.trains.length; b.trains[ti]=nm; b.trainSlot[ti]=(__pendSlot||''); b.trainThemes[ti]=FOCUS2THEME[x.focus||d.focus]||''; b.trainData[ti]={minutes:Math.min(600,Math.max(0,parseInt(x.minutes,10)||0)),thumb:x.thumb||'',snap:x.snap||null,focus:x.focus||d.focus||'',gmPhases:(Array.isArray(x.gmPhases)&&x.gmPhases.length?x.gmPhases:((x._card&&Array.isArray(d.gmPhases))?d.gmPhases:[])),gmPhaseNames:(Array.isArray(x.gmPhaseNames)&&x.gmPhaseNames.length?x.gmPhaseNames:((x._card&&Array.isArray(d.gmPhaseNames))?d.gmPhaseNames:[])),fromLib:d.libId||''}; if(d.drillsFrom==='trainings')b.trainData[ti].libIdx=xi; else if(x._pg!=null)b.trainData[ti].libIdx=x._pg; else if(x._card)b.trainData[ti].libIdx=0;   /* 2.946 — 카드의 몇 번째 훈련인지(그 훈련의 애니메이션을 바로 열려고) */ var _ls=parseInt(x.sets,10)||1; if(b.trainData[ti].minutes&&_ls>1)b.trainData[ti].sets=Math.min(20,_ls); if(b.trainData[ti].minutes)timed++; added++; });
     if(added){ try{toast('훈련 '+added+'개를 넣었어요'+(timed===added?' — 보관함에 적힌 시간도 함께':timed?' — '+(added-timed)+'개는 시간을 정해 주세요':' — 시간을 정해 주세요'));}catch(_){} }
   }catch(_){}
   try{ if(wkbdAutoTheme(b)){ try{toast('주제를 국면에서 자동으로 골랐어요 — '+b.theme);}catch(_){} } }catch(_){}
@@ -5423,7 +5423,8 @@ function wksLibCard(id){
 function wksLibTrainOf(td,name){
   if(!td||!td.fromLib)return null;
   var card=wksLibCard(td.fromLib); if(!card)return null;
-  var ty=card.type||'train'; if(ty!=='train'&&ty!=='setpiece')return null;   /* 여러 페이지 작전판(pages)은 이 길이 아니다 */
+  var ty=card.type||'train'; if(ty==='board')return window.PSSchedBoardPlay?PSSchedBoardPlay.target(card,td,name):null;   /* 3.329 작전판 — schedule-board-play.js */
+  if(ty!=='train'&&ty!=='setpiece')return null;
   var trs=Array.isArray(card.trainings)?card.trainings:[], nm=String(name||'').trim(), idx=-1;
   function tn(t){ return String((t&&t.name)||'').trim(); }
   var li=(td.libIdx!=null)?(parseInt(td.libIdx,10)):NaN;
@@ -10497,7 +10498,7 @@ html body .wks .wks-fill:not(#_):hover{border-color:var(--c-act,var(--ps-navy,#1
 @media (max-width:600px){ html body .wks .wks-fill:not(#_){height:40px} }
 </style>
 
-<link rel="stylesheet" href="team-mobile.css?v=3.326">
+<link rel="stylesheet" href="team-mobile.css?v=3.329">
 <script src="schedule-match-time.js"></script><script src="schedule-fill-team.js"></script><script src="schedule-day-kind.js"></script><script src="schedule-fill-autosave.js"></script><script src="schedule-del-undo.js"></script><script src="schedule-syncline-steady.js"></script><script src="schedule-thumb-ref.js"></script>
 
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
