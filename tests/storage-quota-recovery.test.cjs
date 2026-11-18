@@ -33,7 +33,7 @@ test('a different failed key retains its warning after the schedule is confirmed
 });
 test('quota telemetry and cleanup timestamps cannot latch a recovered document warning',async()=>{
   const h=harness(),k='process_coach_v1';h.c.warnFull(k);
-  for(const key of ['ps_full_report_at','ps_opt_auto_at','ps_opt_build_v1'])h.c.warnFull(key);
+  for(const key of ['ps_full_report_at','ps_storage_usage_at','ps_opt_auto_at','ps_opt_build_v1'])h.c.warnFull(key);
   h.disk.set(k,'new');await h.c.sharedRecovered(k,'new');assert.equal(h.node.removed,true);
 });
 for(const change of ['owner','mirror','durable'])test('quota recovery preserves the warning on changed '+change,async()=>{
