@@ -306,7 +306,7 @@ for(k in D)(E[k]||(E[k]={})).en=D[k];
 for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
 for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
 })(window,{
-"폰보드":"Phone board",
+"폰보드":"Phone",
 "폰보드 이름":"Phone board name",
 "세로 운동장":"Portrait pitch",
 "＋ 새 폰보드":"＋ New phone board",
