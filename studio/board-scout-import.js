@@ -225,6 +225,7 @@
     var st=state,L=win.PSTeamLoad,cur=st.players.filter(function(p){return p.team===side&&!p.coach;}),fe=win.document.getElementById(side==='red'?'formAway':'formHome'),flip=cur.length?win._sqTokFlip(cur):side==='red';
     var plan=L.plan(cur.length?win._sqTokSlots(cur,flip):(FORM[fe&&fe.value]||FORM['433']),list,{keep:cur.length>0,code:win.posCode,base:win.posBase,group:win.posGroup}),fresh=[];
     win.pushUndo();cur.forEach(function(p,i){L.dress(p,list[plan.pick[i]]);});
+    if(!cur.length&&win.document.body.classList.contains('editing')&&typeof win._editorTokBoost==='function')win._editorTokBoost();   /* 3.318 — 훈련 편집기에서 새로 올리는 선수는 세 칸 큰 토큰([5] — applySquadToBoard 의 2.582 규칙과 같이, 판 위 자리에 입힐 땐 그대로) */
     plan.add.forEach(function(a){var at=n2u(flip?1-a.x:a.x,flip?1-a.y:a.y),p=L.dress({id:uid++,team:side,num:a.p.no||'',pos:a.p.pos||'',x:at.x,y:at.y},a.p);st.players.push(p);fresh.push(p);});
     L.frames(anim.frames,animActive,cur,fresh);if(counts)win.syncEpRosterUI({counts:counts,syncInputs:true,persist:true});sel=null;multiSel=[];win.renderTokens();win.renderDrawings();win.autoSaveAnimFrame();if(win.boardSaveLive)win.boardSaveLive();
     win.toast(label+' · '+list.length+'명 불러옴'+(plan.bench?' · 대기 '+plan.bench+'명':'')+(left?' · 제외 '+left+'명':''));
