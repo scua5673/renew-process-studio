@@ -299,3 +299,46 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "보관함 · 저장 안 한 변경{}":"Library · unsaved changes{}",
 "보관함 › {} ›":"Library › {} ›"
 },{});
+
+/* 3.320 — 폰보드(board-phone-board.js · board-phone-nav.js): 폰 아래 메뉴 탭 · 목록 · 새 폰보드 · 편집 도구 · 저장 알림 */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{
+"폰보드":"Phone board",
+"폰보드 이름":"Phone board name",
+"세로 운동장":"Portrait pitch",
+"＋ 새 폰보드":"＋ New phone board",
+"새 폰보드":"New phone board",
+"시작 배치":"Starting layout",
+"상대도 같이 놓기":"Place the opponent too",
+"저장하지 않은 판이 있어요":"This board is not saved",
+"버리기":"Discard",
+"계속 만들기":"Keep editing",
+"폰보드는 세로로만 써요. 폰을 세로로 돌려 주세요.":"Phone board works in portrait only. Turn your phone upright.",
+"보관함을 읽지 못했어요. 로그인되어 있는지 확인해 주세요.":"Could not read the library. Check that you are signed in.",
+"다시 불러오기":"Reload",
+"아직 없어요. 위 단추로 첫 판을 만들어 보세요.":"Nothing yet. Use the button above to make your first board.",
+"빈 판":"Empty board",
+"옮기기":"Move",
+"놓기":"Place",
+"화살":"Arrow",
+"이동":"Run",
+"끌어서 옮기고, 선수를 한 번 누르면 번호 · 이름을 고쳐요.":"Drag to move. Tap a player once to edit the number and name.",
+"지울 것을 눌러요. 잘못 지웠으면 위의 되돌리기.":"Tap what you want to erase. Use Undo above if you erase by mistake.",
+"판에 선수나 콘을 하나 이상 놓아 주세요":"Place at least one player or cone on the board",
+"폰보드를 고쳤어요":"Phone board updated",
+"보관함에 저장했어요 · 폰보드":"Saved to the library · Phone board",
+"이 판을 보관함에서 찾지 못했어요. 지워졌거나 아이패드 · 컴퓨터에서 바뀌었어요":"This board was not found in the library. It was deleted or changed on an iPad or computer",
+"저장하지 못했어요. 판은 그대로 있어요. 다시 눌러 주세요":"Could not save. Your board is still here. Tap again",
+"이 판은 아이패드 · 컴퓨터에서 열어 주세요":"Open this board on an iPad or computer",
+"만든 사람만 고칠 수 있어요. 보기로 열었어요":"Only the person who made it can edit. Opened for viewing",
+"아이패드 · 컴퓨터에서 손본 판이라 폰에서는 보기만 돼요":"This board was edited on an iPad or computer, so it is view-only on the phone",
+"«버리기»를 누르면 이 판은 사라져요.":"If you tap «Discard», this board is gone."
+},{
+"내 폰보드 {}개":"My phone boards · {}",
+"콘은 {}개까지 놓을 수 있어요":"You can place up to {} cones",
+"선수는 {}명까지 놓을 수 있어요":"You can place up to {} players",
+"화살은 {}개까지 그릴 수 있어요":"You can draw up to {} arrows"
+},{});
