@@ -17,6 +17,9 @@ const browser=await pw[engine].launch({headless:true,...(engine==='chromium'&&pr
 const inside=(t,box)=>t.x-t.r>=box[0]-EPS&&t.x+t.r<=box[0]+box[2]+EPS&&t.y-t.r>=box[1]-EPS&&t.y+t.r<=box[1]+box[3]+EPS;
 const touching=(t,box)=>Math.abs(t.x-t.r-box[0])<TOUCH||Math.abs(t.x+t.r-(box[0]+box[2]))<TOUCH||Math.abs(t.y-t.r-box[1])<TOUCH||Math.abs(t.y+t.r-(box[1]+box[3]))<TOUCH;
 /* 토큰 중심의 화면 자리(이름표가 있으면 g 의 사각형 중심은 토큰 중심이 아니다 — 잡은 자리 보정 _mvGrab 이 0 이어야 가장자리에 정확히 닿는다) */
+/* CI(느린 실행기)에서 끌기 직전 판이 자리를 잡는 중이면(상자가 프레임마다 바뀜) 결과가 어긋난다 — 두 프레임 연속 같은 상자가 될 때까지 기다리고, 끌기 전후 상자가 다르면 그 단계만 다시 한다 */
+const settle=async page=>{for(let i=0;i<12;i++){const a=await page.evaluate(()=>JSON.stringify(window.__psBoardBox));await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));const b=await page.evaluate(()=>JSON.stringify(window.__psBoardBox));if(a===b)return;}};
+const START={ba:[450,340],ball:[570,350],eq1:[720,340],bc:[300,200]};
 const CENTER="(function(g){const pr=el('circle',{cx:0,cy:0,r:.001,fill:'none','pointer-events':'none'});g.appendChild(pr);const b=pr.getBoundingClientRect();pr.remove();return [b.left+b.width/2,b.top+b.height/2];})";
 try{
   for(const viewport of [{width:1280,height:900},{width:820,height:1180},{width:375,height:812}]){
@@ -54,41 +57,54 @@ try{
         if(phone)continue;
         /* ① 끌기 — 선수 · 공 · 장비를 네 귀 멀리로 끌면 토큰 원이 판 가장자리에 닿아 멈춘다 */
         for(const id of ['ba','ball','eq1'])for(const corner of [[-4000,-4000],[9000,-4000],[9000,9000],[-4000,9000]]){
-          const t=await page.evaluate(({id,corner,CENTER})=>{
-            sel=null;multiSel=[];state.tool='move';renderTokens();
-            const p=tokenItems().find(it=>String(it.o.id)===id).o,g=tokenLayer.querySelector('[data-id="'+id+'"]');
+          let t,tries=0;
+          do{
+          await settle(page);
+          t=await page.evaluate(({id,corner,CENTER,start})=>{
+            sel=null;multiSel=[];state.tool='move';
+            const p0=tokenItems().find(it=>String(it.o.id)===id).o;p0.x=start[0];p0.y=start[1];if(id==='ball'){state.ball.x=start[0];state.ball.y=start[1];}renderTokens();
+            const p=tokenItems().find(it=>String(it.o.id)===id).o,g=tokenLayer.querySelector('[data-id="'+id+'"]'),box0=window.__psBoardBox.slice();
             const c0=eval(CENTER)(g),x=c0[0],y=c0[1];
             const fire=(type,q)=>g.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:77,pointerType:'mouse',buttons:type==='pointerup'?0:1,clientX:q[0],clientY:q[1]}));
             fire('pointerdown',[x,y]);fire('pointermove',[x+(corner[0]>0?30:-30),y+(corner[1]>0?30:-30)]);fire('pointermove',corner);fire('pointerup',corner);
-            return {x:p.x,y:p.y,r:21*_tokScaleOf(p),box:window.__psBoardBox.slice(),ball:state.ball?{x:state.ball.x,y:state.ball.y}:null,dragging:document.body.classList.contains('token-drag')};
-          },{id,corner,CENTER});
-          const tag=JSON.stringify({viewport,orientation,id,corner,t});
-          assert.ok(inside(t,t.box),'끌기: 판 안 '+tag);
+            return {x:p.x,y:p.y,r:21*_tokScaleOf(p),box0,box:window.__psBoardBox.slice(),same:id==='ball'?p===state.ball:true,ball:state.ball?{x:state.ball.x,y:state.ball.y}:null,dragging:document.body.classList.contains('token-drag')};
+          },{id,corner,CENTER,start:START[id]});
+          tries++;
+          }while(tries<3&&JSON.stringify(t.box0)!==JSON.stringify(t.box));
+          t.tries=tries;const tag=JSON.stringify({viewport,orientation,id,corner,t});
+          assert.equal(t.same,true,'끌던 토큰이 그대로 state 의 것 '+tag);
+          assert.ok(inside(t,t.box0),'끌기: 판 안 '+tag);
           /* 세로 보기는 화면 왼쪽이 운동장 ±x 라 어느 쪽인지 안 가린다 — 귀로 끌었으니 x 가장자리 하나 · y 가장자리 하나에 닿는다 */
-          assert.ok(Math.abs(t.x-t.r-t.box[0])<TOUCH||Math.abs(t.x+t.r-(t.box[0]+t.box[2]))<TOUCH,'끌기: x 가장자리에 닿음 '+tag);
-          assert.ok(Math.abs(t.y-t.r-t.box[1])<TOUCH||Math.abs(t.y+t.r-(t.box[1]+t.box[3]))<TOUCH,'끌기: y 가장자리에 닿음 '+tag);
+          assert.ok(Math.abs(t.x-t.r-t.box0[0])<TOUCH||Math.abs(t.x+t.r-(t.box0[0]+t.box0[2]))<TOUCH,'끌기: x 가장자리에 닿음 '+tag);
+          assert.ok(Math.abs(t.y-t.r-t.box0[1])<TOUCH||Math.abs(t.y+t.r-(t.box0[1]+t.box0[3]))<TOUCH,'끌기: y 가장자리에 닿음 '+tag);
           if(id==='ball')assert.deepEqual(t.ball,{x:t.x,y:t.y},'공은 state.ball 도 같은 자리 '+tag);
           assert.equal(t.dragging,false);
-          log.steps.push({orientation,drag:id,corner,x:t.x,y:t.y,r:t.r});
+          log.steps.push({orientation,drag:id,corner,x:t.x,y:t.y,r:t.r,tries:t.tries});
         }
         await page.evaluate(()=>{const f=id=>tokenItems().find(it=>String(it.o.id)===id).o;Object.assign(f('ba'),{x:450,y:340});Object.assign(f('eq1'),{x:720,y:340});Object.assign(f('ball'),{x:570,y:350});state.ball.x=570;state.ball.y=350;renderTokens();});
         /* ② 묶음 끌기 — 둘을 함께 오른쪽 아래 멀리로: 하나도 안 나가고, 먼저 걸리는 쪽이 가장자리에 닿고, 둘은 같은 거리 */
-        const grp=await page.evaluate(CENTER=>{
+        let grp,gtries=0;
+        do{
+        await settle(page);
+        grp=await page.evaluate(CENTER=>{
           const f=id=>tokenItems().find(it=>String(it.o.id)===id).o,pa=f('ba'),pc=f('bc');Object.assign(pa,{x:450,y:340});Object.assign(pc,{x:300,y:200});
-          state.tool='move';sel=null;multiSel=[pa,pc];renderTokens();const before=[{x:pa.x,y:pa.y},{x:pc.x,y:pc.y}];
+          state.tool='move';sel=null;multiSel=[pa,pc];renderTokens();const before=[{x:pa.x,y:pa.y},{x:pc.x,y:pc.y}],box0=window.__psBoardBox.slice();
           const g=tokenLayer.querySelector('[data-id="ba"]'),c0=eval(CENTER)(g),x=c0[0],y=c0[1];
           const fire=(type,q)=>g.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:78,pointerType:'mouse',buttons:type==='pointerup'?0:1,clientX:q[0],clientY:q[1]}));
           fire('pointerdown',[x,y]);fire('pointermove',[x+30,y+30]);fire('pointermove',[9000,9000]);fire('pointerup',[9000,9000]);
           const r=[{x:pa.x,y:pa.y,r:21*_tokScaleOf(pa)},{x:pc.x,y:pc.y,r:21*_tokScaleOf(pc)}];multiSel=[];renderTokens();
-          return {before,after:r,box:window.__psBoardBox.slice()};
+          return {before,after:r,box0,box:window.__psBoardBox.slice()};
         },CENTER);
+        gtries++;
+        }while(gtries<3&&JSON.stringify(grp.box0)!==JSON.stringify(grp.box));
         const gtag=JSON.stringify({viewport,orientation,grp});
-        grp.after.forEach(t=>assert.ok(inside(t,grp.box),'묶음: 판 안 '+gtag));
-        assert.ok(grp.after.some(t=>touching(t,grp.box)),'묶음: 하나는 가장자리에 닿음 '+gtag);
+        grp.after.forEach(t=>assert.ok(inside(t,grp.box0),'묶음: 판 안 '+gtag));
+        assert.ok(grp.after.some(t=>touching(t,grp.box0)),'묶음: 하나는 가장자리에 닿음 '+gtag);
         assert.ok(Math.abs((grp.after[0].x-grp.before[0].x)-(grp.after[1].x-grp.before[1].x))<EPS&&Math.abs((grp.after[0].y-grp.before[0].y)-(grp.after[1].y-grp.before[1].y))<EPS,'묶음: 같은 거리 '+gtag);
         assert.ok(Math.hypot(grp.after[0].x-grp.before[0].x,grp.after[0].y-grp.before[0].y)>100,'묶음: 실제로 옮겨졌다 '+gtag);
         log.steps.push({orientation,group:grp});
         /* ③ 방향키 — Shift+→ · Shift+↓ 를 수백 번: 판 안에서 멈추고, 되돌아올 수 있다 */
+        await settle(page);
         await page.evaluate(()=>{const pa=tokenItems().find(it=>String(it.o.id)==='ba').o;Object.assign(pa,{x:450,y:340});renderTokens();selectItem('player',pa);if(document.activeElement&&document.activeElement!==document.body)document.activeElement.blur();});
         await page.keyboard.down('Shift');for(let i=0;i<260;i++){await page.keyboard.press('ArrowRight');}for(let i=0;i<260;i++){await page.keyboard.press('ArrowDown');}
         const key=await page.evaluate(()=>{const pa=tokenItems().find(it=>String(it.o.id)==='ba').o;return {x:pa.x,y:pa.y,r:21*_tokScaleOf(pa),box:window.__psBoardBox.slice()};});
