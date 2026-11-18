@@ -3,7 +3,7 @@
    - 선택 옆 패널(.sel-ctl.sel-near — 그림 · 글 · 묶음, 컴퓨터 · 아이패드): 검정 작은 카드(1.846, 124px · 26px 단추 · «맨 뒤»가 혼자 줄바꿈)를
      밝은 카드 224px 로(2.608 «얇고 길게»의 124px 1열은 «맨 뒤»가 생기며 줄이 하나 더 늘었다 — 가로로 조금 넓히고 세로를 줄인다) — 머리글, 6칸 격자(복제 · 맨 앞 · 맨 뒤 한 줄 · 좌우 · 상하 한 줄 · 삭제 전폭 · 묶음의 토글은 한 줄 셋). 선수 패널(.ps-insp-on)은 그대로.
    - 도형 오른쪽 클릭 메뉴(board-shape-menu.js)가 열린 동안 옆 패널은 숨긴다 — 한 도형에 창이 둘 뜨지 않게(body.ps-shape-menu-on).
-   - 알림(#cs-ftoast)은 도구 옵션 띠(#ps-df-opts) · 선수 · 장비 트레이(#ps-df-tray)를 가리지 않게 그 위로 올린다(띠가 열리고 닫힐 때도).
+   - 알림(#cs-ftoast)은 도구 옵션 띠(#ps-df-opts) · 선수 · 장비 트레이(#ps-df-tray)를 가리지 않게 그 위로 올린다(띠가 열리고 닫힐 때도) — 올릴 땐 top:auto 도 같이(3.318: 훈련 편집의 위쪽 알림이 위 · 아래 고정으로 늘어나지 않게).
    - 메뉴(«보드 ▾» #ps-tb-menu · 장면 칩 .anim-frame-menu · 선 스타일 #lsPop)도 같은 반지름 · 글자 · 그림자.
    본문보다 먼저 읽힌다 — toast 는 DOMContentLoaded 에 감싼다. renderTokens 는 부르지 않는다(3.120). */
 (function (root, factory) {
@@ -98,10 +98,13 @@
       });
       var b = toastBottom(win.innerHeight || doc.documentElement.clientHeight, tops);
       if (b == null) {
-        if (t.__psRaised) { t.style.setProperty('bottom', t.__psBottom0 || '84px'); t.__psRaised = false; }
+        if (t.__psRaised) { t.style.setProperty('bottom', t.__psBottom0 || '84px'); t.style.setProperty('top', t.__psTop0 || ''); t.__psRaised = false; }
         return null;
       }
-      if (!t.__psRaised) t.__psBottom0 = t.style.bottom || '84px';
+      if (!t.__psRaised) { t.__psBottom0 = t.style.bottom || '84px'; t.__psTop0 = t.style.top || ''; }
+      /* 3.318 — 띠 위로 올릴 땐 top 도 auto 로(인라인 !important): 훈련 편집은 알림을 위쪽(body.editing #cs-ftoast{top:16px!important;bottom:auto!important})에 두는데
+         bottom 만 적으면 위 · 아래가 같이 고정되어 알림이 운동장을 덮는 긴 상자로 늘어났다(사용자 11/18 «구역 설정하는데 이렇게 떠»). 띠가 닫히면 둘 다 처음 값으로. */
+      t.style.setProperty('top', 'auto', 'important');
       t.style.setProperty('bottom', b + 'px', 'important'); t.__psRaised = true;
       return b;
     }
