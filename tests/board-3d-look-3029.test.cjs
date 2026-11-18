@@ -15,7 +15,8 @@ test('3.029 mood is a device option with night (today\'s look) as the default, a
   /* stadium picture */
   assert.match(board,/md=TILT_MOOD\[t3\.mood\]\|\|TILT_MOOD\.night,brand=!!t3\.brand,tname=brand\?tiltTeamName\(\):"",tcol=brand\?String\(teamHex\("blue"\)\|\|""\):"",ad=String\(t3\.ad\|\|""\)\.trim\(\)\|\|tname\|\|"PROCESS STUDIO"/);
   assert.match(board,/const sig=\[wt,L,R,T,B,goals\?sp\.goal:0,turf\?1:0,(?:cards\.join\(';'\),sp\.len,PSStadiumGround\.GRAIN_V,)?deco,ad,md\.key,brand\?1:0,tcol(?:,bleed\?1:0)?\]\.join\('\|'\);/,'mood and branding redraw the picture');
-  assert.match(board,/fill="'\+pk\.ga\+'"\/>'\+\(multi\?'':'<rect width="'\+f\(per\/2\)\+'" height="'\+f\(per\)\+'" fill="'\+pk\.gb\+'"\/>'\)/,'grass tone (3.255 · 3.316 — pk = pitch look — the two-tone x stripe only for one pitch · 3.263 one pair = per, about 4m bands)');
+  /* 3.326 — 기대를 일부러 고침: 사진 없는 psStGrass 는 mowPlan 이 무늬에 맞춰 만든다(두 색 줄은 띠 · 넓은 띠 · 운동장 하나만 — 글자는 tests/board-mow-3326) */
+  assert.match(board,/:mow\.grass\(pk\.ga,pk\.gb\)\)/,'grass tone (3.255 · 3.316 — pk = pitch look · 3.326 the pattern kind decides the two-tone stripe)');
   assert.match(board,/stop-opacity="'\+md\.vig\+'"\/><\/radialGradient>'/,'outer darkness');
   assert.match(board,/<radialGradient id="psStCone">/);assert.match(board,/<clipPath id="psStPitchClip"><path d="'\+rr\(0\)\+'"\/><\/clipPath>/,'light cones stay on the grass');
   assert.match(board,/if\(md\.cone>0&&!ground\)\{ o\+='<g clip-path="url\(#psStPitchClip\)" fill="url\(#psStCone\)" fill-opacity="'\+md\.cone\+'">'; \[\[L,T\],\[R,T\],\[R,B\],\[L,B\]\]/,'3.303 — no mast cones on the compact (simple · grass) floor: they were cut at the plate edge');

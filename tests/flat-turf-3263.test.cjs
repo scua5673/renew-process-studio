@@ -25,8 +25,10 @@ test('실사 잔디 · 깎은 줄 자리 — 운동장 하나는 골라인 L · 
 test('어디에 깔까 — 잎결은 사진 없는 잔디, 깎은 줄은 잔디(실사 포함) · «잔디 줄무늬»를 직접 켠 판은 그 줄',()=>{
   assert.equal(F.want({pitch:'grass',img:''}),true);
   for(const o of [{pitch:'',img:''},{pitch:'white',img:''},{pitch:'grass',img:'@real'},{pitch:'grass',img:'@photo:abc'},null])assert.equal(F.want(o),false,JSON.stringify(o));
-  assert.equal(F.wantMow({pitch:'grass',img:'@real'}),true);assert.equal(F.wantMow({pitch:'grass',img:'@real',grassM:5}),true,'실사 잔디는 줄무늬가 사진 밑');
-  assert.equal(F.wantMow({pitch:'grass',img:''}),true);assert.equal(F.wantMow({pitch:'grass',img:'',grassM:5}),false,'두 겹이 되지 않게');
+  /* 3.326 — 기대를 일부러 고침(사용자 «없게도»): 무늬 «없음»(grassM 0)은 실사 사진에도 줄 없이. 사진 없는 잔디는 무늬를 .grass-stripes 가 그린다 */
+  assert.equal(F.wantMow({pitch:'grass',img:'@real'}),false,'무늬 없음');assert.equal(F.wantMow({pitch:'grass',img:'@real',grassM:5}),true,'실사 잔디는 줄무늬가 사진 밑');
+  assert.equal(F.wantMow({pitch:'grass',img:'@real',grassM:5.4}),true,'원도 사진 위에');
+  assert.equal(F.wantMow({pitch:'grass',img:''}),false);assert.equal(F.wantMow({pitch:'grass',img:'',grassM:5}),false,'두 겹이 되지 않게');
   for(const o of [{pitch:'',img:''},{pitch:'white',img:''},{pitch:'train',img:''},{pitch:'custom',img:''},{pitch:'grass',img:'@photo:abc'},null])assert.equal(F.wantMow(o),false,JSON.stringify(o));
   assert.ok(F.DK<.07&&F.LT<.06,'3D(.07 · .06)보다 옅게');assert.ok(F.OP>0&&F.OP<=.5);
 });

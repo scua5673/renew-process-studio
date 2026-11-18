@@ -299,3 +299,28 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "보관함 · 저장 안 한 변경{}":"Library · unsaved changes{}",
 "보관함 › {} ›":"Library › {} ›"
 },{});
+
+/* 3.326 — 잔디 무늬(board-mow.js): 보드 설정 › 운동장 › 바탕의 여덟 칸 · 평면과 3D 가 같이 쓴다 */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{
+"잔디 무늬":"Grass pattern",
+"띠":"Stripes",
+"넓은 띠":"Wide stripes",
+"바둑판":"Checkerboard",
+"사선":"Diagonal",
+"다이아":"Diamond",
+"5레인":"5 lanes",
+"줄 없이 한 색":"One colour, no stripes",
+"골라인과 나란한 띠(약 4m)":"Stripes parallel to the goal line (about 4 m)",
+"굵은 띠(약 9.5m)":"Wide stripes (about 9.5 m)",
+"띠 위로 한 번 더 가로질러 깎은 칸":"Squares cut across the stripes a second time",
+"비스듬한 띠":"Slanted stripes",
+"사선을 엇갈려 깎은 마름모":"Diamonds from two crossed diagonal cuts",
+"센터 서클에서 퍼지는 동심원":"Rings spreading out from the centre circle",
+"터치라인과 나란한 다섯 길(측면 · 하프스페이스 · 중앙)":"Five lanes parallel to the touchline (wide · half-space · centre)"
+},{
+"잔디 무늬 {}":"Grass pattern {}"
+},{});
