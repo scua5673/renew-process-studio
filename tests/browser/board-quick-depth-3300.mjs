@@ -17,6 +17,13 @@ async function boardFrame(page){
   await f.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&window._boardPrivateLoaded&&!window.__boardRestoring&&window.PSQuickDepth&&window.__psQuickTokWrap);
   return f;
 }
+// 3.320 — 새로 만들기는 «폰보드» 탭 안으로: 폰보드 › «＋ 뎁스 차트»
+async function openDepth(page,f){
+  await page.locator('#psPhoneBoardBtn').tap();
+  await f.locator('#psPhoneBoard').waitFor({state:'visible'});
+  await f.locator('#psPhoneBoard [data-phb="new-depth"]').tap();
+  await f.locator('#pqForm').waitFor({state:'visible'});
+}
 const quickItems=()=>[...fx.lib.values()].map(r=>r&&r.item||r).filter(d=>d&&d.quick);
 // 기기 보관함 → 서버는 동기화 회차 뒤에 온다 — 서버 사본이 조건을 만족할 때까지(20초)
 async function serverItems(ok){for(let i=0;i<80;i++){const l=quickItems();if(ok(l))return l;await new Promise(r=>setTimeout(r,250));}return quickItems();}
@@ -43,12 +50,10 @@ try{
  {const {page,context,logs}=await openApp(fx,'phone',{browsers,examples:false,tilt3d:false});
   await ready(page);
   const f=await boardFrame(page);
-  const btn=f.locator('#psPhoneBoardNotice [data-quick]');
-  await btn.waitFor({state:'visible'});
-  assert.equal((await btn.innerText()).trim(),'＋ 빠른 보드');
+  await f.locator('#psPhoneBoardNotice').waitFor({state:'visible'});
+  assert.equal(await f.locator('#psPhoneBoardNotice [data-quick]').isVisible(),false,'3.320 — the board tab no longer carries «＋ 빠른 보드»');
   const libBefore=quickItems().length;
-  await btn.tap();
-  await f.locator('#pqForm').waitFor({state:'visible'});
+  await openDepth(page,f);
   await f.waitForFunction(()=>window.__psQuickDepth.ui().state().rosterState==='ok',null,{timeout:20000});
   assert.match(await f.locator('#pqForm').innerText(),/선수단 18명/,'squad count from the roster (read-only)');
   await shot(page,'1-form');
@@ -136,10 +141,15 @@ try{
   await f.locator('#pqTitle').fill('U-15 뎁스');
   await f.locator('#psQuick [data-pq="save"]').tap();
   await f.waitForFunction(()=>document.getElementById('psQuick').hidden);
+  /* 3.320 — 저장하면 폰보드 목록으로 돌아온다(«폰보드» 칩 · «뎁스 차트»). 아래 보기 화면 검사는 그 항목을 보관함 보기로 열어 잇는다 */
+  await f.locator('#phbHome').waitFor({state:'visible'});
+  await f.waitForFunction(()=>[...document.querySelectorAll('#phbList .phb-row')].some(r=>/U-15 뎁스/.test(r.textContent)&&/뎁스 차트/.test(r.textContent)));
+  await shot(page,'3b-phoneboard-list');
+  await f.evaluate(()=>{window.__psPhoneBoard.close();return libGet().then(l=>window.__vaultOpenView(l.find(d=>d&&d.quick&&d.name==='U-15 뎁스')));});
   await f.waitForFunction(()=>window.__vaultReadOnly===true&&document.body.classList.contains('vcreating')&&window.__vvItem&&window.__vvItem.quick,null,{timeout:20000});
   const items=await serverItems(l=>l.length===libBefore+1);assert.equal(items.length,libBefore+1,'one new library item');
   const it=items.find(d=>d.name==='U-15 뎁스');assert.ok(it,'saved with the typed name');
-  assert.equal(it.type,'board');assert.deepEqual(it.tags,['빠른 보드']);assert.equal(it.quick.form,'4-2-3-1');assert.ok(await f.evaluate(id=>libGet().then(l=>{const d=l.find(x=>x.libId===id);return !!d&&String(d.thumb||'').length>100;}),it.libId),'card thumbnail on the device copy');
+  assert.equal(it.type,'board');assert.deepEqual(it.tags,['폰보드']);assert.equal(it.quick.form,'4-2-3-1');assert.ok(await f.evaluate(id=>libGet().then(l=>{const d=l.find(x=>x.libId===id);return !!d&&String(d.thumb||'').length>100;}),it.libId),'card thumbnail on the device copy');
   assert.equal(it.snap.orientation,'v');assert.equal(it.snap.label,'num','the board shows numbers, as chosen');assert.equal(it.snap.players.length,11);
   const lw=it.snap.players.find(p=>p.id===8);assert.equal(lw.pos,'LM','typed position');assert.equal(lw.num,'77','typed number');assert.equal(lw.name,'가상 선수 13');
   assert.deepEqual(it.snap.players.filter(p=>[1,3,10].includes(p.id)).map(p=>[p.pos,p.num]),[['GK','1'],['CB','3'],['RW','10']],'untouched tokens: formation position · squad number (or place)');assert.deepEqual(lw.depth,['김 새로','가상 선수 15','가상 선수 14']);
@@ -199,9 +209,7 @@ try{
   await f.locator('#vCreateCancel').click();
   await f.waitForFunction(()=>!document.body.classList.contains('vcreating'));
   await page.locator('#appSeg [data-app="board"]:not([data-train])').click();
-  await f.waitForFunction(()=>{const b=document.querySelector('#psPhoneBoardNotice [data-quick]');return b&&!b.hidden&&b.textContent==='＋ 빠른 보드';},null,{timeout:15000});
-  await f.locator('#psPhoneBoardNotice [data-quick]').tap();
-  await f.locator('#pqForm').waitFor({state:'visible'});
+  await openDepth(page,f);
   await f.locator('#pqFill-blank').check();
   await f.locator('#pqForm [data-form="3-3-1"]').tap();
   await f.locator('#pqForm [data-pq="form-go"]').tap();
@@ -210,7 +218,8 @@ try{
   await f.locator('#pqInput').fill('골키퍼 하나, 골키퍼 둘');await f.locator('#pqInput').press('Enter');
   await f.locator('#psQuick [data-pq="back"]').tap();
   await f.waitForFunction(()=>document.getElementById('psQuick').hidden);
-  await f.locator('#psPhoneBoardNotice [data-quick]').tap();
+  assert.match(await f.locator('#phbToast').innerText(),/쓰던 뎁스 차트는 남겨 뒀어요/,'the draft notice shows on the phone board');
+  await f.locator('#psPhoneBoard [data-phb="new-depth"]').tap();
   await f.locator('#pqForm [data-pq="draft"]').waitFor({state:'visible'});
   await f.locator('#pqForm [data-pq="draft"]').tap();
   s=await slots(f);assert.deepEqual(s[0],['골키퍼 하나','골키퍼 둘']);

@@ -60,7 +60,7 @@
     function guard(e){
       if(!readOnly(win))return;
       var t=e.target;
-      if(closest(t,'#psPhoneBoardNotice,#psVvPlay,#psEyeDialog,#psQuick'))return;
+      if(closest(t,'#psPhoneBoardNotice,#psVvPlay,#psEyeDialog,#psQuick,#psPhoneBoard'))return;
       var canvas=closest(t,'#boardStage'),edit=closest(t,EDIT_TARGET);
       // Blocking the canvas default also prevents iframe focus/parent blur.
       if(canvas&&['pointerdown','touchstart','mousedown'].indexOf(e.type)>=0){try{if(win.parent.__psAppMoreClose)win.parent.__psAppMoreClose();}catch(_){}}
