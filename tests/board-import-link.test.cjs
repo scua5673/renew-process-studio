@@ -87,7 +87,7 @@ test('연결 지점 — 가져오기·⌘Z·보관함 저장 시트·새로고�
   assert.match(src,/try\{ window\.__psPages\.linkClear\(_lk\.tag\.libId\); \}catch\(_\)\{\}\n        window\.__vaultPending=/,'새 항목으로 저장하면 옛 연결은 끊는다');
   assert.match(src,/boardLink:\(window\.__psPages&&window\.__psPages\.singleLinkVal\?window\.__psPages\.singleLinkVal\(\):null\)/);
   assert.match(src,/window\.__psPages\.setSingleLink\(live\.boardLink\|\|null\)/);
-  assert.match(src,/var _fp=_clone\(pages\); _fp\.forEach\(function\(p\)\{ if\(p\)delete p\.vlink; \}\);/,'보관함 저장본엔 연결을 싣지 않는다');
+  assert.match(src,/var _fp=_cloneLean\(pages\); _fp\.forEach\(function\(p\)\{ if\(p\)delete p\.vlink; \}\);/,'보관함 저장본엔 연결을 싣지 않는다');
   const dup=src.slice(src.indexOf('var src=pages[i]; if(!src)return; pages.splice('),src.indexOf('var src=pages[i]; if(!src)return; pages.splice(')+260);
   assert.doesNotMatch(dup,/vlink/,'페이지 복제는 연결을 따라가지 않는다');
 });

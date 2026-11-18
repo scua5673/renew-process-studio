@@ -47,7 +47,9 @@ suites.board.push('board-draft-divergent-3302');   /* 3.302 — 초안의 두 �
 suites.selection.push('training-grid-snap-3302');   /* 3.302 — 훈련 편집기는 격자에 붙는 것이 기본: 놓기 · 끌기 · ⌘/Ctrl 로 한 번 자유 · 선 끝은 선수에 묶임 · 끄기 · 나가면 작전판 그대로 */
 suites.board.push('anim-token-over-handle-3302');   /* 3.302 — 장면 사이에 조금 움직인 선수: 곡선 손잡이가 덮어도 토큰이 잡혀 끌린다 · 긴 동선의 손잡이는 그대로 */
 suites.selection.push('board-motion-marks-3302');   /* 3.302 — 잔상은 가늘어지는 꼬리 하나 · «시야» 단추가 끔 → 방향 표식 → 시야 → 끔 · 뒤 장면까지 · 재생 · 내보내기 */
-suites.selection.push('board-grass-natural-3303');   /* 3.303 — 3D «잔디만 · 간단»: 바닥은 잔디 한 장(판 테두리 안팎 밝기 같음 · 조명 기둥 · 따로 칠한 어둠 없음 · 멀수록 어둡게) · 전체 경기장 · 그리드 판은 그대로 */
+suites.selection.push('board-grass-natural-3303');
+suites.selection.push('board-toast-editing-3319');   /* 3.319 — 훈련 편집에서 도구 옵션 띠가 열린 채 뜬 알림은 띠 위 한 줄(위 · 아래 고정으로 늘어난 632px 상자 아님) */
+suites.selection.push('board-3d-pitch-3316');   /* 3.316 — 3D 잔디 색은 평면 피치(네이비 · 화이트 · 딥그린 · 직접 색 · 실사 + 밝기/연하기)를 따른다 */   /* 3.303 — 3D «잔디만 · 간단»: 바닥은 잔디 한 장(판 테두리 안팎 밝기 같음 · 조명 기둥 · 따로 칠한 어둠 없음 · 멀수록 어둡게) · 전체 경기장 · 그리드 판은 그대로 */
 suites.selection.push('board-tv-clean-3304');   /* 3.304 — 장면 줄은 번호 칩(그림 없음 · 그림을 만들지 않음) · 보관함 «전체화면»은 위쪽 띠(페이지 탭 · 보기 옵션)를 걷고 ‹ n / m › 가 도크를 덮지 않는다 */
 suites.selection.push('board-fold-top-3306');suites.selection.push('board-header-row-3309');
 suites.selection.push('board-reports-3311');   /* 3.311 — 그리기 도구 제보 묶음: 토큰 안의 화살 머리는 가장자리에 · 끝 모양은 집안마다 · 우클릭 창은 고른 그림에만 · 채움 없음 · 단축키 여섯 */   /* 3.306 — 아래 도크의 «도구 접기»(단추 · ⌘.)는 위쪽 띠도 같이 접고 «도구 펼치기»로 같이 편다 · 판은 제자리 · 새로고침 뒤에도 같이 · 보관함 편집기의 맨 위 줄(저장 · 나가기)은 남는다 */
