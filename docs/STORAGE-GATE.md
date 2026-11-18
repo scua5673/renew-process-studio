@@ -137,8 +137,47 @@ where (meta->>'ls')::int > 3072 order by ls_kb desc;
 
 아직 남은 «살펴볼 곳» 8줄(막지 않는다) — 전부 **백업 · 내보내기 목록**(app.html `KNOWN_IDB` · `MIRRORED_IDB` 에 `cs_drill_lib_v1` · `cs_perms_v1` · `scout_tool_v1` 없음 — 그 키는 다른 길(MERGED · restore 전용)로 다룬다)과 scout.html `SHARED_IDB`(`cs_drill_lib_v1` · `cs_gamemodel_v1` — 읽기만). 쓰기를 건너뛰는 길은 아니라 두었다.
 
+## 보관 사본 정리 (3.321) — 작은 저장소 2위 `ps_private_board_draft_v1:kept`
+
+③ 의 첫 숫자(11/18 13시 KST · 35기기)에서 1위는 일정 거울(3.315 가 고침), **2위가 작업 보드 «보관 사본»**이었다 — 7기기 · 평균 2.5MB · 최대 5.7MB.
+5MB 넘는 기기 넷은 전부 데스크톱이고, 그 기기들은 작은 저장소의 거의 전부가 이것(6.7MB 중 5.7 · 5.3 중 5.2 · 4.6 중 4.1 · 2.6 중 1.9). 같은 기기에 `:unsaved` · 머리 사본은 없었다.
+
+**무엇**: 작업 보드의 초안 · 머리 레코드가 갈리거나 충돌하면 `board-draft.js` 가 진 쪽 원문을 글자 그대로 보관 자리에 옮겨 둔다(넷). 되읽는 화면은 없다(백업 파일에만 실린다 — app.html `backupKeyAllowed`).
+`optimize`(3.124)는 작은 저장소의 보관 사본을 IndexedDB 로 옮기지만 **같은 자리에 다른 값이 있으면 못 옮겨**(`kept`) 영영 남았다 — `keepHead` 는 창마다 한 자리를 CAS 로 되쓰고 `localRecovery` 는 세션마다 새 자리에 쓰므로, IndexedDB 에 먼저 간 값과 작은 저장소의 나중 값이 자주 다르다. IndexedDB 쪽 사본은 아무도 지우지 않았다(3.302 «예전부터 아무도 지우지 않는다»).
+
+| 자리 | 누가 | 어디 |
+|---|---|---|
+| `…:kept:<token>` | `keepHead` — 머리 충돌 때의 내 레코드 | IndexedDB 먼저 · 실패하면 localStorage |
+| `…:kept:source-<token>` | `archiveHeads` — 갈린 두 머리(거울 · IndexedDB) | IndexedDB |
+| `…:kept:unsaved-<at>-<rand>` | `recover` · `localRecovery` — 충돌한 초안 | IndexedDB 먼저 · 수명 주기엔 localStorage |
+| `…:kept:unsaved-split-<지문>` | `settle`(3.302) — 갈린 두 초안 | IndexedDB |
+
+**규칙**(`studio/storage-kept.js` `PSStorageKept` — 셈은 `plan`(순수), I/O 는 `run`; `storage.js` `keptPrune` 가 저장소를 잇고 `optimize` 가 옛 사본 정리 뒤 · persist 앞에 부른다):
+- 작은 저장소의 사본은 IndexedDB 로 옮겨 되읽어 확인한 뒤에만 지운다 — 같은 자리에 다른 값이 있으면 `<키>:ls-<지문>` 자리.
+- 주인(uid · wid)마다 최신 **8**개만, **14일** 지난 것은 지운다. 한 시간 안의 것은 개수로 지우지 않는다(쓰는 중일 수 있다). 시각은 레코드의 `at`(초안) · `seq`(머리), 없으면 키의 토큰(10진 · base36), 그것도 없으면 가장 오래된 것으로 세어 개수 규칙만 받는다.
+- 지금 보드와 같은 지문(`:unsaved` 초안 · 머리 레코드와 같은 글이거나 같은 원문)은 지우지 않는다.
+- 지우기는 전부 «읽었던 값일 때만»(`idbDelIfValue` · `getItem` 대조) · 계정 · 공간이 바뀌면(`current`) 거기서 멈춘다 · 로그인한 계정의 키만(다른 계정이 남긴 것은 로그아웃 정리의 몫).
+- 지우기 전 `ps_events storage_kept_pruned`(status ok · feature storage) — `storage_usage` 와 같은 모양: `stage` 키 표 이름 · `n`/`kb` 지울 개수 · KB · `ls`/`idb` 어느 저장소에서 · `mv`/`mvKb` 옮기는 작은 저장소 사본 · `left`/`leftKb` 남는 것. 내용 · 키 전체 이름 · 계정 id 는 없다. 할 일이 없으면 보내지 않는다.
+
+**언제**: `optimize` 가 도는 때 — 하루 한 번(맨 위 창 · 부팅 12초 뒤) · 가득 찬 뒤 배너의 자동 정리 · 앱 설정의 «정리». 큰 기기 넷은 새 판 첫 부팅의 정리(3.126 — 작은 저장소 1.5MB 넘으면 하루를 기다리지 않는다)에서 작은 저장소가 비는 셈.
+보드가 쓰는 중인 자리를 지울 때의 경합: 쓰는 쪽(CAS → 되읽기)은 자리가 비면 null 에서 다시 쓰므로 자료는 잃지 않고, 그 한 번만 «저장되지 않았습니다»가 뜰 수 있다 — 한 시간 유예가 틈을 좁힌다.
+
+키 표: `ps_private_board_draft_v1:` 줄을 `idb`(IndexedDB 먼저 · localStorage 는 수명 주기 · 실패 때 사본 — 거울 아님)로, `:kept:` 는 와일드카드 줄 `ps_private_board_draft_v1:*:kept:`(recovery · idb · of 작업 보드 기록) — `info()` 가 `*` 앞을 접두사, 뒤를 그 다음 어딘가(사이에 계정 id)로 본다. 보고 이름(`fullName`)은 예전 그대로 `ps_private_board_draft_v1:kept`(③ 의 SQL 그대로).
+
+시험: 단위 `tests/storage-kept-prune.test.cjs`(가짜 저장소 — 경계 · 지문 · CAS · 계정 바뀜 · 기록 모양 · storage.js 연결 · 키 표) · 브라우저 `storage-kept-prune`(storage 묶음 — 실제 IndexedDB · optimize 길 · ps_events 본문; 고치기 전 코드는 모듈이 없어 첫 기다림에서 떨어진다).
+
+보는 법(운영 DB 읽기):
+
+```sql
+select created_at, device, app_version, meta from public.ps_events where event_name='storage_kept_pruned' order by created_at desc limit 50;
+-- 효과: ③ 의 «주인별» SQL 에서 k:ps_private_board_draft_v1:kept 의 기기 수 · 최대 KB 가 줄어드는지(승격 뒤 이틀)
+```
+
+**안 한 것**: 초안 본체(`:unsaved` · 머리 레코드) 정리 · 다른 계정이 남긴 보관 사본 · 2단계(거울 쓰기 실패 시 IndexedDB 기준).
+
 ## 다음(설계 6절)
 
+- 보관 사본 정리(3.321)의 효과를 본다 — 승격 뒤 이틀 `storage_kept_pruned` 와 ③ 의 `k:ps_private_board_draft_v1:kept`. 다른 계정이 남긴 보관 사본 · 초안 본체(`:unsaved` · 머리)는 2단계와 같이.
 - 2단계: 거울 쓰기가 실패하면 옛 거울을 지우고 IndexedDB 를 기준으로(일정의 `scheduleMirrorDrop` 을 거울 키 전체로) · `storage.get` 이 읽으면서 쓰는 것을 멈춘다. `board-rescue.js` · `board-vault-draft.js` 의 «마지막 사본» 길도 여기서 같이 본다.
 - ③ 의 숫자를 본 뒤 3단계(거울 걷어내기)의 첫 키를 고른다 — 가장 큰 `k:` 부터. `gamemodel.html` 의 `render` · `board.html` 의 `loadTeamToBoard` 같은 «거울을 동기로 읽는 곳»이 그때 바뀐다.
 - 실제 자료 복구 · 실기기 확인은 따로.

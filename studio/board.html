@@ -4227,10 +4227,10 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.321"></script>
-<script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-rescue.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>
+<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.323"></script>
+<script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-bounds.js"></script><script src="board-rescue.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-tv-fold.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.321"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script>
+<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.323"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -4935,7 +4935,7 @@ function applyView(){
     else{_cr.setAttribute("x",-_EXT);_cr.setAttribute("width",_EXT+_hh2);}
     _cr.setAttribute("y",-_EXT);_cr.setAttribute("height",H+_EXT*2);}}catch(_){}world.removeAttribute("clip-path");}catch(e){}})();   /* 클립은 라인·그리드 레이어에만 — 잔디 표면은 여백까지 자연스럽게 이어진다 */
   fy-=_topExt;fh+=_topExt;
-  FILL_X=fx;FILL_Y=fy;FILL_W=fw;FILL_H=fh;
+  FILL_X=fx;FILL_Y=fy;FILL_W=fw;FILL_H=fh;{var _wb=worldBounds();window.__psBoardBox=[_wb.minX,_wb.minY,_wb.maxX-_wb.minX,_wb.maxY-_wb.minY];}   /* 3.320 — 토큰이 못 나가는 판(board-bounds.js) — 운동장 좌표(세로 보기는 worldBounds 가 돌려 놓는다) */
   window.__pvBox=[bx,by,bw,bh];   /* 3.009 — 보여 줄 운동장 범위(여백 확장 전). 입체 보기의 틀 맞춤이 이것을 잰다 */
   const _vb=Math.round(fx)+" "+Math.round(fy)+" "+Math.round(fw)+" "+Math.round(fh);
   if(_vb!==_lastVB){svg.setAttribute("viewBox",_vb);_lastVB=_vb;}
@@ -5461,6 +5461,7 @@ function enableDrag(g,p,removable,kind){
     if(mode==="draw"){_inkMove(e);}   /* 3.025 — 펜의 중간 점까지 */
     else if(grp){if(!grpUndo){pushUndo();grpUndo=true;}const u=toUnit(e);let dx=u.x-gu0.x,dy=u.y-gu0.y;const ds=PSBoardEdit.snapDelta(grp,p,dx,dy,e);dx=ds.x;dy=ds.y;
       if(e.shiftKey){ if(!_mvAxis&&(Math.abs(dx)>6||Math.abs(dy)>6))_mvAxis=Math.abs(dx)>=Math.abs(dy)?"x":"y"; if(_mvAxis==="x")dy=0; else if(_mvAxis==="y")dx=0; } else _mvAxis=null;
+      {const _cb=PSBoardBounds.clampDelta(grp.filter(it=>!it.draw&&!it.locked).map(it=>({x:it.x0,y:it.y0,o:it.o})),dx,dy,q=>21*_tokScaleOf(q.o));dx=_cb.x;dy=_cb.y;}   /* 3.320 — 묶음도 판 안에서 */
       grp.forEach(it=>{if(it.locked)return;if(it.draw&&!it.locked){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&!g2.locked&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else if(!it.draw&&!it.locked){it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});renderMultiGuides();if(_dirLive()||grp.some(function(it){return !it.locked&&it.o&&(it.o.vis||it.o.shaper);})){renderVisionRAF();}}
     else{if(!mvUndo){pushUndo();mvUndo=true;}
       var _u0=toUnit(e);
@@ -5479,6 +5480,7 @@ function enableDrag(g,p,removable,kind){
       const s=_snapOn?snapDrag(p,kind,u):u;
       if(_snapOn&&(s.gx!=null||s.gy!=null))drawSnapGuides(s.gx,s.gy); else drawSnapGuides(null,null);
       if(e.shiftKey&&_mvP0){ if(!_mvAxis&&(Math.abs(s.x-_mvP0.x)>6||Math.abs(s.y-_mvP0.y)>6))_mvAxis=Math.abs(s.x-_mvP0.x)>=Math.abs(s.y-_mvP0.y)?"x":"y"; if(_mvAxis==="x")s.y=_mvP0.y; else if(_mvAxis==="y")s.x=_mvP0.x; } else _mvAxis=null;
+      PSBoardBounds.clampTo(s,21*_tokScaleOf(p));   /* 3.320 — 판 밖으로는 안 간다 */
       p.x=s.x;p.y=s.y;if(kind==="ball"){state.ball.x=s.x;state.ball.y=s.y;}g.setAttribute("transform",tokenTransform(p));try{if(window.psMeasDrag)psMeasDrag(p);}catch(_){}if((kind==="player"&&(p.vis||p.shaper||tokShape==="shaper"))||_dirLive()){renderVisionRAF();}}}   /* 2.986 — 볼을 끌면 쉐이퍼가 따라 돈다 */
   const onMove=e=>{
     if(!mode)return;
@@ -7633,9 +7635,11 @@ function _addEquipImage(file){if(!file)return;const rd=new FileReader();
       renderBench();if(typeof toast==="function")toast("내 장비에 저장됨 — 다음 작전판에서도 사용할 수 있어요");};
     img.onerror=function(){if(typeof toast==="function")toast("이미지를 읽지 못했어요");};img.src=rd.result;};
   rd.onerror=function(){if(typeof toast==="function")toast("파일을 읽지 못했어요");};rd.readAsDataURL(file);}
+/* 3.320 — 훈련 편집기에서 장비를 놓을 때도 선수 불러오기와 같은 크기([5])로(사용자 «장비도 마찬가지»). 이미 크면 그대로 · 이 판에만 */
+function _editorTokBoost(){var L=tokScaleLevels(),t=Math.round(L[5]*100)/100;if((state.tokenScale||L[0])<t-0.001)state.tokenScale=t;}
 function dropToken(cat,val,u,color,extra){
   pushUndo();
-  if(cat==="equip"){const _ec=color||((typeof equipColor!=="undefined"&&equipColor&&EQUIP_COL_DEF[val])?equipColor:null);state.equipment.push({id:uid++,team:val,x:u.x,y:u.y,color:_ec,src:(extra&&extra.src)||null});}
+  if(cat==="equip"){const _ec=color||((typeof equipColor!=="undefined"&&equipColor&&EQUIP_COL_DEF[val])?equipColor:null);state.equipment.push({id:uid++,team:val,x:u.x,y:u.y,color:_ec,src:(extra&&extra.src)||null});if(document.body.classList.contains("editing"))_editorTokBoost();}
   else if(cat==="coach")state.players.push({id:uid++,team:val,coach:true,x:u.x,y:u.y});
   else if(extra&&extra.gk){state.players.push({id:uid++,team:cat,num:"1",pos:"GK",x:u.x,y:u.y,color:null});}   /* 1.997 — GK 토큰 */
   else {const isAuto=!!(extra&&extra.auto),isPos=isPosLabel()&&!isAuto,_rc=roleColor(val);state.players.push({id:uid++,team:cat,num:isPos?"":val,pos:isPos?val:"",x:u.x,y:u.y,color:_rc||null});}
@@ -11993,7 +11997,7 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   /* 2.582 — 선수단을 올릴 때 토큰 기본 크기는 **두 단계 크게**(사용자 "선수단 올리기 해서 토큰 위로 올라갈 때 기본 토큰 크기 지금보다 2단계 크게").
      단계는 «크기 −/＋» 와 같은 사다리(tokScaleLevels: 기본 → ×1.25 → ×1.55 → …)의 [2]. 이미 그보다 크게 해 뒀으면 그대로.
      개인 설정(cs_tokscale_v4)은 안 건드린다 — 이 판(드릴 스냅의 tokenScale)에만 실린다. */
-  try{ if(!opts.boardToks){ var _tl=tokScaleLevels(), _tw=Math.round(_tl[2]*100)/100; if((state.tokenScale||_tl[0])<_tw-0.001)state.tokenScale=_tw; } }catch(_){}   /* 2.975 — 판 위 자리에 입힐 땐 코치가 맞춘 크기 그대로 */
+  try{ if(!opts.boardToks){ var _tl=tokScaleLevels(), _tw=Math.round(_tl[document.body.classList.contains("editing")?5:2]*100)/100; if((state.tokenScale||_tl[0])<_tw-0.001)state.tokenScale=_tw; } }catch(_){}   /* 2.975 — 판 위 자리에 입힐 땐 코치가 맞춘 크기 그대로 · 3.320 — 훈련 편집기(body.editing)에서는 세 칸 더([5], 사용자 «지금보다 3칸 키워줘») */
   /* 맨 오른쪽 대기 정렬 — 위에서부터 GK → 수비 → 미드필더 → 공격수 한 줄씩.
      포메이션 자리가 아니라 "끌어다 쓰는 출발 대형"이라 코치가 원하는 곳으로 바로 배치한다. */
   const GRP={GK:["GK"],DF:["CB","LCB","RCB","LB","RB","LWB","RWB","FB"],MF:["DM","LDM","RDM","CM","LCM","RCM","AM","LM","RM"],FW:["CF","ST","LW","RW","W"]};   /* 2.752 — 세부 포지션 포함 */
@@ -15904,6 +15908,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
            (spFlip=true: X=H−y·Y=x → (dx,dy)_w=(dy,−dx)s / false: X=y·Y=W−x → (−dy,dx)s.
            180°는 _mir180 이 좌표 자체를 굽기 때문에 보정 대상이 아니다.) */
         if(state.orientation==="v"){var _dt=_dx;if(state.spFlip){_dx=_dy;_dy=-_dt;}else{_dx=-_dy;_dy=_dt;}}
+        {var _cb=PSBoardBounds.clampDelta(_items.filter(function(o){return typeOfItem(o)!=="drawing";}).map(function(o){return {x:o.x,y:o.y,o:o};}),_dx,_dy,function(q){return 21*_tokScaleOf(q.o);});_dx=_cb.x;_dy=_cb.y;}   /* 3.320 — 방향키도 판 안에서 */
         if(!window.__nudgeT)pushUndo();
         clearTimeout(window.__nudgeT);window.__nudgeT=setTimeout(function(){window.__nudgeT=0;try{boardSaveLive();}catch(_){}},600);
         var _aD=false,_aT=false;

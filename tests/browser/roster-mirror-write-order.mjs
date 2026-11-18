@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {startFixture,openApp,OUT,SHOTS,WT,A} from '../fixtures/team-app.mjs';
 
-/* 3.321 — 같은 회차 안의 쓰기 차례: 일정 다이어트 쓰기(옛 8MB 사본 → 참조만 남긴 서버 원문, 3.315)가 작은 저장소에 내려앉은 **뒤에** 선수단 거울(scout_tool_v1)을 쓴다.
+/* 3.323(처음 3.321) — 같은 회차 안의 쓰기 차례: 일정 다이어트 쓰기(옛 8MB 사본 → 참조만 남긴 서버 원문, 3.315)가 작은 저장소에 내려앉은 **뒤에** 선수단 거울(scout_tool_v1)을 쓴다.
    PR #888(roster-mirror-after-diet-3315)의 첫 판이 CI 크롬 storage(run 44249806681)에서 잡은 것: 작은 저장소가 가득 차고 선수단 거울이 없는 기기로 부팅하면
    부팅 회차 안에서 두 쓰기가 각각 비동기 사슬(IDB 읽기 → 비교 저장 → 거울 쓰기)이라 차례가 없었다 — 8MB 를 읽고 견주는 일정 쪽이 느린 실행기에서 늦고,
    선수단 거울(140KB)이 먼저 60KB 남은 자리에 쓰이다 `sync_failed sync_storage scout_mirror_write`(reason boot) + `storage_full` 한 번 → 다음 회차에 성공(자기 치유).
