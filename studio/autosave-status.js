@@ -99,6 +99,9 @@
     function scan(){
       var live=[],loading=false;
       function visit(win,frame){
+        /* 3.331 — 글자로 지은 틀(srcdoc — 작전판 미팅 A4 미리보기 #ksPagePreview)은 앱 저장 코드를 싣지 않아 저장 상태를 알릴 일이 없다.
+           «아직 알리지 않은 화면»(unknown)으로 세면 미팅 화면을 한 번 연 뒤 상태 줄이 «기기 저장 확인 중…»에 머물렀다 — 세지 않는다 */
+        try{if(frame&&(String(win.location.href)==='about:srcdoc'||(frame.hasAttribute&&frame.hasAttribute('srcdoc'))))return;}catch(_){return;}
         var doc;try{doc=win.document;if(!doc)return;if(frame&&String(win.location.href)==='about:blank'){if(frame.getAttribute('src')&&frame.getAttribute('src')!=='about:blank')loading=true;return;}if(frame&&doc.readyState&&doc.readyState!=='complete')loading=true;}catch(_){return;}
         var row=attach(win,doc,frame);live.push(row);
         var frames=[];try{frames=doc.querySelectorAll('iframe');}catch(_){}
