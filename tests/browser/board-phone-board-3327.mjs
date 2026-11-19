@@ -18,7 +18,8 @@ const model=f=>f.evaluate(()=>{const m=window.__psPhoneBoard.ui().model();return
 // 운동장 위 합성 포인터(두 엔진 공통 · touch) — 미터 좌표로
 const ptr=(f,steps)=>f.evaluate(async steps=>{
   const svg=document.getElementById('phbPitch'),m=svg.getScreenCTM();
-  const at=(x,y)=>{const p=svg.createSVGPoint();p.x=x;p.y=y;const q=p.matrixTransform(m);return [q.x,q.y];};
+  const sp3=window.PSPhoneBoard.SPECS[window.__psPhoneBoard.ui().model().doc.n];
+  const at=(x,y)=>{const v=window.PSPhoneBoard.proj(sp3,x,y),p=svg.createSVGPoint();p.x=v.x;p.y=v.y;const q=p.matrixTransform(m);return [q.x,q.y];};   /* 3.333 — 3D: 미터 → 원근 → 화면 */
   const ev=(type,x,y)=>svg.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,composed:true,pointerId:5,pointerType:'touch',isPrimary:true,clientX:x,clientY:y,button:0,buttons:type==='pointerup'?0:1}));
   const [a,b]=steps,[x0,y0]=at(a[0],a[1]),[x1,y1]=b?at(b[0],b[1]):[x0,y0];
   ev('pointerdown',x0,y0);

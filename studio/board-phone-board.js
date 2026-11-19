@@ -62,7 +62,7 @@
   /* ── 판(snap) 만들기 ── prev 가 있으면 그 판의 설정 · 토큰의 다른 칸을 그대로 두고 폰보드가 아는 것만 바꾼다 */
   function snapFor(doc,prev){
     var sp=specOf(doc.n),n=sp.n,s=prev?copy(prev):{pitchSpec:sp.spec,orientation:'v',spFlip:false,area:'full',pitchView:'full',pvSide:'own',fieldMode:'standard',pitchN:1,pitchTheme:'grass',
-      lines:true,gridType:'off',label:'num',tokenScale:0.8,tokV:2,tokShape:'circle',namePos:'below',nameSize:'m',nameStyle:'pill'};
+      lines:true,gridType:'off',label:'num',tokenScale:0.8,tokV:2,tokShape:'circle',chip3d:true,namePos:'below',nameSize:'m',nameStyle:'pill'};
     var oldP={},oldE=(prev&&prev.equipment)||[],oldD=(prev&&prev.drawings)||[],eid=1000;
     ((prev&&prev.players)||[]).forEach(function(p){if(p&&p.id!=null)oldP[p.id]=p;});
     s.players=doc.players.slice(0,MAX_PLAYERS).map(function(p){
@@ -123,46 +123,90 @@
 
   /* ── 그리기(순수 — 글을 돌려준다) ── */
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  /* 3.333 — 기본 모양은 3D(사용자 11/19 «폰보드 디자인은 기본 디자인을 3d로 · 토큰도»). 문서 좌표(미터)는 그대로 두고 그릴 때만 원근으로 옮긴다:
+     먼 골라인이 K3 배로 좁아지고(직선은 직선으로 남는 사영), 누른 자리는 unproj 로 되돌린다 — 저장 좌표 · 보관함 판은 예전과 같다. */
+  var K3=0.7,H3=0.88,TOP3=0.1;
+  function proj(sp,x,y){
+    var t=y/sp.h,s=K3/(1-(1-K3)*t);
+    return {x:r2(sp.w/2+(x-sp.w/2)*s),y:r2(sp.h*(TOP3+H3*(s-K3)/(1-K3))),s:s};
+  }
+  function unproj(sp,X,Y){
+    var s=bound(K3+(1-K3)*((Y/sp.h)-TOP3)/H3,K3*0.8,1.2);
+    return {x:sp.w/2+(X-sp.w/2)/s,y:sp.h*(1-K3/s)/(1-K3)};
+  }
+  function pts3(sp,list){return list.map(function(q){var p=proj(sp,q[0],q[1]);return p.x+','+p.y;}).join(' ');}
   function pitchSVG(sp){
-    var w=sp.w,h=sp.h,b=sp.box,s=sp.six,sw=r2(w/170),o='<defs><clipPath id="phbClip"><rect x="0" y="0" width="'+w+'" height="'+h+'"/></clipPath></defs>';
-    var st=' fill="none" stroke="var(--phb-pline)" stroke-width="'+sw+'" stroke-opacity=".9"';
-    o+='<rect x="0" y="0" width="'+w+'" height="'+h+'" fill="var(--phb-pitch)"/><rect x="0" y="0" width="'+w+'" height="'+h+'"'+st+'/>';
-    o+='<line x1="0" y1="'+h/2+'" x2="'+w+'" y2="'+h/2+'"'+st+'/><circle cx="'+w/2+'" cy="'+h/2+'" r="'+sp.r+'"'+st+'/>';
-    var rx=s?0:r2(b[1]*0.9);
+    var w=sp.w,h=sp.h,b=sp.box,s=sp.six,sw=r2(w/190),o='',i;
+    var st=' fill="none" stroke="var(--phb-pline)" stroke-width="'+sw+'" stroke-opacity=".9" stroke-linejoin="round"';
+    var nl=proj(sp,0,h),nr=proj(sp,w,h),th=r2(h*0.014);
+    /* 판의 두께(앞쪽 옆면) · 깎은 줄 */
+    o+='<polygon points="'+nl.x+','+nl.y+' '+nr.x+','+nr.y+' '+nr.x+','+r2(nr.y+th)+' '+nl.x+','+r2(nl.y+th)+'" fill="#000" fill-opacity=".34"/>';
+    var N=11;for(i=0;i<N;i++)o+='<polygon points="'+pts3(sp,[[0,h*i/N],[w,h*i/N],[w,h*(i+1)/N],[0,h*(i+1)/N]])+'" fill="var(--phb-'+(i%2?'pitch2':'pitch')+')"/>';
+    o+='<polygon points="'+pts3(sp,[[0,0],[w,0],[w,h],[0,h]])+'"'+st+'/>';
+    o+='<polyline points="'+pts3(sp,[[0,h/2],[w,h/2]])+'"'+st+'/>';
+    var c=[];for(i=0;i<48;i++){var an=i/48*Math.PI*2;c.push([w/2+Math.cos(an)*sp.r,h/2+Math.sin(an)*sp.r]);}
+    o+='<polygon points="'+pts3(sp,c)+'"'+st+'/>';
     [0,1].forEach(function(k){
-      var y=k?h-b[1]:0;
-      o+='<rect x="'+r2((w-b[0])/2)+'" y="'+r2(k?y:y-rx)+'" width="'+b[0]+'" height="'+r2(b[1]+rx)+'" rx="'+rx+'"'+st+' clip-path="url(#phbClip)"/>';
-      if(s)o+='<rect x="'+r2((w-s[0])/2)+'" y="'+(k?h-s[1]:0)+'" width="'+s[0]+'" height="'+s[1]+'"'+st+'/>';
-      o+='<line x1="'+r2((w-sp.goal)/2)+'" y1="'+(k?h:0)+'" x2="'+r2((w+sp.goal)/2)+'" y2="'+(k?h:0)+'" stroke="var(--phb-pline)" stroke-width="'+r2(sw*3.2)+'"/>';
+      var Y=function(d){return k?h-d:d;},x0=(w-b[0])/2,x1=(w+b[0])/2,box;
+      if(s)box=[[x0,Y(0)],[x0,Y(b[1])],[x1,Y(b[1])],[x1,Y(0)]];
+      else{var rx=Math.min(b[1]*0.9,b[0]/2),j;box=[[x0,Y(0)],[x0,Y(b[1]-rx)]];
+        for(j=1;j<=8;j++){var a1=Math.PI-(Math.PI/2)*j/8;box.push([x0+rx+Math.cos(a1)*rx,Y(b[1]-rx+Math.sin(a1)*rx)]);}
+        for(j=0;j<=8;j++){var a2=Math.PI/2-(Math.PI/2)*j/8;box.push([x1-rx+Math.cos(a2)*rx,Y(b[1]-rx+Math.sin(a2)*rx)]);}
+        box.push([x1,Y(0)]);}
+      o+='<polyline points="'+pts3(sp,box)+'"'+st+'/>';
+      if(s)o+='<polyline points="'+pts3(sp,[[(w-s[0])/2,Y(0)],[(w-s[0])/2,Y(s[1])],[(w+s[0])/2,Y(s[1])],[(w+s[0])/2,Y(0)]])+'"'+st+'/>';
+      /* 골대 — 선 골문(먼 쪽은 그물까지, 앞쪽은 선수를 가리지 않게 옅은 틀만) */
+      var g0=proj(sp,(w-sp.goal)/2,Y(0)),g1=proj(sp,(w+sp.goal)/2,Y(0)),gh=r2(sp.goal*0.36*g0.s),fr='M'+g0.x+' '+g0.y+'L'+g0.x+' '+r2(g0.y-gh)+'L'+g1.x+' '+r2(g1.y-gh)+'L'+g1.x+' '+g1.y;
+      o+='<path class="phb-goal" d="'+fr+'" fill="'+(k?'none':'#fff')+'" fill-opacity=".14" stroke="var(--phb-pline)" stroke-width="'+r2(sw*(k?1.6:2.2))+'" stroke-opacity="'+(k?'.5':'.95')+'" stroke-linejoin="round" stroke-linecap="round"/>';
     });
     return o;
   }
   function lineSVG(l,sp){
-    var dx=l.x2-l.x1,dy=l.y2-l.y1,len=Math.sqrt(dx*dx+dy*dy)||1,ux=dx/len,uy=dy/len,hd=sp.w*0.035,sw=r2(sp.w/110);
-    var ex=l.x2-ux*hd*0.9,ey=l.y2-uy*hd*0.9,d;
+    var dx=l.x2-l.x1,dy=l.y2-l.y1,len=Math.sqrt(dx*dx+dy*dy)||1,ux=dx/len,uy=dy/len,hd0=sp.w*0.035,raw=[[l.x1,l.y1]],i;
     if(l.kind==='dribble'){
-      var n=Math.max(6,Math.round(len/(sp.w*0.012))),amp=sp.w*0.012,wl=sp.w*0.05,body=Math.max(0,len-hd*1.6);d='M'+r2(l.x1)+' '+r2(l.y1);
-      for(var i=1;i<=n;i++){var t=body*i/n,a=Math.sin(t/wl*Math.PI*2)*amp*(i===n?0:1);d+='L'+r2(l.x1+ux*t-uy*a)+' '+r2(l.y1+uy*t+ux*a);}
-      d+='L'+r2(ex)+' '+r2(ey);
-    }else d='M'+r2(l.x1)+' '+r2(l.y1)+'L'+r2(ex)+' '+r2(ey);
+      var n=Math.max(6,Math.round(len/(sp.w*0.012))),amp=sp.w*0.012,wl=sp.w*0.05,body=Math.max(0,len-hd0*1.6);
+      for(i=1;i<=n;i++){var t=body*i/n,a=Math.sin(t/wl*Math.PI*2)*amp*(i===n?0:1);raw.push([l.x1+ux*t-uy*a,l.y1+uy*t+ux*a]);}
+    }
+    var E=proj(sp,l.x2,l.y2),S=proj(sp,l.x1,l.y1),sx=E.x-S.x,sy=E.y-S.y,sl=Math.sqrt(sx*sx+sy*sy)||1,vx=sx/sl,vy=sy/sl;
+    var hd=hd0*E.s,sw=r2(sp.w/110*(E.s+S.s)/2),d=raw.map(function(q,j){var p=proj(sp,q[0],q[1]);return (j?'L':'M')+p.x+' '+p.y;}).join('');
+    d+='L'+r2(E.x-vx*hd*0.9)+' '+r2(E.y-vy*hd*0.9);
     var dash=l.kind==='pass'?' stroke-dasharray="'+r2(sw*3)+' '+r2(sw*2.6)+'"':'';
-    var px=-uy*hd*0.5,py=ux*hd*0.5,bx=l.x2-ux*hd,by=l.y2-uy*hd;
+    var px=-vy*hd*0.5,py=vx*hd*0.5,bx=E.x-vx*hd,by=E.y-vy*hd;
     return '<path d="'+d+'" fill="none" stroke="var(--phb-draw)" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round"'+dash+'/>'+
-      '<polygon points="'+r2(l.x2)+','+r2(l.y2)+' '+r2(bx+px)+','+r2(by+py)+' '+r2(bx-px)+','+r2(by-py)+'" fill="var(--phb-draw)"/>';
+      '<polygon points="'+E.x+','+E.y+' '+r2(bx+px)+','+r2(by+py)+' '+r2(bx-px)+','+r2(by-py)+'" fill="var(--phb-draw)"/>';
+  }
+  /* 토큰은 선 칩(옆면 + 윗면 + 그림자) — 먼 것부터 그려 앞의 것이 덮는다 */
+  function tokSVG(p,sp,r0){
+    var P=proj(sp,p.x,p.y),r=r0*P.s*1.12,ry=r*0.7,hg=r*0.52,X=P.x,Y=P.y,T=r2(Y-hg);
+    var gk=p.num==='1',team=p.team==='us'?'var(--phb-us)':'var(--phb-op)',fill=gk?'var(--phb-gk)':team,ink=gk?'var(--phb-edge)':'#fff';
+    var side='M'+r2(X-r)+' '+T+'L'+r2(X-r)+' '+r2(Y)+'A'+r2(r)+' '+r2(ry)+' 0 0 0 '+r2(X+r)+' '+r2(Y)+'L'+r2(X+r)+' '+T+'Z';
+    var o='<g class="phb-tok" data-id="'+esc(p.id)+'"><ellipse cx="'+r2(X+r*0.16)+'" cy="'+r2(Y+ry*0.3)+'" rx="'+r2(r*1.08)+'" ry="'+r2(ry*1.02)+'" fill="#000" fill-opacity=".3"/>';
+    o+='<path d="'+side+'" fill="'+fill+'"/><path d="'+side+'" fill="#000" fill-opacity=".36"/>';
+    o+='<ellipse cx="'+r2(X)+'" cy="'+T+'" rx="'+r2(r)+'" ry="'+r2(ry)+'" fill="'+fill+'" stroke="'+(gk?team:'#fff')+'" stroke-width="'+r2(r*(gk?0.2:0.11))+'"/>';
+    o+='<ellipse cx="'+r2(X-r*0.22)+'" cy="'+r2(T-ry*0.34)+'" rx="'+r2(r*0.52)+'" ry="'+r2(ry*0.34)+'" fill="#fff" fill-opacity=".16"/>';
+    o+='<text x="'+r2(X)+'" y="'+r2(T+r*0.33)+'" text-anchor="middle" font-size="'+r2(r*0.98)+'" font-weight="700" fill="'+ink+'">'+esc(p.num)+'</text>';
+    if(p.name){var tw=Math.max(r*2.2,p.name.length*r*0.95+r*0.9),th=r*1.1,ty=Y+ry+r*0.3;
+      o+='<rect x="'+r2(X-tw/2)+'" y="'+r2(ty)+'" width="'+r2(tw)+'" height="'+r2(th)+'" rx="'+r2(th/2)+'" fill="var(--phb-tag)" fill-opacity=".82"/>'+
+         '<text x="'+r2(X)+'" y="'+r2(ty+th*0.74)+'" text-anchor="middle" font-size="'+r2(r*0.8)+'" font-weight="600" fill="#fff">'+esc(p.name)+'</text>';}
+    return o+'</g>';
   }
   function docSVG(doc,sp){
-    var o='',r=sp.w*0.043;
+    var o='',r0=sp.w*0.043,all=[];
     doc.lines.forEach(function(l){o+=lineSVG(l,sp);});
-    doc.cones.forEach(function(c){var k=r*0.75;o+='<polygon points="'+r2(c.x)+','+r2(c.y-k)+' '+r2(c.x+k)+','+r2(c.y+k)+' '+r2(c.x-k)+','+r2(c.y+k)+'" fill="var(--phb-cone)" stroke="var(--phb-edge)" stroke-width="'+r2(r*0.08)+'"/>';});
-    doc.players.forEach(function(p){
-      var gk=p.num==='1',fill=gk?'var(--phb-gk)':(p.team==='us'?'var(--phb-us)':'var(--phb-op)'),ink=gk?'var(--phb-edge)':'#fff';
-      o+='<circle cx="'+r2(p.x)+'" cy="'+r2(p.y)+'" r="'+r2(r)+'" fill="'+fill+'" stroke="'+(gk?(p.team==='us'?'var(--phb-us)':'var(--phb-op)'):'#fff')+'" stroke-width="'+r2(r*(gk?0.22:0.12))+'"/>';
-      o+='<text x="'+r2(p.x)+'" y="'+r2(p.y+r*0.36)+'" text-anchor="middle" font-size="'+r2(r*1.05)+'" font-weight="700" fill="'+ink+'">'+esc(p.num)+'</text>';
-      if(p.name){var tw=Math.max(r*2.2,p.name.length*r*0.95+r*0.9),th=r*1.15,ty=p.y+r*1.25;
-        o+='<rect x="'+r2(p.x-tw/2)+'" y="'+r2(ty)+'" width="'+r2(tw)+'" height="'+r2(th)+'" rx="'+r2(th/2)+'" fill="var(--phb-tag)" fill-opacity=".82"/>'+
-           '<text x="'+r2(p.x)+'" y="'+r2(ty+th*0.74)+'" text-anchor="middle" font-size="'+r2(r*0.82)+'" font-weight="600" fill="#fff">'+esc(p.name)+'</text>';}
+    doc.cones.forEach(function(c){all.push({y:c.y,k:'c',o:c});});
+    doc.players.forEach(function(p){all.push({y:p.y,k:'p',o:p});});
+    if(doc.ball)all.push({y:doc.ball.y,k:'b',o:doc.ball});
+    all.sort(function(a,b){return a.y-b.y;});
+    all.forEach(function(it){
+      var P=proj(sp,it.o.x,it.o.y),X=P.x,Y=P.y;
+      if(it.k==='p')o+=tokSVG(it.o,sp,r0);
+      else if(it.k==='c'){var k=r0*0.78*P.s;
+        o+='<ellipse cx="'+r2(X+k*0.2)+'" cy="'+r2(Y+k*0.12)+'" rx="'+r2(k*1.1)+'" ry="'+r2(k*0.42)+'" fill="#000" fill-opacity=".28"/>'+
+           '<path d="M'+r2(X-k)+' '+r2(Y)+'A'+r2(k)+' '+r2(k*0.38)+' 0 0 0 '+r2(X+k)+' '+r2(Y)+'L'+r2(X)+' '+r2(Y-k*2)+'Z" fill="var(--phb-cone)" stroke="var(--phb-edge)" stroke-width="'+r2(k*0.1)+'" stroke-linejoin="round"/>';}
+      else{var br=r0*0.55*P.s;
+        o+='<ellipse cx="'+r2(X+br*0.2)+'" cy="'+r2(Y+br*0.1)+'" rx="'+r2(br*1.05)+'" ry="'+r2(br*0.5)+'" fill="#000" fill-opacity=".3"/>'+
+           '<circle cx="'+r2(X)+'" cy="'+r2(Y-br*0.85)+'" r="'+r2(br)+'" fill="#fff" stroke="var(--phb-edge)" stroke-width="'+r2(br*0.24)+'"/>';}
     });
-    if(doc.ball)o+='<circle cx="'+r2(doc.ball.x)+'" cy="'+r2(doc.ball.y)+'" r="'+r2(r*0.55)+'" fill="#fff" stroke="var(--phb-edge)" stroke-width="'+r2(r*0.14)+'"/>';
     return o;
   }
   function segDist(p,l){
@@ -372,7 +416,7 @@
     function pt(e){
       var svg=$('phbPitch'),p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;
       var q=p.matrixTransform(svg.getScreenCTM().inverse());
-      return inside(M.doc.n,q);
+      return inside(M.doc.n,unproj(specOf(M.doc.n),q.x,q.y));
     }
     function down(e){
       if(M.saving)return;
@@ -530,5 +574,5 @@
   function open(win){win=win||(typeof window!=='undefined'?window:null);var q=win&&(win.__psPhoneBoard||install(win));return q?q.open():false;}
 
   return {TAG:TAG,SPECS:SPECS,FORMS:FORMS,world:world,local:local,docNew:docNew,snapFor:snapFor,itemFor:itemFor,editable:editable,docFrom:docFrom,applyEdit:applyEdit,mine:mine,
-    hit:hit,pitchSVG:pitchSVG,docSVG:docSVG,landscape:landscape,title:title,install:install,open:open};
+    hit:hit,proj:proj,unproj:unproj,pitchSVG:pitchSVG,docSVG:docSVG,landscape:landscape,title:title,install:install,open:open};
 });

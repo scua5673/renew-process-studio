@@ -123,3 +123,28 @@ test('wiring: board script, vault chip, phone guard, service worker, shell tab',
   assert.ok(mod.includes("e.source!==win.parent||e.origin!==win.location.origin"),'only the same-origin parent can open it');
   assert.ok(tab.includes("getAttribute('data-ps-device')==='phone'"),'the tab exists on phones only');
 });
+
+test('3.333 — the editor draws in perspective and maps a touch back to the same metres',()=>{
+  for(const n of ['11','8','5']){
+    const sp=P.SPECS[n],far=P.proj(sp,0,0),farR=P.proj(sp,sp.w,0),near=P.proj(sp,0,sp.h),nearR=P.proj(sp,sp.w,sp.h),mid=P.proj(sp,sp.w/2,sp.h/2);
+    assert.ok(farR.x-far.x<(nearR.x-near.x)*0.75,'the far goal line is narrower');
+    assert.ok(Math.abs((nearR.x-near.x)-sp.w)<0.05,'the near goal line keeps its width');
+    assert.ok(far.y>0&&near.y<=sp.h&&far.y<mid.y&&mid.y<near.y,'the pitch stays inside the view');
+    assert.ok(mid.y-far.y<near.y-mid.y,'the far half is foreshortened');
+    assert.equal(mid.x,sp.w/2);
+    for(const [x,y] of [[0,0],[sp.w,sp.h],[sp.w*0.2,sp.h*0.33],[sp.w*0.9,sp.h*0.71],[sp.w/2,sp.h/2]]){
+      const p=P.proj(sp,x,y),q=P.unproj(sp,p.x,p.y);
+      assert.ok(Math.abs(q.x-x)<0.15&&Math.abs(q.y-y)<0.15,n+' round trip '+x+','+y+' → '+q.x+','+q.y);
+    }
+    const out=P.unproj(sp,-50,-50);assert.ok(Number.isFinite(out.x)&&Number.isFinite(out.y),'a touch outside the pitch stays finite');
+  }
+  const sp=P.SPECS['11'],doc=P.docNew('11','4-3-3','4-4-2');doc.ball={x:34,y:50};doc.cones.push({x:10,y:50});
+  const svg=P.docSVG(doc,sp);
+  assert.equal(svg.split('class="phb-tok"').length-1,22,'every player is a standing chip');
+  const ys=[...svg.matchAll(/class="phb-tok" data-id="(\d+)"/g)].map(m=>doc.players.find(p=>String(p.id)===m[1]).y);
+  assert.deepEqual(ys,ys.slice().sort((a,b)=>a-b),'far players are drawn first');
+  assert.ok(P.pitchSVG(sp).includes('class="phb-goal"'));
+  assert.equal(P.snapFor(doc).chip3d,true,'a new phone board asks the big board for 3D chips');
+  const old={pitchSpec:'fifa',tokShape:'circle',players:[],equipment:[],drawings:[]};
+  assert.equal('chip3d' in P.snapFor(doc,old),false,'an existing board keeps its own look');
+});
