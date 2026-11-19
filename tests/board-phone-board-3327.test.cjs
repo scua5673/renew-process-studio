@@ -124,13 +124,13 @@ test('wiring: board script, vault chip, phone guard, service worker, shell tab',
   assert.ok(tab.includes("getAttribute('data-ps-device')==='phone'"),'the tab exists on phones only');
 });
 
-test('3.333 — the editor draws in perspective and maps a touch back to the same metres',()=>{
+test('3.333 — a flat pitch with standing chips, and a touch maps back to the same metres',()=>{
   for(const n of ['11','8','5']){
     const sp=P.SPECS[n],far=P.proj(sp,0,0),farR=P.proj(sp,sp.w,0),near=P.proj(sp,0,sp.h),nearR=P.proj(sp,sp.w,sp.h),mid=P.proj(sp,sp.w/2,sp.h/2);
-    assert.ok(farR.x-far.x<(nearR.x-near.x)*0.9,'the far goal line is narrower');
+    assert.ok(Math.abs((farR.x-far.x)-sp.w)<0.05,'the pitch is flat — the far goal line is as wide as the near one');
     assert.ok(Math.abs((nearR.x-near.x)-sp.w)<0.05,'the near goal line keeps its width');
     assert.ok(far.y>0&&near.y<=sp.h&&far.y<mid.y&&mid.y<near.y,'the pitch stays inside the view');
-    assert.ok(mid.y-far.y<near.y-mid.y,'the far half is foreshortened');
+    assert.ok(Math.abs((mid.y-far.y)-(near.y-mid.y))<0.05,'no foreshortening');
     assert.equal(mid.x,sp.w/2);
     for(const [x,y] of [[0,0],[sp.w,sp.h],[sp.w*0.2,sp.h*0.33],[sp.w*0.9,sp.h*0.71],[sp.w/2,sp.h/2]]){
       const p=P.proj(sp,x,y),q=P.unproj(sp,p.x,p.y);

@@ -125,16 +125,16 @@
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   /* 3.333 — 기본 모양은 3D(사용자 11/19 «폰보드 디자인은 기본 디자인을 3d로 · 토큰도»). 문서 좌표(미터)는 그대로 두고 그릴 때만 원근으로 옮긴다:
      먼 골라인이 K3 배로 좁아지고(직선은 직선으로 남는 사영), 누른 자리는 unproj 로 되돌린다 — 저장 좌표 · 보관함 판은 예전과 같다. */
-  var K3=0.84,H3=0.875,TOP3=0.065;
+  var K3=1,H3=0.875,TOP3=0.065;   /* K3 1 = 평면(사용자 «평면이 나을 것 같아 토큰만 3d로») — 1 보다 작으면 먼 쪽이 좁아지는 원근 */
   /* 여백 없이(사용자 «최대한 여백없게»): 가로는 운동장 폭에 맞추고 세로는 화면 칸 비율만큼 늘인다 — sp.vh(편집기가 칸 크기로 정한다 · 없으면 실제 길이). 토큰은 폭 기준이라 둥근 그대로. */
   function vh(sp){return sp.vh>0?sp.vh:sp.h;}
   function proj(sp,x,y){
-    var t=y/sp.h,s=K3/(1-(1-K3)*t);
-    return {x:r2(sp.w/2+(x-sp.w/2)*s),y:r2(vh(sp)*(TOP3+H3*(s-K3)/(1-K3))),s:s};
+    var t=y/sp.h,s=K3/(1-(1-K3)*t),f=K3<1?(s-K3)/(1-K3):t;
+    return {x:r2(sp.w/2+(x-sp.w/2)*s),y:r2(vh(sp)*(TOP3+H3*f)),s:s};
   }
   function unproj(sp,X,Y){
-    var s=bound(K3+(1-K3)*((Y/vh(sp))-TOP3)/H3,K3*0.8,1.2);
-    return {x:sp.w/2+(X-sp.w/2)/s,y:sp.h*(1-K3/s)/(1-K3)};
+    var f=((Y/vh(sp))-TOP3)/H3,s=bound(K3+(1-K3)*f,K3*0.8,1.2);
+    return {x:sp.w/2+(X-sp.w/2)/s,y:K3<1?sp.h*(1-K3/s)/(1-K3):sp.h*f};
   }
   function pts3(sp,list){return list.map(function(q){var p=proj(sp,q[0],q[1]);return p.x+','+p.y;}).join(' ');}
   /* 큰 작전판의 잔디 느낌(사용자 11/19 폰 화면 사진 «이 느낌으로 세로로»): 짙은 두 색 10m 띠가 선 밖(런오프)까지 화면을 채우고,
