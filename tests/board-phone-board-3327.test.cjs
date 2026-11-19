@@ -123,3 +123,48 @@ test('wiring: board script, vault chip, phone guard, service worker, shell tab',
   assert.ok(mod.includes("e.source!==win.parent||e.origin!==win.location.origin"),'only the same-origin parent can open it');
   assert.ok(tab.includes("getAttribute('data-ps-device')==='phone'"),'the tab exists on phones only');
 });
+
+test('3.333 — a flat pitch with standing chips, and a touch maps back to the same metres',()=>{
+  for(const n of ['11','8','5']){
+    const sp=P.SPECS[n],far=P.proj(sp,0,0),farR=P.proj(sp,sp.w,0),near=P.proj(sp,0,sp.h),nearR=P.proj(sp,sp.w,sp.h),mid=P.proj(sp,sp.w/2,sp.h/2);
+    assert.ok(Math.abs((farR.x-far.x)-sp.w)<0.05,'the pitch is flat — the far goal line is as wide as the near one');
+    assert.ok(Math.abs((nearR.x-near.x)-sp.w)<0.05,'the near goal line keeps its width');
+    assert.ok(far.y>0&&near.y<=sp.h&&far.y<mid.y&&mid.y<near.y,'the pitch stays inside the view');
+    assert.ok(Math.abs((mid.y-far.y)-(near.y-mid.y))<0.05,'no foreshortening');
+    assert.equal(mid.x,sp.w/2);
+    for(const [x,y] of [[0,0],[sp.w,sp.h],[sp.w*0.2,sp.h*0.33],[sp.w*0.9,sp.h*0.71],[sp.w/2,sp.h/2]]){
+      const p=P.proj(sp,x,y),q=P.unproj(sp,p.x,p.y);
+      assert.ok(Math.abs(q.x-x)<0.15&&Math.abs(q.y-y)<0.15,n+' round trip '+x+','+y+' → '+q.x+','+q.y);
+    }
+    const out=P.unproj(sp,-50,-50);assert.ok(Number.isFinite(out.x)&&Number.isFinite(out.y),'a touch outside the pitch stays finite');
+  }
+  { /* 칸을 꽉 채우게 세로를 늘여도(sp.vh) 왕복은 같다 */
+    const sp=Object.assign({},P.SPECS['11'],{vh:150}),p=P.proj(sp,20,80),q=P.unproj(sp,p.x,p.y),near=P.proj(sp,0,sp.h);
+    assert.ok(Math.abs(q.x-20)<0.15&&Math.abs(q.y-80)<0.15);assert.ok(near.y>sp.h&&near.y<=150,'the near goal line sits near the bottom of the taller view');
+  }
+  const sp=P.SPECS['11'],doc=P.docNew('11','4-3-3','4-4-2');doc.ball={x:34,y:50};doc.cones.push({x:10,y:50});
+  const svg=P.docSVG(doc,sp);
+  assert.equal(svg.split('class="phb-tok"').length-1,22,'every player is a standing chip');
+  const ys=[...svg.matchAll(/class="phb-tok" data-id="(\d+)"/g)].map(m=>doc.players.find(p=>String(p.id)===m[1]).y);
+  assert.deepEqual(ys,ys.slice().sort((a,b)=>a-b),'far players are drawn first');
+  assert.ok(P.pitchSVG(sp).includes('class="phb-goal"'));
+  assert.equal(P.snapFor(doc).chip3d,true,'a new phone board asks the big board for 3D chips');
+  const old={pitchSpec:'fifa',tokShape:'circle',players:[],equipment:[],drawings:[]};
+  assert.equal('chip3d' in P.snapFor(doc,old),false,'an existing board keeps its own look');
+});
+
+test('3.333 — token size is five steps, kept with the item and handed to the big board only when changed',()=>{
+  const sp=P.SPECS['11'],doc=P.docNew('11','4-3-3','');
+  assert.equal(P.tokOf(doc),3);assert.equal(P.tokOf({tok:9}),3);assert.equal(P.tokOf({tok:'5'}),5);
+  const rOf=d=>+P.docSVG(d,sp).match(/class="phb-tok"[^>]*><ellipse[^>]*\/><path[^>]*\/><path[^>]*\/><ellipse cx="[^"]+" cy="[^"]+" rx="([0-9.]+)"/)[1];
+  const mid=rOf(doc);doc.tok=5;doc.tokSet=true;const big=rOf(doc);doc.tok=1;const small=rOf(doc);
+  assert.ok(small<mid&&mid<big,'the chips grow with the step: '+[small,mid,big]);
+  const it0=P.itemFor(P.docNew('11','4-3-3',''),'기본',1);assert.deepEqual(it0.phone,{v:1,n:'11'});assert.equal(it0.snap.tokenScale,0.8,'the default keeps the old board scale');
+  doc.tok=5;const it=P.itemFor(doc,'큰 토큰',2);assert.equal(it.phone.tok,5);assert.equal(it.snap.tokenScale,1.04);
+  assert.equal(P.editable(it),true);assert.equal(P.docFrom(it).tok,5,'reopening keeps the step');
+  const again=P.docFrom(it);P.applyEdit(it,again,'',3);assert.equal(it.snap.tokenScale,1.04,'an untouched reopen leaves the board scale alone');
+  const old={libId:'x',type:'board',phone:{v:1,n:'11'},snap:Object.assign(P.snapFor(P.docNew('11','4-3-3','')),{tokenScale:1.3})};
+  const d2=P.docFrom(old);P.applyEdit(old,d2,'',4);assert.equal(old.snap.tokenScale,1.3,'a board sized on the iPad keeps its scale');assert.equal('tok' in old.phone,false);
+  d2.tok=2;d2.tokSet=true;P.applyEdit(old,d2,'',5);assert.equal(old.phone.tok,2);assert.equal(old.snap.tokenScale,0.69);
+  d2.tok=3;P.applyEdit(old,d2,'',6);assert.equal('tok' in old.phone,false,'back to the default drops the field');
+});
