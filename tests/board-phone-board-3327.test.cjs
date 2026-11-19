@@ -152,3 +152,19 @@ test('3.333 — a flat pitch with standing chips, and a touch maps back to the s
   const old={pitchSpec:'fifa',tokShape:'circle',players:[],equipment:[],drawings:[]};
   assert.equal('chip3d' in P.snapFor(doc,old),false,'an existing board keeps its own look');
 });
+
+test('3.333 — token size is five steps, kept with the item and handed to the big board only when changed',()=>{
+  const sp=P.SPECS['11'],doc=P.docNew('11','4-3-3','');
+  assert.equal(P.tokOf(doc),3);assert.equal(P.tokOf({tok:9}),3);assert.equal(P.tokOf({tok:'5'}),5);
+  const rOf=d=>+P.docSVG(d,sp).match(/class="phb-tok"[^>]*><ellipse[^>]*\/><path[^>]*\/><path[^>]*\/><ellipse cx="[^"]+" cy="[^"]+" rx="([0-9.]+)"/)[1];
+  const mid=rOf(doc);doc.tok=5;doc.tokSet=true;const big=rOf(doc);doc.tok=1;const small=rOf(doc);
+  assert.ok(small<mid&&mid<big,'the chips grow with the step: '+[small,mid,big]);
+  const it0=P.itemFor(P.docNew('11','4-3-3',''),'기본',1);assert.deepEqual(it0.phone,{v:1,n:'11'});assert.equal(it0.snap.tokenScale,0.8,'the default keeps the old board scale');
+  doc.tok=5;const it=P.itemFor(doc,'큰 토큰',2);assert.equal(it.phone.tok,5);assert.equal(it.snap.tokenScale,1.04);
+  assert.equal(P.editable(it),true);assert.equal(P.docFrom(it).tok,5,'reopening keeps the step');
+  const again=P.docFrom(it);P.applyEdit(it,again,'',3);assert.equal(it.snap.tokenScale,1.04,'an untouched reopen leaves the board scale alone');
+  const old={libId:'x',type:'board',phone:{v:1,n:'11'},snap:Object.assign(P.snapFor(P.docNew('11','4-3-3','')),{tokenScale:1.3})};
+  const d2=P.docFrom(old);P.applyEdit(old,d2,'',4);assert.equal(old.snap.tokenScale,1.3,'a board sized on the iPad keeps its scale');assert.equal('tok' in old.phone,false);
+  d2.tok=2;d2.tokSet=true;P.applyEdit(old,d2,'',5);assert.equal(old.phone.tok,2);assert.equal(old.snap.tokenScale,0.69);
+  d2.tok=3;P.applyEdit(old,d2,'',6);assert.equal('tok' in old.phone,false,'back to the default drops the field');
+});

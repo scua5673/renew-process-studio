@@ -94,6 +94,18 @@ try{
   m=await model(f);assert.equal(m.doc.cones.length,1);
   await f.locator('#phbTools [data-v="move"]').tap();
   await shot(page,'3-editor');
+  /* 3.333 — 토큰 크기: «옮기기» 줄의 − / ＋ (다섯 단계 · 되돌리기 한 번에 한 칸) */
+  await f.locator('[data-phb="tool"][data-v="move"]').click();
+  const chipR=()=>f.evaluate(()=>+document.querySelector('#phbPitch .phb-tok ellipse:nth-of-type(2)').getAttribute('rx'));
+  const r3=await chipR();
+  await f.locator('[data-phb="tok"][data-v="1"]').click();await f.locator('[data-phb="tok"][data-v="1"]').click();
+  assert.equal((await model(f)).doc.tok,5);assert.equal(await f.locator('#phbTokN').textContent(),'5');
+  assert.equal(await f.locator('[data-phb="tok"][data-v="1"]').isDisabled(),true,'the biggest step stops');
+  const r5=await chipR();assert.ok(r5>r3*1.2,'the chips grew: '+r3+' → '+r5);
+  await shot(page,'3b-editor-big');
+  await f.locator('[data-phb="undo"]').click();assert.equal((await model(f)).doc.tok,4,'undo steps the size back');
+  await f.locator('[data-phb="tok"][data-v="-1"]').click();assert.equal((await model(f)).doc.tok,3);
+  assert.ok(Math.abs(await chipR()-r3)<0.01,'back to the first size');
   /* 다른 탭에 갔다 와도 쓰던 판은 그대로 */
   await page.locator('#psTrainBtn').tap();
   await f.waitForFunction(()=>document.getElementById('psPhoneBoard').hidden);
