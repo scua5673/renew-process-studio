@@ -3,6 +3,7 @@ import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 3.255 — 3D 잔디결(합성 팀 fixture 에서만). 실제 경기장 그림(<img> SVG)을 풀어 본다:
 //  · 운동장 5개: 카드마다 띠 무늬가 그 카드의 골라인(data-pitch-rect 위)에서 시작, 27개 띠(11인제 · 3.263 — 예전 21) — 가운데 띠가 하프라인에 걸친다
 //  · 운동장 1개: 예전 psStMow(골라인에서 5m) 그대로 · 카드 띠 없음
+// 3.332 — 기대를 일부러 고침: 띠는 결 간격(grassM, 여기선 4m) 정확히 · 카드 띠는 카드 하프라인(가운데)에서 시작
 //  · 잎결 타일은 실제 PNG(이음새 없는 256 타일) · 바둑판 원인이던 큰 얼룩 없음
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};
@@ -16,7 +17,7 @@ try{
   await page.waitForTimeout(800);
   const look=(n,o)=>f.evaluate(async ([n,o])=>{
     const s=captureSnap();s.pitchTheme='grass';s.pitchImg='@real';s.orientation=o;s.spFlip=false;s.players=[];s.drawings=[];s.pitchView='full';s.pitchSpec='fifa';loadSnap(s);
-    window.__setGrassM(5);   /* 3.326 — 3D 도 보드의 «잔디 무늬»를 따른다(기본 없음) — 여기서는 띠 */
+    window.__setGrassM(4);   /* 3.326 — 3D 도 보드의 «잔디 무늬»를 따른다(기본 없음) — 여기서는 띠 · 3.332 — 4m */
     window.__setPitchN(n);window.__setTilt(true);
     const t0=Date.now();let h=null,src='';
     while(Date.now()-t0<15000){h=document.querySelector('#tiltSurface .tilt-stadium');src=h?decodeURIComponent(h.getAttribute('src')||''):'';
@@ -33,9 +34,9 @@ try{
     const r=await look(5,o);
     assert.equal(r.cards.length,5,'카드 다섯');assert.equal(r.cardRects,5,'카드마다 띠');
     assert.deepEqual(r.mow,{patternUnits:'userSpaceOnUse',width:'1',height:'1'},'경기장 전체 x 줄은 빈 무늬');
-    r.cards.forEach((c,i)=>{const p=r.cardPats[i],band=c[3]/27;   /* 3.263 — 약 4m(예전 21) */
-      assert.ok(p,'카드 '+i+' 무늬');assert.ok(Math.abs(+p.x-c[0])<.06&&Math.abs(+p.y-c[1])<.06,'골라인에서 시작');
-      assert.ok(Math.abs(+p.height-2*band)<.06,'11인제 27개 띠 '+p.height+' vs '+2*band);});
+    r.cards.forEach((c,i)=>{const p=r.cardPats[i],band=4*c[3]/105;   /* 3.263 — 약 4m(예전 21) · 3.332 — 정확히 4m */
+      assert.ok(p,'카드 '+i+' 무늬');assert.ok(Math.abs(+p.x-c[0])<.06&&Math.abs(+p.y-(c[1]+c[3]/2))<.06,'카드 하프라인에서 시작');
+      assert.ok(Math.abs(+p.height-2*band)<.06,'11인제 4m 한 쌍 '+p.height+' vs '+2*band);});
     assert.equal(r.grainPat.patternTransform,'rotate(90)','잎결은 카드의 깎는 방향(x)');
     assert.deepEqual(r.tile,{w:256,h:256});assert.equal(r.grainFill,true);
   }

@@ -371,3 +371,18 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "선수는 {}명까지 놓을 수 있어요":"You can place up to {} players",
 "화살은 {}개까지 그릴 수 있어요":"You can draw up to {} arrows"
 },{});
+
+/* 3.332 — 잔디결 간격(board-mow.js): «잔디 무늬»의 «띠»를 고르면 나오는 간격 칸(3 · 4 · 5 · 6 · 8 · 10m)과 아래 한 줄 */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{
+"결 간격":"Stripe width",
+"골라인과 나란한 띠 · 간격은 아래에서":"Stripes parallel to the goal line · set the width below"
+},{
+"{}m 간격":"{} m apart",
+"결 간격 · 판 가운데에서 {}m씩":"Stripe width · every {} m from the centre",
+"결 간격 · 하프라인에서 {}m씩 · 한쪽 {}결 + 골라인 앞 {}m":"Stripe width · every {} m from the halfway line · {} stripes each half + {} m before the goal line",
+"결 간격 · 하프라인에서 {}m씩 · 한쪽 {}결 · 골라인에 딱 맞음":"Stripe width · every {} m from the halfway line · {} stripes each half · ends on the goal line"
+},{});

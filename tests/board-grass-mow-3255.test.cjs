@@ -8,27 +8,27 @@ const G=require('../studio/board-stadium-ground.js');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 const attrs=(xml,tag,id)=>{const m=new RegExp('<'+tag+' id="'+id+'"([^>]*)>').exec(xml);if(!m)return null;const o={};m[1].replace(/([\w-]+)="([^"]*)"/g,(_,k,v)=>{o[k]=v;});return o;};
 
-test('운동장 하나 — 골라인 L 에서 어두운 줄 · 밝은 줄(x 방향, 3.263 부터 약 4m: 27개 띠 · 105/27m), 카드 띠 없음',()=>{
+/* 3.332 — 기대를 일부러 고침: 띠는 «약 4m(길이를 홀수 줄로)» · 골라인에서가 아니라 결 간격(노드 기본 4m) · 하프라인이 결 경계.
+   잔디 사진 칸(per)은 무늬와 따로 예전 그대로. 결 간격 시험은 tests/board-mow-gap-3332.test.cjs */
+test('운동장 하나 — 하프라인에서 어두운 줄 · 밝은 줄(x 방향, 3.332 부터 정확히 4m), 사진 칸은 약 4m 한 쌍(27개 띠) 그대로, 카드 띠 없음',()=>{
   const p=G.mowPlan({multi:false,L:30,T:30,m:10,len:105,pw:1050});
-  assert.equal(p.cards,'');assert.equal(p.rot,0);assert.ok(Math.abs(p.per-2*1050/27)<1e-9,'per = 밝은 띠 + 어두운 띠');
-  assert.deepEqual(attrs(p.defs,'pattern','psStMow'),{patternUnits:'userSpaceOnUse',x:'30',y:'30',width:'77.8',height:'77.8'});
-  assert.match(p.defs,/<rect width="38\.9" height="77\.8" fill="#000" fill-opacity="\.07"\/><rect x="38\.9" width="38\.9" height="77\.8" fill="#fff" fill-opacity="\.06"\/>/);
+  assert.equal(p.cards,'');assert.equal(p.rot,0);assert.ok(Math.abs(p.per-2*1050/27)<1e-9,'per = 사진 칸(예전 그대로)');
+  assert.deepEqual(attrs(p.defs,'pattern','psStMow'),{patternUnits:'userSpaceOnUse',x:'555',y:'30',width:'80',height:'80'},'하프라인(30+525)에서 4m 한 쌍');
+  assert.match(p.defs,/<rect width="40" height="80" fill="#000" fill-opacity="\.07"\/><rect x="40" width="40" height="80" fill="#fff" fill-opacity="\.06"\/>/);
   assert.ok(Math.abs(G.mowPlan({multi:false,L:230,T:130,m:10,len:65,pw:650}).per-2*650/17)<1e-9,'8인제 17개 띠');
   assert.ok(Math.abs(G.mowPlan({multi:false,L:30,T:30,m:10}).per-2*1050/27)<1e-9,'길이를 모르면 105m');
   assert.equal(G.mowPlan({multi:true,cards:[],L:0,T:0,m:10}).cards,'','카드를 못 읽으면 예전 길');
 });
 
-test('여러 운동장은 카드마다 — 골라인(카드 위)에서 시작해 홀수 개 띠, 가운데 띠가 하프라인에 걸친다',()=>{
-  for(const [len,n] of [[105,27],[65,17],[40,11]]){   /* 3.263 — 약 4m(예전 5m: 21 · 13 · 9) */
+test('여러 운동장은 카드마다 — 카드의 하프라인(가운데)이 결 경계, 결은 그 규격의 4m(3.332)',()=>{
+  for(const [len,n] of [[105,27],[65,17],[40,11]]){   /* 3.263 — 약 4m(예전 5m: 21 · 13 · 9) · 3.332 — 정확히 4m */
     const cards=[[0,0,300,450],[320,0,150,220],[320,240,150,220]];
     const p=G.mowPlan({multi:true,cards,len,L:0,T:0,m:4});
     assert.equal(p.rot,90,'잎결은 x(깎는 방향) — 띠는 y');
     assert.deepEqual(attrs(p.defs,'pattern','psStMow'),{patternUnits:'userSpaceOnUse',width:'1',height:'1'},'psStMow 는 빈 무늬(이름을 쓰는 곳은 그대로)');
-    cards.forEach((r,i)=>{const a=attrs(p.defs,'pattern','psStMowC'+i),band=r[3]/n;
-      assert.equal(+a.x,r[0]);assert.equal(+a.y,r[1],'골라인에서 시작');
-      assert.ok(Math.abs(+a.height-2*band)<.06,len+'m → '+n+'개 띠');
-      const mid=r[1]+r[3]/2,k=Math.floor((mid-r[1])/band);
-      assert.equal(k,(n-1)/2,'하프라인은 가운데 띠 안');assert.ok(Math.abs((mid-r[1])/band-k-.5)<1e-9,'가운데 띠의 한가운데');
+    cards.forEach((r,i)=>{const a=attrs(p.defs,'pattern','psStMowC'+i),band=4*r[3]/len;
+      assert.equal(+a.x,r[0]);assert.ok(Math.abs(+a.y-(r[1]+r[3]/2))<.06,'카드 하프라인에서 시작');
+      assert.ok(Math.abs(+a.height-2*band)<.06,len+'m → 4m 한 쌍');assert.ok(!a.patternTransform,'카드 띠는 돌리지 않는 y 띠');
     });
     assert.equal((p.cards.match(/class="ps-mow-card"/g)||[]).length,3);
   }
