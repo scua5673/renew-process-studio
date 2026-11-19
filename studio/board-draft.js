@@ -398,9 +398,23 @@
     });
     api.write=quiescent(w,api.write);api.ready=quiescent(w,api.ready);
     var old=w.boardDraftWriteNow,flush=w.psFlushPendingReady,has=w.psHasPending,live=w.boardFlushLive,exitTarget='';
+    /* 3.331 — 보드에서 빌린 화면(보관함 목록 setView('session'))으로 떠날 때, lifecycle 초안(증명서 cert)을 적은 뒤 영수증 확인까지 한다
+       (ready() 의 빌린 화면 길 = sourceReceipt — 저장소를 읽기만). 사람이 탭을 누르면 셸 장벽(psFlushAllPendingReady)이 ready() 를 부르지만,
+       메시지로 넘어가는 길(일정 ▶ 쇼 · 훈련 보기를 닫음 → goApp · captureCancel)은 장벽을 안 지나 초안이 «대기»로 남고 셸 상태 줄이 그대로였다.
+       증명서가 없거나 이미 확인됐으면 아무것도 안 한다 — 실패 표시는 ready() 의 원래 규칙 그대로. */
+    var confirmT=0,confirmWhy='';
+    function confirmLater(){
+      if(confirmT)w.clearTimeout(confirmT);
+      confirmT=w.setTimeout(function(){
+        confirmT=0;var s=api.snapshot();
+        if(!s.needed||!s.blocked||s.unknown||!api.pending()){confirmWhy='skip';return;}
+        Promise.resolve().then(function(){return api.ready();}).then(function(){confirmWhy='ok';},function(e){confirmWhy=String((e&&(e.psWhy||e.message))||e).slice(0,80);});
+      },0);
+    }
+    api.confirmWhy=function(){return confirmWhy;};
     if(typeof live==='function')w.boardFlushLive=function(target){
       var previous=exitTarget;exitTarget=typeof target==='string'?target:'';
-      try{return live.apply(this,arguments);}finally{exitTarget=previous;}
+      try{return live.apply(this,arguments);}finally{exitTarget=previous;if(typeof target==='string'&&target&&target!=='board'&&target!=='match')confirmLater();}
     };
     w.boardDraftWriteNow=function(options){
       if(!w._boardPrivateOwner)return old.apply(this,arguments);
