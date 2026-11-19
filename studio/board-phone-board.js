@@ -125,7 +125,7 @@
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   /* 3.333 — 기본 모양은 3D(사용자 11/19 «폰보드 디자인은 기본 디자인을 3d로 · 토큰도»). 문서 좌표(미터)는 그대로 두고 그릴 때만 원근으로 옮긴다:
      먼 골라인이 K3 배로 좁아지고(직선은 직선으로 남는 사영), 누른 자리는 unproj 로 되돌린다 — 저장 좌표 · 보관함 판은 예전과 같다. */
-  var K3=0.7,H3=0.88,TOP3=0.1;
+  var K3=0.84,H3=0.91,TOP3=0.07;
   function proj(sp,x,y){
     var t=y/sp.h,s=K3/(1-(1-K3)*t);
     return {x:r2(sp.w/2+(x-sp.w/2)*s),y:r2(sp.h*(TOP3+H3*(s-K3)/(1-K3))),s:s};
@@ -177,7 +177,7 @@
   }
   /* 토큰은 선 칩(옆면 + 윗면 + 그림자) — 먼 것부터 그려 앞의 것이 덮는다 */
   function tokSVG(p,sp,r0){
-    var P=proj(sp,p.x,p.y),r=r0*P.s*1.12,ry=r*0.7,hg=r*0.52,X=P.x,Y=P.y,T=r2(Y-hg);
+    var P=proj(sp,p.x,p.y),r=r0*P.s*1.06,ry=r*0.84,hg=r*0.4,X=P.x,Y=P.y,T=r2(Y-hg);
     var gk=p.num==='1',team=p.team==='us'?'var(--phb-us)':'var(--phb-op)',fill=gk?'var(--phb-gk)':team,ink=gk?'var(--phb-edge)':'#fff';
     var side='M'+r2(X-r)+' '+T+'L'+r2(X-r)+' '+r2(Y)+'A'+r2(r)+' '+r2(ry)+' 0 0 0 '+r2(X+r)+' '+r2(Y)+'L'+r2(X+r)+' '+T+'Z';
     var o='<g class="phb-tok" data-id="'+esc(p.id)+'"><ellipse cx="'+r2(X+r*0.16)+'" cy="'+r2(Y+ry*0.3)+'" rx="'+r2(r*1.08)+'" ry="'+r2(ry*1.02)+'" fill="#000" fill-opacity=".3"/>';

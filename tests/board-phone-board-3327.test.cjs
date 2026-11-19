@@ -127,7 +127,7 @@ test('wiring: board script, vault chip, phone guard, service worker, shell tab',
 test('3.333 — the editor draws in perspective and maps a touch back to the same metres',()=>{
   for(const n of ['11','8','5']){
     const sp=P.SPECS[n],far=P.proj(sp,0,0),farR=P.proj(sp,sp.w,0),near=P.proj(sp,0,sp.h),nearR=P.proj(sp,sp.w,sp.h),mid=P.proj(sp,sp.w/2,sp.h/2);
-    assert.ok(farR.x-far.x<(nearR.x-near.x)*0.75,'the far goal line is narrower');
+    assert.ok(farR.x-far.x<(nearR.x-near.x)*0.9,'the far goal line is narrower');
     assert.ok(Math.abs((nearR.x-near.x)-sp.w)<0.05,'the near goal line keeps its width');
     assert.ok(far.y>0&&near.y<=sp.h&&far.y<mid.y&&mid.y<near.y,'the pitch stays inside the view');
     assert.ok(mid.y-far.y<near.y-mid.y,'the far half is foreshortened');
