@@ -58,6 +58,7 @@ suites.selection.push('board-toast-editing-3319');   /* 3.319 — 훈련 편집�
 suites.selection.push('board-3d-pitch-3316');   /* 3.316 — 3D 잔디 색은 평면 피치(네이비 · 화이트 · 딥그린 · 직접 색 · 실사 + 밝기/연하기)를 따른다 */   /* 3.303 — 3D «잔디만 · 간단»: 바닥은 잔디 한 장(판 테두리 안팎 밝기 같음 · 조명 기둥 · 따로 칠한 어둠 없음 · 멀수록 어둡게) · 전체 경기장 · 그리드 판은 그대로 */
 suites.selection.push('board-tv-clean-3304');   /* 3.304 — 장면 줄은 번호 칩(그림 없음 · 그림을 만들지 않음) · 보관함 «전체화면»은 위쪽 띠(페이지 탭 · 보기 옵션)를 걷고 ‹ n / m › 가 도크를 덮지 않는다 */
 suites.selection.push('board-fold-top-3306');suites.selection.push('board-header-row-3309');
+suites.selection.push('board-anim-pause-3335');   /* 3.335 — 작전판 «일시 정지»는 그 자리에서 멈춤 · ▶ 이어서 · ■ 재생 전으로 · 멈춘 판을 누르면 재생 전 장면(제보 a076fa6e) */
 suites.selection.push('board-reports-3311');   /* 3.311 — 그리기 도구 제보 묶음: 토큰 안의 화살 머리는 가장자리에 · 끝 모양은 집안마다 · 우클릭 창은 고른 그림에만 · 채움 없음 · 단축키 여섯 */   /* 3.306 — 아래 도크의 «도구 접기»(단추 · ⌘.)는 위쪽 띠도 같이 접고 «도구 펼치기»로 같이 편다 · 판은 제자리 · 새로고침 뒤에도 같이 · 보관함 편집기의 맨 위 줄(저장 · 나가기)은 남는다 */
 suites.board.push('vault-edit-update-3291');   /* 3.291 — 보관함 항목을 연 채 저장할 게 없으면 새 판 적용 통과 · 저장 안 한 변경은 blocked:vault-edit · 저장이 editedAt 을 찍어 팀 서버에 올라간다 */   /* 3.271 — 페이지 추가 · 복제 · 삭제 되돌리기(1bc9b7d4) — board2 웹킷은 20분 한도에 닿아 board 로 */
 suites.selection.push('board-shape-delete-carry-3282');   /* 3.282 — 지운 그림은 이 장면부터 뒤 장면에서도(74e59fd4) · 알림의 «이 장면만» */
