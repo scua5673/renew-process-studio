@@ -23,8 +23,10 @@ function pitchLook(md,turf,env){ env=env||{}; md=md||{}; var key=env.key||'navy'
   else if(key==='custom'){ ga=String(css('--pitchbg')||'').trim()||md.ga; gb=shade(ga,.9); }
   else { ga=String(css('--grass-a')||'').trim()||md.ga; gb=String(css('--grass-b')||'').trim()||md.gb; }
   /* 3.326 — 잔디 무늬(board-mow.js)도 서명에: 무늬만 바꿔도 3D 경기장을 다시 그린다(__sig 모양은 그대로) */
-  var mow=env.mow!=null?String(env.mow):((typeof window!=='undefined'&&window.PSBoardMow)?window.PSBoardMow.kindNow(window):'');
-  return {key:key,ga:ga,gb:gb,tone:tone,mow:mow,grass:(key==='real'||key==='calm'),sig:key+'|'+ga+'|'+gb+'|'+tone+(mow?'|'+mow:'')}; }
+  var Mw=(typeof window!=='undefined'&&window.PSBoardMow)?window.PSBoardMow:null,mow=env.mow!=null?String(env.mow):(Mw?Mw.kindNow(window):'');
+  /* 3.332 — 띠는 결 간격까지(간격만 바꿔도 다시 그린다) */
+  var gap=mow!=='band'?'':String(env.gap!=null?env.gap:(Mw&&Mw.gapNow?Mw.gapNow(window):''));
+  return {key:key,ga:ga,gb:gb,tone:tone,mow:mow,gap:gap,grass:(key==='real'||key==='calm'),sig:key+'|'+ga+'|'+gb+'|'+tone+(mow?'|'+mow:'')+(gap?':'+gap:'')}; }
 function cloneLean(arr){ return JSON.parse(JSON.stringify((arr||[]).map(function(p){ if(!p||!p.anim||!Array.isArray(p.anim.frames))return p;
   var fr=p.anim.frames.map(function(f,i){ if(i===0||!f||typeof f.thumb!=='string'||!f.thumb)return f; var c={}; for(var k in f)if(k!=='thumb')c[k]=f[k]; return c; });
   var a={}; for(var k in p.anim)a[k]=p.anim[k]; a.frames=fr; var q={}; for(var k2 in p)q[k2]=p[k2]; q.anim=a; return q; }))); }

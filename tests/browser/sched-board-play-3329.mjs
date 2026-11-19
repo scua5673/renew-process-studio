@@ -105,8 +105,11 @@ try{
   await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='process',null,{timeout:10000});
   assert.equal(await vaultItem(),before.item,'두 번째도 원본 그대로');
   step('again');
-  /* 상태 줄은 기록만 — 닫고 돌아오면 작업 보드 초안이 보관함 화면(session)에 막혀 «확인 중»으로 남는다(기존 훈련 ▶ 도 같다 · 3.274 거짓 변경과 같은 뿌리 · 이 판은 안 고침) */
+  /* 3.331 — 닫고 돌아온 뒤 상태 줄이 «기기 저장 확인 중…» · «기기에 저장 중…»에 머물지 않는다(미팅 A4 미리보기 srcdoc 틀을 세지 않음 · 보관함 목록으로 떠날 때 초안 영수증 확인) */
   await page.waitForTimeout(3000);out.stripEnd=await stripText();
+  out.draftEnd=await bf.evaluate(()=>{const s=window.__psBoardDraft.snapshot();return {pending:s.pending,localDurable:s.localDurable,needed:s.needed};});
+  assert.ok(!/확인 중|저장 중/.test(out.stripEnd),'돌아온 뒤 상태 줄이 머물지 않는다: '+out.stripEnd);
+  assert.equal(out.draftEnd.pending,false,'작업 보드 초안이 대기로 남지 않는다 '+JSON.stringify(out.draftEnd));
   out.passed=true;
   console.log(JSON.stringify(out));
 }catch(e){
