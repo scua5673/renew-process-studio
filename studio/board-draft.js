@@ -134,22 +134,47 @@
        새로 남고 IDB 는 앞 초안인 채 탭이 정리되는 일이 흔하다. 개인 보드 머리(archiveHeads)와 같은 처방 — 두 사본을 보관 키(…:kept:unsaved-split-<지문>)에 글자 그대로
        옮겨 되읽어 확인한 뒤(둘 다 남는다) 평소 길로 이어 쓴다. 보관을 못 하면 예전처럼 막는다. 수명 주기의 동기 길(local)은 그대로다 — 비동기 보관을 기다릴 수 없다. */
     function mark(raw){var h=5381,i=0;raw=String(raw);for(;i<raw.length;i++)h=((h<<5)+h+raw.charCodeAt(i))|0;return (h>>>0).toString(36)+'-'+raw.length.toString(36);}
+    /* 원문 하나를 보관 키(…:kept:unsaved-split-<지문>)에 글자 그대로 — 같은 본문은 같은 자리라 다시 시도해도 늘지 않는다. settle · adopt 가 같이 쓴다 */
+    function archive(j,raw,guard,why){
+      var key=(d.recoveryKey?d.recoveryKey(j.owner):j.key+':kept:')+'split-'+mark(raw);
+      return Promise.resolve(d.storage.get(key)).then(function(v){
+        guard();var old=v&&v.value;old=old==null?null:old;
+        if(old===raw)return true;if(old!==null)throw changed(why);
+        return d.storage.replaceIfValue(key,null,raw,guard).then(function(ok){if(!ok)throw changed(why);return true;});
+      }).then(function(){return d.verifyIDB(key,raw);}).then(guard);
+    }
     function settle(j){
       var n=known;if(!n||!divergent(j))return Promise.resolve(false);
       if(!d.storage||!d.storage.get||!d.storage.replaceIfValue||!d.verifyIDB)return Promise.reject(changed('divergent'));
-      var base=(d.recoveryKey?d.recoveryKey(j.owner):j.key+':kept:')+'split-';
       function guard(){current(j);if(known!==n||d.local.getItem(j.key)!==n.local)throw changed('divergent');return true;}
-      function keep(raw){
-        var key=base+mark(raw);
-        return Promise.resolve(d.storage.get(key)).then(function(v){
-          guard();var old=v&&v.value;old=old==null?null:old;
-          if(old===raw)return true;if(old!==null)throw changed('divergent');
-          return d.storage.replaceIfValue(key,null,raw,guard).then(function(ok){if(!ok)throw changed('divergent');return true;});
-        }).then(function(){return d.verifyIDB(key,raw);}).then(guard);
-      }
+      function keep(raw){return archive(j,raw,guard,'divergent');}
       return Promise.resolve().then(function(){guard();return keep(n.local);}).then(function(){return keep(n.idb);}).then(function(){
         guard();known={owner:n.owner,local:n.local,idb:n.idb,own:true};return true;
       }).catch(function(e){throw e&&e.psCode==='board_draft_storage'?e:changed('divergent');});   /* 보관 중 저장소 오류 = 예전처럼 막는다 · 작업이 바뀐 까닭(seq …)은 그대로 */
+    }
+    /* 3.336 — 이 창이 본 뒤에 다른 창(또는 앞 문서)이 초안 칸을 바꿨다: 작은 저장소에 모르는 사본(local-foreign) · IDB 가 아는 값과 다름(idb-cas) ·
+       칸이 비워짐(idb-gone, 다른 창의 «보드 저장» · «버리기»). 예전엔 이 창의 «아는 값»(known)이 다시 잡히지 않아 창이 살아 있는 동안
+       편집마다 «저장되지 않았습니다» · 새 판 적용 · 팀 전환 장벽이 영영 막혔다(«보드 저장» 뒤에도 — 새로고침해야 풀림. 운영 기록 11/12~11/19
+       idb-cas 최장 26시간 · local-foreign 13시간, 창 둘로 재현 probe/two-window-draft). 3.302 settle 과 같은 처방: 자리를 내줄 남의 사본을
+       보관 키에 글자 그대로 옮겨 되읽어 확인한 뒤, 지금 저장소 값을 기준으로 다시 잡아 이어 쓴다(보는 화면 = 저장된 초안).
+       보관을 못 하거나 그 사이 칸이 또 바뀌면 예전처럼 막는다 — 다음 시도가 다시 본다. 수명 주기의 동기 길(local)은 그대로(비동기 보관을 못 기다림). */
+    function adopt(j,before){
+      var lv=d.local.getItem(j.key),foreignLocal=!j.localOwned&&lv!==null&&lv!==j.record,foreignIdb=before!==j.record&&before!==j.idbBefore;
+      if(!foreignLocal&&!foreignIdb)return Promise.resolve(false);
+      var why=foreignLocal?'local-foreign':before===null?'idb-gone':'idb-cas';
+      if(!d.verifyIDB)return Promise.reject(changed(why));
+      /* 갈린 채 본 IDB 사본(divergent)도 함께 — settle 이 못 돈 길(작은 저장소가 이미 남의 것)에서도 아무 원문도 보관 없이 덮지 않는다 */
+      var keep=[];if(foreignLocal)keep.push(lv);if(before!==null&&before!==j.record&&before!==lv&&(foreignIdb||divergent(j)))keep.push(before);
+      function guard(){current(j);if(d.local.getItem(j.key)!==lv)throw changed(why);return true;}
+      return keep.reduce(function(p,raw){return p.then(function(){return archive(j,raw,guard,why);});},Promise.resolve().then(guard))
+        .then(function(){return d.storage.get(j.key);}).then(function(v){
+          guard();var now=v&&v.value;now=now==null?null:now;if(now!==before)throw changed(why);   /* 보관하는 사이 칸이 또 바뀜 */
+          if(foreignLocal){d.local.removeItem(j.key);if(d.local.getItem(j.key)!==null)throw error(null,'local-mirror');j.localBefore=null;}   /* 보관 · 확인한 사본만 걷는다 */
+          j.localOwned=true;j.idbSeen=true;j.idbBefore=before;j.adopted=before;
+          known={owner:j.ownerRaw,local:d.local.getItem(j.key),idb:before,own:true};
+          if(d.note)d.note(why,{ls:foreignLocal?1:0,idb:before===null?0:1,kept:keep.length,kb:Math.round(keep.join('').length/1024)});
+          return true;
+        }).catch(function(e){throw e&&e.psCode==='board_draft_storage'?e:changed(why);});
     }
     function sameWhy(j,c){return !j?'no-job':j!==job?'superseded':j.epoch!==cancelEpoch?'cleared':!c?'no-ctx':!c.needed?'not-needed':c.seq!==j.seq?'seq':c.generation!==j.generation?'generation':'owner';}
     function blockWhy(c){return 'blocked:'+(c.why||(c.borrowed?'view':'x'));}
@@ -259,21 +284,26 @@
     }
     function persist(j){
       var work=Promise.resolve().then(function(){
-        current(j);if(!j.localOwned)throw changed('local-foreign');
+        current(j);
         if(!d.storage||!d.storage.get||!d.storage.replaceIfValue)throw error(null,'no-idb');
-        return settle(j).then(function(){return d.storage.get(j.key);}).then(function(v){
+        /* 작은 저장소가 남의 사본이면 settle 의 guard(본 값 그대로인가)가 늘 떨어진다 — 그 길은 adopt 가 둘 다 보관한다 */
+        return (j.localOwned?settle(j):Promise.resolve(false)).then(function(){return d.storage.get(j.key);}).then(function(v){
           current(j);var before=v&&v.value;before=before==null?null:before;
           if(!j.idbSeen){j.idbSeen=true;j.idbBefore=known&&known.owner===j.ownerRaw?known.idb:j.localBefore;}
-          if(divergent(j))throw changed('divergent');
+          if(j.localOwned&&divergent(j))throw changed('divergent');
+          return adopt(j,before).then(function(){
+          if(!j.localOwned)throw changed('local-foreign');
           if(before!==j.idbBefore&&before!==j.record)throw changed('idb-cas');
           var previous=parse(before,j);
-          // Never overwrite a concurrent/future draft first seen after capture.
-          if(before!==j.record&&previous&&previous.at>=j.at)throw changed('idb-newer');
+          // Never overwrite a concurrent/future draft first seen after capture —
+          // unless adopt() has just archived that exact draft (3.336).
+          if(before!==j.record&&before!==j.adopted&&previous&&previous.at>=j.at)throw changed('idb-newer');
           if(before===j.record)return true;
           return d.storage.replaceIfValue(j.key,j.idbBefore,j.record,function(){return current(j,true);}).then(function(ok){
             if(!ok)throw changed('idb-cas');var c=d.context();
             if(j.epoch===cancelEpoch&&c&&c.current&&c.needed&&c.generation===j.generation&&JSON.stringify(c.owner)===j.ownerRaw&&(!known||known.owner===j.ownerRaw&&known.idb===j.idbBefore))known={owner:j.ownerRaw,local:known?known.local:j.localBefore,idb:j.record,own:true};
             current(j);return true;
+          });
           });
         }).then(function(){j.store='idb';return check(j,true);}).then(function(){
           current(j,true);var old=d.local.getItem(j.key);
@@ -358,7 +388,7 @@
   }
   function install(w){
     if(w.__psBoardDraft||typeof w.boardDraftWriteNow!=='function')return;
-    var guestSource=null;
+    var guestSource=null,adopted={};
     var api=create({
       context:function(){
         var o=w._boardPrivateOwner,seq=w._boardPrivateEditSeq,current=!!(o&&w._boardPrivateLoaded&&w.boardPrivateCurrent(o)),g=w.__psBoardGuest;
@@ -394,7 +424,14 @@
       recoveryKey:function(o){return w.boardPrivateKey(o)+':kept:unsaved-';},
       verifyIDB:function(k,raw){return w.PSStorage.sharedVerified(k,raw);},
       recoverLocal:function(k,raw,current){return w.PSStorage&&w.PSStorage.localRecovered?w.PSStorage.localRecovered(k,raw,current):false;},
-      state:function(next,e){status(w,'board-draft',next,e);}
+      state:function(next,e){status(w,'board-draft',next,e);},
+      /* 3.336 — 다른 창의 초안을 보관하고 이어 쓴 것(adopt)을 운영 기록에 — 까닭마다 문서당 30분에 한 줄(창 둘이 번갈아 쓰면 잦다 · n 은 그 사이 횟수) */
+      note:function(why,m){
+        var t=Date.now(),s=adopted[why]||(adopted[why]={at:0,n:0});s.n++;if(t-s.at<1800000)return;
+        var S=null;try{S=w.PSSync||(w.parent&&w.parent.PSSync);}catch(e){S=null;}
+        if(!S||typeof S.event!=='function')return;
+        try{S.event('board_draft_adopted',{status:'ok',feature:'board',error_code:why,meta:{ls:m.ls,idb:m.idb,kept:m.kept,kb:m.kb,n:s.n}});s.at=t;s.n=0;}catch(e){s.at=0;}
+      }
     });
     api.write=quiescent(w,api.write);api.ready=quiescent(w,api.ready);
     var old=w.boardDraftWriteNow,flush=w.psFlushPendingReady,has=w.psHasPending,live=w.boardFlushLive,exitTarget='';

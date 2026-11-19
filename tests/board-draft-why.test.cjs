@@ -31,8 +31,11 @@ test('a guarded owner with no durable receipt, a later edit, and an owner change
 });
 test('capture failure, a foreign newer IDB draft and an edit during the write each carry their own reason',async()=>{
  const a=harness();a.hooks.nocap=true;assert.equal((await why(a.api.ready())).why,'capture');
- const b=harness();b.idb.set(b.key,JSON.stringify({v:1,uid:'synthetic-a',wid:'personal-a',raw:'{}',at:999}));
+ /* 3.336 — 남의 초안은 보관한 뒤 이어 쓴다(board-draft-adopt-3336). 보관을 못 할 때만 예전처럼 그 까닭으로 막힌다 */
+ const b=harness();b.idb.set(b.key,JSON.stringify({v:1,uid:'synthetic-a',wid:'personal-a',raw:'{}',at:999}));b.hooks.cas=k=>{if(k.includes(':kept:'))throw Error('synthetic archive failure');};
  assert.deepEqual(await why(b.api.ready()),{code:'board_draft_storage',why:'idb-cas',deferred:false,conflict:true});
+ const l=harness();l.local.set(l.key,JSON.stringify({v:1,uid:'synthetic-a',wid:'personal-a',raw:'{}',at:5}));l.hooks.cas=b.hooks.cas;
+ assert.deepEqual(await why(l.api.ready()),{code:'board_draft_storage',why:'local-foreign',deferred:false,conflict:true});
  const c=harness();let release;c.hooks.cas=()=>new Promise(r=>release=r);const work=why(c.api.ready());await tick();c.set({seq:2});release();
  assert.equal((await work).why,'seq');
 });
