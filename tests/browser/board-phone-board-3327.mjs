@@ -18,7 +18,8 @@ const model=f=>f.evaluate(()=>{const m=window.__psPhoneBoard.ui().model();return
 // 운동장 위 합성 포인터(두 엔진 공통 · touch) — 미터 좌표로
 const ptr=(f,steps)=>f.evaluate(async steps=>{
   const svg=document.getElementById('phbPitch'),m=svg.getScreenCTM();
-  const at=(x,y)=>{const p=svg.createSVGPoint();p.x=x;p.y=y;const q=p.matrixTransform(m);return [q.x,q.y];};
+  const sp3=window.PSPhoneBoard.SPECS[window.__psPhoneBoard.ui().model().doc.n];
+  const at=(x,y)=>{const v=window.PSPhoneBoard.proj(sp3,x,y),p=svg.createSVGPoint();p.x=v.x;p.y=v.y;const q=p.matrixTransform(m);return [q.x,q.y];};   /* 3.333 — 3D: 미터 → 원근 → 화면 */
   const ev=(type,x,y)=>svg.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,composed:true,pointerId:5,pointerType:'touch',isPrimary:true,clientX:x,clientY:y,button:0,buttons:type==='pointerup'?0:1}));
   const [a,b]=steps,[x0,y0]=at(a[0],a[1]),[x1,y1]=b?at(b[0],b[1]):[x0,y0];
   ev('pointerdown',x0,y0);
@@ -93,6 +94,18 @@ try{
   m=await model(f);assert.equal(m.doc.cones.length,1);
   await f.locator('#phbTools [data-v="move"]').tap();
   await shot(page,'3-editor');
+  /* 3.333 — 토큰 크기: «옮기기» 줄의 − / ＋ (다섯 단계 · 되돌리기 한 번에 한 칸) */
+  await f.locator('[data-phb="tool"][data-v="move"]').click();
+  const chipR=()=>f.evaluate(()=>+document.querySelector('#phbPitch .phb-tok ellipse:nth-of-type(2)').getAttribute('rx'));
+  const r3=await chipR();
+  await f.locator('[data-phb="tok"][data-v="1"]').click();await f.locator('[data-phb="tok"][data-v="1"]').click();
+  assert.equal((await model(f)).doc.tok,5);assert.equal(await f.locator('#phbTokN').textContent(),'5');
+  assert.equal(await f.locator('[data-phb="tok"][data-v="1"]').isDisabled(),true,'the biggest step stops');
+  const r5=await chipR();assert.ok(r5>r3*1.2,'the chips grew: '+r3+' → '+r5);
+  await shot(page,'3b-editor-big');
+  await f.locator('[data-phb="undo"]').click();assert.equal((await model(f)).doc.tok,4,'undo steps the size back');
+  await f.locator('[data-phb="tok"][data-v="-1"]').click();assert.equal((await model(f)).doc.tok,3);
+  assert.ok(Math.abs(await chipR()-r3)<0.01,'back to the first size');
   /* 다른 탭에 갔다 와도 쓰던 판은 그대로 */
   await page.locator('#psTrainBtn').tap();
   await f.waitForFunction(()=>document.getElementById('psPhoneBoard').hidden);
