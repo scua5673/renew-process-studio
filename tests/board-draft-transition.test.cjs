@@ -61,8 +61,15 @@ test('lifecycle draft writing still leaves the full local copy synchronously',as
  const h=harness(),g=deferred();h.hooks.get=()=>g.promise;const work=h.api.write({lifecycle:true});
  assert.equal(JSON.parse(h.local.get(h.key)).raw,h.raw);assert.equal(h.api.pending(),true);g.resolve();await work;
 });
-for(const quota of [false,true])test('a future IDB draft prevents confirmation and is never overwritten, quota '+quota,async()=>{
+/* 3.336 — 캡처 뒤 처음 본 (더 새) 남의 초안은 예전엔 «덮지 않는다» 하나로 영영 막혔다(새로고침 전까지 · 새 판 적용도). 이제 그 원문을 보관 키에 글자 그대로 옮겨
+   확인한 뒤에만 이어 쓴다 — 보관을 못 하면 예전처럼 막고 덮지 않는다. (시험 기대를 일부러 고친 곳 — 예전 이름 «… is never overwritten») */
+const kept=h=>[...h.idb].filter(([k])=>k.includes(':kept:split-')).map(([,v])=>v);
+for(const quota of [false,true])test('a future IDB draft is archived exactly before the current input replaces it, quota '+quota,async()=>{
  const h=harness();if(quota)h.quota();const other=JSON.stringify({v:1,uid:'synthetic-account-a',wid:'personal-a',raw:'{}',at:999999});h.idb.set(h.key,other);
+ await h.api.ready();assert.equal(h.api.pending(),false);assert.deepEqual(kept(h),[other]);assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);
+});
+for(const quota of [false,true])test('a future IDB draft prevents confirmation and is never overwritten when it cannot be archived, quota '+quota,async()=>{
+ const h=harness();if(quota)h.quota();const other=JSON.stringify({v:1,uid:'synthetic-account-a',wid:'personal-a',raw:'{}',at:999999});h.idb.set(h.key,other);h.hooks.cas=k=>{if(k.includes(':kept:split-'))throw Error('synthetic archive failure');};
  await assert.rejects(h.api.ready(),/초안/);assert.equal(h.api.pending(),true);assert.equal(h.idb.get(h.key),other);assert.ok([...h.idb.keys()].some(k=>k.includes(':kept:')),'the current full input remains a separate recovery');
 });
 test('a full snapshot mutation without a seq change cannot reuse a guarded receipt',async()=>{
@@ -74,8 +81,12 @@ test('temporary capture locks block a dirty transition rather than treating it a
 test('playback is restored to the editing snapshot before the transition captures it',async()=>{
  const h=harness();h.block();h.d.prepare=()=>h.prepare();await h.api.ready();assert.equal(JSON.parse(h.record()).raw,h.raw);
 });
-test('a malformed unknown IDB original is retained rather than overwritten',async()=>{
- const h=harness();h.idb.set(h.key,JSON.stringify({v:1,uid:'synthetic-account-a',wid:'personal-a',raw:'invalid JSON',at:999999}));
+test('a malformed unknown IDB original is archived exactly rather than lost (3.336)',async()=>{
+ const h=harness(),bad=JSON.stringify({v:1,uid:'synthetic-account-a',wid:'personal-a',raw:'invalid JSON',at:999999});h.idb.set(h.key,bad);
+ await h.api.ready();assert.deepEqual(kept(h),[bad]);assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);assert.equal(h.api.pending(),false);
+});
+test('a malformed unknown IDB original is retained rather than overwritten when it cannot be archived',async()=>{
+ const h=harness();h.idb.set(h.key,JSON.stringify({v:1,uid:'synthetic-account-a',wid:'personal-a',raw:'invalid JSON',at:999999}));h.hooks.cas=k=>{if(k.includes(':kept:split-'))throw Error('synthetic archive failure');};
  await assert.rejects(h.api.ready());assert.equal(JSON.parse(h.idb.get(h.key)).raw,'invalid JSON');assert.equal(h.api.pending(),true);
 });
 test('quota confirmation captures a bounded number of complete snapshots',async()=>{

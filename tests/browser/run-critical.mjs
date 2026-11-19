@@ -48,6 +48,7 @@ suites.selection.push('board-phone-board-3327');   /* 3.320 — 폰보드: 폰 �
 suites.selection.push('board-vision-carry-3271','board-position-direct-3271');   /* 3.271 — 시야 · 시선은 이 페이지에만 + 이 장면부터 뒤로(756c0a48) · 오른쪽 클릭 창의 포지션(0033117a) */
 suites.board.push('board-page-undo-3271');
 suites.board.push('board-draft-divergent-3302');   /* 3.302 — 초안의 두 사본이 달라도 편집이 저장되고 알약이 뜨지 않는다 · 두 사본은 보관 키에 그대로 · 보관 실패면 예전처럼 막음 · 저장 뒤 알약 걷힘 */
+suites.board.push('board-draft-two-window-3336');   /* 3.336 — 같은 계정 창 둘: 다른 창이 초안 칸을 고친 뒤에도 이 창의 편집이 저장되고 새 판 적용 장벽이 막히지 않는다 · 다른 창의 초안은 보관 키에 그대로 */
 suites.selection.push('training-grid-snap-3302');   /* 3.302 — 훈련 편집기는 격자에 붙는 것이 기본: 놓기 · 끌기 · ⌘/Ctrl 로 한 번 자유 · 선 끝은 선수에 묶임 · 끄기 · 나가면 작전판 그대로 */
 suites.board.push('anim-token-over-handle-3302');   /* 3.302 — 장면 사이에 조금 움직인 선수: 곡선 손잡이가 덮어도 토큰이 잡혀 끌린다 · 긴 동선의 손잡이는 그대로 */
 suites.selection.push('board-motion-marks-3302');   /* 3.302 — 잔상은 가늘어지는 꼬리 하나 · «시야» 단추가 끔 → 방향 표식 → 시야 → 끔 · 뒤 장면까지 · 재생 · 내보내기 */
