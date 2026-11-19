@@ -69,6 +69,9 @@ test('재생 단추 — 장면 둘 이상 · 패턴북은 띠에 제 단추가 �
     const btn=f.els.body;assert.equal(btn.id,'psVvPlay');assert.match(btn.innerHTML,/재생 · 장면 3/);
     btn.onclick({stopPropagation(){}});assert.deepEqual(f.calls.at(-1),['play']);
     global.animPlaying=true;api.sync();assert.match(btn.innerHTML,/멈춤/);
+    /* 3.335 — 멈춘 동안(board-anim-pause.js — animPlaying 은 그대로 참)은 «이어서» */
+    f.W.__psAnimPause={held:()=>true};api.sync();assert.match(btn.innerHTML,/이어서/);assert.doesNotMatch(btn.innerHTML,/멈춤/);
+    delete f.W.__psAnimPause;api.sync();assert.match(btn.innerHTML,/멈춤/);
     global.anim={frames:[{}]};api.sync();assert.equal(f.cls.has('ps-vv-anim'),false,'장면 하나는 숨김');
     global.anim={frames:[{},{}]};f.W.__vaultBook=true;api.sync();assert.equal(f.cls.has('ps-vv-anim'),false,'패턴북');
     f.W.__vaultBook=false;f.W.__vaultReadOnly=false;f.W.__vaultViewMode=false;f.W.document.body.classList.remove('vcreating');api.sync();
