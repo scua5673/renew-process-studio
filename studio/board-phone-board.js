@@ -125,7 +125,7 @@
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   /* 3.333 — 기본 모양은 3D(사용자 11/19 «폰보드 디자인은 기본 디자인을 3d로 · 토큰도»). 문서 좌표(미터)는 그대로 두고 그릴 때만 원근으로 옮긴다:
      먼 골라인이 K3 배로 좁아지고(직선은 직선으로 남는 사영), 누른 자리는 unproj 로 되돌린다 — 저장 좌표 · 보관함 판은 예전과 같다. */
-  var K3=0.84,H3=0.905,TOP3=0.065;
+  var K3=0.84,H3=0.875,TOP3=0.065;
   /* 여백 없이(사용자 «최대한 여백없게»): 가로는 운동장 폭에 맞추고 세로는 화면 칸 비율만큼 늘인다 — sp.vh(편집기가 칸 크기로 정한다 · 없으면 실제 길이). 토큰은 폭 기준이라 둥근 그대로. */
   function vh(sp){return sp.vh>0?sp.vh:sp.h;}
   function proj(sp,x,y){
@@ -137,29 +137,41 @@
     return {x:sp.w/2+(X-sp.w/2)/s,y:sp.h*(1-K3/s)/(1-K3)};
   }
   function pts3(sp,list){return list.map(function(q){var p=proj(sp,q[0],q[1]);return p.x+','+p.y;}).join(' ');}
+  /* 큰 작전판의 잔디 느낌(사용자 11/19 폰 화면 사진 «이 느낌으로 세로로»): 짙은 두 색 10m 띠가 선 밖(런오프)까지 화면을 채우고,
+     가는 흰 선 · 페널티 점과 호 · 골라인 밖의 그물 골대. 띠 경계는 하프라인에서 센다. */
+  var SIDE3=0.03;
   function pitchSVG(sp){
-    var w=sp.w,h=sp.h,b=sp.box,s=sp.six,sw=r2(w/190),o='',i;
-    var st=' fill="none" stroke="var(--phb-pline)" stroke-width="'+sw+'" stroke-opacity=".9" stroke-linejoin="round"';
-    var nl=proj(sp,0,h),nr=proj(sp,w,h),th=r2(vh(sp)*0.012);
-    /* 판의 두께(앞쪽 옆면) · 깎은 줄 */
-    o+='<polygon points="'+nl.x+','+nl.y+' '+nr.x+','+nr.y+' '+nr.x+','+r2(nr.y+th)+' '+nl.x+','+r2(nl.y+th)+'" fill="#000" fill-opacity=".34"/>';
-    var N=11;for(i=0;i<N;i++)o+='<polygon points="'+pts3(sp,[[0,h*i/N],[w,h*i/N],[w,h*(i+1)/N],[0,h*(i+1)/N]])+'" fill="var(--phb-'+(i%2?'pitch2':'pitch')+')"/>';
+    var w=sp.w,h=sp.h,b=sp.box,s=sp.six,V=vh(sp),m=r2(w*SIDE3),sw=r2(w/240),o='',i;
+    var st=' fill="none" stroke="var(--phb-pline)" stroke-width="'+sw+'" stroke-opacity=".88" stroke-linejoin="round" stroke-linecap="round"';
+    var band=h/10,k0=-3,k1=13,ys=[];
+    for(i=k0;i<=k1;i++)ys.push(i===k0?0:(i===k1?V:bound(proj(sp,0,band*i).y,0,V)));
+    o+='<rect x="'+(-m)+'" y="0" width="'+r2(w+m*2)+'" height="'+r2(V)+'" fill="var(--phb-pitch)"/>';
+    for(i=0;i<ys.length-1;i++)if((i+k0)%2&&ys[i+1]>ys[i])o+='<rect x="'+(-m)+'" y="'+r2(ys[i])+'" width="'+r2(w+m*2)+'" height="'+r2(ys[i+1]-ys[i]+0.05)+'" fill="var(--phb-pitch2)"/>';
     o+='<polygon points="'+pts3(sp,[[0,0],[w,0],[w,h],[0,h]])+'"'+st+'/>';
     o+='<polyline points="'+pts3(sp,[[0,h/2],[w,h/2]])+'"'+st+'/>';
-    var c=[];for(i=0;i<48;i++){var an=i/48*Math.PI*2;c.push([w/2+Math.cos(an)*sp.r,h/2+Math.sin(an)*sp.r]);}
-    o+='<polygon points="'+pts3(sp,c)+'"'+st+'/>';
+    var c=[],dot=function(x,y){var p=proj(sp,x,y);return '<ellipse cx="'+p.x+'" cy="'+p.y+'" rx="'+r2(sw*1.5)+'" ry="'+r2(sw*1.3)+'" fill="var(--phb-pline)" fill-opacity=".9"/>';};
+    for(i=0;i<48;i++){var an=i/48*Math.PI*2;c.push([w/2+Math.cos(an)*sp.r,h/2+Math.sin(an)*sp.r]);}
+    o+='<polygon points="'+pts3(sp,c)+'"'+st+'/>'+dot(w/2,h/2);
     [0,1].forEach(function(k){
-      var Y=function(d){return k?h-d:d;},x0=(w-b[0])/2,x1=(w+b[0])/2,box;
+      var Y=function(d){return k?h-d:d;},x0=(w-b[0])/2,x1=(w+b[0])/2,box,j;
       if(s)box=[[x0,Y(0)],[x0,Y(b[1])],[x1,Y(b[1])],[x1,Y(0)]];
-      else{var rx=Math.min(b[1]*0.9,b[0]/2),j;box=[[x0,Y(0)],[x0,Y(b[1]-rx)]];
+      else{var rx=Math.min(b[1]*0.9,b[0]/2);box=[[x0,Y(0)],[x0,Y(b[1]-rx)]];
         for(j=1;j<=8;j++){var a1=Math.PI-(Math.PI/2)*j/8;box.push([x0+rx+Math.cos(a1)*rx,Y(b[1]-rx+Math.sin(a1)*rx)]);}
         for(j=0;j<=8;j++){var a2=Math.PI/2-(Math.PI/2)*j/8;box.push([x1-rx+Math.cos(a2)*rx,Y(b[1]-rx+Math.sin(a2)*rx)]);}
         box.push([x1,Y(0)]);}
       o+='<polyline points="'+pts3(sp,box)+'"'+st+'/>';
-      if(s)o+='<polyline points="'+pts3(sp,[[(w-s[0])/2,Y(0)],[(w-s[0])/2,Y(s[1])],[(w+s[0])/2,Y(s[1])],[(w+s[0])/2,Y(0)]])+'"'+st+'/>';
-      /* 골대 — 선 골문(먼 쪽은 그물까지, 앞쪽은 선수를 가리지 않게 옅은 틀만) */
-      var g0=proj(sp,(w-sp.goal)/2,Y(0)),g1=proj(sp,(w+sp.goal)/2,Y(0)),gh=r2(sp.goal*0.36*g0.s),fr='M'+g0.x+' '+g0.y+'L'+g0.x+' '+r2(g0.y-gh)+'L'+g1.x+' '+r2(g1.y-gh)+'L'+g1.x+' '+g1.y;
-      o+='<path class="phb-goal" d="'+fr+'" fill="'+(k?'none':'#fff')+'" fill-opacity=".14" stroke="var(--phb-pline)" stroke-width="'+r2(sw*(k?1.6:2.2))+'" stroke-opacity="'+(k?'.5':'.95')+'" stroke-linejoin="round" stroke-linecap="round"/>';
+      if(s){
+        o+='<polyline points="'+pts3(sp,[[(w-s[0])/2,Y(0)],[(w-s[0])/2,Y(s[1])],[(w+s[0])/2,Y(s[1])],[(w+s[0])/2,Y(0)]])+'"'+st+'/>';
+        /* 페널티 점 · 호(상자 밖 부분만) */
+        var pen=r2(b[1]*2/3),half=Math.acos(bound((b[1]-pen)/sp.r,-1,1)),arc=[];
+        for(j=0;j<=14;j++){var t=-half+2*half*j/14;arc.push([w/2+Math.sin(t)*sp.r,Y(pen+Math.cos(t)*sp.r)]);}
+        o+=dot(w/2,Y(pen))+'<polyline points="'+pts3(sp,arc)+'"'+st+'/>';
+      }
+      /* 골대 — 골라인 밖에 놓인 그물(선수를 가리지 않는다) */
+      var g0=(w-sp.goal)/2,g1=(w+sp.goal)/2,gd=Math.max(1.6,sp.goal*0.3),YO=function(d){return k?h+d:-d;},net='',nst=' stroke="var(--phb-pline)" stroke-width="'+r2(sw*0.45)+'" stroke-opacity=".55"';
+      for(j=1;j<8;j++)net+='<polyline points="'+pts3(sp,[[g0+(g1-g0)*j/8,YO(0)],[g0+(g1-g0)*j/8,YO(gd)]])+'" fill="none"'+nst+'/>';
+      for(j=1;j<3;j++)net+='<polyline points="'+pts3(sp,[[g0,YO(gd*j/3)],[g1,YO(gd*j/3)]])+'" fill="none"'+nst+'/>';
+      o+='<polygon class="phb-goal" points="'+pts3(sp,[[g0,YO(0)],[g0,YO(gd)],[g1,YO(gd)],[g1,YO(0)]])+'" fill="#fff" fill-opacity=".1" stroke="var(--phb-pline)" stroke-width="'+r2(sw*1.3)+'" stroke-opacity=".9" stroke-linejoin="round"/>'+net;
     });
     return o;
   }
@@ -229,8 +241,8 @@
   /* ══ 화면 ══ */
   var CSS='#psPhoneBoard{position:fixed;inset:0;z-index:2147482990;display:flex;flex-direction:column;background:var(--phb-bg);color:var(--phb-ink);font:500 14px/1.5 Pretendard,-apple-system,"Apple SD Gothic Neo",sans-serif;-webkit-text-size-adjust:100%;'+
     '--phb-bg:#F4F5F7;--phb-surface:#fff;--phb-fill:#EEF0F4;--phb-ink:#14213D;--phb-dim:#646A73;--phb-line:#E4E7EC;--phb-act:#14213D;--phb-act-ink:#fff;--phb-soft:#E8ECF5;--phb-mark:#0F6B5C;--phb-mark-soft:#E0F3EE;'+
-    '--phb-pitch:#2E7A4E;--phb-pitch2:#2A7148;--phb-pline:#F3F7F4;--phb-us:#1F3F9A;--phb-op:#C24A46;--phb-gk:#E3B23C;--phb-cone:#F08A24;--phb-draw:#fff;--phb-edge:#14161A;--phb-tag:#0E1422}'+
-    'body.fmdark #psPhoneBoard{--phb-bg:#12161D;--phb-surface:#181E28;--phb-fill:#232C38;--phb-ink:#E7EBF1;--phb-dim:#9AA3AF;--phb-line:#2A3341;--phb-act:#8FA6DA;--phb-act-ink:#0F1522;--phb-soft:#22304F;--phb-mark:#7FD6C2;--phb-mark-soft:#17362F;--phb-pitch:#235F3D;--phb-pitch2:#1F5637}'+
+    '--phb-pitch:#1F4D31;--phb-pitch2:#193A26;--phb-pline:#E9F0EA;--phb-us:#1F3F9A;--phb-op:#C24A46;--phb-gk:#E3B23C;--phb-cone:#F08A24;--phb-draw:#fff;--phb-edge:#14161A;--phb-tag:#0E1422}'+
+    'body.fmdark #psPhoneBoard{--phb-bg:#12161D;--phb-surface:#181E28;--phb-fill:#232C38;--phb-ink:#E7EBF1;--phb-dim:#9AA3AF;--phb-line:#2A3341;--phb-act:#8FA6DA;--phb-act-ink:#0F1522;--phb-soft:#22304F;--phb-mark:#7FD6C2;--phb-mark-soft:#17362F;--phb-pitch:#1B442B;--phb-pitch2:#153221}'+
     '#psPhoneBoard[hidden],#psPhoneBoard [hidden]{display:none!important}#psPhoneBoard *{box-sizing:border-box}'+
     '#psPhoneBoard button,#psPhoneBoard input{font:inherit;color:inherit}#psPhoneBoard button{cursor:pointer;-webkit-tap-highlight-color:transparent}'+
     '#psPhoneBoard button:focus-visible,#psPhoneBoard input:focus-visible{outline:2px solid var(--phb-act);outline-offset:2px}'+
@@ -401,7 +413,7 @@
     }
     /* 운동장이 칸을 꽉 채우게 — 보이는 칸의 비율로 세로를 정한다(칸이 아직 0 이면 실제 비율) */
     function fit(){
-      var sp=specOf(M.doc.n),svg=$('phbPitch'),bx=svg.parentNode,cw=bx.clientWidth,ch=bx.clientHeight,m=r2(sp.w*0.012),W=sp.w+m*2;
+      var sp=specOf(M.doc.n),svg=$('phbPitch'),bx=svg.parentNode,cw=bx.clientWidth,ch=bx.clientHeight,m=r2(sp.w*SIDE3),W=sp.w+m*2;
       sp.vh=(cw>40&&ch>40)?r2(bound(W*ch/cw,sp.h*0.7,sp.h*1.7)):0;
       svg.setAttribute('viewBox',(-m)+' 0 '+W+' '+vh(sp));
     }
