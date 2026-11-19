@@ -138,6 +138,10 @@ test('3.333 — the editor draws in perspective and maps a touch back to the sam
     }
     const out=P.unproj(sp,-50,-50);assert.ok(Number.isFinite(out.x)&&Number.isFinite(out.y),'a touch outside the pitch stays finite');
   }
+  { /* 칸을 꽉 채우게 세로를 늘여도(sp.vh) 왕복은 같다 */
+    const sp=Object.assign({},P.SPECS['11'],{vh:150}),p=P.proj(sp,20,80),q=P.unproj(sp,p.x,p.y),near=P.proj(sp,0,sp.h);
+    assert.ok(Math.abs(q.x-20)<0.15&&Math.abs(q.y-80)<0.15);assert.ok(near.y>sp.h&&near.y<=150,'the near goal line sits near the bottom of the taller view');
+  }
   const sp=P.SPECS['11'],doc=P.docNew('11','4-3-3','4-4-2');doc.ball={x:34,y:50};doc.cones.push({x:10,y:50});
   const svg=P.docSVG(doc,sp);
   assert.equal(svg.split('class="phb-tok"').length-1,22,'every player is a standing chip');

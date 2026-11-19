@@ -125,20 +125,22 @@
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   /* 3.333 — 기본 모양은 3D(사용자 11/19 «폰보드 디자인은 기본 디자인을 3d로 · 토큰도»). 문서 좌표(미터)는 그대로 두고 그릴 때만 원근으로 옮긴다:
      먼 골라인이 K3 배로 좁아지고(직선은 직선으로 남는 사영), 누른 자리는 unproj 로 되돌린다 — 저장 좌표 · 보관함 판은 예전과 같다. */
-  var K3=0.84,H3=0.91,TOP3=0.07;
+  var K3=0.84,H3=0.905,TOP3=0.065;
+  /* 여백 없이(사용자 «최대한 여백없게»): 가로는 운동장 폭에 맞추고 세로는 화면 칸 비율만큼 늘인다 — sp.vh(편집기가 칸 크기로 정한다 · 없으면 실제 길이). 토큰은 폭 기준이라 둥근 그대로. */
+  function vh(sp){return sp.vh>0?sp.vh:sp.h;}
   function proj(sp,x,y){
     var t=y/sp.h,s=K3/(1-(1-K3)*t);
-    return {x:r2(sp.w/2+(x-sp.w/2)*s),y:r2(sp.h*(TOP3+H3*(s-K3)/(1-K3))),s:s};
+    return {x:r2(sp.w/2+(x-sp.w/2)*s),y:r2(vh(sp)*(TOP3+H3*(s-K3)/(1-K3))),s:s};
   }
   function unproj(sp,X,Y){
-    var s=bound(K3+(1-K3)*((Y/sp.h)-TOP3)/H3,K3*0.8,1.2);
+    var s=bound(K3+(1-K3)*((Y/vh(sp))-TOP3)/H3,K3*0.8,1.2);
     return {x:sp.w/2+(X-sp.w/2)/s,y:sp.h*(1-K3/s)/(1-K3)};
   }
   function pts3(sp,list){return list.map(function(q){var p=proj(sp,q[0],q[1]);return p.x+','+p.y;}).join(' ');}
   function pitchSVG(sp){
     var w=sp.w,h=sp.h,b=sp.box,s=sp.six,sw=r2(w/190),o='',i;
     var st=' fill="none" stroke="var(--phb-pline)" stroke-width="'+sw+'" stroke-opacity=".9" stroke-linejoin="round"';
-    var nl=proj(sp,0,h),nr=proj(sp,w,h),th=r2(h*0.014);
+    var nl=proj(sp,0,h),nr=proj(sp,w,h),th=r2(vh(sp)*0.012);
     /* 판의 두께(앞쪽 옆면) · 깎은 줄 */
     o+='<polygon points="'+nl.x+','+nl.y+' '+nr.x+','+nr.y+' '+nr.x+','+r2(nr.y+th)+' '+nl.x+','+r2(nl.y+th)+'" fill="#000" fill-opacity=".34"/>';
     var N=11;for(i=0;i<N;i++)o+='<polygon points="'+pts3(sp,[[0,h*i/N],[w,h*i/N],[w,h*(i+1)/N],[0,h*(i+1)/N]])+'" fill="var(--phb-'+(i%2?'pitch2':'pitch')+')"/>';
@@ -255,7 +257,7 @@
     '#psPhoneBoard .phb-ico{flex:none;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:10px;background:transparent}#psPhoneBoard .phb-ico:disabled{opacity:.3}'+
     '#psPhoneBoard .phb-ico svg,#psPhoneBoard .phb-tool svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}'+
     '#psPhoneBoard .phb-pw{flex:1;min-height:0;position:relative;background:var(--phb-pitch2)}'+
-    '#psPhoneBoard #phbPitch{position:absolute;left:6px;top:6px;width:calc(100% - 12px);height:calc(100% - 12px);display:block;touch-action:none;user-select:none;-webkit-user-select:none}'+
+    '#psPhoneBoard #phbPitch{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none}'+
     '#psPhoneBoard .phb-sub{flex:none;display:flex;align-items:center;gap:8px;min-height:52px;padding:8px 10px 0;background:var(--phb-surface);overflow-x:auto}'+
     '#psPhoneBoard .phb-opt{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--phb-line);border-radius:10px;background:var(--phb-surface);font-size:14px;font-weight:600;white-space:nowrap}'+
     '#psPhoneBoard .phb-opt[aria-pressed="true"]{border-color:var(--phb-act);background:var(--phb-soft)}'+
@@ -344,7 +346,7 @@
       pitch.addEventListener('pointerdown',down);pitch.addEventListener('pointermove',move);pitch.addEventListener('pointerup',up);
       pitch.addEventListener('pointercancel',function(){G=null;paint();});
       $('phbName').addEventListener('input',function(){M.title=this.value;M.dirty=true;});
-      var turn=function(){root.classList.toggle('phb-land',landscape(win));};
+      var turn=function(){root.classList.toggle('phb-land',landscape(win));if(M.scr==='edit'&&M.doc&&!G){fit();paint();}};
       win.addEventListener('orientationchange',turn);win.addEventListener('resize',turn);
       try{if(win.screen&&win.screen.orientation&&win.screen.orientation.addEventListener)win.screen.orientation.addEventListener('change',turn);}catch(e){note(e);}
       turn();
@@ -393,11 +395,15 @@
       if(d){M.editing=d.libId;M.doc=docFrom(d);M.title=d.name||'';}
       else{M.editing=null;M.doc=docNew(M.spec,M.form,M.opp);M.title=title();}
       M.hist=[];M.tool='move';M.dirty=!d;M.saving=false;
-      var sp=specOf(M.doc.n),m=sp.w*0.06;
-      $('phbPitch').setAttribute('viewBox',(-m)+' '+(-m)+' '+(sp.w+m*2)+' '+(sp.h+m*2));
       $('phbName').value=M.title;
       var sb=root.querySelector('[data-phb="save"]');sb.disabled=false;sb.textContent='저장';
-      hideSheets();show('edit');renderTools();paint();
+      hideSheets();show('edit');renderTools();fit();paint();
+    }
+    /* 운동장이 칸을 꽉 채우게 — 보이는 칸의 비율로 세로를 정한다(칸이 아직 0 이면 실제 비율) */
+    function fit(){
+      var sp=specOf(M.doc.n),svg=$('phbPitch'),bx=svg.parentNode,cw=bx.clientWidth,ch=bx.clientHeight,m=r2(sp.w*0.012),W=sp.w+m*2;
+      sp.vh=(cw>40&&ch>40)?r2(bound(W*ch/cw,sp.h*0.7,sp.h*1.7)):0;
+      svg.setAttribute('viewBox',(-m)+' 0 '+W+' '+vh(sp));
     }
     /* ── 편집 ── */
     function renderTools(){
