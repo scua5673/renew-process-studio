@@ -280,8 +280,9 @@
     // 클래스는 다를 때만 바꾼다 — body 클래스 감시가 제 변경에 다시 불려도 멈춘다(CLAUDE.md 함정)
     function cls(name, on) { var c = doc.body.classList; if (c.contains(name) !== !!on) c.toggle(name, !!on); }
     function label() {
-      if (!btn) return; var p = isPlaying(), want = (p ? PAUSE_SVG + '멈춤' : PLAY_SVG + '재생 · 장면 ' + frameCount());
-      if (btn.__psL !== want) { btn.__psL = want; btn.innerHTML = want; btn.setAttribute('aria-label', p ? '애니메이션 멈춤' : '애니메이션 재생'); }
+      if (!btn) return; var h = !!(W.__psAnimPause && W.__psAnimPause.held()), p = isPlaying() && !h,   /* 3.335 — 멈춘 동안(board-anim-pause.js)은 «이어서» */
+        want = (p ? PAUSE_SVG + '멈춤' : h ? PLAY_SVG + '이어서' : PLAY_SVG + '재생 · 장면 ' + frameCount());
+      if (btn.__psL !== want) { btn.__psL = want; btn.innerHTML = want; btn.setAttribute('aria-label', p ? '애니메이션 멈춤' : h ? '이어서 재생' : '애니메이션 재생'); }
     }
     function sync() {
       if (!doc.body) return;
