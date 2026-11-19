@@ -10,7 +10,9 @@
     try{
       if(!Array.isArray(list))return list;
       for(var i=0;i<list.length;i++){var d=list[i],pg=d&&d.pages;if(!Array.isArray(pg))continue;
-        for(var j=0;j<pg.length;j++){var p=pg[j];if(p&&typeof p==='object'&&p.anim!==undefined)delete p.anim;}}
+        for(var j=0;j<pg.length;j++){var p=pg[j];if(p&&typeof p==='object'&&p.anim!==undefined){
+          /* 3.329 — 장면 «수»만 남긴다(일정 줄의 ▶ 가 장면 2개 이상인 페이지에만 붙는다 — schedule-board-play.js) */
+          var an=p.anim,fr=Array.isArray(an)?an:((an&&Array.isArray(an.frames))?an.frames:null);p.animN=fr?fr.length:0;delete p.anim;}}}
     }catch(_){}
     return list;
   }

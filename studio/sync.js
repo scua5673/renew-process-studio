@@ -5581,6 +5581,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
               syncDiagnostic('kv-write-source-mismatch',mismatch);
               ownerStale();if(k==='scout_tool_v1')throw syncIssue('sync_storage','roster_write_stale','선수 자료의 새 편집을 다시 확인해야 합니다');return {stale:true};}}
           try{ rescueStash(k, r&&r.value, v); }catch(_){}
+          return Promise.resolve(scheduleDietWrite).then(function(){   /* 3.327 일정 다이어트 뒤에 — 그 사슬은 거부하지 않는다 */
           if(!ownerCurrent()){ownerStale();return {stale:true};}
           /* expectedLoc이 있는 pull/병합은 get→set 두 transaction으로 나누지 않는다.
              선수 항목처럼 거울이 없는 키는 그 틈의 새 IDB 편집을 달리 발견할 길이 없다. */
@@ -5620,7 +5621,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
           if(k==='cs_perms_v1')permsCacheSet(v,rpcContext());
           if(k==='cs_board_live_v1')boardLivePulled(v);
           return {stale:false};
-        });})
+        });});})
     );
     return true;
   }
@@ -5644,6 +5645,8 @@ var scheduleMirrorFull=false,scheduleMirrorCause='',scheduleMirrorTidyAt=0;
 /* 3.063 — 실제 원인을 적는다: threw-오류 이름 · readback-(보기 전용 게이트가 조용히 막음 → 원래 Storage.setItem 으로 한 번 더) · 크기.
    3.131 — 거울을 못 쓰는 기기는 IDB 정본만으로 회차를 마친다(tests/schedule-mirror-left-3131 · CLAUDE.md). */
 var scheduleMirrorStale=null,scheduleMirrorLeft=null;
+/* 3.327 — 같은 회차의 일정 다이어트 쓰기(3.315). kvWrite 의 거울 쓰기는 이것이 내려앉은 뒤에(가득 찬 기기 · PR #888 CI) */
+var scheduleDietWrite=null;
 function scheduleMirrorReport(){ try{ if(scheduleMirrorQuota()&&window.PSStorage&&PSStorage.reportFull)PSStorage.reportFull(SCHEDULE_KEY); }catch(_){} }
 function scheduleMirrorDrop(raw,mirror){
   if(typeof raw!=='string')return false;
@@ -7214,7 +7217,7 @@ function syncNowCore(reason){
         }
         /* 3.315 — 그림을 품은 옛 기기 사본 → 참조만 남긴 같은 문서(PSSchedBlob.diet) = 서버 원문일 때만(준비표가 그 원문으로 확인된다). 편집이 없을 때, 판본 그대로 */
         if(k===SCHEDULE_KEY&&scheduleDiet&&row&&typeof row.v==='string'&&row.v===scheduleDiet.v&&loc===scheduleDiet.from&&!dirty&&!scheduleHeld()){
-          if(roundKvWrite(k,row.v,writes,loc,scheduleGuard)){applied++;scheduleAppliedPlanned++;m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);syncBaseSet(k,row.v);}
+          if(roundKvWrite(k,row.v,writes,loc,scheduleGuard)){scheduleDietWrite=writes[writes.length-1];applied++;scheduleAppliedPlanned++;m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);syncBaseSet(k,row.v);}
           return;
         }
         if(loc==null&&row){ if(roundKvWrite(k,row.v,writes,loc,k===SCHEDULE_KEY?scheduleGuard:null)){ applied++;if(k===SCHEDULE_KEY)scheduleAppliedPlanned++; m.h[k]=hash(row.v); m.c[k]=row.cupd; nSet(m,k,row.v); syncBaseSet(k,row.v); } return; }
