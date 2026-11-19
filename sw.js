@@ -4,7 +4,7 @@
 const CACHE = 'process-3.335';   // 3.335 작전판 «일시 정지»가 그 자리에서 멈춘다 — ▶ 이어서 · ■ 재생 전 화면으로(board-anim-pause.js · 제보 a076fa6e)
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
-  '/studio/match-home.js', '/studio/training-intensity.js', '/studio/weather-request.js', '/studio/idp-profile-name.js', '/studio/popover-dismiss.js', '/studio/oauth-gate.js', '/studio/data-lock-guard.js', '/studio/account-hygiene.js',
+  '/studio/match-home.js', '/studio/training-intensity.js', '/studio/week-intensity.js', '/studio/weather-request.js', '/studio/idp-profile-name.js', '/studio/popover-dismiss.js', '/studio/oauth-gate.js', '/studio/data-lock-guard.js', '/studio/account-hygiene.js',
   '/studio/board-phone-view.js',
   '/studio/mobile-navigation.js', '/studio/mobile-navigation.css',
   '/studio/phone-consistency.css',
