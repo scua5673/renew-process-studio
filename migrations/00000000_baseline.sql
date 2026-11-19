@@ -2634,7 +2634,7 @@ CREATE OR REPLACE FUNCTION public.ps_kv_shape_guard()
  SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
-declare o int; n int; why text;
+declare o int; n int; d int; why text;   -- ps-20261119-roster-growth
 begin
   if new.k='cs_team_matches_v1' then
     begin
@@ -2644,7 +2644,14 @@ begin
     if o>=5 and n<=o/2 then why:='경기 점수 '||o||'개 중 '||(o-n)||'개가 사라지는 저장을 막았어요 — 앱을 새로고침하면 팀 것으로 맞춰져요'; end if;
   elsif new.k in ('cs_squad_v1','scout_tool_v1') then
     begin o:=jsonb_array_length(old.v::jsonb->'players'); n:=jsonb_array_length(new.v::jsonb->'players'); exception when others then return new; end;
-    if o>=10 and n>o*1.6 then why:='선수가 '||o||'명에서 '||n||'명으로 갑자기 불어나는 저장을 막았어요(중복 의심) — 앱을 새로고침하면 팀 것으로 맞춰져요';
+    if o>=10 and n>o*1.6 then
+      /* 20261119 — 늘어난 수만으로 막지 않는다(제보 d543557f: 옛 14명을 지우고 새 59명을 넣은 저장을 «중복»으로 막았다).
+         새 명단에서 같은 (이름, 등번호)가 되풀이된 수 d 가 늘어난 수의 절반 이상일 때만 중복으로 본다. 이름 없는 줄은 서로 같은 것으로 센다. 못 세면 예전처럼 막는다. */
+      begin
+        select n - count(distinct lower(btrim(coalesce(p->>'name','')))||chr(31)||btrim(coalesce(p->>'num',''))) into d
+          from jsonb_array_elements(new.v::jsonb->'players') p;
+      exception when others then d:=n; end;
+      if d is null or d*2>=n-o then why:='선수가 '||o||'명에서 '||n||'명으로 갑자기 불어나는 저장을 막았어요(중복 의심) — 앱을 새로고침하면 팀 것으로 맞춰져요'; end if;
     elsif o>=10 and n=0 then why:='선수 '||o||'명이 전부 사라지는 저장을 막았어요 — 앱을 새로고침하면 팀 것으로 맞춰져요'; end if;
   end if;
   if why is null then return new; end if;
