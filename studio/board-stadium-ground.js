@@ -55,24 +55,27 @@ function cardBands(cards,len){
     cs.forEach((q,j)=>{if(j===i)return;const gap=Math.max(q[0]-(r[0]+r[2]),r[0]-(q[0]+q[2]),q[1]-(r[1]+r[3]),r[1]-(q[1]+q[3]));if(gap>=0)pad=Math.min(pad,gap/2);});
     return {r:r,band:band,pad:pad,box:[r[0]-pad,r[1]-pad,r[2]+2*pad,r[3]+2*pad]};});
 }
-/* o = {multi, cards:[[x,y,w,h]…], len(규격 길이 m), L, T, m(1m), pw(운동장 길이 — 없으면 105m), ph(폭 — 없으면 68m 비율), f(반올림), kind(무늬 — 없으면 보드 값)}
+/* o = {multi, cards:[[x,y,w,h]…], len(규격 길이 m), L, T, m(1m), pw(운동장 길이 — 없으면 105m), ph(폭 — 없으면 68m 비율), f(반올림), kind(무늬 — 없으면 보드 값), gap(띠 결 간격 m — 없으면 보드 값)}
    → {defs(psStMow 포함), cards(카드 띠 rect), rot(잎결 방향 — 깎는 방향), per(잔디 사진 칸 — 밝은 띠 + 어두운 띠 4m 한 쌍), two(두 색 줄의 한 쌍 — 0 이면 한 색), grass(ga,gb)(사진 없는 psStGrass)}
-   3.326 — 무늬는 보드 설정 «잔디 무늬»(board-mow.js · 평면과 같은 값). 띠 · 넓은 띠는 예전 글자 그대로(두 색 줄 + 옅은 덧칠), 나머지는 한 색 위에 조금 짙은 덧칠, 없음은 빈 무늬. */
+   3.326 — 무늬는 보드 설정 «잔디 무늬»(board-mow.js · 평면과 같은 값). 띠는 두 색 줄 + 옅은 덧칠(3.332 부터 결 간격 · 하프라인 기준), 나머지는 한 색 위에 조금 짙은 덧칠, 없음은 빈 무늬. */
 function mowApi(){ return (W&&W.PSBoardMow)||(typeof require==='function'?require('./board-mow.js'):null); }
+/* 3.332 — 띠는 보드의 결 간격(o.gap · 없으면 보드 값 · 노드는 4m)으로, 하프라인이 결 경계(board-mow.js paint). 두 색 줄(사진 없는 psStGrass)도
+   같은 간격 · 같은 자리(ox). 잔디 사진 칸(per)은 무늬와 따로 예전 크기(약 4m 한 쌍) — 간격을 넓혀도 잎결 크기는 그대로 */
 function mowPlan(o){
   const f=o.f||(n=>Math.round(n*10)/10),DK='.07',LT='.06',cs=cardBands(o.cards,o.len),Mw=mowApi();
   const kind=o.kind||(Mw?Mw.kindNow(W):'band'),two=Mw?Mw.two(kind):kind==='band',strong=two?{}:{dk:['#000',.1],lt:['#fff',.08]};
-  const grassOf=(per,tw,multi)=>function(ga,gb){const t=tw&&!multi,s=t?tw:per;
-    return '<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(o.L)+'" y="'+f(o.T)+'" width="'+f(s)+'" height="'+f(s)+'"><rect width="'+f(s)+'" height="'+f(s)+'" fill="'+ga+'"/>'+(t?'<rect width="'+f(s/2)+'" height="'+f(s)+'" fill="'+gb+'"/>':'')+'</pattern>';};
+  const gap=o.gap>0?+o.gap:(Mw?Mw.gapNow(W):4),lenM=(Mw&&Mw.lenNow)?Mw.lenNow(W,o.len):o.len;
+  const grassOf=(per,tw,multi,ox)=>function(ga,gb){const t=tw&&!multi,s=t?tw:per;
+    return '<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(t&&ox!=null?ox:o.L)+'" y="'+f(o.T)+'" width="'+f(s)+'" height="'+f(s)+'"><rect width="'+f(s)+'" height="'+f(s)+'" fill="'+ga+'"/>'+(t?'<rect width="'+f(s/2)+'" height="'+f(s)+'" fill="'+gb+'"/>':'')+'</pattern>';};
   if(!o.multi||!cs.length){const pw=(o.pw>0?o.pw:105*o.m),band=pw/bands(o.len),per=2*band;
-    if(kind==='band'||!Mw)return {rot:0,cards:'',per:per,two:per,grass:grassOf(per,per,false),defs:'<pattern id="psStMow" patternUnits="userSpaceOnUse" x="'+f(o.L)+'" y="'+f(o.T)+'" width="'+f(per)+'" height="'+f(per)+'"><rect width="'+f(band)+'" height="'+f(per)+'" fill="#000" fill-opacity="'+DK+'"/><rect x="'+f(band)+'" width="'+f(band)+'" height="'+f(per)+'" fill="#fff" fill-opacity="'+LT+'"/></pattern>'};
-    const tw=two?2*pw/Mw.count(kind,o.len):0;
-    return {rot:0,cards:'',per:per,two:tw,grass:grassOf(per,tw,false),defs:Mw.paint('psStMow',kind,Object.assign({x:o.L,y:o.T,len:pw,wid:o.ph>0?o.ph:pw*68/105,lenM:o.len,f:f},strong))};}
+    if(!Mw)return {rot:0,cards:'',per:per,two:per,grass:grassOf(per,per,false),defs:'<pattern id="psStMow" patternUnits="userSpaceOnUse" x="'+f(o.L)+'" y="'+f(o.T)+'" width="'+f(per)+'" height="'+f(per)+'"><rect width="'+f(band)+'" height="'+f(per)+'" fill="#000" fill-opacity="'+DK+'"/><rect x="'+f(band)+'" width="'+f(band)+'" height="'+f(per)+'" fill="#fff" fill-opacity="'+LT+'"/></pattern>'};
+    const tw=two?2*gap*pw/lenM:0;
+    return {rot:0,cards:'',per:per,two:tw,grass:grassOf(per,tw,false,o.L+pw/2),defs:Mw.paint('psStMow',kind,Object.assign({x:o.L,y:o.T,len:pw,wid:o.ph>0?o.ph:pw*68/105,lenM:lenM,gap:gap,f:f},strong))};}
   let defs='<pattern id="psStMow" patternUnits="userSpaceOnUse" width="1" height="1"/>',out='';
   if(kind!=='none')cs.forEach((c,i)=>{const r=c.r,b=c.box,id='psStMowC'+i;
-    if(kind==='band'||!Mw){const band=c.band;
+    if(!Mw){const band=c.band;
       defs+='<pattern id="'+id+'" patternUnits="userSpaceOnUse" x="'+f(r[0])+'" y="'+f(r[1])+'" width="'+f(2*band)+'" height="'+f(2*band)+'"><rect width="'+f(2*band)+'" height="'+f(band)+'" fill="#000" fill-opacity="'+DK+'"/><rect y="'+f(band)+'" width="'+f(2*band)+'" height="'+f(band)+'" fill="#fff" fill-opacity="'+LT+'"/></pattern>';}
-    else defs+=Mw.paint(id,kind,Object.assign({x:r[0],y:r[1],len:r[3],wid:r[2],lenM:o.len,rot:90,f:f},strong));
+    else defs+=Mw.paint(id,kind,Object.assign({x:r[0],y:r[1],len:r[3],wid:r[2],lenM:o.len,rot:90,gap:gap,f:f},strong));
     out+='<rect class="ps-mow-card" x="'+f(b[0])+'" y="'+f(b[1])+'" width="'+f(b[2])+'" height="'+f(b[3])+'" fill="url(#'+id+')"/>';
   });
   const per=2*105*o.m/bands(105);

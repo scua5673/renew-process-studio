@@ -4,6 +4,7 @@ import {startFixture,openApp} from '../fixtures/team-app.mjs';
 //  · 실사 잔디(«잔디» 단추 = @real): 사진 칸 = 깎은 줄 한 쌍(11인제 2×105/27m) · 가로 · 세로 모두 0°(세로 판에서 또 돌리던 것 걷음)
 //    · 깎은 줄 rect.ps-flat-mow(id 없음) — 비네트 바로 위 · 구역 · 라인 아래, 골라인 L 에서 · 8인제는 실제 골라인(PR)에서
 //  · 운동장 5개: 사진 90° · 깎은 줄은 카드마다 90°(카드 위 골라인에서 27개 띠)
+// 3.332 — 기대를 일부러 고침: 깎은 줄은 결 간격(grassM, 여기선 유소년 4m) 정확히 · 하프라인(카드는 카드 가운데)이 결 경계. 사진 칸은 예전 그대로 약 4m 한 쌍(27개 띠)
 //  · 3D: 깎은 줄 · 잎결은 바탕과 같이 숨는다(visibility) · 그림 내보내기(boardImageXML)에 담긴다
 //  · 사진 없는 «잔디»: 잎결(128 타일 · 8m) + 깎은 줄 · «잔디 줄무늬»를 켜면 깎은 줄은 빠지고 잎결은 줄무늬 위
 //  · 네이비 · 흰색: 아무것도 없다
@@ -39,26 +40,26 @@ try{
 
   for(const o of ['h','v']){
     step('real-'+o);
-    await set({pitchTheme:'grass',pitchImg:'@real',grassM:5},1,o);   /* 3.326 — 무늬 «띠»(기본 «없음»은 줄 없이) */
+    await set({pitchTheme:'grass',pitchImg:'@real',grassM:4},1,o);   /* 3.326 — 무늬 «띠»(기본 «없음»은 줄 없이) · 3.332 — 4m */
     const r=await st(),per=2*r.pr.PW/27;
     assert.ok(r.tile,'실사 잔디 사진');near(r.tile.w,per,'사진 칸 = 깎은 줄 한 쌍');near(r.tile.iw,per,'사진 크기');assert.equal(r.tile.t,null,'가로 · 세로 모두 돌리지 않는다('+o+')');
     near(r.tile.x,r.pr.L,'골라인에서');
     assert.equal(r.mow.length,1,'깎은 줄 한 장');assert.equal(r.mow[0].id,'','id 없음(바탕 숨김 규칙)');assert.equal(r.mow[0].vis,'visible');
     assert.equal(r.mowAboveVig,true,'비네트 위');assert.equal(r.mowBelowGrid,true,'구역 · 라인 아래');
-    near(r.single.w,per,'27개 띠');near(r.single.x,r.pr.L,'골라인 L');near(r.single.y,r.pr.T,'T');assert.equal(r.single.t,null);
+    near(r.single.w,2*4*r.pr.PW/105,'4m 한 쌍');near(r.single.x,r.pr.L+r.pr.PW/2,'하프라인에서');near(r.single.y,r.pr.T,'T');assert.equal(r.single.t,null);
     assert.equal(r.grain,null,'실사 잔디엔 잎결 없음');
   }
   step('real-u12');
-  await set({pitchTheme:'grass',pitchImg:'@real',grassM:5},1,'v','u12');
-  let r=await st();near(r.single.x,r.pr.L,'8인제 실제 골라인');near(r.single.w,2*r.pr.PW/17,'8인제 17개 띠');near(r.tile.w,2*r.pr.PW/17,'사진 칸도');
+  await set({pitchTheme:'grass',pitchImg:'@real',grassM:4},1,'v','u12');
+  let r=await st();near(r.single.x,r.pr.L+r.pr.PW/2,'8인제 실제 하프라인');near(r.single.w,2*4*r.pr.PW/65,'8인제도 정확히 4m');near(r.tile.w,2*r.pr.PW/17,'사진 칸은 예전 그대로(17개 띠)');
 
   for(const o of ['h','v']){
     step('five-'+o);
-    await set({pitchTheme:'grass',pitchImg:'@real',grassM:5},5,o);
+    await set({pitchTheme:'grass',pitchImg:'@real',grassM:4},5,o);
     r=await st();
     assert.equal(r.cards.length,5,'카드 다섯');assert.equal(r.mow.length,5,'카드마다 깎은 줄');assert.equal(r.single,null,'운동장 하나 무늬는 없다');
     assert.equal(r.tile.t,'rotate(90 '+r.tile.x+' '+r.tile.y+')','사진은 카드의 골라인과 나란히(90°)');
-    r.cards.forEach((c,i)=>{const p=r.cardPats[i];assert.ok(p,'카드 '+i);near(p.x,c[0],'카드 x');near(p.y,c[1],'카드 위 골라인에서');near(p.w,2*c[3]/27,'카드마다 27개 띠');assert.equal(p.t,null,'3.326 — 카드 띠는 3D 카드와 같은 글자(띠가 y 로 — 돌리지 않는다)');});
+    r.cards.forEach((c,i)=>{const p=r.cardPats[i];assert.ok(p,'카드 '+i);near(p.x,c[0],'카드 x');near(p.y,c[1]+c[3]/2,'카드 하프라인에서');near(p.w,2*4*c[3]/105,'카드마다 4m');assert.equal(p.t,null,'3.326 — 카드 띠는 3D 카드와 같은 글자(띠가 y 로 — 돌리지 않는다)');});
   }
 
   step('3d');

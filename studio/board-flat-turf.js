@@ -44,7 +44,7 @@ function read(win){
   var cards=[];
   if(n>1){try{cards=[].map.call(d.querySelectorAll('#board #ps-multipitch [data-pitch-rect]'),function(g){return g.getAttribute('data-pitch-rect').split(',').map(Number);});}catch(_){}}
   return {pitch:(d.documentElement.dataset&&d.documentElement.dataset.pitch)||'',img:(st&&st.pitchImg)||'',n:n,L:L0,T:T0,mpp:M0,grassM:+win.__grassM||0,
-    pr:pr||{L:L0,T:T0,PW:105*M0,PH:68*M0},len:(sp&&sp.len)||105,cards:cards};
+    pr:pr||{L:L0,T:T0,PW:105*M0,PH:68*M0},len:(sp&&sp.len)||105,lenM:(sp&&sp.blank&&+sp.m>0)?+sp.m:((sp&&sp.len)||105),cards:cards};   /* 3.332 lenM — 결을 셀 길이(그리드 판은 판 가로 m) */
 }
 function tile(win){try{return win.PSStadiumGround?(win.PSStadiumGround.grainTile(TILE)||''):'';}catch(_){return '';}}
 function mk(d,tag,a){var e=d.createElementNS(NS,tag);for(var k in a)e.setAttribute(k,a[k]);return e;}
@@ -95,18 +95,18 @@ function mowSync(win,o){
   if(!base)return null;
   var p=turfPlan({L:o.pr.L,T:o.pr.T,PW:o.pr.PW,len:o.len,cards:o.n>1?o.cards:[]}),k=kindOf(o),Mw=(typeof window!=='undefined'&&window.PSBoardMow)||MOW;
   var cs=o.n>1&&o.cards&&o.cards.length?G.cardBands(o.cards,o.len):[];
-  var key=JSON.stringify([k,p.base,p.cards,base.getAttribute('x'),base.getAttribute('width')]);
+  var gap=Mw&&Mw.gapOf?Mw.gapOf(o.grassM):4,key=JSON.stringify([k,gap,o.lenM,p.base,p.cards,base.getAttribute('x'),base.getAttribute('width')]);   /* 3.332 — 간격 · 길이가 바뀌어도 다시 */
   var defs=world.querySelector(':scope>defs.ps-flat-mow');
   if(!defs||defs.getAttribute('data-k')!==key){
     [].forEach.call(old,function(e){e.remove();});
     defs=mk(d,'defs',{'class':'ps-flat-mow','data-k':key});
-    /* 띠 · 넓은 띠는 3.263 그대로 옅게(.035 · .03), 다른 무늬는 한 겹이라 조금 짙게 */
-    var s1=(k==='band'||k==='wide')?1:1.4,g0={dk:['#000',DK*s1],lt:['#fff',LT*s1],x2:.62,f:f};
+    /* 띠는 3.263 그대로 옅게(.035 · .03), 다른 무늬는 한 겹이라 조금 짙게 */
+    var s1=k==='band'?1:1.4,g0={dk:['#000',DK*s1],lt:['#fff',LT*s1],x2:.62,gap:gap,f:f};
     var paint=function(id,g){var o2={};for(var q in g0)o2[q]=g0[q];for(q in g)o2[q]=g[q];
       if(Mw)return Mw.paint(id,k,o2);
       var b=g.len/G.bands(g.lenM),sz=2*b;return '<pattern id="'+id+'" patternUnits="userSpaceOnUse" x="'+f(g.x)+'" y="'+f(g.y)+'" width="'+f(sz)+'" height="'+f(sz)+'"'+(g.rot?' patternTransform="rotate(90 '+f(g.x)+' '+f(g.y)+')"':'')+'><rect width="'+f(b)+'" height="'+f(sz)+'" fill="#000" fill-opacity="'+DK+'"/><rect x="'+f(b)+'" width="'+f(b)+'" height="'+f(sz)+'" fill="#fff" fill-opacity="'+LT+'"/></pattern>';};
     var rects=[],html='';
-    if(!cs.length){html=paint('psFlatMow',{x:o.pr.L,y:o.pr.T,len:o.pr.PW,wid:o.pr.PH||o.pr.PW*68/105,lenM:o.len,cx:o.pr.CX,cy:o.pr.CY});
+    if(!cs.length){html=paint('psFlatMow',{x:o.pr.L,y:o.pr.T,len:o.pr.PW,wid:o.pr.PH||o.pr.PW*68/105,lenM:o.lenM||o.len,cx:o.pr.CX,cy:o.pr.CY});
       rects.push(mk(d,'rect',{'class':'ps-flat-mow',x:base.getAttribute('x'),y:base.getAttribute('y'),width:base.getAttribute('width'),height:base.getAttribute('height'),fill:'url(#psFlatMow)','pointer-events':'none'}));}
     else cs.forEach(function(c,i){html+=paint('psFlatMowC'+i,{x:c.r[0],y:c.r[1],len:c.r[3],wid:c.r[2],lenM:o.len,rot:90});
       rects.push(mk(d,'rect',{'class':'ps-flat-mow',x:f(c.box[0]),y:f(c.box[1]),width:f(c.box[2]),height:f(c.box[3]),fill:'url(#psFlatMowC'+i+')','pointer-events':'none'}));});
