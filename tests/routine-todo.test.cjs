@@ -45,7 +45,7 @@ test('체크하는 곳은 일지 «오늘 루틴» 하나 — 루틴 탭은 틀�
   const card=fn('rTodayRoutine'),tab=fn('rRoutine');
   assert.match(card,/if\(ro\(\)\)return '';/,'코치(읽기 전용)에게는 그리지 않는다');
   assert.match(card,/if\(!rows\.length&&!extra\.length\)return '';/,'오늘 할 것이 없으면 빈 카드를 그리지 않는다');
-  assert.match(card,/체크는 그날만 남아요\./);
+  assert.match(card,/체크는 그날만 남습니다\./);
   assert.doesNotMatch(card,/못 했|놓쳤|연속/);
   assert.match(tab,/canCk=false/,'루틴 탭은 틀을 정하는 곳');
   assert.match(src,/if\(_todaySimple\)\{ try\{ h\+=rTodayRoutine\(calAnchor\);/,'일지 오늘 카드 바로 아래');

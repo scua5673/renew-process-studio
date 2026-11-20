@@ -17,7 +17,7 @@ test('UX-3 — 연결된 선수 0명인 «오늘»은 안내 + 초대(만들 수
   assert.doesNotMatch(idp,/if\(!linked\.length\)return '';/,'빈 문자열로 돌아가지 않는다');
   const a=idp.indexOf('if(!linked.length){'), s=idp.slice(a,a+1400);
   assert.ok(a>0);
-  assert.match(s,/_ia\.idpLink\.can\(\)/); assert.match(s,/<b>아직 IDP를 쓰는 선수가 없어요<\/b>/);
+  assert.match(s,/_ia\.idpLink\.can\(\)/); assert.match(s,/<b>아직 IDP를 쓰는 선수가 없습니다<\/b>/);
   assert.match(s,/\(_inv\?'<button type="button" class="btn" data-sq-invite>선수 초대하기<\/button>':''\)/);
   assert.match(s,/\(can\?'<button type="button" class="btn primary" data-sqe-mode="eval">선수 평가 시작<\/button>':''\)/);
   assert.match(s,/sqUnlinkedNote\(rws\)/,'연결 안 된 선수 수는 그대로 알린다');

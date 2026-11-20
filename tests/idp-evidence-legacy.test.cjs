@@ -14,12 +14,12 @@ function harness(){
 }
 test('legacy id-only evidence remains an explicit current reference in the daily view after wording changes',()=>{
   const c=harness(),html=c.rVisionDaily({visionBehaviorId:'scan'},'현재 바뀐 문구');
-  assert.match(html,/현재 문구 참고/);assert.doesNotMatch(html,/이 행동을 오늘 기록에 연결했어요/);
+  assert.match(html,/현재 문구 참고/);assert.doesNotMatch(html,/이 행동을 오늘 기록에 연결했습니다/);
   assert.doesNotMatch(html,/class="on" data-vd-b="scan"/);
 });
 test('an actual current snapshot may use the compact connected indicator and selected action',()=>{
   const c=harness(),html=c.rVisionDaily({visionEvidence:{id:'scan',text:'현재 바뀐 문구',revision:'new'}},'현재 바뀐 문구');
-  assert.match(html,/이 행동을 오늘 기록에 연결했어요/);assert.match(html,/class="on" data-vd-b="scan"/);
+  assert.match(html,/이 행동을 오늘 기록에 연결했습니다/);assert.match(html,/class="on" data-vd-b="scan"/);
 });
 test('a historical snapshot with the same ID keeps its saved wording and does not select the new action',()=>{
   const c=harness(),html=c.rVisionDaily({visionEvidence:{id:'scan',text:'옛 문구',revision:'old'}},'현재 바뀐 문구');

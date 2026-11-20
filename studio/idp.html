@@ -4970,7 +4970,7 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
            ⚠ 뷰어 선택(`#viewerSel`)은 남긴다 — '내 IDP ↔ 다른 선수'는 다른 일이다. -->
       <span class="viewer" id="viewer"><select id="viewerSel"></select></span>
       <button class="btn" id="parentRepBtn" title="이번 주 성장을 이미지 1장으로 — 학부모 공유용" style="display:none;padding:7px 12px;font-size:12px;flex:0 0 auto">내보내기</button>
-      <button class="btn" id="repBtn" title="리포트·이력서·평가지·목표를 PDF로 저장해요" style="padding:7px 12px;font-size:12px;flex:0 0 auto">PDF 내보내기</button>
+      <button class="btn" id="repBtn" title="리포트·이력서·평가지·목표를 PDF로 저장합니다" style="padding:7px 12px;font-size:12px;flex:0 0 auto">PDF 내보내기</button>
     </div>
   </div>
   <div id="idpRecovery" hidden></div>
@@ -5817,8 +5817,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<span class="sq-rcats">'+cats+'</span>'
         +'<span class="sq-avg">'+(avgAll!=null?'<b>'+avgAll.toFixed(1)+'</b><i>평균</i>':'<b class="none">–</b><i>평가 없음</i>')+'</span>'
         +(c.q?'<span class="sq-flag q" title="'+esc(c.q)+'">질문 →</span>'
-          :(propN?'<span class="sq-flag prop" title="선수가 키우고 싶은 것을 적었어요">제안'+(propN>1?' '+propN:'')+'</span>'   /* 2.253 */
-          :(c.rvDue?'<span class="sq-flag rv" title="다음 성장 리뷰 기한'+(c.rvDn<0?'이 '+(-c.rvDn)+'일 지났어요':'이 오늘이에요')+' — 열어서 성장 리뷰 쓰기">리뷰'+(c.rvDn<0?' D+'+(-c.rvDn):' 오늘')+'</span>'   /* 2.259 */
+          :(propN?'<span class="sq-flag prop" title="선수가 키우고 싶은 것을 적었습니다">제안'+(propN>1?' '+propN:'')+'</span>'   /* 2.253 */
+          :(c.rvDue?'<span class="sq-flag rv" title="다음 성장 리뷰 기한'+(c.rvDn<0?'이 '+(-c.rvDn)+'일 지났습니다':'이 오늘입니다')+' — 열어서 성장 리뷰 쓰기">리뷰'+(c.rvDn<0?' D+'+(-c.rvDn):' 오늘')+'</span>'   /* 2.259 */
           :(c.fresh?'<span class="sq-flag new">새 기록</span>':'<span class="sq-flag none"></span>'))))   /* 1.857 — '피드백 대기' 배지 제거(사용자) */
         +'</button>'
         +'<button type="button" class="sq-more" aria-expanded="false" aria-label="'+esc(c.nm)+' 평가 자세히 보기">⌄</button>'
@@ -5840,7 +5840,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       h+=(rest.length===cards.length?'':'<div class="sq-sec">포지션 미지정<u>'+rest.length+'</u></div>')
         +'<div class="sq-list">'+rest.map(cardHTML).join('')+'</div>';
     }
-    if(!cards.length) h+='<div class="card" style="text-align:center;color:var(--text-3);font-size:13px;padding:30px 14px">아직 공유된 선수 IDP가 없어요</div>';
+    if(!cards.length) h+='<div class="card" style="text-align:center;color:var(--text-3);font-size:13px;padding:30px 14px">아직 공유된 선수 IDP가 없습니다</div>';
     return h;
   }
   function rPhysicalWeek(cards){
@@ -5883,7 +5883,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var ps=document.getElementById('physLoadSave');
     if(ps)ps.onclick=function(){var box=wrap.querySelector('.phys-load'),date=box&&box.dataset.focus||ymd(new Date()),day=daily.days[date]=daily.days[date]||{},v=(document.getElementById('physLoad').value||'').trim();
       if(v)day._meta={load:v,at:Date.now(),by:(sess()||{}).uid||''}; else delete day._meta;
-      saveDaily();gToast('오늘 팀 훈련 부하를 저장했어요');};
+      saveDaily();gToast('오늘 팀 훈련 부하를 저장했습니다');};
     [].forEach.call(wrap.querySelectorAll('.phys-state'),function(b){b.onclick=function(){
       var r=dailyRec(b.dataset.physD,b.dataset.physU),cur=r&&r.status||null,ix=PHYS_STATES.indexOf(cur);
       /* 전체 리렌더로 주간 표 가로 스크롤·페이지 위치가 처음으로 튕긴다 → 기억했다가 복원(모바일에서 목·금 칸 연속 입력) */
@@ -6045,20 +6045,20 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     var html='';
     if(ro()){ var nm=(doc.profile&&doc.profile.name)||'팀원';
-      html+='<div class="ro-banner">'+ic('eye')+' <b>'+esc(nm)+'</b>님의 IDP는 읽기 전용이에요.</div>'; }
+      html+='<div class="ro-banner">'+ic('eye')+' <b>'+esc(nm)+'</b>님의 IDP는 읽기 전용입니다.</div>'; }
     else if(onTeam()&&sess()&&(curL==='profile'||curL==='eval')){   /* 2.035 — 공유 안내는 프로필 탭에서만 */
       html+='<div class="share-line">'+ic('eye')+' 팀과 공유: 프로필·평가·훈련·학습 기록 — 코치만 볼 수 있어요 · 이미지노트는 나만 봅니다</div>';
     }
     html+=rRisk();
     if(curL!=='home')html+=rMobileHead();
     if(curL==='home')html+=idpWeekly().renderPlayer();
-    else if(curL==='match') html+=(function(){ try{ return rMatchTab(); }catch(e){ return '<section class="card"><b>경기를 그리지 못했어요</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.195 */
+    else if(curL==='match') html+=(function(){ try{ return rMatchTab(); }catch(e){ return '<section class="card"><b>경기를 그리지 못했습니다</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.195 */
     /* ⚠ 2.361 — 여기에 try/catch 가 **반드시** 있어야 한다(사용자 "목표 들어가도 오늘이 나와").
        rGoal() 안에서 오류가 나면 예외가 render() 밖으로 빠져나가 아래 `wrap.innerHTML=html` 에
        닿지 못한다. 그런데 탭 하이라이트는 클릭 핸들러가 render() **전에** 이미 바꿔 놓는다 →
        탭은 '목표'인데 화면은 직전 화면(오늘)이 그대로 남는다. 조용히 실패하지 않게 이유를 보여준다.
        경기(rMatchTab)·리포트(rMyReport)가 같은 이유로 이미 이 모양이다. */
-    else if(curL==='goal') html+=(function(){ try{ return rGoal(); }catch(e){ return '<section class="card"><b>목표를 그리지 못했어요</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();
+    else if(curL==='goal') html+=(function(){ try{ return rGoal(); }catch(e){ return '<section class="card"><b>목표를 그리지 못했습니다</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();
     /* 2.510 — IDP 안의 학습 층은 **도달 불가**로 봉인(사용자 "왼쪽 사이드바는 놔두고 IDP에서 학습만 지워").
        학습은 셸의 독립 앱(learning.html, 2.219)이 맡는다 — IDP 의 옛 학습 화면은 그때부터 죽은 층이었다.
        ⚠ 함수(rLearn·rLearnToc…)와 코치 과제 배정(lrTaskSave)은 남긴다 — 다음 대청소에서 한꺼번에. */
@@ -6069,9 +6069,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
          ⚠ 2.431 — **그것도 뺐다**(사용자 "일지에 넣어야 하지 않을까"). 측정은 이제 **일지 › 일간의
             수요일**에만 뜬다. `rMeasureCard`·`bindMeasureCard` 는 그대로다 — 되살리려면 이 줄만 되돌린다. */
       +rProfileSum(_po)+(_po?(ro()?rProfileView():rProfile()):rProfileView())+   /* 2.647 — 닫혀 있거나 코치 열람이면 «보기» 카드 */(function(){ try{ return rMyArch(); }catch(_){ return ''; } })()+rEvalSum(_eo)+(_eo?rEval():'')+rReviews()+((ro()&&isCoach())?rCompare():'')+(function(){ try{ return rGrowth(); }catch(_){ return ''; } })();   /* 2.172 — 순서(사용자): 프로필 → 유형 → 셀프평가 → 리뷰·대조 → 성장 대화 → 자라는 프로필 */   /* 2.044 순서: 리뷰(현재)·대조 → 프로필 → 셀프평가 → 성장 대화 → 자라는 프로필 */ }   /* 1.977 — 접힌 요약 + 펼침 · 2.027 — 성장 리뷰(6주)·셀프 vs 코치 대조 */
-    else if(curL==='story') html+=(function(){ try{ return rStory(); }catch(e){ return '<section class="card"><b>이야기를 그리지 못했어요</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.766 */
+    else if(curL==='story') html+=(function(){ try{ return rStory(); }catch(e){ return '<section class="card"><b>이야기를 그리지 못했습니다</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.766 */
     else if(curL==='routine') html+=rRoutine();
-    else if(curL==='report') html+=(function(){ try{ return rMyReport(); }catch(e){ return '<section class="card"><b>리포트를 그리지 못했어요</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.172 */
+    else if(curL==='report') html+=(function(){ try{ return rMyReport(); }catch(e){ return '<section class="card"><b>리포트를 그리지 못했습니다</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.172 */
     else if(curL==='img') html+=rImg();
     else if(curL==='cal') html+=rCal();
     else html+=rRoutine();
@@ -6110,7 +6110,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     _idpWeeklyGrowth=PSIDPWeeklyGrowth.create({
       player:function(){return idpWeeklyModel(doc,viewing,(doc.profile||{}).name);},
       coach:function(selected){
-        var messages={unlinked:'계정 연결이 필요해요',ambiguous:'계정 연결을 확인해 주세요',pending:'IDP 자료를 기다리고 있어요',invalid:'IDP 자료를 확인해 주세요',unavailable:'열람 권한을 확인해 주세요'};
+        var messages={unlinked:'계정 연결이 필요합니다',ambiguous:'계정 연결을 확인해 주세요',pending:'IDP 자료를 기다리고 있습니다',invalid:'IDP 자료를 확인해 주세요',unavailable:'열람 권한을 확인해 주세요'};
         var rows=sqEvalPlayers().map(function(p){var ctx=sqStoryContext(p),w=ctx.state==='ready'?PSIDPWeeklyGrowth.weekData(ctx.doc,null,ymd(new Date())):null;
           return {id:String(p.id),name:p.name||'선수',num:p.num||'',position:sqEvalPosName(p.posId),state:ctx.state,message:messages[ctx.state]||'',count:w?w.scenes.length:0,ctx:ctx};});
         var row=rows.find(function(r){return r.id===selected;})||rows[0],m=null;
@@ -6421,7 +6421,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         (`LR_COURSES`·`LR_TERMS` 는 idp.html 안에 있어 다른 화면에서 셀 수 없다). */
   try{ window.LR_COURSES_N=LR_COURSES.length; window.LR_TERMS_N=LR_TERMS.length; }catch(_){}
   function rLearnToc(){
-    return lrHeader()+lrAreaNav()+(window.LR_TOC?LR_TOC.render():'<div class="card"><b>목차를 불러오지 못했어요</b></div>');
+    return lrHeader()+lrAreaNav()+(window.LR_TOC?LR_TOC.render():'<div class="card"><b>목차를 불러오지 못했습니다</b></div>');
   }
   function rLearn(){ if(learnArea==='toc')return rLearnToc();   /* 2.323 */
     if(learnArea==='concepts')return rLearnConcepts();   /* 2.153 */
@@ -6477,7 +6477,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   }
   function rLearnPrinciples(){
     var books=lrBooks(), h=lrHeader()+lrAreaNav();
-    if(!books.length) return h+'<div class="card"><h3>전술 원칙</h3><p class="lp-empty">원리 데이터(learn-principles.js)를 불러오지 못했어요.</p></div>';
+    if(!books.length) return h+'<div class="card"><h3>전술 원칙</h3><p class="lp-empty">원리 데이터(learn-principles.js)를 불러오지 못했습니다.</p></div>';
     if(_lpRun)return rLearnQuizRun();
     var b=learnBook?books.filter(function(x){return x.id===learnBook;})[0]:null;
     /* 1.972 — 트랙: 코치용 책(게임 플랜·축구 분석하기)은 선수 관점에선 뒤로 + 배지 */
@@ -6542,10 +6542,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     [].forEach.call(wrap.querySelectorAll('[data-lprun-next]'),function(b){ b.onclick=function(){ if(!_lpRun)return; _lpRun.i++; if(_lpRun.i>=_lpRun.ids.length&&!_lpRun.saved){ _lpRun.saved=true; var sc=0; _lpRun.ids.forEach(function(id){ var f=lrFindP(id); if(f&&_lpRun.answers[id]===f.p.quiz.a)sc++; }); var t=lrTP(); t.quizRuns=t.quizRuns||[]; t.quizRuns.push({at:Date.now(),score:sc,n:_lpRun.ids.length}); if(t.quizRuns.length>20)t.quizRuns=t.quizRuns.slice(-20); save(); } render(); try{document.querySelector('.stage').scrollTop=0;}catch(_){} }; });
     [].forEach.call(wrap.querySelectorAll('[data-lpgoto]'),function(b){ b.onclick=function(){ var v=b.dataset.lpgoto.split('|'); _lpRun=null; learnBook=v[0]; learnPhaseFilter='all'; render(); setTimeout(function(){ try{ var el=wrap.querySelector('[data-lpid="'+v[1]+'"]'); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){} },80); }; });
     /* 1.972 — 코치 과제 */
-    [].forEach.call(wrap.querySelectorAll('[data-lpassign]'),function(b){ b.onclick=function(){ if(!(ro()&&isCoach()))return; var list=lrTasks(); var bookId=b.dataset.lpassign, pid=b.dataset.lpassignP||''; if(list.some(function(x){return x.bookId===bookId&&(x.pid||'')===pid;})){ gToast('이미 배정한 과제예요'); return; } list.push({id:'lt'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),bookId:bookId,pid:pid,at:Date.now(),by:lrCoachName()}); if(lrTaskSave(list)){ gToast('과제로 배정했어요'); render(); } else gToast('배정을 저장하지 못했어요'); }; });
-    [].forEach.call(wrap.querySelectorAll('[data-lptask-del]'),function(b){ b.onclick=function(){ var list=lrTasks().filter(function(x){return x.id!==b.dataset.lptaskDel;}); if(lrTaskSave(list)){ gToast('과제를 취소했어요'); render(); } }; });
+    [].forEach.call(wrap.querySelectorAll('[data-lpassign]'),function(b){ b.onclick=function(){ if(!(ro()&&isCoach()))return; var list=lrTasks(); var bookId=b.dataset.lpassign, pid=b.dataset.lpassignP||''; if(list.some(function(x){return x.bookId===bookId&&(x.pid||'')===pid;})){ gToast('이미 배정한 과제입니다'); return; } list.push({id:'lt'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),bookId:bookId,pid:pid,at:Date.now(),by:lrCoachName()}); if(lrTaskSave(list)){ gToast('과제로 배정했습니다'); render(); } else gToast('배정을 저장하지 못했습니다'); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-lptask-del]'),function(b){ b.onclick=function(){ var list=lrTasks().filter(function(x){return x.id!==b.dataset.lptaskDel;}); if(lrTaskSave(list)){ gToast('과제를 취소했습니다'); render(); } }; });
     [].forEach.call(wrap.querySelectorAll('[data-lptask-open]'),function(b){ b.onclick=function(){ var t=lrTasks().filter(function(x){return x.id===b.dataset.lptaskOpen;})[0]; if(!t)return; if(t.modId){ learnArea='curriculum'; learnCurModule=t.modId; learnCurLesson=''; var _md=LR_CUR.module(t.modId); if(_md)learnCurLevel=_md.level; render(); return; } learnBook=t.bookId; learnPhaseFilter='all'; render(); if(t.pid)setTimeout(function(){ try{ var el=wrap.querySelector('[data-lpid="'+t.pid+'"]'); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){} },80); }; });
-    [].forEach.call(wrap.querySelectorAll('[data-lptask-done]'),function(b){ b.onclick=function(){ if(ro())return; var t=lrTP(); t.tasksDone=t.tasksDone||{}; var id=b.dataset.lptaskDone; if(t.tasksDone[id])delete t.tasksDone[id]; else t.tasksDone[id]=Date.now(); save(); render(); gToast(t.tasksDone[id]?'과제를 완료로 표시했어요':'완료 표시를 취소했어요'); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-lptask-done]'),function(b){ b.onclick=function(){ if(ro())return; var t=lrTP(); t.tasksDone=t.tasksDone||{}; var id=b.dataset.lptaskDone; if(t.tasksDone[id])delete t.tasksDone[id]; else t.tasksDone[id]=Date.now(); save(); render(); gToast(t.tasksDone[id]?'과제를 완료로 표시했습니다':'완료 표시를 취소했습니다'); }; });
     [].forEach.call(wrap.querySelectorAll('[data-lpbook]'),function(b){ b.onclick=function(){ learnBook=b.dataset.lpbook; learnPhaseFilter='all'; render(); }; });
     [].forEach.call(wrap.querySelectorAll('[data-lpback]'),function(b){ b.onclick=function(){ learnBook=''; render(); }; });
     [].forEach.call(wrap.querySelectorAll('[data-lpph]'),function(b){ b.onclick=function(){ learnPhaseFilter=b.dataset.lpph; render(); }; });
@@ -6554,25 +6554,25 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     [].forEach.call(wrap.querySelectorAll('[data-lpund]'),function(b){ b.onclick=function(){ var id=b.dataset.lpund; if(t.understood[id])delete t.understood[id]; else t.understood[id]=Date.now(); save(); var st=document.querySelector('.stage').scrollTop; render(); try{document.querySelector('.stage').scrollTop=st;}catch(_){} }; });
     [].forEach.call(wrap.querySelectorAll('[data-lpq]'),function(b){ b.onclick=function(){ var id=b.dataset.lpq, oi=+b.dataset.lpqi; var bk=lrBooks().filter(function(x){return x.id===learnBook;})[0]; var p=bk&&(bk.principles||[]).filter(function(x){return x.id===id;})[0]; if(!p)return; _lpQuizPick[id]=oi; var ok=(oi===p.quiz.a); if(!t.quiz[id]||!t.quiz[id].ok)t.quiz[id]={a:oi,ok:ok,ts:Date.now()}; if(ok&&!t.understood[id])t.understood[id]=Date.now(); save(); var st=document.querySelector('.stage').scrollTop; render(); try{document.querySelector('.stage').scrollTop=st;}catch(_){} }; });
     [].forEach.call(wrap.querySelectorAll('[data-lpapply]'),function(ta){ ta.addEventListener('input',function(){ t.applied[ta.dataset.lpapply]=t.applied[ta.dataset.lpapply]||{}; t.applied[ta.dataset.lpapply].text=ta.value; save(); }); });
-    [].forEach.call(wrap.querySelectorAll('[data-lpdone]'),function(b){ b.onclick=function(){ var id=b.dataset.lpdone; t.applied[id]=t.applied[id]||{}; t.applied[id].done=!t.applied[id].done; t.applied[id].ts=Date.now(); save(); render(); gToast(t.applied[id].done?'적용 완료로 표시했어요':'적용 완료 표시를 취소했어요'); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-lpdone]'),function(b){ b.onclick=function(){ var id=b.dataset.lpdone; t.applied[id]=t.applied[id]||{}; t.applied[id].done=!t.applied[id].done; t.applied[id].ts=Date.now(); save(); render(); gToast(t.applied[id].done?'적용 완료로 표시했습니다':'적용 완료 표시를 취소했습니다'); }; });
     /* 게임모델에 넣기 — 팀 게임모델(cs_gamemodel_v1)의 같은 국면(모멘트) 첫 세부 국면 원칙 목록에 "[책] 원리: 무엇"을 추가 */
     [].forEach.call(wrap.querySelectorAll('[data-lpgm]'),function(b){ b.onclick=function(){
       var bk=lrBooks().filter(function(x){return x.id===learnBook;})[0]; var p=bk&&(bk.principles||[]).filter(function(x){return x.id===b.dataset.lpgm;})[0]; if(!p)return;
       var LS='cs_gamemodel_v1', m=null; try{ m=JSON.parse(localStorage.getItem(LS)||'null'); }catch(_){}
-      if(!m||!Array.isArray(m.moments)||!m.moments.length){ gToast('팀 게임모델이 아직 없어요 — 팀 홈 › 국면 평가에서 표준 국면으로 시작하세요'); return; }
-      var mo=m.moments.filter(function(x){return (x.key||'')===p.phase;})[0]||m.moments.filter(function(x){return (x.cat||'')===p.phase;})[0]; if(!mo){ gToast('게임모델에 맞는 국면이 없어요'); return; }
+      if(!m||!Array.isArray(m.moments)||!m.moments.length){ gToast('팀 게임모델이 아직 없습니다 — 팀 홈 › 국면 평가에서 표준 국면으로 시작하세요'); return; }
+      var mo=m.moments.filter(function(x){return (x.key||'')===p.phase;})[0]||m.moments.filter(function(x){return (x.cat||'')===p.phase;})[0]; if(!mo){ gToast('게임모델에 맞는 국면이 없습니다'); return; }
       var ph=(mo.phases||[])[0]; if(!ph){ ph={id:'p'+Math.random().toString(36).slice(2,8),name:'기본',principles:[],snap:null}; mo.phases=[ph]; }
       ph.principles=Array.isArray(ph.principles)?ph.principles:[]; var line=p.name+' — '+p.what;
-      if(ph.principles.some(function(x){ return String((typeof x==='string')?x:(x&&(x.t||x.text)||'')).indexOf(p.name)===0; })){ gToast('이미 게임모델에 있어요 — '+mo.name+' › '+ph.name); return; }
+      if(ph.principles.some(function(x){ return String((typeof x==='string')?x:(x&&(x.t||x.text)||'')).indexOf(p.name)===0; })){ gToast('이미 게임모델에 있습니다 — '+mo.name+' › '+ph.name); return; }
       var emptyI=ph.principles.findIndex(function(x){return !String((typeof x==='string')?x:(x&&(x.t||x.text)||'')).trim();}); if(emptyI>=0)ph.principles[emptyI]=line; else ph.principles.push(line);
       try{ if(window.psSaveShared)window.psSaveShared(LS,JSON.stringify(m)); else localStorage.setItem(LS,JSON.stringify(m)); }catch(_){ try{localStorage.setItem(LS,JSON.stringify(m));}catch(__){} }
-      gToast('게임모델 › '+mo.name+' › '+ph.name+' 원칙에 넣었어요'); }; });
+      gToast('게임모델 › '+mo.name+' › '+ph.name+' 원칙에 넣었습니다'); }; });
     /* 이 국면 훈련 만들기 — 앱 사이드바 '훈련 디자인'을 열되 게임모델의 그 국면(세부 국면 전부)이 미리 골라진 편집기 */
     [].forEach.call(wrap.querySelectorAll('[data-lptrain]'),function(b){ b.onclick=function(){
       var bk=lrBooks().filter(function(x){return x.id===learnBook;})[0]; var p=bk&&(bk.principles||[]).filter(function(x){return x.id===b.dataset.lptrain;})[0]; if(!p)return;
       var ids=[]; try{ var m=JSON.parse(localStorage.getItem('cs_gamemodel_v1')||'null'); if(m&&m.moments){ var mo=m.moments.filter(function(x){return (x.key||'')===p.phase;})[0]||m.moments.filter(function(x){return (x.cat||'')===p.phase;})[0]; if(mo)ids=(mo.phases||[]).map(function(x){return x.id;}).filter(Boolean); } }catch(_){}
       try{ var pw=parent, fb=pw.document.getElementById('fBoard'); if(fb&&fb.contentWindow)fb.contentWindow.__psPreselectPhases=ids.length?ids:null; var tb=pw.document.getElementById('psTrainBtn'); if(tb){ tb.click(); return; } }catch(_){}
-      gToast('훈련 디자인은 왼쪽 메뉴에서 열 수 있어요'); }; });
+      gToast('훈련 디자인은 왼쪽 메뉴에서 열 수 있습니다'); }; });
   }
 
   /* ══ 2.010 · 학습 과정 — 선수·코치 트랙 3단계×6영역(learn-curriculum.js, window.LR_CUR). 글로벌 표준(UEFA·FIFA·FA·KNVB·RBFA·DFB·KFA·IFAB) 재서술.
@@ -6592,7 +6592,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function lcSrcChips(m){ return (m.src||[]).map(function(k){ var sc=LR_CUR.sources[k]; return sc?'<span class="lc-src" title="'+esc(sc.url||'')+'">'+esc(sc.ko)+'</span>':''; }).join(''); }
   function rLearnCurriculum(){
     var h=lrHeader()+lrAreaNav();
-    if(!window.LR_CUR) return h+'<div class="card"><h3>학습 과정</h3><p class="lp-empty">커리큘럼 데이터(learn-curriculum.js)를 불러오지 못했어요.</p></div>';
+    if(!window.LR_CUR) return h+'<div class="card"><h3>학습 과정</h3><p class="lp-empty">커리큘럼 데이터(learn-curriculum.js)를 불러오지 못했습니다.</p></div>';
     if(learnCurLesson) return h+rLcLesson();
     if(learnCurModule) return h+rLcModule();
     return h+rLcHome();
@@ -6687,8 +6687,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       else if(v[0]==='course'){ learnArea='game'; learnCourseId=v[1]; var cs=LR_COURSES.filter(function(x){return x.id===v[1];})[0]; if(cs)learnPhase=cs.phase; learnScreen='lesson'; learnStep=0; render(); }
       else if(v[0]==='term'){ learnArea='terms'; learnTermCat='all'; learnTermQuery=''; render(); setTimeout(function(){ try{ var el=wrap.querySelector('[data-lrterm="'+v[1]+'"]'); if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('lc-flash'); } }catch(_){} },80); }
     }; });
-    [].forEach.call(wrap.querySelectorAll('[data-lcassign]'),function(b){ b.onclick=function(){ if(!(ro()&&isCoach()))return; var list=lrTasks(), modId=b.dataset.lcassign; if(list.some(function(x){return x.modId===modId&&!(lrTP().tasksDone||{})[x.id];})){ gToast('이미 낸 과제예요'); return; }
-      list.push({id:'lt'+Date.now().toString(36),modId:modId,by:lrCoachName(),at:Date.now()}); if(lrTaskSave(list)){ gToast('과제로 냈어요'); render(); } else gToast('저장하지 못했어요'); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-lcassign]'),function(b){ b.onclick=function(){ if(!(ro()&&isCoach()))return; var list=lrTasks(), modId=b.dataset.lcassign; if(list.some(function(x){return x.modId===modId&&!(lrTP().tasksDone||{})[x.id];})){ gToast('이미 낸 과제입니다'); return; }
+      list.push({id:'lt'+Date.now().toString(36),modId:modId,by:lrCoachName(),at:Date.now()}); if(lrTaskSave(list)){ gToast('과제로 냈습니다'); render(); } else gToast('저장하지 못했습니다'); }; });
     var c=lrCP();
     [].forEach.call(wrap.querySelectorAll('[data-lcq]'),function(b){ b.onclick=function(){ var f=LR_CUR.lesson(learnCurLesson); if(!f)return; var oi=+b.dataset.lcq; _lcPick[f.l.id]=oi; if(!ro()){ c.quiz[f.l.id]={a:oi,ok:oi===f.l.quiz.a,ts:Date.now()}; save(); } render(); }; });
     [].forEach.call(wrap.querySelectorAll('[data-lcq-retry]'),function(b){ b.onclick=function(){ var f=LR_CUR.lesson(learnCurLesson); if(!f)return; delete _lcPick[f.l.id]; if(!ro()){ delete c.quiz[f.l.id]; save(); } render(); }; });
@@ -6722,10 +6722,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     return {n:n,d:d,pct:n?Math.round(d/n*100):0}; }
   function rLearnConcepts(){
     var h=lrHeader()+lrAreaNav();
-    if(!window.PS_CONCEPTS) return h+'<div class="card"><h3>개념</h3><p class="lp-empty">개념 데이터(learn-concepts.js)를 불러오지 못했어요.</p></div>';
+    if(!window.PS_CONCEPTS) return h+'<div class="card"><h3>개념</h3><p class="lp-empty">개념 데이터(learn-concepts.js)를 불러오지 못했습니다.</p></div>';
     var p=cptProg(), c=lrCPT(), coach=(lcTrack()==='coach');
     h+='<div class="card cpt-intro"><div class="cpt-introh"><div><div class="lp-kicker">CONCEPTS</div><h3>이 도구가 쓰는 말</h3>'
-      +'<p>축구 용어(컷백 · 하프스페이스)는 <b>용어 학습</b>에 있어요.</p></div>'
+      +'<p>축구 용어(컷백 · 하프스페이스)는 <b>용어 학습</b>에 있습니다.</p></div>'
       +'<div class="cpt-count"><b>'+p.d+'<small>/'+p.n+'</small></b><span>읽음</span></div></div>'
       +'<div class="lc-bar"><i style="width:'+p.pct+'%"></i></div></div>';
     PS_CONCEPTS.groups.forEach(function(g){
@@ -6788,7 +6788,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var all=PS_CONCEPTS.items, i=-1; all.forEach(function(x,k){ if(x.id===id)i=k; });
       var nx=(i>=0)?all[i+1]:null;
       if(nx){ learnCptOpen=nx.id; gToast('다음 개념으로'); }
-      else { learnCptOpen=''; gToast('개념을 다 읽었어요'); }
+      else { learnCptOpen=''; gToast('개념을 다 읽었습니다'); }
       render();
       if(learnCptOpen)setTimeout(function(){ try{ var el=wrap.querySelector('#cpt-'+learnCptOpen); if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'}); }catch(_){} },60); }; });
   }
@@ -6818,7 +6818,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     [].forEach.call(wrap.querySelectorAll('[data-lrknown]'),function(b){b.onclick=function(){
       if(ro())return;var id=b.dataset.lrknown;
       if(doc.learning.termKnown[id])delete doc.learning.termKnown[id];else doc.learning.termKnown[id]=Date.now();
-      save();render();gToast(doc.learning.termKnown[id]?'익힌 용어로 표시했어요':'익힘 표시를 취소했어요');
+      save();render();gToast(doc.learning.termKnown[id]?'익힌 용어로 표시했습니다':'익힘 표시를 취소했습니다');
     };});
     var tq=document.getElementById('lrTermSearch');if(tq){tq.oninput=function(){learnTermQuery=tq.value;filterLearnTerms();};filterLearnTerms();}
     var bk=document.getElementById('lrBack'); if(bk)bk.onclick=function(){ learnScreen='home';render(); };
@@ -6828,7 +6828,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       learnPicked=b.dataset.lrch; if(!ro()){doc.learning.choices[learnCourseId]=learnPicked;save();} render(); }; });
     var sv=document.getElementById('lrSave'); if(sv)sv.onclick=function(){
       var n=document.getElementById('lrNote'); doc.learning.notes[learnCourseId]=(n&&n.value.trim())||'';
-      doc.learning.completed[learnCourseId]=Date.now(); save(); learnScreen='home'; render(); gToast('학습 기록을 저장했어요'); };
+      doc.learning.completed[learnCourseId]=Date.now(); save(); learnScreen='home'; render(); gToast('학습 기록을 저장했습니다'); };
   }
 
   /* ---------- 이미지노트 (이미지 트레이닝) ----------
@@ -6851,7 +6851,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +(onTeam()&&!ro()?'<b>팀에 공유되지 않아요</b>':'')+'</div></div>'
       +(ro()?'':'<button class="btn primary" id="inNew">＋ 새 노트</button>')+'</div>';
     if(!ns.length){
-      h+='<div class="empty"><div class="h">아직 노트가 없어요</div>'
+      h+='<div class="empty"><div class="h">아직 노트가 없습니다</div>'
         +'<div class="s">경기 전에 내 포지션과 역할을 적어요</div></div>';
     }
     h+='</div>';
@@ -7018,9 +7018,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var h='';
     h+='<div class="card role-hero"><div class="role-kicker">팀에서 나의 역할</div>'
       +'<div class="role-line"><span>나는 팀에서</span><input class="role-id" data-role-f="identity" maxlength="60" value="'+esc(r.identity||'')+'" placeholder="예) 뒤에서 빌드업을 시작하는"'+dis+'><span>선수다.</span></div>'
-      +'<div class="role-meta">'+(posTxt?'<span><i>포지션</i>'+esc(posTxt)+'</span>':'<span><i>포지션</i><em>내 프로필에서 정하면 여기 붙어요</em></span>')
+      +'<div class="role-meta">'+(posTxt?'<span><i>포지션</i>'+esc(posTxt)+'</span>':'<span><i>포지션</i><em>내 프로필에서 정하면 여기 붙습니다</em></span>')
       +'<span><i>적은 국면</i>'+done+' / '+mos.length+'</span></div>'
-      +'<p class="role-help">순간마다 "나는 뭘 하는 선수인가"를 한 줄로 적고, 지금 얼마나 하고 있는지 눌러 보세요.'+(m?'':' 팀 게임모델이 아직 없어 기본 국면으로 시작해요.')+'</p></div>';
+      +'<p class="role-help">순간마다 "나는 뭘 하는 선수인가"를 한 줄로 적고, 지금 얼마나 하고 있는지 눌러 보세요.'+(m?'':' 팀 게임모델이 아직 없어 기본 국면으로 시작합니다.')+'</p></div>';
     mos.forEach(function(mo){
       var col=ROLE_COL[mo.cat]||ROLE_COL[mo.key]||'#8a9099', x=(r.phases&&r.phases[mo.key])||{};
       var ask=ROLE_ASK[mo.key]||ROLE_ASK[mo.cat]||'이 순간 나는 뭘 해?', hint=ROLE_HINT[mo.key]||ROLE_HINT[mo.cat]||'한 줄로, 내 말로';
@@ -7068,7 +7068,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var RL=['','아직','가끔','반쯤','자주','거의 항상'];
     var h='<div class="card role-hero role-compact" id="goalRole"><div class="role-kicker">팀에서 내 역할</div>'
       +'<div class="role-line"><span>나는 팀에서</span><input class="role-id" data-role-f="identity" maxlength="60" value="'+esc(r.identity||'')+'" placeholder="예) 뒤에서 빌드업을 시작하는"'+dis+'><span>선수다.</span></div>'
-      +'<div class="role-meta">'+(posTxt?'<span><i>포지션</i>'+esc(posTxt)+'</span>':'<span><i>포지션</i><em>내 프로필에서 정하면 여기 붙어요</em></span>')
+      +'<div class="role-meta">'+(posTxt?'<span><i>포지션</i>'+esc(posTxt)+'</span>':'<span><i>포지션</i><em>내 프로필에서 정하면 여기 붙습니다</em></span>')
       +'<span><i>적은 국면</i>'+done+' / '+mos.length+'</span>'+(m?'':'<span><em>팀 게임모델이 없어 기본 국면</em></span>')+'</div>'
       +'<div class="role-list">';
     mos.forEach(function(mo){
@@ -7079,7 +7079,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var rateBtns=''; for(var i=1;i<=5;i++)rateBtns+='<button type="button" data-role-rate="'+i+'" class="'+(rate===i?'on':'')+'"'+dis+' title="'+RL[i]+'">'+i+'</button>';
       rateBtns+='<button type="button" data-role-rate="0" class="unk'+(rate===0?' on':'')+'"'+dis+'>모르겠어</button>';
       h+='<details class="role-item" data-role-mo="'+esc(mo.key)+'"><summary><span class="d" style="background:'+col+'"></span><b>'+esc(mo.name)+'</b>'
-        +'<span class="ans'+(me?'':' ph')+'">'+(me?esc(me):'아직 안 적었어요')+'</span>'
+        +'<span class="ans'+(me?'':' ph')+'">'+(me?esc(me):'아직 안 적었습니다')+'</span>'
         +(rate?'<span class="rt">'+RL[rate]+'</span>':(rate===0?'<span class="rt unk">지켜보기</span>':''))+'</summary>'
         +'<div class="role-body"><div class="role-q">'+esc(ask)+'</div>'
         +'<div class="fld"><textarea data-role-ph="'+esc(mo.key)+'" data-role-k="me" rows="2" placeholder="'+esc(hint)+'"'+dis+'>'+esc(x.me||'')+'</textarea></div>'
@@ -7097,7 +7097,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(idIn){ idIn.addEventListener('input',function(){ doc.role=doc.role||{}; doc.role.identity=idIn.value; touch(); }); }
     [].forEach.call(card.querySelectorAll('textarea[data-role-ph]'),function(ta){
       ta.addEventListener('input',function(){ doc.role=doc.role||{}; doc.role.phases=doc.role.phases||{}; var k=ta.dataset.rolePh; doc.role.phases[k]=doc.role.phases[k]||{}; doc.role.phases[k].me=ta.value; touch();
-        var it=ta.closest('.role-item'), ans=it&&it.querySelector('summary .ans'); if(ans){ var v=ta.value.trim(); ans.textContent=v||'아직 안 적었어요'; ans.classList.toggle('ph',!v); } });
+        var it=ta.closest('.role-item'), ans=it&&it.querySelector('summary .ans'); if(ans){ var v=ta.value.trim(); ans.textContent=v||'아직 안 적었습니다'; ans.classList.toggle('ph',!v); } });
     });
     [].forEach.call(card.querySelectorAll('[data-role-rate]'),function(b){
       b.onclick=function(){ var it=b.closest('.role-item'), k=it.dataset.roleMo, v=+b.dataset.roleRate;
@@ -7177,7 +7177,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function sqIsReq(){ return sqPanel==='req'; }
   /* ══ 2.117 · 요구의 주어는 **자리**다 ═══════════════════════════════════════════
      2.116 까지 요구 화면은 선수를 통해 자리를 얻었다 — 선수 이름 밑에 있었으니까.
-     그런데 저장은 `positions[].req` 에 되고 화면이 스스로 "이 자리 전체에 적용돼요" 라고 말한다.
+     그런데 저장은 `positions[].req` 에 되고 화면이 스스로 "이 자리 전체에 적용됩니다" 라고 말한다.
      2.116 이 '팀 보기'를 이름 밑에서 빼낸 것과 같은 이유로 요구도 페이지 머리 '자리별'로 나갔다.
      요구 렌더·핸들러가 실제로 쓰는 것은 posId 하나뿐이라, 그 통로를 여기 한 곳으로 모은다.
      ⚠ 자리를 아직 안 골랐으면 **보던 선수의 자리**로 시작한다(평가하다 요구를 보러 오는 흐름). */
@@ -7386,8 +7386,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var h='<div class="sqfit'+(mode==='report'?' rep':'')+'">'
       +(nr?'<div class="sqfit-r"><span class="t">'+esc(nr.name)+'<em class="n">'+nrLb+'</em></span><span class="v">'+nr.hit+'/4'+un(nr)+'</span>'+seg(nr,'fn')+'</div>':'')
       +'<div class="sqfit-r"><span class="t">'+esc(f.want.name)+'<em class="w">팀 이상형</em></span><span class="v">'+f.want.hit+'/4'+un(f.want)+'</span>'+seg(f.want,'f')+'</div>';
-    if(mode==='report')h+='<div class="sqfit-say">'+(f.same?'<b>일치</b> — 이상형에 이미 맞아요.'
-      :'<b>둘이 달라요.</b>')+'</div>';
+    if(mode==='report')h+='<div class="sqfit-say">'+(f.same?'<b>일치</b> — 이상형에 이미 맞습니다.'
+      :'<b>둘이 다릅니다.</b>')+'</div>';
     return h+'</div>';
   }
   /* 2.166 — 기준(자리별) 화면의 '자리의 이상형' 칸. 고르면 그 유형의 핵심 4 가 이 자리 요구에 +1(이미 정해진 항목만). */
@@ -7556,7 +7556,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<span class="cn"><b class="ok">'+r.f.met+'</b>충족 <b class="no">'+r.f.short+'</b>미달'+(r.f.unrated?' <b class="un">'+r.f.unrated+'</b>미평가':'')+'</span>'
         +'<span class="wo">'+r.f.worst.slice(0,2).map(function(x){ return '<span>'+esc(x.name)+' +'+x.gap+'</span>'; }).join('')
         +(r.f.posUnseen?'<span class="un">전용 '+r.f.posUnseen+'개 못 봄</span>':'')+'</span></div>'; }).join('')+'</div>';
-    if(rest>0)h+='<div class="pf-rest">미달이 많은 '+rest+'개 자리는 접었어요.</div>';
+    if(rest>0)h+='<div class="pf-rest">미달이 많은 '+rest+'개 자리는 접었습니다.</div>';
     return h+'</div>';
   }
   /* ══ 2.112 · 선수 평가 = 질문–답 · 한 화면에 한 영역 ═════════════════════════════════
@@ -7738,8 +7738,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'</'+(can?'button':'div')+'>';
     });
     h+='</div>';
-    if(can)h+='<div class="arcm-note">줄을 누르면 <b>이번 주기 초점</b>이 되고, 초점 유형의 핵심 4는 자리 요구가 <b>+1</b> 돼요.'
-           +(cur?' 초점 줄을 다시 누르면 해제돼요.':'')+'</div>';
+    if(can)h+='<div class="arcm-note">줄을 누르면 <b>이번 주기 초점</b>이 되고, 초점 유형의 핵심 4는 자리 요구가 <b>+1</b> 됩니다.'
+           +(cur?' 초점 줄을 다시 누르면 해제됩니다.':'')+'</div>';
     return h+'</div>';
   }
   function sqArchSet(p,key){
@@ -7747,7 +7747,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     p.arch=key; sqArchOpen=false; sqEvalBusy[p.id]=1; render();   /* 고르면 판은 접는다 */   /* 낙관적 반영 — 실패하면 되돌린다 */
     teSend('teamEvalArch',{playerId:p.id,arch:key}).then(function(r){
       delete sqEvalBusy[p.id];
-      if(!(r&&r.ok)){ p.arch=was; gToast(r&&r.err==='forbidden'?'평가 권한이 없어요':'저장하지 못했어요'); }
+      if(!(r&&r.ok)){ p.arch=was; gToast(r&&r.err==='forbidden'?'평가 권한이 없습니다':'저장하지 못했습니다'); }
       render();
     });
   }
@@ -7765,7 +7765,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
      선수는 '매긴 항목 수', 자리는 '요구를 정한 항목 수'. */
   function rSqPosSide(){
     var ps=(sqEvalData&&sqEvalData.positions)||[], all=sqEvalPlayers(), cur=sqReqPosId();
-    if(!ps.length)return '<div class="sqe-msg" style="padding:24px 8px"><b>자리가 없어요</b>팀 › 게임모델에서 자리를 먼저 만들어 주세요.</div>';
+    if(!ps.length)return '<div class="sqe-msg" style="padding:24px 8px"><b>자리가 없습니다</b>팀 › 게임모델에서 자리를 먼저 만들어 주세요.</div>';
     var used={}, side='<div class="sqe-list">';
     SQE_GRP.forEach(function(g){
       var arr=ps.filter(function(po){ if(used[po.id])return false;
@@ -7871,12 +7871,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rSqHist(p){
     var ms=(p&&Array.isArray(p.meetings))?p.meetings.slice():[];
     ms.sort(function(a,b){ return String(b.at||'').localeCompare(String(a.at||'')); });
-    if(!ms.length)return '<div class="nw-none">아직 면담 기록이 없어요 — 쓰는 것은 데스크톱에서 해요.</div>';
+    if(!ms.length)return '<div class="nw-none">아직 면담 기록이 없습니다 — 쓰는 것은 데스크톱에서 합니다.</div>';
     var h=ms.slice(0,3).map(function(m){
       var nx=String(m.next||'').trim();
       return '<div class="nw-hi"><b>'+esc(m.at||'날짜 없음')+'</b><span>'+esc([m.by,m.way].filter(Boolean).join(' · '))+'</span>'
         +(nx?'<em>'+esc(nx)+'</em>':'')+'</div>'; }).join('');
-    if(ms.length>3)h+='<div class="nw-none" style="border:0;padding:6px 2px 0">그 밖에 '+(ms.length-3)+'회 — 데스크톱에서 전부 봐요.</div>';
+    if(ms.length>3)h+='<div class="nw-none" style="border:0;padding:6px 2px 0">그 밖에 '+(ms.length-3)+'회 — 데스크톱에서 전부 봅니다.</div>';
     return h;
   }
   /* ══ 2.122 · 머리 띠 — 신원과 개수를 한 줄에 ═══════════════════════════════════
@@ -7932,12 +7932,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(v>=1&&v<=5)dist[v-1]++; else un++; }); });
     var rated=tot-un, SL=['아직','훈련에서','경기에서','압박에서도','내 무기'];
     var h='<div class="nw-blk ev-dist"><div class="nw-h">어디까지 왔나<em>'
-      +(rated?('매긴 '+rated+'항목이 척도 어디에'):'아직 매긴 항목이 없어요')+'</em></div>';
+      +(rated?('매긴 '+rated+'항목이 척도 어디에'):'아직 매긴 항목이 없습니다')+'</em></div>';
     if(rated){
       h+='<div class="nw-dist">'+dist.map(function(n,i2){ return n?('<span class="s'+(i2+1)+'" style="flex:'+n+'">'+n+'</span>'):''; }).join('')+'</div>'
         +'<div class="nw-distl">'+dist.map(function(n,i2){ return n?('<span><i class="s'+(i2+1)+'"></i>'+SL[i2]+' '+n+'</span>'):''; }).join('')
         +(un?'<span class="un">미평가 '+un+'</span>':'')+'</div>';
-    }else h+='<div class="nw-none">아래에서 매기면 이 줄이 채워져요.</div>';
+    }else h+='<div class="nw-none">아래에서 매기면 이 줄이 채워집니다.</div>';
     return h+'</div>';
   }
   function rSqNow(p){
@@ -7976,9 +7976,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<div class="nw-blk"><div class="nw-h">다음에 뭘<em>요구까지 먼 순서</em></div>';
     if(!gaps.length){
       var anyReq=false; try{ var _r=reqBase||{}; anyReq=Object.keys(_r).some(function(k){ return +_r[k]>0; }); }catch(_){}
-      h+= (!posNm) ? '<div class="nw-none">포지션이 없어 견줄 기준이 없어요 — 팀 › 선수단에서 자리를 먼저 정해 주세요.</div>'
-         : anyReq ? (n.no?'':'<div class="nw-none ok">지금 기준으로는 <b>다 넘겼어요</b></div>')
-         : '<button type="button" class="nw-go" data-sqe-mode="req">이 자리의 <b>요구</b>를 아직 안 정했어요 ›</button>';
+      h+= (!posNm) ? '<div class="nw-none">포지션이 없어 견줄 기준이 없습니다 — 팀 › 선수단에서 자리를 먼저 정해 주세요.</div>'
+         : anyReq ? (n.no?'':'<div class="nw-none ok">지금 기준으로는 <b>다 넘겼습니다</b></div>')
+         : '<button type="button" class="nw-go" data-sqe-mode="req">이 자리의 <b>요구</b>를 아직 안 정했습니다 ›</button>';
     }else{
       var cap=sqNowGapAll?gaps:gaps.slice(0,3);
       h+='<div class="nw-gaps">'+cap.map(function(x){
@@ -8011,7 +8011,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         /* ⚠ 2.120 — 자리 비교(pf-card)는 폰 실측에서 **345px** 로 갭(203)보다 컸다.
            "이 선수가 어느 자리에 맞나"는 유형과 같은 질문의 두 얼굴이라 이 층에 함께 접는다. */
         if(f[0]==='arch')h+='<div class="nw-foldb">'
-          +(function(){ try{ return rSqArch(p,true)||'<div class="nw-none">이 자리는 유형 사전이 없어요.</div>'; }catch(_){ return ''; } })()
+          +(function(){ try{ return rSqArch(p,true)||'<div class="nw-none">이 자리는 유형 사전이 없습니다.</div>'; }catch(_){ return ''; } })()
           +(function(){ try{ return rSqPosFit(p); }catch(_){ return ''; } })()+'</div>';
         if(f[0]==='attr')h+='<div class="nw-foldb">'+attrBlk+'</div>';
         if(f[0]==='hist')h+='<div class="nw-foldb">'+rSqHist(p)+'</div>';
@@ -8035,7 +8035,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
               ['소속팀',pf.team],['학년',/^[1-3]$/.test(String(p.schoolYear||''))?p.schoolYear+'학년':''],['상태',SQP_ST[p.status]||'훈련 가능']];   /* 3.283 — 학년은 schoolYear(grade 는 평가 등급) */
       var age=null; try{ age=sqpAgeOf(pf.dob||(sf&&sf.dob)||''); }catch(_){}
       if(age!=null)KV.splice(4,0,['나이',age+'세']);
-      h+='<div class="nw-info"><div class="sqp-sec">팀 프로필<em>팀 › 선수단 › 편집과 같은 값이에요</em></div><div class="sqp-kv">'
+      h+='<div class="nw-info"><div class="sqp-sec">팀 프로필<em>팀 › 선수단 › 편집과 같은 값입니다</em></div><div class="sqp-kv">'
         +KV.map(function(k){ return '<div><small>'+esc(k[0])+'</small>'+(k[1]?esc(String(k[1])):'<span style="color:var(--text-3);font-weight:500">—</span>')+'</div>'; }).join('')
         +'</div>';
       var sch=[pf.elem,pf.mid,pf.high,pf.univ].filter(Boolean).join(' · ');
@@ -8054,9 +8054,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         h+='<div class="sqp-sec">선수가 쓴 것<em>읽기만 합니다</em></div>';
         h+=difs.length
           ? difs.map(function(d){ return '<div class="sqp-dif"><span class="lb">'+esc(d[0])+'</span>'+esc(d[1])+' <b>'+esc(d[2])+'</b></div>'; }).join('')
-          : '<div class="sqp-note">선수가 쓴 것과 <b>같아요</b>.</div>';
-      }else h+='<div class="sqp-note">이 선수는 아직 <b>계정이 연결되지 않아</b> 선수가 앱에서 쓴 프로필이 없어요.</div>';
-      h+='<div class="sqp-note">프로필을 고치려면 <b>팀 › 선수단</b>에서 이 선수를 열어요.</div></div>';
+          : '<div class="sqp-note">선수가 쓴 것과 <b>같습니다</b>.</div>';
+      }else h+='<div class="sqp-note">이 선수는 아직 <b>계정이 연결되지 않아</b> 선수가 앱에서 쓴 프로필이 없습니다.</div>';
+      h+='<div class="sqp-note">프로필을 고치려면 <b>팀 › 선수단</b>에서 이 선수를 엽니다.</div></div>';
     }
     return h;
   }
@@ -8088,7 +8088,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<textarea id="sqQaQ" rows="2" maxlength="200" placeholder="예: 이번 대회에서 배운 점과 다음에 해볼 것을 적어 주세요"></textarea>'
       +'<div class="qa-formbtns"><button type="button" class="btn primary" data-sqqa-send>모두에게 묻기</button></div></div>';
     if(!ps.length)
-      return h+'<div class="card sqe-msg"><b>아직 질문이 없어요</b></div></div>';
+      return h+'<div class="card sqe-msg"><b>아직 질문이 없습니다</b></div></div>';
     var players=[]; try{ players=sqEvalPlayers(); }catch(_){}
     ps.slice(0,10).forEach(function(x){
       var wrote=[], quiet=[], linked=0;
@@ -8107,7 +8107,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<span class="sqqa-x">'+(isOn?'▴':'▾')+'</span></button>';
       if(editable&&x.open)h+='<div class="qa-actions"><button type="button" data-sqqa-close="'+esc(x.id)+'">받기 끝내기</button></div>';
       if(isOn){
-        if(!wrote.length)h+='<div class="sqd-none">아직 아무도 답하지 않았어요.</div>';
+        if(!wrote.length)h+='<div class="sqd-none">아직 아무도 답하지 않았습니다.</div>';
         wrote.forEach(function(w){
           var t=String(w.a.t||'');
           h+='<div class="sqqa-a">'
@@ -8131,8 +8131,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       sd.disabled=true;
       teSend('teamPrompt',{act:'add',q:q,by:lrCoachName()}).then(function(r){
         sd.disabled=false;
-        if(r&&r.ok){ gToast('팀 전체에게 물었어요'); render(); }
-        else gToast('보내지 못했어요'+((r&&r.err)?' — '+r.err:''));
+        if(r&&r.ok){ gToast('팀 전체에게 물었습니다'); render(); }
+        else gToast('보내지 못했습니다'+((r&&r.err)?' — '+r.err:''));
       }); };
     [].forEach.call(wrap.querySelectorAll('[data-sqqa-go]'),function(b){ b.onclick=function(){
       sqQaOpen=(sqQaOpen===b.dataset.sqqaGo)?'':b.dataset.sqqaGo; render(); }; });
@@ -8195,14 +8195,14 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var rr=uid?(rvRec(PREFIX+uid)||{}):{}, list=Array.isArray(rr.qmeet)?rr.qmeet.slice().sort(function(a,b){return (+b.ts||0)-(+a.ts||0);}):[];
     var h='<div class="qm-card"><div class="mt-top"><b>분기 면담 <small>KNVB 5단계 · 20분</small></b><span>'+(list.length?list.length+'회':'12주째에 한 번')+'</span><span class="sp"></span>'
       +(can&&d2?'<button type="button" class="btn sm'+(sqQmOpen?'':' primary')+'" data-qm-toggle>'+(sqQmOpen?'접기':'면담 시작')+'</button>':'')+'</div>';
-    if(!d2)return h+'<div class="sqe-msg"><b>선수 계정이 연결되지 않았어요</b>연결은 계정 › 권한 관리.</div></div>';
+    if(!d2)return h+'<div class="sqe-msg"><b>선수 계정이 연결되지 않았습니다</b>연결은 계정 › 권한 관리.</div></div>';
     if(sqQmOpen&&can){
       var ev=qmEvidence(p,d2,rr), dr=sqQmDraft, t0=new Date(); t0.setHours(0,0,0,0);
       h+='<div class="qm-steps">'+['도입','축구 밖','강점 · 개선점 함께','약속','서면'].map(function(sn,i){ return '<span class="qm-step"><i>'+(i+1)+'</i>'+sn+'</span>'; }).join('')+'</div>';
       h+='<div class="qm-grid"><div class="qm-l"><div class="qm-h">1 · 12주가 말하는 것 <small>'+(ev.st?qmSeason(ev.st)+' · '+ev.st+' 시작':'분기 시작 없음')+(ev.g1?' · '+esc(ev.g1):'')+'</small></div>';
-      h+=ev.fcs.length?'<div class="qm-fcs">'+ev.fcs.map(function(f){ return '<div class="qm-fc"><span class="w">'+f.w+'주</span><span class="t">'+(f.t?esc(f.t):'<i>초점 없음</i>')+'</span><span class="sqw-cnt">계속 '+f.k+' · 해봄 '+f.y+' · 아직 '+f.n+'</span></div>'; }).join('')+'</div>':'<div class="td-q-empty">이 분기의 주간 초점이 아직 없어요</div>';
-      h+='<div class="qm-h" style="margin-top:12px">'+esc(p.name||'선수')+'가 쓴 말 중 코치가 ❤ 한 것 <small>'+ev.hearts.length+'</small></div>'+(ev.hearts.length?'<div class="qm-hearts">'+ev.hearts.slice(-6).map(function(x){ return '<div><span class="d">'+esc(x.d.slice(5).replace('-','/'))+'</span>'+esc(x.t)+'</div>'; }).join('')+'</div>':'<div class="td-q-empty">아직 없어요</div>');
-      h+='<div class="qm-h" style="margin-top:12px">분기 평가 · 셀프 vs 코치 <small>갭 큰 항목 둘</small></div>'+(ev.gaps.length?'<div class="qm-gaps">'+ev.gaps.map(function(g){ return '<div><b>'+esc(g.name)+'</b><span>셀프 '+g.s+' · 코치 '+g.c+'</span></div>'; }).join('')+'</div>':'<div class="td-q-empty">둘 다 매겨진 항목이 없어요</div>');
+      h+=ev.fcs.length?'<div class="qm-fcs">'+ev.fcs.map(function(f){ return '<div class="qm-fc"><span class="w">'+f.w+'주</span><span class="t">'+(f.t?esc(f.t):'<i>초점 없음</i>')+'</span><span class="sqw-cnt">계속 '+f.k+' · 해봄 '+f.y+' · 아직 '+f.n+'</span></div>'; }).join('')+'</div>':'<div class="td-q-empty">이 분기의 주간 초점이 아직 없습니다</div>';
+      h+='<div class="qm-h" style="margin-top:12px">'+esc(p.name||'선수')+'가 쓴 말 중 코치가 ❤ 한 것 <small>'+ev.hearts.length+'</small></div>'+(ev.hearts.length?'<div class="qm-hearts">'+ev.hearts.slice(-6).map(function(x){ return '<div><span class="d">'+esc(x.d.slice(5).replace('-','/'))+'</span>'+esc(x.t)+'</div>'; }).join('')+'</div>':'<div class="td-q-empty">아직 없습니다</div>');
+      h+='<div class="qm-h" style="margin-top:12px">분기 평가 · 셀프 vs 코치 <small>갭 큰 항목 둘</small></div>'+(ev.gaps.length?'<div class="qm-gaps">'+ev.gaps.map(function(g){ return '<div><b>'+esc(g.name)+'</b><span>셀프 '+g.s+' · 코치 '+g.c+'</span></div>'; }).join('')+'</div>':'<div class="td-q-empty">둘 다 매겨진 항목이 없습니다</div>');
       if(ev.mid)h+='<div class="qm-h" style="margin-top:12px">6주 점검 <small>'+(MID_LB[ev.mid.c]||'')+(ev.mid.c==='change'?' — 면담 안건':'')+'</small></div>'+(ev.mid.t?'<div class="qm-mid">'+esc(ev.mid.t)+'</div>':'');
       h+='</div><div class="qm-r">';
       h+='<div class="qm-h">2 · 축구 밖 <small>학교 · 집 · 몸 · 마음</small></div><input class="qm-in" data-qm="outside" maxlength="140" placeholder="한 줄 (선택)" value="'+esc(dr.outside||'')+'">';
@@ -8218,15 +8218,15 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     return h+'</div>';
   }
   function qmSave(p){
-    var ln=sqLinkOfPlayer(p.id), d2=(ln&&ln.d&&ln.d.v===1)?ln.d:null; if(!d2){ gToast('선수 계정이 연결되지 않았어요'); return; }
+    var ln=sqLinkOfPlayer(p.id), d2=(ln&&ln.d&&ln.d.v===1)?ln.d:null; if(!d2){ gToast('선수 계정이 연결되지 않았습니다'); return; }
     var kk=coachFeedbackKey(PREFIX+ln.uid), rr=rvRec(PREFIX+ln.uid)||{}, ev=qmEvidence(p,d2,rr), dr=sqQmDraft||{}, t0=new Date();
     var pick=function(k){ return String(dr[k]||'').trim(); };
     if(!pick('promise')&&!pick('strengths')&&!pick('nextArea')&&!pick('outside')){ gToast('한 칸은 적어 주세요'); return; }
     var obj={id:'qm'+Date.now().toString(36),ts:Date.now(),at:ymd(t0),by:lrCoachName(),q:qmSeason(ev.st||ymd(t0)),start:ev.st,
       focuses:ev.fcs.map(function(f){return f.t;}).filter(function(t,i,a){ return t&&t!==a[i-1]; }),hearts:ev.hearts.slice(-6),gaps:(ev.gaps||[]).map(function(g){return {name:g.name};}),mid:(ev.mid&&ev.mid.c)||'',   /* 같은 초점이 이어진 주는 하나로 */
       outside:pick('outside').slice(0,140),strengths:pick('strengths').slice(0,140),nextArea:pick('nextArea').slice(0,140),promise:pick('promise').slice(0,60),firstFocus:pick('firstFocus').slice(0,60)};
-    if(!pubPushAt(kk,'qmeet',obj)){ gToast('저장하지 못했어요'); return; }
-    sqQmDraft={}; sqQmOpen=false; psAct('a_qmeet'); gToast('면담을 저장했어요'); render();
+    if(!pubPushAt(kk,'qmeet',obj)){ gToast('저장하지 못했습니다'); return; }
+    sqQmDraft={}; sqQmOpen=false; psAct('a_qmeet'); gToast('면담을 저장했습니다'); render();
   }
   function sqWeekTable(linked,wkM,nextM,can){
     _sqwAuto={};
@@ -8242,7 +8242,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(!pr&&ap.a)wait++;
       var wkCell='<span class="sqg-wk" title="이번 주 · 계속=진파랑 · 해봄=연파랑 · 아직=회색">'+r.wkCells.map(function(c){ return '<i class="'+(c.v===2?'k':(c.v===1?'y':(c.v===0?'n':'')))+(c.fut?' f':'')+'"></i>'; }).join('')+'</span>'
         +'<div class="sqw-cnt">계속 '+ap.k+' · 해봄 '+ap.y+' · 아직 '+ap.n+'</div>';
-      var st=pr?('보냄 ✓ · '+(function(){ try{ var d=new Date(pr.at); return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }catch(_){ return ''; } })()):(ap.a?'자동 제안 · 승인 전':'초점이 없어요 — 직접 써 주세요');
+      var st=pr?('보냄 ✓ · '+(function(){ try{ var d=new Date(pr.at); return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }catch(_){ return ''; } })()):(ap.a?'자동 제안 · 승인 전':'초점이 없습니다 — 직접 써 주세요');
       if(r.pick&&r.pick.text)st+=' · 선수가 고름 «'+esc(r.pick.text)+'»';
       var cell=can
         ?('<div class="sqw-p a"><i>1</i><input class="sqw-in" data-sqw-a="'+esc(uid)+'" maxlength="60" value="'+esc(va)+'" placeholder="다음 주 초점 (계속+한 걸음)">'+(sa?'<small>'+esc(sa)+'</small>':'')+'</div>'
@@ -8268,8 +8268,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rSqToday(){
     var ps=sqEvalPlayers();
     var wiped=false; try{ wiped=!!localStorage.getItem('ps_cache_wiped_v1'); }catch(_){}
-    if(!ps.length)return wiped?'<div class="card sqe-msg"><b>팀 자료를 받는 중이에요</b></div>'   /* 8d8daa7e — 비운 기기 사본을 다시 받는 중엔 «비었다»고 하지 않는다 */
-      :'<div class="card sqe-msg"><b>명단이 비어 있어요</b>팀 › 선수단에서 선수를 먼저 등록하세요.</div>';
+    if(!ps.length)return wiped?'<div class="card sqe-msg"><b>팀 자료를 받는 중입니다</b></div>'   /* 8d8daa7e — 비운 기기 사본을 다시 받는 중엔 «비었다»고 하지 않는다 */
+      :'<div class="card sqe-msg"><b>명단이 비어 있습니다</b>팀 › 선수단에서 선수를 먼저 등록하세요.</div>';
     var rows=ps.map(function(p){ var ln=sqLinkOfPlayer(p.id), br=null; try{ br=sqThreadBrief(p.id); }catch(_){}
       return {p:p,ln:ln,br:br}; });
     var SL=SQ_SL5;
@@ -8337,11 +8337,11 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       /* 3.039 — 연결된 선수가 0명이면(새 팀은 모두) 빈 화면 대신 다음 할 일 두 가지(피드백 UX-3 — 제목 줄 아래가 비어 «고장났나?» 싶었다).
          초대 코드는 만들 수 있는 사람(소유자 · 임원 — PSSync.idpLink.can)에게만 단추로, 아니면 어디서 만드는지 한 줄. 평가는 «선수» 탭의 평가로 바로 */
       if(!linked.length){ var _ia=idpSaveApi(), _inv=false; try{ _inv=!!(_ia&&_ia.idpLink&&_ia.idpLink.can&&_ia.idpLink.can()); }catch(_){}
-        return '<div class="card sqe-msg sq-empty-today"><b>아직 IDP를 쓰는 선수가 없어요</b>'
+        return '<div class="card sqe-msg sq-empty-today"><b>아직 IDP를 쓰는 선수가 없습니다</b>'
           +''
           +'<div class="sq-empty-acts">'+(_inv?'<button type="button" class="btn" data-sq-invite>선수 초대하기</button>':'')
           +(can?'<button type="button" class="btn primary" data-sqe-mode="eval">선수 평가 시작</button>':'')+'</div>'
-          +(_inv?'':'<small>선수 초대 코드는 팀 임원이 계정 › 권한 관리에서 만들어요</small>')
+          +(_inv?'':'<small>선수 초대 코드는 팀 임원이 계정 › 권한 관리에서 만듭니다</small>')
           +sqUnlinkedNote(rws)+'</div>'; }
       var wroteN=linked.filter(function(r){return r.wrote;}).length;
       var dt=new Date(day+'T12:00:00'); var WD=['일','월','화','수','목','금','토'];
@@ -8369,7 +8369,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         o+='<div class="sqg-list">';
         linked.forEach(function(r){ var uid=r.x.ln.uid;
           var tryCell=(r.tryV>=0)?('<em class="sqg-try t'+r.tryV+'">'+TRY_LB[r.tryV]+'</em>'):'';
-          var memo=r.memoT?('<p class="sqg-li-m">'+esc(r.memoT)+'</p>'):(r.wrote?'<p class="sqg-li-m dim">칩만 눌렀어요</p>':'<p class="sqg-li-m dim">안 씀</p>');
+          var memo=r.memoT?('<p class="sqg-li-m">'+esc(r.memoT)+'</p>'):(r.wrote?'<p class="sqg-li-m dim">칩만 눌렀습니다</p>':'<p class="sqg-li-m dim">안 씀</p>');
           o+='<div class="sqg-li'+(r.wrote?'':' quiet')+(r.hot?' hot':'')+'">'
             +'<div class="sqg-li-h"><span class="plr"><span class="no">'+esc(r.x.p.num||'')+'</span><b>'+esc(r.x.p.name||'')+'</b></span>'+tryCell
             +(can?('<button type="button" class="sqd-h'+(r.rc&&r.rc.h?' on':'')+'" data-sqd-h="'+esc(uid)+'" title="봤어요">'+(r.rc&&r.rc.h?'❤':'♡')+'</button>'):'')
@@ -8428,7 +8428,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       o+='</tbody></table></div>';
       /* 2.616 — 요약은 사실만(개수). 재촉 문구 없음 */
       (function(){ var cK=0,cY=0,cN=0,cX=0,bad=0,mm=0; linked.forEach(function(r){ if(r.tryV===2)cK++; else if(r.tryV===1)cY++; else if(r.tryV===0)cN++; else cX++; if(r.bodyBad)bad++; if(r.memoT)mm++; });
-        o+='<div class="sqg-sum"><span>칩 · 계속 <b>'+cK+'</b> · 해봄 <b>'+cY+'</b> · 아직 <b>'+cN+'</b> · 안 적음 <b>'+cX+'</b></span><span>한 마디 <b>'+mm+'</b></span>'+(sqTdAuto?'<span class="sqg-auto">오늘은 아직 아무도 안 적어 '+esc(dayTag||day)+' 것을 보여요</span>':'')+'</div>'; })();
+        o+='<div class="sqg-sum"><span>칩 · 계속 <b>'+cK+'</b> · 해봄 <b>'+cY+'</b> · 아직 <b>'+cN+'</b> · 안 적음 <b>'+cX+'</b></span><span>한 마디 <b>'+mm+'</b></span>'+(sqTdAuto?'<span class="sqg-auto">오늘은 아직 아무도 안 적어 '+esc(dayTag||day)+' 것을 보입니다</span>':'')+'</div>'; })();
       o+=sqUnlinkedNote(rws);   /* 2.798 */
       return o+'</div>';
     }catch(_){ return ''; } })();
@@ -8452,11 +8452,11 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   }
   function rSquadEval(){
     if(sqEvalState==='loading'||sqEvalState==='idle')
-      return '<div class="ps-ph sq-ph"><b>팀 IDP</b></div><div class="card sqe-msg"><b>선수단을 불러오는 중…</b>팀 자료를 여는 중이에요.</div>';
+      return '<div class="ps-ph sq-ph"><b>팀 IDP</b></div><div class="card sqe-msg"><b>선수단을 불러오는 중…</b>팀 자료를 여는 중입니다.</div>';
     if(sqEvalState==='err')
       return '<div class="ps-ph sq-ph"><b>팀 IDP</b></div>'
-        +'<div class="card sqe-msg"><b>'+(sqEvalErr==='timeout'?'팀 화면을 여는 데 시간이 걸려요':'선수단을 불러오지 못했어요')+'</b>'
-        +(sqEvalErr==='standalone'?'앱 안에서 열어야 팀 자료를 읽을 수 있어요.':'잠시 뒤 다시 시도해 주세요.')
+        +'<div class="card sqe-msg"><b>'+(sqEvalErr==='timeout'?'팀 화면을 여는 데 시간이 걸립니다':'선수단을 불러오지 못했습니다')+'</b>'
+        +(sqEvalErr==='standalone'?'앱 안에서 열어야 팀 자료를 읽을 수 있습니다.':'잠시 뒤 다시 시도해 주세요.')
         +'<div><button type="button" data-sqe-retry>다시 시도</button></div></div>';
     var all=sqEvalPlayers(), q=sqEvalQ.trim().toLowerCase();
     var list=q?all.filter(function(p){ return (p.name||'').toLowerCase().indexOf(q)>=0||String(p.num||'').indexOf(q)>=0; }):all;
@@ -8486,10 +8486,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<button type="button" class="sq-pdfbtn" data-sq-pdf title="리포트·평가지·목표를 PDF로 저장">PDF 내보내기</button>'
       +'</div>';
     if(sqPanel==='today')
-      return h+(function(){ try{ return idpWeekly().renderCoach()+'<details class="wg-legacy"'+(_idpWeeklyLegacyOpen?' open':'')+'><summary>일간·주간 기록과 6주 리뷰</summary>'+rSqToday()+'</details>'; }catch(e){ return '<div class="card sqe-msg"><b>오늘을 그리지 못했어요</b>'+esc(String(e&&e.message||e))+'</div>'; } })();
+      return h+(function(){ try{ return idpWeekly().renderCoach()+'<details class="wg-legacy"'+(_idpWeeklyLegacyOpen?' open':'')+'><summary>일간·주간 기록과 6주 리뷰</summary>'+rSqToday()+'</details>'; }catch(e){ return '<div class="card sqe-msg"><b>오늘을 그리지 못했습니다</b>'+esc(String(e&&e.message||e))+'</div>'; } })();
     /* 2.409 — 공통질문: 팀 전체에 한 가지를 묻고 돌아온 글을 읽는 자리 */
     if(sqPanel==='qa')
-      return h+(function(){ try{ return rSqQA(); }catch(e){ return '<div class="card sqe-msg"><b>공통질문을 그리지 못했어요</b>'+esc(String(e&&e.message||e))+'</div>'; } })();
+      return h+(function(){ try{ return rSqQA(); }catch(e){ return '<div class="card sqe-msg"><b>공통질문을 그리지 못했습니다</b>'+esc(String(e&&e.message||e))+'</div>'; } })();
     /* 왼쪽 — 선수 목록 */
     var side='<input class="sqe-search" id="sqeQ" placeholder="이름·등번호 검색" value="'+esc(sqEvalQ)+'"><div class="sqe-list">';
     var used={};
@@ -8509,13 +8509,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +(br&&br.t?'<span class="th">'+esc(br.t)+'</span>':'')+rSqFitLines(p,'list')+'</span></button>'; });
     });
     side+='</div>';
-    if(!list.length)side='<input class="sqe-search" id="sqeQ" placeholder="이름·등번호 검색" value="'+esc(sqEvalQ)+'"><div class="sqe-msg" style="padding:24px 8px">찾는 선수가 없어요</div>';
+    if(!list.length)side='<input class="sqe-search" id="sqeQ" placeholder="이름·등번호 검색" value="'+esc(sqEvalQ)+'"><div class="sqe-msg" style="padding:24px 8px">찾는 선수가 없습니다</div>';
     if(sqIsReq())side=rSqPosSide();   /* 2.117 — 자리별은 왼쪽도 자리 목록이다. 자리를 고르는 화면에서 선수를 고르게 두지 않는다 */
     /* 오른쪽 — 선택한 선수 평가 */
     /* 2.117 — 요구 모드의 주어는 자리다. 아래 렌더는 posId 만 읽으므로 같은 모양의 가벼운 객체로 넘긴다 */
     var sel=sqIsReq()?sqReqSubject():all.filter(function(p){return p.id===sqEvalSel;})[0];
     var main='';
-    if(sqIsReq()&&!sel.posId) main='<div class="card sqe-msg"><b>자리가 없어요</b>팀 › 게임모델에서 자리를 먼저 만들어 주세요.</div>';
+    if(sqIsReq()&&!sel.posId) main='<div class="card sqe-msg"><b>자리가 없습니다</b>팀 › 게임모델에서 자리를 먼저 만들어 주세요.</div>';
     else if(!sel) main='<div class="card sqe-msg"><b>선수를 고르세요</b></div>';
     else{
       var pr=sqEvalProgress(sel), gs=sqEvalItemsFor(sel);
@@ -8561,12 +8561,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         var _gm=null; try{ _gm=gmModel()?PS_REQ.picked(gmAns()):null; }catch(_){}
         var _why=(_gm||[]).map(function(x){return x.label;}).join(' · ');
         main+='<button type="button" class="rq-whyline'+(sqWhyOpen?' on':'')+'" data-rq-why>'
-          +'<i>근거</i><span>'+esc(_why||'게임모델 4국면을 아직 안 답했어요')+'</span>'
+          +'<i>근거</i><span>'+esc(_why||'게임모델 4국면을 아직 안 답했습니다')+'</span>'
           +'<em>'+(sqWhyOpen?'접기 ▴':'펴기 ▾')+'</em></button>';
         if(sqWhyOpen&&posNm)main+=(function(){ try{ return rReqModel(sel,editable); }catch(_){ return ''; } })();
       }
       if(sqIsReq()&&!posNm)
-        main+='<div class="sqe-reqwarn">이 자리를 찾을 수 없어요 — 왼쪽에서 자리를 다시 골라 주세요.</div>';   /* 2.117 — 주어가 자리로 바뀌면서 문구도 바뀐다 */
+        main+='<div class="sqe-reqwarn">이 자리를 찾을 수 없습니다 — 왼쪽에서 자리를 다시 골라 주세요.</div>';   /* 2.117 — 주어가 자리로 바뀌면서 문구도 바뀐다 */
       if(sqPanel==='story'){ main+=rSqStory(sel)+'</div>'; return sqeWrap(h,side,main); }   /* 2.157 — 이야기 먼저 */
       if(sqPanel==='matches'){ main+=rSqMatches(sel)+'</div>'; return sqeWrap(h,side,main); }
       /* 2.429 — 선수 탭의 공통질문(팀 세그 `qa` 와 다른 `pqa`) */
@@ -8670,7 +8670,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +'<button type="button" data-rqf="empty"'+(sqReqFilter==='empty'?' class="on"':'')+'>비어 있는 '+_rqN.empty+'</button>'
           +'<button type="button" data-rqf="diff"'+(sqReqFilter==='diff'?' class="on"':'')+'>제안과 다른 '+_rqN.diff+'</button>'
           +'<button type="button" data-rqf="all"'+(sqReqFilter==='all'?' class="on"':'')+'>전체 '+_rqN.all+'</button>'
-          +'<span class="note">게임모델 제안이 깔려 있어요</span></div>';
+          +'<span class="note">게임모델 제안이 깔려 있습니다</span></div>';
       }
       gs.forEach(function(g){
         var _vis=g.items.filter(_rqShow);
@@ -8755,7 +8755,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var ask=uids.filter(function(u){return !_sqDocsAbsent[u];}), absentN=uids.length-ask.length, waitN=Math.max(0,nodoc-absentN);
       if(ask.length&&window.parent!==window&&now-_sqDocsReqAt>20000){ _sqDocsReqAt=now; try{ window.parent.postMessage({source:'idp',type:'idpDocsMissing',uids:ask},'*'); }catch(_){} }
       var failed=_sqDocsAck&&_sqDocsAck.missing>0&&(now-_sqDocsAck.at<120000);
-      if(waitN)o+='<div class="sqg-un sqg-nodoc">선수 문서 아직 안 받음 '+waitN+'명 — '+(failed?('받지 못했어요 · 앱 설정 › 데이터 › «진단 보기»'+(_sqDocsAck.stage?(' ('+esc(_sqDocsAck.stage)+')'):'')):'서버에서 받는 중…')+'</div>';
+      if(waitN)o+='<div class="sqg-un sqg-nodoc">선수 문서 아직 안 받음 '+waitN+'명 — '+(failed?('받지 못했습니다 · 앱 설정 › 데이터 › «진단 보기»'+(_sqDocsAck.stage?(' ('+esc(_sqDocsAck.stage)+')'):'')):'서버에서 받는 중…')+'</div>';
       if(absentN)o+='<div class="sqg-un">IDP 를 아직 시작하지 않은 선수 '+absentN+'명</div>';
     }
     if(nolink)o+='<div class="sqg-un">계정 연결 안 됨 '+nolink+'명 — 연결은 계정 › 권한 관리</div>';
@@ -8798,12 +8798,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var state=ctx.state==='ready'&&!rows.length?'empty':ctx.state;
     var h='<section class="sqm" data-sqm-state="'+state+'"'+(state==='ready'?' data-sqm-subject="'+esc(ctx.uid)+'"':'')+' aria-label="선수 경기 기록">';
     var messages={
-      unavailable:['경기 기록을 열 수 없어요','팀의 코치 계정으로 연결 상태를 확인해 주세요.'],
-      unlinked:['선수 계정이 연결되지 않았어요','팀 설정에서 이 선수의 계정을 연결하면 작성한 경기 리뷰를 볼 수 있어요.'],
-      ambiguous:['선수 계정 연결을 확인해 주세요','여러 계정이 이 선수에게 연결되어 있어 팀 설정에서 확인이 필요해요.'],
-      pending:['선수 기록을 아직 불러오지 못했어요','계정과 기록이 동기화되면 이곳에 표시돼요.'],
-      invalid:['선수 기록을 읽을 수 없어요','기록 형식을 확인하지 못했어요 — 동기화 상태를 확인한 뒤 다시 열어 주세요.'],
-      empty:['아직 작성한 경기 기록이 없어요','선수가 IDP의 경기에서 남긴 리뷰·역할·출전 기록이 여기에 모여요.']
+      unavailable:['경기 기록을 열 수 없습니다','팀의 코치 계정으로 연결 상태를 확인해 주세요.'],
+      unlinked:['선수 계정이 연결되지 않았습니다','팀 설정에서 이 선수의 계정을 연결하면 작성한 경기 리뷰를 볼 수 있습니다.'],
+      ambiguous:['선수 계정 연결을 확인해 주세요','여러 계정이 이 선수에게 연결되어 있어 팀 설정에서 확인이 필요합니다.'],
+      pending:['선수 기록을 아직 불러오지 못했습니다','계정과 기록이 동기화되면 이곳에 표시됩니다.'],
+      invalid:['선수 기록을 읽을 수 없습니다','기록 형식을 확인하지 못했습니다 — 동기화 상태를 확인한 뒤 다시 열어 주세요.'],
+      empty:['아직 작성한 경기 기록이 없습니다','선수가 IDP의 경기에서 남긴 리뷰·역할·출전 기록이 여기에 모입니다.']
     };
     if(state!=='ready'){var msg=messages[state];return h+'<div class="sqst-none"><b>'+msg[0]+'</b><span>'+msg[1]+'</span></div></section>';}
     h+='<div class="sqm-intro"><b>선수가 남긴 경기 기록</b><span>'+rows.length+'경기 · 최근순</span></div>';
@@ -8856,7 +8856,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         코치가 **쓰는** 것(평가 매기기·면담·리포트)은 위 탭이 맡는다 — 읽는 화면과 쓰는 화면을 가른다.
      ⚠ **선수 말은 선수 말 그대로** 둔다. 요약하거나 점수로 바꾸지 않는다. 긴 글(공통질문 답)만
         접고 '전문 ›' 을 단다.
-     ⚠ 안 쓰는 선수에게는 '계정 연결이 필요해요' 대신 **'아직 앱을 쓰지 않아요'** — 연결해도
+     ⚠ 안 쓰는 선수에게는 '계정 연결이 필요합니다' 대신 **'아직 앱을 쓰지 않습니다'** — 연결해도
         적은 게 없으면 여전히 빈 화면이다. 원인을 바르게 말한다. */
   var sqStFilt='all', sqStOpen={}, sqRxEdit='';
   function sqStDay(ts){
@@ -8885,7 +8885,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
                 (lg.rpe?('느낀 강도 '+lg.rpe):'')].filter(Boolean).join(' · ');
       try{ var _ve=visionEvidenceOf(lg,visionOf(d)); if(_ve)meta+=(meta?' · ':'')+'내 방향 · '+esc(_ve.text); }catch(_){}
       out.push({k:'log',kn:'일지',id:'log:'+y,day:y,reactKey:'day:'+y,ts:sqStTs(y),said:memo,quote:!!memo,meta:meta,
-                none:memo?'':'한 줄은 안 적었어요'});
+                none:memo?'':'한 줄은 안 적었습니다'});
     }); }catch(_){}
     /* ② 공통질문 답 — 질문은 팀 것, 답은 선수 것(2.408) */
     try{ var qs=tmPrompts()||[];
@@ -8974,12 +8974,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var d=(ln&&ln.d&&ln.d.v===1)?ln.d:null;
     var h='<div class="pqa">';
     if(!qs.length)
-      return h+'<div class="sqst-none"><b>아직 질문이 없어요</b>'
+      return h+'<div class="sqst-none"><b>아직 질문이 없습니다</b>'
         +''
         +'<button type="button" class="pqa-go" data-sqe-mode="qa">공통질문에서 물어보기 ›</button></div></div>';
     if(!d)
-      return h+'<div class="sqst-none"><b>아직 앱을 쓰지 않아요</b>'
-        +'<span>계정을 연결하면 이 선수가 적은 답이 질문마다 여기에 붙어요.</span></div></div>';
+      return h+'<div class="sqst-none"><b>아직 앱을 쓰지 않습니다</b>'
+        +'<span>계정을 연결하면 이 선수가 적은 답이 질문마다 여기에 붙습니다.</span></div></div>';
     var ans=d.answers||{};
     var open=qs.filter(function(x){return x.open;}), past=qs.filter(function(x){return !x.open;});
     var done=qs.filter(function(x){ return String((ans[x.id]&&ans[x.id].t)||'').trim(); }).length;
@@ -8989,7 +8989,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var g='<div class="pqa-q'+(t?' has':'')+'">'
         +'<div class="pqa-h"><i>'+(x.open?'묻는 중':'지난 질문')+'</i><b>'+esc(x.q)+'</b>'
         +'<small>'+esc(x.by||'코치')+' · '+esc(rvFmt(x.at))+'</small></div>';
-      if(!t) return g+'<div class="pqa-none">아직 안 적었어요</div></div>';
+      if(!t) return g+'<div class="pqa-none">아직 안 적었습니다</div></div>';
       var op=!!sqStOpen[x.id], cut=(!op&&n>150)?(t.slice(0,150)+'…'):t;
       g+='<div class="pqa-a">'+esc(cut)+'</div>'
         +'<div class="pqa-m"><b>'+n.toLocaleString()+'자</b> · '+esc(rvFmt(a.at))+'</div>';
@@ -9101,13 +9101,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rSqStory(p){
     var ctx=sqStoryContext(p),h='<div class="sqth" data-story-state="'+ctx.state+'">';
     if(ctx.state!=='ready'){
-      var msg={unavailable:['이야기를 열 수 없어요','팀의 코치 계정으로 연결 상태를 확인해 주세요.'],unlinked:['선수 계정이 연결되지 않았어요','계정을 연결하면 선수가 남긴 이야기를 볼 수 있어요.'],ambiguous:['선수 계정 연결을 확인해 주세요','여러 계정이 이 선수에게 연결되어 있어요.'],pending:['선수 기록을 아직 불러오지 못했어요','계정과 기록이 동기화되면 이곳에 표시돼요.'],invalid:['선수 기록을 읽을 수 없어요','동기화 상태를 확인한 뒤 다시 열어 주세요.']}[ctx.state];
+      var msg={unavailable:['이야기를 열 수 없습니다','팀의 코치 계정으로 연결 상태를 확인해 주세요.'],unlinked:['선수 계정이 연결되지 않았습니다','계정을 연결하면 선수가 남긴 이야기를 볼 수 있습니다.'],ambiguous:['선수 계정 연결을 확인해 주세요','여러 계정이 이 선수에게 연결되어 있습니다.'],pending:['선수 기록을 아직 불러오지 못했습니다','계정과 기록이 동기화되면 이곳에 표시됩니다.'],invalid:['선수 기록을 읽을 수 없습니다','동기화 상태를 확인한 뒤 다시 열어 주세요.']}[ctx.state];
       /* 3.052 — 연결 안 된 선수에서 막히지 않게(피드백 UX-15): 이 선수 초대 링크(임원 — 합류하면 바로 이어진다) · 평가는 연결 없이도 */
       var acts='';
       if(ctx.state==='unlinked'){ var _ia=idpSaveApi(),_can=false; try{ _can=!!(_ia&&_ia.idpLink&&_ia.idpLink.can&&_ia.idpLink.can()&&_ia.idpLink.inviteFor); }catch(_){}
         acts='<div class="sqst-acts">'+(_can?'<button type="button" class="btn primary" data-sq-plink="'+esc(p.id)+'" data-sq-plabel="'+esc((p.num?'#'+p.num+' ':'')+String(p.name||''))+'">이 선수 초대 링크</button>':'')
           +'<button type="button" class="btn" data-sqe-mode="eval">평가하기</button></div>'
-          +(_can?'':'<small class="sqst-hint">초대 링크는 팀 임원이 만들어요</small>'); }
+          +(_can?'':'<small class="sqst-hint">초대 링크는 팀 임원이 만듭니다</small>'); }
       return h+'<div class="sqst-none"><b>'+msg[0]+'</b><span>'+msg[1]+'</span>'+acts+'</div></div>';
     }
     var d=ctx.doc,v=visionOf(d),reacts=(rvRec(PREFIX+ctx.uid).reacts)||{},d0=doc,k0=viewing;
@@ -9300,7 +9300,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* 강점 먼저 — IDP 는 강점에서 시작한다(마스터플랜 원칙 3) */
     h+='<div class="sqrep-sec sqrep-a-str"><b>강점'+(d.linked?' · 내 무기':'')+'</b>'
       +(d.strengths.length?'<div class="sqrep-str">'+d.strengths.map(function(x){return '<span>'+esc(x.t)+'<small>'+esc(x.src||'')+'</small></span>';}).join('')+'</div>'
-        :'<div class="sqrep-empty">아직 4단(압박에서도) 이상 항목이 없어요</div>')
+        :'<div class="sqrep-empty">아직 4단(압박에서도) 이상 항목이 없습니다</div>')
       +rSqFitLines(p,'report')+'</div>';   /* 2.166 — 강점 옆 적합 두 줄 */
     /* 요구 대비 미달 — 다음 훈련·면담에서 볼 것 */
     h+='<div class="sqrep-sec sqrep-a-sh"><b>요구 대비 미달 '+(d.shorts.length?d.shorts.length:'')+'</b>'
@@ -9308,22 +9308,22 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           return '<div class="sqrep-r"><i class="dot '+sqDimCl(x.g)+'"></i><span class="nm">'+esc(x.name)+'</span>'
             +'<span class="mv">'+esc(x.vLb)+'</span><em>→</em><span class="rq">'+esc(x.rLb)+'</span></div>'; }).join('')
         +(d.shorts.length>8?'<div class="sqrep-more">외 '+(d.shorts.length-8)+'개 — 평가 탭에서</div>':'')
-        :'<div class="sqrep-empty">'+((d.fit&&d.fit.req)?'미달이 없어요':'이 자리의 요구를 아직 안 정했어요')+'</div>')
-      +(d.unrated?'<div class="sqrep-note">요구가 있는데 아직 안 매긴 항목 '+d.unrated+'개 — 미달로 세지 않았어요</div>':'')+'</div>';
+        :'<div class="sqrep-empty">'+((d.fit&&d.fit.req)?'미달이 없습니다':'이 자리의 요구를 아직 안 정했습니다')+'</div>')
+      +(d.unrated?'<div class="sqrep-note">요구가 있는데 아직 안 매긴 항목 '+d.unrated+'개 — 미달로 세지 않았습니다</div>':'')+'</div>';
     /* 분기 목표 — 계정이 연결된 선수만(선수 IDP 문서) */
     h+='<div class="sqrep-sec sqrep-a-go"><b>분기 목표'+(d.qgoal&&d.qgoal.theme?' · '+esc(d.qgoal.theme):'')+'</b>'
       +(d.qgoal?'<div class="sqrep-goals">'+(d.qgoal.goals||[]).map(function(g,i){
           var cur=+(g.sc&&g.sc[d.wkKey]||0), sl5=['','아직','훈련에서','경기에서','압박에서도','내 무기'];
           return '<div><i>'+(i+1)+'</i><span>'+esc(g.t||'')+(g.ifthen?'<small>if '+esc(g.ifthen)+'</small>':'')+'</span>'
             +'<em>'+(cur?sl5[cur]:'이번 주 기록 없음')+'</em></div>'; }).join('')+'</div>'
-        :'<div class="sqrep-empty">'+(d.linked?'분기 목표가 아직 없어요':'계정이 연결되지 않은 선수예요')+'</div>')+'</div>';
+        :'<div class="sqrep-empty">'+(d.linked?'분기 목표가 아직 없습니다':'계정이 연결되지 않은 선수입니다')+'</div>')+'</div>';
     /* 최근 면담 — 합의한 다음 한 걸음이 이번 미팅의 출발점 */
     h+='<div class="sqrep-sec sqrep-a-mt"><b>최근 면담</b>'
       +(d.meet?'<div class="sqrep-meet"><span class="d">'+esc(d.meet.at||'날짜 없음')+(d.meet.by?' · '+esc(d.meet.by):'')+'</span>'
           +(d.meet.agreement?'<p><b>합의한 다음 한 걸음</b>'+esc(d.meet.agreement)+'</p>':'')
           +(d.meet.nextPlan?'<p><b>다음 확인</b>'+esc(d.meet.nextPlan)+'</p>':'')
           +(!d.meet.agreement&&!d.meet.nextPlan&&d.meet.coachFeedback?'<p><b>코치가 전한 말</b>'+esc(d.meet.coachFeedback)+'</p>':'')+'</div>'
-        :'<div class="sqrep-empty">면담 기록이 없어요</div>')+'</div>';
+        :'<div class="sqrep-empty">면담 기록이 없습니다</div>')+'</div>';
     h+='</div><div class="sqrep-foot">기준 = 게임모델 → 자리 요구'+(d.arcN?' + 초점 '+esc(d.arcN)+' 보정':'')+' · 척도: 아직 → 훈련에서 → 경기에서 → 압박에서도 → 내 무기</div>';
     return h+'</div>';
   }
@@ -9426,8 +9426,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var wp=[]; try{ wp=((d2&&d2.weapon&&d2.weapon.picks)||[]).map(function(x){ return String((x&&x.t)||'').trim(); }).filter(Boolean).slice(0,4); }catch(_){}
     function lis(a,empty){ return a.length?a.map(function(t){ return '<div class="rpp-li">· '+e2(t)+'</div>'; }).join(''):'<div class="rpp-li rpp-dim">'+e2(empty)+'</div>'; }
     h+='<div class="rpp-box"><div class="rpp-h"><b>잘하고 있는 것</b></div><div class="rpp-2">'
-      +'<div><div class="rpp-k">코치가 본 강점'+(rv&&rv.at?' · '+e2(rppMD(rv.at))+' 성장 리뷰':'')+'</div>'+lis(rvS,'아직 성장 리뷰 전이에요')+'</div>'
-      +'<div><div class="rpp-k">내가 고른 무기</div>'+lis(wp,d2?'아직 고르지 않았어요':'계정 연결 전이에요')+'</div></div></div>';
+      +'<div><div class="rpp-k">코치가 본 강점'+(rv&&rv.at?' · '+e2(rppMD(rv.at))+' 성장 리뷰':'')+'</div>'+lis(rvS,'아직 성장 리뷰 전입니다')+'</div>'
+      +'<div><div class="rpp-k">내가 고른 무기</div>'+lis(wp,d2?'아직 고르지 않았습니다':'계정 연결 전입니다')+'</div></div></div>';
     /* 12주 목표 — 선수가 스스로 매긴 주간 단계 */
     var q=th.q||null, goals=(th.list||[]).slice(0,3);
     var gh='';
@@ -9442,12 +9442,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         if(st){ for(var w=0;w<12;w++){ var kk=ymd(addDays(st,w*7)), v=Math.min(5,+(sc[kk]||0)), fut=kk>wkNow;
           sq+='<i class="'+(kk===wkNow?'now':'')+(fut?' fut':'')+'" style="background:'+(fut?'#fff':RPP_WK[v])+'"></i>'; } }
         gh+='<div class="rpp-g"><span class="rpp-no">'+(i+1)+'</span><div class="rpp-gt"><b>'+e2(g.t)+(own?'<span class="rpp-own">'+own+'</span>':'')+'</b>'
-          +'<small>'+(cur?'이번 주 내가 매긴 단계 — <em>'+e2(SQ_SL5[cur])+'</em>':'이번 주는 아직 안 매겼어요')+'</small></div>'
+          +'<small>'+(cur?'이번 주 내가 매긴 단계 — <em>'+e2(SQ_SL5[cur])+'</em>':'이번 주는 아직 안 매겼습니다')+'</small></div>'
           +(sq?'<div class="rpp-wk">'+sq+'</div>':'')+'</div>'; });
       gh+='<div class="rpp-note">칸 하나 = 한 주 · 선수가 스스로 매긴 단계(진할수록 높음)</div>';
     } else {
       gh+='<div class="rpp-h"><b>지금 키우는 것 · 12주</b></div>'
-        +'<div class="rpp-li rpp-dim">'+(th.linked?'아직 12주 목표가 없어요':'계정 연결 전이에요')+'</div>';
+        +'<div class="rpp-li rpp-dim">'+(th.linked?'아직 12주 목표가 없습니다':'계정 연결 전입니다')+'</div>';
     }
     h+='<div class="rpp-box">'+gh+'</div>';
     /* 셀프 평가 — 선수 본인 점수만 */
@@ -9458,7 +9458,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         var lv=Math.max(1,Math.min(5,Math.round(r.self)));
         return '<div class="rpp-bar"><b>'+e2(r.lb)+'</b><span><i style="width:'+Math.round(r.self/5*100)+'%"></i></span><em>'+e2(SQ_SL5[lv])+'</em></div>'; }).join('');
       sh+='<div class="rpp-note">선수 본인이 매긴 점수만 — 코치 점수는 이 종이에 없습니다</div>'; }
-    else sh+='<div class="rpp-li rpp-dim">'+(d2?'아직 셀프 평가 전이에요':'계정 연결 전이에요')+'</div>';
+    else sh+='<div class="rpp-li rpp-dim">'+(d2?'아직 셀프 평가 전입니다':'계정 연결 전입니다')+'</div>';
     /* 코치가 전한 말 — 리뷰 공개본의 한마디 + 지난 면담의 합의 한 줄 */
     var ch='<div class="rpp-h"><b>코치가 전한 말</b></div>', any=false;
     var note=String((rv&&rv.note)||'').trim(), dev=((rv&&rv.develop)||[]).map(function(x){ return String((x&&x.t)||x||'').trim(); }).filter(Boolean).slice(0,3);
@@ -9469,7 +9469,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var mt=null; try{ mt=sqMeetList(p)[0]||null; }catch(_){}
     var agr=String((mt&&mt.agreement)||'').trim();
     if(agr){ any=true; ch+='<div class="rpp-k">지난 면담에서 함께 정한 것'+(mt.at?' · '+e2(rppMD(mt.at)):'')+'</div><div class="rpp-msg">'+e2(agr)+'</div>'; }
-    if(!any)ch+='<div class="rpp-li rpp-dim">아직 전한 말이 없어요</div>';
+    if(!any)ch+='<div class="rpp-li rpp-dim">아직 전한 말이 없습니다</div>';
     h+='<div class="rpp-2 rpp-row"><div class="rpp-box">'+sh+'</div><div class="rpp-box">'+ch+'</div></div>';
     h+='<div class="rpp-today"><div class="rpp-h"><b>오늘 함께 정한 것</b><span>다음 확인 ____월 ____일</span></div>'
       +'<div class="rpp-lines"></div><div class="rpp-sign"><span>선수 ____________________</span><span>코치 ____________________</span></div></div>';
@@ -9485,7 +9485,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+=(function(){ try{ return rSqQuarter(p,can); }catch(e){ console.warn('분기 면담 카드',e); return ''; } })();   /* 2.619 — 분기 면담(5단계)은 12칸 양식 위에 */
     h+='<div class="mt-top"><b>면담 기록</b><span>'+ms.length+'회 · 코칭스태프만 볼 수 있어요</span><span class="sp"></span>'
       +(can?'<button type="button" class="btn sm primary" data-mt-new>＋ 새 면담</button>':'')+'</div>';
-    if(!ms.length)return h+'<div class="sqe-msg"><b>아직 면담 기록이 없어요</b></div>';
+    if(!ms.length)return h+'<div class="sqe-msg"><b>아직 면담 기록이 없습니다</b></div>';
     ms.forEach(function(m,i){
       var open=(sqMeetOpen===m.id);
       h+='<div class="mt-card'+(open?' open':'')+'">'
@@ -9537,7 +9537,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     teSend('teamEvalMeet',{playerId:p.id,meeting:m}).then(function(r){
       delete sqEvalBusy[p.id];
       if(r&&r.ok&&Array.isArray(r.meetings))p.meetings=r.meetings;
-      else gToast(r&&r.err==='forbidden'?'권한이 없어요':'저장하지 못했어요');
+      else gToast(r&&r.err==='forbidden'?'권한이 없습니다':'저장하지 못했습니다');
       render();
     });
   }
@@ -9576,7 +9576,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       sqEvalBusy[p.id]=1; render();
       teSend('teamEvalMeet',{playerId:p.id,delId:b.dataset.mtDel}).then(function(r){
         delete sqEvalBusy[p.id];
-        if(r&&r.ok&&Array.isArray(r.meetings))p.meetings=r.meetings; else gToast('지우지 못했어요');
+        if(r&&r.ok&&Array.isArray(r.meetings))p.meetings=r.meetings; else gToast('지우지 못했습니다');
         sqMeetOpen=''; render();
       });
     }; });
@@ -9691,7 +9691,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var _sqwAll=wrap.querySelector('[data-sqw-all]'); if(_sqwAll)_sqwAll.onclick=function(){ var n=0;
       Object.keys(_sqwAuto).forEach(function(uid){ var au=_sqwAuto[uid]; if(!au||!au.a)return; var kk=coachFeedbackKey(PREFIX+uid); var has=false; try{ has=!!(((JSON.parse(localStorage.getItem(kk)||'null')||{}).props||{})[_sqwNextM]); }catch(_){}
         if(has)return; if(propSetAt(kk,_sqwNextM,{a:au.a,ra:au.ra,b:au.b,rb:au.rb}))n++; });
-      gToast(n?n+'명에게 첫 제안을 보냈어요':'보낼 사람이 없어요'); render(); };
+      gToast(n?n+'명에게 첫 제안을 보냈습니다':'보낼 사람이 없습니다'); render(); };
     /* ── 2.619 · 6주 점검: 답 셋 · 한 줄 · 남은 사람 «계속» ── */
     var _sqmSave=function(uid,st){ var inp=wrap.querySelector('[data-sqm-t="'+uid+'"]'), t=inp?String(inp.value||'').trim().slice(0,300):'';
       var on=wrap.querySelector('.sqm-c.on[data-sqm-uid="'+uid+'"]'), c=on?on.dataset.sqmC:'keep', kk=coachFeedbackKey(PREFIX+uid);
@@ -9703,11 +9703,11 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       i.onblur=sv3; i.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); sv3(); try{i.blur();}catch(_){} } }; });
     var _sqmAll=wrap.querySelector('[data-sqm-all]'); if(_sqmAll)_sqmAll.onclick=function(){ var n=0;
       [].forEach.call(wrap.querySelectorAll('.sqm-c.dft'),function(b){ if(pubSetAt(coachFeedbackKey(PREFIX+b.dataset.sqmUid),'mid',b.dataset.sqmSt,{c:'keep',t:''}))n++; });
-      gToast(n?n+'명 «계속»으로':'남은 사람이 없어요'); render(); };
+      gToast(n?n+'명 «계속»으로':'남은 사람이 없습니다'); render(); };
     var _rp=wrap.querySelector('[data-sqrep-print]'); if(_rp)_rp.onclick=function(){
-      var p=sqEvalPlayers().filter(function(x){return x.id===sqEvalSel;})[0]; if(p)try{ sqRepPrint(p); }catch(e){ gToast('리포트를 만들지 못했어요'); try{console.warn('sqRep',e);}catch(_){}} };
+      var p=sqEvalPlayers().filter(function(x){return x.id===sqEvalSel;})[0]; if(p)try{ sqRepPrint(p); }catch(e){ gToast('리포트를 만들지 못했습니다'); try{console.warn('sqRep',e);}catch(_){}} };
     var _rpp=wrap.querySelector('[data-sqrep-print-pl]'); if(_rpp)_rpp.onclick=function(){   /* 2.909 — 선수·학부모용 */
-      var p=sqEvalPlayers().filter(function(x){return x.id===sqEvalSel;})[0]; if(p)try{ sqRepPrintPlayer(p); }catch(e){ gToast('선수용 면담 자료를 만들지 못했어요'); try{console.warn('sqRepPl',e);}catch(_){}} };
+      var p=sqEvalPlayers().filter(function(x){return x.id===sqEvalSel;})[0]; if(p)try{ sqRepPrintPlayer(p); }catch(e){ gToast('선수용 면담 자료를 만들지 못했습니다'); try{console.warn('sqRepPl',e);}catch(_){}} };
     /* 2.155 — 선수 띠 실제 높이를 재서 모드 탭 sticky top 으로 넘긴다(고정값이면 이름 줄바꿈에 겹친다) */
     try{ var _sb=wrap.querySelector('.sqb-card>.sqb'); if(_sb&&_sb.parentNode)_sb.parentNode.style.setProperty('--sqbH',_sb.offsetHeight+'px'); }catch(_){}
     /* 2.423 — 선수가 적은 것: 갈래 거르개 · 긴 답 펼치기 */
@@ -9731,7 +9731,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var _sqRxSave=function(box){ var to=_sqRxTarget(box), i=box&&box.querySelector('[data-sqrx-in]'); if(!to||!i)return;
       var v=String(i.value||'').trim().slice(0,300), old=''; try{ old=String(((((rvRec(PREFIX+to.uid)||{}).reacts)||{})[to.key]||{}).t||''); }catch(_){}
       var changed=(v!==old); if(changed&&!reactSetAt(to.kk,to.key,{t:v}))return;
-      if(sqRxEdit===sqRxToken(to.uid,to.key))sqRxEdit=''; if(changed)gToast(v?(to.key.indexOf('vision:')===0?'질문·제안을 선수에게 보냈어요':'답글을 선수에게 보냈어요'):'답글을 비웠어요'); render(); _sqRxFocus(to,'[data-sqrx-open]'); };
+      if(sqRxEdit===sqRxToken(to.uid,to.key))sqRxEdit=''; if(changed)gToast(v?(to.key.indexOf('vision:')===0?'질문·제안을 선수에게 보냈습니다':'답글을 선수에게 보냈습니다'):'답글을 비웠습니다'); render(); _sqRxFocus(to,'[data-sqrx-open]'); };
     [].forEach.call(wrap.querySelectorAll('[data-sqrx-like]'),function(b){ b.onclick=function(){ var box=_sqRxBox(b),to=_sqRxTarget(box); if(!to)return;
       var rc=null; try{ rc=(((rvRec(PREFIX+to.uid)||{}).reacts)||{})[to.key]||null; }catch(_){}
       if(reactSetAt(to.kk,to.key,{h:(rc&&rc.h)?0:1})){ if(!(rc&&rc.h))gToast('좋아요가 선수에게 보여요'); render(); _sqRxFocus(to,'[data-sqrx-like]'); } }; });
@@ -9749,7 +9749,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         if(e&&e.relatedTarget&&box.contains(e.relatedTarget))return;
         var token=sqRxToken(to.uid,to.key); setTimeout(function(){ if(sqRxEdit!==token)return; sqRxEdit='';
           if(!squadView||String(sqEvalSel)!==String((function(){ try{ var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'); return pm&&pm.members&&pm.members[to.uid]&&pm.members[to.uid].playerId||''; }catch(_){return '';} })()))return;
-          if(changed)gToast(v?(to.key.indexOf('vision:')===0?'질문·제안을 선수에게 보냈어요':'답글을 선수에게 보냈어요'):'답글을 비웠어요'); render(); },0); }; });
+          if(changed)gToast(v?(to.key.indexOf('vision:')===0?'질문·제안을 선수에게 보냈습니다':'답글을 선수에게 보냈습니다'):'답글을 비웠습니다'); render(); },0); }; });
     try{ var _pdf=wrap.querySelector('[data-sq-pdf]'); if(_pdf)_pdf.onclick=function(){ var rb=document.getElementById('repBtn'); if(rb)rb.click(); }; }catch(_){}   /* 2.478 — 병합 헤더의 PDF 프록시 */
     [].forEach.call(wrap.querySelectorAll('[data-sq-plink]'),function(b){ b.onclick=function(){ try{ var a=idpSaveApi(); if(a&&a.idpLink&&a.idpLink.inviteFor)a.idpLink.inviteFor(b.getAttribute('data-sq-plink'),b.getAttribute('data-sq-plabel')||''); }catch(_){} }; });   /* 3.052 — 선수별 초대 링크(UX-15) */
     [].forEach.call(wrap.querySelectorAll('[data-sq-invite]'),function(b){ b.onclick=function(){ try{ var a=idpSaveApi(); if(a&&a.idpLink&&a.idpLink.invite)a.idpLink.invite(); }catch(_){} }; });   /* 3.039 — «오늘» 빈 화면의 선수 초대(셸의 합류 코드 창) */
@@ -9796,8 +9796,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var _bk='__pos_'+po.id; sqEvalBusy[_bk]=1; render();
       teSend('teamEvalWantArch',{posId:po.id,arch:key}).then(function(r){
         delete sqEvalBusy[_bk];
-        if(!(r&&r.ok)){ if(was)po.wantArch=was; else delete po.wantArch; gToast(r&&r.err==='forbidden'?'평가 권한이 없어요':'저장하지 못했어요'); }
-        else gToast(key?('이 자리의 이상형: '+PS_ARCH.name(key)):'이상형을 지웠어요');
+        if(!(r&&r.ok)){ if(was)po.wantArch=was; else delete po.wantArch; gToast(r&&r.err==='forbidden'?'평가 권한이 없습니다':'저장하지 못했습니다'); }
+        else gToast(key?('이 자리의 이상형: '+PS_ARCH.name(key)):'이상형을 지웠습니다');
         render();
       });
     }; });
@@ -9810,8 +9810,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var _bk='__pos_'+po.id; sqEvalBusy[_bk]=1; render();
       teSend('teamEvalReqBulk',{posId:po.id,req:sg.req,mode:mode}).then(function(r){
         delete sqEvalBusy[_bk];
-        if(r&&r.ok&&r.req){ po.req=r.req; gToast(r.n?(r.n+'개 항목에 요구를 넣었어요'):'바뀐 항목이 없어요'); }
-        else gToast(r&&r.err==='forbidden'?'평가 권한이 없어요':'저장하지 못했어요');
+        if(r&&r.ok&&r.req){ po.req=r.req; gToast(r.n?(r.n+'개 항목에 요구를 넣었습니다'):'바뀐 항목이 없습니다'); }
+        else gToast(r&&r.err==='forbidden'?'평가 권한이 없습니다':'저장하지 못했습니다');
         render();
       });
     }; });
@@ -9860,13 +9860,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var id=b.dataset.exSet, was=(sqEvalData.ex&&sqEvalData.ex[id])||'';
       var u=prompt('모범 장면 링크 (유튜브·드라이브 등 https://…)\n비우면 지웁니다.',was); if(u==null)return;
       u=String(u).trim(); if(u===was)return;
-      if(u&&!/^https?:\/\/\S+$/i.test(u)){ gToast('https:// 로 시작하는 주소만 돼요'); return; }
+      if(u&&!/^https?:\/\/\S+$/i.test(u)){ gToast('https:// 로 시작하는 주소만 됩니다'); return; }
       sqEvalData.ex=sqEvalData.ex||{}; if(u)sqEvalData.ex[id]=u; else delete sqEvalData.ex[id];
       var _bk='__ex_'+id; sqEvalBusy[_bk]=1; render();
       teSend('teamEvalExLink',{attrId:id,url:u}).then(function(r){
         delete sqEvalBusy[_bk];
-        if(!(r&&r.ok)){ if(was)sqEvalData.ex[id]=was; else delete sqEvalData.ex[id]; gToast(r&&r.err==='forbidden'?'평가 권한이 없어요':'저장하지 못했어요'); }
-        else gToast(u?'모범 장면을 붙였어요':'모범 장면을 지웠어요');
+        if(!(r&&r.ok)){ if(was)sqEvalData.ex[id]=was; else delete sqEvalData.ex[id]; gToast(r&&r.err==='forbidden'?'평가 권한이 없습니다':'저장하지 못했습니다'); }
+        else gToast(u?'모범 장면을 붙였습니다':'모범 장면을 지웠습니다');
         render();
       });
     }; });
@@ -9882,7 +9882,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           teSend('teamEvalReq',{posId:po.id,attrId:aid,v:(was===v?0:v)}).then(function(r){
             delete sqEvalBusy[_bk];
             if(!(r&&r.ok)){ if(was)po.req[aid]=was; else delete po.req[aid];
-              gToast(r&&r.err==='forbidden'?'평가 권한이 없어요':'저장하지 못했어요'); }
+              gToast(r&&r.err==='forbidden'?'평가 권한이 없습니다':'저장하지 못했습니다'); }
             render();
           });
         };
@@ -9901,7 +9901,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
             delete sqEvalBusy[pid];
             if(r&&r.ok){ if(r.evalAt)p.evalAt=r.evalAt; }
             else{ if(was)p.levels[aid]=was; else delete p.levels[aid];
-              gToast(r&&r.err==='forbidden'?'평가 권한이 없어요':'저장하지 못했어요 — 다시 시도해 주세요'); }
+              gToast(r&&r.err==='forbidden'?'평가 권한이 없습니다':'저장하지 못했습니다 — 다시 시도해 주세요'); }
             render();
           });
         };
@@ -9946,7 +9946,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     } else if(can){
       h+='<div class="wp-lead"><b>내가 이미 잘하는 것</b> 하나만 정해 두세요.</div>';
     } else {
-      h+='<div class="td-q-empty">아직 정하지 않았어요</div>';
+      h+='<div class="td-q-empty">아직 정하지 않았습니다</div>';
     }
     if(can&&picks.length<WP_MAX){
       if(cands.length){
@@ -9954,7 +9954,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +cands.slice(0,10).map(function(c){ return '<button type="button" class="wp-cb" data-wp-add="'+esc(c.t)+'" data-wp-src="'+esc(c.src)+'" data-wp-cat="'+esc(c.cat)+'">'+esc(c.t)+' <em>'+esc(c.fromStrength?'내 장점':WP_SRC[c.src])+'</em></button>'; }).join('')+'</div></div>';
       }
       h+='<div class="wp-line"><input class="qg-in" id="wpIn" maxlength="24" placeholder="'+(cands.length?'직접 적기':'예: 좁은 곳에서 안 뺏기기')+'"><button type="button" class="td-mic" data-wp-save title="정하기">✓</button></div>';
-      if(!cands.length)h+='<div class="wp-note">나를 평가하거나 코치 리뷰를 받으면 후보가 자동으로 생겨요.</div>';
+      if(!cands.length)h+='<div class="wp-note">나를 평가하거나 코치 리뷰를 받으면 후보가 자동으로 생깁니다.</div>';
     }
     return h+'</section>';
   }
@@ -9962,7 +9962,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var card=wrap.querySelector('.wp-card'),key=viewing; if(!card||ro())return;
     function put(t,src,cat){ if(!idpOwnActionAllowed(key))return;t=String(t||'').trim();if(t.length>24){openWeaponSheet({t:t,src:src,cat:cat});return;} if(!t){ gToast('한 가지만 적어 주세요'); return; }
       var picks=wpPicks();
-      if(picks.some(function(p){return p.t===t;})){ gToast('이미 있어요'); return; }
+      if(picks.some(function(p){return p.t===t;})){ gToast('이미 있습니다'); return; }
       if(picks.length>=WP_MAX){ gToast('무기는 '+WP_MAX+'개까지 — 하나를 먼저 빼 주세요'); return; }
       picks.push({t:t,src:src||'me',cat:cat||'',at:Date.now()});
       doc.weapon={picks:picks,at:Date.now()}; save(); psAct('a_weapon'); gToast('내 무기 — '+t); render(); }
@@ -10003,7 +10003,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!theme)adds.push('<button type="button" data-ql="season">＋ 시즌 목표</button>');
     if(theme)h+='<button type="button" class="ql-row" data-ql="season">'
       +'<span class="ql-tag long">장기</span>'
-      +'<span class="ql-body"><b>'+(theme?esc(theme):'시즌 테마가 비어 있어요')+'</b>'
+      +'<span class="ql-body"><b>'+(theme?esc(theme):'시즌 테마가 비어 있습니다')+'</b>'
       +(outcome?'<span class="ql-sub">'+esc(outcome)+'</span>':'<span class="ql-sub none">결과 목표</span>')
       +(si?bar(si.pct,'long'):'')+'</span>'
       +'<span class="ql-meta">'+(si?('<b>'+si.pct+'%</b><i>'+si.remain+'일 남음</i>'):'')+'</span></button>';
@@ -10015,7 +10015,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!pf.t)adds.push('<button type="button" data-ql="perf">＋ 숫자로 볼 지표</button>');
     if(pf.t)h+='<button type="button" class="ql-row" data-ql="perf">'
       +'<span class="ql-tag mid">중기</span>'
-      +'<span class="ql-body"><b>'+(pf.t?esc(pf.t):'12주 안에 올릴 숫자가 비어 있어요')+'</b>'
+      +'<span class="ql-body"><b>'+(pf.t?esc(pf.t):'12주 안에 올릴 숫자가 비어 있습니다')+'</b>'
       +(pf.metric?'<span class="ql-sub"><em>'+esc(pf.metric)+'</em>'+(okNum?' <u>'+esc(pf.cur)+' → '+esc(pf.target)+'</u>':'')+'</span>'
                  :'<span class="ql-sub none">지표</span>')
       +(okNum?bar(pPct,'mid'):'')+'</span>'
@@ -10026,7 +10026,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!th)adds.push('<button type="button" data-ql="week">＋ 행동 문장</button>');
     if(th)h+='<button type="button" class="ql-row" data-ql="week">'
       +'<span class="ql-tag short">단기</span>'
-      +'<span class="ql-body"><b>'+(th?esc(th.t):'매일 돌아올 행동 문장이 비어 있어요')+'</b>'
+      +'<span class="ql-body"><b>'+(th?esc(th.t):'매일 돌아올 행동 문장이 비어 있습니다')+'</b>'
       +(th&&th.visionLink?visionLinkBadge(th.visionLink,'내 방향에서 연결'):'')
       +(f&&f.text?'<span class="ql-sub"><em>이번 주 초점</em> '+esc(f.text)+'</span>'
         :(th&&th.ifthen?'<span class="ql-sub"><em>IF</em> '+esc(th.ifthen)+'</span>':'<span class="ql-sub none">이번 주 초점</span>'))
@@ -10089,7 +10089,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var left=Math.max(0,total-gone);
     var pct=Math.min(100,Math.max(0,Math.round(gone/total*100)));
     return '<section class="card yl">'
-      +'<div class="yl-top"><b>'+y+'년</b><span>'+pct+'% 지났어요</span></div>'
+      +'<div class="yl-top"><b>'+y+'년</b><span>'+pct+'% 지났습니다</span></div>'
       +'<div class="yl-hero"><em>'+left+'</em><i>일 남음</i></div>'
       +'<div class="yl-bar"><i style="width:'+pct+'%"></i></div>'
       +'<div class="yl-foot"><span>'+gone+'일 지남</span><span>'+total+'일 중</span></div>'
@@ -10121,7 +10121,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     function box(k,lab,cls,ph,addLab){
       var ls=swLines(ev[k]), h='<div class="sw-col '+cls+'"><div class="sw-h">'+lab+'</div>';
       if(!can) return h+(ls.length?'<ul class="sw-read">'+ls.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul>'
-                                  :'<div class="sw-none">아직 없어요</div>')+'</div>';
+                                  :'<div class="sw-none">아직 없습니다</div>')+'</div>';
       /* 비어 있어도 **줄 하나는 열어 둔다** — 적으려면 먼저 '추가'를 눌러야 하는 칸은 한 걸음이 더 든다 */
       h+='<div class="sw-list" data-swk="'+k+'" data-swph="'+esc(ph)+'">'
         +(ls.length?ls:['']).map(function(t){ return swRowHTML(k,t,ph); }).join('')+'</div>'
@@ -10190,8 +10190,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
        문장이 생긴 뒤에는 이 카드가 **편집기**로 남는다(문장 3개·if-then·주별 점검). */
     if(!q&&!ro())return '';
     if(!q){ return '<section class="card qg-card qg-empty"><div class="td-top"><b>분기 목표</b><span>12주 · 과정 목표 2~3개</span></div>'
-      +'<div class="qg-lead">결과("주전 된다")가 아니라 <b>내가 통제할 수 있는 행동</b>으로 적어요.</div>'
-      +(can?'<div class="qg-act"><button type="button" class="btn primary" data-qg-start>이번 주부터 12주 시작</button></div>':'<div class="td-q-empty">아직 분기 목표가 없어요</div>')+'</section>'; }
+      +'<div class="qg-lead">결과("주전 된다")가 아니라 <b>내가 통제할 수 있는 행동</b>으로 적습니다.</div>'
+      +(can?'<div class="qg-act"><button type="button" class="btn primary" data-qg-start>이번 주부터 12주 시작</button></div>':'<div class="td-q-empty">아직 분기 목표가 없습니다</div>')+'</section>'; }
     var d=qgDays(q), wk=focusWk(), done=d.left<0, gs=q.goals||[];
     var thisFocus=focusNow();
     h+='<section class="card qg-card"><div class="td-top"><b>분기 목표</b><span>'+(d.st.getMonth()+1)+'/'+d.st.getDate()+' ~ '+(d.end.getMonth()+1)+'/'+d.end.getDate()+' · '+(done?'끝':Math.min(12,Math.max(1,Math.ceil(d.day/7)))+'주째')+'</span><span class="sp"></span>'
@@ -10221,7 +10221,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<div class="qg-hist">'+wks.map(function(v,k){ var isCur=ymd(addDays(d.st,k*7))===wk; return '<i class="l'+v+(isCur?' cur':'')+'" title="'+(k+1)+'주'+(v?' · '+v:'')+'"></i>'; }).join('')+'<span>12주</span>'
         +(can&&g.t?'<button type="button" class="qg-focus'+(thisFocus&&thisFocus.text===g.t?' on':'')+'" data-qg-focus>'+(thisFocus&&thisFocus.text===g.t?'이번 주 초점 ✓':'이번 주 초점으로')+'</button>':'')+'</div></div>'; });
     if(can&&gs.length<3)h+='<button type="button" class="qg-add" data-qg-add>+ 과정 목표'+(gs.length?' 추가':' 만들기')+' <small>'+gs.length+'/3</small></button>';
-    if(!can&&!gs.length)h+='<div class="td-q-empty">과정 목표가 아직 없어요</div>';
+    if(!can&&!gs.length)h+='<div class="td-q-empty">과정 목표가 아직 없습니다</div>';
     h+='</div>';
     /* 아래줄: 6주 점검 · 대조 · 마무리 */
     var midTxt=(function(){ var t=new Date(); t.setHours(0,0,0,0); var dm=Math.round((d.mid-t)/864e5); return dm>0?'6주 점검 D-'+dm:(dm===0?'오늘 6주 점검':'6주 점검 지남'); })();
@@ -10481,7 +10481,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         h+='<button type="button" class="pr-candtg" data-pr-candtg aria-expanded="'+(_prCandsOpen?'true':'false')+'">후보에서 고르기 '+(_prCandsOpen?'▴':'▾')+'</button>';
         if(_prCandsOpen)h+='<div class="pr-cands">'+cds.map(function(c){return '<button type="button" class="pr-cand" data-pr-cand="'+esc(c.t)+'"><b>'+esc(c.t)+'</b><small>'+esc(c.src)+'</small></button>';}).join('')+'</div>';
       }
-      if(!items.length)h+='<div class="pr-note">여기 적은 건 <b>제안</b>이에요.</div>';
+      if(!items.length)h+='<div class="pr-note">여기 적은 건 <b>제안</b>입니다.</div>';
     }
     h+='</section>'; return h;
   }
@@ -10492,7 +10492,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var inp=card.querySelector('[data-pr-in]'), ok=card.querySelector('[data-pr-ok]');
     var addNow=function(){ if(!inp)return; var t=inp.value.trim().slice(0,140); if(!t)return; var its=prItems(); if(its.length>=2)return;
       its.push({t:t,at:Date.now()}); prWrite(its); _prCandsOpen=false;
-      gToast(sess()?'적었어요':'적어 뒀어요'); render(); };
+      gToast(sess()?'적었습니다':'적어 뒀습니다'); render(); };
     if(inp){ inp.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); addNow(); } });
       inp.addEventListener('input',function(){ if(ok)ok.hidden=!inp.value.trim(); }); }
     if(ok)ok.onclick=addNow;
@@ -10550,12 +10550,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<label class="vs-field"><span>왜 이런 선수가 되고 싶어? <i>선택</i></span><textarea id="vsReason" maxlength="180" rows="2" placeholder="예: 팀이 어려울 때 공을 받아 흐름을 바꾸고 싶다">'+esc(v.reason)+'</textarea></label>'
         +'<div class="vs-beh"><div class="vs-beh-h"><b>함께 키울 행동</b></div>'
         +rows.slice(1).map(function(b,i){return behaviorRow(b,i+1);}).join('')+'</div></div></details>'
-        +'<div class="vs-safe">저장을 눌렀을 때만 바뀌고, 이전 문장은 최대 8개까지 남아요.</div>'
+        +'<div class="vs-safe">저장을 눌렀을 때만 바뀌고, 이전 문장은 최대 8개까지 남습니다.</div>'
         +'<div class="vs-actions"><button type="button" class="btn ghost" data-vs-cancel>취소</button><button type="button" class="btn primary" data-vs-save="today">저장하고 오늘 기록하기</button></div>';
       return h+'</section>';
     }
     if(!has){
-      h+='<div class="vs-empty"><b>'+(can?'아직 내 방향을 적지 않았어요':'아직 선수가 내 방향을 적지 않았어요')+'</b>'
+      h+='<div class="vs-empty"><b>'+(can?'아직 내 방향을 적지 않았습니다':'아직 선수가 내 방향을 적지 않았습니다')+'</b>'
         +''
         +(can?'<button type="button" class="btn primary" data-vs-edit>내 방향 쓰기</button>':'')+'</div>';
       return h+'</section>';
@@ -10565,7 +10565,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +(v.reason?'<div class="vs-reason"><span>이유</span><p>'+esc(v.reason)+'</p></div>':'')
       +'<div class="vs-beh-view"><div class="vs-beh-h"><b>경기에서 보일 행동</b><span>이번에 집중할 행동부터 함께 확인해요</span></div><ol>'
       +v.behaviors.map(function(b){ return '<li class="'+(b.id===v.focusId?'on':'')+'"><i></i><span>'+esc(b.text)+'</span>'+(b.id===v.focusId?'<em>이번에 집중</em>':'')+'</li>'; }).join('')+'</ol></div>'
-      +(qg?(can?'<div class="vs-goal vs-goal-linked"><button type="button" data-vs-goal>연결된 목표 보기 ›</button></div>':''):'<div class="vs-goal"><div><span>12주 목표</span><b>아직 연결하지 않았어요</b>'+(fb?'<small>먼저 이어갈 행동 · '+esc(fb.text)+'</small>':'')+'</div>'+(can?'<button type="button" data-vs-goal>목표로 이어가기 ›</button>':'')+'</div>');
+      +(qg?(can?'<div class="vs-goal vs-goal-linked"><button type="button" data-vs-goal>연결된 목표 보기 ›</button></div>':''):'<div class="vs-goal"><div><span>12주 목표</span><b>아직 연결하지 않았습니다</b>'+(fb?'<small>먼저 이어갈 행동 · '+esc(fb.text)+'</small>':'')+'</div>'+(can?'<button type="button" data-vs-goal>목표로 이어가기 ›</button>':'')+'</div>');
     try{ h+=rReact(visionReactKey(v),'내 방향을 봤어요'); }catch(_){}
     if(v.history.length){
       h+='<details class="vs-history"><summary>이전 방향 '+v.history.length+'개</summary><div>'
@@ -10700,7 +10700,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       latest.vision=next;
       if(!visionWriteRoot(latest,latestState.raw)){ gToast('내 방향을 저장하지 못했어요. 기존 IDP는 바꾸지 않았습니다.'); return; }
       try{ psAct('a_vision'); }catch(_){}
-      visionEndEdit(); gToast('내 방향을 저장했어요'); if(andToday)goToday(); else render();
+      visionEndEdit(); gToast('내 방향을 저장했습니다'); if(andToday)goToday(); else render();
     }
     [].forEach.call(card.querySelectorAll('[data-vs-save]'),function(b){ b.onclick=function(){ commit(b.dataset.vsSave==='today'); }; });
     var goal=card.querySelector('[data-vs-goal]'); if(goal)goal.onclick=function(){ goGoal(visionOf(doc)); };
@@ -10711,8 +10711,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var h='<section class="card gc-card">';
     if(!g){
       h+='<div class="td-q">내가 키우는 것 <small>12주 · 문장 하나</small></div>';
-      if(!can)return h+'<div class="gc-empty">아직 없어요</div></section>';
-      h+='<div class="gc-lead">결과("주전 된다")가 아니라 <b>내가 통제할 수 있는 행동</b>으로 적어요.</div>'
+      if(!can)return h+'<div class="gc-empty">아직 없습니다</div></section>';
+      h+='<div class="gc-lead">결과("주전 된다")가 아니라 <b>내가 통제할 수 있는 행동</b>으로 적습니다.</div>'
         +'<div class="gc-line"><input id="gcStart" maxlength="60" placeholder="예: 공 받기 전 어깨 너머 두 번 보기">'
         +'<button type="button" class="btn primary" data-gc-start>시작</button></div>';
       return h+'</section>';
@@ -10778,7 +10778,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
        ⚠ 2.412 의 뜻(간결)은 지킨다 — 옛 카드 전부가 아니라 **적는 문 둘**(사다리·무기)만 돌아온다. */
     try{ var _gl=qgLadder(); if(_gl)h+=_gl;
       else if(!ro())h+='<section class="card"><div class="td-q">목표 사다리 <small>장기 → 중기 → 단기</small></div>'
-        +'<div class="td-q-empty" style="margin:6px 0 10px">아직 시작 전이에요</div>'
+        +'<div class="td-q-empty" style="margin:6px 0 10px">아직 시작 전입니다</div>'
         +'<button type="button" class="btn primary" data-ql="week" style="width:100%;justify-content:center">＋ 문장 정하기</button></section>'; }catch(_){}
     /* 2.507 — '올해 남은 날'은 **일지 날짜 줄 옆 작은 표기**로 옮겼다(사용자 "일지로 옮겨 주고 날짜 옆에
        아주 작게"). 시간의 남은 양은 목표를 적을 때보다 **매일 적는 자리**에서 뜻이 있다. */
@@ -10787,7 +10787,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     try{ if(!ro()){ var _wp=wpPicks();
       h+='<section class="card"><div class="td-q">내 무기 <small>이미 잘하는 것'+(_wp.length?' · '+_wp.length+'/2':'')+'</small></div>'
         +(_wp.length?'<div class="mr-weap" style="margin:8px 0 10px">'+_wp.map(function(x){return '<span>'+esc(x.t)+(x.src?'<small>'+esc(WP_SRC[x.src]||WP_SRC.me)+'</small>':'')+'</span>';}).join('')+'</div>'
-                    :'<div class="td-q-empty" style="margin:6px 0 10px">아직 고르지 않았어요</div>')
+                    :'<div class="td-q-empty" style="margin:6px 0 10px">아직 고르지 않았습니다</div>')
         +'<button type="button" class="btn'+(_wp.length?'':' primary')+'" data-wp-open style="width:100%;justify-content:center">'+(_wp.length?'무기 고치기':'＋ 무기 고르기')+'</button></section>'; } }catch(_){}
 
     if(startEmpty)h+='</div></details>';
@@ -10868,7 +10868,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var picked=pickedLink, linkTouched=linkDirty||(!g0&&!!pickedLink);   /* 2.906 — 고르지 않고 저장하면 기존 연결은 그대로 둔다 */
     var linkH='';
     if(vOptions.length||pickedLink){
-      linkH='<div class="gl-sheet"><div class="gl-sheet-h"><b>내 방향 행동과 연결</b><span>지금 문장을 바꿔도 이 목표에는 오늘 문장이 남아요.</span></div><div class="gl-picks">'
+      linkH='<div class="gl-sheet"><div class="gl-sheet-h"><b>내 방향 행동과 연결</b><span>지금 문장을 바꿔도 이 목표에는 오늘 문장이 남습니다.</span></div><div class="gl-picks">'
         +vOptions.map(function(b){ var sn=visionLinkSnap(vNow,b.id), on=visionLinkSame(pickedLink,sn); return '<button type="button" class="gl-pick'+(on?' on':'')+'" data-ls-vlink="'+esc(b.id)+'" aria-pressed="'+(on?'true':'false')+'"><i></i><span>'+esc(b.text)+'</span></button>'; }).join('')
         +(pickedLink&&!pickedIsCurrent?'<button type="button" class="gl-pick old on" data-ls-vold aria-pressed="true"><i></i><span>'+esc(pickedLink.text)+'</span><em>당시 연결</em></button>':'')
         +'<button type="button" class="gl-pick none'+(!pickedLink?' on':'')+'" data-ls-vnone aria-pressed="'+(!pickedLink?'true':'false')+'">연결 안 함</button></div></div>';
@@ -10922,7 +10922,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       save(); try{ psAct('a_qgoal'); }catch(_){}
       window.__visionGoalSeed=''; window.__visionGoalLink=null;
       gmask.classList.remove('on');
-      gToast(act?('12주 — '+act.slice(0,26)):'저장했어요');
+      gToast(act?('12주 — '+act.slice(0,26)):'저장했습니다');
       render();
     };
   }
@@ -10939,15 +10939,15 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!full){
       if(cands.length)h+='<div class="gs-cat">후보</div><div class="wp-cand">'+cands.map(function(c){return '<button type="button" class="wp-cb" data-ws-add="'+esc(c.t)+'" data-ws-src="'+esc(c.src)+'" data-ws-cat="'+esc(c.cat)+'">'+esc(c.t)+' <em>'+esc(c.fromStrength?'내 장점':WP_SRC[c.src])+'</em></button>';}).join('')+'</div>';
       h+='<div class="wp-source" id="wsSource" hidden><span>고른 문장</span><p></p></div><label class="gs-cat" for="wsIn">내 무기로 부를 짧은 이름</label>'
-        +'<div class="fld"><input id="wsIn" maxlength="24" placeholder="예: 좁은 곳에서 안 뺏기기" autocomplete="off" aria-describedby="wsCount"></div><div class="wp-count" id="wsCount">24자까지 적을 수 있어요.</div>';
-    }else h+='<p class="wp-intro">'+WP_MAX+'개를 다 정했어요. 바꾸려면 하나를 먼저 빼 주세요.</p>';
+        +'<div class="fld"><input id="wsIn" maxlength="24" placeholder="예: 좁은 곳에서 안 뺏기기" autocomplete="off" aria-describedby="wsCount"></div><div class="wp-count" id="wsCount">24자까지 적을 수 있습니다.</div>';
+    }else h+='<p class="wp-intro">'+WP_MAX+'개를 다 정했습니다. 바꾸려면 하나를 먼저 빼 주세요.</p>';
     h+='<div class="wp-actions"><button class="btn ghost" id="wsClose">닫기</button>'+(full?'':'<button class="btn primary" id="wsSave">정하기</button>')+'</div>';
     gbox.innerHTML=h;gmask.classList.add('on');
     var inp=gbox.querySelector('#wsIn'),sv=gbox.querySelector('#wsSave'),chosen=null;
-    function count(){if(!inp||!sv)return;var n=inp.value.trim().length;sv.disabled=!n||n>24;gbox.querySelector('#wsCount').textContent=n>24?n+'자 · 24자 이하로 줄여 주세요. 원래 장점은 그대로 남아요.':n+'/24자';}
+    function count(){if(!inp||!sv)return;var n=inp.value.trim().length;sv.disabled=!n||n>24;gbox.querySelector('#wsCount').textContent=n>24?n+'자 · 24자 이하로 줄여 주세요. 원래 장점은 그대로 남습니다.':n+'/24자';}
     function choose(c){chosen=c;var source=gbox.querySelector('#wsSource');source.hidden=false;source.querySelector('p').textContent=c.t;inp.value=c.t;count();inp.focus();inp.setSelectionRange(0,inp.value.length);}
     function put(t,src,cat){if(!idpOwnActionAllowed(key))return;t=String(t||'').trim();if(!t||t.length>24){count();if(inp)inp.focus();return;}
-      var ps=wpPicks();if(ps.some(function(p){return p.t===t;})){gToast('이미 있어요');return;}if(ps.length>=WP_MAX){gToast('무기는 '+WP_MAX+'개까지예요.');return;}
+      var ps=wpPicks();if(ps.some(function(p){return p.t===t;})){gToast('이미 있습니다');return;}if(ps.length>=WP_MAX){gToast('무기는 '+WP_MAX+'개까지입니다.');return;}
       ps.push({t:t,src:src||'me',cat:cat||'',at:Date.now()});doc.weapon={picks:ps,at:Date.now()};
       if(!persistMyIdpNow())return;psAct('a_weapon');gToast('내 무기 — '+t);render();openWeaponSheet();}
     [].forEach.call(gbox.querySelectorAll('[data-ws-add]'),function(b){b.onclick=function(){var c={t:b.dataset.wsAdd,src:b.dataset.wsSrc,cat:b.dataset.wsCat};if(c.t.length>24)choose(c);else put(c.t,c.src,c.cat);};});
@@ -11028,7 +11028,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'</div>'
       /* 팀 탭 선수 프로필과 같은 양식 — 기본 / 프로필(이력서용) / 출신(학력). 스카우팅 항목(코치 전용)만 제외 */
       +(needsGuardian(p)&&!(p.guardianConsent&&p.guardianConsent.name)
-        ?'<div style="background:#FDECEC;border:1px solid #F5B5B1;color:#A32D2D;border-radius:10px;padding:10px 12px;font-size:12px;margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">만 14세 미만 선수는 <b>보호자 동의</b>가 필요해요.'+(ro()?'':'<button class="btn" id="pfGuard" style="min-height:30px;font-size:11px">보호자 동의 받기</button>')+'</div>'
+        ?'<div style="background:#FDECEC;border:1px solid #F5B5B1;color:#A32D2D;border-radius:10px;padding:10px 12px;font-size:12px;margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">만 14세 미만 선수는 <b>보호자 동의</b>가 필요합니다.'+(ro()?'':'<button class="btn" id="pfGuard" style="min-height:30px;font-size:11px">보호자 동의 받기</button>')+'</div>'
         :(p.guardianConsent&&p.guardianConsent.name?'<div style="font-size:11px;color:#2E7D4F;font-weight:800;margin:0 0 8px">✓ 보호자 동의 완료 — '+esc(p.guardianConsent.name)+' · '+new Date(+p.guardianConsent.at||0).toLocaleDateString()+'</div>':''))
       +'<div class="pf-sec" style="margin-top:4px;padding-top:0;border-top:0">기본</div>'
       +'<div class="pf-grid">'
@@ -11196,7 +11196,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var bh=Math.max(3,plotH*x.rpe/scaleMax);
       h+='<rect x="'+bx(i).toFixed(1)+'" y="'+(H-B-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="'+(bw>10?5:2)+'" fill="url(#gRpe)"/>';
       if(showVal) h+='<text x="'+(bx(i)+bw/2).toFixed(1)+'" y="'+(H-B-bh-5).toFixed(1)+'" text-anchor="middle" font-size="11" font-weight="800" fill="#7C4DFF">'+x.rpe+'</text>'; });
-    if(!vals.length) h+='<text x="'+(W/2)+'" y="'+((H-B+T)/2+4)+'" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-3)">강도를 기록하면 여기 채워져요</text>';
+    if(!vals.length) h+='<text x="'+(W/2)+'" y="'+((H-B+T)/2+4)+'" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-3)">강도를 기록하면 여기 채워집니다</text>';
     return h+_dayXLabels(days,L,slot,H)+'</svg>'; }
   function svgWeight(days){
     var W=720,H=190,L=14,Rt=14,T=26,B=28, n=days.length, slot=(W-L-Rt)/n;
@@ -11225,7 +11225,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       h+='<text x="'+lx.toFixed(1)+'" y="'+(wy(days[li].wt)-10).toFixed(1)+'" text-anchor="'+anchor+'" font-size="12" font-weight="800" fill="var(--green)">'+days[li].wt+'kg</text>';
     } else {
       h+='<line x1="'+L+'" y1="'+(H-B)+'" x2="'+(W-Rt)+'" y2="'+(H-B)+'" stroke="var(--line)"/>'
-        +'<text x="'+(W/2)+'" y="'+((H-B+T)/2+4)+'" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-3)">몸무게를 기록하면 여기 채워져요</text>';
+        +'<text x="'+(W/2)+'" y="'+((H-B+T)/2+4)+'" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-3)">몸무게를 기록하면 여기 채워집니다</text>';
     }
     return h+_dayXLabels(days,L,slot,H)+'</svg>'; }
   function bodyTrendCard(o){
@@ -11279,7 +11279,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var lx=Math.min(cx(li),W-Rt-24), anchor=(li>n-4)?'end':'middle';
       h+='<text x="'+lx.toFixed(1)+'" y="'+(vy(last.v)-10).toFixed(1)+'" text-anchor="'+anchor+'" font-size="12" font-weight="800" fill="'+color+'">'+(+last.v)+unit+'</text>';
     } else {
-      h+='<text x="'+(W/2)+'" y="'+((H-B+T)/2+4)+'" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-3)">이번 주 측정에 기록하면 여기 채워져요</text>';
+      h+='<text x="'+(W/2)+'" y="'+((H-B+T)/2+4)+'" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--text-3)">이번 주 측정에 기록하면 여기 채워집니다</text>';
     }
     /* x 라벨 — 달이 바뀌는 주에만 'n월' */
     var pm=-1;
@@ -11545,13 +11545,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var list=cgList(), coach=cgCanWrite(), mine=!ro();
     if(!coach&&!(mine&&list.length))return '';
     var h='<section class="card cg-card"><div class="td-q">'+(coach?'코치가 제안하는 목표':'코치가 적은 목표')
-      +' <small>'+(coach?'선수가 «내 목표로»를 누르면 12주 목표가 돼요':'골라서 내 12주 목표로 가져와요')+'</small></div>';
+      +' <small>'+(coach?'선수가 «내 목표로»를 누르면 12주 목표가 됩니다':'골라서 내 12주 목표로 가져옵니다')+'</small></div>';
     if(list.length)h+='<div class="cg-list">'+list.map(function(g){ var ad=cgAdopted(g.id), due=cgDue(g.due);
         return '<div class="cg-row"><div class="cg-t"><b>'+esc(g.t)+'</b><small>'+esc((g.by||'코치')+' · '+rvFmt(g.at))+(due?' · '+esc(due):'')+'</small></div>'
           +(ad?'<span class="cg-ok">'+(coach?'선수가 가져감 ✓':'내 목표 ✓')+'</span>'
               :(mine?'<button type="button" class="btn primary cg-adopt" data-cg-adopt="'+esc(g.id)+'">내 목표로</button>':''))
           +(coach?'<button type="button" class="cg-x" data-cg-del="'+esc(g.id)+'" title="지우기" aria-label="지우기">×</button>':'')+'</div>'; }).join('')+'</div>';
-    else if(coach)h+='<div class="td-q-empty" style="margin:6px 0 4px">아직 제안한 목표가 없어요</div>';
+    else if(coach)h+='<div class="td-q-empty" style="margin:6px 0 4px">아직 제안한 목표가 없습니다</div>';
     if(coach)h+='<div class="cg-add"><input type="text" data-cg-in maxlength="80" placeholder="목표 문장 — 내가 통제할 수 있는 행동으로">'
       +'<input type="date" data-cg-due title="기한(선택)" aria-label="기한(선택)"><button type="button" class="btn primary" data-cg-add>제안</button></div>';
     return h+'</section>';
@@ -11560,7 +11560,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var add=wrap.querySelector('[data-cg-add]'), inp=wrap.querySelector('[data-cg-in]'), due=wrap.querySelector('[data-cg-due]');
     var go=function(){ if(!cgCanWrite())return; var t=String((inp&&inp.value)||'').replace(/\s+/g,' ').trim().slice(0,80); if(!t){ try{inp.focus();}catch(_){} return; }
       var dv=String((due&&due.value)||''), g={id:'cg'+Date.now().toString(36),t:t,by:lrCoachName(),at:Date.now()}; if(/^\d{4}-\d{2}-\d{2}$/.test(dv))g.due=dv;
-      if(cgSetAt(coachFeedbackKey(viewing),function(a){ a.push(g); if(a.length>20)a.splice(0,a.length-20); })){ gToast('목표를 제안했어요'); render(); }
+      if(cgSetAt(coachFeedbackKey(viewing),function(a){ a.push(g); if(a.length>20)a.splice(0,a.length-20); })){ gToast('목표를 제안했습니다'); render(); }
       else gToast('다른 기기에서 먼저 바뀌어 저장을 멈췄어요 — 다시 눌러 주세요'); };
     if(add)add.onclick=go;
     if(inp)inp.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); go(); } });
@@ -11573,10 +11573,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var q=doc.qgoal; if(!q||!q.start){ doc.qgoal=qgNew(); q=doc.qgoal; }
       q.goals=q.goals||[];
       var free=q.goals.filter(function(x){ return x&&!String(x.t||'').trim(); })[0];
-      if(!free&&q.goals.length>=3){ gToast('12주 목표는 셋까지예요 — 하나를 정리한 뒤 다시 가져와요'); return; }
+      if(!free&&q.goals.length>=3){ gToast('12주 목표는 셋까지입니다 — 하나를 정리한 뒤 다시 가져옵니다'); return; }
       var ng=free||{id:uid(),t:'',ifthen:'',sc:{}}; ng.t=g.t; ng.fromCoach=id; ng.owner='both'; if(g.due)ng.due=g.due;
       if(!free)q.goals.push(ng);
-      if(!persistMyIdpNow())return; psAct('a_qgoal'); gToast('내 12주 목표에 넣었어요'); render(); }; });
+      if(!persistMyIdpNow())return; psAct('a_qgoal'); gToast('내 12주 목표에 넣었습니다'); render(); }; });
   }
   function pubSetAt(kk,field,key,patch){ if(!kk||!field||!key)return false;
     var r=null; try{ r=JSON.parse(localStorage.getItem(kk)||'null')||{}; }catch(_){ r={}; }
@@ -11597,7 +11597,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(/^vision:[a-zA-Z0-9_-]+$/.test(String(k||'')))try{
       var raw=localStorage.getItem(viewing), latest=raw&&JSON.parse(raw);
       if(!latest||latest.v!==1||visionReactKey(visionOf(latest))!==k){
-        gToast('선수가 내 방향을 새로 고쳤어요. 최신 문장을 확인한 뒤 다시 보내 주세요.'); return false;
+        gToast('선수가 내 방향을 새로 고쳤습니다. 최신 문장을 확인한 뒤 다시 보내 주세요.'); return false;
       }
     }catch(_){ return false; }
     return reactSetAt(coachFeedbackKey(viewing),k,patch);
@@ -11732,7 +11732,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!window.PS_ARCH)return '';
     var grp=archGrpDoc(), who=ro()?'선수':'내';
     if(!grp)return '<section class="card arc-card"><div class="arc-top"><i>유형</i><span>포지션 먼저</span></div>'
-      +'<div class="arc-none">아래 <b>프로필</b>에서 포지션을 정해요.</div></section>';
+      +'<div class="arc-none">아래 <b>프로필</b>에서 포지션을 정합니다.</div></section>';
     var types=PS_ARCH.byGroup(grp)||[]; if(!types.length)return '';
     var mine=archSelf(), co=archCoach(), mt=mine?PS_ARCH.get(mine):null, ct=co?PS_ARCH.get(co):null, st=archSt();
     var gname=''; try{ gname=PS_EVAL_STD.posGroupName(grp)||''; }catch(_){}
@@ -11747,20 +11747,20 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<span class="pes-edit">'+(arcOpen?'접기':'펴기')+'<em></em></span></div>';
     if(!arcOpen){
       /* 접힘 — 내 스페셜 한 줄만. 그게 이 카드가 답하는 질문이다 */
-      h+='<div class="arc-fold">'+(mt?'<b>★ '+esc(mt.name)+'</b><em>'+esc(mt.en)+'</em>':'<b class="off">내 스페셜 — 아직 없어요</b>')+'</div>';
+      h+='<div class="arc-fold">'+(mt?'<b>★ '+esc(mt.name)+'</b><em>'+esc(mt.en)+'</em>':'<b class="off">내 스페셜 — 아직 없습니다</b>')+'</div>';
       return h+'</section>';
     }
     h+='<div class="arc-two">'
-      +'<div class="arc-side me"><i>'+who+' 스페셜</i>'+(mt?'<b>★ '+esc(mt.name)+'</b><em>'+esc(mt.en)+'</em>':'<b class="off">아직 없어요</b>')+'</div>'
-      +'<div class="arc-side co"><i>코치가 보는 유형</i>'+(ct?'<b>'+esc(ct.name)+'</b><em>'+esc(ct.en)+'</em>':'<b class="off">아직 없어요</b>')+'</div>'
+      +'<div class="arc-side me"><i>'+who+' 스페셜</i>'+(mt?'<b>★ '+esc(mt.name)+'</b><em>'+esc(mt.en)+'</em>':'<b class="off">아직 없습니다</b>')+'</div>'
+      +'<div class="arc-side co"><i>코치가 보는 유형</i>'+(ct?'<b>'+esc(ct.name)+'</b><em>'+esc(ct.en)+'</em>':'<b class="off">아직 없습니다</b>')+'</div>'
       +'</div>';
     if(mt&&ct&&mine===co)
-      h+='<div class="arc-agree">코치도 <b>같은 유형</b>으로 보고 있어요.</div>';
+      h+='<div class="arc-agree">코치도 <b>같은 유형</b>으로 보고 있습니다.</div>';
     else if(mt&&ct){
       var onlyMe=mt.keys.filter(function(id){ return ct.keys.indexOf(id)<0; });
       var onlyCo=ct.keys.filter(function(id){ return mt.keys.indexOf(id)<0; });
       var both2=mt.keys.filter(function(id){ return ct.keys.indexOf(id)>=0; });
-      h+='<div class="arc-diff"><b>서로 다르게 보고 있어요.</b>'
+      h+='<div class="arc-diff"><b>서로 다르게 보고 있습니다.</b>'
         +''
         +'<span class="arc-dl"><i>겹치는 핵심 '+both2.length+'</i>'+(both2.length?both2.map(function(id){return '<u>'+esc(iname(id))+'</u>';}).join(''):'<u class="off">없음</u>')+'</span>'
         +(onlyMe.length?'<span class="arc-dl"><i>'+who+' 스페셜에만</i>'+onlyMe.map(function(id){return '<u class="me">'+esc(iname(id))+'</u>';}).join('')+'</span>':'')
@@ -11806,7 +11806,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var h='<div class="rqm-card">';
     h+='<div class="arc-top"><i>게임모델</i><span>우리 팀은 어느 쪽인가 — 4국면</span><span class="sp"></span></div>';
     if(!m)
-      return h+'<div class="arc-none">팀 게임모델이 아직 없어요 — <b>팀 › 게임모델</b>에서 4국면을 먼저 시작하세요.</div></div>';
+      return h+'<div class="arc-none">팀 게임모델이 아직 없습니다 — <b>팀 › 게임모델</b>에서 4국면을 먼저 시작하세요.</div></div>';
     var ans=gmAns(), done=false; try{ done=PS_REQ.complete(ans); }catch(_){}
     h+='<div class="rqm-qs">'+PS_REQ.moments.map(function(mo){
       return '<div class="rqm-q"><i>'+esc(mo.name)+'</i><span class="rqm-lb">'+esc(mo.q)+'</span><span class="rqm-opts">'
@@ -11815,9 +11815,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
               +' data-rqm="'+esc(mo.key)+'" data-rqmv="'+esc(o.v)+'" title="'+esc(o.one)+'">'+esc(o.label)+'</button>'; }).join('')
         +'</span></div>'; }).join('')+'</div>';
     if(!done)
-      return h+'<div class="rqm-note">4국면을 다 답하면 이 자리의 요구 기본값을 제안해요.</div></div>';
+      return h+'<div class="rqm-note">4국면을 다 답하면 이 자리의 요구 기본값을 제안합니다.</div></div>';
     var sg=reqSuggest(p);
-    if(!sg)return h+'<div class="rqm-note">이 자리에 제안할 항목이 없어요.</div></div>';
+    if(!sg)return h+'<div class="rqm-note">이 자리에 제안할 항목이 없습니다.</div></div>';
     var po=sqEvalPos(p.posId), cur=(po&&po.req)||{};
     var ids=Object.keys(sg.req);
     var empty=ids.filter(function(id){ return !(+(cur[id]||0)); });
@@ -11832,7 +11832,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<button type="button" class="btn sm" data-rqfill="all">전부 다시 깔기 ('+ids.length+')</button>'
       +(diff.length?'<span class="rqm-diff">코치가 매긴 값과 다른 항목 '+diff.length+'개 — 각 줄에 <b>제안 n</b> 으로 보입니다</span>':'')
       +'</div>';
-    h+='<div class="rqm-foot">제안은 저장되지 않아요 — 버튼을 눌러야 이 자리 요구가 됩니다. 숫자 옆 <b>제안</b> 배지에 커서를 올리면 어느 답에서 나온 값인지 보입니다. 네 답은 <b>팀 › 게임모델</b>에서도 고칠 수 있어요.</div>';
+    h+='<div class="rqm-foot">제안은 저장되지 않습니다 — 버튼을 눌러야 이 자리 요구가 됩니다. 숫자 옆 <b>제안</b> 배지에 커서를 올리면 어느 답에서 나온 값인지 보입니다. 네 답은 <b>팀 › 게임모델</b>에서도 고칠 수 있습니다.</div>';
     return h+'</div>';
   }
   function bindMyArch(){
@@ -11847,8 +11847,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rCompare(){
     var d=cmpData();
     var h='<div class="card cmp-card"><div class="cmp-head"><div><div class="lp-kicker">SELF vs COACH</div><h3>셀프 vs 코치 대조</h3></div><span class="cmp-cnt">둘 다 매김 <b>'+d.both.length+'</b> / '+d.total+' · 셀프 '+d.selfN+' · 코치 '+d.coachN+'</span></div>';
-    if(!d.coachN){ h+='<div class="cmp-empty">코치 평가가 아직 없어요 — 팀 › 선수단 › 프로필에서 평가해요.</div></div>'; return h; }
-    if(!d.selfN){ h+='<div class="cmp-empty">선수 셀프평가가 아직 없어요</div></div>'; return h; }
+    if(!d.coachN){ h+='<div class="cmp-empty">코치 평가가 아직 없습니다 — 팀 › 선수단 › 프로필에서 평가합니다.</div></div>'; return h; }
+    if(!d.selfN){ h+='<div class="cmp-empty">선수 셀프평가가 아직 없습니다</div></div>'; return h; }
     h+='<div class="cmp-cats">'+d.cats.map(function(c){ if(!c.sn&&!c.cn)return ''; var gap=(c.sn&&c.cn)?Math.round((c.s-c.c)*10)/10:null;
       return '<div class="cmp-row"><span class="c">'+esc(c.cat)+'</span><span class="bars"><i class="s" style="width:'+Math.round(c.s/5*100)+'%"></i><i class="k" style="width:'+Math.round(c.c/5*100)+'%"></i></span><span class="v"><b class="s">'+(c.sn?c.s.toFixed(1):'–')+'</b><b class="k">'+(c.cn?c.c.toFixed(1):'–')+'</b>'+(gap!=null&&Math.abs(gap)>=1?'<em class="'+(gap>0?'up':'dn')+'">'+(gap>0?'선수↑':'코치↑')+Math.abs(gap)+'</em>':'<em></em>')+'</span></div>'; }).join('')+'</div>'
       +'<div class="cmp-legend"><i class="s"></i>셀프 <i class="k"></i>코치 · 차이 1 이상만 표시</div>';
@@ -11856,7 +11856,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(big.length){
       h+='<div class="cmp-sub">대화할 지점 <small>차이가 큰 순 · 같은 장면을 다르게 보고 있는 항목</small></div><div class="cmp-gaps">'
         +big.map(function(r){ var sent=(window.PS_EVAL_STD&&PS_EVAL_STD.sentence(r.id,'player'))||''; return '<div class="cmp-gap"><span class="tag">'+esc(r.cat)+'</span><span class="nm"><b>'+esc(r.name)+'</b>'+(sent?'<small>'+esc(sent)+'</small>':'')+'</span><span class="sc"><b class="s">'+r.sv+'</b><i>·</i><b class="k">'+r.cv+'</b></span><span class="dir '+(r.d>0?'up':'dn')+'">'+(r.d>0?'선수가 높게':'코치가 높게')+' '+Math.abs(r.d)+'</span></div>'; }).join('')+'</div>';
-    } else { h+='<div class="cmp-empty ok">둘 다 매긴 항목에서 1점 이상 차이가 없어요.</div>'; }
+    } else { h+='<div class="cmp-empty ok">둘 다 매긴 항목에서 1점 이상 차이가 없습니다.</div>'; }
     var agree=d.both.filter(function(r){return r.sv>=4&&r.cv>=4;}).slice(0,4);
     if(agree.length) h+='<div class="cmp-sub">함께 인정하는 강점</div><div class="cmp-chips">'+agree.map(function(r){return '<span>'+esc(r.name)+' <b>'+r.sv+'·'+r.cv+'</b></span>';}).join('')+'</div>';
     h+='</div>';
@@ -11965,12 +11965,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
            먼저 정해 주는 말이라, 짧게 떠오른 사람은 그 말부터 어긴 채 시작한다. 부탁하는 말로 바꾼다.
            ⚠ **보내기**: 답은 blur 로 이미 담기지만, 다 적고 **끝냈다고 말할 자리**가 없었다.
               하는 일 = 담기(setAnswer) + 알려 주기 + 목록으로. 새 저장 자리를 만들지 않는다. */
-        +'<div class="qa-foot"><div class="qa-meta">'+(a?'적음 · '+esc(rvFmt(a.at)):'아직 안 적음')+(isOpen?'':' · 받기가 끝난 질문이에요')+'</div>'
+        +'<div class="qa-foot"><div class="qa-meta">'+(a?'적음 · '+esc(rvFmt(a.at)):'아직 안 적음')+(isOpen?'':' · 받기가 끝난 질문입니다')+'</div>'
         +(isOpen?'<button type="button" class="btn primary qa-send" data-qa-send'+(t?'':' disabled')+'>보내기</button>':'')
         +'</div>';
     }else{
       h+=t?'<div class="qa-paper read">'+esc(t)+'</div><div class="qa-meta">'+esc(rvFmt(a.at))+'</div>'
-          :'<div class="qa-meta none">아직 안 적었어요</div>';
+          :'<div class="qa-meta none">아직 안 적었습니다</div>';
     }
     return h+'</section>';
   }
@@ -11992,7 +11992,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!ps.length){
       /* ⚠ 2.413 — 한 줄이면 된다(사용자). 뒤에 붙어 있던 '팀 운영 › IDP › 공통질문에서 물어보세요' 는
          **코치에게 하는 길 안내**라, 선수와 코치가 같은 화면을 볼 때 남의 할 일이 내 화면에 섞였다. */
-      h+='<div class="td-q-empty">아직 질문이 없어요</div>';
+      h+='<div class="td-q-empty">아직 질문이 없습니다</div>';
       return h+'</section>';
     }
     /* 목록 — 질문 카드만. 답은 눌러서 들어가 쓴다 */
@@ -12035,7 +12035,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var t=wrap.querySelector('[data-qa-ans]'); if(!t||t.disabled)return;
       if(!String(t.value||'').trim()){ try{t.focus();}catch(_){} return; }
       try{ setAnswer(t.dataset.qaAns,t.value); }catch(_){}
-      try{ gToast('보냈어요'); }catch(_){}
+      try{ gToast('보냈습니다'); }catch(_){}
       qaOpen=''; render(); };
     var bk=wrap.querySelector('[data-qa-back]');
     if(bk)bk.onclick=function(){
@@ -12205,7 +12205,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<section class="card st-card" data-st-owner="'+esc(viewing)+'"><div class="td-top"><b>이야기</b><span>'+(coachMode?esc(pname)+'와 나':'코치와 나')+' · 시간순</span><span class="sp"></span><span class="td-pill">'+(opts.total==null?items.length:opts.total)+'</span></div>';
     if(coachMode)h+=stCompose();
     if(opts.filter)h+=opts.filter;
-    if(!items.length){ if(!coachMode)h+=stCompose(); h+='<div class="td-q-empty">'+(coachMode?'아직 오간 말이 없어요':'아직 오간 말이 없어요')+'</div></section>'; return h; }
+    if(!items.length){ if(!coachMode)h+=stCompose(); h+='<div class="td-q-empty">'+(coachMode?'아직 오간 말이 없습니다':'아직 오간 말이 없습니다')+'</div></section>'; return h; }
     var byDate={}; try{ mtList().forEach(function(m){ if(m&&m.date)byDate[m.date]=m.opponent||''; }); }catch(_){}
     var LIM=40, expanded=opts.squadUid?opts.expanded:(_stAll&&_stAllKey===viewing), show=expanded?items:items.slice(0,LIM), lastD=''; h+='<div class="st-list">';
     show.forEach(function(it){
@@ -12231,9 +12231,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function stSend(text,key){
     text=String(text||'').trim().slice(0,300); if(!text)return false;
     var item={id:'tk'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),text:text,at:Date.now()};
-    if(key&&isCoach()){ if(!storyCoachTarget(PREFIX+key.slice(PUBP.length))||(squadView&&!sqStoryTarget(key.slice(PUBP.length))))return false; item.by=lrCoachName(); if(!pubPushAt(key,'talk',item)){ try{gToast('저장하지 못했어요');}catch(_){} return false; } psAct('a_talk'); return true; }   /* 2.769 — 선수 상세에서 온 보내기 */
-    if(!ro()){ if(!idpOwnActionAllowed(viewing))return false; doc.talk=Array.isArray(doc.talk)?doc.talk:[]; doc.talk.push(item); if(!persistMyIdpNow()){ try{gToast('저장하지 못했어요');}catch(_){} doc.talk.pop(); return false; } psAct('a_talk'); return true; }
-    if(isCoach()){ if(!storyCoachTarget(viewing))return false; item.by=lrCoachName(); var kk=coachFeedbackKey(viewing); if(!kk||!pubPushAt(kk,'talk',item)){ try{gToast('저장하지 못했어요');}catch(_){} return false; } psAct('a_talk'); return true; }
+    if(key&&isCoach()){ if(!storyCoachTarget(PREFIX+key.slice(PUBP.length))||(squadView&&!sqStoryTarget(key.slice(PUBP.length))))return false; item.by=lrCoachName(); if(!pubPushAt(key,'talk',item)){ try{gToast('저장하지 못했습니다');}catch(_){} return false; } psAct('a_talk'); return true; }   /* 2.769 — 선수 상세에서 온 보내기 */
+    if(!ro()){ if(!idpOwnActionAllowed(viewing))return false; doc.talk=Array.isArray(doc.talk)?doc.talk:[]; doc.talk.push(item); if(!persistMyIdpNow()){ try{gToast('저장하지 못했습니다');}catch(_){} doc.talk.pop(); return false; } psAct('a_talk'); return true; }
+    if(isCoach()){ if(!storyCoachTarget(viewing))return false; item.by=lrCoachName(); var kk=coachFeedbackKey(viewing); if(!kk||!pubPushAt(kk,'talk',item)){ try{gToast('저장하지 못했습니다');}catch(_){} return false; } psAct('a_talk'); return true; }
     return false;
   }
   function bindStory(){
@@ -12270,7 +12270,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         if(qm.firstFocus){doc.focusByWk=doc.focusByWk||{};doc.focusByWk[nm]={wk:nm,text:qm.firstFocus,from:'meet',at:Date.now()};if(nm===focusWk())doc.focus=doc.focusByWk[nm];}
         if(!persistMyIdpNow())return; psAct('a_qgoal'); gToast('다음 분기 시작 — '+qm.promise); render(); }); }; });
     [].forEach.call(card.querySelectorAll('[data-th-reply]'),function(b){ b.onclick=function(){ _thReplyOpen=b.dataset.thReply; render(); setTimeout(function(){ try{ wrap.querySelector('[data-th-reply-in]').focus(); }catch(_){} },30); }; });
-    var saveReply=function(id){ if(!idpOwnActionAllowed(key))return; var inp=card.querySelector('[data-th-reply-in="'+id+'"]'); var t=inp?inp.value.trim():''; if(!t){ gToast('한 줄만 적어 주세요'); return; } doc.rvReplies=doc.rvReplies||{}; doc.rvReplies[id]={text:t.slice(0,140),at:Date.now()}; if(!persistMyIdpNow())return; _thReplyOpen=null; psAct('a_reply'); gToast('답을 남겼어요'); render(); };
+    var saveReply=function(id){ if(!idpOwnActionAllowed(key))return; var inp=card.querySelector('[data-th-reply-in="'+id+'"]'); var t=inp?inp.value.trim():''; if(!t){ gToast('한 줄만 적어 주세요'); return; } doc.rvReplies=doc.rvReplies||{}; doc.rvReplies[id]={text:t.slice(0,140),at:Date.now()}; if(!persistMyIdpNow())return; _thReplyOpen=null; psAct('a_reply'); gToast('답을 남겼습니다'); render(); };
     [].forEach.call(card.querySelectorAll('[data-th-reply-save]'),function(b){ b.onclick=function(){ saveReply(b.dataset.thReplySave); }; });
     [].forEach.call(card.querySelectorAll('[data-th-reply-in]'),function(i){ i.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); saveReply(i.dataset.thReplyIn); } }); });
   }
@@ -12298,7 +12298,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(last.link&&/^https?:\/\//i.test(last.link)) h+='<a class="th-link" href="'+esc(last.link)+'" target="_blank" rel="noopener">▶ 참고 링크 열기</a>';
       h+='</div>';
     } else if(coachMode){
-      h+='<div class="rv-empty">아직 리뷰가 없어요</div>';
+      h+='<div class="rv-empty">아직 리뷰가 없습니다</div>';
     }
     h+='</div>';
     return h;
@@ -12427,7 +12427,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(!goals.length&&!d.strengths.length&&!d.develop.length){ gToast('강점·발전점·목표 중 하나는 적어 주세요'); return; }
       var now=new Date(), at=ymd(now), nx=new Date(now.getTime()+(+d.weeks||6)*7*864e5), nextAt=ymd(nx);
       var list=rvList(); list.push({id:'rv'+Date.now().toString(36),at:at,by:lrCoachName(),weeks:+d.weeks||6,prevProgress:d.prevProgress,strengths:d.strengths,develop:d.develop,goals:goals,nextAt:nextAt,note:(d.note||'').trim(),link:String(d.link||'').trim().slice(0,300)});
-      if(rvSave(list,d)){ _rvOpen=false; _rvDraft=null; gToast('리뷰를 저장했어요 — 다음 리뷰 '+rvFmt(nextAt)); render(); } else gToast('저장하지 못했어요');
+      if(rvSave(list,d)){ _rvOpen=false; _rvDraft=null; gToast('리뷰를 저장했습니다 — 다음 리뷰 '+rvFmt(nextAt)); render(); } else gToast('저장하지 못했습니다');
     };
   }
   function idpProfileName(){
@@ -12445,12 +12445,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var empty=!(nm||p.pos||p.photo);
     /* 1.980 — 두 요약 카드 같은 뼈대(사용자): 머리(제목·메타) → 본문 → 오른쪽 아래 '수정하기 ›' */
     return '<div class="card pe-sum pf-sum'+(open?' open':'')+'" data-pe-toggle="pf" role="button" tabindex="0" aria-expanded="'+(open?'true':'false')+'">'
-      +'<div class="pes-head"><b>프로필</b><span class="pes-meta">'+(p.team?esc(p.team):(empty?'아직 비어 있어요':''))+'</span></div>'
+      +'<div class="pes-head"><b>프로필</b><span class="pes-meta">'+(p.team?esc(p.team):(empty?'아직 비어 있습니다':''))+'</span></div>'
       +'<div class="pes-body pfs-body">'
         +'<div class="pfs-ava">'+(phSrc(p.photo)?'<img src="'+phSrc(p.photo)+'" alt="">':'<span>'+esc((nm||'?').charAt(0))+'</span>')+'</div>'
         +'<div class="pfs-main">'
           +'<b class="pfs-name">'+(nm?esc(nm):'<i>이름 없음</i>')+'</b>'
-          +'<span class="pfs-sub">'+(sub?esc(sub):(empty?'프로필을 채우면 여기 한눈에 보여요':'포지션·주발·나이를 채워 보세요'))+'</span>'
+          +'<span class="pfs-sub">'+(sub?esc(sub):(empty?'프로필을 채우면 여기 한눈에 보입니다':'포지션·주발·나이를 채워 보세요'))+'</span>'
           +(chips.length?'<span class="pfs-chips">'+chips.map(function(c){return '<i>'+c+'</i>';}).join('')+'</span>':'')
         +'</div>'
       +'</div>'
@@ -12554,7 +12554,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
               그 기준으로 읽히고, 코치 화면·리뷰가 그 값을 쓴다. 새로 **고르게 하지 않을 뿐**이다. */
       }
       if(ev.setId&&ev.setId!==set.id)
-        h+='<div class="ro-banner">이전 평가는 다른 항목 세트 기준이었어요.</div>';
+        h+='<div class="ro-banner">이전 평가는 다른 항목 세트 기준이었습니다.</div>';
     }
     /* 능력 레이더 + 성장선 — 평가가 하나라도 있으면 그림이 먼저 */
     var avs=catAvgs(groups, ev.levels||{});
@@ -12597,7 +12597,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var bits='<div class="ev-sum v2"><span class="pg"><b>'+done+'</b>/'+tot+'</span>'
         +'<span class="ev-sumbar"><i style="width:'+(tot?Math.round(done/tot*100):0)+'%"></i></span>'
         +(done<tot?'<span class="rest">남은 곳 '+esc(restCats.slice(0,2).join(' · '))+(restCats.length>2?' 외 '+(restCats.length-2):'')+'</span>'
-                  :'<span class="rest done">모두 평가했어요</span>')
+                  :'<span class="rest done">모두 평가했습니다</span>')
         /* 2.113 — 앵커 점프가 아니라 **그 영역만 보기**로. 누르면 화면이 그 영역 하나가 된다 */
         +'<span class="ev-sumcats seg">'+areas.map(function(g,gi){
             var d=g.items.filter(function(it){return +(ev.levels&&ev.levels[it.id])>0;}).length;
@@ -12689,7 +12689,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<button type="button" data-evarea="'+(evArea+1)+'">'+esc(String(_nx.cat).replace(/^포지션 · /,''))+' '+_nx.items.length+'문항 ›</button></div>';
     }
     try{ if(!isJr&&MAXL===5&&(!doc.profile||!doc.profile.pos))
-      h+='<div class="ev-pos-hint">내 프로필에 포지션을 정하면 <b>포지션별 문항 8개</b>가 여기에 붙어요.</div>';
+      h+='<div class="ev-pos-hint">내 프로필에 포지션을 정하면 <b>포지션별 문항 8개</b>가 여기에 붙습니다.</div>';
     }catch(_){}
     return h;
   }
@@ -12822,7 +12822,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* ══ 2.410 · 공통 — 코치가 팀 전체에게 물은 것이 여기 쌓인다 ═══════════════════
        ⚠ 목록·쓰기 화면은 `rPrompts()` 그대로 쓴다. 자리만 옮겼지 새로 만들지 않았다 —
           같은 것을 두 벌 만들면 다음에 한쪽만 고쳐진다. */
-    if(_isQa)return h+(function(){ try{ return rPrompts(true); }catch(e){ return '<section class="card"><b>공통 질문을 그리지 못했어요</b>'+esc(String(e&&e.message||e))+'</section>'; } })();
+    if(_isQa)return h+(function(){ try{ return rPrompts(true); }catch(e){ return '<section class="card"><b>공통 질문을 그리지 못했습니다</b>'+esc(String(e&&e.message||e))+'</section>'; } })();
 
     if(calView==='year'){
       /* 년간 — 팀 일정과 같은 문법: 12개월 미니 달력, 기록이 색점으로 깔린다. 달을 누르면 월간으로 */
@@ -12972,7 +12972,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       }
       /* 2.320 — 오늘 화면에서 뺀 한 주짜리 말을 여기로 옮겼었다.
          2.326 — **다시 걷는다**(사용자). 주간은 **한 주를 보는 자리**지 재촉하는 자리가 아니다:
-         '어제 비었어요'(빈 날을 캐묻는 줄) · '이번 주 n/7 · 다음 일정 · 주간 ›'(이미 이 화면이 그 주다) ·
+         '어제 비었습니다'(빈 날을 캐묻는 줄) · '이번 주 n/7 · 다음 일정 · 주간 ›'(이미 이 화면이 그 주다) ·
          '내일 계획 30초' · '지난주 회고' — 넷 다 **주간 칸 일곱이 이미 말하는 것**을 글로 또 말하고 있었다.
          2.475 — 그 조각들은 옛 홈과 함께 걷었다(전수조사: 옛 홈은 5669 리다이렉트로 도달 불가 — '아직 쓴다'가 거짓이 된 지 오래였다). */
       h+=bodyTrendCard({noWeight:1});   /* 주간 뷰는 강도만 — 몸무게·키는 월간(2.348) */
@@ -13000,7 +13000,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
          문자열이라 이 줄이 실제로는 어디에도 안 그려지고 있었다(전수조사 적발). 재촉이 아니라 온 소식이라
          환영 카드와 겹쳐도 그린다(2.317 예외 규칙 그대로). 클릭은 bind() 공통 hd-go 엔진이 받는다. */
       if(_isTodayDay&&!ro()){ try{ var _fb474=coachFeedbackFor(viewing);
-        if(_fb474&&_fb474.id&&(doc.feedbackReply||{}).feedbackId!==_fb474.id)h+='<button type="button" class="td-note" data-hd-go="goal">'+ic('eye')+' 코치 피드백이 왔어요 — 읽기 ›</button>'; }catch(_){} }
+        if(_fb474&&_fb474.id&&(doc.feedbackReply||{}).feedbackId!==_fb474.id)h+='<button type="button" class="td-note" data-hd-go="goal">'+ic('eye')+' 코치 피드백이 왔습니다 — 읽기 ›</button>'; }catch(_){} }
       /* 2.489 — 이번 주 단계가 비어 있으면 그 물음이 첫 카드(월요 리듬 — 알림이 아니라 그 주의 첫 카드일 뿐) */
       var _wsCard=''; if(_isTodayDay&&!ro()){ try{ _wsCard=rWeekStepCard()||''; }catch(_){} }   /* 2.780 — ③ «이번 주 나는 10초» 는 오늘 카드 아래로(선수 첫 화면 목업) */
       /* ══ 2.314 · 1층 = 오늘 적는 것 ═══════════════════════════════════════════════
@@ -13071,7 +13071,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
             +'<div class="rpe-scale"><span>가벼움</span><span>보통</span><span>한계</span></div>'
             +'</div></div></div>';
         } else if(attNow==='off'){
-          h+='<div class="dc-sec"><div class="td-lb" style="margin:0">쉰 날은 강도를 적지 않아요.</div></div>';
+          h+='<div class="dc-sec"><div class="td-lb" style="margin:0">쉰 날은 강도를 적지 않습니다.</div></div>';
         }
         /* 2.321 — 몸은 어때(몸·잠·태그)가 오늘로 돌아왔다(사용자). 자리는 **강도 다음, 한 줄 앞** —
            강도(얼마나 힘들었나) → 몸·잠(어떤 상태였나) → 한 줄(무슨 장면이었나) 로 읽힌다.
@@ -13392,7 +13392,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<span class="rtd-tm">'+(tm?esc(tm):'—')+'</span><span class="rtd-tx">'+esc(tx)+'</span>'
         +(trId?'<button type="button" class="rtd-tag" data-trtr="'+esc(trId)+'">'+tagLb+'</button>':'')+'</div>'; };
     var h='<section class="card rtd-card rtd-today"><div class="rtd-head"><div class="rtd-ttl"><b>오늘 루틴</b><span>'
-      +(rows.length?(done+' / '+rows.length+' 했어요'):'오늘 루틴은 비어 있어요')+'</span></div>'
+      +(rows.length?(done+' / '+rows.length+' 했습니다'):'오늘 루틴은 비어 있습니다')+'</span></div>'
       +'<button type="button" class="rtd-edit" data-trgo>편집 ›</button></div>';
     if(rows.length)h+='<div class="rtd-prog" aria-hidden="true"><i style="width:'+Math.round(done/rows.length*100)+'%"></i></div>';
     if(rows.length)h+='<div class="rtd-list">'+rows.map(function(r){
@@ -13400,7 +13400,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var key=rtKey(r); return row(rtChecked(dt,key),'data-trck="'+esc(key)+'"',String(r.t||'').trim(),String(r.s||''),'',''); }).join('')+'</div>';
     if(extra.length)h+='<div class="rtd-sub">예정에 없던 개인 훈련 — 했으면 체크</div><div class="rtd-list">'+extra.map(function(t){
       return row(isDone(dt,t.id),'data-trtk="'+esc(t.id)+'"',String(t.time||'').trim(),String(t.title||'훈련'),t.id,'열기 ›'); }).join('')+'</div>';
-    h+='<div class="rtd-foot">체크는 그날만 남아요.</div></section>';
+    h+='<div class="rtd-foot">체크는 그날만 남습니다.</div></section>';
     return h;
   }
   function bindTodayRoutine(){
@@ -13426,7 +13426,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<div class="rt-days" role="group" aria-label="요일">'+DAYS.map(function(nm,i){ var n=rtMerged(i).length;
       return '<button type="button" class="rt-day'+(i===pick?' on':'')+(i===tIdx?' today':'')+'" data-rtd="'+i+'" aria-pressed="'+(i===pick?'true':'false')+'" aria-label="'+nm+'요일 '+n+'개'+(i===tIdx?' · 오늘':'')+'">'+nm+'<u>'+(n||'·')+'</u></button>'; }).join('')+'</div>';
     var done=0; if(canCk)rows.forEach(function(r){ if(r.k==='t'?isDone(t0,r.tr.id):rtChecked(t0,rtKey(r)))done++; });
-    var sub=ro()?('선수가 정한 '+DAYS[pick]+'요일 루틴'):rows.length?('매주 '+DAYS[pick]+'요일에 떠요 · 오늘 체크는 일지에서'):'아직 비어 있어요';
+    var sub=ro()?('선수가 정한 '+DAYS[pick]+'요일 루틴'):rows.length?('매주 '+DAYS[pick]+'요일에 뜹니다 · 오늘 체크는 일지에서'):'아직 비어 있습니다';
     h+='<div class="card rtd-card"><div class="rtd-head"><div class="rtd-ttl"><b>'+DAYS[pick]+'요일'+(isToday?' · 오늘':'')+'</b><span>'+sub+'</span></div>'
       +(!ro()?'<button type="button" class="rtd-edit" data-rtedit aria-pressed="'+(edit?'true':'false')+'">'+(edit?'완료':'편집')+'</button>':'')+'</div>';
     if(canCk&&rows.length)h+='<div class="rtd-prog" aria-hidden="true"><i style="width:'+Math.round(done/rows.length*100)+'%"></i></div>';
@@ -13445,7 +13445,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
               ? '<div class="rt-row rov"><b>'+esc(r.t)+'</b><span>'+esc(r.s)+'</span></div>'
               : roRow(r.tr);
           }).join('')+'</div>'
-        : '<div class="rtd-empty">비어 있어요</div>';
+        : '<div class="rtd-empty">비어 있습니다</div>';
       if(orph.length){
         h+='<div class="rt-orph"><i>요일이 없는 훈련</i><div class="rt-list">'
           +orph.map(roRow).join('')+'</div></div>';
@@ -13476,9 +13476,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +(isT?'<button type="button" class="rtd-tag" data-rttr="'+esc(r.tr.id)+'">개인 훈련 ›</button>':'')+'</div>';
       }).join('')+'</div>';
     }
-    if(!rows.length)h+='<div class="rtd-empty">'+DAYS[pick]+'요일은 아직 비어 있어요</div>';
+    if(!rows.length)h+='<div class="rtd-empty">'+DAYS[pick]+'요일은 아직 비어 있습니다</div>';
     h+='<div class="rtd-add"><label class="rtd-sr" for="rtAddIn">'+DAYS[pick]+'요일에 할 일 추가</label>'
-      +'<input id="rtAddIn" data-rtadd maxlength="46" autocomplete="off" enterkeyhint="done" placeholder="예) 21:00 슈팅 50개 · 시간은 빼도 돼요">'
+      +'<input id="rtAddIn" data-rtadd maxlength="46" autocomplete="off" enterkeyhint="done" placeholder="예) 21:00 슈팅 50개 · 시간은 빼도 됩니다">'
       +'<button type="button" data-rtaddgo>추가</button></div>';
     if(edit){
       var others=DAYS.map(function(nm,i){return {i:i,nm:nm,n:((doc.rtDay&&doc.rtDay[i])||[]).length};})
@@ -13623,14 +13623,14 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var trend='<svg viewBox="0 0 100 54" preserveAspectRatio="none">'+poly('body','var(--accent)')+poly('sleep','var(--green)')+'</svg>';
     var hasAny=total>0||tagArr.length||memos.length||weeks.some(function(w){return w.f;});
     var h='<section class="card gw-card"><div class="td-top"><b>자라는 프로필</b><span>최근 12주 · 자동</span><span class="sp"></span><span class="td-pill">기록 '+total+'일</span></div>';
-    if(!hasAny)h+='<div class="td-q td-q-empty">일지를 쓰면 달력·몸/잠 추세·내 무기와 과제가 여기 채워져요.</div>';
+    if(!hasAny)h+='<div class="td-q td-q-empty">일지를 쓰면 달력·몸/잠 추세·내 무기와 과제가 여기 채워집니다.</div>';
     h+='<div class="gw-grid"><div class="td-sec"><div class="td-lb">달력</div><div class="gw-hm">'+cells+'</div><div class="gw-cap"><span>'+(start.getMonth()+1)+'/'+start.getDate()+'</span><span>오늘</span></div></div>'
       +'<div class="td-sec"><div class="td-lb">몸 <i class="gw-k p"></i> · 잠 <i class="gw-k g"></i> <small>주 평균 · 8주</small></div><div class="gw-trend">'+trend+'</div><div class="gw-cap"><span>'+(last8[0]?(last8[0].mon.getMonth()+1)+'/'+last8[0].mon.getDate():'')+'</span><span>이번 주</span></div></div>';
-    h+='<div class="td-sec"><div class="td-lb">내 무기 · 과제 <small>한 줄 칩 누적</small></div>'+(tagArr.length?'<div class="gw-cloud">'+tagArr.map(function(t){ var r=t[1]/tmax; return '<span class="'+(r>=.66?'big':r>=.33?'mid':'sm')+'">'+esc(t[0])+' <em>'+t[1]+'</em></span>'; }).join('')+'</div>':'<div class="td-q-empty" style="font-size:13px">아직 없어요</div>')+'</div></div>';
+    h+='<div class="td-sec"><div class="td-lb">내 무기 · 과제 <small>한 줄 칩 누적</small></div>'+(tagArr.length?'<div class="gw-cloud">'+tagArr.map(function(t){ var r=t[1]/tmax; return '<span class="'+(r>=.66?'big':r>=.33?'mid':'sm')+'">'+esc(t[0])+' <em>'+t[1]+'</em></span>'; }).join('')+'</div>':'<div class="td-q-empty" style="font-size:13px">아직 없습니다</div>')+'</div></div>';
     try{ h+=rBodyGrowthSec(); }catch(_){}   /* 2.261 — 몸의 성장(키·몸무게 곡선) */
     var fw=weeks.filter(function(w){return w.f;}).slice(-6).reverse();
-    h+='<div class="gw-grid2"><div class="td-sec"><div class="td-lb">이번 주 초점 이력</div>'+(fw.length?'<div class="gw-focus">'+fw.map(function(w){ return '<div class="gw-fr"><span class="d">'+(w.mon.getMonth()+1)+'/'+w.mon.getDate()+'</span><span class="t">'+esc(w.f.text)+'</span><span class="n">'+w.st.tries+'/'+w.st.n+'일</span></div>'; }).join('')+'</div>':'<div class="td-q-empty" style="font-size:13px">아직 없어요</div>')+'</div>';
-    h+='<div class="td-sec"><div class="td-lb">내 말로 쓴 것</div>'+(memos.length?'<div class="gw-memo">'+memos.map(function(m){ return '<div><span class="d">'+(m.d.getMonth()+1)+'/'+m.d.getDate()+'</span>'+esc(m.t)+'</div>'; }).join('')+'</div>':'<div class="td-q-empty" style="font-size:13px">아직 없어요</div>')+'</div></div>';
+    h+='<div class="gw-grid2"><div class="td-sec"><div class="td-lb">이번 주 초점 이력</div>'+(fw.length?'<div class="gw-focus">'+fw.map(function(w){ return '<div class="gw-fr"><span class="d">'+(w.mon.getMonth()+1)+'/'+w.mon.getDate()+'</span><span class="t">'+esc(w.f.text)+'</span><span class="n">'+w.st.tries+'/'+w.st.n+'일</span></div>'; }).join('')+'</div>':'<div class="td-q-empty" style="font-size:13px">아직 없습니다</div>')+'</div>';
+    h+='<div class="td-sec"><div class="td-lb">내 말로 쓴 것</div>'+(memos.length?'<div class="gw-memo">'+memos.map(function(m){ return '<div><span class="d">'+(m.d.getMonth()+1)+'/'+m.d.getDate()+'</span>'+esc(m.t)+'</div>'; }).join('')+'</div>':'<div class="td-q-empty" style="font-size:13px">아직 없습니다</div>')+'</div></div>';
     return h+'</section>';
   }
   /* 2.261 — 몸의 성장 곡선(doc.growth 주 1회 측정, 2.260): 키(보라)·몸무게(초록) 각각 작은 라인.
@@ -13650,7 +13650,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +pts.map(function(p){return '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="1.6" fill="'+color+'"/>';}).join('')+'</svg>';
     }
     var rate=growthRate(doc), lastH=hs[hs.length-1]||null, lastW=wss[wss.length-1]||null;
-    var one='<div class="td-q-empty" style="font-size:12px">측정이 2번 쌓이면 선이 그려져요</div>';
+    var one='<div class="td-q-empty" style="font-size:12px">측정이 2번 쌓이면 선이 그려집니다</div>';
     var h2='<div class="td-sec gw-body"><div class="td-lb">몸의 성장 <small>키 <i class="gw-k p"></i> · 몸무게 <i class="gw-k g"></i> · 주 1회 측정</small>'
       +(rate!=null?'<span class="gw-rate'+(rate>=8?' spurt':'')+'">'+(rate>0?'+':'')+rate+'cm/년'+(rate>=8?' · 급성장기':'')+'</span>':'')+'</div><div class="gw-bgrid">';
     if(hs.length)h2+='<div><div class="gw-bnum"><b>'+lastH.h+'</b>cm<small>'+rvFmt(lastH.wk)+'</small></div>'+(hs.length>1?'<div class="gw-trend">'+chart(hs,function(r){return r.h;},1,'var(--accent)')+'</div><div class="gw-cap"><span>'+rvFmt(hs.slice(-26)[0].wk)+'</span><span>'+rvFmt(lastH.wk)+'</span></div>':one)+'</div>';
@@ -13694,7 +13694,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         return '<div class="tsq-row'+(o.k?' '+o.k:'')+'"><b>'+(o.t?esc(o.t):'—')+'</b><span>'+esc(o.s)+'</span></div>'; }).join('')
         +(_tItems.length>3?'<div class="tsq-more">외 '+(_tItems.length-3)+'개</div>':'');
     } else {
-      _tRows='<div class="tsq-row none"><span>'+(tl.k==='rest'?'오늘은 팀 OFF':'오늘 팀 일정이 없어요')+'</span></div>';
+      _tRows='<div class="tsq-row none"><span>'+(tl.k==='rest'?'오늘은 팀 OFF':'오늘 팀 일정이 없습니다')+'</span></div>';
     }
     /* ══ 2.362 · 읽는 것과 쓰는 것을 가른다(사용자: 카드 하나로 쭉 입력) ═══════════════════
        `오늘 팀 일정`은 선수가 **읽는 것**이고 '전체 ›'로 팀 일정으로 나가는 문이다. 내가 적는 칸들과
@@ -13721,7 +13721,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       return '<button type="button" class="attp'+(on?' on':'')+' g-'+o[2]+(o[0]===tl.k?' same':'')+'" data-att6="'+o[0]+'"'+(can?'':' disabled')+'>'+o[1]+'</button>';
     }).join('')+'</div>';
     if(lg.solo&&(lg.t==='team'||lg.t==='match'))
-      h+='<div class="att-note">팀 일정과 <b>개인운동</b>을 함께 했어요</div>';
+      h+='<div class="att-note">팀 일정과 <b>개인운동</b>을 함께 했습니다</div>';
     return {strip:_strip, body:h};   /* 2.362 — 껍데기(section)는 부르는 쪽이 씌운다 */
   }
   function bindTeamMeRow(root,dt){ [].forEach.call(root.querySelectorAll('[data-tn]'),function(b){ b.onclick=function(){ if(ro())return; var k=b.dataset.tn; if(k==='solo'){ var o=dlog(dt)||{}; setLog(dt,{solo:o.solo?null:true}); } else setType(dt,k); psAct('a_diary'); render(); }; }); }
@@ -13874,10 +13874,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<div class="mr-hero'+(th?'':' empty')+'"><div class="mr-k">'+mine('내가 키우는 것','키우는 것')+(th&&th.wk?' · '+th.wk+'주째':'')+'</div>';
     if(th){ h+='<h3>'+esc(th.t)+'</h3>'+(th.wk?'<div class="mr-wk" aria-label="12주 중 '+Math.min(12,th.wk)+'주째">'+Array.apply(null,Array(12)).map(function(_,i){return '<i'+(i<th.wk?' class="on"':'')+'></i>';}).join('')+'</div>':'')+(th.ifthen?'<div class="mr-if"><b>IF</b>'+esc(th.ifthen)+'</div>':'')
         +'<div class="mr-stage">'+SL.slice(1).map(function(x,i){ var s2=i+1, cls=(th.cur&&s2<th.cur)?'done':((th.cur&&s2===th.cur)?'now':''); return '<span class="'+cls+'">'+x+(th.reach[s2]?'<small>'+rvFmt(th.reach[s2])+'</small>':'')+'</span>'; }).join('')+'</div>'
-        +(trail?'<div class="mr-trail">'+trail+'</div>':'<div class="mr-empty">'+mine('아직 주간 단계 기록이 없어요','아직 주간 단계 기록이 없어요')+'</div>'); }
+        +(trail?'<div class="mr-trail">'+trail+'</div>':'<div class="mr-empty">'+mine('아직 주간 단계 기록이 없습니다','아직 주간 단계 기록이 없습니다')+'</div>'); }
     /* 2.504 — 옛 문구는 "목표 탭에서 시작해요" 였는데 그 자리가 2.412 에서 사라져 **없는 문**을 가리켰다.
        안내문 자리를 그대로 문으로 만든다(코치가 남의 문서를 볼 때는 버튼 없이 사실만). */
-    else h+='<div class="mr-empty">'+mine('아직 없어요','아직 없어요')+'</div>'
+    else h+='<div class="mr-empty">'+mine('아직 없습니다','아직 없습니다')+'</div>'
       +(ro()?'':'<button type="button" class="mr-goto" data-mr-goto>목표 탭에서 정하기 ›</button>');   /* 2.501 — 적는 문은 목표 탭 */
     if(f)h+='<div class="mr-focus"><i>이번 주 초점</i>'+esc(f.text)+'</div>';
     h+='</div>';
@@ -13916,7 +13916,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           o+=hasC?('<div class="mr-sw-me"><i>'+meLbl+'</i><ul class="mr-sw-l me">'+li+'</ul></div>')
                  :('<ul class="mr-sw-l me solo">'+li+'</ul>');
         }
-        if(!hasC&&!hasM)o+='<div class="mr-empty">아직 없어요</div>';
+        if(!hasC&&!hasM)o+='<div class="mr-empty">아직 없습니다</div>';
         return o;
       };
       h+='<div class="mr-sw"><div class="mr-k">장점 · 단점'+(voices.length?' <small>'+voices.join(' · ')+'</small>':'')+'</div><div class="mr-sw-grid">';
@@ -13934,29 +13934,29 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           return '<div><span>'+esc(c.cat)+'</span><span class="b"><i style="width:'+Math.round(v/_mx*100)+'%"></i>'+(cv?'<em style="left:'+Math.round(cv/_mx*100)+'%"></em>':'')+'</span><span class="v">'+(v?(Math.round(v*10)/10):'–')+'</span></div>'; }).join('')+'</div>'; } }catch(_){ _axes=''; }
       h+='<div class="mr-sec"><div class="mr-k">능력 레이더'+(ed&&ed.hasCoach?' <small>셀프 · 코치</small>':'')+'</div>'
         +(radar?'<div class="mr-eye"><div class="mr-radar">'+radar+'</div>'+_axes+'</div>'+(ed.hasCoach?'<div class="mr-lg"><span><i class="s"></i>셀프</span><span><i class="c"></i>코치</span></div>':'')
-          :'<div class="mr-empty">'+mine('아직 셀프 평가 전이에요','아직 셀프 평가 전이에요')+'</div>')+'</div>';
+          :'<div class="mr-empty">'+mine('아직 셀프 평가 전입니다','아직 셀프 평가 전입니다')+'</div>')+'</div>';
     }
     /* ⚠ 2.447 — 비었을 때 '0/2' 는 셈이 아니라 잔소리다. 고른 것이 있을 때만 센다 */
     if(picks.length||tagArr.length||!_stepsNeeded){   /* 2.647 — 빈 무기는 순서 카드가 대신 */
     h+='<div class="mr-sec"><div class="mr-k">'+mine('내 무기','무기')+(picks.length?' <small>'+picks.length+'/2</small>':'')+'</div>'
       /* 2.505 — 옛 문구는 또 '목표 탭'(없는 문)을 가리켰다. 빈 칸이 곧 문이 된다. */
-      +(picks.length?'<div class="mr-weap">'+picks.map(function(x){return '<span>'+esc(x.t)+(x.src?'<small>'+esc(WP_SRC[x.src]||WP_SRC.me)+'</small>':'')+'</span>';}).join('')+'</div>':'<div class="mr-empty">'+mine('아직 고르지 않았어요','아직 고르지 않았어요')+'</div>')
+      +(picks.length?'<div class="mr-weap">'+picks.map(function(x){return '<span>'+esc(x.t)+(x.src?'<small>'+esc(WP_SRC[x.src]||WP_SRC.me)+'</small>':'')+'</span>';}).join('')+'</div>':'<div class="mr-empty">'+mine('아직 고르지 않았습니다','아직 고르지 않았습니다')+'</div>')
       +((ro()||picks.length)?'':'<button type="button" class="mr-goto" data-mr-goto>목표 탭에서 고르기 ›</button>')   /* 2.501 */
       +(tagArr.length?'<div class="mr-k" style="margin-top:10px">한 줄 칩 <small>12주 누적</small></div><div class="mr-tags">'+tagArr.map(function(t){return '<span>'+esc(t[0])+'<b>'+t[1]+'</b></span>';}).join('')+'</div>':'')+'</div>';
     }
     h+='<div class="mr-sec"><div class="mr-k">팀 기준 대비 <small>'+(fit?esc(fit.pos)+' 요구 '+fit.req+'개':'자리 요구')+'</small></div>'
       +(fit?'<div class="mr-kpi"><div class="ok"><b>'+fit.met+'</b><i>충족</i></div><div class="no"><b>'+fit.short+'</b><i>미달</i></div><div><b>'+fit.un+'</b><i>미평가</i></div></div>'
-          +(fit.shorts.length?'<div class="mr-list">'+fit.shorts.slice(0,5).map(function(x){return '<div><span>'+esc(x.n)+'</span><em>+'+x.gap+'</em></div>';}).join('')+'</div>':'<div class="mr-note">요구를 모두 충족해요</div>')
-          :'<div class="mr-empty">'+(pos?esc(pos)+mine(' 자리 요구를 코치가 정하면 여기에',' 자리 요구가 아직 없어요'):mine('포지션이 아직 없어요','포지션이 아직 없어요'))+'</div>')+'</div>';
+          +(fit.shorts.length?'<div class="mr-list">'+fit.shorts.slice(0,5).map(function(x){return '<div><span>'+esc(x.n)+'</span><em>+'+x.gap+'</em></div>';}).join('')+'</div>':'<div class="mr-note">요구를 모두 충족합니다</div>')
+          :'<div class="mr-empty">'+(pos?esc(pos)+mine(' 자리 요구를 코치가 정하면 여기에',' 자리 요구가 아직 없습니다'):mine('포지션이 아직 없습니다','포지션이 아직 없습니다'))+'</div>')+'</div>';
     /* ③ 기록 · 리뷰 — 2.501 위계: 묶음마다 제목을 두고 그리드를 끊는다(빈 칸 order 규칙도 묶음 안에서만 돈다) */
     h+='</div>'; var _done0=h.length;   /* 2.647 */
-    h+='<div class="mr-group">일지에 남긴 기록 <small>일지 작성 기준 · 실제 출전 횟수와 다를 수 있어요</small></div><div class="mr-grid">';
+    h+='<div class="mr-group">일지에 남긴 기록 <small>일지 작성 기준 · 실제 출전 횟수와 다를 수 있습니다</small></div><div class="mr-grid">';
     /* 2.765 — 격자(주 행·요일 열) + 표 하나(이번 달 · 12주) + 몸·잠 막대. 예전 «이번 달» 네 타일·«얼마나 했나» 여덟 타일을 대신한다 */
     (function(){
       var cal=null; try{ cal=mrCal12(); }catch(_){}
       h+='<div class="mr-sec"><div class="mr-k">최근 12주 <small>'+(cal?('기록한 날 '+cal.total+' / 84'):'')+'</small></div>'+(cal?cal.html:'');
       var ef=rpEffort12();
-      if(!ef.days&&!(mo&&mo.days)){ h+='<div class="mr-empty" style="margin-top:10px">'+mine('아직 기록이 없어요','아직 기록이 없어요')+'</div></div>'; return; }
+      if(!ef.days&&!(mo&&mo.days)){ h+='<div class="mr-empty" style="margin-top:10px">'+mine('아직 기록이 없습니다','아직 기록이 없습니다')+'</div></div>'; return; }
       var mc=(mo&&mo.cnt)||{}, z=function(v){ return '<td class="'+(v?'':'z')+'">'+v+'</td>'; };
       var rowsT=[['팀 훈련',mc.team||0,ef.team],['경기',mc.match||0,ef.match],['개인 운동',mc.solo||0,ef.solo],['휴식',mc.rest||0,ef.rest],['재활 · 부상',(mc.rehab||0)+(mc.injury||0),ef.rehab+ef.injury],['초점 시도',(mo&&mo.tries)||0,ef.tryDays],['한 줄',(mo&&mo.memo)||0,ef.memo]];
       h+='<div class="mr-k mr-k2">활동별로 기록한 날</div><table class="mr-stat"><tr><th></th><th>'+((mo&&mo.m)||(today.getMonth()+1))+'월</th><th>12주</th></tr>'
@@ -13975,7 +13975,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var slp=rpWeekly12(function(lg){ return lg.sleepq?(SLEEP_H[lg.sleepq]||null):null; });
       var cN=cond.filter(function(v){return v!=null;}), sN=slp.filter(function(v){return v!=null;});
       h+='<div class="mr-sec"><div class="mr-k">컨디션 · 수면 <small>최근 12주 · 주 평균</small></div>';
-      if(!cN.length&&!sN.length){ h+='<div class="mr-empty">'+mine('아직 컨디션·수면 기록이 없어요','아직 컨디션·수면 기록이 없어요')+'</div></div>'; return; }
+      if(!cN.length&&!sN.length){ h+='<div class="mr-empty">'+mine('아직 컨디션·수면 기록이 없습니다','아직 컨디션·수면 기록이 없습니다')+'</div></div>'; return; }
       var CL=['','최악','안 좋음','괜찮음','좋음','최고'];
       if(cN.length){
         var ca=cN.reduce(function(a,b){return a+b;},0)/cN.length;
@@ -13996,7 +13996,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +((rv.develop||[]).length?'<div class="mr-row"><i>발전</i><div class="mr-chips dev">'+rv.develop.map(function(x){return '<span>'+esc(x)+'</span>';}).join('')+'</div></div>':'')
           +((rv.goals||[]).length?'<div class="mr-row"><i>목표</i><div class="mr-list">'+rv.goals.slice(0,3).map(function(g2,i){return '<div><span>'+(i+1)+'. '+esc(g2.t||'')+'</span></div>';}).join('')+'</div></div>':'')
           +(rv.note?'<div class="mr-note">'+esc(rv.note)+'</div>':'')
-        :'<div class="mr-empty">'+mine('아직 성장 리뷰가 없어요','아직 성장 리뷰가 없어요')+'</div>')+'</div>';
+        :'<div class="mr-empty">'+mine('아직 성장 리뷰가 없습니다','아직 성장 리뷰가 없습니다')+'</div>')+'</div>';
     /* ══ 2.379 · 내가 쓴 한 줄 ═══════════════════════════════════════════════════════
        리포트에 사람의 목소리가 없었다 — 숫자와 도형뿐이었다. 코치의 말 옆에 **선수 자신의 말**을 둔다.
        그래야 이 문서가 성적표가 아니라 자기 기록장이 되고, 나중에 다시 꺼내 볼 이유가 생긴다.
@@ -14006,16 +14006,16 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       h+='<div class="mr-sec"><div class="mr-k">'+mine('내가 쓴 한 줄','선수가 쓴 한 줄')+' <small>'+(ms.length?'최근 '+ms.length+'개':'12주')+'</small></div>'
         +(ms.length?'<div class="mr-memos">'+ms.map(function(m){
             return '<div><span class="d">'+(m.d.getMonth()+1)+'/'+m.d.getDate()+'</span><p>'+esc(m.t)+'</p></div>'; }).join('')+'</div>'
-          :'<div class="mr-empty">'+mine('일지의 \'한 줄\'에 적으면 여기에 모여요','아직 쓴 한 줄이 없어요')+'</div>')
+          :'<div class="mr-empty">'+mine('일지의 \'한 줄\'에 적으면 여기에 모입니다','아직 쓴 한 줄이 없습니다')+'</div>')
         +'</div>';
     })();
     h+='</div>';
     if(!th){ try{ h=h.slice(0,_eye0)+h.slice(_done0,_talk0)+h.slice(_eye0,_done0)+h.slice(_talk0); }catch(_){} }   /* 2.647 — 아직 문장이 없으면 «벌써 이만큼»(해 온 것)이 먼저 */
-    h+='<div class="mr-foot">같은 내용을 PDF 한 벌(3장)로 받을 수 있어요.</div>';
+    h+='<div class="mr-foot">같은 내용을 PDF 한 벌(3장)로 받을 수 있습니다.</div>';
     return h+'</section>';
   }
   function bindMyReport(){
-    var b=wrap.querySelector('[data-mr-pdf]'); if(b)b.onclick=function(){ try{ doReport('all'); }catch(_){ gToast('PDF 를 만들지 못했어요'); } };
+    var b=wrap.querySelector('[data-mr-pdf]'); if(b)b.onclick=function(){ try{ doReport('all'); }catch(_){ gToast('PDF 를 만들지 못했습니다'); } };
     /* 2.502 — 폰에서 머리줄 `.idp-actions` 를 접었으므로 '내보내기'(부모 요약 PNG)의 집은 리포트 화면이다.
        핸들러를 다시 쓰지 않고 원래 버튼을 누른다 — 배선이 한 곳에만 있어야 갈라지지 않는다. */
     /* 2.501 — 리포트에서 적는 문을 없앴다. 남은 것은 **목표 탭으로 가는 길** 하나(코치 열람에는 없음) */
@@ -14051,8 +14051,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function bindDayHours(dt){
     var calAnchor=dt;
     /* 2.038 — 루틴 불러오기 / 이 하루를 루틴으로 저장 */
-    try{ var lr=wrap.querySelector('[data-dh-loadrt]'); if(lr)lr.onclick=function(){ var dow=(calAnchor.getDay()+6)%7, rt=(doc.rtDay&&doc.rtDay[dow])||[], hrs={}; rt.forEach(function(r){ var m=String(r&&r.t||'').match(/^(\d{1,2})/); if(!m||!r.s)return; var hh=+m[1]; if(hh===0)hh=24; if(hh<5||hh>24)return; var lb=(hh<10?'0':'')+hh+':00'; hrs[lb]=(hrs[lb]?hrs[lb]+' · ':'')+r.s; }); if(!Object.keys(hrs).length)return; setLog(calAnchor,{hours:hrs}); window.__idpHoursOpen=1; gToast('루틴을 이 날 계획으로 가져왔어요'); render(); };
-      var sr=wrap.querySelector('[data-dh-savert]'); if(sr)sr.onclick=function(){ try{ [].forEach.call(wrap.querySelectorAll('[data-dayhour]'),function(i){ if(document.activeElement===i)i.blur(); }); }catch(_){} var dow=(calAnchor.getDay()+6)%7, o=dlog(calAnchor)||{}, hrs=o.hours||{}, keys=Object.keys(hrs).sort(); if(!keys.length){ gToast('먼저 시간표에 한 줄 적어 주세요'); return; } if(!confirm(DAYS[dow]+'요일 루틴을 이 하루 시간표('+keys.length+'시간)로 바꿀까요? 이후 '+DAYS[dow]+'요일마다 미리 채워져요.'))return; doc.rtDay=doc.rtDay||{}; doc.rtDay[dow]=keys.map(function(k){return {t:k,s:hrs[k]};}); save(); psAct('a_routine'); window.__idpHoursOpen=1; gToast(DAYS[dow]+'요일 루틴으로 저장했어요'); render(); }; }catch(_){}
+    try{ var lr=wrap.querySelector('[data-dh-loadrt]'); if(lr)lr.onclick=function(){ var dow=(calAnchor.getDay()+6)%7, rt=(doc.rtDay&&doc.rtDay[dow])||[], hrs={}; rt.forEach(function(r){ var m=String(r&&r.t||'').match(/^(\d{1,2})/); if(!m||!r.s)return; var hh=+m[1]; if(hh===0)hh=24; if(hh<5||hh>24)return; var lb=(hh<10?'0':'')+hh+':00'; hrs[lb]=(hrs[lb]?hrs[lb]+' · ':'')+r.s; }); if(!Object.keys(hrs).length)return; setLog(calAnchor,{hours:hrs}); window.__idpHoursOpen=1; gToast('루틴을 이 날 계획으로 가져왔습니다'); render(); };
+      var sr=wrap.querySelector('[data-dh-savert]'); if(sr)sr.onclick=function(){ try{ [].forEach.call(wrap.querySelectorAll('[data-dayhour]'),function(i){ if(document.activeElement===i)i.blur(); }); }catch(_){} var dow=(calAnchor.getDay()+6)%7, o=dlog(calAnchor)||{}, hrs=o.hours||{}, keys=Object.keys(hrs).sort(); if(!keys.length){ gToast('먼저 시간표에 한 줄 적어 주세요'); return; } if(!confirm(DAYS[dow]+'요일 루틴을 이 하루 시간표('+keys.length+'시간)로 바꿀까요? 이후 '+DAYS[dow]+'요일마다 미리 채워집니다.'))return; doc.rtDay=doc.rtDay||{}; doc.rtDay[dow]=keys.map(function(k){return {t:k,s:hrs[k]};}); save(); psAct('a_routine'); window.__idpHoursOpen=1; gToast(DAYS[dow]+'요일 루틴으로 저장했습니다'); render(); }; }catch(_){}
     /* 2.024 — 하루 시간표 입력 → log.hours */
     [].forEach.call(wrap.querySelectorAll('[data-dayhour]'),function(inp){
       inp.addEventListener('change',function(){ if(ro())return; var o=dlog(calAnchor)||{}, hrs=Object.assign({},o.hours||{}); var v=inp.value.trim(); if(v)hrs[inp.dataset.dayhour]=v; else delete hrs[inp.dataset.dayhour]; setLog(calAnchor,{hours:Object.keys(hrs).length?hrs:null}); var row=inp.closest('.rt-row'); if(row){ row.classList.toggle('has',!!v); var tg=row.querySelector('.rt-tag'); if(tg&&v)tg.textContent=''; } });
@@ -14074,7 +14074,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var _t0=new Date(); _t0.setHours(0,0,0,0); var isPast=calAnchor<_t0, phTxt=isPast?'무엇을 했나요':'무엇을 할 건가요';
       var teamBy={}, teamNoTime=[]; try{ tlItems(calAnchor).forEach(function(o){ if(o.k!=='team'&&o.k!=='match'&&o.k!=='meet')return; if(o.m==null){ teamNoTime.push(o.s); return; } var hh0=Math.floor(o.m/60); if(hh0===0)hh0=24; if(hh0<1||hh0>24)return; var lb0=rtHourLabel(hh0); teamBy[lb0]=(teamBy[lb0]?teamBy[lb0]+' · ':'')+o.s; }); }catch(_){}
       var openNow=true; window.__idpHoursOpen=0;   /* 2.071 — 늘 펼친 채로(사용자): 접었다 펴는 한 번이 기록을 막았다 */
-      h+='<details class="day-hours"'+(openNow?' open':'')+'><summary><b>하루 시간표</b><span>'+(filled?filled+'시간 '+(isPast?'기록':'계획'):(rtN?'루틴 '+rtN+'개가 미리 채워져요':(isPast?'05:00~04:00':'시간마다 적어요')))+'</span><i></i></summary>'
+      h+='<details class="day-hours"'+(openNow?' open':'')+'><summary><b>하루 시간표</b><span>'+(filled?filled+'시간 '+(isPast?'기록':'계획'):(rtN?'루틴 '+rtN+'개가 미리 채워집니다':(isPast?'05:00~04:00':'시간마다 적습니다')))+'</span><i></i></summary>'
         +'<div class="rt-list rt-timeline day-hours-list">'
         +(teamNoTime.length?'<div class="dh-team-line"><i>팀</i>'+teamNoTime.map(esc).join(' · ')+' <em>시간 미정</em></div>':'')
         +(!ro()?'<div class="dh-tools">'+(rtN&&!filled?'<button type="button" class="btn sm" data-dh-loadrt>루틴 불러오기 '+rtN+'</button>':'')+'<button type="button" class="btn sm" data-dh-savert>이 하루를 '+DAYS[dow]+'요일 루틴으로 저장</button></div>':'');
@@ -14129,7 +14129,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rVisionDaily(lg,actionText){
     var v=visionOf(doc),has=visionHas(v),chosen=visionEvidenceOf(lg,v),snapshot=!!(lg&&lg.visionEvidence&&typeof lg.visionEvidence.text==='string'&&lg.visionEvidence.text.trim()),h='';
     if(chosen||(window.PSIDPEvidence&&PSIDPEvidence.has(lg))){
-      h+='<div class="idp-day-evidence">'+(snapshot&&chosen&&chosen.text===actionText?'<p class="idp-day-linked">이 행동을 오늘 기록에 연결했어요.</p>':(window.PSIDPEvidence?PSIDPEvidence.render(lg,v,{compact:true}):'<p>'+esc(chosen.text)+'</p>'))
+      h+='<div class="idp-day-evidence">'+(snapshot&&chosen&&chosen.text===actionText?'<p class="idp-day-linked">이 행동을 오늘 기록에 연결했습니다.</p>':(window.PSIDPEvidence?PSIDPEvidence.render(lg,v,{compact:true}):'<p>'+esc(chosen.text)+'</p>'))
         +(!ro()?'<button type="button" data-vd-clear>행동 연결 해제</button>':'')+'</div>';
     }
     /* 2.781 — 첫날(방향 없음)은 작은 링크가 아니라 버튼 하나(선수 첫 화면 목업 ④). 누르면 같은 «내 방향 쓰기» 시트 */
@@ -14175,7 +14175,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +(dailyAction.linked&&dailyAction.behavior&&dailyAction.behavior.text!==sen?visionLinkBadge({id:dailyAction.behavior.id,text:dailyAction.behavior.text,revision:dailyAction.revision},'내 방향'):'')
       +(g1&&g1.t&&g1.t!==sen?'<div class="ol-sub">내가 키우는 것 · '+esc(g1.t)+'</div>':'')+'</div>';
     if(!off){ h+='<div class="idp-day-question">오늘 이 행동을 해봤어?</div><div class="td-emo ol-chips">'+[[0,'아직'],[1,'해봄'],[2,'계속']].map(function(o){ return '<button type="button" class="td-chip'+(tv===o[0]?' on':'')+'" data-td-try="'+o[0]+'"><small>'+o[1]+'</small></button>'; }).join('')+'</div>'; }
-    else h+='<div class="td-lb" style="margin:8px 0 0">쉰 날은 초점을 묻지 않아요.</div>';
+    else h+='<div class="td-lb" style="margin:8px 0 0">쉰 날은 초점을 묻지 않습니다.</div>';
     h+='<textarea id="dayMemo" class="ol-memo" rows="2" maxlength="300" placeholder="한 마디">'+esc(lg.memo||'')+'</textarea>';
     if(!lg.memo) h+='<div class="ol-prompts">'+['언제 됐어?','뭐가 어려웠어?'].map(function(q){ return '<button type="button" class="ol-pr" data-ol-pr="'+esc(q)+'">'+esc(q)+'</button>'; }).join('')+'</div>';
     var mon=mondayOf(today), cells='';
@@ -14318,7 +14318,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var evidence='';try{if(window.PSIDPEvidence)evidence=PSIDPEvidence.weekHTML(doc.log,wk,doc.vision);}catch(_){}
     if(has&&!window.__wrOpen)
       return '<button type="button" class="td-wkline ms-line" data-wr-open style="width:100%;text-align:left;cursor:pointer"><b>주간 회고 ✓</b><span class="sep">·</span><span>'+esc(String((w.good||w.better)||'').slice(0,40))+'</span><u style="margin-left:auto">고치기 ›</u></button>'+evidence;
-    return '<section class="card td-card wr-card"><div class="td-top"><b>주간 회고</b><span>이번 주를 한 줄로 — 쓰는 대로 저장돼요</span><span class="sp"></span><span class="td-pill">2분</span></div>'
+    return '<section class="card td-card wr-card"><div class="td-top"><b>주간 회고</b><span>이번 주를 한 줄로 — 쓰는 대로 저장됩니다</span><span class="sp"></span><span class="td-pill">2분</span></div>'
       +'<div class="td-body">'+evidence
       +'<div class="td-q">잘된 것</div><input id="wrGood" maxlength="120" value="'+esc((w&&w.good)||'')+'" placeholder="이번 주 잘된 장면 하나">'
       +'<div class="td-q" style="margin-top:8px">다음 주엔</div><input id="wrBetter" maxlength="120" value="'+esc((w&&w.better)||'')+'" placeholder="다음 주에 해볼 것 하나">'
@@ -14371,7 +14371,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(mtCur){ var cur=all.filter(function(m){return m.id===mtCur;})[0]; if(cur)return rMatchDetail(cur); mtCur=''; }
     var up=all.filter(mtUpcoming).reverse(), past=all.filter(function(m){return !mtUpcoming(m);});
     var h='<section class="card mt-head"><div class="mt-title"><h3>경기</h3><span class="mt-cnt">'+all.length+'</span></div><p class="mt-sub">팀 경기 일정</p></section>';
-    if(!all.length)return h+'<section class="card mt-empty"><b>아직 팀 경기가 없어요</b><p>코치가 팀 › 경기에 경기를 만들면 여기에 보여요.</p></section>';
+    if(!all.length)return h+'<section class="card mt-empty"><b>아직 팀 경기가 없습니다</b><p>코치가 팀 › 경기에 경기를 만들면 여기에 보입니다.</p></section>';
     /* 2.468 — 맡아 본 롤(밀린 일 8/24, 3판): 선수가 경기마다 스스로 적는 포지션·출전·분(matchSelf)을
        모아 보는 거울. 한 유형으로 몰지 않는다 — 여러 롤 경험이 그대로 보이면 된다. 읽기 전용·새 저장 없음. */
     try{ var _agg={}, _ord=[];
@@ -14456,14 +14456,14 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     var _fcTx=''; try{ var _f=focusOf(ymd(mondayOf(new Date(String(m.date||'')+'T00:00:00')))); _fcTx=_f&&_f.text?String(_f.text):''; }catch(_){ _fcTx=''; }   /* 2.782 — 그 주 초점을 «시도한 것» 자리에 미리 보여 준다(placeholder — 저장은 선수가 적을 때만) */
     h+='<section class="card mt-card mt-self"><div class="mt-lb" style="margin-top:0">'+(ro()?'선수의 되돌아보기':'경기 뒤 · 되돌아보기')+(!ro()?' <small>위 임무를 보면서</small>':'')+(r.at?' <small>'+esc(ymd(new Date(r.at)))+' 저장</small>':'')+'</div>';
-    if(future&&!ro())h+='<p class="mt-sum" style="margin-top:0;color:var(--text-3)">경기 전이에요</p>';
+    if(future&&!ro())h+='<p class="mt-sum" style="margin-top:0;color:var(--text-3)">경기 전입니다</p>';
     if(ro()){
       h+=mtSelfHas(m.id)?((r.tried?mtRvItem('memo','시도한 것',r.tried):'')+(r.good?mtRvItem('good','잘 된 장면',r.good):'')+(r.better?mtRvItem('imp','다음엔 이렇게',r.better):'')+(visionLinkOf(r)?mtRvItem('memo','내 방향 행동',visionLinkOf(r).text):'')+(sc2?'<div class="mt-next"><div><span>내 평점</span>'+esc(mtSc5Lb(sc2))+'</div></div>':''))
-        :'<p class="mt-sum" style="margin-top:0;color:var(--text-3)">선수가 아직 안 썼어요.</p>';
+        :'<p class="mt-sum" style="margin-top:0;color:var(--text-3)">선수가 아직 안 썼습니다.</p>';
     }else{
       h+='<label class="mt-f"><span>잘 된 장면 하나</span><textarea class="inp" data-mt-self="good" placeholder="예: 압박 오는데 미리 몸 열고 앞을 봤다">'+esc(r.good||'')+'</textarea></label>'
         +'<label class="mt-f"><span>다음엔 이렇게</span><textarea class="inp" data-mt-self="better" placeholder="예: 받기 전에 한 번 더 본다">'+esc(r.better||'')+'</textarea></label>'
-        +'<label class="mt-f"><span>시도한 것 <small>'+(_fcTx?'이번 주 초점이 미리 적혀요':'이번 주 초점이나 내 유형으로')+'</small></span><textarea class="inp" data-mt-self="tried" placeholder="'+esc(_fcTx||'예: 받기 전에 어깨 너머 두 번 보기')+'">'+esc(r.tried||'')+'</textarea></label>'
+        +'<label class="mt-f"><span>시도한 것 <small>'+(_fcTx?'이번 주 초점이 미리 적힙니다':'이번 주 초점이나 내 유형으로')+'</small></span><textarea class="inp" data-mt-self="tried" placeholder="'+esc(_fcTx||'예: 받기 전에 어깨 너머 두 번 보기')+'">'+esc(r.tried||'')+'</textarea></label>'
         +mtVisionPick(r)
         +'<div class="mt-f"><span>내 평점 <small>오늘 나에게</small></span><div class="mt-sc5">'+MT_SC5.map(function(o){
             return '<button type="button" class="'+(sc2===o[0]?'on':'')+'" data-mt-score="'+o[0]+'">'+o[1]+'</button>'; }).join('')+'</div></div>';
@@ -14478,7 +14478,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(m.reviewPublished){
       var g=String(m.reviewGood||'').trim(), im=String(m.reviewImprove||'').trim(), ta=String(m.trainingAction||'').trim(), ia=String(m.idpAction||'').trim();
       h+='<section class="card mt-card"><div class="mt-lb" style="margin-top:0">팀 리뷰 · 코치</div>';
-      h+=(g||im)?'<div class="mt-rv" style="margin-top:4px">'+(g?mtRvItem('good','잘된 점',g):'')+(im?mtRvItem('imp','개선할 점',im):'')+'</div>':'<p class="mt-sum" style="margin-top:0;color:var(--text-3)">아직 적힌 내용이 없어요.</p>';
+      h+=(g||im)?'<div class="mt-rv" style="margin-top:4px">'+(g?mtRvItem('good','잘된 점',g):'')+(im?mtRvItem('imp','개선할 점',im):'')+'</div>':'<p class="mt-sum" style="margin-top:0;color:var(--text-3)">아직 적힌 내용이 없습니다.</p>';
       if(ta||ia)h+='<div class="mt-next">'+(ta?'<div><span>다음 훈련</span>'+esc(ta)+'</div>':'')+(ia?'<div><span>IDP</span>'+esc(ia)+'</div>':'')+'</div>';
       var pr=m.phaseReview&&typeof m.phaseReview==='object'?m.phaseReview:null, moms=mtMoments();
       if(pr&&moms.length){ var rows=''; moms.forEach(function(mo){ var v=pr[mo.key]||{}, sv=(+v.s>0)?Math.min(10,+v.s):0, nt=String(v.note||'').trim(), gd=String(v.good||'').trim(), iv=String(v.improve||'').trim(); if(!sv&&!nt&&!gd&&!iv)return;
@@ -14487,7 +14487,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         if(rows)h+='<div class="mt-phs"><div class="mt-lb">국면 평가</div>'+rows+'</div>'; }
       h+='</section>';
     }else if(!future){
-      h+='<section class="card mt-empty"><b>팀 리뷰는 아직 비공개예요</b><p>'+(isCoach()?'팀 › 경기 › 리뷰에서 "선수에게 팀 리뷰 공개"를 켜면 여기에 보여요.':'코치가 공개하면 여기에 보여요.')+'</p></section>';
+      h+='<section class="card mt-empty"><b>팀 리뷰는 아직 비공개입니다</b><p>'+(isCoach()?'팀 › 경기 › 리뷰에서 "선수에게 팀 리뷰 공개"를 켜면 여기에 보입니다.':'코치가 공개하면 여기에 보입니다.')+'</p></section>';
     }
     /* 2.333 — 옛 이미지노트에 그 경기 날짜로 적어 둔 것이 있으면 **읽어서** 보여준다.
        ⚠ 옮겨 쓰지 않는다(자동 이관은 사용자가 안 시킨 쓰기다) — 보고 옮기고 싶으면 위 칸에 다시 쓰면 된다. */
@@ -14553,7 +14553,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(_gi)_gi.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); _start(); } });
       var _gm=wrap.querySelector('[data-gc-more]');
       if(_gm)_gm.onclick=function(){ if(ro())return; var q=doc.qgoal; if(!q)return;
-        q.goals=q.goals||[]; if(q.goals.length>=3){ gToast('문장은 최대 3개예요'); return; }
+        q.goals=q.goals||[]; if(q.goals.length>=3){ gToast('문장은 최대 3개입니다'); return; }
         q.goals.push({id:uid(),t:'',ifthen:'',sc:{}}); save(); render();
         setTimeout(function(){ try{ var ls=wrap.querySelectorAll('.qg-g'); ls[ls.length-1].querySelector('[data-qg-t]').focus(); }catch(_){} },40); };
     }catch(_){}
@@ -14620,7 +14620,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       try{ bindQGoal(); }catch(_){}   /* 2.039 */
       try{ bindPropose(); }catch(_){}   /* 2.253 */
       try{ bindWeapon(); }catch(_){}   /* 2.067 */
-      try{ var _wpo=wrap.querySelector('[data-wp-open]'); if(_wpo)_wpo.onclick=function(){ if(ro())return; try{ openWeaponSheet(); }catch(_){ gToast('열지 못했어요'); } }; }catch(_){}   /* 2.501 */
+      try{ var _wpo=wrap.querySelector('[data-wp-open]'); if(_wpo)_wpo.onclick=function(){ if(ro())return; try{ openWeaponSheet(); }catch(_){ gToast('열지 못했습니다'); } }; }catch(_){}   /* 2.501 */
       try{ var gr=wrap.querySelector('[data-g-rest]'); if(gr)gr.onclick=function(){ window.__gRestOpen=!window.__gRestOpen; render(); }; }catch(_){}
       bindRoleCard();   /* 1.976 */
       var cfw=wrap.querySelector('.cf-replyform');
@@ -14678,7 +14678,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* 2.508 — 카드 발치 PDF. 카드 전체가 토글이라 반드시 전파를 끊는다(누르면 카드가 접히던 함정) */
     if(_pe){ [].forEach.call(wrap.querySelectorAll('[data-pe-pdf]'),function(b){ b.onclick=function(e){
       e.stopPropagation(); e.preventDefault();
-      try{ doReport(b.dataset.pePdf); }catch(_){ gToast('PDF 를 만들지 못했어요'); } }; }); }
+      try{ doReport(b.dataset.pePdf); }catch(_){ gToast('PDF 를 만들지 못했습니다'); } }; }); }
     if(_pe){ [].forEach.call(wrap.querySelectorAll('[data-pe-toggle]'),function(c){ var f=function(e){ if(e&&e.target&&e.target.closest&&e.target.closest('input,select,textarea,a')&&!e.target.closest('.pes-edit'))return; if(e&&e.target&&e.target.closest&&e.target.closest('button')&&!e.target.closest('.pes-edit'))return; var k=c.dataset.peToggle; if(k==='pf')pfOpen=!pfOpen; else if(k==='arc')arcOpen=!arcOpen; else evOpen=!evOpen;   /* 2.408 — 유형 카드 */ render();
         if((k==='pf'&&pfOpen)||(k==='ev'&&evOpen)||(k==='arc'&&arcOpen)){ setTimeout(function(){ try{ var el=wrap.querySelector('[data-pe-toggle="'+k+'"]'); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){} },30); } };
       c.onclick=f; c.onkeydown=function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); f(e); } }; }); }
@@ -14899,7 +14899,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(key){
         if(!adoptViewing(key))return;
         document.body.classList.remove('idp-top-learning');personalOnly=false;squadView=false;curL='goal';evOpen=true;render();   /* 2.475 — 옛 의미(-1=영역 인덱스) 잔재를 현 의미(truthy=펼침)로 */
-      }else gToast('연결된 선수 IDP를 찾지 못했어요');
+      }else gToast('연결된 선수 IDP를 찾지 못했습니다');
     }
   });
   function dayChips(){ mDays.innerHTML=DAYS.map(function(d){
@@ -15093,7 +15093,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rpDate(){ var t=new Date(); return t.getFullYear()+'.'+String(t.getMonth()+1).padStart(2,'0')+'.'+String(t.getDate()).padStart(2,'0'); }
   function rpTeam(){ var p=doc.profile||{}; if(p.team)return p.team; try{ var w=teamWsObj&&teamWsObj(); if(w&&w.name)return w.name; }catch(_){} return ''; }
   function rpAge(dob){ var a=null; try{ a=pfAgeOf(dob); }catch(_){ a=null; } if(a==null){ var m=String(dob||'').match(/(\d{4})/); if(!m)return ''; a=new Date().getFullYear()-(+m[1]); } return (a>0&&a<60)?a+'세':''; }   /* 2.647 — 프로필과 같은 계산(리포트 40세 vs 프로필 39세였다) */
-  function rpEmpty(t){ return '<div class="rp2-empty">'+rpEsc(t||'아직 없음 — 화면에서 채우면 여기에 나와요')+'</div>'; }
+  function rpEmpty(t){ return '<div class="rp2-empty">'+rpEsc(t||'아직 없음 — 화면에서 채우면 여기에 나옵니다')+'</div>'; }
   function rpHead(title,sub){ var p=doc.profile||{}, meta=[p.pos?String(p.pos):'',rpTeam(),rpAge(p.dob)].filter(Boolean).join(' · ');
     return '<header class="rp2-hd"><div><div class="rp2-name">'+rpEsc(rpName())+'</div><div class="rp2-meta">'+rpEsc(meta||'')+(sub?(meta?' · ':'')+rpEsc(sub):'')+'</div></div><div class="rp2-brand"><b>'+rpEsc(title)+'</b><span><i>PRO</i>CESS STUDIO · '+rpDate()+'</span></div></header>'; }
   function rpFoot(pg,of){ return '<footer class="rp2-ft"><span>PROCESS STUDIO · IDP — 선수·코치가 함께 쓰는 성장 노트</span><span>'+(pg?pg+' / '+of:'')+'</span></footer>'; }
@@ -15105,7 +15105,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var cats=catAvgs(groups,self), ccats=coach?catAvgs(groups,coach):null;
     return {groups:groups,self:self,coach:coach,mx:mx,cats:cats,ccats:ccats,hasSelf:!!Object.keys(self).length,hasCoach:!!(coach&&Object.keys(coach).length)}; }
   /* SVG 레이더(인쇄용, 고정 색) */
-  function rpRadar(cats,selfV,coachV,mx,size){ var N=cats.length; if(N<3)return rpEmpty('셀프평가를 하면 레이더가 그려져요'); size=size||220; mx=mx||5;
+  function rpRadar(cats,selfV,coachV,mx,size){ var N=cats.length; if(N<3)return rpEmpty('셀프평가를 하면 레이더가 그려집니다'); size=size||220; mx=mx||5;
     var cx=size/2, cy=size/2, R=size*0.36; function px(i,r){ var a=-Math.PI/2+i*2*Math.PI/N; return [(cx+r*Math.cos(a)).toFixed(1),(cy+r*Math.sin(a)).toFixed(1)]; }
     function poly(vals){ return vals.map(function(v,i){ return px(i,Math.max(.04,(v||0)/mx)*R).join(','); }).join(' '); }
     var h='<svg viewBox="0 0 '+size+' '+size+'" width="'+size+'" height="'+size+'" class="rp2-radar">';
@@ -15148,7 +15148,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<text x="0" y="8" font-size="7" fill="'+RP_G2+'" font-weight="700">'+h[0].o+'</text>'
       +'<text x="'+W+'" y="8" text-anchor="end" font-size="7" fill="'+RP_ACC+'" font-weight="800">'+h[h.length-1].o+'</text></svg>';
     return rpSec('셀프평가 추세','최근 '+h.length+'회 · '+h[0].o+' → '+h[h.length-1].o)+'<div class="rp2-trendwrap">'+g+'</div>'; }
-  function rpCatList(ed){ if(!ed.hasSelf)return rpEmpty('셀프평가를 하면 영역별 평균이 나와요');
+  function rpCatList(ed){ if(!ed.hasSelf)return rpEmpty('셀프평가를 하면 영역별 평균이 나옵니다');
     return '<div class="rp2-list sm">'+ed.cats.map(function(c){ var cc=ed.ccats?ed.ccats.filter(function(x){return x.cat===c.cat;})[0]:null;
       return '<div><i>'+rpEsc(c.cat)+'</i><b>'+(c.n?c.avg.toFixed(1):'–')+(cc&&cc.n?' <small>코치 '+cc.avg.toFixed(1)+'</small>':'')+'</b></div>'; }).join('')+'</div>'; }
   /* ── ① 이력서 — 말 그대로 이력서만: 기본 정보 · 프로필(신체·경력·성과) · 영상·연락. 평가·목표는 넣지 않는다(사용자 지시 2.047) ── */
@@ -15171,7 +15171,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'</div>'
       /* 오른쪽 — 기본 정보 · 학력 · 성과 */
       +'<div class="rp2-rsr">'
-        +rpSec('기본 정보')+(basic.length?'<div class="rp2-facts wide">'+basic.map(function(x){return '<div><i>'+rpEsc(x[0])+'</i><b>'+rpEsc(x[1])+'</b></div>';}).join('')+'</div>':rpEmpty('프로필을 채우면 여기에 나와요'))
+        +rpSec('기본 정보')+(basic.length?'<div class="rp2-facts wide">'+basic.map(function(x){return '<div><i>'+rpEsc(x[0])+'</i><b>'+rpEsc(x[1])+'</b></div>';}).join('')+'</div>':rpEmpty('프로필을 채우면 여기에 나옵니다'))
         +rpSec('축구 경력')+(career.length?'<div class="rp2-career">'+career.map(function(x){return '<div><i>'+rpEsc(x[0])+'</i><b>'+rpEsc(x[1])+'</b></div>';}).join('')+'</div>':rpEmpty())
         +rpSec('주요 성과','대회 · 수상')+(awards.length?'<ul class="rp2-awards">'+awards.map(function(a){return '<li>'+rpEsc(a)+'</li>';}).join('')+'</ul>':rpEmpty())
       +'</div></div>'+rpFoot()+'</section>';
@@ -15188,10 +15188,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           h+='<tr><td class="n">'+rpEsc(it[1])+'</td><td>'+(sv||'·')+'</td>'+(ed.hasCoach?'<td>'+(cv||'·')+'</td><td class="'+(d>0?'p':d<0?'m':'')+'">'+(d==null?'':(d>0?'+'+d:d))+'</td>':'')+'<td class="b">'+rpBar(sv,ed.mx,54)+'</td></tr>'; }); });
       return h+'</tbody></table>'; }
     var h='<section class="rp2 rp2-page land">'+rpHead('EVALUATION SHEET','세부평가 · '+rows.length+'항목'+(ed.hasCoach?' · 셀프 vs 코치':''));
-    if(!ed.hasSelf)h+=rpEmpty('셀프평가가 아직 없어요 — 프로필 탭 셀프평가에서 매기면 이 표가 채워져요');
+    if(!ed.hasSelf)h+=rpEmpty('셀프평가가 아직 없습니다 — 프로필 탭 셀프평가에서 매기면 이 표가 채워집니다');
     h+='<div class="rp2-ev"><div>'+tbl(colA)+'</div><div>'+tbl(colB)+'</div><div class="rp2-evside">'
       +rpSec('요약')+'<div class="rp2-kpi"><div><b>'+(ed.hasSelf?(ed.cats.filter(function(c){return c.n;}).reduce(function(s,c){return s+c.avg;},0)/Math.max(1,ed.cats.filter(function(c){return c.n;}).length)).toFixed(1):'–')+'</b><i>셀프 평균</i></div>'+(ed.hasCoach?'<div><b>'+(ed.ccats.filter(function(c){return c.n;}).reduce(function(s,c){return s+c.avg;},0)/Math.max(1,ed.ccats.filter(function(c){return c.n;}).length)).toFixed(1)+'</b><i>코치 평균</i></div>':'')+'</div>'
-      +(ed.hasCoach?rpSec('가장 벌어진 3')+(gap.length?'<div class="rp2-list sm">'+gap.map(function(r){return '<div><i>'+(r.d>0?'셀프↑':'코치↑')+'</i><b>'+rpEsc(r.name)+' <small>'+r.sv+' / '+r.cv+'</small></b></div>';}).join('')+'</div>':rpEmpty('둘 다 매긴 항목이 없어요'))+rpSec('함께 높은 3')+(high.length?'<div class="rp2-list sm">'+high.map(function(r){return '<div><i>'+r.sv+'·'+r.cv+'</i><b>'+rpEsc(r.name)+'</b></div>';}).join('')+'</div>':rpEmpty('4점 이상이 아직 없어요')):'')
+      +(ed.hasCoach?rpSec('가장 벌어진 3')+(gap.length?'<div class="rp2-list sm">'+gap.map(function(r){return '<div><i>'+(r.d>0?'셀프↑':'코치↑')+'</i><b>'+rpEsc(r.name)+' <small>'+r.sv+' / '+r.cv+'</small></b></div>';}).join('')+'</div>':rpEmpty('둘 다 매긴 항목이 없습니다'))+rpSec('함께 높은 3')+(high.length?'<div class="rp2-list sm">'+high.map(function(r){return '<div><i>'+r.sv+'·'+r.cv+'</i><b>'+rpEsc(r.name)+'</b></div>';}).join('')+'</div>':rpEmpty('4점 이상이 아직 없습니다')):'')
       +rpSec('영역별',ed.hasCoach?'셀프 · 코치':'셀프')+rpCatList(ed)
       +(ed.hasSelf?'<div class="rp2-radarwrap sm">'+rpRadar(ed.cats.filter(function(c){return !/^포지션/.test(c.cat);}).map(function(c){return c.cat;}),ed.cats.filter(function(c){return !/^포지션/.test(c.cat);}).map(function(c){return c.avg;}),ed.ccats?ed.ccats.filter(function(c){return !/^포지션/.test(c.cat);}).map(function(c){return c.avg;}):null,ed.mx,150)+'</div>':'')
       +rpSec('척도')+'<div class="rp2-scale">'+sc.map(function(s){return '<div><b>'+s.v+'</b><span>'+rpEsc(s.label)+'</span></div>';}).join('')+'</div>'
@@ -15205,17 +15205,17 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+=(q.theme?'<div class="rp2-theme big">'+rpEsc(q.theme)+'</div>':'')+'<div class="rp2-3l wide"><div><i>결과 목표</i><b>'+(q.outcome?rpEsc(q.outcome):'—')+'</b><small>방향 — 내가 다 통제 못함</small></div><div><i>퍼포먼스 목표</i><b>'+(pf.t?rpEsc(pf.t):'—')+'</b>'+(pf.metric?'<small>'+rpEsc(pf.metric)+' · 지금 '+rpEsc(pf.cur||'–')+' → 목표 '+rpEsc(pf.target||'–')+'</small>'+(pf.cur&&pf.target&&!isNaN(parseFloat(pf.cur))&&!isNaN(parseFloat(pf.target))?'<svg viewBox="0 0 100 6" width="100%" height="6" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="6" rx="3" fill="'+RP_G4+'"/><rect x="0" y="0" width="'+Math.max(0,Math.min(100,parseFloat(pf.cur)/parseFloat(pf.target)*100)).toFixed(0)+'" height="6" rx="3" fill="'+RP_ACC+'"/></svg>':''):'')+'</div></div>';
     var gs=(q.goals||[]).filter(function(g){return g.t;}).slice(0,3);
     h+=rpSec('행동 목표 · 12주 점 이력','1~5 = 아직·훈련에서·경기에서·압박에서도·내 무기');
-    h+=gs.length?'<div class="rp2-acts">'+gs.map(function(g,i){ var cur=(g.sc||{})[wk]||0; return '<div class="rp2-act"><b class="no">'+(i+1)+'</b><div class="t"><b>'+rpEsc(g.t)+'</b>'+(g.ifthen?'<small>if · '+rpEsc(g.ifthen)+'</small>':'')+'</div><div class="dots">'+rpDots12(g.sc||{},st)+'<small>이번 주 '+(cur||'–')+'</small></div></div>'; }).join('')+'</div>':rpEmpty('행동 목표가 아직 없어요');
+    h+=gs.length?'<div class="rp2-acts">'+gs.map(function(g,i){ var cur=(g.sc||{})[wk]||0; return '<div class="rp2-act"><b class="no">'+(i+1)+'</b><div class="t"><b>'+rpEsc(g.t)+'</b>'+(g.ifthen?'<small>if · '+rpEsc(g.ifthen)+'</small>':'')+'</div><div class="dots">'+rpDots12(g.sc||{},st)+'<small>이번 주 '+(cur||'–')+'</small></div></div>'; }).join('')+'</div>':rpEmpty('행동 목표가 아직 없습니다');
     if(!noFocus)h+=rp2FocusHist(st);
     return h; }
   function rp2FocusHist(st){ var h='';
     if(!st){ var q=doc.qgoal||null; if(!q)return ''; try{ st=qgDays(q).st; }catch(_){ return ''; } }
     var fs=[]; for(var k=0;k<12;k++){ var m=addDays(st,k*7); if(m>new Date())break; var f=focusOf(ymd(m)); if(f){ var s2=wkStats(m); fs.push({m:m,f:f,s:s2}); } }
     h+=rpSec('주간 초점 이력','시도한 날 / 기록한 날');
-    h+=fs.length?'<table class="rp2-tbl focus"><tbody>'+fs.slice(-8).reverse().map(function(x){return '<tr><td class="d">'+(x.m.getMonth()+1)+'/'+x.m.getDate()+'</td><td class="n">'+rpEsc(x.f.text)+'</td><td>'+x.s.tries+' / '+x.s.n+'</td></tr>';}).join('')+'</tbody></table>':rpEmpty('이번 주 초점을 정하면 쌓여요');
+    h+=fs.length?'<table class="rp2-tbl focus"><tbody>'+fs.slice(-8).reverse().map(function(x){return '<tr><td class="d">'+(x.m.getMonth()+1)+'/'+x.m.getDate()+'</td><td class="n">'+rpEsc(x.f.text)+'</td><td>'+x.s.tries+' / '+x.s.n+'</td></tr>';}).join('')+'</tbody></table>':rpEmpty('이번 주 초점을 정하면 쌓입니다');
     return h; }
   function rp2Review(){ var list=rvList(viewing), rv=list[list.length-1]||null, h=rpSec('최근 성장 리뷰',rv?rpEsc((rv.by||'코치')+' · '+rvFmt(rv.at)+' · 다음 '+rvFmt(rv.nextAt)):'');
-    if(!rv)return h+rpEmpty('코치 리뷰가 아직 없어요');
+    if(!rv)return h+rpEmpty('코치 리뷰가 아직 없습니다');
     var rp=(doc.rvReplies||{})[rv.id];
     h+='<div class="rp2-rv"><div><i>강점</i><b>'+((rv.strengths||[]).slice(0,3).map(rpEsc).join(' · ')||'—')+'</b></div><div><i>발전</i><b>'+((rv.develop||[]).slice(0,3).map(rpEsc).join(' · ')||'—')+'</b></div><div><i>목표</i><b>'+((rv.goals||[]).slice(0,3).map(function(g,i){return (i+1)+'. '+rpEsc(g.t);}).join('<br>')||'—')+'</b></div>'+(rv.note?'<div><i>메모</i><b>'+rpEsc(rv.note)+'</b></div>':'')+(rp&&rp.text?'<div class="me"><i>선수</i><b>'+rpEsc(rp.text)+'</b></div>':'')+'</div>';
     return h; }
@@ -15244,10 +15244,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var h='<section class="rp2 rp2-page">'+rpHead(T,'1 · 키우는 것 · 나를 보는 눈')
       +'<div class="rp2-cols"><div class="rp2-l">'+rp2GoalBody(true)
       +rpSec('장점 · 단점',(cs.length||cd.length)?'코치 리뷰'+(ms||mi?' · 내가 본 것':''):(ms||mi?'내가 본 것':''))+swBlk
-      +'</div><div class="rp2-r">'+rpSec('능력 레이더',ed.hasCoach?'<span class="rp2-lg"><i class="s"></i>셀프 <i class="c"></i>코치</span>':'셀프')+'<div class="rp2-radarwrap">'+(ed.hasSelf?rpRadar(ed.cats.filter(noPos).map(function(c){return c.cat;}),ed.cats.filter(noPos).map(function(c){return c.avg;}),ed.ccats?ed.ccats.filter(noPos).map(function(c){return c.avg;}):null,ed.mx,210):rpEmpty('셀프평가를 하면 레이더가 그려져요'))+'</div>'
+      +'</div><div class="rp2-r">'+rpSec('능력 레이더',ed.hasCoach?'<span class="rp2-lg"><i class="s"></i>셀프 <i class="c"></i>코치</span>':'셀프')+'<div class="rp2-radarwrap">'+(ed.hasSelf?rpRadar(ed.cats.filter(noPos).map(function(c){return c.cat;}),ed.cats.filter(noPos).map(function(c){return c.avg;}),ed.ccats?ed.ccats.filter(noPos).map(function(c){return c.avg;}):null,ed.mx,210):rpEmpty('셀프평가를 하면 레이더가 그려집니다'))+'</div>'
       +rpSec('영역별',ed.hasCoach?'셀프 · 코치':'셀프')+rpCatList(ed)+rpTrend()
-      +rpSec('내 무기',picks.length?picks.length+'/2':'')+(picks.length?'<div class="rp2-list sm">'+picks.map(function(x){return '<div><i>'+rpEsc(WP_SRC[x.src]||WP_SRC.me)+'</i><b>'+rpEsc(x.t)+'</b></div>';}).join('')+'</div>':rpEmpty('아직 고르지 않았어요'))
-      +rpSec('팀 기준 대비',fit?rpEsc(fit.pos)+' 요구 '+fit.req+'개':'')+(fit?'<div class="rp2-kpi"><div><b>'+fit.met+'</b><i>충족</i></div><div><b>'+fit.short+'</b><i>미달</i></div><div><b>'+fit.un+'</b><i>미평가</i></div></div>'+(fit.shorts.length?'<div class="rp2-list sm">'+fit.shorts.slice(0,5).map(function(x){return '<div><i>'+rpEsc(x.n)+'</i><b>+'+x.gap+'</b></div>';}).join('')+'</div>':''):rpEmpty(p.pos?rpEsc(String(p.pos))+' 자리 요구를 코치가 정하면 여기에':'포지션을 정하면 팀 기준과 견줘요'))
+      +rpSec('내 무기',picks.length?picks.length+'/2':'')+(picks.length?'<div class="rp2-list sm">'+picks.map(function(x){return '<div><i>'+rpEsc(WP_SRC[x.src]||WP_SRC.me)+'</i><b>'+rpEsc(x.t)+'</b></div>';}).join('')+'</div>':rpEmpty('아직 고르지 않았습니다'))
+      +rpSec('팀 기준 대비',fit?rpEsc(fit.pos)+' 요구 '+fit.req+'개':'')+(fit?'<div class="rp2-kpi"><div><b>'+fit.met+'</b><i>충족</i></div><div><b>'+fit.short+'</b><i>미달</i></div><div><b>'+fit.un+'</b><i>미평가</i></div></div>'+(fit.shorts.length?'<div class="rp2-list sm">'+fit.shorts.slice(0,5).map(function(x){return '<div><i>'+rpEsc(x.n)+'</i><b>+'+x.gap+'</b></div>';}).join('')+'</div>':''):rpEmpty(p.pos?rpEsc(String(p.pos))+' 자리 요구를 코치가 정하면 여기에':'포지션을 정하면 팀 기준과 견줍니다'))
       +'</div></div>'+rpFoot(1,3)+'</section>';
     /* ── 2쪽 해 온 것 ── */
     var ef=null; try{ ef=rpEffort12(); }catch(_){}
@@ -15258,10 +15258,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<section class="rp2 rp2-page">'+rpHead(T,'2 · 해 온 것')+'<div class="rp2-one">'
       +rpHeatBlock(12)
       +rpSec('이번 달',(today.getMonth()+1)+'월')+rpMonthKpi()
-      +rpSec('일지에 남긴 기록','최근 12주 · 일지 작성 기준')+(ef&&ef.days?'<div class="rp2-kpi four"><div><b>'+ef.days+'</b><i>기록한 날</i></div><div><b>'+ef.tryDays+'</b><i>초점 시도</i></div><div><b>'+ef.team+'</b><i>훈련</i></div><div><b>'+ef.match+'</b><i>경기</i></div></div><div class="rp2-kpi four"><div><b>'+ef.solo+'</b><i>개인운동</i></div><div><b>'+ef.rest+'</b><i>휴식</i></div><div><b>'+(ef.rehab+ef.injury)+'</b><i>재활·부상</i></div><div><b>'+ef.memo+'</b><i>한 줄</i></div></div>':rpEmpty('아직 기록이 없어요'))
+      +rpSec('일지에 남긴 기록','최근 12주 · 일지 작성 기준')+(ef&&ef.days?'<div class="rp2-kpi four"><div><b>'+ef.days+'</b><i>기록한 날</i></div><div><b>'+ef.tryDays+'</b><i>초점 시도</i></div><div><b>'+ef.team+'</b><i>훈련</i></div><div><b>'+ef.match+'</b><i>경기</i></div></div><div class="rp2-kpi four"><div><b>'+ef.solo+'</b><i>개인운동</i></div><div><b>'+ef.rest+'</b><i>휴식</i></div><div><b>'+(ef.rehab+ef.injury)+'</b><i>재활·부상</i></div><div><b>'+ef.memo+'</b><i>한 줄</i></div></div>':rpEmpty('아직 기록이 없습니다'))
       +rpSec('컨디션 · 수면','최근 12주 · 주 평균')+((cN.length||sN.length)?'<div class="rp2-3l wide">'
           +(cN.length?'<div><i>컨디션 · 평균 '+CL[Math.round(cN.reduce(function(a,b){return a+b;},0)/cN.length)]+'</i><b>'+rpSpark(cond,1,5,RP_ACC)+'</b></div>':'')
-          +(sN.length?'<div><i>수면 · 평균 '+(Math.round(sN.reduce(function(a,b){return a+b;},0)/sN.length*10)/10)+'시간</i><b>'+rpSpark(slp,5,10,'#2E7D63')+'</b></div>':'')+'</div>':rpEmpty('아직 컨디션·수면 기록이 없어요'))
+          +(sN.length?'<div><i>수면 · 평균 '+(Math.round(sN.reduce(function(a,b){return a+b;},0)/sN.length*10)/10)+'시간</i><b>'+rpSpark(slp,5,10,'#2E7D63')+'</b></div>':'')+'</div>':rpEmpty('아직 컨디션·수면 기록이 없습니다'))
       +rp2FocusHist()
       +'</div>'+rpFoot(2,3)+'</section>';
     /* ── 3쪽 주고받은 말 ── */
@@ -15280,7 +15280,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var tags={}; Object.keys(doc.log||{}).forEach(function(k){ (doc.log[k].tags||[]).forEach(function(t){tags[t]=(tags[t]||0)+1;}); }); var tagArr=Object.keys(tags).map(function(k){return [k,tags[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
     h+='<section class="rp2 rp2-page">'+rpHead(T,'3 · 주고받은 말')+'<div class="rp2-cols"><div class="rp2-l">'+rp2Review()
       +rpSec('성장 대화','최근 '+items.length)+th+'</div><div class="rp2-r">'
-      +rpSec(isRO?'선수가 쓴 한 줄':'내가 쓴 한 줄',memos.length?'최근 '+memos.length+'개':'12주')+(memos.length?'<div class="rp2-list sm">'+memos.map(function(m){return '<div><i>'+(m.d.getMonth()+1)+'/'+m.d.getDate()+'</i><b>'+rpEsc(m.t)+'</b></div>';}).join('')+'</div>':rpEmpty('일지의 «한 줄»에 적으면 여기에 모여요'))
+      +rpSec(isRO?'선수가 쓴 한 줄':'내가 쓴 한 줄',memos.length?'최근 '+memos.length+'개':'12주')+(memos.length?'<div class="rp2-list sm">'+memos.map(function(m){return '<div><i>'+(m.d.getMonth()+1)+'/'+m.d.getDate()+'</i><b>'+rpEsc(m.t)+'</b></div>';}).join('')+'</div>':rpEmpty('일지의 «한 줄»에 적으면 여기에 모입니다'))
       +rpSec('한 줄 칩','12주 누적')+(tagArr.length?'<div class="rp2-tags">'+tagArr.map(function(t){return '<span>'+rpEsc(t[0])+' <b>'+t[1]+'</b></span>';}).join('')+'</div>':rpEmpty())
       +'</div></div>'+rpFoot(3,3)+'</section>';
     return h; }
@@ -15494,7 +15494,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       });
     }else{
       c.fillStyle='#8A9099'; c.font='600 13px '+F;
-      c.fillText('성장 문장이 아직 없어요',M,y+24); y+=48;
+      c.fillText('성장 문장이 아직 없습니다',M,y+24); y+=48;
     }
     /* 몸의 성장 */
     y+=16;
@@ -15516,7 +15516,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(rate!=null&&rate>=8){ c.fillStyle='#B4552D'; c.font='700 12px '+F;
         c.fillText('성장 속도 +'+rate+'cm/년',M,y); y+=22; }
     }else{
-      c.fillStyle='#8A9099'; c.font='600 13px '+F; c.fillText('키·몸무게 기록이 아직 없어요',M,y+18); y+=40;
+      c.fillStyle='#8A9099'; c.font='600 13px '+F; c.fillText('키·몸무게 기록이 아직 없습니다',M,y+18); y+=40;
     }
     /* 잘된 것 · 코치 한마디 */
     y+=14;
@@ -16010,7 +16010,7 @@ html.ps-page-idp body:not(#_) .mr-head .mr-export{display:none}
 }
 
 /* ── 11) 리포트의 빈 칸 — **지우지 않되 한 줄로**(2.447 "빈 칸을 지우지 않는다. 앱은 거울이다"의 다음 걸음).
-       실측(새 계정): 여덟 칸 중 **일곱이 빈 칸**이고 각 62px = 434px — 화면의 절반이 '아직 없어요'였다.
+       실측(새 계정): 여덟 칸 중 **일곱이 빈 칸**이고 각 62px = 434px — 화면의 절반이 '아직 없습니다'였다.
        비었다는 사실은 그대로 보여 주되, **제목과 안내를 한 줄에** 놓아 26px 씩 돌려준다(≈180px).
        점선 테두리는 남긴다 — '자리는 있는데 비었다'를 말하는 건 그쪽이다.
        `.mr-sec` 반경 13 → 12(앱 전체 카드 반경). ── */
