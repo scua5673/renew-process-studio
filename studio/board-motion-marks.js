@@ -217,7 +217,7 @@
           h = el('div', 'bs-sec', '시선'); h.setAttribute('role', 'heading'); h.setAttribute('aria-level', '3'); f.appendChild(h);
           teams.forEach(function (g) { f.appendChild(seg('look', g.key, g.label, [['off', '끔'], ['ball', '공 보기']])); });
         }
-        f.appendChild(el('div', 'bs-hint', '재생 · 영상에서 보여요 · 토큰 하나만 다르게는 토큰을 고르고 «잔상» «시선»'));
+        f.appendChild(el('div', 'bs-hint', '토큰 하나만 다르게는 «잔상» «시선» 단추'));
       }
       menu.appendChild(f);
     }

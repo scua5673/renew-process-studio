@@ -101,6 +101,16 @@ try{
   await f.click('#cmd-board-settings-look-tab');await page.waitForTimeout(200);
   const away=await f.evaluate(()=>{const p=document.getElementById('cmd-board-settings-pop'),vis=e=>e.getClientRects().length>0;return {tab:p.getAttribute('data-bs-tab'),mine:[...p.querySelectorAll('#viewMenu > [data-bs-tab="motion"]')].filter(vis).length,on:[...p.querySelectorAll('.cmd-board-settings-tabs > button.on')].map(b=>b.textContent)};});
   assert.deepEqual(away,{tab:'look',mine:0,on:['선수 표시']});
+  // 다섯 탭 모두 — 탭 이름 · 줄 이름 · 칸 · 묶음 제목 · 안내문이 한 줄(사용자 11/21 «메뉴 텍스트들이 두줄로 안되게»)
+  stage='one-line';
+  await openTab();
+  for(const id of ['pitch','look','form','motion','view']){
+    await f.click('#cmd-board-settings-'+id+'-tab');await page.waitForTimeout(300);
+    const bad=await f.evaluate(()=>{const p=document.getElementById('cmd-board-settings-pop'),vis=e=>e.getClientRects().length>0&&getComputedStyle(e).visibility!=='hidden';
+      const lines=e=>{const r=document.createRange();r.selectNodeContents(e);return new Set([...r.getClientRects()].filter(x=>x.width>1).map(x=>Math.round(x.top/4))).size;};
+      return [...p.querySelectorAll('button,.menulbl,.bs-sec,.bs-hint,summary,label,.cmd-board-settings-title,.cmd-board-settings-scope')].filter(vis).filter(e=>!e.querySelector('button,svg,input,select')&&e.textContent.trim()&&(lines(e)>1||e.scrollWidth>e.clientWidth+1)).map(e=>e.textContent.trim().slice(0,30));});
+    assert.deepEqual(bad,[],'board settings › '+id+': every label fits on one line');
+  }
   // 팀이 늘면 줄도 는다
   stage='teams';
   await f.evaluate(()=>{state.players.push({id:'d',team:'yellow',num:3,x:400,y:200});renderTokens();updateDelUI();});

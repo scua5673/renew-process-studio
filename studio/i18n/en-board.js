@@ -399,7 +399,7 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "잔상 · 지난 장면 수":"Trail · scenes kept",
 "공 보기":"Watch ball",
 "선수나 공을 놓으면 여기서 잔상 · 시선을 켤 수 있어요":"Place players or the ball to set trails and gaze here",
-"재생 · 영상에서 보여요 · 토큰 하나만 다르게는 토큰을 고르고 «잔상» «시선»":"Shown in playback and video · for a single token, select it and use «Trail» «Gaze»",
+"토큰 하나만 다르게는 «잔상» «시선» 단추":"For a single token, use its «Trail» «Gaze» buttons",
 "누르면 이 보드의 토큰에 바로 들어가요":"Applies to this board's tokens right away"
 },{
 "잔상 {}단계 · {}":"Trail {} · {}",
