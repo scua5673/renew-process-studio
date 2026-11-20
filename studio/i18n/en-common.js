@@ -236,6 +236,7 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "이름·번호로 찾기":"Find by name or number",
 "이미지노트":"Image notes",
 "이미지를 읽지 못했어요":"Couldn't read the image",
+"이미지를 읽지 못했습니다":"Couldn't read the image",
 "이전":"Previous",
 "이전 페이지":"Previous page",
 "인쇄":"Print",
