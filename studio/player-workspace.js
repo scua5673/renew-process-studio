@@ -7,6 +7,18 @@
   function evaluated(p){var keys=scored(p.levels);return keys.length>0&&(!!p.evalAt||keys.some(function(k){return +p.levels[k]>1;}));}
   function filter(rows,state){var words=String(state.q||'').toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);return rows.filter(function(r){return words.every(function(w){return [r.name,r.num,r.pos,(r.positions||[]).join(' '),r.club,r.group].join(' ').toLocaleLowerCase().indexOf(w)>=0;})&&(!state.pos||(r.positions&&r.positions.length?r.positions:[r.pos]).some(function(p){return family(p)===state.pos;}))&&(!state.status||r.statusKey===state.status)&&(!state.unevaluated||!r.evaluated);});}
   function select(selected,id){var next=selected.slice(),at=next.indexOf(id);if(at>=0)next.splice(at,1);else if(next.length<3)next.push(id);return next;}
+  /* 3.339 — 선수단 명단은 몇 명이든 고른다(비교 · 조 바꾸기 · 명단에서 빼기). 스카우팅은 예전처럼 비교 3명 */
+  var FRESH_LABEL='방금 추가';
+  function toggle(selected,id){var next=selected.slice(),at=next.indexOf(id);if(at>=0)next.splice(at,1);else next.push(id);return next;}
+  function norm(v){return String(v==null?'':v).replace(/\s+/g,'').toLocaleLowerCase();}
+  /* 스카우팅 후보가 이미 명단에 있나 — 불러온 표식(joinedFrom.cid)이면 «있음», 같은 이름(번호가 둘 다 있으면 번호도)이면 «같은 이름» */
+  function rosterMatch(roster,c){var cp=c.profile||{},hit='';
+    roster.forEach(function(p){if(hit==='dup')return;if(p.joinedFrom&&p.joinedFrom.cid&&p.joinedFrom.cid===c.cid){hit='dup';return;}
+      if(!norm(p.name)||norm(p.name)!==norm(c.name))return;var pd=String(p.profile&&p.profile.dob||''),cd=String(cp.dob||''),pn=String(p.num==null?'':p.num),cn=String(c.num==null?'':c.num);
+      if(pd&&cd){hit=pd===cd?'dup':hit;return;}   /* 생년월일이 둘 다 있으면 그것으로 가른다 */
+      if(pn&&cn){hit=pn===cn?'dup':hit;return;}
+      hit='same';});   /* 이름만 같고 가를 값이 없다 — 흐리게 두지 않고 «같은 이름»만 알린다 */
+    return hit;}
   function reconcile(selected,rows){return selected.filter(function(id){return rows.some(function(r){return r.id===id;});});}
   function candidates(placements,registry,visible){
     return (visible||[]).map(function(v){var c=registry&&registry[v.id],ps=placements.filter(function(p){return p.cid===v.id;});return {id:'candidate:'+v.id,cid:v.id,player:ps[0]||null,placements:ps,candidate:c||null,source:v};});
@@ -108,9 +120,12 @@
     phoneView.addEventListener('change',phoneSummary);
     function opts(values,current){return values.map(function(x){return '<option value="'+esc(x[0])+'"'+(x[0]===current?' selected':'')+'>'+esc(x[1])+'</option>';}).join('');}
     function create(kind,parent,before){var host=doc.createElement('section');host.id=kind==='team'?'pwTeam':'pwScout';host.className='pw-workspace';host.setAttribute('aria-label',kind==='team'?'선수단 작업 공간':'스카우팅 작업 공간');parent.insertBefore(host,before||null);
-      host.innerHTML='<div class="pw-top"></div><div class="pw-toolbar"></div><div class="pw-result" aria-live="polite"></div><div class="pw-content"></div><div class="pw-comparebar" hidden></div>';
+      host.innerHTML='<div class="pw-top"></div><div class="pw-toolbar"></div><div class="pw-result" aria-live="polite"></div>'+(kind==='team'?'<div class="pw-quickadd" hidden></div>':'')+'<div class="pw-content"></div><div class="pw-comparebar" hidden></div>';
+      if(kind==='team'){host.addEventListener('submit',function(e){var f=e.target.closest('[data-pw-qa]');if(!f)return;e.preventDefault();quickAdd(f);});
+        host.addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.isComposing||e.keyCode===229)&&e.target.closest&&e.target.closest('[data-pw-qa]'))e.preventDefault();});}   /* 한글 조합을 끝내는 Enter 는 넣기가 아니다 */
       host.addEventListener('input',function(e){if(e.target.dataset.pwSearch!==undefined){states[kind].q=e.target.value;states[kind].depthLimit=6;paintContent(kind);}});
-      host.addEventListener('change',function(e){var k=e.target.dataset.pwFilter;if(k){states[kind][k]=e.target.value;states[kind].depthLimit=6;states[kind].depthStage='';paintContent(kind);}if(e.target.dataset.pwSelect!==undefined){var id=e.target.dataset.pwSelect,prior=states[kind].selected;states[kind].selected=select(prior,id);if(prior.length===3&&prior.indexOf(id)<0)toast('최대 3명까지 비교할 수 있어요.');paintContent(kind);var choice=Array.from(host.querySelectorAll('[data-pw-select]')).find(function(x){return x.dataset.pwSelect===id;});if(choice)choice.focus({preventScroll:true});}});
+      host.addEventListener('change',function(e){var k=e.target.dataset.pwFilter;if(k){states[kind][k]=e.target.value;states[kind].depthLimit=6;states[kind].depthStage='';paintContent(kind);}if(e.target.dataset.pwSelectall!==undefined){states[kind].selected=e.target.checked?visible(kind).map(function(r){return r.id;}):[];paintContent(kind);var all=host.querySelector('[data-pw-selectall]');if(all)all.focus({preventScroll:true});}
+        if(e.target.dataset.pwSelect!==undefined){var id=e.target.dataset.pwSelect,prior=states[kind].selected;states[kind].selected=kind==='team'?toggle(prior,id):select(prior,id);if(kind!=='team'&&prior.length===3&&prior.indexOf(id)<0)toast('최대 3명까지 비교할 수 있어요.');paintContent(kind);var choice=Array.from(host.querySelectorAll('[data-pw-select]')).find(function(x){return x.dataset.pwSelect===id;});if(choice)choice.focus({preventScroll:true});}});
       installDrag(host,kind);
       host.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var d=b.dataset;
         if(d.pwAction==='filters'){states[kind].filters=!states[kind].filters;host.classList.toggle('pw-filters-open',states[kind].filters);b.setAttribute('aria-expanded',String(states[kind].filters));return;}
@@ -129,6 +144,9 @@
         if(d.pwOpen){if(dragged&&Date.now()-dragged<400)return;if(kind==='team'&&states.team.view==='depth'&&states.team.groupEdit)pickGroup(b,d.pwOpen);else{e.stopPropagation();openProfile(kind,d.pwOpen,d.pwAtpos);}return;}   /* 같은 클릭이 방금 연 프로필의 «바깥 누르면 닫기»에 닿지 않게(예전 «프로필 수정»과 같다) */
         if(d.pwAction==='clear'){states[kind].selected=[];paintContent(kind);}
         if(d.pwAction==='compare')compare(kind);
+        if(kind==='team'&&d.pwAction==='regroup'){regroup(b);return;}
+        if(kind==='team'&&d.pwAction==='remove'){removeSelected();return;}
+        if(kind==='team'&&d.pwAction==='scoutImport'){importScout();return;}
         if(d.pwAction==='points'){modal();detail=null;dialog.classList.remove('pw-comparison');dialog.innerHTML='<header class="pw-dialoghead"><h2 id="pwDetailTitle">스카우팅 질문 기준</h2>'+button('닫기','data-pw-close')+'</header><div class="pw-detailbody"><iframe title="스카우팅 질문 기준" src="scouting.html?view=points"></iframe></div>';show();}
         if(d.pwAction==='reset'){Object.assign(states[kind],{q:'',pos:'',status:'',unevaluated:false});if(kind==='team'){tmGrpFilter='';tmSchoolYearFilter='';tmUnlinkedOnly=false;renderTeam();}else paint(kind);}
         if(d.pwAction==='unevaluated'){states[kind].unevaluated=!states[kind].unevaluated;paint(kind);}
@@ -144,7 +162,7 @@
         if(typeof win.sbPtsPlace==='function')win.sbPtsPlace();
       }
       var statuses=kind==='team'?[['','모든 상태'],['ok','정상'],['rest','휴식'],['rehab','재활'],['injury','부상'],['out','불참']]:[['','모든 단계'],['rep','추천'],['go','영입대상'],['done','확정'],['mixed','배치별 상이']];
-      host.querySelector('.pw-toolbar').innerHTML='<label class="pw-search"><span aria-hidden="true">⌕</span><input data-pw-search type="search" aria-label="'+(kind==='team'?'선수':'후보')+' 검색" placeholder="이름·번호·포지션" value="'+esc(s.q)+'"></label>'+button('필터','data-pw-action="filters" aria-controls="pw-'+kind+'-filters" aria-expanded="'+s.filters+'"','pw-filter-toggle')+'<div class="pw-filter-fields" id="pw-'+kind+'-filters"><select data-pw-filter="pos" aria-label="포지션 필터">'+opts([['','모든 포지션'],['GK','골키퍼'],['DF','수비수'],['MF','미드필더'],['FW','공격수'],['미지정','미지정']],s.pos)+'</select><select data-pw-filter="status" aria-label="'+(kind==='team'?'상태':'영입 단계')+' 필터">'+opts(statuses,s.status)+'</select>'+button('미평가','data-pw-action="unevaluated" aria-pressed="'+s.unevaluated+'"',s.unevaluated?'is-on':'')+'</div><span class="pw-view" role="group" aria-label="보기 선택">'+[['list','명단'],['depth','포지션']].map(function(x){return button(x[1],'data-pw-view="'+x[0]+'" aria-pressed="'+(s.view===x[0])+'"',s.view===x[0]?'is-on':'');}).join('')+'</span>'+button('편집 도구','data-pw-action="tools" aria-controls="pw-'+kind+'-tools" aria-expanded="'+s.tools+'"','pw-tools-toggle')+'<div class="pw-edit-tools" id="pw-'+kind+'-tools">'+button(s.view==='edit'?'편집 닫기':'배치·명단 편집','data-pw-view="'+(s.view==='edit'?'depth':'edit')+'"')+(s.view==='depth'?button(s.depthEdit?'판 편집 끝':'판 편집','data-pw-action="layout" aria-pressed="'+!!s.depthEdit+'"',s.depthEdit?'is-on':''):'')+(kind==='scout'?button('＋ 후보 등록','data-pw-action="add"','pw-primary')+button('＋ 여러 명','data-pw-action="bulk"'):button('＋ 여러 명 추가','data-pw-action="bulk"','pw-primary'))+'</div>';
+      host.querySelector('.pw-toolbar').innerHTML='<label class="pw-search"><span aria-hidden="true">⌕</span><input data-pw-search type="search" aria-label="'+(kind==='team'?'선수':'후보')+' 검색" placeholder="이름·번호·포지션" value="'+esc(s.q)+'"></label>'+button('필터','data-pw-action="filters" aria-controls="pw-'+kind+'-filters" aria-expanded="'+s.filters+'"','pw-filter-toggle')+'<div class="pw-filter-fields" id="pw-'+kind+'-filters"><select data-pw-filter="pos" aria-label="포지션 필터">'+opts([['','모든 포지션'],['GK','골키퍼'],['DF','수비수'],['MF','미드필더'],['FW','공격수'],['미지정','미지정']],s.pos)+'</select><select data-pw-filter="status" aria-label="'+(kind==='team'?'상태':'영입 단계')+' 필터">'+opts(statuses,s.status)+'</select>'+button('미평가','data-pw-action="unevaluated" aria-pressed="'+s.unevaluated+'"',s.unevaluated?'is-on':'')+'</div><span class="pw-view" role="group" aria-label="보기 선택">'+[['list','명단'],['depth','포지션']].map(function(x){return button(x[1],'data-pw-view="'+x[0]+'" aria-pressed="'+(s.view===x[0])+'"',s.view===x[0]?'is-on':'');}).join('')+'</span>'+button('편집 도구','data-pw-action="tools" aria-controls="pw-'+kind+'-tools" aria-expanded="'+s.tools+'"','pw-tools-toggle')+'<div class="pw-edit-tools" id="pw-'+kind+'-tools">'+button(s.view==='edit'?'편집 닫기':'배치·명단 편집','data-pw-view="'+(s.view==='edit'?'depth':'edit')+'"')+(s.view==='depth'?button(s.depthEdit?'판 편집 끝':'판 편집','data-pw-action="layout" aria-pressed="'+!!s.depthEdit+'"',s.depthEdit?'is-on':''):'')+(kind==='scout'?button('＋ 후보 등록','data-pw-action="add"','pw-primary')+button('＋ 여러 명','data-pw-action="bulk"'):button('＋ 여러 명 추가','data-pw-action="bulk"','pw-primary')+(scoutVisible()&&groupAllowed(true)?button('⇣ 스카우팅에서 불러오기','data-pw-action="scoutImport"','pw-rq-edit'):''))+'</div>';
       host.classList.toggle('pw-tools-open',s.tools);host.classList.toggle('pw-filters-open',s.filters);
       var view=kind==='team'?el('teamView'):el('sbPaneCands');view.classList.toggle('pw-edit',s.view==='edit');
       paintContent(kind);
@@ -293,7 +311,7 @@
       var active=doc.activeElement,focusedPlayer=active&&content.contains(active)&&active.dataset.pwOpen?{id:active.dataset.pwOpen,pos:active.dataset.pwAtpos,cls:active.className}:null;
       var filterButton=host.querySelector('[data-pw-action="filters"]'),filterCount=Number(!!s.pos)+Number(!!s.status)+Number(!!s.unevaluated);
       if(filterButton){filterButton.textContent='필터'+(filterCount?' '+filterCount:'');filterButton.classList.toggle('is-filtered',filterCount>0);}
-      host.querySelector('.pw-result').innerHTML='<span><b>'+rows.length+'</b>명 표시 <span class="pw-muted">/ 전체 '+models[kind].length+'명</span></span>'+((s.q||s.pos||s.status||s.unevaluated||(kind==='team'&&(tmGrpFilter||tmSchoolYearFilter||tmUnlinkedOnly)))?button('필터 초기화','data-pw-action="reset"'):'')+'<small>'+(s.groupEdit?'선수 이름을 누르면 조 변경':'선수 이름을 누르면 상세')+' · 최대 3명 비교</small>';
+      host.querySelector('.pw-result').innerHTML='<span><b>'+rows.length+'</b>명 표시 <span class="pw-muted">/ 전체 '+models[kind].length+'명</span></span>'+((s.q||s.pos||s.status||s.unevaluated||(kind==='team'&&(tmGrpFilter||tmSchoolYearFilter||tmUnlinkedOnly)))?button('필터 초기화','data-pw-action="reset"'):'')+'<small>'+(s.groupEdit?'선수 이름을 누르면 조 변경':'선수 이름을 누르면 상세')+(kind==='team'?' · 체크해서 비교 · 조 바꾸기 · 빼기':' · 최대 3명 비교')+'</small>';
       if(s.view==='edit'){content.innerHTML='<p class="pw-empty">아래에서 기존 배치·명단 편집 도구를 사용할 수 있어요.</p>';}
       else if((kind==='team'&&el('teamView').classList.contains('tm-waiting'))||(kind==='scout'&&!scoutReady())){content.innerHTML='<div class="pw-empty"><strong>명단을 불러오는 중이에요</strong><p>자료를 확인하면 여기에 표시합니다.</p></div>';}
       else if(s.view==='depth'&&!(kind==='team'&&el('teamView').classList.contains('tm-waiting'))&&(kind!=='scout'||scoutReady())){depths[kind]=depthModel(kind);var depthMarkup=depthHTML(kind,depths[kind]);
@@ -304,9 +322,14 @@
       else if(!rows.length){var waiting=kind==='team'&&el('teamView').classList.contains('tm-waiting');try{if(kind==='scout')scStore().check();}catch(_){waiting=true;}
         content.innerHTML='<div class="pw-empty"><strong>'+(waiting?'명단을 불러오는 중이에요':models[kind].length?'조건에 맞는 선수가 없어요':'아직 등록된 '+(kind==='team'?'선수':'후보')+'가 없어요')+'</strong><p>'+(waiting?'자료를 확인하면 여기에 표시합니다.':models[kind].length?'검색어나 필터를 바꿔 보세요.':'이름과 포지션부터 등록해 보세요.')+'</p>'+(!waiting?button(models[kind].length?'필터 초기화':'＋ '+(kind==='team'?'선수':'후보')+' 등록','data-pw-action="'+(models[kind].length?'reset':'add')+'"'):'')+'</div>';
       }else{
-        content.innerHTML='<div class="pw-table-wrap"><table class="pw-table"><thead><tr><th><span class="pw-sr">비교 선택</span></th><th>선수</th><th>'+(kind==='team'?'팀 · 학년':'소속')+'</th><th>'+(kind==='team'?'상태':'영입 단계')+'</th><th>'+(kind==='team'?'평가':'등급 · 평가 기록')+'</th><th>'+(kind==='team'?'IDP':'관찰 메모')+'</th></tr></thead><tbody>'+rows.map(function(r){return '<tr'+(s.selected.indexOf(r.id)>=0?' class="is-selected"':'')+'><td><label class="pw-select-hit"><input type="checkbox" data-pw-select="'+esc(r.id)+'" aria-label="'+esc(r.name)+' 비교 선택"'+(s.selected.indexOf(r.id)>=0?' checked':'')+'></label></td><td>'+button(nameCell(r,kind),'data-pw-open="'+esc(r.id)+'"','pw-name')+'</td><td>'+esc(kind==='team'?r.group||'미배정':r.club||'—')+(kind==='team'&&r.year?'<small>'+esc(r.year)+'학년</small>':'')+'</td><td><span class="pw-status '+(r.statusKey==='injury'?'pw-bad':r.statusKey==='rehab'||r.statusKey==='go'?'pw-warn':r.statusKey==='ok'?'pw-ok':'')+'">'+esc(r.status)+'</span></td><td>'+(kind==='scout'?'<span class="pw-grade">'+esc(r.grade?'등급 '+r.grade:'등급 미정')+'</span>':'')+'<small class="'+(r.evaluated?'':'pw-muted')+'">'+score(r,kind)+'</small></td><td><small>'+esc(kind==='team'?(r.linked?'연결됨':'미연결'):(r.notes.length?r.notes.length+'개':'기록 없음'))+'</small></td></tr>';}).join('')+'</tbody></table></div>';
+        var fresh=kind==='team'&&s.fresh||[];if(fresh.length)rows=rows.filter(function(r){return fresh.indexOf(r.id)>=0;}).sort(function(a,b){return fresh.indexOf(a.id)-fresh.indexOf(b.id);}).concat(rows.filter(function(r){return fresh.indexOf(r.id)<0;}));
+        var allOn=kind==='team'&&rows.length>0&&rows.every(function(r){return s.selected.indexOf(r.id)>=0;});
+        content.innerHTML='<div class="pw-table-wrap"><table class="pw-table"><thead><tr><th>'+(kind==='team'?'<label class="pw-select-hit"><input type="checkbox" data-pw-selectall aria-label="보이는 선수 모두 선택"'+(allOn?' checked':'')+'></label>':'<span class="pw-sr">비교 선택</span>')+'</th><th>선수</th><th>'+(kind==='team'?'팀 · 학년':'소속')+'</th><th>'+(kind==='team'?'상태':'영입 단계')+'</th><th>'+(kind==='team'?'평가':'등급 · 평가 기록')+'</th><th>'+(kind==='team'?'IDP':'관찰 메모')+'</th></tr></thead><tbody>'+rows.map(function(r){var cls=[s.selected.indexOf(r.id)>=0?'is-selected':'',fresh.indexOf(r.id)>=0?'is-fresh':''].filter(Boolean).join(' ');return '<tr'+(cls?' class="'+cls+'"':'')+'><td><label class="pw-select-hit"><input type="checkbox" data-pw-select="'+esc(r.id)+'" aria-label="'+esc(r.name)+(kind==='team'?' 선택':' 비교 선택')+'"'+(s.selected.indexOf(r.id)>=0?' checked':'')+'></label></td><td>'+button(nameCell(r,kind),'data-pw-open="'+esc(r.id)+'"','pw-name')+(fresh.indexOf(r.id)>=0?'<span class="pw-fresh-tag">'+FRESH_LABEL+'</span>'+(r.p&&r.p.joinedFrom&&r.p.joinedFrom.cid?'<span class="pw-fresh-tag pw-from-scout">스카우팅에서</span>':''):'')+'</td><td>'+esc(kind==='team'?r.group||'미배정':r.club||'—')+(kind==='team'&&r.year?'<small>'+esc(r.year)+'학년</small>':'')+'</td><td><span class="pw-status '+(r.statusKey==='injury'?'pw-bad':r.statusKey==='rehab'||r.statusKey==='go'?'pw-warn':r.statusKey==='ok'?'pw-ok':'')+'">'+esc(r.status)+'</span></td><td>'+(kind==='scout'?'<span class="pw-grade">'+esc(r.grade?'등급 '+r.grade:'등급 미정')+'</span>':'')+'<small class="'+(r.evaluated?'':'pw-muted')+'">'+score(r,kind)+'</small></td><td><small>'+esc(kind==='team'?(r.linked?'연결됨':'미연결'):(r.notes.length?r.notes.length+'개':'기록 없음'))+'</small></td></tr>';}).join('')+'</tbody></table></div>';
       }
-      var bar=host.querySelector('.pw-comparebar');bar.hidden=!s.selected.length;bar.innerHTML='<span><b>'+s.selected.length+'명 선택</b> · '+s.selected.map(function(id){var r=models[kind].find(function(r){return r.id===id;});return esc(r.name);}).join(', ')+'</span>'+button('선택 해제','data-pw-action="clear"')+button('선수 비교','data-pw-action="compare"'+(s.selected.length<2?' disabled':''),'pw-primary');
+      var bar=host.querySelector('.pw-comparebar');bar.hidden=!s.selected.length;
+      if(kind==='team')bar.innerHTML=selectionBar(s);
+      else bar.innerHTML='<span><b>'+s.selected.length+'명 선택</b> · '+s.selected.map(function(id){var r=models[kind].find(function(r){return r.id===id;});return esc(r.name);}).join(', ')+'</span>'+button('선택 해제','data-pw-action="clear"')+button('선수 비교','data-pw-action="compare"'+(s.selected.length<2?' disabled':''),'pw-primary');
+      if(kind==='team')paintQuick();
       if(focusedPlayer&&doc.activeElement!==active){var next=Array.from(content.querySelectorAll('[data-pw-open]')).find(function(b){return b.dataset.pwOpen===focusedPlayer.id&&b.dataset.pwAtpos===focusedPlayer.pos&&b.className===focusedPlayer.cls;});if(next)next.focus({preventScroll:true});}
     }
     function modal(){if(dialog)return dialog;dialog=doc.createElement('dialog');dialog.id='pwDrawer';dialog.className='pw-dialog';dialog.setAttribute('aria-labelledby','pwDetailTitle');doc.body.appendChild(dialog);dialog.addEventListener('close',function(){detail=null;dialog.innerHTML='';if(lastFocus&&lastFocus.isConnected)lastFocus.focus();});dialog.addEventListener('click',function(e){if(e.target===dialog){var r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}var b=e.target.closest('button');if(!b)return;var d=b.dataset;if(d.pwClose!==undefined)close();if(d.pwTab&&detail){detail.tab=d.pwTab;drawDetail();dialog.querySelector('[data-pw-tab="'+d.pwTab+'"]').focus();}if(d.pwEdit&&detail){e.stopPropagation();editDetail(d.pwEdit);}});dialog.addEventListener('keydown',function(e){if(!detail||!e.target.dataset.pwTab)return;var tabs=['summary','evaluation','notes','idp'],i=tabs.indexOf(detail.tab);if(e.key==='ArrowRight')i=(i+1)%tabs.length;else if(e.key==='ArrowLeft')i=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')i=0;else if(e.key==='End')i=3;else return;e.preventDefault();detail.tab=tabs[i];drawDetail();dialog.querySelector('[data-pw-tab="'+detail.tab+'"]').focus();});return dialog;}
@@ -341,6 +364,110 @@
       if(kind==='scout'&&!r.pid)scOpenCandidate(r.cid);else openPlayer(r.pid);
       if(action==='evaluation'||action==='notes'){var target=el(action==='evaluation'?'plLevels':'plMemo');if(target){target.scrollIntoView({block:'start'});if(action==='notes')target.focus();}}
     }
+    /* ══ 3.339 · 명단 표에서 바로(사용자 11/20 «명단 선수추가 · 선수 삭제 쉽게 · 스카우팅에 있는 선수단 불러오기» → 목업 A안) ══
+       ① 표 위 «＋ 번호 · 이름 · 포지션 · 조» 한 줄 — Enter 로 넣고 이름 칸에 남아 다음 선수 ② 체크 칸은 몇 명이든 · 아래 띠 «비교(2~3명) · 조 바꾸기 · 명단에서 빼기»
+       ③ «스카우팅에서 불러오기» 창 — 후보를 골라 새 선수로(후보 · 평가 기록은 스카우팅에 그대로, joinedFrom.cid 로 다시 불러오기를 막는다).
+       저장 길은 원래 것: 넣기 = data.players.push → save({skipTargets}) — 후보 문서는 손대지 않으니 쓰지도 않는다 · 빼기 = 선수 삭제(#plDelete)와 같은 plTombAdd → splice → save({deletedIds,skipTargets}) · 조 = pickGroup 과 같은 grpPickOpen → save({skipTargets}).
+       권한은 groupAllowed(운영진 · 선수단 잠금 · 보기 전용 · 복구 확인)와 teamSaveOwner(창을 연 뒤 팀이 바뀌면 멈춘다). */
+    function scoutVisible(){try{return typeof win.canSeeTargets!=='function'||!!win.canSeeTargets();}catch(e){return false;}}
+    function teamGroups(){var list=[''];try{list=win.tmGrpCycle();}catch(e){list=[''];}return list.map(function(g){g=String(g||'').trim();return {v:g,lb:g?(group({grp:g})||g):'조 없음'};});}
+    function quickGroup(){var g='';try{g=String(typeof tmGrpFilter!=='undefined'&&tmGrpFilter||'').trim();}catch(e){g='';}return teamGroups().some(function(x){return x.v===g;})?g:'';}
+    function paintQuick(){var host=el('pwTeam'),box=host&&host.querySelector('.pw-quickadd');if(!box)return;var s=states.team;
+      var on=s.view==='list'&&!el('teamView').classList.contains('tm-waiting')&&groupAllowed(true);box.hidden=!on;if(!on)return;
+      var f=box.querySelector('form'),groups=teamGroups(),sig=JSON.stringify([source().positions.map(function(p){return [p.id,p.name];}),groups]);
+      if(f&&(f._sig===sig||f.contains(doc.activeElement)||f.elements.name.value))return;   /* 치는 중 · 친 글이 있으면 다시 그리지 않는다(한글 조합) */
+      var keep=f?{pos:f.elements.pos.value,grp:f.elements.grp.value}:{pos:'',grp:quickGroup()};
+      box.innerHTML='<form class="pw-qa" data-pw-qa autocomplete="off" aria-label="새 선수 바로 넣기"><span class="pw-qa-plus" aria-hidden="true">＋</span><input name="num" inputmode="numeric" maxlength="3" placeholder="번호" aria-label="새 선수 등번호"><input name="name" maxlength="20" placeholder="이름 치고 Enter" aria-label="새 선수 이름"><select name="pos" aria-label="새 선수 포지션"><option value="">포지션</option>'+source().positions.map(function(p){return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>';}).join('')+'</select><select name="grp" aria-label="새 선수 조">'+groups.map(function(g){return '<option value="'+esc(g.v)+'">'+esc(g.lb)+'</option>';}).join('')+'</select>'+'<button type="submit" class="pw-button pw-primary">넣기</button></form>';
+      f=box.querySelector('form');f._sig=sig;f.elements.pos.value=keep.pos;f.elements.grp.value=groups.some(function(g){return g.v===keep.grp;})?keep.grp:'';
+    }
+    function markFresh(ids){states.team.fresh=ids.concat((states.team.fresh||[]).filter(function(id){return ids.indexOf(id)<0;})).slice(0,12);}
+    function quickAdd(f){if(!groupAllowed())return;var name=String(f.elements.name.value||'').trim().slice(0,20),num=String(f.elements.num.value||'').replace(/\D/g,'').slice(0,3);
+      if(!name){f.elements.name.focus();return;}
+      var d=source(),grp=String(f.elements.grp.value||'').trim();
+      if(d.players.some(function(p){return p.type!=='target'&&norm(p.name)===norm(name)&&String(p.num||'')===num;})){toast(name+(num?' '+num+'번':'')+'은 이미 명단에 있어요');f.elements.name.select();return;}
+      var p={id:uid('pl'),name:name,num:num,foot:'',type:'ours',posId:f.elements.pos.value||'',levels:{},memo:'',manual:true};if(grp)p.grp=grp;
+      d.players.push(p);var ok=win.save({skipTargets:true});markFresh([p.id]);f.elements.name.value='';f.elements.num.value='';
+      win.renderTeam();var again=el('pwTeam').querySelector('[data-pw-qa] [name="name"]');if(again)again.focus({preventScroll:true});
+      toast(ok===false?win.TM_ADD_FAIL:name+' 추가됨');
+    }
+    function selectedPlayers(){var d=source();return states.team.selected.map(function(id){return d.players.find(function(p){return p.id===id&&p.type!=='target';});}).filter(Boolean);}
+    function selectionBar(s){var n=s.selected.length,names=s.selected.map(function(id){var r=models.team.find(function(x){return x.id===id;});return r?r.name:'';}).filter(Boolean),edit=groupAllowed(true);
+      return '<span><b>'+n+'명 선택</b> · '+esc(names.slice(0,3).join(', '))+(names.length>3?' 외 '+(names.length-3)+'명':'')+'</span>'+button('선택 해제','data-pw-action="clear"')
+        +button(n>3?'비교는 3명까지':'선수 비교','data-pw-action="compare"'+(n<2||n>3?' disabled':''),edit?'':'pw-primary')
+        +(edit?button('조 바꾸기','data-pw-action="regroup"')+button('명단에서 빼기','data-pw-action="remove"','pw-danger'):'');}
+    /* 동기화가 끝나면 선수단 화면은 data 를 새 객체로 바꿔 끼운다 — 같은 객체인지가 아니라 같은 선수(id) · 같은 값인지로 다시 본다 */
+    function sameNow(sig,key){var cur=source(),now=Object.keys(sig).map(function(id){return cur.players.find(function(p){return String(p.id)===id&&p.type!=='target';});});
+      return now.every(function(p){return p&&key(p)===sig[String(p.id)];})?now:null;}
+    function regroup(anchor){if(!groupAllowed())return;var list=selectedPlayers(),owner=win.teamSaveOwner(),sig={},key=function(p){return String(p.grp||'').trim();};if(!list.length)return;
+      list.forEach(function(p){sig[String(p.id)]=key(p);});
+      closeGroupPicker();var groups=teamGroups();win.psPickOpen(anchor,groups.map(function(g){return {v:g.v,lb:g.lb,col:null};}),'',function(value){
+        var now=groupAllowed()&&owner===win.teamSaveOwner()&&sameNow(sig,key);if(!now){toast('명단이 바뀌었어요. 선수를 다시 골라 주세요');refresh('team');return;}
+        var to=String(value||'').trim();if(teamGroups().every(function(g){return g.v!==to;})){toast('조가 바뀌었어요. 다시 골라 주세요');return;}
+        now.forEach(function(p){p.grp=to;});var ok=win.save({skipTargets:true});win.renderTeam();
+        toast(ok===false?'조를 바꿨지만 저장 확인이 필요해요':now.length+'명 → '+(to?group({grp:to})||to:'조 없음'));
+      },'조 고르기',{title:list.length+'명 · 조 바꾸기'});
+    }
+    function removeSelected(){if(!groupAllowed())return;var list=selectedPlayers(),owner=win.teamSaveOwner(),sig={},key=function(p){return [p.name||'',p.num||''].join('|');};if(!list.length)return;
+      list.forEach(function(p){sig[String(p.id)]=key(p);});
+      var names=list.map(function(p){return (p.name||'이름 없음')+(p.num?' '+p.num+'번':'');}),who=names.slice(0,8).join(' · ')+(names.length>8?' 외 '+(names.length-8)+'명':'');
+      win.psConfirm(list.length+'명을 명단에서 삭제할까요?\n'+who+'\n평가 기록도 함께 지워져요.',function(){
+        var now=groupAllowed()&&owner===win.teamSaveOwner()&&sameNow(sig,key);if(!now){toast('명단이 바뀌었어요. 선수를 다시 골라 주세요');refresh('team');return;}
+        var d=source(),gone=[];for(var i=0;i<now.length;i++){var p=now[i],at=d.players.indexOf(p);if(at<0)continue;
+          if(!win.plTombAdd(p.id)){toast(gone.length?gone.length+'명을 지웠어요 · 나머지는 삭제 기록을 남기지 못해 그대로 두었어요':'삭제 기록을 남기지 못해 명단을 그대로 두었어요 · 자료 확인에서 확인해 주세요');break;}
+          d.players.splice(at,1);gone.push(String(p.id));}
+        if(!gone.length)return;
+        states.team.selected=[];states.team.fresh=(states.team.fresh||[]).filter(function(id){return gone.indexOf(String(id))<0;});
+        var ok=win.save({deletedIds:gone,skipTargets:true});
+        ['renderTeam','renderScoutCands','renderScoutBoard','redrawTeamPitch'].forEach(function(k){try{if(typeof win[k]==='function')win[k]();}catch(e){win.console.warn('[roster-remove] '+k,e);}});
+        toast(ok?gone.length+'명을 명단에서 지웠어요 · 팀 반영은 동기화 상태에서 확인할 수 있어요':'삭제 저장 확인이 필요합니다 · 자료 확인에서 확인하세요');
+      });
+    }
+    var importDlg=null;
+    function importScout(){if(!groupAllowed())return;if(!scoutVisible()){toast('스카우팅은 운영진만 볼 수 있어요');return;}
+      var rows;try{scStore().check();rows=scoutRows();}catch(e){toast('스카우팅 자료를 확인하는 중이에요 · 잠시 뒤 다시 열어 주세요');return;}
+      var owner=win.teamSaveOwner(),roster=source().players.filter(function(p){return p.type!=='target';});
+      var items=rows.map(function(r){var k=r.statusKey;if(['done','go','rep'].indexOf(k)<0)k=['done','go','rep'].filter(function(x){return (r.placements||[]).some(function(pl){return pl.statusKey===x;});})[0]||'';return {r:r,key:k,hit:rosterMatch(roster,r)};}),groups=teamGroups();
+      var st={stage:items.some(function(it){return it.key==='done';})?'done':'',q:'',pos:'',grp:quickGroup(),picked:{}},posList=[];
+      items.forEach(function(it){(it.r.positions&&it.r.positions.length?it.r.positions:[it.r.pos]).forEach(function(v){if(v&&posList.indexOf(v)<0)posList.push(v);});});
+      items.forEach(function(it){if(it.key==='done'&&!it.hit)st.picked[it.r.id]=true;});
+      if(importDlg)importDlg.remove();var dlg=importDlg=doc.createElement('dialog');dlg.id='pwImport';dlg.className='pw-dialog pw-import';dlg.setAttribute('aria-labelledby','pwImportTitle');doc.body.appendChild(dlg);
+      function shown(){var w=norm(st.q);return items.filter(function(it){return (!st.stage||it.key===st.stage)&&(!st.pos||(it.r.positions&&it.r.positions.length?it.r.positions:[it.r.pos]).indexOf(st.pos)>=0)&&(!w||norm([it.r.name,it.r.club,(it.r.positions||[]).join(' '),it.r.pos,it.r.num].join(' ')).indexOf(w)>=0);});}
+      function picked(){return items.filter(function(it){return st.picked[it.r.id]&&it.hit!=='dup';});}
+      function count(k){return items.filter(function(it){return !k||it.key===k;}).length;}
+      function chips(){return [['done','확정'],['go','영입대상'],['rep','추천'],['','전체']].map(function(c){var n=count(c[0]);return (c[0]&&!n)?'':button(c[1]+' '+n,'data-pwi-stage="'+c[0]+'" aria-pressed="'+(st.stage===c[0])+'"',st.stage===c[0]?'is-on':'');}).join('');}
+      function list(){var L=shown();return L.length?L.map(function(it){var r=it.r,dup=it.hit==='dup',meta=[(r.positions&&r.positions.length?r.positions.join(' / '):r.pos)||'포지션 미정',r.club||'소속 미입력',r.num!==''&&r.num!=null?'#'+r.num:''].filter(Boolean).join(' · ');
+          return '<label class="pwi-row'+(dup?' is-dup':'')+'"><input type="checkbox" data-pwi-pick="'+esc(r.id)+'"'+(st.picked[r.id]&&!dup?' checked':'')+(dup?' disabled':'')+' aria-label="'+esc(r.name)+' 명단에 넣기"><span class="pwi-who"><strong>'+esc(r.name)+'</strong><small>'+esc(meta)+(dup?' · 이미 명단에 있어요':it.hit==='same'?' · 같은 이름이 명단에 있어요':'')+'</small></span><span class="pw-status pw-status-'+esc(it.key)+'">'+esc(r.status||'')+'</span></label>';}).join(''):'<p class="pw-muted pwi-empty">'+(items.length?'조건에 맞는 후보가 없어요':'스카우팅에 등록한 후보가 없어요')+'</p>';}
+      function foot(){var n=picked().length,skip=items.filter(function(it){return st.picked[it.r.id]&&it.hit==='dup';}).length;
+        dlg.querySelector('[data-pwi-sum]').innerHTML='<b>'+n+'명 선택</b>'+(skip?' <span>· '+skip+'명은 이미 명단에 있어 건너뜀</span>':'');var ok=dlg.querySelector('[data-pwi-ok]');ok.textContent=n?n+'명 명단에 넣기':'명단에 넣기';ok.disabled=!n;}
+      function paintList(){dlg.querySelector('.pwi-list').innerHTML=list();foot();}
+      function draw(){dlg.innerHTML='<header class="pw-dialoghead"><h2 id="pwImportTitle">스카우팅에서 불러오기</h2>'+button('닫기','data-pwi-close')+'</header><div class="pw-detailbody"><p class="pw-muted pwi-lead">고른 후보를 우리 팀 명단에 새 선수로 넣어요. 이름 · 포지션 · 등번호 · 주발 · 소속팀 · 프로필을 옮기고, 후보와 그 평가 기록은 스카우팅에 그대로 남아요.</p>'
+          +'<div class="pwi-chips" role="group" aria-label="영입 단계">'+chips()+'</div><div class="pwi-find">'+(posList.length>1?'<select data-pwi-pos aria-label="포지션"><option value="">모든 포지션</option>'+posList.map(function(v){return '<option'+(st.pos===v?' selected':'')+'>'+esc(v)+'</option>';}).join('')+'</select>':'')+'<label class="pw-search pwi-search"><span aria-hidden="true">⌕</span><input data-pwi-q type="search" aria-label="후보 검색" placeholder="이름 · 소속 · 포지션" value="'+esc(st.q)+'"></label></div>'
+          +'<div class="pwi-bulk">'+button('모두','data-pwi-all="1"')+button('없음','data-pwi-all="0"')+'</div><div class="pwi-list">'+list()+'</div>'
+          +'<div class="pwi-grp" role="group" aria-label="넣을 조"><span>넣을 조</span>'+groups.map(function(g){return button(g.lb,'data-pwi-grp="'+esc(g.v)+'" aria-pressed="'+(st.grp===g.v)+'"',st.grp===g.v?'is-on':'');}).join('')+'</div></div>'
+          +'<footer class="pwi-foot"><span data-pwi-sum></span><p class="pwi-err" role="alert" data-pwi-err></p>'+button('취소','data-pwi-close')+button('명단에 넣기','data-pwi-ok','pw-primary')+'</footer>';foot();}
+      function commit(){var err=dlg.querySelector('[data-pwi-err]');
+        if(!groupAllowed(true)||owner!==win.teamSaveOwner()){err.textContent='팀 또는 편집 권한이 바뀌었어요. 창을 다시 열어 주세요.';return;}
+        var d=source(),rosterNow=d.players.filter(function(p){return p.type!=='target';}),add=picked().filter(function(it){return rosterMatch(rosterNow,it.r)!=='dup';});if(!add.length){err.textContent='고른 후보가 그사이 명단에 들어왔어요. 창을 다시 열어 주세요.';return;}var now=Date.now(),made=[];
+        add.forEach(function(it){var r=it.r,pl=(r.placements||[]).filter(function(x){return x.posId;}).sort(function(a,b){return ['done','go','rep'].indexOf(a.statusKey)-['done','go','rep'].indexOf(b.statusKey);})[0],pf={};
+          try{pf=JSON.parse(JSON.stringify(r.profile||{}));}catch(e){pf={};}if(r.club&&!pf.team)pf.team=r.club;
+          var p={id:uid('pl'),name:String(r.name||'').trim(),num:r.num==null?'':String(r.num),foot:r.foot||'',type:'ours',posId:pl&&pl.posId||'',levels:{},memo:'',manual:true,status:'ok',profile:pf,joinedFrom:{at:now,cid:r.cid,scoutSt:it.key||'',grade:r.grade||''}};
+          if(st.grp)p.grp=st.grp;d.players.push(p);made.push(p.id);});
+        var ok=win.save({skipTargets:true});dlg.close();markFresh(made);if(states.team.view!=='list'){states.team.view='list';states.team.viewInitialized=true;}
+        win.renderTeam();toast(ok===false?win.TM_ADD_FAIL:made.length+'명을 명단에 넣었어요');
+      }
+      dlg.addEventListener('click',function(e){if(e.target===dlg){var b0=dlg.getBoundingClientRect();if(e.clientX<b0.left||e.clientX>b0.right||e.clientY<b0.top||e.clientY>b0.bottom)dlg.close();return;}
+        var b=e.target.closest('button');if(!b)return;var x=b.dataset;
+        if(x.pwiClose!==undefined){dlg.close();return;}
+        if(x.pwiStage!==undefined){st.stage=x.pwiStage;dlg.querySelector('.pwi-chips').innerHTML=chips();paintList();return;}
+        if(x.pwiAll!==undefined){shown().forEach(function(it){if(it.hit!=='dup')st.picked[it.r.id]=x.pwiAll==='1';});paintList();return;}
+        if(x.pwiGrp!==undefined){st.grp=x.pwiGrp;dlg.querySelectorAll('[data-pwi-grp]').forEach(function(g){var on=g.dataset.pwiGrp===st.grp;g.classList.toggle('is-on',on);g.setAttribute('aria-pressed',String(on));});return;}
+        if(x.pwiOk!==undefined)commit();
+      });
+      dlg.addEventListener('change',function(e){if(e.target.dataset&&e.target.dataset.pwiPos!==undefined){st.pos=e.target.value;paintList();return;}var id=e.target.dataset&&e.target.dataset.pwiPick;if(id===undefined)return;st.picked[id]=e.target.checked;foot();});
+      dlg.addEventListener('input',function(e){if(e.target.dataset&&e.target.dataset.pwiQ!==undefined){st.q=e.target.value;paintList();}});
+      dlg.addEventListener('close',function(){var last=el('pwTeam')&&el('pwTeam').querySelector('[data-pw-action="scoutImport"]');dlg.remove();if(importDlg===dlg)importDlg=null;if(last)last.focus({preventScroll:true});});
+      draw();dlg.showModal();var first=dlg.querySelector('[data-pwi-q]');if(first)first.focus({preventScroll:true});
+    }
     function compare(kind){var rows=states[kind].selected.map(function(id){return models[kind].find(function(r){return r.id===id;});}).filter(Boolean);if(rows.length<2)return;
       modal();detail=null;dialog.classList.add('pw-comparison');var fields=[['선수',function(r){return r.name;}],['포지션',function(r){return r.pos||'미지정';}],['팀',function(r){return kind==='team'?r.group:r.club;}],['상태',function(r){return r.status;}],['주발',function(r){return ({L:'왼발',R:'오른발',B:'양발'})[r.foot]||r.foot;}],['평가 기록',function(r){return score(r,kind);}]];
       if(kind==='scout')fields.push(['영입 등급',function(r){return r.grade||'미정';}]);fields.push(['강점',function(r){return r.profile.strengths;}],['성장 과제',function(r){return r.profile.develop;}]);
@@ -355,5 +482,5 @@
     }
     if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',boot);else boot();
   }
-  return {escape:esc,family:family,scored:scored,evaluated:evaluated,filter:filter,select:select,reconcile:reconcile,candidates:candidates,depthBoard:depthBoard,depthSelection:depthSelection,layoutRows:layoutRows,moveCard:moveCard,rowsIds:rowsIds,rowLabel:rowLabel,ROW_MAX:ROW_MAX,mount:mount};
+  return {escape:esc,family:family,scored:scored,evaluated:evaluated,filter:filter,select:select,toggle:toggle,rosterMatch:rosterMatch,reconcile:reconcile,candidates:candidates,depthBoard:depthBoard,depthSelection:depthSelection,layoutRows:layoutRows,moveCard:moveCard,rowsIds:rowsIds,rowLabel:rowLabel,ROW_MAX:ROW_MAX,mount:mount};
 });

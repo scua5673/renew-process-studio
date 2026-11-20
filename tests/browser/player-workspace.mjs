@@ -20,8 +20,8 @@ try{
   await frame.getByRole('searchbox',{name:'선수 검색'}).fill('가상 선수 18');
   assert.equal(await frame.locator('#pwTeam .pw-table tbody tr').count(),1);
   await frame.getByRole('searchbox',{name:'선수 검색'}).fill('');
-  await frame.getByRole('checkbox',{name:'가상 선수 1 비교 선택',exact:true}).check();
-  await frame.getByRole('checkbox',{name:'가상 선수 2 비교 선택',exact:true}).check();
+  await frame.getByRole('checkbox',{name:'가상 선수 1 선택',exact:true}).check();
+  await frame.getByRole('checkbox',{name:'가상 선수 2 선택',exact:true}).check();
   await frame.getByRole('button',{name:'선수 비교',exact:true}).click();
   assert.equal(await frame.getByRole('heading',{name:'선수 비교 · 2명'}).isVisible(),true);
   await frame.getByRole('button',{name:'닫기',exact:true}).click();
