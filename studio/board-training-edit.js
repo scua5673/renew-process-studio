@@ -143,7 +143,7 @@
     function setSnap(on){
       if(!editCtx()){var b=doc.querySelector('#dragSnapSeg [data-ds="'+(on?'1':'0')+'"]');if(b)b.click();else try{win.localStorage.setItem('cs_drag_snap_v1',on?'1':'0');}catch(_){}return;}
       told=true;memPref=null;try{win.localStorage.setItem(EDIT_SNAP,on?'1':'0');}catch(_){memPref=on;}
-      syncSnapUI();win.toast(on?'훈련 편집기 자석 켬 — 놓거나 끌면 격자 칸에 붙어요':keysHere()?'훈련 편집기 자석 끔 — ⌘/Ctrl 로는 언제든 붙어요':'훈련 편집기 자석 끔 — 자유롭게 놓여요');
+      syncSnapUI();win.toast(on?'훈련 편집기 자석 켬':keysHere()?'훈련 편집기 자석 끔':'훈련 편집기 자석 끔');
     }
     api.snapEnabled=function(e){var auto=editCtx(),on=moveSnap(e,auto?editPref():deviceSnap(),freeOnce,auto);if(on&&auto&&!told&&editPref())tell();return on;};
     api.pointGridActive=function(e){return !!grid()&&pointSnap(e||pointEvent);};

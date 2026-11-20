@@ -31,7 +31,7 @@ try{
   await nav;
   assert.deepEqual(await cache(page),{pub:3,roster:true,wiped:false},'새 판으로 여는 새로고침은 팀 자료 사본을 지우지 않는다');
   assert.ok(await idpShows(page,/가상 선수 1/,20000),'다시 열린 IDP 선수단에 선수가 그대로 보인다');
-  assert.equal(/명단이 비어 있어요/.test(await idpText(page)),false);
+  assert.equal(/명단이 비어 있습니다/.test(await idpText(page)),false);
   await page.waitForTimeout(16000);
 
   step('close-like-reload-slow-pull');
@@ -42,8 +42,8 @@ try{
   await page.evaluate(()=>{sessionStorage.setItem('ps_resume_screen',JSON.stringify({app:document.body.getAttribute('data-ps-app')||'',team:window.__psTeamSection?String(window.__psTeamSection()||''):'',at:Date.now()}));location.reload();});
   await nav;
   const w=await cache(page);assert.equal(w.wiped,true,'닫힘 정리는 그대로 동작한다');assert.equal(w.pub,0);
-  assert.ok(await idpShows(page,/팀 자료를 받는 중이에요/,15000),'받는 동안은 «받는 중»');
-  assert.equal(/명단이 비어 있어요/.test(await idpText(page)),false,'받는 동안 «명단이 비어 있어요»라고 하지 않는다');
+  assert.ok(await idpShows(page,/팀 자료를 받는 중입니다/,15000),'받는 동안은 «받는 중»');
+  assert.equal(/명단이 비어 있습니다/.test(await idpText(page)),false,'받는 동안 «명단이 비어 있어요»라고 하지 않는다');
   await page.evaluate(()=>{document.getElementById('fIdp').contentWindow.__sameDoc=1;});
   assert.ok(await idpShows(page,/가상 선수 1/,40000),'자료가 오면 다시 열지 않아도 명단이 나타난다');
   assert.equal(await page.evaluate(()=>document.getElementById('fIdp').contentWindow.__sameDoc),1,'프레임을 다시 연 것이 아니다');

@@ -46,7 +46,7 @@ test('coach scores, requirements, shortfalls and coach-only meeting notes never 
 
 test('unlinked player paper says what is missing instead of guessing',()=>{
   const h=ctx({sqThreads:()=>({linked:false,list:[]}),rvList:()=>{throw new Error('should not read');},sqRadarRows:()=>[{lb:'전술',n:5,coach:5,self:null}],sqMeetList:()=>[]}).sqRepPlayerHTML(P);
-  assert.ok(h.includes('계정 연결 전이에요'));assert.ok(h.includes('아직 성장 리뷰 전이에요'));assert.ok(h.includes('아직 전한 말이 없어요'));
+  assert.ok(h.includes('계정 연결 전입니다'));assert.ok(h.includes('아직 성장 리뷰 전입니다'));assert.ok(h.includes('아직 전한 말이 없습니다'));
   assert.equal(h.includes('width:100%'),false);
 });
 

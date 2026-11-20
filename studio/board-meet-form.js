@@ -498,7 +498,7 @@
       var hd = el('div', 'mf-hd'); hd.appendChild(el('b', '', ttl));
       var x = el('button', 'mf-x', '×'); x.type = 'button'; x.setAttribute('aria-label', o.path === 'match' ? '만들지 않고 닫기' : '카테고리만 두고 닫기'); hd.appendChild(x); box.appendChild(hd);
       var sub = el('div', 'mf-sub'); box.appendChild(sub);
-      function subText() { if(o.path==='vault')return o.start==='categories'?'카테고리 이름과 빈 운동장으로 시작해요. 필요한 장만 고르고, 보관함 자료는 나중에 복사해 더할 수 있어요.':o.start==='empty'?'빈 운동장 한 장에서 시작해요. 제목과 내용을 직접 넣거나 보관함 자료를 더하세요.':(o.kind==='opp'?'상대 분석 6장 — ':'경기 준비 10장 — ')+'기본 배치가 들어 있는 자료에서 필요한 장만 골라 시작해요.'; return o.lookOnly ? '고른 운동장을 모든 장에 넣어요.' : (o.kind === 'opp' ? '상대 분석 6장 — 상대 BEST와 상대 분석의 국면(공격 시 · 수비 시 · 두 전환 · 세트피스) 차례로 채워요. 팀 운영 › 경기 › 상대 분석에 붙여요.' : '운동장과 우리 팀 · 상대 팀 포메이션으로 10장을 채워요. 장마다(블록 · 빌드업 · 코너킥) 자리를 맞춰 놓아요.'); }
+      function subText() { if(o.path==='vault')return o.start==='categories'?'카테고리 이름과 빈 운동장으로 시작해요.':o.start==='empty'?'빈 운동장 한 장에서 시작해요. 제목과 내용을 직접 넣거나 보관함 자료를 더하세요.':(o.kind==='opp'?'상대 분석 6장 — ':'경기 준비 10장 — ')+'기본 배치가 들어 있는 자료에서 필요한 장만 골라 시작해요.'; return o.lookOnly ? '고른 운동장을 모든 장에 넣어요.' : (o.kind === 'opp' ? '상대 분석 6장 — 상대 BEST와 상대 분석의 국면(공격 시 · 수비 시 · 두 전환 · 세트피스) 차례로 채워요. 팀 운영 › 경기 › 상대 분석에 붙여요.' : '운동장과 우리 팀 · 상대 팀 포메이션으로 10장을 채워요. 장마다(블록 · 빌드업 · 코너킥) 자리를 맞춰 놓아요.'); }
       var kseg = null;
       if (o.canKind) {   // 3.133 — 자료 종류(팀 운영 › 경기의 어느 칸에 붙일 자료인가)
         kseg = el('div', 'mf-kind'); kseg.setAttribute('role', 'group'); kseg.setAttribute('aria-label', '자료 종류');
