@@ -83,7 +83,8 @@ test('평면 실사 잔디 — 무늬가 사진 위에(없음이면 사진 그�
   assert.equal(F.wantMow({pitch:'grass',img:'',grassM:5.3}),false,'두 겹이 되지 않게');
   const src=read('studio/board-flat-turf.js');
   assert.match(src,/var s1=k==='band'\?1:1\.4,g0=\{dk:\['#000',DK\*s1\],lt:\['#fff',LT\*s1\],x2:\.62,gap:gap,f:f\};/);
-  assert.match(src,/html\+=paint\('psFlatMowC'\+i,\{x:c\.r\[0\],y:c\.r\[1\],len:c\.r\[3\],wid:c\.r\[2\],lenM:o\.len,rot:90\}\);/,'카드는 제 골라인에서 90°');
+  /* 3.340 — 일부러 고친 기대: 가로 카드(운동장 여럿 새 배치 · 긴 변이 가로)는 돌리지 않는다, 세로 카드는 예전처럼 90° */
+  assert.match(src,/html\+=paint\('psFlatMowC'\+i,\{x:c\.r\[0\],y:c\.r\[1\],len:c\.hz\?c\.r\[2\]:c\.r\[3\],wid:c\.hz\?c\.r\[3\]:c\.r\[2\],lenM:o\.len,rot:c\.hz\?0:90\}\);/,'카드는 제 골라인에서(세로 카드 90°)');
 });
 
 test('3D 다시 그리기 — 무늬가 pk 서명에 든다(__sig 모양은 그대로)',()=>{
