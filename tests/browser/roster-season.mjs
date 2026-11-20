@@ -66,6 +66,14 @@ try{
   // ③ 되돌리기 — 넘기기 전 명단 그대로
   step='undo';
   const undo=frame.locator('.pw-undo');await undo.waitFor();
+  /* 되돌리기 알림이 떠 있는 동안 선수를 체크해도 선택 띠의 단추를 가리지 않는다 — 실제로 눌리는지 본다 */
+  await rows().first().locator('[data-pw-select]').check();
+  const lift=await frame.evaluate(()=>{const u=document.querySelector('.pw-undo').getBoundingClientRect(),bar=document.querySelector('#pwTeam .pw-comparebar'),b=bar.getBoundingClientRect(),hit=[...bar.querySelectorAll('button')].filter(x=>x.offsetParent).map(x=>{const r=x.getBoundingClientRect(),e=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return [x.textContent.trim(),!!e&&(e===x||x.contains(e))];});return {undo:[Math.round(u.top),Math.round(u.bottom)],bar:[Math.round(b.top),Math.round(b.bottom)],vh:innerHeight,overlap:!(u.bottom<=b.top||u.top>=b.bottom||u.right<=b.left||u.left>=b.right),hit};});
+  console.error('[measure] undo-lift',size,JSON.stringify(lift));
+  assert.equal(lift.overlap,false,'알림이 선택 띠와 겹치지 않는다');assert.ok(lift.undo[0]>=0,'알림이 화면 안');assert.deepEqual(lift.hit.filter(h=>!h[1]),[],'선택 띠 단추가 다 눌린다');
+  await page.screenshot({path:shots+'/roster-season-undo-'+size+'.png'});
+  await frame.getByRole('button',{name:'선택 해제',exact:true}).click();
+  assert.equal(await frame.evaluate(()=>document.querySelector('.pw-undo').style.bottom),'','띠가 사라지면 알림은 제자리');
   assert.match(await undo.innerText(),new RegExp(next+' 시즌[\\s\\S]*졸업 3명[\\s\\S]*진급 9명'));
   await undo.getByRole('button',{name:'되돌리기'}).click();
   await frame.waitForFunction(()=>tmOurs().length===18);
