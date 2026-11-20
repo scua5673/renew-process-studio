@@ -40,7 +40,7 @@ test('a candidate document with nothing changed is recognised before verificatio
 test('every refusal carries a classification code and keeps its message',async()=>{
   const codeOf=fn=>{try{fn();}catch(e){return [e.psCode,e.message];}return null;};
   const f=fixture();
-  assert.deepEqual(codeOf(()=>f.client.check()),['scout_unread','후보 자료가 갱신됐어요. 다시 열어 주세요.']);
+  assert.deepEqual(codeOf(()=>f.client.check()),['scout_unread','후보 자료가 갱신됐습니다. 다시 열어 주세요.']);
   f.client.read();assert.equal(codeOf(()=>f.client.check())[0],'scout_unverified');
   await f.client.prepare();assert.equal(codeOf(()=>f.client.check()),null);
   f.st.ready=false;assert.deepEqual(codeOf(()=>f.client.check()),['scout_not_ready','팀의 후보 자료와 권한을 확인 중이에요.']);
@@ -126,7 +126,7 @@ test('a team with no candidate document: the first real candidate is written whe
 });
 
 test('the update flush tags a repeated failure once, so the cause and key survive the 80-character record',async()=>{
-  const e=new Error('후보 자료가 갱신됐어요. 다시 열어 주세요.');e.psCode='scout_unverified';e.psKey=S.KEY;
+  const e=new Error('후보 자료가 갱신됐습니다. 다시 열어 주세요.');e.psCode='scout_unverified';e.psKey=S.KEY;
   const c=vm.createContext({window:{},Promise,Error,String,
     matchFlushNow:()=>({had:false,ok:true}),matchIndividualPublicPendingAny:()=>false,scChildWindows:()=>[],
     scoutStore:{ready:()=>Promise.reject(e)}});
