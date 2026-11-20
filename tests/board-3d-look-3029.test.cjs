@@ -5,9 +5,9 @@ const board=R('studio/board.html'),depth=R('studio/board-token-depth.js'),notes=
 
 /* 3.029 — 사용자 «3D 연출 — 시간대 · 분석 그래픽»(목업 ①): 분위기 낮·해질녘·야간 · 분석 그래픽 다섯 · 팀 브랜딩 */
 test('3.029 mood is a device option with night (today\'s look) as the default, and reaches the stadium, the stage and the chips',()=>{
-  assert.match(board,/var TILT_MOOD=\{night:\{key:"night",ga:"#2c6a2a",gb:"#367a33",tint:null,cone:\.9,lamp:1,vig:\.62,warm:0\},/,'night keeps the colours the stadium had');
-  assert.match(board,/day:\{key:"day",ga:"#3b9a4e",gb:"#348c46",tint:\["#fff",\.06\],cone:0,lamp:\.2,vig:\.3,warm:0\}/);
-  assert.match(board,/dusk:\{key:"dusk",ga:"#3a8a45",gb:"#327d3e",tint:\["#ff9a3c",\.1\],cone:\.45,lamp:\.7,vig:\.52,warm:\.12\}/);
+  /* 3.346 — 기대를 일부러 고침(사용자 «아예 전부 쓰지 말자»): 조명을 쓰지 않는다 — 분위기는 night 하나 · 빛 값은 모두 0 · 저장된 day · dusk 는 night 로 읽힌다 */
+  assert.match(board,/var TILT_MOOD=\{night:\{key:"night",ga:"#2c6a2a",gb:"#367a33",tint:null,cone:0,lamp:0,vig:0,warm:0\}\};/,'one look, every light at zero');
+  assert.match(board,/<radialGradient id="psStLight"[^>]*><stop offset="0" stop-color="#fff" stop-opacity="0"\/><stop offset="\.55" stop-color="#fff" stop-opacity="0"\/><stop offset="1" stop-color="#000" stop-opacity="0"\/>/,'no glow, no dark rim on the grass');
   assert.match(board,/mood:TILT_MOOD\[o\.mood\]\?o\.mood:"night",brand:!!o\.brand\}; \}/,'read with the other 3D options');
   assert.match(board,/function tiltMoodApply\(\)\{ try\{ var m=\(window\.__tilt3d&&TILT_MOOD\[window\.__tilt3d\.mood\]\)\?window\.__tilt3d\.mood:"night"; document\.body\.setAttribute\("data-tilt-mood",m\);/);
   assert.match(board,/else if\(k==="mood"\)\{ if\(!TILT_MOOD\[v\]\)return; n\.mood=v; \} else if\(k==="brand"\)\{ n\.brand=\(v===true\|\|v==="1"\|\|v===1\); \}/);
@@ -22,22 +22,20 @@ test('3.029 mood is a device option with night (today\'s look) as the default, a
   assert.match(board,/if\(md\.cone>0&&!ground\)\{ o\+='<g clip-path="url\(#psStPitchClip\)" fill="url\(#psStCone\)" fill-opacity="'\+md\.cone\+'">'; \[\[L,T\],\[R,T\],\[R,B\],\[L,B\]\]/,'3.303 — no mast cones on the compact (simple · grass) floor: they were cut at the plate edge');
   assert.match(board,/<g fill="url\(#psStLamp\)" fill-opacity="'\+md\.lamp\+'">'\+lamps\+'<\/g>'/,'roof lamps dim by day');
   assert.match(board,/\(md\.warm\?'<path d="'\+rr\(ground\?gW:dE\)\+'" fill="#ff9a3c" fill-opacity="'\+md\.warm\+'"\/>':''\)\+\(ground\?PSStadiumGround\.shade\(rr\(gW\)\):'<path d="'\+rr\(dE\)\+'" fill="url\(#psStVig\)"\/>'\)/,'dusk wash remains (3.303 — across the whole compact floor); compact turf avoids the dark stadium rim and fades softly instead');
-  /* stage + screen layer */
-  assert.match(board,/html body\.bc-tilt3d\[data-tilt-mood="day"\] #boardStage\{background:#3c4753!important\}/);
-  assert.match(board,/html body\.bc-tilt3d\[data-tilt-mood="dusk"\] #boardStage\{background:#241c27!important\}/);
-  assert.match(board,/#tiltMood\{display:none;position:absolute;inset:0;pointer-events:none;z-index:5\}\nbody\.bc-tilt3d #tiltMood\{display:block\}/);
-  assert.match(board,/mood=document\.createElement\("div"\); mood\.id="tiltMood"; mood\.setAttribute\("aria-hidden","true"\); stage\.appendChild\(mood\);/);
+  /* stage + screen layer — 3.346: 무대 바탕은 한 색, 화면 위 빛 층은 없다 */
+  assert.doesNotMatch(board,/data-tilt-mood="(?:day|dusk)"\] #boardStage|#tiltMood\{|mood\.id="tiltMood"|function _t3Mood/);
+  assert.match(board,/const _T3_STAGE=\{night:'#050806'\};/,'the video stage too');
   /* chips */
   assert.match(board,/nameStyle:window\.__nameStyle==="pill"\?"pill":"text",mood:\(window\.__tilt3d&&window\.__tilt3d\.mood\)\|\|"night"\}; \}/);
-  assert.match(depth,/var mood = opts && opts\.mood;\n    if \(mood === 'day'\) body\.appendChild\(node\(doc, 'ellipse', \{ cx: 3, cy: 3, rx: R \+ 2, ry: R \* \.8, fill: '#000', 'fill-opacity': '\.22'/,'day: one short shadow');
-  assert.match(depth,/else if \(mood === 'dusk'\) body\.appendChild\(node\(doc, 'ellipse', \{ cx: R \* 1\.1, cy: 3, rx: R \* 2\.1, ry: R \* \.62, fill: '#000', 'fill-opacity': '\.3'[^\n]*transform: 'rotate\(12\)'/,'dusk: one long shadow');
-  assert.match(depth,/else \[\[6, 5\], \[-6, 5\], \[6, -3\], \[-6, -3\]\]\.forEach\(/,'night: the four masts as before');
+  /* 3.346 — 칩: 광택 · 드리운 그림자(.ps-chip-shadow)는 없고 발밑 그림자만 */
+  assert.doesNotMatch(depth,/psChipGloss|ps-chip-shadow|opts\.mood/);
+  assert.match(depth,/body\.appendChild\(node\(doc, 'ellipse', \{ cx: 1, cy: 1\.5, rx: R \+ 1\.5, ry: R \+ \.5, fill: '#000', 'fill-opacity': '\.26'/,'contact shadow stays');
   /* settings rows, 3D only, synced */
-  assert.match(board,/<div class="menurow ps-tilt-row" id="tiltMoodRow"><span class="menulbl">분위기<\/span><div class="seg" id="tiltMoodSeg"[^>]*><button type="button" data-mood="day"[^>]*>낮<\/button><button type="button" data-mood="dusk"[^>]*>해질녘<\/button><button type="button" data-mood="night" class="on" aria-pressed="true"[^>]*>야간<\/button><\/div><\/div>/);
+  assert.doesNotMatch(board,/id="tiltMoodRow"|id="tiltMoodSeg"/,'3.346 — the mood row is gone');
   assert.match(board,/<div class="menurow ps-tilt-row" id="tiltBrandRow"><span class="menulbl">팀 브랜딩<\/span>/);
   assert.match(board,/document\.querySelectorAll\("#tiltMoodSeg button\[data-mood\]"\)\.forEach\(function\(b\)\{ var on=b\.getAttribute\("data-mood"\)===o\.mood;/);
   assert.match(board,/closest\("#tiltCamSeg button\[data-cam\],#tiltDecoSeg button\[data-deco\],#tiltMoodSeg button\[data-mood\],#tiltBrandSeg button\[data-brand\]"\)/);
-  assert.match(board,/\["view","3D 경기장",\["tiltCamSeg","tiltDecoSeg","tiltAdInput","tiltMoodSeg","tiltBrandSeg"\],"ps-tilt-row"\]/,'settings sections (3.036: 3D rows under «내 화면», analysis under «선수 표시»)');
+  assert.match(board,/\["view","3D 경기장",\["tiltCamSeg","tiltDecoSeg","tiltAdInput","tiltBrandSeg"\],"ps-tilt-row"\]/,'settings sections (3.036: 3D rows under «내 화면», analysis under «선수 표시»)');
   assert.match(board,/\["look","분석",\["analysisSeg"\]\]/);
 });
 
