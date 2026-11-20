@@ -38,7 +38,7 @@ test('상태 문구·버튼은 팝오버·폰 줄([data-upd-msg]·[data-upd-now]
   const msgs=[el({}),el({})],btns=[el({'data-upd-label':'지금 적용'}),el({'data-upd-label':'적용'})];
   const document={getElementById:()=>null,querySelectorAll:q=>q==='[data-upd-msg]'?msgs:q==='[data-upd-now]'?btns:[],body:{classList:{contains:()=>false}}};
   const c=vm.createContext({document,window:{}});vm.runInContext(f+'\nthis.psUpdateStatus=psUpdateStatus;',c);
-  c.psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있어요.',true);
+  c.psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있습니다.',true);
   assert.equal(msgs[0].hidden,false);assert.match(msgs[1].textContent,/새 버전/);
   assert.equal(btns[0].disabled,true);assert.equal(btns[1].textContent,'저장 확인 중…');
   c.psUpdateStatus('저장 확인이 지연되어 업데이트를 보류했어요.',false);
