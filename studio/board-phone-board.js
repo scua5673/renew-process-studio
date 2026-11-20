@@ -385,7 +385,7 @@
       if(M.listState==='fail'){cnt.textContent='';box.innerHTML='<p class="phb-blank">보관함을 읽지 못했어요. 로그인되어 있는지 확인해 주세요.</p><button type="button" class="phb-btn phb-big" data-phb="reload">다시 불러오기</button>';return;}
       var list=M.list||[];
       cnt.textContent=list.length?('내 폰보드 '+list.length+'개'):'';
-      if(!list.length){box.innerHTML='<p class="phb-blank">아직 없어요. 위에서 작전판이나 뎁스 차트를 골라 첫 판을 만들어 보세요.</p>';return;}
+      if(!list.length){box.innerHTML='<p class="phb-blank">아직 없어요.</p>';return;}
       box.innerHTML='<div class="phb-rows">'+list.map(function(d,i){
         return '<button type="button" class="phb-row" data-phb="open" data-i="'+i+'">'+thumbHTML(d)+'<span><span class="phb-nm">'+esc(d.name||TAG)+'</span>'+
           '<span class="phb-mt"><span class="phb-chip">폰보드</span>'+(d.quick?'<span>뎁스 차트</span>':'')+'<span>'+esc(when(d))+'</span></span></span></button>';
