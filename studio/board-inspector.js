@@ -100,7 +100,7 @@
     function active() { return body.classList.contains('ps-dock-float') && !!selPlayer() && shown(); }
     // 더하는 칸들(머리 · 제목 · 주발) — 떠 있는 도크 밖에서는 CSS 가 숨긴다(.ps-insp-on 없이는 display:none)
     var hd = doc.createElement('div'); hd.className = 'ps-in-hd';
-    hd.innerHTML = '<span class="ps-in-ball"></span><span style="min-width:0;flex:1 1 auto"><div class="ps-in-nm"></div><div class="ps-in-sub"></div></span><button type="button" class="ps-in-x" title="패널 닫기 (선수를 오른쪽 클릭하면 다시 열려요)" aria-label="패널 닫기">✕</button>';
+    hd.innerHTML = '<span class="ps-in-ball"></span><span style="min-width:0;flex:1 1 auto"><div class="ps-in-nm"></div><div class="ps-in-sub"></div></span><button type="button" class="ps-in-x" title="패널 닫기 (선수를 오른쪽 클릭하면 다시 열립니다)" aria-label="패널 닫기">✕</button>';
     var heads = {}; SECTIONS.forEach(function (s) { var h = doc.createElement('div'); h.className = 'ps-in-h'; h.setAttribute('data-sec', s[0]); h.textContent = s[1]; h.style.setProperty('order', String(s[2]), 'important'); heads[s[0]] = h; });
     var foot = doc.createElement('div'); foot.className = 'ps-in-foot'; foot.setAttribute('role', 'group'); foot.setAttribute('aria-label', '주발');
     foot.innerHTML = FEET.map(function (f) { return '<button type="button" data-foot="' + f[0] + '">' + f[1] + '</button>'; }).join('');

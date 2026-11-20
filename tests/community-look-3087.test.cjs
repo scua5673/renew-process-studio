@@ -50,10 +50,10 @@ test('단추 글 · 안내',()=>{
   assert.equal(CL.summary(DESK,true,true,'person'),'3D · 사람');
   assert.equal(CL.summary(DESK,true,false,''),'평면 · 올린 그대로');
   assert.equal(CL.summary(PHONE,false,false,'person'),'유니폼','폰은 모양만');
-  assert.match(CL.hint(DESK,false,'person'),/^사람은 3D 에서 서 있는 선수로 보여요/);
+  assert.match(CL.hint(DESK,false,'person'),/^사람은 3D 에서 서 있는 선수로 보입니다/);
   assert.doesNotMatch(CL.hint(DESK,true,'person'),/평면에서는 유니폼/);
-  assert.match(CL.hint(DESK,true,'circle'),/다음 글에도 그대로 열려요\. 글은 바뀌지 않아요\.$/);
-  assert.match(CL.hint(IPAD,false,'circle'),/3D 는 글마다 켜요/);
+  assert.match(CL.hint(DESK,true,'circle'),/다음 글에도 그대로 열립니다\. 글은 바뀌지 않습니다\.$/);
+  assert.match(CL.hint(IPAD,false,'circle'),/3D 는 글마다 켭니다/);
   assert.doesNotMatch(CL.hint(PHONE,false,'circle'),/3D/);
 });
 

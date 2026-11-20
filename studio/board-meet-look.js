@@ -93,8 +93,8 @@
     '#ksEd input[readonly],#ksEd textarea[readonly]{cursor:default}'
   ].join('');
   var TITLE_EDIT = '미팅 수정', TITLE_VIEW = '미팅 보기';
-  var TIP_EDIT = '보기 전용이에요 — 위쪽 «편집»을 누르면 고칠 수 있어요';
-  var TIP_VIEW = '보기 전용이에요 — 고치려면 보관함에서 «편집»으로 여세요';
+  var TIP_EDIT = '보기 전용입니다 — 위쪽 «편집»을 누르면 고칠 수 있습니다';
+  var TIP_VIEW = '보기 전용입니다 — 고치려면 보관함에서 «편집»으로 여세요';
 
   function installView(win) {
     if (!win || !win.document || win.__psMeetView) return null;

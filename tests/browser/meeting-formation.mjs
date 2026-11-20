@@ -88,7 +88,7 @@ try{
     mem:JSON.parse(localStorage.getItem('ps_meet_form_v1')||'null'),toast:(document.getElementById('cs-ftoast')||{}).textContent||''}));
   assert.equal(cur.board,after[cur.idx].p.map(p=>p.num+p.pos).sort().join(','),'지금 판 = 지금 장');
   assert.deepEqual(cur.mem&&cur.mem['11'],{us:'4231',op:'352'},'고른 값 기억');
-  assert.match(cur.toast,/10장을 채웠어요 — 우리 4-2-3-1 · 상대 3-5-2/);
+  assert.match(cur.toast,/10장을 채웠습니다 — 우리 4-2-3-1 · 상대 3-5-2/);
   await page.waitForTimeout(700);
   await page.screenshot({path:path.join(SHOTS,'meeting-formation-applied-'+size+'.png')});
 
@@ -108,7 +108,7 @@ try{
   let k=await f.evaluate(()=>({blue:anim.slides.map(s=>(s.snap.teamColors||{}).blue),label:window.__ftSeen.label,text:window.__ftSeen.text}));
   assert.equal(k.blue[1]??null,JSON.parse(kit0[1]),'리저브 유니폼은 다른 페이지와 별도');
   assert.ok(k.blue.every((c,i)=>i===2||i===1||c==='#e85a9b'),'다른 모든 슬라이드 '+JSON.stringify(k));
-  assert.equal(k.label,'이 슬라이드만');assert.match(k.text,/유니폼을 모든 슬라이드에 적용했어요 \(다른 슬라이드 8장\)/);
+  assert.equal(k.label,'이 슬라이드만');assert.match(k.text,/유니폼을 모든 슬라이드에 적용했습니다 \(다른 슬라이드 8장\)/);
   assert.deepEqual(await pagesKit(),pages0,'작업 보드의 페이지는 그대로(미팅의 «모든 장»은 슬라이드)');
   await f.evaluate(()=>{const e=document.getElementById('psKitEd');if(e)e.classList.remove('on');});
   await f.waitForFunction(()=>window.__psPitchThumbsLeft()===0,null,{timeout:30000});

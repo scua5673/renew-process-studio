@@ -31,11 +31,11 @@
     if(id==='lineDashToggle'){
       var nv=(S.drawLineStyle==='dash')?'solid':'dash'; S.drawLineStyle=nv;
       if(sd.length&&SM&&SM.setLineStyle){ call(w,'pushUndo'); sd.forEach(function(o){ SM.setLineStyle(o,nv); }); call(w,'renderDrawings'); call(w,'autoSaveAnimFrame'); call(w,'boardSaveLive'); }
-      say(w,nv==='dash'?(sd.length?'점선으로 그려요 · 고른 그림도 점선':'점선으로 그려요'):(sd.length?'실선으로 그려요 · 고른 그림도 실선':'실선으로 그려요'));
+      say(w,nv==='dash'?(sd.length?'점선으로 그립니다 · 고른 그림도 점선':'점선으로 그립니다'):(sd.length?'실선으로 그립니다 · 고른 그림도 실선':'실선으로 그립니다'));
     }else if(id==='passLobToggle'){
       var on=!S.drawLob; S.drawLob=on; var ps=sd.filter(function(o){return o.type==='pass';});
       if(ps.length){ call(w,'pushUndo'); ps.forEach(function(o){ if(on)o.lob=true; else delete o.lob; }); call(w,'renderDrawings'); call(w,'autoSaveAnimFrame'); call(w,'boardSaveLive'); }
-      say(w,on?(ps.length?'로빙 패스로 그려요 · 고른 패스도 로빙':'로빙 패스로 그려요'):(ps.length?'땅볼 패스로 그려요 · 고른 패스도 땅볼':'땅볼 패스로 그려요'));
+      say(w,on?(ps.length?'로빙 패스로 그립니다 · 고른 패스도 로빙':'로빙 패스로 그립니다'):(ps.length?'땅볼 패스로 그립니다 · 고른 패스도 땅볼':'땅볼 패스로 그립니다'));
     }else return;
     if(d&&d.getElementById('lsPop')){ press(d,'lineStyleBtn'); press(d,'lineStyleBtn'); }   // 열려 있던 «선 스타일» 창은 닫았다 열어 표시를 맞춘다
   }

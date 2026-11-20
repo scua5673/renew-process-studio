@@ -266,10 +266,10 @@
       if(!items.length||anim.frames.length<2||animActive<0){call('toast','텍스트와 두 개 이상의 장면이 있을 때 씁니다');return 0;}
       call('stopAnim');
       var plan=positionTexts(anim.frames,animActive,items);
-      if(!plan.changed){call('toast',plan.skipped?'같은 글이 여럿 있어 구분할 수 없는 장면은 유지했어요':'다른 장면에서 위치를 바꿀 같은 텍스트가 없어요');return 0;}
+      if(!plan.changed){call('toast',plan.skipped?'같은 글이 여럿 있어 구분할 수 없는 장면은 유지했습니다':'다른 장면에서 위치를 바꿀 같은 텍스트가 없습니다');return 0;}
       call('pushUndo');plan.frames[animActive]=Object.assign({},anim.frames[animActive],{snap:call('captureSnap')});anim.frames=plan.frames;
       call('renderAnimFrames');call('renderOnion');call('boardSaveLive');
-      call('toast',plan.changed+'곳에 텍스트 위치를 적용했어요'+(plan.skipped?' · 구분할 수 없는 '+plan.skipped+'곳은 유지':''));return plan.changed;
+      call('toast',plan.changed+'곳에 텍스트 위치를 적용했습니다'+(plan.skipped?' · 구분할 수 없는 '+plan.skipped+'곳은 유지':''));return plan.changed;
     }
     function open(d, x, y) {
       close();
@@ -291,7 +291,7 @@
         + '<button type="button" class="sm-wide" data-act="reset" title="현재 모습을 이후 장면에 반영">↺ 이후 장면 리셋</button>'
         + '<button type="button" data-act="front" title="맨 앞으로 (⌘])">맨 앞</button><button type="button" data-act="back" title="맨 뒤로 (⌘[)">맨 뒤</button>'
         + (doc.getElementById('dupSelBtn') ? '<button type="button" data-act="dup">복제</button>' : '')
-        + (doc.getElementById('lockSelBtn') ? '<button type="button" data-act="lock"' + (locked ? ' class="on"' : '') + ' title="위치 고정 — 끌어도 안 움직여요">' + (locked ? '고정 해제' : '고정') + '</button>' : '')
+        + (doc.getElementById('lockSelBtn') ? '<button type="button" data-act="lock"' + (locked ? ' class="on"' : '') + ' title="위치 고정 — 끌어도 안 움직입니다">' + (locked ? '고정 해제' : '고정') + '</button>' : '')
         + (more ? '<button type="button" data-act="more" title="선 스타일 — 실선 · 점선 · 둥근 점선 · 끝 모양 · 채움">점선 · 선 스타일…</button>' : '')   /* 3.254 — 점선이 여기 있다는 것을 이름으로(제보 2456db8e) */
         + '<button type="button" class="sm-del' + (more ? '' : ' sm-wide') + '" data-act="del">삭제</button></div>';
       doc.body.appendChild(el);
@@ -383,7 +383,7 @@
     function syncBack() {
       var fb=doc.getElementById('frontSelBtn'),b=mountBack();if(fb&&b&&b.style.display!==fb.style.display)b.style.display=fb.style.display;
       var edit=doc.getElementById('textEditBtn'),pos=doc.getElementById('textPositionAllBtn');
-      if(edit&&!pos){pos=doc.createElement('button');pos.type='button';pos.id='textPositionAllBtn';pos.className='dup-sel';pos.textContent='모든 장면에 위치 적용';pos.title='같은 텍스트의 위치만 맞춥니다. 장면별 내용과 서식은 유지돼요.';edit.insertAdjacentElement('afterend',pos);pos.onclick=function(e){e.stopPropagation();applyPositions();};}
+      if(edit&&!pos){pos=doc.createElement('button');pos.type='button';pos.id='textPositionAllBtn';pos.className='dup-sel';pos.textContent='모든 장면에 위치 적용';pos.title='같은 텍스트의 위치만 맞춥니다. 장면별 내용과 서식은 유지됩니다.';edit.insertAdjacentElement('afterend',pos);pos.onclick=function(e){e.stopPropagation();applyPositions();};}
       if(pos){var selected=selection();pos.style.display=selected.length&&selected.every(isText)?'inline-flex':'none';}
     }
     // 3.282 — 지운 그림을 뒤 장면에서도(제보 74e59fd4). 지우기 전 mark, 지운 뒤 done — 그 사이 판에서 빠진 그림만 본다.
@@ -408,7 +408,7 @@
         anim.frames = plan.frames;
         call('renderAnimFrames'); call('renderOnion'); call('boardSaveLive');
         var k = mark.k, range = '장면 ' + (k + 2) + (plan.last > k + 1 ? '~' + (plan.last + 1) : '');
-        call('toast', '삭제됨 · ' + range + '에서도 지웠어요');
+        call('toast', '삭제됨 · ' + range + '에서도 지웠습니다');
         var t = doc.getElementById('cs-ftoast'); if (!t) return plan.changed;
         var b = doc.createElement('button'); b.type = 'button'; b.className = 'ftoast-act'; b.textContent = '이 장면만';
         b.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });

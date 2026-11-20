@@ -171,7 +171,7 @@ test('board.html: every user gets the «프로세스» folder once — per accou
   assert.match(seed,/it\.libId=vxSeedId\(k\); it\.savedAt=VX_SEED_AT-i\*60000; stampCreator\(it\);/,'a fixed number per user and an old date — another device\'s delete wins the merge, two devices meet on one row');
   assert.match(seed,/if\(d&&d\.ex\)have\[d\.ex\]=1; if\(d&&d\.libId\)have\["#"\+d\.libId\]=1;/,'an example already there is not doubled');
   assert.match(seed,/return libSet\(lib\.concat\(add\)\)/,'appended — old-dated examples never stand in front of a card added meanwhile (letter pack)');
-  assert.match(seed,/vxSeedToast\("«"\+X\.FOLDER\+"» 폴더에 예시 "\+r\.n\+"개가 준비되어 있어요/,'the notice waits for another toast');
+  assert.match(seed,/vxSeedToast\("«"\+X\.FOLDER\+"» 폴더에 예시 "\+r\.n\+"개가 준비되어 있습니다/,'the notice waits for another toast');
   assert.match(seed,/if\(t&&t\.getAttribute\("aria-hidden"\)==="false"&&n<10\)\{ setTimeout\(function\(\)\{ vxSeedToast\(msg,n\+1\); \},400\); return; \}/,'never overwrites «훈련 3개를 보관함에 담았어요»');
   assert.match(seed,/vxSeedMark\(who\);[\s\S]*if\(!r\.was\)\{ try\{ var cf=libFilter\.folder\|\|""; if\(cf===""\|\|cf==="__all"\|\|cf==="__mine"\)libFilter\.folder=X\.FOLDER; \}catch\(_\)\{\} \}/,'a newcomer lands in the folder; an existing user keeps their view');
   assert.match(seed,/\},function\(\)\{ return false; \}\);   \/\* 실패하면 표식을 남기지 않는다/,'a failed write is retried next time');

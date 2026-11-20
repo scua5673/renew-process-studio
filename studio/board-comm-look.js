@@ -59,9 +59,9 @@
   // 단추 글: «3D · 사람» · 폰은 모양만
   function summary(dev, threeD, is3d, shape) { var s = shown(shape, dev); return (threeD ? (is3d ? '3D' : '평면') + ' · ' : '') + (s ? NAME[s] : '올린 그대로'); }
   function hint(dev, is3d, drawn) {
-    var h = (!dev.phone && !is3d && drawn === 'person') ? '사람은 3D 에서 서 있는 선수로 보여요 — 평면에서는 유니폼이에요. ' : '';
-    h += dev.phone ? '고른 모양은 다음 글에도 그대로 열려요.' : (dev.touch ? '고른 모양은 다음 글에도 그대로예요 · 3D 는 글마다 켜요.' : '고른 보기는 다음 글에도 그대로 열려요.');
-    return h + ' 글은 바뀌지 않아요.';
+    var h = (!dev.phone && !is3d && drawn === 'person') ? '사람은 3D 에서 서 있는 선수로 보입니다 — 평면에서는 유니폼입니다. ' : '';
+    h += dev.phone ? '고른 모양은 다음 글에도 그대로 열립니다.' : (dev.touch ? '고른 모양은 다음 글에도 그대로입니다 · 3D 는 글마다 켭니다.' : '고른 보기는 다음 글에도 그대로 열립니다.');
+    return h + ' 글은 바뀌지 않습니다.';
   }
 
   // ── 모양 ── 판 위 어두운 유리(재생 단추 #commPlayControls 와 같은 결). 값은 tokens.css(--t-* · --sp-* · --r-* · --sh-*)

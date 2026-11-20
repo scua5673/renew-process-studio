@@ -146,7 +146,7 @@ test('drag wiring: token grabs at once, name labels after a long press, drop on 
   assert.match(v,/if\(\(e\.type==='click'\|\|tap\)&&!quickTap\(t\)\)tip\(\);/,'a finger tap (no click on a guarded canvas) opens the token sheet or shows the hint');
   assert.match(v,/id>=1&&id<=F\.n&&Q\.open\(win,\{token:id\}\)/,'only the quick board slot tokens open the sheet');
   const en=read('studio/i18n/en-board.js');
-  for(const k of ['고치기','토큰 표시','이 자리에 이미 있는 이름이에요','포메이션 자리로','포메이션 자리로 돌렸어요','{} 자리를 옮겼어요','{} ↔ {} 이름을 맞바꿨어요','고친 내용을 버리고 닫을까요?','토큰을 누르거나 위의 «{}»에서 바꿔요'])assert.ok(en.includes('"'+k+'":'),k);
+  for(const k of ['고치기','토큰 표시','이 자리에 이미 있는 이름입니다','포메이션 자리로','포메이션 자리로 돌렸습니다','{} 자리를 옮겼습니다','{} ↔ {} 이름을 맞바꿨습니다','고친 내용을 버리고 닫을까요?','토큰을 누르거나 위의 «{}»에서 바꿔요'])assert.ok(en.includes('"'+k+'":'),k);
 });
 
 test('token text: position and number are written only where they were changed, the board label follows the choice',()=>{

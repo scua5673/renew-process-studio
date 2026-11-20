@@ -117,7 +117,7 @@ try{
   await f.locator('#phbName').fill('토요일 4-4-2');
   await f.locator('[data-phb="save"]').tap();
   await f.locator('#phbHome').waitFor({state:'visible'});
-  assert.match(await toastText(f),/보관함에 저장했어요/);
+  assert.match(await toastText(f),/보관함에 저장했습니다/);
   await f.waitForFunction(()=>(window.__psPhoneBoard.ui().model().list||[]).length===1);
   const local=await f.evaluate(()=>libGet().then(l=>JSON.parse(JSON.stringify(l.filter(d=>d&&d.phone)))));
   assert.equal(local.length,1);
@@ -148,7 +148,7 @@ try{
   await ptr(f,[[p5.x,p5.y],[p5.x+6,p5.y-6]]);
   await f.locator('[data-phb="save"]').tap();
   await f.locator('#phbHome').waitFor({state:'visible'});
-  assert.match(await toastText(f),/폰보드를 고쳤어요/);
+  assert.match(await toastText(f),/폰보드를 고쳤습니다/);
   const again=await f.evaluate(()=>libGet().then(l=>JSON.parse(JSON.stringify(l.filter(d=>d&&d.phone)))));
   assert.equal(again.length,1,'still one item');assert.equal(again[0].libId,savedId);assert.ok(again[0].editedAt>=it.editedAt);
   assert.notEqual(again[0].snap.players[5].x,it.snap.players[5].x,'the moved player has a new place');

@@ -138,7 +138,7 @@
         ps.forEach(function (p) { p.dirMark = true; try { win._ensureDir(p); } catch (_) {} });
         carry(ps, true, was);
         try { win.renderTokens(); win.updateDelUI(); } catch (_) {} try { win.positionSelCtl(); } catch (_) {} try { win.boardSaveLive(); } catch (_) {}
-        try { win.toast('방향 표식 — 한 번 더 누르면 시야 부채꼴 · 노란 손잡이로 돌려요'); } catch (_) {}
+        try { win.toast('방향 표식 — 한 번 더 누르면 시야 부채꼴 · 노란 손잡이로 돌립니다'); } catch (_) {}
         return;
       }
       var r = inner.apply(this, arguments);

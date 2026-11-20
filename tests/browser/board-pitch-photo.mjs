@@ -38,7 +38,7 @@ try{
   assert.equal(lb[lb.indexOf('피치')+1],'사진','«사진» 줄은 «피치» 바로 아래 '+JSON.stringify(lb));
   let r=await row();
   assert.deepEqual([r.pick,r.clearOff,r.state,r.hintShown],['사진 고르기',true,'none',true],JSON.stringify(r));
-  assert.match(r.hint,/이 기기에만 저장돼요/);
+  assert.match(r.hint,/이 기기에만 저장됩니다/);
   await shot(page,'1-settings');
 
   // ② 사진 고르기 — 1920×1080 PNG(왼쪽 빨강 · 오른쪽 파랑)를 파일 고르개로
@@ -57,7 +57,7 @@ try{
   assert.ok(ph.len<500000,'긴 변 1600 JPEG — '+ph.len+'자');
   assert.deepEqual(await idbKeys(),['ps_pitch_photo:'+id],'이 기기 IndexedDB 에 한 벌');
   assert.equal(await f.evaluate(k=>window.storage.get(k).then(v=>v&&v.value.slice(0,23)),'ps_pitch_photo:'+id),'data:image/jpeg;base64,');
-  r=await row();assert.deepEqual([r.pick,r.clearOff,r.state],['다른 사진',false,'here']);assert.match(r.hint,/이 기기에만 저장돼요.*운동장으로 보여요/);
+  r=await row();assert.deepEqual([r.pick,r.clearOff,r.state],['다른 사진',false,'here']);assert.match(r.hint,/이 기기에만 저장됩니다.*운동장으로 보입니다/);
   await shot(page,'2-picked');
   /* ⌘Z 한 걸음 — 사진 전으로, ⇧⌘Z 로 다시 */
   await f.evaluate(()=>undoLast());await page.waitForTimeout(300);
@@ -146,7 +146,7 @@ try{
   // ⑧-2 3D 보기 — 사진은 숨고(운동장이 보인다) 켠 순간 알려 준다. 끄면 다시 사진
   await f.evaluate(()=>window.__setTilt(true,{transient:true}));await page.waitForTimeout(700);
   const t3=await f.evaluate(()=>({vis:getComputedStyle(document.querySelector('#ps-pitchimg')).visibility,hint:(document.getElementById('hint')||{}).textContent||''}));
-  assert.equal(t3.vis,'hidden','3D 에서는 사진이 숨는다');assert.match(t3.hint,/3D 보기에서는 운동장 사진이 보이지 않아요/);
+  assert.equal(t3.vis,'hidden','3D 에서는 사진이 숨는다');assert.match(t3.hint,/3D 보기에서는 운동장 사진이 보이지 않습니다/);
   await shot(page,'5b-3d');
   await f.evaluate(()=>window.__setTilt(false,{transient:true}));await page.waitForTimeout(500);
   assert.equal(await f.evaluate(()=>getComputedStyle(document.querySelector('#ps-pitchimg')).visibility),'visible');
@@ -176,7 +176,7 @@ try{
   ph=await photo();assert.equal(ph.inWorld,false,'사진이 없으면 그리지 않는다');assert.equal(ph.custom,false);
   assert.equal(await f.evaluate(()=>!!document.querySelector('#lineLayer')),true,'운동장으로 보인다');
   await settings(true);
-  r=await row();assert.equal(r.state,'missing');assert.match(r.hint,/이 기기에는 없어요/);
+  r=await row();assert.equal(r.state,'missing');assert.match(r.hint,/이 기기에는 없습니다/);
   await shot(page,'6-missing');
   await settings(false);
 

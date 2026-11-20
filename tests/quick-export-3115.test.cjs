@@ -45,7 +45,7 @@ test('PDF uses the board picture (no floating buttons), the shared A4 assembler 
   const pick=s.indexOf('win._ppbPickSaveTarget(fname)'),build=s.indexOf('win.boardImageXML()');
   assert.ok(pick>0&&pick<build,'저장 창을 먼저 연다(누른 순간에만 열린다)');
   assert.match(s,/if \(target === false\) return;/,'취소하면 아무것도 저장하지 않는다');
-  assert.match(s,/'로그인하면 PNG · PDF 로 내보낼 수 있어요'/);
+  assert.match(s,/'로그인하면 PNG · PDF 로 내보낼 수 있습니다'/);
   assert.match(s,/700 " \+ FS \+ "px 'Pretendard Variable',Pretendard,/,'캔버스 글꼴도 Pretendard 먼저');
   const b=read('studio/board.html');
   for(const fn of ['boardImageXML','_jpegPagesToPdf','_ppbPickSaveTarget','_pdfSafeName','_animDefaultBase','exportPNG','psVaultUnlocked','deselect'])

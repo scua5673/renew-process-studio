@@ -74,7 +74,7 @@ test('3.033 this tab\'s mark left by a 3D boot that died opens the next boot fla
   assert.equal(e.win.__tiltBootSafe,true);assert.equal(e.win.__tiltBootOk,false);assert.equal(e.ls.getItem('ps_board_tilt3d'),'0');assert.equal(e.ls.getItem('ps_tilt3d_boot'),null);
   assert.equal(e.toasts.length,0,'not yet');const first=e.timers.find(x=>x.ms===1600);first.f();
   e.timers.filter(x=>[0,1500,3000,4500].includes(x.ms)).forEach(x=>x.f());
-  assert.equal(e.toasts.length,4);assert.match(e.toasts[0],/평면으로 열었어요 · 보드 설정 › 보드 보기에서 다시 켤 수 있어요/);assert.ok(e.win.__tiltBootSafeShown>0);
+  assert.equal(e.toasts.length,4);assert.match(e.toasts[0],/평면으로 열었습니다 · 보드 설정 › 보드 보기에서 다시 켤 수 있습니다/);assert.ok(e.win.__tiltBootSafeShown>0);
   const old=env({local:{ps_board_tilt3d:'1',ps_tilt3d_boot:JSON.stringify({T1:1e12-11*60000})},session:{ps_tilt3d_tab:'T1'}});
   assert.equal(old.win.__tiltBootSafe,false,'older than 10 minutes is not a crash loop');assert.deepEqual(old.marks(),{T1:1e12});
 });

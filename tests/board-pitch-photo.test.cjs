@@ -60,10 +60,10 @@ test('사진 자리 — 틀을 다 덮고 제 비율 그대로 가운데(16:9 �
 });
 
 test('설정 안내 — 이 기기에만 · 다른 기기에서 넣은 사진 · 3D',()=>{
-  assert.match(P.note('none'),/이 기기에만 저장돼요/);
-  assert.match(P.note('here'),/이 기기에만 저장돼요.*운동장으로 보여요/);
-  assert.match(P.note('missing'),/이 기기에는 없어요/);
-  assert.match(P.note('here',true),/3D 보기에서는 보이지 않아요/);assert.doesNotMatch(P.note('none',true),/3D/);
+  assert.match(P.note('none'),/이 기기에만 저장됩니다/);
+  assert.match(P.note('here'),/이 기기에만 저장됩니다.*운동장으로 보입니다/);
+  assert.match(P.note('missing'),/이 기기에는 없습니다/);
+  assert.match(P.note('here',true),/3D 보기에서는 보이지 않습니다/);assert.doesNotMatch(P.note('none',true),/3D/);
   assert.match(P.T.ok,/이 기기에만/);
 });
 

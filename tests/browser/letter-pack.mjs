@@ -89,7 +89,7 @@ try{
   // 4) 같은 세션을 다시 — 담겨 있다고 말하고, «보관함에서 보기»는 담지 않는다. «한 장 더 담기»는 고를 때만
   await go('review-03');
   await f.waitForSelector('#lpShow');
-  assert.match(await f.evaluate(()=>document.getElementById('lpNote').textContent),/‘레터 3호 · 가상 세션’ 카드로 담겨 있어요/);
+  assert.match(await f.evaluate(()=>document.getElementById('lpNote').textContent),/‘레터 3호 · 가상 세션’ 카드로 담겨 있습니다/);
   assert.equal(await f.evaluate(()=>!!document.getElementById('lpOk')),false);
   await f.click('#lpShow');
   await f.waitForFunction(()=>!document.getElementById('lpOv'));
@@ -109,7 +109,7 @@ try{
   await f.waitForFunction(()=>!document.getElementById('lpOv'));
   assert.equal((await lib()).length,2,'취소는 담지 않는다');
   await go('review-09');
-  await f.waitForFunction(()=>/훈련 세션을 받지 못했어요/.test((document.getElementById('hint')||{}).textContent||''));
+  await f.waitForFunction(()=>/훈련 세션을 받지 못했습니다/.test((document.getElementById('hint')||{}).textContent||''));
   assert.equal(await f.evaluate(()=>!!document.getElementById('lpOv')),false,'없는 호는 알리고 끝');
   const n=asked.length;
   for(const bad of ['evil-03','review-3','review-03x','https://outside.invalid/a.json'])await go(bad);

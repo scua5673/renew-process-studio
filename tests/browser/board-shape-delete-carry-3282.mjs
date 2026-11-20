@@ -39,7 +39,7 @@ try{
   assert.equal(await has('A'),'110000','장면 3에서 지우면 3~6 에서 사라진다(앞 장면은 그대로)');
   assert.equal(await has('B'),'111111','고르지 않은 그림은 그대로');
   assert.equal(await has('C'),'001111');
-  assert.match(await toastText(),/장면 4~6에서도 지웠어요/);
+  assert.match(await toastText(),/장면 4~6에서도 지웠습니다/);
   assert.equal(await undoN(),u0+1,'되돌리기 기록 하나');
   assert.equal(await other(),before,'다른 페이지의 같은 그림은 그대로');
   await f.evaluate(()=>undoLast());

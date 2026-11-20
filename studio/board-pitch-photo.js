@@ -12,10 +12,10 @@
 'use strict';
 var PREFIX='ps_pitch_photo:',REF='@photo:',RE=/^@photo:([0-9a-f]{16})(?:-(\d{1,5})x(\d{1,5}))?$/,MAX_BYTES=10*1024*1024,EDGE=1600,QUALITY=0.82,TYPES=/^image\/(png|jpeg|jpg|webp)$/i;
 var T={
-  ok:'운동장 사진을 깔았어요 · 이 기기에만 저장돼요',type:'PNG · JPEG · WebP 사진만 넣을 수 있어요',big:'10MB 이하 사진만 넣을 수 있어요',
-  read:'사진을 읽지 못했어요 — 다른 사진으로 해 주세요',save:'사진을 이 기기에 저장하지 못했어요 — 저장 공간을 확인해 주세요',
-  off:'운동장 사진을 뺐어요',miss:'운동장 사진은 넣은 기기에만 있어요 — 여기서는 운동장으로 보여요',exportRead:'운동장 사진을 읽지 못했어요 — 잠시 후 다시 내보내 주세요',
-  tilt:'3D 보기에서는 운동장 사진이 보이지 않아요 · 평면 보기에서 보여요',ro:'보기 전용이라 바꿀 수 없어요'
+  ok:'운동장 사진을 깔았습니다 · 이 기기에만 저장됩니다',type:'PNG · JPEG · WebP 사진만 넣을 수 있습니다',big:'10MB 이하 사진만 넣을 수 있습니다',
+  read:'사진을 읽지 못했습니다 — 다른 사진으로 해 주세요',save:'사진을 이 기기에 저장하지 못했습니다 — 저장 공간을 확인해 주세요',
+  off:'운동장 사진을 뺐습니다',miss:'운동장 사진은 넣은 기기에만 있습니다 — 여기서는 운동장으로 보입니다',exportRead:'운동장 사진을 읽지 못했습니다 — 잠시 후 다시 내보내 주세요',
+  tilt:'3D 보기에서는 운동장 사진이 보이지 않습니다 · 평면 보기에서 보입니다',ro:'보기 전용이라 바꿀 수 없습니다'
 };
 /* ── 셈(DOM 없이 — tests/board-pitch-photo.test.cjs) ── */
 function isRef(v){return typeof v==='string'&&RE.test(v);}
@@ -56,8 +56,8 @@ function videoBox(s,pr,m,w,h,ar){
 }
 /* 설정 줄 아래 안내 — st: none | here | missing */
 function note(st,tilt){
-  var s=st==='here'?'이 기기에만 저장돼요 · 다른 기기 · 팀 · 커뮤니티에는 운동장으로 보여요':st==='missing'?'다른 기기에서 넣은 사진이라 이 기기에는 없어요 — 운동장으로 보여요':'경기 화면 캡처를 깔고 그 위에 그려요 · 사진은 이 기기에만 저장돼요';
-  return (tilt&&st!=='none')?s+' · 3D 보기에서는 보이지 않아요':s;}
+  var s=st==='here'?'이 기기에만 저장됩니다 · 다른 기기 · 팀 · 커뮤니티에는 운동장으로 보입니다':st==='missing'?'다른 기기에서 넣은 사진이라 이 기기에는 없습니다 — 운동장으로 보입니다':'경기 화면 캡처를 깔고 그 위에 그립니다 · 사진은 이 기기에만 저장됩니다';
+  return (tilt&&st!=='none')?s+' · 3D 보기에서는 보이지 않습니다':s;}
 /* 장면 · 페이지 묶음에서 사진 참조를 모은다(겹치지 않게) */
 function refsIn(o,out,depth){out=out||[];if(!o||typeof o!=='object'||(depth|0)>6)return out;
   Object.keys(o).forEach(function(k){var v=o[k];if(k==='pitchImg'&&isRef(v)){if(out.indexOf(v)<0)out.push(v);}else if(v&&typeof v==='object')refsIn(v,out,(depth|0)+1);});return out;}
@@ -176,7 +176,7 @@ function mount(doc){
   doc=doc||(W&&W.document);if(!doc||row)return;
   var seg=doc.getElementById('pitchSeg'),pr=seg&&seg.closest('.menurow');if(!pr)return;
   row=doc.createElement('div');row.className='menurow';row.id='pitchPhotoRow';row.setAttribute('data-bs-tab','pitch');
-  row.innerHTML='<span class="menulbl">사진</span><div class="seg" role="group" aria-label="운동장 사진"><button type="button" data-pp="pick" title="경기 화면 캡처 같은 사진을 운동장 자리에 깔아요 — PNG · JPEG · WebP, 10MB 이하">사진 고르기</button><button type="button" data-pp="clear" title="사진을 빼고 운동장으로" disabled>사진 빼기</button></div>';
+  row.innerHTML='<span class="menulbl">사진</span><div class="seg" role="group" aria-label="운동장 사진"><button type="button" data-pp="pick" title="경기 화면 캡처 같은 사진을 운동장 자리에 깝니다 — PNG · JPEG · WebP, 10MB 이하">사진 고르기</button><button type="button" data-pp="clear" title="사진을 빼고 운동장으로" disabled>사진 빼기</button></div>';
   hint=doc.createElement('div');hint.id='pitchPhotoHint';hint.className='bs-hint';hint.setAttribute('data-bs-tab','pitch');
   pr.after(row);row.after(hint);
   row.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('button[data-pp]');if(!b||b.disabled)return;e.stopPropagation();if(b.getAttribute('data-pp')==='pick')pick();else clear();});

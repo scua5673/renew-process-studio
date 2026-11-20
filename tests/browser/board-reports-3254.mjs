@@ -130,7 +130,7 @@ try{
   assert.equal(hl.other,'000011111','다른 토큰은 제 줄');assert.equal(hl.mine,'001111100','먼저 켠 토큰은 그대로');
   assert.deepEqual(hl.clearAll,['001110000','000010000'],'고른 것 없이 누르면 이 장면부터 모두 끈다(켜져 있던 곳까지)');
   assert.deepEqual(hl.undo,['001111100','000011111'],'되돌리기 한 번에 이어 적용 전체가 돌아온다');
-  assert.ok(hl.toasts.includes('계속 강조 · 장면 5~9 — 재생·영상에서 계속 환하게 보여요'),hl.toasts.join(' | '));
+  assert.ok(hl.toasts.includes('계속 강조 · 장면 5~9 — 재생·영상에서 계속 환하게 보입니다'),hl.toasts.join(' | '));
   assert.ok(hl.toasts.includes('강조 해제 · 장면 8~9'));
   assert.ok(hl.toasts.includes('강조 해제 모두 · 장면 6~9')||hl.toasts.some(m=>/^강조 해제 모두 · 장면 6/.test(m)),hl.toasts.join(' | '));
 

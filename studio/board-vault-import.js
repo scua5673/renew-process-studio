@@ -66,12 +66,12 @@
     function canWrite() { try { return !doc.body.classList.contains('ps-viewonly'); } catch (_) { return true; } }
     function run(file) {
       if (!file) return Promise.resolve(false);
-      if (file.size > MAX) { toast('파일이 너무 커요'); return Promise.resolve(false); }
+      if (file.size > MAX) { toast('파일이 너무 큽니다'); return Promise.resolve(false); }
       return Promise.resolve().then(function () { return file.text(); }).then(function (text) {
         var pack = null;
         try { pack = cleanPack(JSON.parse(text)); } catch (_) { pack = null; }
-        if (!pack) { toast('보관함에서 내보낸 파일(.json)이 아니에요'); return false; }
-        if (typeof win.importDrillPack !== 'function') { toast('지금은 가져올 수 없어요'); return false; }
+        if (!pack) { toast('보관함에서 내보낸 파일(.json)이 아닙니다'); return false; }
+        if (typeof win.importDrillPack !== 'function') { toast('지금은 가져올 수 없습니다'); return false; }
         var fs = foldersOf(pack);
         var f = new win.File([JSON.stringify(pack)], file.name || 'drillpack.json', {type: 'application/json'});
         return Promise.resolve(win.importDrillPack(f)).then(function () {
@@ -80,7 +80,7 @@
           try { if (typeof win.renderDrillFiles === 'function') win.renderDrillFiles(); } catch (_) {}
           return true;
         });
-      }, function () { toast('파일을 읽을 수 없어요'); return false; });
+      }, function () { toast('파일을 읽을 수 없습니다'); return false; });
     }
     function pick() {
       var inp = doc.createElement('input');
@@ -93,7 +93,7 @@
       if (!ov || ov.querySelector('#vccImportRow') || !canWrite()) return;
       var grid = ov.querySelector('#vccGrid'); if (!grid || !grid.parentNode) return;
       var row = doc.createElement('div'); row.className = 'vcc-ex'; row.id = 'vccImportRow';
-      row.innerHTML = '<span><b>파일에서 가져오기</b> 보관함에서 내보낸 파일(.json)을 넣습니다. 훈련 · 장면 · 설명 · 폴더가 그대로 들어와요.</span>'
+      row.innerHTML = '<span><b>파일에서 가져오기</b> 보관함에서 내보낸 파일(.json)을 넣습니다. 훈련 · 장면 · 설명 · 폴더가 그대로 들어옵니다.</span>'
         + '<button type="button" class="vcc-ex-go" id="vccImport">파일 고르기</button>';
       row.querySelector('button').onclick = function (e) {
         e.stopPropagation();

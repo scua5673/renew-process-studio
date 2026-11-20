@@ -74,5 +74,5 @@ test('the vault runs it only when the meeting opens editable, then tells and sav
   assert.ok(open.indexOf('__meetUpgrade')<open.indexOf('setView("meeting")'),'before the editor loads slide 1');
   assert.match(open,/if\(_mup&&_mup\.changed\)\{ try\{toast\(window\.__meetUpgradeText\(_mup\)\);\}catch\(_\)\{\} try\{if\(window\.__vaultAutoSaveSchedule\)window\.__vaultAutoSaveSchedule\(\);/);
   const c=ctx([]);assert.equal(c.window.__meetUpgrade(),null);
-  assert.equal(c.window.__meetUpgradeText({changed:true,best:1,names:4,brand:0}),'예전에 만든 미팅을 새 규칙으로 맞췄어요 — BEST 11 배치 · 이름 4곳');
+  assert.equal(c.window.__meetUpgradeText({changed:true,best:1,names:4,brand:0}),'예전에 만든 미팅을 새 규칙으로 맞췄습니다 — BEST 11 배치 · 이름 4곳');
 });

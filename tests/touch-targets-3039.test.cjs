@@ -41,5 +41,5 @@ test('UX-7 — 아이패드도 길게 누르지 않고 바로 끈다. 데스크�
 test('UX-11 — 아이패드 도크는 컴퓨터와 같은 치수(2.922) 그대로, 이름은 길게 누르면(2.248) — 처음 한 번 알려 준다',()=>{
   assert.match(board,/html\.ps-page-board body\.ps-ipad-work:not\(\.ps-dock\):not\(\.cmd-dock-folded\) #ps-command-dock:not\(#_\)(:not\(#_\)){8} button\{height:30px!important;min-height:30px!important;max-height:30px!important/);
   assert.match(board,/if\(localStorage\.getItem\('ps_dock_tip_hint_v1'\)\)return; localStorage\.setItem\('ps_dock_tip_hint_v1','1'\);/);
-  assert.match(board,/toast\('도구 이름은 단추를 길게 누르면 보여요'\)/);
+  assert.match(board,/toast\('도구 이름은 단추를 길게 누르면 보입니다'\)/);
 });

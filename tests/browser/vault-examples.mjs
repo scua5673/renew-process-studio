@@ -142,7 +142,7 @@ try{
   await bf.waitForSelector('.vault-start .vs-ex',{timeout:12000});
   const st=await bf.evaluate(()=>({head:document.querySelector('.vault-start .vs-head').textContent,cards:[...document.querySelectorAll('.vault-start [data-vx]')].map(b=>b.querySelector('.vs-nm').textContent),all:document.querySelector('.vault-start [data-vxall]').textContent}));
   console.log('starter',JSON.stringify(st)); await shot('10-starter');
-  assert.deepEqual(st,{head:'보관함이 비어 있어요',cards:['패턴북','훈련 세션','세트피스','작전판','미팅 자료'],all:'예시 5개 모두 담기'});
+  assert.deepEqual(st,{head:'보관함이 비어 있습니다',cards:['패턴북','훈련 세션','세트피스','작전판','미팅 자료'],all:'예시 5개 모두 담기'});
   await page.waitForTimeout(1200); assert.equal((await lib()).length,0,'an emptied vault is not refilled on its own');
   await bf.evaluate(()=>document.querySelector('.vault-start [data-vx="train"]').click());
   await bf.waitForFunction(()=>document.getElementById('editorModal').classList.contains('on')&&document.querySelectorAll('#trainingStrip .tr-tab').length===3,null,{timeout:15000});

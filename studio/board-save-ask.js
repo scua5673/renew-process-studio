@@ -17,8 +17,8 @@
 })(typeof window === 'undefined' ? null : window, function () {
   'use strict';
   var DECLINED = '보드에 저장됨 ✓ · 보관함에 담으려면 «저장»을 한 번 더 누르세요';
-  var TIP_OLD = '보관함 자료와 이어져 있으면 그 자료에도 저장해요(아니면 보관함에 담을지 물어요)';
-  var TIP_NEW = '«보드 가져오기»로 가져온 페이지면 그 보관함 자료에도 저장해요(아니면 보관함에 담을지 물어요 — 창을 닫았으면 «저장»을 한 번 더)';
+  var TIP_OLD = '보관함 자료와 이어져 있으면 그 자료에도 저장해요(아니면 보관함에 담을지 뭅니다)';
+  var TIP_NEW = '«보드 가져오기»로 가져온 페이지면 그 보관함 자료에도 저장해요(아니면 보관함에 담을지 뭅니다 — 창을 닫았으면 «저장»을 한 번 더)';
   // 페이지에 담을 것이 있는가 — 선수 · 장비 · 그림, 또는 장면 둘 이상(board-import-safe.js hasContent 와 같은 셈)
   function pageHasContent(p) {
     if (!p || typeof p !== 'object') return false;

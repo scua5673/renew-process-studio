@@ -35,7 +35,7 @@
   function show(w,d,idx){
     var slides=[];
     try{ slides=(typeof w.__meetSlidesFromBoard==='function')?(w.__meetSlidesFromBoard(d)||[]):[]; }catch(e){ note(e); }
-    if(!slides.length||typeof w.__psVaultOpenItem!=='function'){ say(w,'이 자료를 보관함에서 찾지 못했어요 — 지워졌거나 아직 이 기기에 오지 않았어요'); back(w,false); return false; }
+    if(!slides.length||typeof w.__psVaultOpenItem!=='function'){ say(w,'이 자료를 보관함에서 찾지 못했습니다 — 지워졌거나 아직 이 기기에 오지 않았습니다'); back(w,false); return false; }
     if(!(idx>=0&&idx<slides.length))idx=0;
     try{ w.__psVaultOpenItem({type:'meeting',name:d.name||'작전판',slides:slides,__showOf:d.libId},true); }catch(e){ note(e); }
     if(!(w.__vaultViewMode&&w.__vvMeetLib===d.libId)){ back(w,false); return false; }   // 열리지 않았다(로그인 · 보관함 잠김) — 일정 그대로

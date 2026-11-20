@@ -358,10 +358,10 @@
           '<label class="phb-fld"><span>번호</span><input id="phbNum" type="text" inputmode="numeric" maxlength="3" autocomplete="off"></label>'+
           '<label class="phb-fld"><span>이름</span><input id="phbNm" type="text" maxlength="'+NAME_LEN+'" autocomplete="off"></label>'+
           '<div class="phb-end"><button type="button" class="phb-btn phb-txt" data-phb="tok-del">이 선수 지우기</button><button type="button" class="phb-btn phb-pri" data-phb="tok-ok">확인</button></div></div></div>'+
-        '<div class="phb-shade" id="phbAsk" hidden><div class="phb-sheet"><h3>저장하지 않은 판이 있어요</h3><p class="phb-hint" id="phbAskMsg"></p>'+
+        '<div class="phb-shade" id="phbAsk" hidden><div class="phb-sheet"><h3>저장하지 않은 판이 있습니다</h3><p class="phb-hint" id="phbAskMsg"></p>'+
           '<div class="phb-end"><button type="button" class="phb-btn" data-phb="ask-drop">버리기</button><button type="button" class="phb-btn phb-pri" data-phb="ask-keep">계속 만들기</button></div></div></div>'+
         '<div class="phb-toast" id="phbToast" role="status" hidden></div>'+
-        '<div class="phb-rot"><span>폰보드는 세로로만 써요. 폰을 세로로 돌려 주세요.</span></div>';
+        '<div class="phb-rot"><span>폰보드는 세로로만 씁니다. 폰을 세로로 돌려 주세요.</span></div>';
       doc.body.appendChild(root);
       root.addEventListener('click',onClick);
       var pitch=$('phbPitch');
@@ -382,10 +382,10 @@
     function renderHome(){
       var box=$('phbList'),cnt=$('phbCount');
       if(M.listState==='loading'&&!M.list){cnt.textContent='';box.innerHTML='<p class="phb-blank">불러오는 중…</p>';return;}
-      if(M.listState==='fail'){cnt.textContent='';box.innerHTML='<p class="phb-blank">보관함을 읽지 못했어요. 로그인되어 있는지 확인해 주세요.</p><button type="button" class="phb-btn phb-big" data-phb="reload">다시 불러오기</button>';return;}
+      if(M.listState==='fail'){cnt.textContent='';box.innerHTML='<p class="phb-blank">보관함을 읽지 못했습니다. 로그인되어 있는지 확인해 주세요.</p><button type="button" class="phb-btn phb-big" data-phb="reload">다시 불러오기</button>';return;}
       var list=M.list||[];
       cnt.textContent=list.length?('내 폰보드 '+list.length+'개'):'';
-      if(!list.length){box.innerHTML='<p class="phb-blank">아직 없어요.</p>';return;}
+      if(!list.length){box.innerHTML='<p class="phb-blank">아직 없습니다.</p>';return;}
       box.innerHTML='<div class="phb-rows">'+list.map(function(d,i){
         return '<button type="button" class="phb-row" data-phb="open" data-i="'+i+'">'+thumbHTML(d)+'<span><span class="phb-nm">'+esc(d.name||TAG)+'</span>'+
           '<span class="phb-mt"><span class="phb-chip">폰보드</span>'+(d.quick?'<span>뎁스 차트</span>':'')+'<span>'+esc(when(d))+'</span></span></span></button>';
@@ -404,7 +404,7 @@
     /* 뎁스 차트(예전 «빠른 보드», board-quick-depth.js) — 폰보드의 한 종류. 그 창을 이 덮개 위에 띄우고, 저장하면 목록으로 돌아온다 */
     function openQuick(d){
       var Q=quick();if(!Q)return false;
-      return Q.open(win,{host:true,item:d||null,say:toast,done:function(saved,edited){show('home');toast(edited?'폰보드를 고쳤어요':'보관함에 저장했어요 · 폰보드');loadList();}});
+      return Q.open(win,{host:true,item:d||null,say:toast,done:function(saved,edited){show('home');toast(edited?'폰보드를 고쳤습니다':'보관함에 저장했습니다 · 폰보드');loadList();}});
     }
     function renderNew(){
       $('phbSpec').innerHTML=[['11','11인제'],['8','8인제'],['5','풋살']].map(function(x){return '<button type="button" class="phb-opt" data-phb="spec" data-v="'+x[0]+'" aria-pressed="'+(x[0]===M.spec)+'">'+x[1]+'</button>';}).join('');
@@ -434,7 +434,7 @@
       var s;
       if(M.tool==='put')s=[['us','우리','us'],['op','상대','op'],['ball','공','bl'],['cone','콘','cn']].map(function(x){return '<button type="button" class="phb-opt" data-phb="put" data-v="'+x[0]+'" aria-pressed="'+(M.put===x[0])+'"><i class="'+x[2]+'"></i><span>'+x[1]+'</span></button>';}).join('');
       else if(M.tool==='line')s=[['run','이동','M1 5H29'],['pass','패스','M1 5H29" stroke-dasharray="4 4'],['dribble','드리블','M1 5q3.5-7 7 0t7 0 7 0 7 0']].map(function(x){return '<button type="button" class="phb-opt" data-phb="line" data-v="'+x[0]+'" aria-pressed="'+(M.line===x[0])+'"><svg viewBox="0 0 30 10" aria-hidden="true"><path d="'+x[2]+'"/></svg><span>'+x[1]+'</span></button>';}).join('');
-      else if(M.tool==='move'){var tk=tokOf(M.doc);s='<span class="phb-hint">끌어서 옮기고, 선수를 누르면 번호 · 이름을 고쳐요.</span>'+
+      else if(M.tool==='move'){var tk=tokOf(M.doc);s='<span class="phb-hint">끌어서 옮기고, 선수를 누르면 번호 · 이름을 고칩니다.</span>'+
         '<span class="phb-size" role="group" aria-label="토큰 크기"><span>토큰</span><button type="button" data-phb="tok" data-v="-1" aria-label="토큰 작게"'+(tk<=1?' disabled':'')+'>−</button><b id="phbTokN">'+tk+'</b><button type="button" data-phb="tok" data-v="1" aria-label="토큰 크게"'+(tk>=TOKF.length?' disabled':'')+'>＋</button></span>';}
       else s='<span class="phb-hint">지울 것을 눌러요. 잘못 지웠으면 위의 되돌리기.</span>';
       $('phbSub').innerHTML=s;
@@ -454,15 +454,15 @@
       if(M.tool==='move'){var h=hit(D,p,false);if(h)G={mode:'drag',h:h,sx:e.clientX,sy:e.clientY,ox:h.o.x-p.x,oy:h.o.y-p.y,moved:false};}
       else if(M.tool==='put'){
         if(M.put==='ball'){snapHist();D.ball={x:p.x,y:p.y};}
-        else if(M.put==='cone'){if(D.cones.length>=MAX_CONES){toast('콘은 '+MAX_CONES+'개까지 놓을 수 있어요');return;}snapHist();D.cones.push({x:p.x,y:p.y});}
+        else if(M.put==='cone'){if(D.cones.length>=MAX_CONES){toast('콘은 '+MAX_CONES+'개까지 놓을 수 있습니다');return;}snapHist();D.cones.push({x:p.x,y:p.y});}
         else{
-          if(D.players.length>=MAX_PLAYERS){toast('선수는 '+MAX_PLAYERS+'명까지 놓을 수 있어요');return;}
+          if(D.players.length>=MAX_PLAYERS){toast('선수는 '+MAX_PLAYERS+'명까지 놓을 수 있습니다');return;}
           snapHist();var n=D.players.filter(function(q){return q.team===M.put;}).length+1;
           D.players.push({id:nextId(D),team:M.put,num:String(n),name:'',x:p.x,y:p.y});
         }
         paint();
       }
-      else if(M.tool==='line'){if(D.lines.length>=MAX_LINES){toast('화살은 '+MAX_LINES+'개까지 그릴 수 있어요');return;}G={mode:'line',x1:p.x,y1:p.y,x2:p.x,y2:p.y};}
+      else if(M.tool==='line'){if(D.lines.length>=MAX_LINES){toast('화살은 '+MAX_LINES+'개까지 그릴 수 있습니다');return;}G={mode:'line',x1:p.x,y1:p.y,x2:p.x,y2:p.y};}
       else if(M.tool==='erase'){
         var k=hit(D,p,true);if(!k)return;snapHist();
         if(k.type==='ball')D.ball=null;else if(k.type==='player')D.players.splice(k.i,1);else if(k.type==='cone')D.cones.splice(k.i,1);else D.lines.splice(k.i,1);
@@ -512,12 +512,12 @@
         return write(lib).then(function(){if(touch)touch();});
       });}).then(function(){
         M.saving=false;M.doc=null;M.editing=null;M.dirty=false;M.hist=[];
-        show('home');toast(editId?'폰보드를 고쳤어요':'보관함에 저장했어요 · 폰보드');
+        show('home');toast(editId?'폰보드를 고쳤습니다':'보관함에 저장했습니다 · 폰보드');
         var redraw=gfn('renderDrillFiles');try{if(redraw)redraw();}catch(e){note(e);}
         loadList();
       },function(e){
         note(e);M.saving=false;btn.disabled=false;btn.textContent='저장';
-        toast(e&&e.psVaultLocked?'보관함을 쓰려면 먼저 로그인해 주세요':(e&&e.psPhone==='gone'?'이 판을 보관함에서 찾지 못했어요. 지워졌거나 아이패드 · 컴퓨터에서 바뀌었어요':(e&&e.psPhone==='owner'?'만든 사람만 고칠 수 있어요':'저장하지 못했어요. 판은 그대로 있어요. 다시 눌러 주세요')));
+        toast(e&&e.psVaultLocked?'보관함을 쓰려면 먼저 로그인해 주세요':(e&&e.psPhone==='gone'?'이 판을 보관함에서 찾지 못했습니다. 지워졌거나 아이패드 · 컴퓨터에서 바뀌었습니다':(e&&e.psPhone==='owner'?'만든 사람만 고칠 수 있습니다':'저장하지 못했습니다. 판은 그대로 있습니다. 다시 눌러 주세요')));
       });
     }
     /* ── 단추 ── */
@@ -529,7 +529,7 @@
       if(typeof view!=='function'){toast('이 판은 아이패드 · 컴퓨터에서 열어 주세요');return;}
       close();
       try{view(d);}catch(e){note(e);}
-      var say=gfn('toast');if(say)say(ok?'만든 사람만 고칠 수 있어요. 보기로 열었어요':'아이패드 · 컴퓨터에서 손본 판이라 폰에서는 보기만 돼요');
+      var say=gfn('toast');if(say)say(ok?'만든 사람만 고칠 수 있습니다. 보기로 열었습니다':'아이패드 · 컴퓨터에서 손본 판이라 폰에서는 보기만 됩니다');
     }
     function leaveEditor(){
       if(M.dirty&&M.doc){$('phbAskMsg').textContent='«버리기»를 누르면 이 판은 사라져요.';M.ask='leave';$('phbAsk').hidden=false;return;}
@@ -544,7 +544,7 @@
       else if(k==='spec'){M.spec=v;renderNew();}
       else if(k==='form'){M.form=v;renderNew();}
       else if(k==='opp'){M.opp=v;renderNew();}
-      else if(k==='new-depth'){if(!openQuick(null))toast('뎁스 차트를 열지 못했어요. 잠시 뒤 다시 눌러 주세요');}
+      else if(k==='new-depth'){if(!openQuick(null))toast('뎁스 차트를 열지 못했습니다. 잠시 뒤 다시 눌러 주세요');}
       else if(k==='new-go')startEditor(null);
       else if(k==='reload')loadList();
       else if(k==='open'){var d=(M.list||[])[+b.getAttribute('data-i')];if(d)openItem(d);}

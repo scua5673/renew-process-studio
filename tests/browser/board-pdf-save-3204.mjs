@@ -25,7 +25,7 @@ try{
   await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');
   await f.waitForFunction(()=>{const c=document.getElementById('psExpProg');return !!c&&[...c.querySelectorAll('button')].some(b=>b.textContent.trim()==='파일에 저장');},null,{timeout:20000});
   const card=await f.evaluate(()=>{const c=document.getElementById('psExpProg');return {t:c.querySelector('.pep-t').textContent,sub:c.querySelector('.pep-sub').textContent,acts:[...c.querySelectorAll('button')].map(b=>b.textContent.trim())};});
-  assert.equal(card.t,'다 만들었어요');assert.match(card.sub,/파일에 저장.*폴더/);assert.deepEqual(card.acts.slice(0,2),['파일에 저장','내려받기']);
+  assert.equal(card.t,'다 만들었습니다');assert.match(card.sub,/파일에 저장.*폴더/);assert.deepEqual(card.acts.slice(0,2),['파일에 저장','내려받기']);
   await f.evaluate(()=>{[...document.querySelectorAll('#psExpProg button')].find(b=>b.textContent.trim()==='파일에 저장').click();});
   await f.waitForFunction(()=>window.__shared.length===1,null,{timeout:5000});
   const shared=await f.evaluate(()=>window.__shared[0]);
@@ -40,7 +40,7 @@ try{
   const dl=page.waitForEvent('download',{timeout:20000});
   await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');
   await dl;
-  assert.match(await hint(),/저장 위치 창을 열지 못해 다운로드 폴더에 받아요 \(SecurityError\)|PDF 저장됨/);
+  assert.match(await hint(),/저장 위치 창을 열지 못해 다운로드 폴더에 받습니다 \(SecurityError\)|PDF 저장됨/);
   const ev=await f.evaluate(()=>window.__ev.filter(x=>x[0]==='pdf_picker_failed'));
   assert.deepEqual(ev,[['pdf_picker_failed','SecurityError']]);
   assert.equal((await f.evaluate(()=>window.__dlNames)).length,1);

@@ -209,7 +209,7 @@ try{
   if(unsupported){
     result.mode='unsupported-native-video/frame-probe';
     result.validationMode='unsupported-native-video';
-    assert.ok(result.runtime.toasts.includes('이 브라우저는 영상 저장을 지원하지 않아요'),'native unsupported-video message');
+    assert.ok(result.runtime.toasts.includes('이 브라우저는 영상 저장을 지원하지 않습니다'),'native unsupported-video message');
     assert.equal(result.runtime.write,0);assert.equal(result.runtime.anchor,0);assert.equal(result.runtime.blob,null);assert.ok(result.runtime.remove>0);
     assert.ok(!Object.values(result.runtime.guard).some(Boolean),'unsupported export releases all guards');
     result.afterUnsupported=await readState();result.after=result.afterUnsupported;compareSources();assert.equal(result.sourcePreserved,true,'unsupported video leaves all authored source unchanged');

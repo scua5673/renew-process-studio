@@ -26,10 +26,10 @@
   if(root)root.PSPdfSave=api;
 })(typeof window!=='undefined'?window:null,function(){
   'use strict';
-  var BUSY='저장 창이 이미 열려 있어요 — 그 창에서 폴더를 고르세요';
-  var SILENT='다운로드 폴더에 받았어요 — 크롬 설정 › 다운로드 › «다운로드 전에 각 파일의 저장 위치 확인»을 켜면 폴더를 고를 수 있어요';
+  var BUSY='저장 창이 이미 열려 있습니다 — 그 창에서 폴더를 고르세요';
+  var SILENT='다운로드 폴더에 받았습니다 — 크롬 설정 › 다운로드 › «다운로드 전에 각 파일의 저장 위치 확인»을 켜면 폴더를 고를 수 있습니다';
   var SILENT_MS=2500;
-  var FB_TITLE='저장 창이 보이지 않나요?',FB_SUB='창이 떴으면 그 창에서 폴더를 고르세요. 크롬이 창을 열지 않으면 다운로드 폴더로 받을 수 있어요.',FB_DL='다운로드 폴더로 받기',FB_X='취소';
+  var FB_TITLE='저장 창이 보이지 않나요?',FB_SUB='창이 떴으면 그 창에서 폴더를 고르세요. 크롬이 창을 열지 않으면 다운로드 폴더로 받을 수 있습니다.',FB_DL='다운로드 폴더로 받기',FB_X='취소';
   function iosShare(win){try{var n=win.navigator||{};return typeof win.showSaveFilePicker!=='function'&&(n.maxTouchPoints||0)>1&&/iPhone|iPad|iPod|Macintosh/.test(n.userAgent||'')&&typeof n.share==='function';}catch(_){return false;}}
   function toast(win,m){try{if(typeof win.toast==='function')win.toast(m);}catch(_){}}
   function record(win,e,meta,status){var S=null;try{S=win.PSSync||(win.parent&&win.parent.PSSync);}catch(_){}
@@ -84,7 +84,7 @@
       Promise.resolve(p).then(function(h){if(done)return;var late=waited;finish();if(late)record(win,{name:'late',message:'dialog answered after prompt'},meta(),'ok');resolve(h);},function(e){if(done)return;var late=waited;finish();
         if(e&&e.name==='AbortError'){if(late)record(win,{name:'late',message:'dialog cancelled after prompt'},meta(),'ok');return resolve(false);}
         if(alreadyOpen(e)){if(win.__psPdfPickerWaited){win.__psPdfPickerSilent=true;record(win,{name:'silent',message:'picker already active after a silent one'},meta());toast(win,SILENT);return resolve(null);}toast(win,BUSY);return resolve(false);}
-        record(win,e,meta());toast(win,'저장 위치 창을 열지 못해 다운로드 폴더에 받아요'+(e&&e.name?' ('+e.name+')':''));resolve(null);});
+        record(win,e,meta());toast(win,'저장 위치 창을 열지 못해 다운로드 폴더에 받습니다'+(e&&e.name?' ('+e.name+')':''));resolve(null);});
       var ms=win.__psPdfSilentMs||SILENT_MS;
       timer=win.setTimeout(function(){
         if(done)return;

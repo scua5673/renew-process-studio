@@ -63,7 +63,7 @@
     function toast(m) { try { if (typeof win.toast === 'function') win.toast(m); } catch (_) {} }
     function unlocked() {
       var ok = true; try { if (typeof win.psVaultUnlocked === 'function') ok = !!win.psVaultUnlocked(); } catch (_) {}
-      if (!ok) toast('로그인하면 PNG · PDF 로 내보낼 수 있어요');
+      if (!ok) toast('로그인하면 PNG · PDF 로 내보낼 수 있습니다');
       return ok;
     }
     function base() { try { if (typeof win._animDefaultBase === 'function') return win._animDefaultBase(); } catch (_) {} return '작전판'; }
@@ -106,10 +106,10 @@
         toast('PDF 저장됨 ✓ — ' + fname);
       } catch (e) {
         try { win.console.warn('[quick-export pdf]', e); } catch (_) {}
-        toast('PDF 를 만들지 못했어요 — 다시 눌러 주세요');
+        toast('PDF 를 만들지 못했습니다 — 다시 눌러 주세요');
       } finally { busy = false; }
     }
-    function png() { if (!unlocked()) return; try { win.exportPNG(); } catch (e) { toast('이미지를 만들지 못했어요 — 다시 눌러 주세요'); } }
+    function png() { if (!unlocked()) return; try { win.exportPNG(); } catch (e) { toast('이미지를 만들지 못했습니다 — 다시 눌러 주세요'); } }
     function run(k) { if (k === 'pdf') return pdf(); return png(); }
 
     // 위쪽 막대의 단추(board-topbar.js 가 덩어리를 세울 때마다 새로 받는다)
