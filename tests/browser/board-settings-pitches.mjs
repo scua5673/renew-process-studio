@@ -54,7 +54,8 @@ try{
         const sp=__getPitchSpec(),rs=__psPitchRects||[],geo=__tiltGoalsGeo();
         const cards=[...document.querySelectorAll('#ps-multipitch [data-pitch-rect]')].map(g=>{
           const r=g.getAttribute('data-pitch-rect').split(',').map(Number),c=g.querySelector('circle,ellipse');
-          return {r,cc:+c.getAttribute(c.tagName==='ellipse'?'rx':'r')/r[2],goals:g.querySelectorAll('.ps-pitch-goal').length};
+          const dir=g.getAttribute('data-pitch-dir')||'v';   /* 3.340 — 가로 카드(새 배치 4 · 6)는 폭이 세로(r[3]) */
+          return {r,dir,cc:+c.getAttribute(c.tagName==='ellipse'?'rx':'r')/(dir==='h'?r[3]:r[2]),goals:g.querySelectorAll('.ps-pitch-goal').length};
         });
         const footprints=geo.goals.map(g=>{const ps=[g.a,g.b,g.a.map((v,i)=>v+g.n[i]*g.d),g.b.map((v,i)=>v+g.n[i]*g.d)];return [Math.min(...ps.map(p=>p[0])),Math.min(...ps.map(p=>p[1])),Math.max(...ps.map(p=>p[0])),Math.max(...ps.map(p=>p[1]))];});
         return {sp,cards,footprints,goals:geo.goals.length,fronts:document.querySelectorAll('#tiltGoals .goal-front').length,finite:geo.goals.every(g=>[...g.a,...g.b,g.h,g.d].every(Number.isFinite)),single:document.getElementById('lineLayer')?.style.display};
@@ -64,12 +65,13 @@ try{
         const a=data.footprints[i],b=data.footprints[j];
         assert.ok(Math.min(a[2],b[2])-Math.max(a[0],b[0])<=1e-6||Math.min(a[3],b[3])-Math.max(a[1],b[1])<=1e-6,'3D goal footprints must not intersect: '+JSON.stringify({spec,n,orientation,i,j,a,b}));
       }
-      for(const card of data.cards){assert.equal(card.goals,2);assert.ok(Math.abs(card.r[2]/card.r[3]-data.sp.wid/data.sp.len)<1e-6);assert.ok(Math.abs(card.cc-data.sp.cc/data.sp.wid)<1e-6);}
+      for(const card of data.cards){assert.equal(card.goals,2);assert.ok(Math.abs((card.dir==='h'?card.r[3]/card.r[2]:card.r[2]/card.r[3])-data.sp.wid/data.sp.len)<1e-6);assert.ok(Math.abs(card.cc-data.sp.cc/data.sp.wid)<1e-6);}
       assert.equal(data.single,n===1?'':'none');checks.push({spec,n,orientation});
     }
+    /* 3.340 — 가로 카드(6)의 선은 돌린 안쪽 g.ps-pitch-body 에 */
     for(const n of [1,3,6])for(const color of ['#fafafa','#102040','#dddddd']){
       await f.evaluate(({n,color})=>{__setPitchN(n);applyView();__applyPitchN(n);__applyPitch('custom',color);},{n,color});
-      const paints=await f.evaluate(()=>({expected:getCss('--pline').trim(),actual:[...document.querySelectorAll(state.pitchN>1?'#ps-multipitch [data-pitch-rect] > circle':'#lineLayer > circle')].map(c=>c.getAttribute('stroke')==='none'?c.getAttribute('fill'):c.getAttribute('stroke')||c.getAttribute('fill'))}));
+      const paints=await f.evaluate(()=>({expected:getCss('--pline').trim(),actual:[...document.querySelectorAll(state.pitchN>1?'#ps-multipitch [data-pitch-rect] > circle, #ps-multipitch [data-pitch-rect] > .ps-pitch-body > circle':'#lineLayer > circle')].map(c=>c.getAttribute('stroke')==='none'?c.getAttribute('fill'):c.getAttribute('stroke')||c.getAttribute('fill'))}));
       assert.ok(paints.actual.length>0);assert.ok(paints.actual.every(c=>c===paints.expected),'custom color contrast refreshes without changing theme key');
     }
     await f.evaluate(()=>{document.querySelector('#lineSeg [data-ln="off"]').click();});

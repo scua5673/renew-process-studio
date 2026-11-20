@@ -21,7 +21,7 @@ var f=function(v){return Math.round(v*100)/100;};
 /* ── ① 잎결 ── */
 function want(o){return !!o&&o.pitch==='grass'&&!o.img;}
 /* o = {L,T,mpp(1m), n(운동장 수)} — 칸은 운동장 수와 상관없이 8m(열 수로 줄이면 결이 뭉개져 얼룩만 남았다) */
-function plan(o){var n=Math.max(1,+o.n||1);return {x:f(+o.L||0),y:f(+o.T||0),size:f(8*(+o.mpp||10)),rot:n>1?90:0,op:OP};}
+function plan(o){var n=Math.max(1,+o.n||1),c=o.cards&&o.cards[0],hz=!!c&&c[2]>c[3];return {x:f(+o.L||0),y:f(+o.T||0),size:f(8*(+o.mpp||10)),rot:n>1&&!hz?90:0,op:OP};}   /* 3.340 — 가로 카드(긴 변이 가로)는 돌리지 않는다 */
 /* ── ② 실사 잔디 줄 ──
    o = {L,T,PW(운동장 길이 — 판 단위), len(규격 m), cards:[[x,y,w,h]…](운동장 여럿일 때)}
    → {base:{x,y,size,rot}, cards:[{x,y,size,box}]} — size = 밝은 띠 + 어두운 띠. 운동장 하나는 돌리지 않는다(world 가 가로 · 세로를 돌린다) */
@@ -29,7 +29,7 @@ function turfPlan(o){
   var cs=(o.cards&&o.cards.length)?G.cardBands(o.cards,o.len):[];
   if(!cs.length){var band=(+o.PW||1050)/G.bands(o.len);return {base:{x:f(+o.L||0),y:f(+o.T||0),size:f(2*band),rot:0},cards:[]};}
   var c0=cs[0];
-  return {base:{x:f(c0.r[0]),y:f(c0.r[1]),size:f(2*c0.band),rot:90},
+  return {base:{x:f(c0.r[0]),y:f(c0.r[1]),size:f(2*c0.band),rot:c0.hz?0:90},
     cards:cs.map(function(c){return {x:f(c.r[0]),y:f(c.r[1]),size:f(2*c.band),box:c.box.map(f)};})};
 }
 function read(win){
@@ -108,7 +108,7 @@ function mowSync(win,o){
     var rects=[],html='';
     if(!cs.length){html=paint('psFlatMow',{x:o.pr.L,y:o.pr.T,len:o.pr.PW,wid:o.pr.PH||o.pr.PW*68/105,lenM:o.lenM||o.len,cx:o.pr.CX,cy:o.pr.CY});
       rects.push(mk(d,'rect',{'class':'ps-flat-mow',x:base.getAttribute('x'),y:base.getAttribute('y'),width:base.getAttribute('width'),height:base.getAttribute('height'),fill:'url(#psFlatMow)','pointer-events':'none'}));}
-    else cs.forEach(function(c,i){html+=paint('psFlatMowC'+i,{x:c.r[0],y:c.r[1],len:c.r[3],wid:c.r[2],lenM:o.len,rot:90});
+    else cs.forEach(function(c,i){html+=paint('psFlatMowC'+i,{x:c.r[0],y:c.r[1],len:c.hz?c.r[2]:c.r[3],wid:c.hz?c.r[3]:c.r[2],lenM:o.len,rot:c.hz?0:90});   /* 3.340 */
       rects.push(mk(d,'rect',{'class':'ps-flat-mow',x:f(c.box[0]),y:f(c.box[1]),width:f(c.box[2]),height:f(c.box[3]),fill:'url(#psFlatMowC'+i+')','pointer-events':'none'}));});
     defs.innerHTML=html;
     old=[defs].concat(rects);

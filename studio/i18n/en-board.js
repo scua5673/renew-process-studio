@@ -386,3 +386,8 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "결 간격 · 하프라인에서 {}m씩 · 한쪽 {}결 + 골라인 앞 {}m":"Stripe width · every {} m from the halfway line · {} stripes each half + {} m before the goal line",
 "결 간격 · 하프라인에서 {}m씩 · 한쪽 {}결 · 골라인에 딱 맞음":"Stripe width · every {} m from the halfway line · {} stripes each half · ends on the goal line"
 },{});
+
+/* 3.340 — 운동장 여럿 새 배치(board.html __setPitchN): 같은 개수를 다시 눌러 옛 판을 새 배치로 바꿀 때의 알림 */
+(function(w,D){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),k;for(k in D)(E[k]||(E[k]={})).en=D[k];})(window,{
+"운동장을 새 배치로 바꿨어요 · 선수는 그 자리 그대로 · 되돌리기로 이전 배치":"Pitches now use the new layout · players stay where they are · undo for the previous layout"
+});
