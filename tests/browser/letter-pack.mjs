@@ -63,7 +63,7 @@ try{
   for(const bad of ['onload','밖에서 온 그림','outside.invalid','javascript:','someone-else'])assert.equal(json.includes(bad),false,'카드에 «'+bad+'» 가 없다');
   assert.equal(await f.evaluate(()=>window.__lpHit),undefined,'밖에서 온 그림은 한 번도 그려지지 않았다');
   assert.deepEqual(c.letter,{issue:3,session:'가상 세션 제목',title:'가상 호 제목',theme:'가상 주제',url:'https://process-letter.netlify.app/03/'});
-  assert.match(await hint(),/훈련 3개를 보관함에 담았어요/);
+  assert.match(await hint(),/훈련 3개를 보관함에 담았습니다/);
   // 담은 카드가 고른 채 보인다
   await f.waitForFunction(()=>{const el=document.querySelector('#drillFiles .vcard.selected');return !!el&&/레터 3호 · 가상 세션/.test(el.textContent);});
   assert.equal(await f.evaluate(()=>window.__csView),'session');

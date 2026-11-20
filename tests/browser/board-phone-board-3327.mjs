@@ -46,7 +46,7 @@ try{
   assert.equal(await tab.getAttribute('aria-current'),'page');
   assert.equal(await page.locator('#appSeg [data-app="board"]:not([data-train])').getAttribute('aria-current'),null,'«보드» is not the current tab');
   await f.waitForFunction(()=>window.__psPhoneBoard.ui().model().listState==='ok');
-  assert.match(await f.locator('#phbList').innerText(),/아직 없어요/);
+  assert.match(await f.locator('#phbList').innerText(),/아직 없습니다/);
   await shot(page,'1-home');
   /* 새 폰보드 — 8인제로 바꿨다가 11인제 4-4-2 · 상대도 */
   assert.deepEqual((await f.locator('#phbHome .phb-two button').allInnerTexts()).map(t=>t.trim()),['＋ 작전판','＋ 뎁스 차트'],'two separate ways to start');

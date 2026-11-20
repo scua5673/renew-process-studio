@@ -165,7 +165,7 @@ try{
   await shot(page,'4-view');
   /* 보기 화면에서 판을 누르면 «아이패드에서» 대신 고치는 단추를 알린다 */
   await f.locator('#boardStage').tap({position:{x:40,y:260}});
-  await f.waitForFunction(()=>/토큰을 누르거나 위의 «고치기»에서 바꿔요/.test((document.getElementById('cs-ftoast')||{}).textContent||''),null,{timeout:5000});
+  await f.waitForFunction(()=>/토큰을 누르거나 위의 «고치기»에서 바꿉니다/.test((document.getElementById('cs-ftoast')||{}).textContent||''),null,{timeout:5000});
   /* 보기 화면의 토큰을 누르면 그 자리 시트가 바로 열린다 — 그냥 닫으면 아무것도 안 바뀐다 */
   await f.locator('#tokenLayer [data-id="8"] .tok-c').tap();
   await f.locator('#pqPos').waitFor({state:'visible'});
