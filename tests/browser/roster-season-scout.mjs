@@ -141,9 +141,11 @@ try{
   await frame.locator('#pwTeam [data-pw-action="season"]').waitFor();
   await pick('#pwTeam',n2+' 시즌 · 미리');
   await frame.locator('#pwTeam .pw-proj').waitFor();
-  assert.match(await frame.locator('#pwTeam .pw-proj').innerText(),/이 시즌 스카우팅 후보 1명/);
-  await frame.getByRole('button',{name:'이 시즌 지우기',exact:true}).click();
-  await frame.waitForFunction(()=>{const t=document.getElementById('toast');return t&&t.classList.contains('on')&&/먼저 옮겨 주세요/.test(t.textContent);});
+  /* 후보 문서가 «확인 중»일 때 그려지면 후보 수 글이 빠진다 — 준비된 뒤 다시 그려 본다(CI 웹킷이 여기서 떨어졌다) */
+  let projText='';for(let i=0;i<30;i++){await scReady();await frame.evaluate(()=>renderTeam());projText=await frame.locator('#pwTeam .pw-proj').innerText();if(/이 시즌 스카우팅 후보 1명/.test(projText))break;await page.waitForTimeout(400);}
+  assert.match(projText,/이 시즌 스카우팅 후보 1명/);
+  let dropToast='';for(let i=0;i<30;i++){await scReady();await frame.getByRole('button',{name:'이 시즌 지우기',exact:true}).click();dropToast=await toastText();if(/먼저 옮겨 주세요/.test(dropToast))break;await page.waitForTimeout(500);}
+  assert.match(dropToast,/담아 둔 스카우팅 후보 1명을 먼저 옮겨 주세요/);
   assert.deepEqual(await frame.evaluate(()=>data.meta.season.future),[n2]);
 
   // ⑧ 서버 — 후보는 하나도 지워지지 않았고 꼬리표가 실려 있다
