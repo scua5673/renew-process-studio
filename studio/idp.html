@@ -7414,9 +7414,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='</div>';
     if(t){
       h+='<div class="rqw-keys">'+t.keys.map(function(id){ var v=+(base[id]||0), up=(v>=1&&v<5);
-        return '<span class="'+(up?'up':(v>=5?'max':'no'))+'">'+esc(iname(id))+'<u>'+(up?'+1':(v>=5?'최고':'요구 없음'))+'</u></span>'; }).join('')+'</div>'
-        +'<div class="rqw-note">핵심 4 가 이 자리 요구에 +1 로 얹히고(요구가 정해진 항목만 · 5 상한), 선수의 초점 유형이 따로 있으면 항목마다 <b>높은 쪽 하나만</b> 더해요.</div>';
-    } else h+='<div class="rqw-note">정하면 그 유형의 핵심 4 가 이 자리 요구에 +1 돼요.</div>';
+        return '<span class="'+(up?'up':(v>=5?'max':'no'))+'">'+esc(iname(id))+'<u>'+(up?'+1':(v>=5?'최고':'요구 없음'))+'</u></span>'; }).join('')+'</div>';
+    }
     return h+'</div>';
   }
   /* ══ 2.077 · 자리 적합도 — "우리 팀 이 자리에 이 선수가 얼마나 맞는가"
@@ -7558,9 +7557,6 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<span class="wo">'+r.f.worst.slice(0,2).map(function(x){ return '<span>'+esc(x.name)+' +'+x.gap+'</span>'; }).join('')
         +(r.f.posUnseen?'<span class="un">전용 '+r.f.posUnseen+'개 못 봄</span>':'')+'</span></div>'; }).join('')+'</div>';
     if(rest>0)h+='<div class="pf-rest">미달이 많은 '+rest+'개 자리는 접었어요.</div>';
-    h+='<div class="pf-foot">자리를 옮기라는 뜻이 아닙니다 — <b>지금 이 선수가 어느 자리 요구에 가장 가까운지</b>입니다. '
-      +'<b>포지션 전용 문항은 뺐어요</b> — 선수는 자기 군의 전용 문항으로만 평가받아 와서, 그대로 세면 한 번도 안 재 본 자리가 더 좋아 보입니다. '
-      +'전용 항목은 옆에 <b>못 봄 n개</b>로만 적었고, 그건 훈련에서 직접 봐야 압니다.</div>';
     return h+'</div>';
   }
   /* ══ 2.112 · 선수 평가 = 질문–답 · 한 화면에 한 영역 ═════════════════════════════════
@@ -7742,10 +7738,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'</'+(can?'button':'div')+'>';
     });
     h+='</div>';
-    h+='<div class="arcm-note">핵심 4 중 <b>경기에서</b> 이상 몇 개.'
-      +(can?' 줄을 누르면 <b>이번 주기 초점</b>이 되고, 초점 유형의 핵심 4는 자리 요구가 <b>+1</b> 돼요.'
-           +(cur?' 초점 줄을 다시 누르면 해제돼요.':'')
-           :'')+'</div>';
+    if(can)h+='<div class="arcm-note">줄을 누르면 <b>이번 주기 초점</b>이 되고, 초점 유형의 핵심 4는 자리 요구가 <b>+1</b> 돼요.'
+           +(cur?' 초점 줄을 다시 누르면 해제돼요.':'')+'</div>';
     return h+'</div>';
   }
   function sqArchSet(p,key){
@@ -7942,8 +7936,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(rated){
       h+='<div class="nw-dist">'+dist.map(function(n,i2){ return n?('<span class="s'+(i2+1)+'" style="flex:'+n+'">'+n+'</span>'):''; }).join('')+'</div>'
         +'<div class="nw-distl">'+dist.map(function(n,i2){ return n?('<span><i class="s'+(i2+1)+'"></i>'+SL[i2]+' '+n+'</span>'):''; }).join('')
-        +(un?'<span class="un">미평가 '+un+'</span>':'')+'</div>'
-        +'<div class="nw-cap">태도 5문항은 빈도(아직·가끔·보통·자주·늘)로 같은 칸에 셉니다.</div>';
+        +(un?'<span class="un">미평가 '+un+'</span>':'')+'</div>';
     }else h+='<div class="nw-none">아래에서 매기면 이 줄이 채워져요.</div>';
     return h+'</div>';
   }
@@ -8677,7 +8670,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +'<button type="button" data-rqf="empty"'+(sqReqFilter==='empty'?' class="on"':'')+'>비어 있는 '+_rqN.empty+'</button>'
           +'<button type="button" data-rqf="diff"'+(sqReqFilter==='diff'?' class="on"':'')+'>제안과 다른 '+_rqN.diff+'</button>'
           +'<button type="button" data-rqf="all"'+(sqReqFilter==='all'?' class="on"':'')+'>전체 '+_rqN.all+'</button>'
-          +'<span class="note">게임모델 제안이 깔려 있어요 — 손볼 것만</span></div>';
+          +'<span class="note">게임모델 제안이 깔려 있어요</span></div>';
       }
       gs.forEach(function(g){
         var _vis=g.items.filter(_rqShow);
@@ -12335,7 +12328,6 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var h='<div class="rv-form">'+rvEvidenceHtml();
     /* ① 지난 목표 진척 */
     if(last&&last.goals&&last.goals.length){
-      h+='<div class="rv-guide"><b>대화 순서</b><span>① 파악·긍정(잘 지켜온 것) → ② 데이터로 과제 하나 제안 → ③ 공감·다음 한 걸음</span></div>';
       h+='<div class="rv-fsec"><b>① 지난 목표는 어떻게 됐나</b>'+last.goals.map(function(g,i){ var v=d.prevProgress[i]||''; return '<div class="rv-prev"><span class="t">'+(i+1)+'. '+esc(g.t||'')+'</span><span class="seg">'+[['ok','달성'],['part','진행 중'],['no','아직']].map(function(o){return '<button type="button" data-rv-prev="'+i+'" data-v="'+o[0]+'" class="'+(v===o[0]?'on':'')+'">'+o[1]+'</button>';}).join('')+'</span></div>'; }).join('')+'</div>';
     }
     /* ② 강점·발전점 — 대조에서 제안 */
@@ -12881,7 +12873,6 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<div class="yr-grid">'+YROW.map(function(o){
             return '<div class="yr-cell'+(YC[o[0]]?'':' zero')+' g-'+o[2]+'"><b>'+YC[o[0]]+'</b><i>'+o[1]+'</i></div>'; }).join('')
         +'</div>'
-        +(YC.solo?'<div class="yr-note">개인운동은 다른 날과 <b>겹칠 수 있어요</b> — 팀훈련 하고 개인운동도 한 날은 둘 다에 들어요</div>':'')
         +'</section>';
       h+='<div class="ygrid">'+yh+'</div>'
         +'<div class="ylegend"><span><i class="g"></i>경기</span><span><i class="t"></i>훈련·개인운동</span><span><i class="o"></i>휴식</span><span><i class="a"></i>부상·재활</span><span>달을 누르면 월간으로 이동</span></div>';
@@ -15523,7 +15514,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       });
       y+=88;
       if(rate!=null&&rate>=8){ c.fillStyle='#B4552D'; c.font='700 12px '+F;
-        c.fillText('성장 속도 +'+rate+'cm/년 — 급성장기에는 훈련량 조절 대화가 좋아요',M,y); y+=22; }
+        c.fillText('성장 속도 +'+rate+'cm/년',M,y); y+=22; }
     }else{
       c.fillStyle='#8A9099'; c.font='600 13px '+F; c.fillText('키·몸무게 기록이 아직 없어요 — 매주 수요일에 함께 재요',M,y+18); y+=40;
     }
@@ -15544,7 +15535,6 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* 푸터 */
     line(H-104);
     c.fillStyle='#14161A'; c.font='700 14px '+F;
-    c.fillText('이번 주도 성장했습니다 — 아이에게 칭찬 한마디 부탁드려요.',M,H-70);
     c.fillStyle='#9CA1A9'; c.font='600 11px '+F;
     c.fillText('PROCESS STUDIO · 선수 개인 성장 기록(IDP)',M,H-44);
     cv.toBlob(function(b){ if(!b)return;
