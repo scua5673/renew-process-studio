@@ -4227,10 +4227,10 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.336"></script>
-<script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-bounds.js"></script><script src="board-rescue.js"></script><script src="board-mow.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script>
+<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.338"></script>
+<script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-bounds.js"></script><script src="board-rescue.js"></script><script src="board-mow.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script><script src="board-train-grid.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-tv-fold.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-sched-show.js"></script><script src="board-anim-pause.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.336"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script><script src="board-phone-board.js"></script>
+<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-sched-show.js"></script><script src="board-anim-pause.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.338"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script><script src="board-phone-board.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -4734,11 +4734,6 @@ function buildLines(){
   const LN={fill:"none",stroke:PLN,"stroke-width":3.2*LSF,opacity:".95","stroke-linecap":"round"};
   const P=el("g",{id:"lineLayer"});
   try{if(pitchViewKey()!=="full")P.setAttribute("clip-path","url(#psHalfClip)");}catch(_){}
-  /* 2.738 — 위에서 본 실제 골망: ±45° 선을 겹친 마름모 패턴을 SVG 안에 둔다.
-     외부 CSS가 아니라 순수 SVG여야 썸네일·PNG·영상·PDF 직렬화에도 그대로 남는다. */
-  const goalNetId="psGoalNet",goalMesh=6.4*LSF,goalDefs=el("defs"),goalPattern=el("pattern",{id:goalNetId,patternUnits:"userSpaceOnUse",width:goalMesh,height:goalMesh});
-  goalPattern.appendChild(el("path",{d:`M 0 0 L ${goalMesh} ${goalMesh} M ${goalMesh} 0 L 0 ${goalMesh}`,fill:"none",stroke:PLN,"stroke-width":0.52*LSF,opacity:".58","stroke-linecap":"round"}));
-  goalDefs.appendChild(goalPattern);P.appendChild(goalDefs);
   const ln=a=>P.appendChild(el("line",Object.assign({},LN,a)));
   const rc=a=>P.appendChild(el("rect",Object.assign({},LN,a)));
   const ci=a=>P.appendChild(el("circle",Object.assign({},LN,a)));
@@ -4764,16 +4759,12 @@ function buildLines(){
     rc({x:side<0?L:R-paW,y:CY-paH/2,width:paW,height:paH});
     rc({x:side<0?L:R-gaW,y:CY-gaH/2,width:gaW,height:gaH});}
     dot({cx:base+dir*spotX,cy:CY,r:3.5*LSF});
-    /* 2.738 — TacticalPad 참고처럼 골라인 밖으로 깊이가 보이는 사다리꼴 골대.
-       입구보다 뒤 프레임을 살짝 넓히고 촘촘한 마름모 망을 채워 작은 화면에서도 '골대'로 읽히게 한다. */
-    const gy=CY-goalH/2,out=side<0?-1:1,depth=Math.min(M-4*LSF,goalD*1.25),flare=0,backX=base+out*depth,backTop=gy-flare,backBottom=gy+goalH+flare;
-    const goalPath=`M ${base} ${gy} L ${backX} ${backTop} L ${backX} ${backBottom} L ${base} ${gy+goalH} Z`;
+    /* 3.338 — 선 골대(사용자 11/20 «골대가 어색하게 표현» → 목업 B안): 골포스트 · 뒤 막대를 둥근 ㄷ 자 한 줄로, 망 없이 옅은 바닥(2.738 마름모 망은 작은 화면에서 회색 상자처럼 보였다) */
+    const gy=CY-goalH/2,gb=gy+goalH,out=side<0?-1:1,depth=Math.min(M-4*LSF,goalD*1.25),backX=base+out*depth,gr=depth*.3;
+    const goalU=`M ${base} ${gy} L ${backX-out*gr} ${gy} Q ${backX} ${gy} ${backX} ${gy+gr} L ${backX} ${gb-gr} Q ${backX} ${gb} ${backX-out*gr} ${gb} L ${base} ${gb}`;
     const goalGroup=el("g",{class:"pitch-goal","data-side":side<0?"left":"right","data-goal-depth":depth});
-    goalGroup.appendChild(el("path",{class:"pitch-goal-bed",d:goalPath,fill:PLN,opacity:".055",stroke:"none"}));
-    goalGroup.appendChild(el("path",{class:"pitch-goal-net",d:goalPath,fill:`url(#${goalNetId})`,stroke:"none"}));
-    goalGroup.appendChild(el("path",{class:"pitch-goal-frame",d:`M ${base} ${gy} L ${backX} ${backTop} L ${backX} ${backBottom} L ${base} ${gy+goalH}`,fill:"none",stroke:PLN,"stroke-width":1.7*LSF,opacity:".9","stroke-linecap":"round","stroke-linejoin":"round"}));
-    goalGroup.appendChild(el("line",{class:"pitch-goal-back",x1:backX,y1:backTop,x2:backX,y2:backBottom,stroke:PLN,"stroke-width":2.8*LSF,opacity:".98","stroke-linecap":"round"}));
-    goalGroup.appendChild(el("line",{class:"pitch-goal-mouth",x1:base,y1:gy,x2:base,y2:gy+goalH,stroke:PLN,"stroke-width":3.6*LSF,opacity:"1","stroke-linecap":"round"}));
+    goalGroup.appendChild(el("path",{class:"pitch-goal-bed",d:goalU+" Z",fill:PLN,opacity:".12",stroke:"none"}));
+    goalGroup.appendChild(el("path",{class:"pitch-goal-frame",d:goalU,fill:"none",stroke:PLN,"stroke-width":3*LSF,opacity:".95","stroke-linecap":"round","stroke-linejoin":"round"}));
     P.appendChild(goalGroup);
     if(!SP.futsal){const sx=base+dir*spotX,boxFront=side<0?L+paW:R-paW,cosT=Math.abs(boxFront-sx)/arcR;
     if(cosT<1){const dy=arcR*Math.sqrt(1-cosT*cosT),sweep=side<0?1:0;
@@ -7624,8 +7615,8 @@ function _addEquipImage(file){if(!file)return;const rd=new FileReader();
       renderBench();if(typeof toast==="function")toast("내 장비에 저장됨 — 다음 작전판에서도 사용할 수 있어요");};
     img.onerror=function(){if(typeof toast==="function")toast("이미지를 읽지 못했어요");};img.src=rd.result;};
   rd.onerror=function(){if(typeof toast==="function")toast("파일을 읽지 못했어요");};rd.readAsDataURL(file);}
-/* 3.320 — 훈련 편집기에서 장비를 놓을 때도 선수 불러오기와 같은 크기([5])로(사용자 «장비도 마찬가지»). 이미 크면 그대로 · 이 판에만 */
-function _editorTokBoost(){var L=tokScaleLevels(),t=Math.round(L[5]*100)/100;if((state.tokenScale||L[0])<t-0.001)state.tokenScale=t;}
+/* 3.320 — 훈련 편집기에서 장비를 놓을 때도 선수 불러오기와 같은 크기로(사용자 «장비도 마찬가지»). 이미 크면 그대로 · 이 판에만 · 3.338 [5] → [1](사용자 «4단계 줄여서») */
+function _editorTokBoost(){var L=tokScaleLevels(),t=Math.round(L[1]*100)/100;if((state.tokenScale||L[0])<t-0.001)state.tokenScale=t;}
 function dropToken(cat,val,u,color,extra){
   pushUndo();
   if(cat==="equip"){const _ec=color||((typeof equipColor!=="undefined"&&equipColor&&EQUIP_COL_DEF[val])?equipColor:null);state.equipment.push({id:uid++,team:val,x:u.x,y:u.y,color:_ec,src:(extra&&extra.src)||null});if(document.body.classList.contains("editing"))_editorTokBoost();}
@@ -11981,7 +11972,7 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   /* 2.582 — 선수단을 올릴 때 토큰 기본 크기는 **두 단계 크게**(사용자 "선수단 올리기 해서 토큰 위로 올라갈 때 기본 토큰 크기 지금보다 2단계 크게").
      단계는 «크기 −/＋» 와 같은 사다리(tokScaleLevels: 기본 → ×1.25 → ×1.55 → …)의 [2]. 이미 그보다 크게 해 뒀으면 그대로.
      개인 설정(cs_tokscale_v4)은 안 건드린다 — 이 판(드릴 스냅의 tokenScale)에만 실린다. */
-  try{ if(!opts.boardToks){ var _tl=tokScaleLevels(), _tw=Math.round(_tl[document.body.classList.contains("editing")?5:2]*100)/100; if((state.tokenScale||_tl[0])<_tw-0.001)state.tokenScale=_tw; } }catch(_){}   /* 2.975 — 판 위 자리에 입힐 땐 코치가 맞춘 크기 그대로 · 3.320 — 훈련 편집기(body.editing)에서는 세 칸 더([5], 사용자 «지금보다 3칸 키워줘») */
+  try{ if(!opts.boardToks){ var _tl=tokScaleLevels(), _tw=Math.round(_tl[document.body.classList.contains("editing")?1:2]*100)/100; if((state.tokenScale||_tl[0])<_tw-0.001)state.tokenScale=_tw; } }catch(_){}   /* 2.975 — 판 위 자리에 입힐 땐 코치가 맞춘 크기 그대로 · 3.320 — 훈련 편집기(body.editing)에서는 세 칸 더([5]) → 3.338 네 칸 아래 [1](사용자 «4단계 줄여서») */
   /* 맨 오른쪽 대기 정렬 — 위에서부터 GK → 수비 → 미드필더 → 공격수 한 줄씩.
      포메이션 자리가 아니라 "끌어다 쓰는 출발 대형"이라 코치가 원하는 곳으로 바로 배치한다. */
   const GRP={GK:["GK"],DF:["CB","LCB","RCB","LB","RB","LWB","RWB","FB"],MF:["DM","LDM","RDM","CM","LCM","RCM","AM","LM","RM"],FW:["CF","ST","LW","RW","W"]};   /* 2.752 — 세부 포지션 포함 */
