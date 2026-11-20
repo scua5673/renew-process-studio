@@ -39,5 +39,5 @@ for(const malformed of ['{broken','[]','{"v":2}'])test('review save preserves un
  const h=fixture();h.local.set('cs_idp_pub_v1_player-a',malformed);h.save();assert.equal(h.local.get('cs_idp_pub_v1_player-a'),malformed);assert.ok(h.c._rvDraft);assert.equal(h.sync.length,0);
 });
 test('failed storage keeps the draft and never claims success',()=>{
- const h=fixture();h.state.fail=true;h.save();assert.ok(h.c._rvDraft);assert.equal(h.sync.length,0);assert.equal(h.toasts.at(-1),'저장하지 못했어요');
+ const h=fixture();h.state.fail=true;h.save();assert.ok(h.c._rvDraft);assert.equal(h.sync.length,0);assert.equal(h.toasts.at(-1),'저장하지 못했습니다');
 });
