@@ -69,7 +69,7 @@ try{
   assert.equal(await vis('#cmd-board-settings-pop .cmd-board-settings-danger'),false,'지우기·초기화는 배치에만');
   await f.evaluate(()=>window.__setTilt(true));await page.waitForTimeout(600);
   sc=await secs();assert.deepEqual(sc,['보기','3D 경기장','편집','도크','새 보드','단축키'],'3D: 3D 경기장 묶음 '+JSON.stringify(sc));
-  lb=await labels();assert.ok(lb.includes('카메라')&&lb.includes('꾸밈')&&lb.includes('분위기'),'3D 줄 '+JSON.stringify(lb));
+  lb=await labels();assert.ok(lb.includes('카메라')&&lb.includes('꾸밈')&&!lb.includes('분위기'),'3D 줄 '+JSON.stringify(lb));   /* 3.346 — 기대를 일부러 고침: «분위기» 줄은 없다 */
   await page.screenshot({path:path.join(SHOTS,'board-settings-hierarchy-view-3d-'+engine+'.png')});
   await f.evaluate(()=>window.__setPitchSpec('grid30'));await page.waitForTimeout(500);
   lb=await labels();assert.ok(!lb.includes('꾸밈'),'그리드 판은 꾸밈이 효과가 없어 숨는다 '+JSON.stringify(lb));

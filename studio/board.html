@@ -3134,18 +3134,8 @@ body.bc-tilt3d #board #world>rect:not([id]),body.bc-tilt3d #board .grass-stripes
    ⚠ 각도를 바꾸면 __tiltFit 이 틀 맞춤을 다시 잰다(실측). 좌표 역변환(bcUnproject)도 실측이라 따로 고칠 것이 없다. */
 body.bc-tilt3d{--tilt-tf:translateY(var(--tilt-ty,0px)) scale(var(--tilt-k,1),calc(var(--tilt-sy,1.08)*var(--tilt-k,1))) rotateX(var(--tilt-ax,24deg))}   /* 3.010 — 카메라 «낮게·보통·높게»는 --tilt-ax(각도)·--tilt-sy(세로 보정)만 바꾼다(기본 = 3.009 의 24° · 1.08) */
 html body.bc-tilt3d #boardStage{background:#050806!important;perspective:1150px;perspective-origin:50% 32%}   /* !important — 장면 줄이 열리면 applyView 가 판 배경을 인라인으로 칠하고, figma-premium.css 의 html.ps-page-board #boardStage(!important)도 같은 세기라 html 을 하나 더 붙여 이긴다 */
-/* 3.029 — 분위기(사용자 «3D 연출 — 시간대»): 야간 = 지금 모습(어두운 무대 · 조명탑) · 낮 = 밝은 무대 · 해질녘 = 따뜻한 빛. 무대 바탕과 화면 위 빛·비네트 층(#tiltMood)은 여기,
-   잔디 톤 · 조명등 · 빛 기둥은 경기장 그림(tiltStadium), 선수 칩 그림자는 board-token-depth.js(applyChip · opts.mood). 기기 설정(ps_tilt3d_opts_v1.mood) — body[data-tilt-mood] */
-html body.bc-tilt3d[data-tilt-mood="day"] #boardStage{background:#3c4753!important}
-html body.bc-tilt3d[data-tilt-mood="dusk"] #boardStage{background:#241c27!important}
-#tiltMood{display:none;position:absolute;inset:0;pointer-events:none;z-index:5}
-body.bc-tilt3d #tiltMood{display:block}
-body.bc-tilt3d[data-tilt-mood="night"] #tiltMood{background:radial-gradient(18% 14% at 8% 4%,rgba(255,250,230,.26),transparent 70%),radial-gradient(18% 14% at 92% 4%,rgba(255,250,230,.26),transparent 70%),radial-gradient(90% 80% at 50% 45%,transparent 60%,rgba(0,0,0,.34) 100%)}
-body.bc-tilt3d[data-tilt-mood="dusk"] #tiltMood{background:radial-gradient(60% 50% at 10% 0%,rgba(255,170,90,.32),transparent 70%),linear-gradient(180deg,rgba(255,140,60,.08),rgba(80,40,120,.12))}
-body.bc-tilt3d[data-tilt-mood="day"] #tiltMood{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.07))}
-/* 3.033 — 아이폰 · 아이패드 사파리는 이 층을 그리지 않는다: 3D 판 위에 겹친 무대 크기 층이라 따로 한 장(11인치 약 14MB · 13인치 약 20MB)을 더 잡는다.
-   아이패드에서 3D 경기장을 그리다 페이지가 연달아 강제 종료됐다(3D 판 전체 93~147MB, 평면 19MB). 무대 바탕 · 잔디 톤 · 조명 · 칩 그림자는 분위기를 그대로 따른다 */
-@supports (-webkit-touch-callout:none){ html body.bc-tilt3d #tiltMood{display:none!important} }
+/* 3.346 — 3D 조명을 쓰지 않는다(사용자 «3D 모드일 때 조명효과가 너무 들어간 것 같아» → «아예 전부 쓰지 말자»): 분위기(낮 · 해질녘 · 야간) 설정 줄 · 화면 위 빛 층(#tiltMood) ·
+   조명 기둥 · 지붕 조명등 · 바깥 어둠 · 노을 겹 · 칩 광택 · 드리운 그림자를 걷었다. 무대 바탕은 한 색, 칩 발밑 그림자만 남는다 */
 /* 판 SVG 의 1px 안쪽 테두리(figma-premium.css «html.ps-page-board #boardStage>svg#board» !important)가 기울인 판의 위·아래 끝에
    가로줄로 남는다 — 입체에서는 테두리 없음. 그 규칙이 id 둘이라 여기도 id 둘 + 요소 하나 더 */
 html body.bc-tilt3d #boardStage>svg#board{box-shadow:none!important;border:0!important;outline:0!important}
@@ -3498,7 +3488,6 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
           <div class="menurow ps-tilt-row" id="tiltDecoRow"><span class="menulbl">경기장</span><div class="seg" id="tiltDecoSeg" role="group" aria-label="3D 경기장 꾸밈"><button type="button" data-deco="full" class="on" aria-pressed="true" title="관중석·지붕·광고판·벤치">전체</button><button type="button" data-deco="simple" aria-pressed="false" title="광고판·벤치만 — 운동장이 더 크게">간단</button><button type="button" data-deco="grass" aria-pressed="false" title="잔디만 — 운동장이 가장 크게">잔디만</button></div></div>
           <div class="menurow ps-tilt-row" id="tiltAdRow"><span class="menulbl">광고판</span><input type="text" id="tiltAdInput" class="ps-tilt-ad" maxlength="24" placeholder="PROCESS STUDIO" title="광고판에 들어갈 글자 — 비우면 PROCESS STUDIO" aria-label="3D 광고판 문구" autocomplete="off" spellcheck="false" enterkeyhint="done"></div>
           <!-- 3.029 — 3D 분위기 · 팀 브랜딩(기기 설정, 3D 를 켰을 때만) -->
-          <div class="menurow ps-tilt-row" id="tiltMoodRow"><span class="menulbl">분위기</span><div class="seg" id="tiltMoodSeg" role="group" aria-label="3D 분위기"><button type="button" data-mood="day" aria-pressed="false" title="낮 — 밝은 무대 · 해가 높아 짧은 그림자">낮</button><button type="button" data-mood="dusk" aria-pressed="false" title="해질녘 — 따뜻한 빛 · 긴 그림자">해질녘</button><button type="button" data-mood="night" class="on" aria-pressed="true" title="야간 — 조명탑 네 개 · 네 방향 그림자">야간</button></div></div>
           <div class="menurow ps-tilt-row" id="tiltBrandRow"><span class="menulbl">팀 브랜딩</span><div class="seg" id="tiltBrandSeg" role="group" aria-label="3D 팀 브랜딩"><button type="button" data-brand="0" class="on" aria-pressed="true">끄기</button><button type="button" data-brand="1" aria-pressed="false" title="광고판에 팀 이름 · 관중석에 팀 색">팀 색</button></div></div>
           <!-- 3.029 — 분석 그래픽(보드에 저장 · 평면·3D 모두 · 여러 개 켤 수 있다) -->
           <div class="menurow" id="analysisRow"><span class="menulbl">분석 그래픽</span><div class="seg ps-multi" id="analysisSeg" role="group" aria-label="분석 그래픽"><button type="button" data-an="hull" aria-pressed="false" title="팀 형태 — 필드 선수 외곽선 · 폭 · 길이">팀 형태</button><button type="button" data-an="gap" aria-pressed="false" title="라인 간격 — 수비·미드·공격 사이 m">라인 간격</button><button type="button" data-an="off" aria-pressed="false" title="오프사이드 라인 — 제 골문에서 둘째 선수">오프사이드</button><button type="button" data-an="vor" aria-pressed="false" title="공간 점유 — 선수마다 차지한 땅">공간 점유</button><button type="button" data-an="press" aria-pressed="false" title="압박 거리 — 공에서 가장 가까운 선수">압박 거리</button></div></div>
@@ -10360,7 +10349,7 @@ window.__mp4Mux=_mp4Mux;
    화면의 3D 는 CSS(판 SVG 에 --tilt-tf = translateY · scale(k, sy·k) · rotateX(ax), 무대에 perspective)라 SVG 를 그림으로 바꾸면 평면이 된다.
    그래서 한 장마다 ① 경기장 그림(#tiltSurface 의 그림 한 장)과 판 그림(3D 칩 그대로 · 바탕 투명)을 평면 캔버스에 겹치고
    ② 같은 카메라 식으로 줄마다 옮겨 그린다 — rotateX 는 가로줄을 가로줄로 보내므로 줄 하나는 drawImage 한 번(가로 배율·자리만 다르다).
-   ③ 서 있는 골대 · 코너 깃발은 같은 식으로 높이까지 넣어 선으로 그리고 ④ 분위기 빛(#tiltMood)을 덮는다.
+   ③ 서 있는 골대 · 코너 깃발은 같은 식으로 높이까지 넣어 선으로 그리고 (3.346 — 분위기 빛은 걷었다).
    카메라 각도·세로 보정·여백·분위기는 화면 설정 그대로(__tiltCamNow · __tiltPadsNow). 원근 세기는 화면 비율(무대 760px 에 1150px)을 영상 크기에 맞춘다.
    GIF · PNG · 평면 보기의 MP4 는 그대로(평면). (tests/export-3d-3039 가 이 구간을 잘라 쓴다) */
 /* 순수 구간 시작 */
@@ -10422,16 +10411,7 @@ function _t3DrawGoals(ctx,cam,geo,lw){ if(!geo)return;
     ctx.beginPath(); ctx.moveTo(c0[0],c0[1]); ctx.lineTo(c1[0],c1[1]); ctx.strokeStyle='#e9edf0'; ctx.lineWidth=Math.max(1,lw*.6); ctx.stroke();
     const e=[fl.c[0]+fl.sx*fl.fw,fl.c[1]]; poly([c1,P(e,fl.h),P(e,fl.h-fl.fh),P(fl.c,fl.h-fl.fh)],'#f5b400','rgba(0,0,0,.25)',.6); });
   ctx.restore(); }
-/* 분위기 빛 — 화면의 #tiltMood(CSS 그라디언트)와 같은 값. 타원 그라디언트는 캔버스를 늘려 그린다 */
-function _t3Mood(ctx,W,H,mood){ ctx.save();
-  const rad=(cx,cy,rx,ry,stops)=>{ ctx.save(); ctx.translate(cx*W,cy*H); ctx.scale(rx*W,ry*H); const g=ctx.createRadialGradient(0,0,0,0,0,1); stops.forEach(s=>g.addColorStop(s[0],s[1])); ctx.fillStyle=g; ctx.fillRect(-cx/rx,-cy/ry,1/rx,1/ry); ctx.restore(); };
-  const lin=(a,b)=>{ const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,a); g.addColorStop(1,b); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); };
-  if(mood==='day')lin('rgba(255,255,255,.05)','rgba(0,0,0,.07)');
-  else if(mood==='dusk'){ rad(.1,0,.6,.5,[[0,'rgba(255,170,90,.32)'],[.7,'rgba(255,170,90,0)']]); lin('rgba(255,140,60,.08)','rgba(80,40,120,.12)'); }
-  else { rad(.08,.04,.18,.14,[[0,'rgba(255,250,230,.26)'],[.7,'rgba(255,250,230,0)']]); rad(.92,.04,.18,.14,[[0,'rgba(255,250,230,.26)'],[.7,'rgba(255,250,230,0)']]);
-    rad(.5,.45,.9,.8,[[.6,'rgba(0,0,0,0)'],[1,'rgba(0,0,0,.34)']]); }
-  ctx.restore(); }
-const _T3_STAGE={night:'#050806',day:'#3c4753',dusk:'#241c27'};   /* 무대 바탕 — 화면 html body.bc-tilt3d #boardStage 의 분위기별 색 */
+const _T3_STAGE={night:'#050806'};   /* 무대 바탕 — 화면 html body.bc-tilt3d #boardStage 와 같은 색 · 3.346 — 분위기 빛(_t3Mood)은 걷었다 */
 /* 판 그림에 넣는 3D 화면 규칙(직렬화엔 페이지 CSS 가 없다) — 화면의 ps-tilt-continuous · ps-3009-stadium 과 같은 것만 */
 function _t3BoardCss(stadium,lightPitch){
   return (stadium?'#world>rect:not([id]),.grass-stripes,#ps-pitchtile,#ps-pitchimg,':'')+'.pitch-goal,.ps-pitch-goal{visibility:hidden}'
@@ -10608,7 +10588,6 @@ async function _exportVideoRun(opts){
       fx.drawImage(fr.img,0,0,RW,RH);
       _t3Warp(ctx,fr.cam,T.flat,src,RW,RH);
       _t3DrawGoals(ctx,fr.cam,fr.geo,T.lw); }
-    _t3Mood(ctx,Wc,Hc,T.cam.mood);
     titleBar(meta); capBar(meta.cap,meta.idx); _wmDraw(ctx,Wc,Hc,!!(dest&&opts.reel)); _pushFrame(); }
   async function produce(k){if(plan[k].cover&&window.PSMeetCover)return null; if(_t3x)return _t3Produce(k); try{ plan[k].set(); }catch(_){} if(window.PSPitchPhoto)await PSPitchPhoto.ready(state.pitchImg,renderPitchImg);const o=boardImageXML(plan[k].vb||uvb); const img=new Image();
     const pr=new Promise(function(res){ img.onload=function(){ res(img); }; img.onerror=function(){ res(null); }; });
@@ -14780,9 +14759,6 @@ function init(){
           +'<div class="st-far"></div><div class="st-near"></div><div class="st-board"></div><div class="st-lights"></div>';
         stage.insertBefore(el,stage.firstChild);
       }
-      /* 3.029 — 분위기 층(화면 위 빛·비네트): 판 위, 포인터는 통과. 모양은 body[data-tilt-mood] 의 CSS */
-      var mood=document.getElementById("tiltMood");
-      if(!mood){ mood=document.createElement("div"); mood.id="tiltMood"; mood.setAttribute("aria-hidden","true"); stage.appendChild(mood); }
     }catch(_){}
   };
   /* ══ 3.009 · 틀 맞춤은 **보여 줄 운동장 범위(__pvBox)** 를 잰다 ═══════════════════════════
@@ -14805,9 +14781,8 @@ function init(){
   /* 3.029 — 분위기(사용자 «3D 연출 — 낮 · 해질녘 · 야간»). 야간 = 지금까지의 모습(어두운 무대 · 조명탑 넷 · 네 방향 그림자)이라 기본.
      ga·gb 잔디 톤(사진 잔디가 아닐 때) · tint 잔디 위 색 겹 · cone 조명 빛 기둥(잔디 네 귀퉁이) · lamp 지붕 조명등 밝기 · vig 바깥 어둠 · warm 전체 노을 겹.
      무대 바탕 · 화면 위 빛 층은 CSS(body[data-tilt-mood]) · 칩 그림자는 _chipOpts().mood → board-token-depth.js */
-  var TILT_MOOD={night:{key:"night",ga:"#2c6a2a",gb:"#367a33",tint:null,cone:.9,lamp:1,vig:.62,warm:0},
-                 day:{key:"day",ga:"#3b9a4e",gb:"#348c46",tint:["#fff",.06],cone:0,lamp:.2,vig:.3,warm:0},
-                 dusk:{key:"dusk",ga:"#3a8a45",gb:"#327d3e",tint:["#ff9a3c",.1],cone:.45,lamp:.7,vig:.52,warm:.12}};
+  /* 3.346 — 조명을 쓰지 않는다: 분위기는 하나(저장된 day · dusk 는 night 로 읽힌다) · 빛 기둥 · 조명등 · 바깥 어둠 · 색 겹은 모두 0. ga · gb 는 사진을 못 그리는 기기의 실사 잔디 두 색 */
+  var TILT_MOOD={night:{key:"night",ga:"#2c6a2a",gb:"#367a33",tint:null,cone:0,lamp:0,vig:0,warm:0}};
   function tiltMoodApply(){ try{ var m=(window.__tilt3d&&TILT_MOOD[window.__tilt3d.mood])?window.__tilt3d.mood:"night"; document.body.setAttribute("data-tilt-mood",m); try{window.__tiltStands&&window.__tiltStands();}catch(_){} }catch(_){} }
   /* 3.029 — 팀 브랜딩의 팀 이름: 선수단 이름(기본값 «우리 선수단»이 아닐 때) → 경기 시계의 우리 팀 이름(기본값 «우리»가 아닐 때) → 없음 */
   function tiltTeamName(){ try{ var n=(typeof squad!=="undefined"&&squad&&squad.name&&squad.name!=="우리 선수단")?squad.name:"";
@@ -15007,7 +14982,7 @@ function init(){
             :mow.grass(pk.ga,pk.gb))   /* 3.255 — 사진을 못 그리는 기기의 두 색 줄(x)은 운동장 하나에서만 — 여러 운동장은 카드 띠가 줄이다 */
       +mow.defs+PSStadiumGround.grainDefs({m:m,L:L,T:T,f:f,rot:mow.rot})
       +(crowd?'<pattern id="psStCrowd" patternUnits="userSpaceOnUse" width="'+f(ct)+'" height="'+f(ct*.96)+'"><image href="'+crowd+'" width="'+f(ct)+'" height="'+f(ct*.96)+'" preserveAspectRatio="none"/></pattern>':'')
-      +'<radialGradient id="psStLight" gradientUnits="userSpaceOnUse" cx="'+f(CX)+'" cy="'+f(CY)+'" r="'+f(PW*.7)+'"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></radialGradient>'
+      +'<radialGradient id="psStLight" gradientUnits="userSpaceOnUse" cx="'+f(CX)+'" cy="'+f(CY)+'" r="'+f(PW*.7)+'"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>'
       +'<radialGradient id="psStVig" gradientUnits="userSpaceOnUse" cx="'+f(CX)+'" cy="'+f(CY)+'" r="'+f(PW*1.05)+'"><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="'+md.vig+'"/></radialGradient>'
       +'<radialGradient id="psStWear"><stop offset="0" stop-color="#8a7a4c" stop-opacity=".38"/><stop offset=".6" stop-color="#7a6c42" stop-opacity=".14"/><stop offset="1" stop-color="#7a6c42" stop-opacity="0"/></radialGradient>'
       +'<radialGradient id="psStLamp"><stop offset="0" stop-color="#fffbe9" stop-opacity=".95"/><stop offset=".25" stop-color="#fff3c8" stop-opacity=".45"/><stop offset="1" stop-color="#fff3c8" stop-opacity="0"/></radialGradient>'
@@ -22228,7 +22203,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
                 ["look","이름표",["namePosSeg","nameSizeSeg","nameStyleSeg","nameFontSeg"]],
                 ["look","분석",["analysisSeg"]],
                 ["view","보기",["tiltSeg",editorHint]],
-                ["view","3D 경기장",["tiltCamSeg","tiltDecoSeg","tiltAdInput","tiltMoodSeg","tiltBrandSeg"],"ps-tilt-row"],
+                ["view","3D 경기장",["tiltCamSeg","tiltDecoSeg","tiltAdInput","tiltBrandSeg"],"ps-tilt-row"],
                 ["view","편집",["dragSnapSeg",snapHint]],
                 ["view","새 보드",[defaultRow,defaultHint],"bs-sec-newboard"]];
       var frag=document.createDocumentFragment(),first={};

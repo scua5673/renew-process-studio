@@ -70,27 +70,19 @@ try{
   assert.equal(an.empty,0,'all off → nothing drawn');assert.equal(an.snap3,null,'and nothing saved');
   assert.equal(an.restored,4,'a snapshot restores its toggles');assert.equal(an.restoredPressed,'truefalsetruefalsefalse');
 
-  // ② 3D 분위기 — 야간이 기본(지금 모습), 낮·해질녘으로 바꾸면 경기장 그림 · 무대 · 칩 그림자가 바뀌고 기기에 남는다
+  // ② 3.346 — 기대를 일부러 고침(사용자 «아예 전부 쓰지 말자»): 3D 에 조명이 없다 — 조명 기둥 · 지붕 조명등 · 바깥 어둠 · 화면 위 빛 층 · 드리운 그림자 · 분위기 줄 모두 없음, 저장된 낮 · 해질녘은 한 모습으로 읽힌다
   const night=await page.evaluate(async()=>{
     __setTilt(true);__tiltFit();await __sleep(800);const st=__stadium();
-    return {mood:document.body.getAttribute('data-tilt-mood'),sig:st.sig,cone:st.svg.includes('psStCone')&&/clip-path="url\(#psStPitchClip\)"/.test(st.svg),shadows:document.querySelectorAll('#tokenLayer .ps-chip-shadow').length,chips:document.querySelectorAll('#tokenLayer .ps-chip').length,
-      moodLayer:(function(){const m=document.getElementById('tiltMood');return m?getComputedStyle(m).display:'';})(),iosSafari:CSS.supports('-webkit-touch-callout','none'),stored:JSON.parse(localStorage.getItem('ps_tilt3d_opts_v1')||'{}').mood,pressed:[...document.querySelectorAll('#tiltMoodSeg button')].map(b=>b.getAttribute('aria-pressed')).join('')};
+    const r={mood:document.body.getAttribute('data-tilt-mood'),sig:st.sig,cone:/fill="url\(#psStCone\)"/.test(st.svg),lamp:(st.svg.match(/fill="url\(#psStLamp\)" fill-opacity="([^"]*)"/)||[])[1],vig:(st.svg.match(/id="psStVig"[^>]*>.*?stop-opacity="0"\/><stop offset="1" stop-color="#000" stop-opacity="([^"]*)"/)||[])[1],warm:st.svg.includes('#ff9a3c'),
+      shadows:document.querySelectorAll('#tokenLayer .ps-chip-shadow').length,gloss:document.querySelectorAll('#tokenLayer [fill="url(#psChipGloss)"]').length+(document.getElementById('psChipGloss')?1:0),chips:document.querySelectorAll('#tokenLayer .ps-chip').length,
+      moodLayer:!!document.getElementById('tiltMood'),moodRow:!!document.getElementById('tiltMoodRow'),bg:getComputedStyle(document.getElementById('boardStage')).backgroundColor};
+    window.__setTilt3dOpt('mood','day');window.__setTilt3dOpt('mood','dusk');await __sleep(300);
+    r.after=document.body.getAttribute('data-tilt-mood');r.afterSig=__stadium().sig;r.stored=JSON.parse(localStorage.getItem('ps_tilt3d_opts_v1')||'{}').mood;r.afterBg=getComputedStyle(document.getElementById('boardStage')).backgroundColor;
+    return r;
   });
-  assert.equal(night.mood,'night','today\'s look is the default');assert.match(night.sig,/\|night\|0\|\|0$/);assert.ok(night.cone,'floodlight cones on the grass');
-  assert.equal(night.chips,22);assert.equal(night.shadows,88,'four shadows per chip under the masts');assert.equal(night.moodLayer,night.iosSafari?'none':'block','3.033 — iPhone/iPad Safari skips the stage-sized light layer (memory)');assert.equal(night.stored,undefined,'nothing stored until chosen');
-  assert.equal(night.pressed,'falsefalsetrue');
-  const day=await page.evaluate(async()=>{
-    document.querySelector('#tiltMoodSeg [data-mood="day"]').click();await __sleep(800);const st=__stadium();
-    return {mood:document.body.getAttribute('data-tilt-mood'),sig:st.sig,cone:st.svg.includes('psStCone')&&/clip-path="url\(#psStPitchClip\)"/.test(st.svg),lampDim:/fill="url\(#psStLamp\)" fill-opacity="0?\.2"/.test(st.svg),shadows:document.querySelectorAll('#tokenLayer .ps-chip-shadow').length,
-      bg:getComputedStyle(document.getElementById('boardStage')).backgroundColor,stored:JSON.parse(localStorage.getItem('ps_tilt3d_opts_v1')||'{}').mood,pressed:[...document.querySelectorAll('#tiltMoodSeg button')].map(b=>b.getAttribute('aria-pressed')).join('')};
-  });
-  assert.equal(day.mood,'day');assert.match(day.sig,/\|day\|0\|\|0$/,'the stadium is redrawn');assert.equal(day.cone,false,'no floodlights by day');assert.ok(day.lampDim,'roof lamps off');
-  assert.equal(day.shadows,22,'one short shadow per chip');assert.equal(day.bg,'rgb(60, 71, 83)','a lighter stage');assert.equal(day.stored,'day','remembered on this device');assert.equal(day.pressed,'truefalsefalse');
-  const dusk=await page.evaluate(async()=>{
-    window.__setTilt3dOpt('mood','dusk');await __sleep(800);const st=__stadium();
-    return {sig:st.sig,warm:/fill="#ff9a3c" fill-opacity="0?\.12"/.test(st.svg),shadows:document.querySelectorAll('#tokenLayer .ps-chip-shadow').length,long:!!document.querySelector('#tokenLayer .ps-chip-shadow[transform="rotate(12)"]'),bg:getComputedStyle(document.getElementById('boardStage')).backgroundColor};
-  });
-  assert.match(dusk.sig,/\|dusk\|0\|\|0$/);assert.ok(dusk.warm,'a sunset wash');assert.equal(dusk.shadows,22);assert.ok(dusk.long,'one long shadow');assert.equal(dusk.bg,'rgb(36, 28, 39)');
+  assert.equal(night.mood,'night');assert.match(night.sig,/\|night\|0\|\|0$/);assert.equal(night.cone,false,'no floodlight cones');assert.equal(+night.lamp,0,'roof lamps off');assert.equal(+night.vig,0,'no outer darkness');assert.equal(night.warm,false);
+  assert.equal(night.chips,22);assert.equal(night.shadows,0,'no cast shadows');assert.equal(night.gloss,0,'no gloss');assert.equal(night.moodLayer,false,'no light layer over the stage');assert.equal(night.moodRow,false,'no mood row');
+  assert.equal(night.bg,'rgb(5, 8, 6)');assert.equal(night.after,'night','day · dusk are not looks any more');assert.equal(night.afterSig,night.sig);assert.equal(night.stored,undefined);assert.equal(night.afterBg,night.bg);
 
   // ③ 팀 브랜딩 — 광고판 = 팀 이름 · 관중은 팀 색 · 직접 적은 문구가 우선 · 끄면 PROCESS STUDIO
   const brand=await page.evaluate(async()=>{
