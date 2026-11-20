@@ -58,26 +58,22 @@
       [].slice.call(world.children).forEach(function(c){ if(c.tagName.toLowerCase()==='g' && !c.id && c.querySelector('circle,path,line')){ c.setAttribute('data-ps-hidden','1'); c.style.display='none'; } }); ['#lineLayer','#gridLayer'].forEach(function(sel){ var el=world.querySelector(sel); if(el){ el.setAttribute('data-ps-hidden','1'); el.style.display='none'; } });
       function E(t,a){ var e=doc.createElementNS(NS,t); for(var k in a) e.setAttribute(k,a[k]); return e; }
       var _lc=lineColor,ST={stroke:_lc,'stroke-width':'1.3',fill:'none','stroke-opacity':'0.92'};
-      var _goalNetSeq=0;
       function pitch(x0,y0,w,h,goalDepthCap,showGoals){
         var g=E('g',{'data-pitch-rect':[x0,y0,w,h].join(',')});
         if(!lines)return g;
-        var _goalNetId='ps-mp-goal-net-'+(++_goalNetSeq), _goalMesh=Math.max(3.8,Math.min(6.4,w*.025));
-        var _goalDefs=E('defs',{}),_goalPattern=E('pattern',{id:_goalNetId,patternUnits:'userSpaceOnUse',width:_goalMesh,height:_goalMesh});
-        _goalPattern.appendChild(E('path',{d:'M 0 0 L '+_goalMesh+' '+_goalMesh+' M '+_goalMesh+' 0 L 0 '+_goalMesh,fill:'none',stroke:_lc,'stroke-width':'0.52','stroke-opacity':'0.58','stroke-linecap':'round'}));
-        _goalDefs.appendChild(_goalPattern);g.appendChild(_goalDefs);
         function add(t,a){ for(var k in ST) if(!(k in a)) a[k]=ST[k]; g.appendChild(E(t,a)); }
-        /* 2.738 — 멀티피치도 단일 보드와 같은 사다리꼴 프레임·마름모 망으로 통일한다. */
-        function goalShape(yLine,dir,goW,rawDepth){
+        /* 3.338 — 선 골대(사용자 11/20 «골대가 어색하게 표현» → 목업 B안): 골포스트 · 뒤 막대를 둥근 ㄷ 자 한 줄로, 망 없이 옅은 바닥.
+           2.738 의 마름모 망 · 굵은 뒤 막대는 작은 카드에서 회색 상자처럼 보였다. 입구 선(.ps-pitch-goal-mouth)은 3D 골대가 읽는 자리라 남긴다(골라인과 같은 굵기).
+           line = 골라인 좌표 · dir = 바깥쪽(-1 위/왼쪽, 1 아래/오른쪽) · axis 'h' 면 입구가 세로(line = x, mid = 입구 가운데 y — 가로로 눕힌 카드) */
+        function goalShape(line,dir,goW,rawDepth,axis,mid){
           if(showGoals===false)return;
-          var center=x0+w/2,frontL=center-goW/2,frontR=center+goW/2,depth=Math.max(5,Math.min(rawDepth*1.25,goalDepthCap||Infinity)),backY=yLine+dir*depth,flare=0,backL=frontL-flare,backR=frontR+flare;
-          var d='M '+frontL+' '+yLine+' L '+backL+' '+backY+' L '+backR+' '+backY+' L '+frontR+' '+yLine+' Z';
-          var gg=E('g',{class:'ps-pitch-goal','data-side':dir<0?'top':'bottom','data-goal-depth':depth,'data-goal-depth-cap':goalDepthCap||Infinity});
-          gg.appendChild(E('path',{class:'ps-pitch-goal-bed',d:d,fill:_lc,'fill-opacity':'0.055',stroke:'none'}));
-          gg.appendChild(E('path',{class:'ps-pitch-goal-net',d:d,fill:'url(#'+_goalNetId+')',stroke:'none'}));
-          gg.appendChild(E('path',{class:'ps-pitch-goal-frame',d:'M '+frontL+' '+yLine+' L '+backL+' '+backY+' L '+backR+' '+backY+' L '+frontR+' '+yLine,fill:'none',stroke:_lc,'stroke-width':'1.7','stroke-opacity':'0.9','stroke-linecap':'round','stroke-linejoin':'round'}));
-          gg.appendChild(E('line',{class:'ps-pitch-goal-back',x1:backL,y1:backY,x2:backR,y2:backY,stroke:_lc,'stroke-width':'2.6','stroke-opacity':'0.98','stroke-linecap':'round'}));
-          gg.appendChild(E('line',{class:'ps-pitch-goal-mouth',x1:frontL,y1:yLine,x2:frontR,y2:yLine,stroke:_lc,'stroke-width':'3.1','stroke-opacity':'1','stroke-linecap':'round'}));
+          var hz=axis==='h',c=mid!=null?mid:x0+w/2,a0=c-goW/2,a1=c+goW/2,depth=Math.max(5,Math.min(rawDepth*1.25,goalDepthCap||Infinity)),back=line+dir*depth,r=depth*.3;
+          function p(a,b){return hz?b+' '+a:a+' '+b;}
+          var u='M '+p(a0,line)+' L '+p(a0,back-dir*r)+' Q '+p(a0,back)+' '+p(a0+r,back)+' L '+p(a1-r,back)+' Q '+p(a1,back)+' '+p(a1,back-dir*r)+' L '+p(a1,line);
+          var gg=E('g',{class:'ps-pitch-goal','data-side':hz?(dir<0?'left':'right'):(dir<0?'top':'bottom'),'data-goal-depth':depth,'data-goal-depth-cap':goalDepthCap||Infinity});
+          gg.appendChild(E('path',{class:'ps-pitch-goal-bed',d:u+' Z',fill:_lc,'fill-opacity':'0.12',stroke:'none'}));
+          gg.appendChild(E('path',{class:'ps-pitch-goal-frame',d:u,fill:'none',stroke:_lc,'stroke-width':'2.2','stroke-opacity':'0.95','stroke-linecap':'round','stroke-linejoin':'round'}));
+          gg.appendChild(E('line',{class:'ps-pitch-goal-mouth',x1:hz?line:a0,y1:hz?a0:line,x2:hz?line:a1,y2:hz?a1:line,stroke:_lc,'stroke-width':'1.3','stroke-opacity':'0.92','stroke-linecap':'round'}));
           g.appendChild(gg);
         }
         // Each measurement comes from the same specification as the single pitch.

@@ -117,7 +117,7 @@ test('the editor default lives in its own device key and leaves line ends and th
   // 그림(구역 · 선 · 론도 그리드)을 잡고 끄는 것도 선 끝과 같은 규칙 — 가운데가 교차점으로 당겨지면 포인터를 벗어난다(CI rondo-grid)
   assert.match(src,/if\(!\(item&&item\.draw\?pointSnap\(e\):api\.snapEnabled\(e\)\)\)\{win\.drawSnapGuides\(null,null\);return \{x:dx,y:dy\};\}/);
   // 놓기(dropToken)도 편집기 문맥에서만 교차점으로
-  assert.match(src,/editCtx\(\)&&editable\(\)&&api\.snapEnabled\(pointEvent\)\?grid\(\):null/);
+  assert.match(src,/editCtx\(\)&&editable\(\)&&api\.snapEnabled\(pointEvent\)\?grid\(u\):null/);   // 3.338 — 놓는 자리(u)의 카드 칸
   // 새 글은 영어 사전에도
   const en=read('studio/i18n/en-board.js');
   for(const m of src.matchAll(/'(훈련 (?:격자 칸에 맞춰|편집기는 격자|편집기 자석)[^']*)'/g))assert.ok(en.includes('"'+m[1]+'":'),'no English for: '+m[1]);
