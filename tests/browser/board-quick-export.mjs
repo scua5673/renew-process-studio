@@ -62,7 +62,7 @@ try{
   let fired=false;const onDl=()=>{fired=true;};page.on('download',onDl);
   await f.click('#tbExport');await f.click('#ps-tb-export [data-qx="pdf"]');await page.waitForTimeout(800);
   assert.equal(fired,false,'로그인 전 — 파일 없음');
-  assert.match(await f.evaluate(()=>document.getElementById('hint').textContent),/로그인하면 PNG · PDF 로 내보낼 수 있어요/);
+  assert.match(await f.evaluate(()=>document.getElementById('hint').textContent),/로그인하면 PNG · PDF 로 내보낼 수 있습니다/);
   page.off('download',onDl);await f.evaluate(()=>{window.psVaultUnlocked=window.__qxUnlocked;});
 
   // 6) 장면 막대 «내보내기 ▾»: GIF · MP4 · PNG 아래 PDF

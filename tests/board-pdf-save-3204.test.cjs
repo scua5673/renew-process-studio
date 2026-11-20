@@ -99,7 +99,7 @@ test('3.219 — 카드의 «다운로드 폴더로 받기»를 누르면 그때 
   assert.equal(toasts.length,0,'기다리는 동안 다운로드 알림은 없다');w.__psPdfFallback();
   assert.equal(await p,null);
   assert.equal(w.__psPdfPicking,false,'단추 잠금은 풀린다');assert.equal(w.__psPdfPickerSilent,true);assert.equal(w.__psPdfPickerWaited,true);
-  assert.match(toasts[0],/다운로드 폴더에 받았어요.*저장 위치 확인/);
+  assert.match(toasts[0],/다운로드 폴더에 받았습니다.*저장 위치 확인/);
   assert.deepEqual(w.PSSync.log.map(x=>[x[0],x[1].status,x[1].error_code,x[1].meta.top,x[1].meta.standalone,x[1].meta.focus]),[['pdf_picker_failed','error','silent',false,true,true]]);
   assert.equal(await mod.pick(w,'훈련.pdf'),null,'다음 호출은 창을 다시 부르지 않고 바로 받는다');assert.equal(calls,1);assert.equal(toasts.length,2);
 });

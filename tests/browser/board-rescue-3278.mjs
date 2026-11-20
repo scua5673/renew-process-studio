@@ -1,7 +1,7 @@
 /* 3.278 — 작업 보드 «구조 사본»(제보 0976735a · 사용자 «다시는 반복되지 않게»).
    운영에서 본 모양을 만든다: 기기 초안 쓰기(board-draft.js)가 늘 실패하는 창에서 장면을 만들고 새로고침한다.
    고치기 전: 초안이 한 번도 적히지 않아 새로고침 뒤 아무것도 남지 않는다(띠 없음 · 장면 0).
-   고친 뒤: 구조 사본이 남고, 다시 열면 «저장하지 않은 작업이 있어요 — 되살리기»로 장면이 돌아온다.
+   고친 뒤: 구조 사본이 남고, 다시 열면 «저장하지 않은 작업이 있습니다 — 되살리기»로 장면이 돌아온다.
    합성 팀만 쓴다. */
 import assert from 'node:assert/strict';
 import {startFixture,openApp,SIZES} from '../fixtures/team-app.mjs';
@@ -33,7 +33,7 @@ try{
   /* 새로고침 — 저장하지 않았다 */
   await page.reload();f=await board();
   await f.waitForSelector('#boardDraftBar',{timeout:20000});
-  assert.match(await f.locator('#boardDraftBar .bd-tx').innerText(),/저장하지 않은 작업이 있어요/);
+  assert.match(await f.locator('#boardDraftBar .bd-tx').innerText(),/저장하지 않은 작업이 있습니다/);
   assert.equal(await f.evaluate(()=>anim.frames.length),0,'되살리기 전엔 저장본(빈 판)');
   await f.locator('#boardDraftBar .bd-keep').click();
   await f.waitForFunction(n=>anim.frames.length===n,made,{timeout:10000});

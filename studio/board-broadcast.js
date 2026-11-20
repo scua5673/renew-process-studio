@@ -329,7 +329,7 @@
       sg.addEventListener('click', function (e) {
         var bt = e.target.closest('button[data-rs]'); if (!bt) return; var o = bt.dataset.rs === '1'; if (o === _realScaleOn()) return;
         _lookFreeze(); win.__realScale = o; sync(); renderTokens(); try { positionSelCtl(); } catch (_) {} try { boardSaveLive(); } catch (_) {}
-        try { toast(o ? '실제 비율 — 선수 몸 폭 0.5m · 공 22cm 로 운동장과 같은 비율이에요' : '보기 좋게 — 토큰을 잘 보이게 키웠어요'); } catch (_) {}
+        try { toast(o ? '실제 비율 — 선수 몸 폭 0.5m · 공 22cm 로 운동장과 같은 비율입니다' : '보기 좋게 — 토큰을 잘 보이게 키웠습니다'); } catch (_) {}
       });
       sync();
     })();

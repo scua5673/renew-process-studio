@@ -111,7 +111,7 @@
       var list=cardRows(),keys=groupsOf(list).filter(function(k){return k!=='__none';}),all=FIXED.concat(keys.filter(function(k){return FIXED.indexOf(k)<0;}));
       box.textContent='';box.appendChild(el('span','ep-roster-label ep-sq-lb','불러오기'));var host=el('span','ep-sq-btns');box.appendChild(host);
       function chip(label,cls,title,has,fn){var b=el('button','ep-sq-btn'+(cls?' '+cls:''),label);b.type='button';b.title=title;b.__has=has;b.disabled=!has||!editable();b.onclick=function(){fn(b);};host.appendChild(b);}
-      chip('전체','ep-sq-all','등록된 모든 선수를 팀 1 에 올리고 인원을 채웁니다 — 부상 · 재활 · 불참을 뺄지는 «고르기…»의 상태 조건을 따라요',!!list.length,function(b){quick({src:'team',grp:''},b);});
+      chip('전체','ep-sq-all','등록된 모든 선수를 팀 1 에 올리고 인원을 채웁니다 — 부상 · 재활 · 불참을 뺄지는 «고르기…»의 상태 조건을 따릅니다',!!list.length,function(b){quick({src:'team',grp:''},b);});
       all.forEach(function(k){var has=keys.indexOf(k)>=0,lb=groupLabel(k);chip(lb,'',has?lb+' 선수를 팀 1 에 올리고 인원을 채웁니다':lb+'에 등록된 선수가 없습니다',has,function(b){quick({src:'team',grp:k},b);});});
       if(allowed('scout'))chip('스카우팅','ep-sq-scout','스카우팅 후보를 모두 팀 1 에 올립니다',true,function(b){quick({src:'scout',grp:''},b);});
       chip('고르기…','ep-sq-pick','출처 · 조 · 상태 · 포지션 · 학년을 골라 불러옵니다',true,function(b){open(null,b);});
@@ -147,12 +147,12 @@
       var m=memory(win.localStorage.getItem(MEM)),c={src:c0.src,grp:c0.grp||'',stage:'',avail:m.avail,pos:'',years:[]};
       if(!allowed(c.src))return;
       opening=true;button.disabled=true;var target=destination(),isTraining=training(),src=null;
-      try{src=await load(c);}catch(_){win.toast(c.src==='scout'?'스카우팅 명단을 확인하지 못했어요. 팀 자료가 준비된 뒤 다시 눌러 주세요.':'선수단 명단을 확인하지 못했어요. 팀 자료가 준비된 뒤 다시 눌러 주세요.');}finally{opening=false;refresh();}
+      try{src=await load(c);}catch(_){win.toast(c.src==='scout'?'스카우팅 명단을 확인하지 못했습니다. 팀 자료가 준비된 뒤 다시 눌러 주세요.':'선수단 명단을 확인하지 못했습니다. 팀 자료가 준비된 뒤 다시 눌러 주세요.');}finally{opening=false;refresh();}
       if(!src||!editable()||target!==destination())return;
-      var data=build(src,dayOf(isTraining),today());if(c.src==='scout'&&!data.scout){win.toast('스카우팅 명단을 확인하지 못했어요. 팀 자료가 준비된 뒤 다시 눌러 주세요.');return;}
+      var data=build(src,dayOf(isTraining),today());if(c.src==='scout'&&!data.scout){win.toast('스카우팅 명단을 확인하지 못했습니다. 팀 자료가 준비된 뒤 다시 눌러 주세요.');return;}
       var s=select(data.all,c);
-      if(!s.pool.length){win.toast(c.src==='scout'?'스카우팅에 등록된 후보가 없어요':c.grp?groupLabel(c.grp)+' 선수가 없어요 — 팀 탭에서 조를 지정하세요':'선수단에 선수가 없어요 — 팀 탭에서 선수를 추가하세요');return;}
-      if(!s.on.length){win.toast('훈련 가능한 선수가 없어요 — «고르기…»에서 상태를 «전부»로 두면 모두 올라와요');return;}
+      if(!s.pool.length){win.toast(c.src==='scout'?'스카우팅에 등록된 후보가 없습니다':c.grp?groupLabel(c.grp)+' 선수가 없습니다 — 팀 탭에서 조를 지정하세요':'선수단에 선수가 없습니다 — 팀 탭에서 선수를 추가하세요');return;}
+      if(!s.on.length){win.toast('훈련 가능한 선수가 없습니다 — «고르기…»에서 상태를 «전부»로 두면 모두 올라옵니다');return;}
       try{src.check();if(!editable()||target!==destination())throw Error();}catch(_){win.toast('팀 · 권한 또는 명단이 바뀌어 불러오지 않았어요. 다시 눌러 주세요.');return;}
       apply(win,s.on,'blue',nameOf(c),isTraining?poolCounts(s.pool,new Set(s.on.map(function(p){return p.id;}))):null,s.pool.length-s.on.length);
     }
@@ -163,7 +163,7 @@
       if(!allowed(c.src==='both'?'team':c.src))return;
       opening=true;button.disabled=true;
       var target=destination(),isTraining=training(),src=null;
-      try{src=await load(c);}catch(_){win.toast('명단을 확인하지 못했어요. 팀 자료가 준비된 뒤 다시 열어 주세요.');}finally{opening=false;refresh();}
+      try{src=await load(c);}catch(_){win.toast('명단을 확인하지 못했습니다. 팀 자료가 준비된 뒤 다시 열어 주세요.');}finally{opening=false;refresh();}
       if(!src||!editable()||target!==destination())return;
       document.querySelectorAll('.popmenu.on').forEach(function(m){m.classList.remove('on');});
       var day=dayOf(isTraining),data=build(src,day,today());
@@ -201,7 +201,7 @@
           var text=el('span','bsi-person');text.appendChild(el('strong','',p.name||'이름 미등록'));text.appendChild(el('small','',[p.kind==='scout'?'후보':p.club,p.kind==='scout'?p.club:'',p.no?'#'+p.no:'',p.positions.join(' / ')||'포지션 미지정'].filter(Boolean).join(' · ')));
           var st=el('span','bsi-stage');if(p.kind==='scout')st.textContent=STAGES[p.status]||'';else{st.appendChild(el('span','bsi-st st-'+p.day.s,p.day.label));if(p.day.note)st.appendChild(el('small','bsi-note',p.day.note));}
           label.append(input,text,st);box.appendChild(label);});
-        if(!shown.length)box.appendChild(el('p','bsi-empty',data.all.length?'조건에 맞는 선수가 없어요.':'등록된 선수가 없어요.'));count();
+        if(!shown.length)box.appendChild(el('p','bsi-empty',data.all.length?'조건에 맞는 선수가 없습니다.':'등록된 선수가 없습니다.'));count();
       }
       search.oninput=paint;search.onkeydown=function(e){if(e.key==='Enter')e.preventDefault();};
       d.querySelector('[data-all]').onclick=function(){visible().forEach(function(p){if(p.name)selected.add(p.id);});paint();};d.querySelector('[data-none]').onclick=function(){selected.clear();paint();};
@@ -213,7 +213,7 @@
       var timer=win.setInterval(function(){try{src.check();if(!editable()||target!==destination())throw Error();}catch(_){close();win.toast('팀·권한 또는 명단이 바뀌어 불러오기 창을 닫았어요. 다시 열어 주세요.');}},500);
       d.addEventListener('close',function(){win.clearInterval(timer);d.remove();if(button.isConnected)button.focus();});
       form.onsubmit=function(e){e.preventDefault();if(e.isComposing||opening)return;
-        try{src.check();if(!editable()||target!==destination())throw Error('지금은 이 보드를 편집할 수 없어요.');
+        try{src.check();if(!editable()||target!==destination())throw Error('지금은 이 보드를 편집할 수 없습니다.');
           var pl=pool(data.all,c),chosen=pl.filter(function(p){return selected.has(p.id)&&p.name;}),side=form.elements.side.value;if(!chosen.length||!['blue','red'].includes(side))return;
           remember(c);apply(win,chosen,side,nameOf(c),isTraining?poolCounts(pl,selected):null,pl.length-chosen.length);close();
         }catch(err){d.querySelector('[data-error]').textContent=err.message||'명단을 다시 열어 주세요.';}

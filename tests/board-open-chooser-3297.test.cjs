@@ -93,7 +93,7 @@ test('prefOn: 기본 켬 · «0» 이면 끔 · 저장소가 없어도 켬',()=>
 });
 
 test('workMeta: 빈 보드는 «빈 보드로 시작», 아니면 페이지 · 장면',()=>{
-  assert.deepEqual(OC.workMeta({empty:true}),{label:'이어서',name:'빈 보드로 시작',meta:'운동장만 있어요'});
+  assert.deepEqual(OC.workMeta({empty:true}),{label:'이어서',name:'빈 보드로 시작',meta:'운동장만 있습니다'});
   assert.deepEqual(OC.workMeta({empty:false,pages:2,frames:6}),{label:'이어서',name:'작업 보드',meta:'페이지 2 · 장면 6'});
   assert.deepEqual(OC.workMeta({empty:false,pages:1,frames:0}),{label:'이어서',name:'작업 보드',meta:'마지막에 보던 판 그대로'});
 });

@@ -149,7 +149,7 @@ test('게스트: 저장하는 사이 또 손대면 «변경됨»이 남는다 ·
   const p=w.boardSaveExplicit();w.boardSaveLive();
   assert.equal(await p,true);assert.equal(w._boardManualDirty,true,'저장 뒤에 그린 것은 저장 전');
   w.storage.set=async()=>{throw new Error('QuotaExceededError');};
-  assert.equal(await w.boardSaveExplicit(),false);assert.match(w.toasts.at(-1),/저장하지 못했어요/);
+  assert.equal(await w.boardSaveExplicit(),false);assert.match(w.toasts.at(-1),/저장하지 못했습니다/);
   w.storage.set=async()=>true;   /* 쓴다고 했지만 다시 읽으면 다르다(앞 저장의 원문이 남아 있다) */
   w.canvas={players:[{num:'2'}],equipment:[],drawings:[]};
   assert.equal(await w.boardSaveExplicit(),false,'다시 읽어 확인한다');

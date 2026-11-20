@@ -44,7 +44,7 @@
       var n=Date.now();if(n-lastTip<6000)return;lastTip=n;
       /* 내 빠른 보드를 보는 중이면 고칠 길이 있다 — «아이패드에서» 대신 그 길을 알린다 */
       var qe=null;try{qe=win.PSQuickDepth&&win.PSQuickDepth.entry(win);}catch(_){}
-      if(qe&&qe.mode==='edit'){try{if(win.toast)win.toast('토큰을 누르거나 위의 «'+qe.label+'»에서 바꿔요');}catch(_){}return;}
+      if(qe&&qe.mode==='edit'){try{if(win.toast)win.toast('토큰을 누르거나 위의 «'+qe.label+'»에서 바꿉니다');}catch(_){}return;}
       win.psPhoneBoardNotice();
     }
     /* 내 빠른 보드를 보는 중 — 토큰을 누르면 그 자리의 시트(이름 · 포지션 · 번호)가 바로 열린다. 빠른 보드의 자리 토큰(id 1~n)만 */

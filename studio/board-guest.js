@@ -130,7 +130,7 @@
     }
     function save(o) {
       o = o || {};
-      if (!st.loaded) { toast('보드를 여는 중이에요 — 잠시 뒤 «저장»을 다시 눌러 주세요'); return Promise.resolve(false); }
+      if (!st.loaded) { toast('보드를 여는 중입니다 — 잠시 뒤 «저장»을 다시 눌러 주세요'); return Promise.resolve(false); }
       if (st.saving || saveBusy()) return Promise.resolve(false);
       try { if (typeof win.restoreAnimBeforeCapture === 'function') win.restoreAnimBeforeCapture(); } catch (e) { diag('board-guest-anim', e); }
       var cap = null;
@@ -146,11 +146,11 @@
         st.saving = false;
         if (seq === st.seq && active()) win._boardManualDirty = false;   // 저장하는 사이 또 손댔으면 «저장 ●» 그대로
         status();
-        if (!o.quiet) toast('이 기기에 저장됨 ✓ · 로그인하면 다른 기기·팀과 함께 써요');
+        if (!o.quiet) toast('이 기기에 저장됨 ✓ · 로그인하면 다른 기기·팀과 함께 씁니다');
         return true;
       }).catch(function (e) {
         st.saving = false; diag('board-guest-save', e);
-        toast('이 기기에 저장하지 못했어요 — 저장 공간을 확인해 주세요');
+        toast('이 기기에 저장하지 못했습니다 — 저장 공간을 확인해 주세요');
         return false;
       });
     }
@@ -172,7 +172,7 @@
         win._boardManualDirty = true; win._boardUserTouched = true;
         st.adopted = { uid: o.uid, wid: o.wid, value: slot.value, seq: win._boardPrivateEditSeq };
         status();
-        toast('로그인 전에 이 기기에서 만든 보드를 열었어요 — «저장»하면 계정에 저장돼요');
+        toast('로그인 전에 이 기기에서 만든 보드를 열었습니다 — «저장»하면 계정에 저장됩니다');
         return true;
       });
     }

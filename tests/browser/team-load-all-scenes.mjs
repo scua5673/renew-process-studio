@@ -44,7 +44,7 @@ try{
   const toast=await load();
   await page.waitForTimeout(300);
   assert.equal(toast.label,'이 장면만',JSON.stringify(toast));
-  assert.match(toast.text,/장면 3개 모두 · 다른 페이지 2개에도 넣었어요/,toast.text);
+  assert.match(toast.text,/장면 3개 모두 · 다른 페이지 2개에도 넣었습니다/,toast.text);
   // 같은 자리(포지션 표시)에는 모든 장면 · 페이지에서 같은 선수
   const cur=await f.evaluate(()=>Object.fromEntries(state.players.filter(p=>p.team==='blue'&&p.pos&&!/후보/.test(p.name||'')).map(p=>[p.pos,p.name])));
   assert.equal(Object.keys(cur).length>=9,true,JSON.stringify(cur));
@@ -81,7 +81,7 @@ try{
   const workPages=await f.evaluate(()=>JSON.stringify(window.__psPages.pg().map(p=>[p.snap.players,((p.anim&&p.anim.frames)||[]).map(x=>x.snap.players)])));
   const mt=await load();
   assert.equal(mt.label,'이 슬라이드만',JSON.stringify(mt));
-  assert.match(mt.text,/다른 슬라이드 \d+장에도 넣었어요/,mt.text);
+  assert.match(mt.text,/다른 슬라이드 \d+장에도 넣었습니다/,mt.text);
   await page.waitForTimeout(800);
   const slides=await f.evaluate(()=>anim.slides.filter(s=>!PSMeetReserve.isReserve(s)).map(s=>s.snap.players.filter(p=>p.team==='blue'&&p.name).length));
   assert.equal(await f.evaluate(()=>anim.slides.find(PSMeetReserve.isReserve).snap.players.filter(p=>p.name).length),0,'리저브 이름은 따로 편집');

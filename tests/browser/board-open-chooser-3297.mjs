@@ -43,7 +43,7 @@ try{
   await reopen(); await chooser();
   let s=await state();
   assert.equal(s.title,'불러오기'); assert.equal(s.phone,phone);
-  assert.equal(s.sub,phone?'폰에서는 보기로 열어요':'어느 작전판으로 시작할까요?');
+  assert.equal(s.sub,phone?'폰에서는 보기로 엽니다':'어느 작전판으로 시작할까요?');
   assert.ok(s.tiles.length>=1&&s.tiles[0].id==='psOpenChooserContinue'&&s.tiles[0].lbl==='이어서','이어서 타일 '+JSON.stringify(s.tiles));
   if(phone)assert.equal(s.tiles.length,1,'폰은 보기 전용 — 새 보드 없음');
   assert.deepEqual(s.rows.map(r=>[r.lib,r.nm,r.thumb]),[['OC1','가상 빌드업 기본형',true],['OC2','가상 수비 전환',true]],'작전판만 · 최근 저장 순 · 그림');

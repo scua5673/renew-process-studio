@@ -110,7 +110,7 @@ try{
   assert.equal(await f.locator('#pqPosReset').isVisible(),false,'no reset pill until something moved');
   await dragSlot(f,8,[70,40]);
   m=await st(f);near(m.pos[8],[70,40],0.5,'AM follows the finger');assert.equal(m.moved[8],true);assert.equal(m.moved.filter(Boolean).length,1);
-  assert.equal(await qToast(f),'AM 자리를 옮겼어요');
+  assert.equal(await qToast(f),'AM 자리를 옮겼습니다');
   assert.ok(Math.abs(parseFloat(await f.locator('#pqStage .pq-slot[data-i="8"]').evaluate(b=>b.style.left))-70)<0.6,'drawn at the new place');
   assert.equal(await f.locator('#pqPos').isVisible(),false,'a drag is not a tap — no sheet');
   await f.locator('#psQuick [data-pq="undo"]').tap();
@@ -126,7 +126,7 @@ try{
   const lwNames=m.slots[7].slice(),rwNames=m.slots[9].slice();
   await dragSlot(f,7,[86,27]);
   m=await st(f);assert.deepEqual([m.slots[7],m.slots[9]],[rwNames,lwNames],'dropped on RW: the two name lists swap');assert.equal(m.pos[7],null,'the places stay');
-  assert.equal(await qToast(f),'LW ↔ RW 이름을 맞바꿨어요'.replace('LW','LM'));
+  assert.equal(await qToast(f),'LW ↔ RW 이름을 맞바꿨습니다'.replace('LW','LM'));
   assert.equal(await bdg(f,9),'77','the number goes with the player');assert.notEqual(await bdg(f,7),'77');
   await f.locator('#psQuick [data-pq="undo"]').tap();
   m=await st(f);assert.deepEqual([m.slots[7],m.slots[9]],[lwNames,rwNames]);
@@ -165,7 +165,7 @@ try{
   await shot(page,'4-view');
   /* 보기 화면에서 판을 누르면 «아이패드에서» 대신 고치는 단추를 알린다 */
   await f.locator('#boardStage').tap({position:{x:40,y:260}});
-  await f.waitForFunction(()=>/토큰을 누르거나 위의 «고치기»에서 바꿔요/.test((document.getElementById('cs-ftoast')||{}).textContent||''),null,{timeout:5000});
+  await f.waitForFunction(()=>/토큰을 누르거나 위의 «고치기»에서 바꿉니다/.test((document.getElementById('cs-ftoast')||{}).textContent||''),null,{timeout:5000});
   /* 보기 화면의 토큰을 누르면 그 자리 시트가 바로 열린다 — 그냥 닫으면 아무것도 안 바뀐다 */
   await f.locator('#tokenLayer [data-id="8"] .tok-c').tap();
   await f.locator('#pqPos').waitFor({state:'visible'});
@@ -218,7 +218,7 @@ try{
   await f.locator('#pqInput').fill('골키퍼 하나, 골키퍼 둘');await f.locator('#pqInput').press('Enter');
   await f.locator('#psQuick [data-pq="back"]').tap();
   await f.waitForFunction(()=>document.getElementById('psQuick').hidden);
-  assert.match(await f.locator('#phbToast').innerText(),/쓰던 뎁스 차트는 남겨 뒀어요/,'the draft notice shows on the phone board');
+  assert.match(await f.locator('#phbToast').innerText(),/쓰던 뎁스 차트는 남겨 뒀습니다/,'the draft notice shows on the phone board');
   await f.locator('#psPhoneBoard [data-phb="new-depth"]').tap();
   await f.locator('#pqForm [data-pq="draft"]').waitFor({state:'visible'});
   await f.locator('#pqForm [data-pq="draft"]').tap();

@@ -53,12 +53,12 @@ try{
   await sheet();await bf.locator('#evSheet #evGo').click();
   await bf.waitForFunction(()=>{const o=document.getElementById('psExpProg');return o&&o.className==='warn';},null,{timeout:60000});
   const warn=await card();
-  assert.equal(warn.t,'고른 폴더에 저장하지 못했어요');assert.deepEqual(warn.btn,['내려받기','닫기']);
+  assert.equal(warn.t,'고른 폴더에 저장하지 못했습니다');assert.deepEqual(warn.btn,['내려받기','닫기']);
   assert.equal(await bf.evaluate(()=>window.__ev.anchor),0,'저장 창이 또 뜨지 않게 — 누를 때만 받는다');
   await page.screenshot({path:path.join(SHOTS,'anim-export-once-warn-'+size+'.png')});
   await bf.evaluate(()=>[...document.querySelectorAll('#psExpProg .pep-acts button')].find(x=>x.textContent==='내려받기').click());
   assert.equal(await bf.evaluate(()=>window.__ev.anchor),1);
-  assert.equal((await card()).t,'내려받았어요 ✓');
+  assert.equal((await card()).t,'내려받았습니다 ✓');
   await bf.evaluate(()=>{const b=[...document.querySelectorAll('#psExpProg .pep-acts button')].find(x=>x.textContent==='닫기');if(b)b.click();});
 
   } else console.log('영상 단계 건너뜀 — 이 브라우저는 영상을 만들 수 없다',engine);

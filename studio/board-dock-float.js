@@ -169,10 +169,10 @@
     // «선수» 칸
     var tray = doc.createElement('div'); tray.id = 'ps-df-tray'; tray.setAttribute('role', 'dialog'); tray.setAttribute('aria-label', '선수 · 장비 · 포메이션');
     tray.innerHTML = '<div class="df-tray-head"><div class="df-tabs" role="tablist"><button type="button" data-tab="team">선수</button><button type="button" data-tab="equip">훈련 도구</button><button type="button" data-tab="form">포메이션</button></div><button type="button" class="df-close" data-close-tray aria-label="선수·훈련 도구 닫기">닫기</button></div>' +
-      '<div class="df-pane" data-pane="team"><div class="df-h">팀 — 고르고 운동장을 누르면 한 명씩 (길게 누르면 유니폼 설정)</div><div class="df-slot-team"></div><div class="df-h">역할 · 연속 배치 — 끌어서 놓아도 돼요</div><div class="df-slot-stamp"></div>' +
+      '<div class="df-pane" data-pane="team"><div class="df-h">팀 — 고르고 운동장을 누르면 한 명씩 (길게 누르면 유니폼 설정)</div><div class="df-slot-team"></div><div class="df-h">역할 · 연속 배치 — 끌어서 놓아도 됩니다</div><div class="df-slot-stamp"></div>' +
       '<div class="df-row"><span>한 번에 놓기</span><div class="df-step"><button type="button" data-step="-1" aria-label="한 명 적게">−</button><b class="df-n">11</b>명<button type="button" data-step="1" aria-label="한 명 많이">＋</button></div><button type="button" class="df-cta" data-place="1">운동장에 놓기</button></div></div>' +
-      '<div class="df-pane" data-pane="equip"><div class="df-h">장비 — 누르고 운동장을 누르거나, 끌어서 놓아요</div><div class="df-slot-equip"></div></div>' +
-      '<div class="df-pane" data-pane="form"><div class="df-seg"><button type="button" data-fteam="blue" class="on">우리 팀</button><button type="button" data-fteam="red">상대 팀</button></div><div class="df-slot-form"></div><div class="df-hint">고르면 그 팀 선수를 포메이션 자리에 다시 놓아요</div></div>';
+      '<div class="df-pane" data-pane="equip"><div class="df-h">장비 — 누르고 운동장을 누르거나, 끌어서 놓습니다</div><div class="df-slot-equip"></div></div>' +
+      '<div class="df-pane" data-pane="form"><div class="df-seg"><button type="button" data-fteam="blue" class="on">우리 팀</button><button type="button" data-fteam="red">상대 팀</button></div><div class="df-slot-form"></div><div class="df-hint">고르면 그 팀 선수를 포메이션 자리에 다시 놓습니다</div></div>';
     body.appendChild(tray);
     var homes = {};   // 옮긴 원래 노드의 집(떠 있는 도크가 꺼지면 되돌린다)
     function adopt(id, slot) { var n = doc.getElementById(id); if (!n) return; if (!homes[id]) homes[id] = { parent: n.parentNode, next: n.nextSibling }; var s = tray.querySelector(slot); if (n.parentNode !== s) s.appendChild(n); }
@@ -223,7 +223,7 @@
       var s = e.target.closest('[data-step]'); if (s) { count = Math.max(1, Math.min(11, count + +s.getAttribute('data-step'))); tray.querySelector('.df-n').textContent = count; return; }
       if (e.target.closest('[data-place]')) { var on = doc.querySelector('#benchCat .tpill.on'), team = on ? on.getAttribute('data-cat') : 'blue'; try { win.addPlayers(team, count); } catch (_) {} return; }
       var ft = e.target.closest('[data-fteam]'); if (ft) { formTeam = ft.getAttribute('data-fteam'); tray.querySelectorAll('[data-fteam]').forEach(function (b) { b.classList.toggle('on', b === ft); }); return; }
-      var f = e.target.closest('[data-form]'); if (f) { try { win.applyFormationTo(formTeam, f.getAttribute('data-form')); if (typeof win.toast === 'function') win.toast((formTeam === 'blue' ? '우리 팀' : '상대 팀') + ' ' + f.textContent + ' 로 놓았어요'); } catch (_) {} return; }
+      var f = e.target.closest('[data-form]'); if (f) { try { win.applyFormationTo(formTeam, f.getAttribute('data-form')); if (typeof win.toast === 'function') win.toast((formTeam === 'blue' ? '우리 팀' : '상대 팀') + ' ' + f.textContent + ' 로 놓았습니다'); } catch (_) {} return; }
     });
     // 운동장을 누르거나(놓기 · 고르기는 그대로 된다) 칸에서 무언가를 끌어 밖으로 나가면 칸을 닫는다 — 운동장을 가리지 않게
     function closeTray() { if (!st.panel) return; st.panel = ''; writeOpen(st, env.storage); paint(); }

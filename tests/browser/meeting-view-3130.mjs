@@ -36,7 +36,7 @@ try{
   await page.waitForTimeout(300);
   const typed=await f.evaluate(()=>({v:document.getElementById('ksTitle').value,t:anim.slides[0].title,hint:(document.getElementById('hint')||{}).textContent||''}));
   assert.equal(typed.v,ro.title0,'칸이 그대로');assert.equal(typed.t,ro.title0,'슬라이드도 그대로');
-  assert.match(typed.hint,/보기 전용이에요 — 위쪽 «편집»/);
+  assert.match(typed.hint,/보기 전용입니다 — 위쪽 «편집»/);
   await page.screenshot({path:path.join(SHOTS,`meeting-view-3130-${engine}-${size}-1-view.png`)});
 
   // 2) «편집» — 닫고 같은 미팅을 편집으로 연다(보관함 «편집»과 같은 길) · 고치면 슬라이드에 들어간다

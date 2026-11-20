@@ -82,7 +82,7 @@ try{
   await f.waitForSelector('#boardDraftBar',{state:'visible',timeout:10000});
   const tops=await f.evaluate(()=>['boardDraftBar','psVaultDraftBar'].map(id=>{const r=document.getElementById(id).getBoundingClientRect();return [Math.round(r.top),Math.round(r.bottom)];}));
   assert.ok(tops[1][0]>=tops[0][1],'두 띠가 겹치지 않는다: '+JSON.stringify(tops));
-  let v=await live(f);assert.match(v.barText,/보관함에서 만들던 작전판이 있어요 · 장면 5개/);assert.equal(v.frames<=1,true,'새로고침 뒤 판에는 없다(초안으로만)');
+  let v=await live(f);assert.match(v.barText,/보관함에서 만들던 작전판이 있습니다 · 장면 5개/);assert.equal(v.frames<=1,true,'새로고침 뒤 판에는 없다(초안으로만)');
   await page.screenshot({path:path.join(out,`vault-board-draft-bar-${engine}.png`),animations:'disabled'});
   await f.locator('#psVaultDraftBar .vd-keep').click();
   await f.waitForFunction(()=>document.body.classList.contains('vcreating')&&anim.frames.length===5,null,{timeout:10000});

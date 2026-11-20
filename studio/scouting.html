@@ -543,7 +543,7 @@ window.psHasPending=function(){return scPageSaves.hasPending();};
 window.psFlushPendingReady=function(){return scPageSaves.ready(true).then(function(){return PSStorage.sharedReady(KEY);});};
 function scPageState(message){var e=document.getElementById('scStoreState');if(!e){e=document.createElement('div');e.id='scStoreState';document.body.appendChild(e);}e.textContent=message||'';e.hidden=!message;document.body.classList.toggle('sc-pending',!!message);}
 function scPageLoad(){
-  if(!scPageClient.state.verified){scPageState('팀의 후보 자료와 저장소를 확인하고 있어요.');return;}
+  if(!scPageClient.state.verified){scPageState('팀의 후보 자료와 저장소를 확인하고 있습니다.');return;}
   var d=scPageClient.read(),r=d.scoutRegistry;
   db={players:Object.keys(r.candidates).filter(function(id){return !r.candidates[id].archivedAt;}).map(function(id){var c=r.candidates[id],p=PSScoutStore.copy(c.source||{}),i=c.info;p.id=id;p._candidateId=id;p.nameKr=i.name||'';p.num=i.num||'';p.foot=i.foot||'';p.club=i.club||'';p.grade=i.grade||'';p.points=PSScoutStore.copy(c.points||{});p.ratings=PSScoutStore.copy(c.ratings||{});p.pos=p.pos||[];p.tags=p.tags||[];p.contacts=p.contacts||[];p.videos=p.videos||[];p.custom=p.custom||{};p.obs=p.obs||[];['nameEn','nat','height','weight','photo'].forEach(function(k){if(i.profile&&i.profile[k]!=null)p[k]=PSScoutStore.copy(i.profile[k]);else delete p[k];});return p;}),meta:PSScoutStore.copy(r.meta||{})};
   scPageSnapshot=PSScoutStore.copy(db);scPageState('');
@@ -553,7 +553,7 @@ function scPageSave(){
     db.players.forEach(function(p){
       var cid=p._candidateId;
       if(!cid){PSScoutStore.importLegacy(d,{players:[p]},[p.id],false);cid='db:'+p.id;p._candidateId=cid;p.id=cid;}
-      var c=d.scoutRegistry.candidates[cid];if(!c)throw new Error('후보 자료가 바뀌었어요. 다시 열어 주세요.');known[cid]=true;
+      var c=d.scoutRegistry.candidates[cid];if(!c)throw new Error('후보 자료가 바뀌었습니다. 다시 열어 주세요.');known[cid]=true;
       [['name','nameKr'],['num','num'],['foot','foot'],['club','club'],['grade','grade']].forEach(function(pair){PSScoutStore.edit(d,cid,pair[0],p[pair[1]]||'',stamp);});
       ['nameEn','nat','height','weight','photo'].forEach(function(k){PSScoutStore.edit(d,cid,'profile.'+k,p[k],stamp);});
       Object.keys(p.points||{}).forEach(function(k){if(c.points[k]!==p.points[k])PSScoutStore.score(d,cid,k,p.points[k],stamp);});
@@ -567,12 +567,12 @@ function scPageSave(){
     });
     (scPageSnapshot&&scPageSnapshot.players||[]).forEach(function(p){if(!known[p._candidateId])PSScoutStore.archive(d,p._candidateId,Date.now(),stamp);});
     if(JSON.stringify(d.scoutRegistry.meta)!==JSON.stringify(db.meta)){d.scoutRegistry.metaHistory=d.scoutRegistry.metaHistory||[];d.scoutRegistry.metaHistory.push(PSScoutStore.copy(d.scoutRegistry.meta));d.scoutRegistry.meta=PSScoutStore.copy(db.meta);d.scoutRegistry.metaEdit=stamp;}
-    var pending=scPageClient.save(d);scPageSaves.track(KEY,pending,function(){return scPageClient.retry();});pending.catch(function(e){scPageState('기기 저장 확인이 필요해요. '+e.message);});scPageSnapshot=PSScoutStore.copy(db);
+    var pending=scPageClient.save(d);scPageSaves.track(KEY,pending,function(){return scPageClient.retry();});pending.catch(function(e){scPageState('기기 저장 확인이 필요합니다. '+e.message);});scPageSnapshot=PSScoutStore.copy(db);
   }catch(e){scPageState(e.message);toast(e.message);}
 }
 function scPageHydrate(){
   scPageClient.prepare().then(function(){load();renderAll();if(document.body.classList.contains('sc-points-only'))renderPtSet();
-    if(/[?&]view=evaluate\b/.test(location.search)){document.body.classList.add('sc-eval-only');var cid=new URLSearchParams(location.search).get('candidate'),p=db.players.find(function(p){return p._candidateId===cid;});if(p)openPtEval(p);else scPageState('후보를 찾을 수 없거나 보관된 기록이에요.');}
+    if(/[?&]view=evaluate\b/.test(location.search)){document.body.classList.add('sc-eval-only');var cid=new URLSearchParams(location.search).get('candidate'),p=db.players.find(function(p){return p._candidateId===cid;});if(p)openPtEval(p);else scPageState('후보를 찾을 수 없거나 보관된 기록입니다.');}
   }).catch(function(e){scPageState(e.message);});
 }
 document.addEventListener('click',function(e){if(document.body.classList.contains('sc-pending')){e.preventDefault();e.stopImmediatePropagation();return;}try{scPageClient.check();}catch(err){e.preventDefault();e.stopImmediatePropagation();toast(err.message);}},true);
@@ -660,7 +660,7 @@ function renderGrid(){
   var rows=list(),g=$("grid");
   $("cnt").textContent="후보 "+db.players.length+"명"+(rows.length!==db.players.length?" · 표시 "+rows.length:"");
   if(!rows.length){
-    g.innerHTML='<div class="sc-empty" style="grid-column:1/-1"><b>'+(db.players.length?"조건에 맞는 후보가 없어요":"후보를 등록하세요")+'</b>'
+    g.innerHTML='<div class="sc-empty" style="grid-column:1/-1"><b>'+(db.players.length?"조건에 맞는 후보가 없습니다":"후보를 등록하세요")+'</b>'
       +(db.players.length?"":'<span class="sc-empty-desk">위 빠른 기록에 이름만 적고 Enter</span><span class="sc-empty-phone">오른쪽 아래 ＋ 로 이름만 적어 두세요</span>')+'</div>';
     return;
   }
@@ -683,7 +683,7 @@ $("grid").addEventListener("click",function(e){
 
 /* 2.617 — 후보 프로필 한 장(A4). 문서는 profile-sheet.js(공용) — 부제 SCOUTING REPORT, 자동 통계 없음 */
 function printCandSheet(p){
-  if(!window.PSProfileSheet){toast("프로필 문서 모듈을 불러오지 못했어요 — 새로고침 뒤 다시");return;}
+  if(!window.PSProfileSheet){toast("프로필 문서 모듈을 불러오지 못했습니다 — 새로고침 뒤 다시");return;}
   var coach="";try{var api=parent&&parent.PSSync;if(api&&typeof api.displayName==="function")coach=api.displayName()||"";}catch(_){}
   var career=[];if(p.formerClub)career.push(p.formerClub);if(p.club)career.push(p.club);
   PSProfileSheet.preview(PSProfileSheet.docHTML({
@@ -851,7 +851,7 @@ function renderDetail(){
   /* 삭제 */
   $("dDelete").addEventListener("click",function(){
     if(!confirm((p.nameKr||"이 후보")+" 를 보관할까요? 팀 스카우팅의 보관한 후보에서 복원할 수 있어요."))return;
-    db.players=db.players.filter(function(x){return x.id!==p.id;});selId=null;save();renderAll();toast("후보를 보관했어요");});
+    db.players=db.players.filter(function(x){return x.id!==p.id;});selId=null;save();renderAll();toast("후보를 보관했습니다");});
 }
 $("photoFile").addEventListener("change",function(){
   var f=this.files&&this.files[0];this.value="";var p=cur();if(!f||!p)return;
@@ -861,7 +861,7 @@ $("photoFile").addEventListener("change",function(){
     var c=document.createElement("canvas");c.width=Math.round(w*s);c.height=Math.round(h*s);
     c.getContext("2d").drawImage(img,0,0,c.width,c.height);
     p.photo=c.toDataURL("image/jpeg",0.8);URL.revokeObjectURL(url);touch(p);renderDetail();renderGrid();};
-  img.onerror=function(){URL.revokeObjectURL(url);toast("이미지를 읽지 못했어요");};
+  img.onerror=function(){URL.revokeObjectURL(url);toast("이미지를 읽지 못했습니다");};
   img.src=url;
 });
 
@@ -928,7 +928,7 @@ $("exportBtn").addEventListener("click",function(){
   var a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,1)],{type:"application/json"}));
   var d=new Date(),ds=d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
-  a.download="스카우팅_"+ds+".json";a.click();URL.revokeObjectURL(a.href);toast("JSON으로 내보냈어요");
+  a.download="스카우팅_"+ds+".json";a.click();URL.revokeObjectURL(a.href);toast("JSON으로 내보냈습니다");
 });
 $("importBtn").addEventListener("click",function(){$("importFile").click();});
 $("importFile").addEventListener("change",function(){
@@ -963,7 +963,7 @@ $("importFile").addEventListener("change",function(){
       var col=function(names){for(var i=0;i<head.length;i++)if(names.indexOf(head[i])>=0)return i;return -1;};
       var ci={name:col(["이름","성명","name","nameKr"]),pos:col(["포지션","pos","position"]),club:col(["소속","현소속","출신","club"]),
         former:col(["전소속","formerClub"]),year:col(["출생년","출생년도","생년","year"]),nat:col(["국적","nat"]),num:col(["등번호","번호","num"])};
-      if(ci.name<0)throw new Error("이름 열을 찾지 못했어요");
+      if(ci.name<0)throw new Error("이름 열을 찾지 못했습니다");
       lines.slice(1).forEach(function(l){var c=l.split(sep).map(function(x){return x.trim();});
         var nm=c[ci.name];if(!nm)return;
         var p=blank(nm,[],ci.club>=0?c[ci.club]:"");
@@ -974,7 +974,7 @@ $("importFile").addEventListener("change",function(){
         if(ci.num>=0)p.num=c[ci.num]||"";
         db.players.push(p);added++;});
     }
-    save();renderAll();toast(added+"명 가져왔어요");
+    save();renderAll();toast(added+"명 가져왔습니다");
   }catch(e){toast("가져오기 실패 — 파일 형식을 확인하세요");}};
   rd.readAsText(f);
 });
@@ -998,8 +998,8 @@ $("emblemFile").addEventListener("change",function(){
   img.onload=function(){var M=128,s=Math.min(1,M/Math.max(img.width,img.height));
     var c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
     c.getContext("2d").drawImage(img,0,0,c.width,c.height);
-    db.meta.emblem=c.toDataURL("image/png");URL.revokeObjectURL(url);save();renderBand();toast("엠블럼을 넣었어요");};
-  img.onerror=function(){URL.revokeObjectURL(url);toast("이미지를 읽지 못했어요");};
+    db.meta.emblem=c.toDataURL("image/png");URL.revokeObjectURL(url);save();renderBand();toast("엠블럼을 넣었습니다");};
+  img.onerror=function(){URL.revokeObjectURL(url);toast("이미지를 읽지 못했습니다");};
   img.src=url;
 });
 $("bandName").addEventListener("input",function(){db.meta.teamName=this.value;save();});
@@ -1010,7 +1010,7 @@ function ptStats(set){ var sec=0,q=0; String(set.text||"").split(/\r?\n/).forEac
 function renderPtSet(){
   var host=$("ptSetBody");host.innerHTML="";
   var sets=db.meta.pointSets||[];
-  if(!sets.length){host.innerHTML='<div class="pt-empty">아직 세트가 없어요 — <b>프로세스 기본세트 불러오기</b>로 시작하거나 ＋ 그룹으로 직접 만드세요.</div>';return;}
+  if(!sets.length){host.innerHTML='<div class="pt-empty">아직 세트가 없습니다 — <b>프로세스 기본세트 불러오기</b>로 시작하거나 ＋ 그룹으로 직접 만드세요.</div>';return;}
   if(ptOpen!=null&&!sets[ptOpen])ptOpen=null;
   /* 2.012 — 머리: 설명 + 통계(그룹·문항·평가한 후보) */
   (function(){ var tq=0; sets.forEach(function(x){tq+=ptStats(x).q;}); var evN=(db.players||[]).filter(function(p){return p&&p.points&&Object.keys(p.points).some(function(k){return p.points[k]>0;});}).length;
@@ -1103,7 +1103,7 @@ function renderPtSet(){
       row.appendChild(n);row.appendChild(sc);row.appendChild(q);row.appendChild(ops);tbl.appendChild(row);
       lastSec=r.sec;
     });
-    if(!qi){var em=document.createElement("div");em.className="pt-sr empty";em.textContent="질문이 없어요";tbl.appendChild(em);}
+    if(!qi){var em=document.createElement("div");em.className="pt-sr empty";em.textContent="질문이 없습니다";tbl.appendChild(em);}
     g.appendChild(tbl);
     addQ.onclick=function(){var lastRow=rows.slice().reverse().find(function(r){return !r.hdr;});rows.push({sec:(lastRow?lastRow.sec:(rows.length?rows[rows.length-1].sec:"")),q:""});commit();renderPtSet();setTimeout(function(){var qs=g.querySelectorAll(".pt-sr .q");if(qs.length)qs[qs.length-1].focus();},0);};
     addS.onclick=function(){var nm=prompt("새 섹션 이름 (예: 오프 더 볼 · 움직임)");nm=nm&&nm.trim();if(!nm)return;rows.push({sec:nm,q:"",hdr:true});rows.push({sec:nm,q:""});commit();renderPtSet();};
@@ -1114,7 +1114,7 @@ $("ptSetBtn").addEventListener("click",function(){ptOpen=null;renderPtSet();$("p
 $("ptSetClose").addEventListener("click",function(){$("ptSet").classList.remove("on");renderDetail();});
 $("ptTemplate").addEventListener("click",function(){
   if((db.meta.pointSets||[]).length&&!confirm("기존 세트를 프로세스 기본세트로 교체할까요? (매긴 점수는 질문이 같으면 유지)"))return;
-  db.meta.pointSets=JSON.parse(JSON.stringify(PS_POINT_TEMPLATE));save();renderPtSet();toast("프로세스 기본세트를 불러왔어요");
+  db.meta.pointSets=JSON.parse(JSON.stringify(PS_POINT_TEMPLATE));save();renderPtSet();toast("프로세스 기본세트를 불러왔습니다");
 });
 $("ptGroupAdd").addEventListener("click",function(){var t=prompt("그룹 이름 (예: 공격수)");t=t&&t.trim();if(!t)return;
   db.meta.pointSets=db.meta.pointSets||[];db.meta.pointSets.push({name:t,positions:[],text:""});ptOpen=db.meta.pointSets.length-1;save();renderPtSet();});
@@ -1125,9 +1125,9 @@ function renderPtEval(){
   var p=ptEvalPlayer;if(!p)return;
   var sets=db.meta.pointSets||[],si=Number($("ptEvalSet").value);if(si>=sets.length)si=-1;
   var set=sets[si];var host=$("ptEvalBody");host.innerHTML="";
-  if(!set){host.innerHTML='<div class="pt-empty">'+(sets.length?'포지션에 맞는 질문 그룹을 위에서 선택해 주세요.':'세트가 없어요 — 포인트 설정에서 만들어주세요.')+'</div>';renderOldPointRecords(host,p,sets);return;}
+  if(!set){host.innerHTML='<div class="pt-empty">'+(sets.length?'포지션에 맞는 질문 그룹을 위에서 선택해 주세요.':'세트가 없습니다 — 포인트 설정에서 만들어주세요.')+'</div>';renderOldPointRecords(host,p,sets);return;}
   var secs=parsePoints(set.text);
-  if(!secs.length){host.innerHTML='<div class="pt-empty">이 그룹에 질문이 없어요 — 포인트 설정에서 붙여넣어 주세요.</div>';renderOldPointRecords(host,p,sets);return;}
+  if(!secs.length){host.innerHTML='<div class="pt-empty">이 그룹에 질문이 없습니다 — 포인트 설정에서 붙여넣어 주세요.</div>';renderOldPointRecords(host,p,sets);return;}
   /* 2.012 — 평가표 재설계: 요약 띠(이 그룹 평균·응답 진행·척도 말·안 매긴 것만) → 섹션 헤더(평균·응답) → 번호 질문 + 말 붙은 1~5 */
   var SCALE=[[1,"거의 없음"],[2,"가끔"],[3,"보통"],[4,"자주"],[5,"항상"]];
   var tot=0,ans=0,sum=0, secStat=[];
@@ -1166,7 +1166,7 @@ function renderPtEval(){
       row.appendChild(seg);host.appendChild(row);
     });
   });
-  if(only&&ans===tot&&tot){var dn=document.createElement("div");dn.className="pt-empty";dn.textContent="이 그룹은 모두 매겼어요.";host.appendChild(dn);}
+  if(only&&ans===tot&&tot){var dn=document.createElement("div");dn.className="pt-empty";dn.textContent="이 그룹은 모두 매겼습니다.";host.appendChild(dn);}
   renderOldPointRecords(host,p,sets);
   var s=pointSummary(p);
   $("ptEvalSum").textContent=s?("전체 평균 "+s.avg+" · "+s.n+"문항"):"아직 매긴 점수 없음";

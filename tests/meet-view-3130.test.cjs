@@ -52,7 +52,7 @@ test('보기 전용 미팅 — 칸을 잠그고 «미팅 보기» · 미리보�
   assert.equal(f.els.vCreateEdit.style.display,'','«편집» 보임');
   // 잠긴 칸을 누르면 안내 — 2.5초에 한 번
   f.fire('focusin',f.els.ksTitle);f.fire('keydown',f.els.ksTitle);
-  assert.deepEqual(f.toasts,['보기 전용이에요 — 위쪽 «편집»을 누르면 고칠 수 있어요']);
+  assert.deepEqual(f.toasts,['보기 전용입니다 — 위쪽 «편집»을 누르면 고칠 수 있습니다']);
 });
 
 test('«편집» — 닫고, 보관함 화면으로 돌아온 뒤 그 미리보기의 «편집»을 누른다(board.html 의 처리는 건너뛴다)',()=>{
@@ -72,7 +72,7 @@ test('어디서 열었는지 모르면(경기 준비 안 쇼 · 목록 줄 «보
   assert.equal(f.els.vCreateEdit.style.display,'none');
   assert.equal(f.els.ksPoints.readOnly,true,'그래도 잠근다');
   f.fire('focusin',f.els.ksPoints);
-  assert.deepEqual(f.toasts,['보기 전용이에요 — 고치려면 보관함에서 «편집»으로 여세요']);
+  assert.deepEqual(f.toasts,['보기 전용입니다 — 고치려면 보관함에서 «편집»으로 여세요']);
   f.fire('click',f.els.vCreateEdit);assert.equal(f.els.vCreateCancel.clicks,0,'닫지 않는다');
   // 남의 미팅(미리보기에 «편집» 없음)
   f=fake();L.installView(f.win);openRo(f,{editable:false});

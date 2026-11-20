@@ -66,13 +66,13 @@ test('선 모양 점선 ↔ 실선 — 새로 그릴 기본값을 바꾸고 고�
   const {w,calls}=fakeWin(doc,{state:{drawings:[l1,l2,tx]},multiSel:[l1,tx],sel:null});
   assert.equal(K.run(w,'lineDashToggle'),true);
   assert.equal(w.state.drawLineStyle,'dash');assert.equal(l1.dash,true);assert.equal(l2.dash,undefined,'안 고른 그림');assert.equal(tx.dash,undefined,'글');
-  assert.deepEqual(calls.map(c=>c[0]),['pushUndo','render','anim','save','toast']);assert.equal(calls[4][1],'점선으로 그려요 · 고른 그림도 점선');
+  assert.deepEqual(calls.map(c=>c[0]),['pushUndo','render','anim','save','toast']);assert.equal(calls[4][1],'점선으로 그립니다 · 고른 그림도 점선');
   calls.length=0;w.multiSel=[];w.sel={type:'drawing',ref:l2};
   K.run(w,'lineDashToggle');
   assert.equal(w.state.drawLineStyle,'solid');assert.equal(l2.dash,undefined);assert.equal(l1.dash,true,'고르지 않은 그림은 그대로');
-  assert.equal(calls[calls.length-1][1],'실선으로 그려요 · 고른 그림도 실선');
+  assert.equal(calls[calls.length-1][1],'실선으로 그립니다 · 고른 그림도 실선');
   calls.length=0;w.sel=null;
-  K.run(w,'lineDashToggle');assert.equal(w.state.drawLineStyle,'dash');assert.deepEqual(calls,[['toast','점선으로 그려요']],'고른 것이 없으면 기본값만');
+  K.run(w,'lineDashToggle');assert.equal(w.state.drawLineStyle,'dash');assert.deepEqual(calls,[['toast','점선으로 그립니다']],'고른 것이 없으면 기본값만');
   w.state.drawLineStyle='dot';K.run(w,'lineDashToggle');assert.equal(w.state.drawLineStyle,'dash','둥근 점선에서 누르면 점선');
 });
 
@@ -80,9 +80,9 @@ test('패스 로빙 ↔ 땅볼 — 기본값 + 고른 패스에만',()=>{
   const {doc}=fakeDoc([]);const p={type:'pass',pts:[]},r={type:'run',pts:[]};
   const {w,calls}=fakeWin(doc,{state:{drawings:[p,r]},multiSel:[p,r]});
   K.run(w,'passLobToggle');assert.equal(w.state.drawLob,true);assert.equal(p.lob,true);assert.equal(r.lob,undefined);
-  assert.equal(calls[calls.length-1][1],'로빙 패스로 그려요 · 고른 패스도 로빙');
+  assert.equal(calls[calls.length-1][1],'로빙 패스로 그립니다 · 고른 패스도 로빙');
   K.run(w,'passLobToggle');assert.equal(w.state.drawLob,false);assert.equal(p.lob,undefined);
-  calls.length=0;w.multiSel=[r];K.run(w,'passLobToggle');assert.deepEqual(calls,[['toast','로빙 패스로 그려요']],'패스가 아니면 기본값만');
+  calls.length=0;w.multiSel=[r];K.run(w,'passLobToggle');assert.deepEqual(calls,[['toast','로빙 패스로 그립니다']],'패스가 아니면 기본값만');
 });
 
 test('열기 · 불러오기 · 지우기 — 있는 단추 · 함수를 대신 누른다',()=>{
@@ -127,5 +127,5 @@ test('board.html 배선 — 채움 «없음» · 메뉴 길은 고른 그림에�
   const sm=read('studio/board-shape-menu.js');
   assert.ok(sm.includes("win.__psLsSelOnly = 1; try { lb.click(); } finally { win.__psLsSelOnly = 0; }"),'메뉴가 표식을 세우고 누른다');
   const en=read('studio/i18n/en-board.js');
-  for(const k of ['"선 모양 — 점선 ↔ 실선"','"이 장면의 그림 모두 지우기"','"그림 모두 지우기"','"점선으로 그려요 · 고른 그림도 점선"'])assert.ok(en.includes(k),'영어 '+k);
+  for(const k of ['"선 모양 — 점선 ↔ 실선"','"이 장면의 그림 모두 지우기"','"그림 모두 지우기"','"점선으로 그립니다 · 고른 그림도 점선"'])assert.ok(en.includes(k),'영어 '+k);
 });

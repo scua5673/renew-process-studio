@@ -85,7 +85,7 @@ try{
   }else{
     assert.deepEqual(L.tiltOpts,['평면*','3D']);
     assert.deepEqual(L.shapeOpts,['올린 그대로 · 원형*','원형','유니폼','사람','쉐이퍼']);
-    assert.match(L.hint,/다음 글에도 그대로 열려요\. 글은 바뀌지 않아요\./);
+    assert.match(L.hint,/다음 글에도 그대로 열립니다\. 글은 바뀌지 않습니다\./);
     await shot('2-pop');
     // 2) 3D — 보드 설정 값(ps_board_tilt3d)은 그대로
     const setting0=L.setting;
@@ -100,7 +100,7 @@ try{
     // 4) 평면으로 — 사람은 유니폼으로 보인다고 알린다 · 사람을 다시 고르면 3D 도 켠다
     await pick(v,'[data-cl-tilt="flat"]'); L=await look(v);
     assert.deepEqual([L.tilt,L.shape,L.now],[false,'person','평면 · 사람']);
-    assert.match(L.hint,/^사람은 3D 에서 서 있는 선수로 보여요 — 평면에서는 유니폼이에요/);
+    assert.match(L.hint,/^사람은 3D 에서 서 있는 선수로 보입니다 — 평면에서는 유니폼입니다/);
     await pick(v,'[data-cl-shape="person"]'); L=await look(v);
     assert.equal(L.tilt,true,'평면에서 사람을 고르면 3D 도');
     await pick(v,'[data-cl-shape="shirt"]'); await pick(v,'[data-cl-tilt="flat"]');

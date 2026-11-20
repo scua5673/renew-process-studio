@@ -46,7 +46,7 @@ try{
   assert.equal(await tab.getAttribute('aria-current'),'page');
   assert.equal(await page.locator('#appSeg [data-app="board"]:not([data-train])').getAttribute('aria-current'),null,'«보드» is not the current tab');
   await f.waitForFunction(()=>window.__psPhoneBoard.ui().model().listState==='ok');
-  assert.match(await f.locator('#phbList').innerText(),/아직 없어요/);
+  assert.match(await f.locator('#phbList').innerText(),/아직 없습니다/);
   await shot(page,'1-home');
   /* 새 폰보드 — 8인제로 바꿨다가 11인제 4-4-2 · 상대도 */
   assert.deepEqual((await f.locator('#phbHome .phb-two button').allInnerTexts()).map(t=>t.trim()),['＋ 작전판','＋ 뎁스 차트'],'two separate ways to start');
@@ -117,7 +117,7 @@ try{
   await f.locator('#phbName').fill('토요일 4-4-2');
   await f.locator('[data-phb="save"]').tap();
   await f.locator('#phbHome').waitFor({state:'visible'});
-  assert.match(await toastText(f),/보관함에 저장했어요/);
+  assert.match(await toastText(f),/보관함에 저장했습니다/);
   await f.waitForFunction(()=>(window.__psPhoneBoard.ui().model().list||[]).length===1);
   const local=await f.evaluate(()=>libGet().then(l=>JSON.parse(JSON.stringify(l.filter(d=>d&&d.phone)))));
   assert.equal(local.length,1);
@@ -148,7 +148,7 @@ try{
   await ptr(f,[[p5.x,p5.y],[p5.x+6,p5.y-6]]);
   await f.locator('[data-phb="save"]').tap();
   await f.locator('#phbHome').waitFor({state:'visible'});
-  assert.match(await toastText(f),/폰보드를 고쳤어요/);
+  assert.match(await toastText(f),/폰보드를 고쳤습니다/);
   const again=await f.evaluate(()=>libGet().then(l=>JSON.parse(JSON.stringify(l.filter(d=>d&&d.phone)))));
   assert.equal(again.length,1,'still one item');assert.equal(again[0].libId,savedId);assert.ok(again[0].editedAt>=it.editedAt);
   assert.notEqual(again[0].snap.players[5].x,it.snap.players[5].x,'the moved player has a new place');

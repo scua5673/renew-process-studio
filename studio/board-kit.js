@@ -195,11 +195,11 @@
         '<div class="ke-cols" role="group" aria-label="목깃">' + COLLARS.map(function (c) { return '<button type="button" data-collar="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>' +
         '</div></div>' +
         // 3.121 — 토큰 미리보기(사용자 «토큰 유니폼 설정할 때 미리보기 가능하게»): 판에서 보일 원형 · 유니폼 토큰을 그대로(board-jersey.js)
-        '<div class="ke-h">토큰 미리보기 <small>판에서 이렇게 보여요</small></div><div class="ke-prev">' + PREV.map(function (p) {
+        '<div class="ke-h">토큰 미리보기 <small>판에서 이렇게 보입니다</small></div><div class="ke-prev">' + PREV.map(function (p) {
           return '<div class="ke-tok" data-shape="' + p[0] + '"><svg viewBox="-27 -27 54 54" aria-hidden="true" focusable="false"></svg><span>' + p[1] + '</span></div>';
         }).join('') + '</div>' +
         '<div class="ke-h">빠른 조합</div><div class="ke-combos">' + COMBOS.map(function (c, i) { return '<button type="button" data-combo="' + i + '" title="' + c[5] + '" aria-label="' + c[5] + '">' + kitHTML('ke-mini') + '</button>'; }).join('') + '</div>' +
-        '<div class="ke-ft"><span class="ke-hint">그림을 눌러 고르고, 색을 눌러 입혀요 · 하의 · 스타킹은 3D «사람»에 보여요</span><button type="button" class="ke-reset">기본으로</button></div>';
+        '<div class="ke-ft"><span class="ke-hint">그림을 눌러 고르고, 색을 눌러 입힙니다 · 하의 · 스타킹은 3D «사람»에 보입니다</span><button type="button" class="ke-reset">기본으로</button></div>';
       doc.body.appendChild(box);
       // 빠른 조합 그림은 한 번만 칠한다
       [].forEach.call(box.querySelectorAll('[data-combo]'), function (b) { var c = COMBOS[+b.getAttribute('data-combo')]; paintFig(b.querySelector('.ke-mini'), c[0], c[1], c[2], c[3], c[4], '', true, c[6]); });
