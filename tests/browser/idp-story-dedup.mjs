@@ -132,7 +132,7 @@ try{
   assert.ok(await frame.locator('[data-st-more]').count());await allStory(frame);
   let text=await frame.locator('.sqth').innerText();
   assert.equal(occurrences(text,MEMO),2);assert.equal(occurrences(text,'한 번만 보일 코치 답글'),1);assert.equal(occurrences(text,'한 번만 보일 방향 제안'),1);
-  for(const x of ['84일 이전 기록 보존','당시 방향 원문','한 줄은 안 적었어요','가상 면담 강점','가상 축구 밖 대화','가상 첫 초점','원래 일지가 없는 답글','3/5단계',STRENGTH])assert.ok(text.includes(x),x+' preserved');
+  for(const x of ['84일 이전 기록 보존','당시 방향 원문','한 줄은 안 적었습니다','가상 면담 강점','가상 축구 밖 대화','가상 첫 초점','원래 일지가 없는 답글','3/5단계',STRENGTH])assert.ok(text.includes(x),x+' preserved');
   const ordering=await frame.locator('[data-story-ts]').evaluateAll(els=>els.map(e=>+e.dataset.storyTs));assert.ok(ordering.every((v,i)=>i===0||ordering[i-1]>=v));
   const identities=await frame.locator('[data-story-id]').evaluateAll(els=>els.map(e=>e.dataset.storyId));assert.equal(new Set(identities).size,identities.length);assert.equal(identities.filter(k=>k==='record:ev:ev').length,1);assert.equal(identities.filter(k=>k.startsWith('self:')).length,0);assert.ok(text.includes('평균'));assert.ok(text.includes('9/7~9/13'));
   await frame.locator('[data-sqst-f="qa"]').click();assert.equal(await frame.locator('.st-msg').count(),1);assert.equal((await frame.locator('.sqth').innerText()).includes(LONG),false);
