@@ -23,7 +23,7 @@ try{
   const sel=t=>f.evaluate(t=>document.getElementById('cmd-board-settings-pop').__psSelectTab(t),t);
   await f.evaluate(()=>window.__psToggleBoardSettings('open'));await page.waitForTimeout(400);
   let s=await st();
-  assert.deepEqual(s.tabs,['운동장','선수 표시','배치','내 화면'],'네 탭');
+  assert.deepEqual(s.tabs,['운동장','선수 표시','배치','움직임','내 화면'],'네 탭 + 3.347 «움직임»(board-motion-marks.js 가 붙인다)');
   // ① 운동장 — 이 보드에 저장
   await sel('pitch');s=await st();assert.equal(s.scope,'이 보드에 저장');assert.deepEqual(s.on,['운동장']);assert.equal(s.mem,'pitch');
   let sc=await secs();assert.deepEqual(sc,['내 스타일','바탕','선·구역','범위·방향'],'운동장 묶음 '+JSON.stringify(sc));

@@ -391,3 +391,19 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 (function(w,D){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),k;for(k in D)(E[k]||(E[k]={})).en=D[k];})(window,{
 "운동장을 새 배치로 바꿨어요 · 선수는 그 자리 그대로 · 되돌리기로 이전 배치":"Pitches now use the new layout · players stay where they are · undo for the previous layout"
 });
+
+/* 3.347 — 보드 설정 «움직임» 탭(board-motion-marks.js installTab): 공 · 팀마다 잔상 길이 · 공 보기 */
+(function(w,D,T){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),k;for(k in D)(E[k]||(E[k]={})).en=D[k];if(T&&w.PS_I18N_TEMPLATES)for(k in T)w.PS_I18N_TEMPLATES[k]=T[k];})(window,{
+"움직임":"Motion",
+"재생할 때의 잔상 · 시선을 묶음마다 한 번에":"Trails and gaze for playback, one group at a time",
+"잔상 · 지난 장면 수":"Trail · scenes kept",
+"공 보기":"Watch ball",
+"선수나 공을 놓으면 여기서 잔상 · 시선을 켤 수 있어요":"Place players or the ball to set trails and gaze here",
+"재생 · 영상에서 보여요 · 토큰 하나만 다르게는 토큰을 고르고 «잔상» «시선»":"Shown in playback and video · for a single token, select it and use «Trail» «Gaze»",
+"누르면 이 보드의 토큰에 바로 들어가요":"Applies to this board's tokens right away"
+},{
+"잔상 {}단계 · {}":"Trail {} · {}",
+"잔상 끔 · {}":"Trail off · {}",
+"공 보기 · {} · 공이 움직여도 따라 봐요":"Watch ball · {} · follows the ball as it moves",
+"시선 끔 · {}":"Gaze off · {}"
+});
