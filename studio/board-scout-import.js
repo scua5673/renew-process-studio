@@ -31,7 +31,7 @@
   }
   function teamRows(team,tombs,code){
     var positions=team.positions||[],meta=team.meta||{},abbr=meta.posAbbr||{},labels=meta.grpLabels||{};
-    return (team.players||[]).filter(function(p){return p&&p.type!=='target'&&!tombs[p.id]&&String(p.name||'').trim();}).map(function(p){
+    return (team.players||[]).filter(function(p){return p&&p.type!=='target'&&!p.grad&&!tombs[p.id]&&String(p.name||'').trim();}).map(function(p){
       var def=positions.find(function(x){return x.id===p.posId;}),pos=abbr[p.posId]||code(def&&def.name||p.posName||p.pos||''),grp=String(p.grp||'').trim();
       return {id:p.id,name:String(p.name).trim(),no:p.num==null?'':String(p.num),pos:pos,positions:pos?[pos]:[],club:labels[grp]||grp||'조 없음',status:grp,availability:p.status||'ok',until:p.statusUntil?String(p.statusUntil):'',year:p.schoolYear==null||p.schoolYear===''?'':String(p.schoolYear)};
     });
