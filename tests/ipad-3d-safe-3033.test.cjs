@@ -101,10 +101,10 @@ test('3.033 the guard runs right before the 3D boot restore, which obeys it; tur
   assert.match(b,/window\.__setTilt=function\(on,opts\)\{ on=!!on; opts=opts\|\|\{\}; var _was=document\.body\.classList\.contains\("bc-tilt3d"\);[\s\S]{0,200}try\{ if\(on&&!_was&&window\.__tiltBootArm\)window\.__tiltBootArm\(\); else if\(!on&&_was&&window\.__tiltBootDone\)window\.__tiltBootDone\(\); \}catch\(_\)\{\}/);
 });
 
-test('3.033 iPhone/iPad Safari does not draw the stage-sized 3D light layer',()=>{
+/* 3.346 — 기대를 일부러 고침: 3D 조명을 걷으면서 화면 위 빛 층(#tiltMood)이 어느 기기에도 없다 — 아이폰 · 아이패드만 숨기던 규칙도 같이 사라졌다 */
+test('3.346 no device draws the stage-sized 3D light layer (3.033 hid it on iPhone/iPad Safari only)',()=>{
   const b=R('studio/board.html');
-  assert.match(b,/@supports \(-webkit-touch-callout:none\)\{ html body\.bc-tilt3d #tiltMood\{display:none!important\} \}/);
-  assert.ok(b.indexOf('@supports (-webkit-touch-callout:none){ html body.bc-tilt3d #tiltMood')>b.indexOf('body.bc-tilt3d #tiltMood{display:block}'),'after the rule that shows it');
+  assert.doesNotMatch(b,/#tiltMood\{|mood\.id="tiltMood"/);
 });
 
 test('3.033 version and release note',()=>{

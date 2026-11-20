@@ -10,7 +10,7 @@ const src=fs.readFileSync(path.join(__dirname,'..','studio','board.html'),'utf8'
 const a=src.indexOf('/* 순수 구간 시작 */'),b=src.indexOf('/* 순수 구간 끝 */');
 assert.ok(a>0&&b>a,'3D 영상 순수 구간');
 const ctx={Math};vm.createContext(ctx);
-vm.runInContext(src.slice(a,b).replace(/^const /gm,'var ')+';this.T={_t3Project,_t3Unrow,_t3RowX,_t3Unx,_t3Camera,_t3Visible,_t3Warp,_t3DrawGoals,_t3Mood,_t3BoardCss,_T3_STAGE};',ctx);
+vm.runInContext(src.slice(a,b).replace(/^const /gm,'var ')+';this.T={_t3Project,_t3Unrow,_t3RowX,_t3Unx,_t3Camera,_t3Visible,_t3Warp,_t3DrawGoals,_t3BoardCss,_T3_STAGE};',ctx);
 const T=ctx.T;
 const PITCH=[40,95,1010,745];   // 105×68 m 판의 운동장 상자(판 좌표)
 const cam=(o,Wo=1280,Ho=720,box=PITCH)=>T._t3Camera(Wo,Ho,box,Object.assign({ax:24,sy:1.08,pads:[.15,.11,.05]},o||{}));
@@ -141,14 +141,14 @@ test('줄 옮겨 그리기 — 줄 하나에 drawImage 한 번, 원본 범위 �
   assert.ok(calls[0][7]<calls[calls.length-1][7],'먼 줄이 좁다');
 });
 
-test('골대 · 깃발 · 분위기 그리기는 캔버스 호출만(예외 없이)',()=>{
+/* 3.346 — 기대를 일부러 고침: 분위기 빛(_t3Mood)은 걷었고 무대 바탕은 한 색 */
+test('골대 · 깃발 그리기는 캔버스 호출만(예외 없이) · 분위기 빛은 없다',()=>{
   const log=[]; const fake=new Proxy({},{get:(t,k)=>{ if(k in t)return t[k]; return (...a)=>{ log.push(k); return {addColorStop(){}}; }; },set:(t,k,v)=>{ t[k]=v; return true; }});
   const c=cam();
   T._t3DrawGoals(fake,c,{goals:[{a:[1010,385],b:[1010,455],n:[1,0],h:40,d:30}],flags:[{c:[40,95],sx:1,h:20,fw:8,fh:6}]},2.8);
   assert.ok(log.filter(k=>k==='stroke').length>=6,'그물 · 기둥 · 깃발 선');
-  for(const m of ['night','day','dusk'])T._t3Mood(fake,1280,720,m);
-  assert.ok(log.includes('createRadialGradient')&&log.includes('createLinearGradient'));
-  assert.deepEqual(Object.keys(T._T3_STAGE).sort().join(),'day,dusk,night');
+  assert.doesNotMatch(src,/function _t3Mood|_t3Mood\(ctx/);
+  assert.deepEqual(Object.keys(T._T3_STAGE).sort().join(),'night');
 });
 
 test('판 그림 규칙 — 경기장 그림이 있으면 판 잔디를 숨기고, 평면 골대는 늘 숨긴다(서 있는 골대를 그린다)',()=>{
