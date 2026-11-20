@@ -302,7 +302,9 @@ html.ps-page-scout body #pwImport[open]{display:flex}
 .pwi-err{flex-basis:100%;order:-1;margin:0;font-size:var(--t-3);color:var(--c-bad)}
 .pwi-err:empty{display:none}
 @media(max-width:700px){
-  .pw-qa{grid-template-columns:64px minmax(0,1fr) auto;padding:var(--sp-2)}
+  .pw-quickadd{margin-bottom:var(--sp-2)}
+  .pw-qa{grid-template-columns:64px minmax(0,1fr) auto;padding:var(--sp-1) var(--sp-2)}
+  .pw-table thead th:first-child{padding-block:0}
   .pw-qa-plus,.pw-workspace .pw-qa select{display:none}
   .pw-fresh-tag{display:none}
   .pw-comparebar .pw-button{flex:1 1 auto}
