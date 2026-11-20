@@ -101,6 +101,8 @@ try{
   await dlg.getByRole('button',{name:n1+' 시즌 시작',exact:true}).click();
   await frame.waitForFunction(()=>!document.getElementById('pwSeason'));
   const after=async()=>({tags:await tags(),season:await frame.evaluate(()=>JSON.parse(JSON.stringify({cur:data.meta.season&&data.meta.season.cur,future:data.meta.season&&data.meta.season.future}))),joined:await frame.evaluate(()=>data.players.filter(p=>p.joinedFrom).map(p=>p.name).sort()),ours:await frame.evaluate(()=>tmOurs().length)});
+  const settle=async ok=>{for(let i=0;i<60;i++){let t=null;try{t=await tags();}catch(e){}if(t&&ok(t))return;await page.waitForTimeout(400);}};
+  await settle(t=>t['서지훈']===cur&&t['문건우']==='');
   let a=await after();
   assert.deepEqual(a.tags,{'서지훈':cur,'오태양':cur,'문건우':'','배준혁':n2});
   assert.equal(a.season.cur,n1);assert.deepEqual(a.season.future,[n2],'시작한 시즌은 미리 만든 목록에서 빠진다');
@@ -112,16 +114,18 @@ try{
   assert.match(await undo.innerText(),new RegExp('스카우팅 2명은 '+cur+' 시즌 목록으로'));
   await undo.getByRole('button',{name:'되돌리기'}).click();
   await frame.waitForFunction(()=>tmOurs().length===18);
+  await settle(t=>t['서지훈']===''&&t['문건우']===n1);
   a=await after();
   assert.deepEqual(a.tags,{'서지훈':'','오태양':'','문건우':n1,'배준혁':n2});
   assert.equal(a.season.cur,cur);assert.deepEqual(a.season.future,[n1,n2]);assert.deepEqual(a.joined,[]);
 
   // ⑥ 다시 시작 → 스카우팅 화면
   step='restart';
-  await scReady();
+  for(let i=0;i<60;i++){await scReady();const t=await tags();if(t['서지훈']===''&&t['오태양']===''&&t['문건우']===n1)break;await page.waitForTimeout(400);}   /* 되돌린 스카우팅이 가라앉은 뒤 */
   await pick('#pwTeam',n1+' 시즌 시작');await dlg.waitFor();
   await dlg.getByRole('button',{name:n1+' 시즌 시작',exact:true}).click();
   await frame.waitForFunction(()=>!document.getElementById('pwSeason')&&tmOurs().length===16);
+  for(let i=0;i<60;i++){let t=null;try{t=await tags();}catch(e){}if(t&&t['서지훈']===cur&&t['문건우']==='')break;await page.waitForTimeout(400);}   /* 스카우팅 넘기기는 후보 문서가 풀린 뒤 따라온다 */
   step='scout-after';
   await tab('scouting');
   await frame.locator('#pwScout [data-pw-view="list"]').click();

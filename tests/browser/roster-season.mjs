@@ -97,6 +97,8 @@ try{
 
   // ④ 다시 시작 — 거울(작전판 · IDP)과 가용인원에는 현재 선수만
   step='restart';
+  /* 되돌리기 직후엔 후보 문서가 잠깐 «확인 중» — 풀린 뒤 창을 연다(CI 웹킷이 스카우팅 줄 없는 창에서 떨어졌다) */
+  for(let i=0;i<60;i++){if(await frame.evaluate(()=>{try{scStore().check();return scStore().read().players.filter(p=>!p._scoutHidden).length>=3;}catch(e){return false;}}))break;await page.waitForTimeout(400);}
   await pick(next+' 시즌 시작');await dlg.waitFor();
   await dlg.getByRole('button',{name:seed.y3[3],exact:true}).click();
   for(const n of ['서지훈','오태양'])await dlg.getByRole('button',{name:n,exact:true}).click();   /* 이번엔 신입 없이 */
