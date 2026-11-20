@@ -5817,7 +5817,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<span class="sq-rcats">'+cats+'</span>'
         +'<span class="sq-avg">'+(avgAll!=null?'<b>'+avgAll.toFixed(1)+'</b><i>평균</i>':'<b class="none">–</b><i>평가 없음</i>')+'</span>'
         +(c.q?'<span class="sq-flag q" title="'+esc(c.q)+'">질문 →</span>'
-          :(propN?'<span class="sq-flag prop" title="선수가 키우고 싶은 것을 적었어요 — 열어서 ❤ 또는 리뷰로 답하기">제안'+(propN>1?' '+propN:'')+'</span>'   /* 2.253 */
+          :(propN?'<span class="sq-flag prop" title="선수가 키우고 싶은 것을 적었어요">제안'+(propN>1?' '+propN:'')+'</span>'   /* 2.253 */
           :(c.rvDue?'<span class="sq-flag rv" title="다음 성장 리뷰 기한'+(c.rvDn<0?'이 '+(-c.rvDn)+'일 지났어요':'이 오늘이에요')+' — 열어서 성장 리뷰 쓰기">리뷰'+(c.rvDn<0?' D+'+(-c.rvDn):' 오늘')+'</span>'   /* 2.259 */
           :(c.fresh?'<span class="sq-flag new">새 기록</span>':'<span class="sq-flag none"></span>'))))   /* 1.857 — '피드백 대기' 배지 제거(사용자) */
         +'</button>'
@@ -8163,14 +8163,14 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }).filter(Boolean);
     if(!rows.length)return '';
     var und=rows.filter(function(x){return !x.rr;}).length;
-    var o='<div class="card sqg sqmid"><div class="sqd-nav"><b>6주 점검 <i>'+rows.length+'명 · 질문은 하나 — 이 초점을 계속 갈 것인가</i></b>'
+    var o='<div class="card sqg sqmid"><div class="sqd-nav"><b>6주 점검 <i>'+rows.length+'명</i></b>'
       +'<span class="sqd-cnt">'+(rows.length-und)+'명 결정 · '+und+'명 남음'+(can&&und?' <button type="button" class="sqw-all" data-sqm-all>남은 '+und+'명 «계속»으로</button>':'')+'</span></div>';
     o+='<div class="sqg-scroll"><table class="sqg-t sqg-mid"><thead><tr><th class="l">선수</th><th class="l">6주간 · 키우는 것</th><th class="l">6주 띠</th><th class="l">계속 갈 것인가</th><th class="l c-in">선수에게 갈 한 줄 <i class="sqg-rule">쓰면 오늘 카드 맨 위에 «6주째»로 · 안 쓰면 조용히 계속</i></th></tr></thead><tbody>';
     rows.forEach(function(x){ var uid=x.r.x.ln.uid, c=(x.rr&&x.rr.c)||'keep';
       var chips=[['keep','계속'],['step','한 걸음 더'],['change','바꾸기']].map(function(cc){ return can
         ?'<button type="button" class="sqm-c'+(c===cc[0]?' on':'')+(!x.rr&&cc[0]==='keep'?' dft':'')+'" data-sqm-c="'+cc[0]+'" data-sqm-uid="'+esc(uid)+'" data-sqm-st="'+esc(x.st)+'">'+cc[1]+'</button>'
         :'<span class="sqm-c'+(c===cc[0]?' on':'')+'">'+cc[1]+'</span>'; }).join('');
-      var ev=(c==='change'?'분기 목표 자체를 바꾼다 — 면담 안건으로':(c==='step'?'초점은 그대로 · 조건만 올린다':(x.rr?'같은 걸 6주 더':'기본값 · 아무것도 안 하면 계속')));
+      var ev=(c==='change'?'분기 목표 자체를 바꾼다':(c==='step'?'초점은 그대로 · 조건만 올린다':(x.rr?'같은 걸 6주 더':'기본값 · 아무것도 안 하면 계속')));
       o+='<tr><td class="l"><span class="plr"><span class="no">'+esc(x.r.x.p.num||'')+'</span><b>'+esc(x.r.x.p.name||'')+'</b></span>'+(x.late?'<div class="sqw-fc">6주째 지남</div>':'')+'</td>'
         +'<td class="l"><div class="sqm-g">'+(x.g1?esc(x.g1):'<span class="sqg-nulla">12주 문장 없음</span>')+'</div><div class="sqw-fc" style="max-width:260px">초점 '+x.fcs.length+'개'+(x.fcs.length?' · '+esc(x.fcs.join(' → ')):'')+'</div></td>'
         +'<td class="l"><div class="sqw-cnt">계속 '+x.k+' · 해봄 '+x.y+' · 아직 '+x.n+(x.bad?' · 몸 나쁨 '+x.bad+'일':'')+'</div></td>'
@@ -8208,7 +8208,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       h+='<div class="qm-h">2 · 축구 밖 <small>학교 · 집 · 몸 · 마음</small></div><input class="qm-in" data-qm="outside" maxlength="140" placeholder="한 줄 (선택)" value="'+esc(dr.outside||'')+'">';
       h+='<div class="qm-h" style="margin-top:14px">3 · 함께 묻기</div><div class="qm-q">네 강점은 뭐라고 생각해?</div><input class="qm-in" data-qm="strengths" maxlength="140" placeholder="선수의 답" value="'+esc(dr.strengths||'')+'">'
         +'<div class="qm-q" style="margin-top:8px">다음 12주, 초점 영역은?</div><input class="qm-in" data-qm="nextArea" maxlength="140" placeholder="선수의 답" value="'+esc(dr.nextArea||'')+'">';
-      h+='<div class="qm-h" style="margin-top:14px">4 · 약속 <small>다음 분기 «내가 키우는 것» — 선수가 자기 화면에서 시작을 누른다</small></div><input class="qm-in" data-qm="promise" maxlength="60" placeholder="예) 받는 순간 다음 플레이가 준비돼 있는 선수" value="'+esc(dr.promise||'')+'"><input class="qm-in" data-qm="firstFocus" maxlength="60" placeholder="첫 초점 — 예) 받기 전 몸 열기 (갭 항목에서)" value="'+esc(dr.firstFocus||'')+'" style="margin-top:6px">';
+      h+='<div class="qm-h" style="margin-top:14px">4 · 약속 <small>다음 분기 «내가 키우는 것»</small></div><input class="qm-in" data-qm="promise" maxlength="60" placeholder="예) 받는 순간 다음 플레이가 준비돼 있는 선수" value="'+esc(dr.promise||'')+'"><input class="qm-in" data-qm="firstFocus" maxlength="60" placeholder="첫 초점 — 예) 받기 전 몸 열기 (갭 항목에서)" value="'+esc(dr.firstFocus||'')+'" style="margin-top:6px">';
       h+='<div class="qm-h" style="margin-top:14px">5 · 서면 <small>이 화면이 그대로 저장된다</small></div><button type="button" class="btn sm primary" data-qm-save>저장 · 선수 «이야기»에 «'+esc(qmSeason(ev.st||ymd(t0)))+' 면담» 카드로</button>';
       h+='</div></div>';
     }
@@ -8221,7 +8221,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var ln=sqLinkOfPlayer(p.id), d2=(ln&&ln.d&&ln.d.v===1)?ln.d:null; if(!d2){ gToast('선수 계정이 연결되지 않았어요'); return; }
     var kk=coachFeedbackKey(PREFIX+ln.uid), rr=rvRec(PREFIX+ln.uid)||{}, ev=qmEvidence(p,d2,rr), dr=sqQmDraft||{}, t0=new Date();
     var pick=function(k){ return String(dr[k]||'').trim(); };
-    if(!pick('promise')&&!pick('strengths')&&!pick('nextArea')&&!pick('outside')){ gToast('한 칸은 적어 주세요 — 약속 또는 선수의 답'); return; }
+    if(!pick('promise')&&!pick('strengths')&&!pick('nextArea')&&!pick('outside')){ gToast('한 칸은 적어 주세요'); return; }
     var obj={id:'qm'+Date.now().toString(36),ts:Date.now(),at:ymd(t0),by:lrCoachName(),q:qmSeason(ev.st||ymd(t0)),start:ev.st,
       focuses:ev.fcs.map(function(f){return f.t;}).filter(function(t,i,a){ return t&&t!==a[i-1]; }),hearts:ev.hearts.slice(-6),gaps:(ev.gaps||[]).map(function(g){return {name:g.name};}),mid:(ev.mid&&ev.mid.c)||'',   /* 같은 초점이 이어진 주는 하나로 */
       outside:pick('outside').slice(0,140),strengths:pick('strengths').slice(0,140),nextArea:pick('nextArea').slice(0,140),promise:pick('promise').slice(0,60),firstFocus:pick('firstFocus').slice(0,60)};
@@ -8268,7 +8268,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rSqToday(){
     var ps=sqEvalPlayers();
     var wiped=false; try{ wiped=!!localStorage.getItem('ps_cache_wiped_v1'); }catch(_){}
-    if(!ps.length)return wiped?'<div class="card sqe-msg"><b>팀 자료를 받는 중이에요</b>받는 대로 선수 명단과 피드백이 나타나요.</div>'   /* 8d8daa7e — 비운 기기 사본을 다시 받는 중엔 «비었다»고 하지 않는다 */
+    if(!ps.length)return wiped?'<div class="card sqe-msg"><b>팀 자료를 받는 중이에요</b></div>'   /* 8d8daa7e — 비운 기기 사본을 다시 받는 중엔 «비었다»고 하지 않는다 */
       :'<div class="card sqe-msg"><b>명단이 비어 있어요</b>팀 › 선수단에서 선수를 먼저 등록하세요.</div>';
     var rows=ps.map(function(p){ var ln=sqLinkOfPlayer(p.id), br=null; try{ br=sqThreadBrief(p.id); }catch(_){}
       return {p:p,ln:ln,br:br}; });
@@ -8338,7 +8338,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
          초대 코드는 만들 수 있는 사람(소유자 · 임원 — PSSync.idpLink.can)에게만 단추로, 아니면 어디서 만드는지 한 줄. 평가는 «선수» 탭의 평가로 바로 */
       if(!linked.length){ var _ia=idpSaveApi(), _inv=false; try{ _inv=!!(_ia&&_ia.idpLink&&_ia.idpLink.can&&_ia.idpLink.can()); }catch(_){}
         return '<div class="card sqe-msg sq-empty-today"><b>아직 IDP를 쓰는 선수가 없어요</b>'
-          +'<span>평가는 지금도 시작할 수 있어요.</span>'
+          +''
           +'<div class="sq-empty-acts">'+(_inv?'<button type="button" class="btn" data-sq-invite>선수 초대하기</button>':'')
           +(can?'<button type="button" class="btn primary" data-sqe-mode="eval">선수 평가 시작</button>':'')+'</div>'
           +(_inv?'':'<small>선수 초대 코드는 팀 임원이 계정 › 권한 관리에서 만들어요</small>')
@@ -8515,7 +8515,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* 2.117 — 요구 모드의 주어는 자리다. 아래 렌더는 posId 만 읽으므로 같은 모양의 가벼운 객체로 넘긴다 */
     var sel=sqIsReq()?sqReqSubject():all.filter(function(p){return p.id===sqEvalSel;})[0];
     var main='';
-    if(sqIsReq()&&!sel.posId) main='<div class="card sqe-msg"><b>자리가 없어요</b>팀 › 게임모델에서 자리를 먼저 만들면 자리마다 요구를 정할 수 있어요.</div>';
+    if(sqIsReq()&&!sel.posId) main='<div class="card sqe-msg"><b>자리가 없어요</b>팀 › 게임모델에서 자리를 먼저 만들어 주세요.</div>';
     else if(!sel) main='<div class="card sqe-msg"><b>선수를 고르세요</b></div>';
     else{
       var pr=sqEvalProgress(sel), gs=sqEvalItemsFor(sel);
@@ -10004,7 +10004,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(theme)h+='<button type="button" class="ql-row" data-ql="season">'
       +'<span class="ql-tag long">장기</span>'
       +'<span class="ql-body"><b>'+(theme?esc(theme):'시즌 테마가 비어 있어요')+'</b>'
-      +(outcome?'<span class="ql-sub">'+esc(outcome)+'</span>':'<span class="ql-sub none">결과 목표 — 어디로 가고 싶은지</span>')
+      +(outcome?'<span class="ql-sub">'+esc(outcome)+'</span>':'<span class="ql-sub none">결과 목표</span>')
       +(si?bar(si.pct,'long'):'')+'</span>'
       +'<span class="ql-meta">'+(si?('<b>'+si.pct+'%</b><i>'+si.remain+'일 남음</i>'):'')+'</span></button>';
 
@@ -10017,7 +10017,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<span class="ql-tag mid">중기</span>'
       +'<span class="ql-body"><b>'+(pf.t?esc(pf.t):'12주 안에 올릴 숫자가 비어 있어요')+'</b>'
       +(pf.metric?'<span class="ql-sub"><em>'+esc(pf.metric)+'</em>'+(okNum?' <u>'+esc(pf.cur)+' → '+esc(pf.target)+'</u>':'')+'</span>'
-                 :'<span class="ql-sub none">지표 — 무엇을 숫자로 볼지</span>')
+                 :'<span class="ql-sub none">지표</span>')
       +(okNum?bar(pPct,'mid'):'')+'</span>'
       +'<span class="ql-meta">'+(d?('<b>'+(okNum?pPct+'%':'–')+'</b><i>'+(d.left>=0?'D-'+d.left:'끝')+'</i>'):'')+'</span></button>';
 
@@ -10029,7 +10029,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<span class="ql-body"><b>'+(th?esc(th.t):'매일 돌아올 행동 문장이 비어 있어요')+'</b>'
       +(th&&th.visionLink?visionLinkBadge(th.visionLink,'내 방향에서 연결'):'')
       +(f&&f.text?'<span class="ql-sub"><em>이번 주 초점</em> '+esc(f.text)+'</span>'
-        :(th&&th.ifthen?'<span class="ql-sub"><em>IF</em> '+esc(th.ifthen)+'</span>':'<span class="ql-sub none">이번 주 초점 — 이번 주에 볼 것 하나</span>'))
+        :(th&&th.ifthen?'<span class="ql-sub"><em>IF</em> '+esc(th.ifthen)+'</span>':'<span class="ql-sub none">이번 주 초점</span>'))
       +(th?'<span class="ql-dots">'+SL.slice(1).map(function(x,i){ var n=i+1;
           return '<i class="'+(stg&&n<stg?'done':(stg&&n===stg?'now':''))+'" title="'+esc(x)+'"></i>'; }).join('')+'</span>':'')
       +'</span>'
@@ -10128,7 +10128,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<button type="button" class="sw-add" data-sw-add="'+k+'">＋ '+addLab+' <small>'+ls.length+'/'+SW_MAX+'</small></button>';
       return h+'</div>';
     }
-    return '<section class="card sw-card"><div class="td-q">장점 · 단점 <small>내가 보는 나 — 한 줄에 하나씩</small></div>'
+    return '<section class="card sw-card"><div class="td-q">장점 · 단점 <small>한 줄에 하나씩</small></div>'
       +'<div class="sw-grid">'
       +box('strengths','잘하는 것','good','예: 슛 - 좁은 공간에서도 슛이 된다','장점 추가')
       +box('improve','키워야 할 것','grow','예: 전환 - 공 잃고 돌아서는 첫 두 걸음이 느리다','단점 추가')
@@ -10360,7 +10360,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(c){var same=!c.none&&String(c.pid||'')===st.mine,lbl='';
         try{var lp=(st.roster||[]).filter(function(p){return String(p.id)===st.mine;})[0];lbl=ilcLabel(lp);}catch(_){}
         setTimeout(function(){try{if(doc.claim){delete doc.claim;save();}
-          gToast(same?'코치가 확인했어요 — 내 IDP가 팀과 이어졌어요 ✓':('코치가 '+ilcJ(lbl||'명단의 선수','으로')+' 연결했어요'));}catch(_){}},0);}
+          gToast(same?'코치가 확인했어요 ✓':('코치가 '+ilcJ(lbl||'명단의 선수','으로')+' 연결했어요'));}catch(_){}},0);}
       return '';
     }
     if(!st.roster||!st.roster.length)return '';
@@ -10368,7 +10368,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var cp=c.none?null:st.roster.filter(function(p){return String(p.id)===String(c.pid||'');})[0];
       return '<section class="card ilc-card ilc-wait"><div class="ilc-k">팀 명단과 연결</div>'
         +'<div class="ilc-w"><b>'+(c.none?'명단에 이름이 없다고 코치에게 알렸어요':esc(ilcJ(ilcLabel(cp)||((c.num?'#'+c.num+' ':'')+(c.name||'')),'으로'))+' 골랐어요')+'</b>'
-        +'<span>코치가 확인하면 내 IDP가 팀과 이어지고, 그동안에도 IDP는 그대로 쓸 수 있어요.</span></div>'
+        +'<span>그동안에도 IDP는 그대로 쓸 수 있어요.</span></div>'
         +'<button type="button" class="ilc-redo" data-ilc-redo>다시 고르기</button></section>';
     }
     var L=st.roster.slice().sort(function(a,b){var ta=st.taken[String(a.id)]?1:0,tb=st.taken[String(b.id)]?1:0;if(ta!==tb)return ta-tb;
@@ -10376,7 +10376,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var sel=L.filter(function(p){return String(p.id)===ilcSel&&!st.taken[String(p.id)];})[0]||null;if(!sel)ilcSel='';
     var tick='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>';
     return '<section class="card ilc-card"><div class="ilc-k">팀 명단과 연결</div><h3 class="ilc-t">명단에서 나를 골라 주세요</h3>'
-      +'<p class="ilc-sub">고르면 코치에게 «이 선수가 나예요»가 가고, 코치가 확인하면 내 IDP가 팀과 이어져요.</p>'
+      +'<p class="ilc-sub">고르면 코치에게 «이 선수가 나예요»가 가요.</p>'
       +'<input type="search" class="ilc-q" placeholder="이름·번호" aria-label="이름·번호로 찾기">'
       +'<div class="ilc-list">'+L.map(function(p){var tk=!!st.taken[String(p.id)],meta=[p.pos,PSSchedule.groupLabel(p.grp)].filter(Boolean).join(' · ');
         var key=esc(String(p.name||'').replace(/\s+/g,'').toLowerCase()+' '+String(p.num||''));
@@ -10400,12 +10400,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     var st=ilcState();if(!st)return;
     if(t.hasAttribute('data-ilc-redo')){delete doc.claim;ilcSel='';save();render();return;}
-    if(t.hasAttribute('data-ilc-none')){doc.claim={none:1,at:Date.now()};save();render();gToast('코치에게 알렸어요 — 코치가 명단에 올리고 연결해 줘요');return;}
+    if(t.hasAttribute('data-ilc-none')){doc.claim={none:1,at:Date.now()};save();render();gToast('코치에게 알렸어요');return;}
     if(t.hasAttribute('data-ilc-go')){
       var p=(st.roster||[]).filter(function(x){return String(x.id)===ilcSel;})[0];
       if(!p||st.taken[String(p.id)]){gToast('다른 선수를 골라 주세요');return;}
       doc.claim={pid:String(p.id),num:String(p.num||''),name:String(p.name||''),at:Date.now()};ilcSel='';
-      save();render();gToast('코치에게 보냈어요 — 확인되면 내 IDP가 팀과 이어져요');
+      save();render();gToast('코치에게 보냈어요');
     }
   });
   document.addEventListener('input',function(e){
@@ -10534,7 +10534,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var can=!ro(), v=visionOf(doc), has=visionHas(v), editing=can&&visionEdit;
     var h='<section class="card vs-card'+(editing?' editing':'')+(has?' has':' empty')+'">'
       +'<div class="vs-head"><div><span class="vs-k">내 방향</span><h2>나는 어떤 선수가 되고 싶어?</h2>'
-      +'<p>포지션 이름보다 경기에서 보여주고 싶은 모습을 적어요.</p></div>';
+      +'</div>';
     if(can&&has&&!editing)h+='<button type="button" class="vs-edit" data-vs-edit>고치기</button>';
     h+='</div>';
     if(editing){
@@ -10545,10 +10545,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<input aria-label="'+(i===0?'이번에 키울 행동 하나':('추가 행동 '+i))+'" data-vs-beh="'+i+'" data-vs-bid="'+esc(b.id||'')+'" maxlength="80" value="'+esc(b.text||'')+'" placeholder="'+esc(['공을 받기 전에 두 번 확인한다','첫 터치를 전진할 쪽으로 둔다','공을 잃으면 가장 가까운 동료와 압박한다'][i])+'"></div>'; }
       h+='<div class="vs-example"><span>처음이라면</span><button type="button" data-vs-example>예시로 시작하기</button></div>'
         +'<label class="vs-field"><span>내가 되고 싶은 선수</span><input id="vsStatement" maxlength="80" value="'+esc(v.statement)+'" placeholder="예: 압박 속에서도 동료를 살리는 미드필더"></label>'
-        +'<div class="vs-beh"><div class="vs-beh-h"><b>이번에 키울 행동 하나</b><span>훈련이나 경기에서 직접 해볼 행동으로 적어요.</span></div>'+behaviorRow(rows[0],0)+'</div>'
+        +'<div class="vs-beh"><div class="vs-beh-h"><b>이번에 키울 행동 하나</b></div>'+behaviorRow(rows[0],0)+'</div>'
         +'<details class="vs-start-more"'+(v.reason||v.behaviors.length>1?' open':'')+'><summary>이유·행동 더 적기 <span>선택</span></summary><div class="vs-start-more-body">'
         +'<label class="vs-field"><span>왜 이런 선수가 되고 싶어? <i>선택</i></span><textarea id="vsReason" maxlength="180" rows="2" placeholder="예: 팀이 어려울 때 공을 받아 흐름을 바꾸고 싶다">'+esc(v.reason)+'</textarea></label>'
-        +'<div class="vs-beh"><div class="vs-beh-h"><b>함께 키울 행동</b><span>더 적었다면 이번에 집중할 행동을 하나 골라요.</span></div>'
+        +'<div class="vs-beh"><div class="vs-beh-h"><b>함께 키울 행동</b></div>'
         +rows.slice(1).map(function(b,i){return behaviorRow(b,i+1);}).join('')+'</div></div></details>'
         +'<div class="vs-safe">저장을 눌렀을 때만 바뀌고, 이전 문장은 최대 8개까지 남아요.</div>'
         +'<div class="vs-actions"><button type="button" class="btn ghost" data-vs-cancel>취소</button><button type="button" class="btn primary" data-vs-save="today">저장하고 오늘 기록하기</button></div>';
@@ -10556,7 +10556,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     if(!has){
       h+='<div class="vs-empty"><b>'+(can?'아직 내 방향을 적지 않았어요':'아직 선수가 내 방향을 적지 않았어요')+'</b>'
-        +'<span>'+(can?'되고 싶은 선수 모습과 행동 하나를 적어요.':'선수가 직접 적으면 이 자리에 그대로 보여요.')+'</span>'
+        +''
         +(can?'<button type="button" class="btn primary" data-vs-edit>내 방향 쓰기</button>':'')+'</div>';
       return h+'</section>';
     }
@@ -11732,7 +11732,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!window.PS_ARCH)return '';
     var grp=archGrpDoc(), who=ro()?'선수':'내';
     if(!grp)return '<section class="card arc-card"><div class="arc-top"><i>유형</i><span>포지션 먼저</span></div>'
-      +'<div class="arc-none">아래 <b>프로필</b>에서 포지션을 정하면, 그 자리의 유형 6가지가 여기에 펼쳐져요.</div></section>';
+      +'<div class="arc-none">아래 <b>프로필</b>에서 포지션을 정해요.</div></section>';
     var types=PS_ARCH.byGroup(grp)||[]; if(!types.length)return '';
     var mine=archSelf(), co=archCoach(), mt=mine?PS_ARCH.get(mine):null, ct=co?PS_ARCH.get(co):null, st=archSt();
     var gname=''; try{ gname=PS_EVAL_STD.posGroupName(grp)||''; }catch(_){}
@@ -11761,7 +11761,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var onlyCo=ct.keys.filter(function(id){ return mt.keys.indexOf(id)<0; });
       var both2=mt.keys.filter(function(id){ return ct.keys.indexOf(id)>=0; });
       h+='<div class="arc-diff"><b>서로 다르게 보고 있어요.</b>'
-        +'어떤 장면을 보고 그렇게 생각했는지 다음 성장 대화에서 이야기해 봐요.'
+        +''
         +'<span class="arc-dl"><i>겹치는 핵심 '+both2.length+'</i>'+(both2.length?both2.map(function(id){return '<u>'+esc(iname(id))+'</u>';}).join(''):'<u class="off">없음</u>')+'</span>'
         +(onlyMe.length?'<span class="arc-dl"><i>'+who+' 스페셜에만</i>'+onlyMe.map(function(id){return '<u class="me">'+esc(iname(id))+'</u>';}).join('')+'</span>':'')
         +(onlyCo.length?'<span class="arc-dl"><i>코치 생각에만</i>'+onlyCo.map(function(id){return '<u class="co">'+esc(iname(id))+'</u>';}).join('')+'</span>':'')
@@ -11986,7 +11986,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var open=ps.filter(function(x){return x.open;}), past=ps.filter(function(x){return !x.open;});
     /* ⚠ 2.410 — 일지 › 공통 에서는 위에 이미 '팀 공통 질문' 머리가 있다. 머리를 두 겹으로 두지 않는다. */
     var h='<section class="card qa-card">'
-      +(bare?'':'<div class="td-top"><b>성장 대화</b><span>코치가 묻고, 내가 적는다</span><span class="sp"></span></div>');
+      +(bare?'':'<div class="td-top"><b>성장 대화</b><span class="sp"></span></div>');
     /* ⚠ 2.409 — 질문 만들기는 **팀 운영 › IDP › 공통질문** 탭으로 옮겼다. 여기(내 프로필)에도 두면
        같은 일을 하는 문이 둘이 되고, 선수 화면에 코치 전용 버튼이 섞인다. */
     if(!ps.length){
@@ -12218,7 +12218,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='</div>';
     if(items.length>LIM&&!expanded)h+='<button type="button" class="qg-add" data-st-more'+(opts.moreKey?' data-st-more-key="'+esc(opts.moreKey)+'"':'')+'>지난 이야기 '+(items.length-LIM)+'개 더 보기</button>';
     if(!coachMode)h+=stCompose();
-    h+='<div class="st-note">출처를 누르면 원래 기록으로 가요</div></section>'; return h;
+    h+='</section>'; return h;
   }
   /* 2.770 — 실계정에서 코치 이름이 기록마다 달랐다(좋아요 by=«이름», 보내기 by=«이름 코치»=displayName). 뒤의 코치·감독·님과 공백을 걷고 비교 */
   function stSameCoach(name){ function nz(x){ return String(x||'').replace(/\s+/g,'').replace(/(코치|감독|선생님|쌤|님)$/,''); } var a=nz(name), b=nz(lrCoachName()); return !!a&&!!b&&a===b; }
@@ -12298,7 +12298,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(last.link&&/^https?:\/\//i.test(last.link)) h+='<a class="th-link" href="'+esc(last.link)+'" target="_blank" rel="noopener">▶ 참고 링크 열기</a>';
       h+='</div>';
     } else if(coachMode){
-      h+='<div class="rv-empty">아직 리뷰가 없어요 — 6주마다 <b>지난 목표 → 진척 → 강점·발전점 → 다음 목표</b>를 함께 정하고 남기면, 선수 화면에도 같은 카드가 떠요.</div>';
+      h+='<div class="rv-empty">아직 리뷰가 없어요</div>';
     }
     h+='</div>';
     return h;
@@ -12334,7 +12334,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var sugS=cmp.both.filter(function(r){return r.cv>=4;}).slice(0,6).map(function(r){return r.name;}), sugD=cmp.both.filter(function(r){return r.cv<=2||r.d>=2;}).slice(0,6).map(function(r){return r.name;});
     if(!cmp.both.length){ sugS=Object.keys(cmp.coach).length?cmp.rows.filter(function(r){return r.cv>=4;}).slice(0,6).map(function(r){return r.name;}):[]; sugD=cmp.rows.filter(function(r){return r.cv&&r.cv<=2;}).slice(0,6).map(function(r){return r.name;}); }
     h+='<div class="rv-fsec"><b>② 강점 <small>코치 평가 4점 이상에서 제안 — 눌러 넣기</small></b><div class="rv-sug">'+sugS.map(function(x){return '<button type="button" data-rv-sug="s" data-t="'+esc(x)+'"'+(d.strengths.indexOf(x)>=0?' class="on"':'')+'>'+esc(x)+'</button>';}).join('')+'</div><input class="inp" data-rv-f="strengths" value="'+esc(d.strengths.join(', '))+'" placeholder="쉼표로 구분 — 예: 스캔·판단, 공중볼"></div>';
-    h+='<div class="rv-fsec"><b>③ 발전시킬 것 <small>코치 2점 이하·선수와 2점 이상 차이에서 제안</small></b><div class="rv-sug dev">'+sugD.map(function(x){return '<button type="button" data-rv-sug="d" data-t="'+esc(x)+'"'+(d.develop.indexOf(x)>=0?' class="on"':'')+'>'+esc(x)+'</button>';}).join('')+'</div><input class="inp" data-rv-f="develop" value="'+esc(d.develop.join(', '))+'" placeholder="쉼표로 구분 — 최대 3개가 좋아요"></div>';
+    h+='<div class="rv-fsec"><b>③ 발전시킬 것 <small>코치 2점 이하·선수와 2점 이상 차이에서 제안</small></b><div class="rv-sug dev">'+sugD.map(function(x){return '<button type="button" data-rv-sug="d" data-t="'+esc(x)+'"'+(d.develop.indexOf(x)>=0?' class="on"':'')+'>'+esc(x)+'</button>';}).join('')+'</div><input class="inp" data-rv-f="develop" value="'+esc(d.develop.join(', '))+'" placeholder="쉼표로 구분"></div>';
     /* ④ 다음 목표 1~3 */
     h+='<div class="rv-fsec"><b>④ 다음 리뷰까지 목표 <small>1~3개 · 과정 목표(내가 통제할 수 있는 행동)</small></b>';
     (function(){ var rl=rvRoleLines(_rvUid); if(!rl)return;   /* 2.109 */
@@ -12554,7 +12554,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
               그 기준으로 읽히고, 코치 화면·리뷰가 그 값을 쓴다. 새로 **고르게 하지 않을 뿐**이다. */
       }
       if(ev.setId&&ev.setId!==set.id)
-        h+='<div class="ro-banner">이전 평가는 다른 항목 세트 기준이었어요 — 새 기준으로 다시 평가하면 갱신돼요.</div>';
+        h+='<div class="ro-banner">이전 평가는 다른 항목 세트 기준이었어요.</div>';
     }
     /* 능력 레이더 + 성장선 — 평가가 하나라도 있으면 그림이 먼저 */
     var avs=catAvgs(groups, ev.levels||{});
@@ -12566,7 +12566,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +svgRadar(avs.map(function(a){return a.cat;}), avs.map(function(a){return a.avg;}),
                   hasCoach?coachAvs.map(function(a){return a.avg;}):null, setMax(viewSetId));
       if(ev.hist&&ev.hist.length>=2)
-        h+='<div class="ch-sub">성장선 — 평가 전체 평균의 변화</div>'+svgGrowth(ev.hist);
+        h+='<div class="ch-sub">성장선</div>'+svgGrowth(ev.hist);
       h+='</div>';
     }
     /* ══ 2.113 · 선수 셀프평가도 질문–답으로 (코치 화면과 같은 결) ══════════════════════
@@ -12928,7 +12928,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +(dots?'<span class="mon-dots">'+dots+'</span>':'')+rxm+'</button>';
       }
       h+='</div>';
-      h+='<div style="margin-top:10px;font-size:11px;color:var(--text-3);line-height:1.7">날짜를 누르면 <b>이 날 일간</b>으로 — 적는 곳은 일간 하나예요</div>';
+      h+='<div style="margin-top:10px;font-size:11px;color:var(--text-3);line-height:1.7">날짜를 누르면 <b>이 날 일간</b>으로</div>';
       /* 몸 상태 추이 — 강도는 일별, 키·몸무게는 주 1회 측정을 최근 6개월로(2.348) */
       h+=bodyTrendCard({noWeight:1});
       h+=growthCards();
@@ -13476,7 +13476,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +(isT?'<button type="button" class="rtd-tag" data-rttr="'+esc(r.tr.id)+'">개인 훈련 ›</button>':'')+'</div>';
       }).join('')+'</div>';
     }
-    if(!rows.length)h+='<div class="rtd-empty">'+DAYS[pick]+'요일은 아직 비어 있어요 — 아래에 적으면 매주 '+DAYS[pick]+'요일에 떠요</div>';
+    if(!rows.length)h+='<div class="rtd-empty">'+DAYS[pick]+'요일은 아직 비어 있어요</div>';
     h+='<div class="rtd-add"><label class="rtd-sr" for="rtAddIn">'+DAYS[pick]+'요일에 할 일 추가</label>'
       +'<input id="rtAddIn" data-rtadd maxlength="46" autocomplete="off" enterkeyhint="done" placeholder="예) 21:00 슈팅 50개 · 시간은 빼도 돼요">'
       +'<button type="button" data-rtaddgo>추가</button></div>';
@@ -13487,7 +13487,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       /* 비우기는 되돌리기 어려운 동작이라 더하는 버튼과 같은 줄에 두지 않는다. 1.597 — 훈련은 건드리지 않는다 */
       if(plan.length)h+='<button type="button" class="rt-d-clear">이 요일 비우기</button>';
       if(orph.length){
-        h+='<div class="rt-orph"><i>요일이 없는 훈련 — 요일을 정하면 그 요일 루틴에 놓여요</i><div class="rt-list">'
+        h+='<div class="rt-orph"><i>요일이 없는 훈련</i><div class="rt-list">'
           +orph.map(trOpen).join('')+'</div></div>';
       }
     }
@@ -13874,7 +13874,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<div class="mr-hero'+(th?'':' empty')+'"><div class="mr-k">'+mine('내가 키우는 것','키우는 것')+(th&&th.wk?' · '+th.wk+'주째':'')+'</div>';
     if(th){ h+='<h3>'+esc(th.t)+'</h3>'+(th.wk?'<div class="mr-wk" aria-label="12주 중 '+Math.min(12,th.wk)+'주째">'+Array.apply(null,Array(12)).map(function(_,i){return '<i'+(i<th.wk?' class="on"':'')+'></i>';}).join('')+'</div>':'')+(th.ifthen?'<div class="mr-if"><b>IF</b>'+esc(th.ifthen)+'</div>':'')
         +'<div class="mr-stage">'+SL.slice(1).map(function(x,i){ var s2=i+1, cls=(th.cur&&s2<th.cur)?'done':((th.cur&&s2===th.cur)?'now':''); return '<span class="'+cls+'">'+x+(th.reach[s2]?'<small>'+rvFmt(th.reach[s2])+'</small>':'')+'</span>'; }).join('')+'</div>'
-        +(trail?'<div class="mr-trail">'+trail+'</div>':'<div class="mr-empty">'+mine('매주 일요일 단계를 적으면 12주 궤적이 그려져요','아직 주간 단계 기록이 없어요')+'</div>'); }
+        +(trail?'<div class="mr-trail">'+trail+'</div>':'<div class="mr-empty">'+mine('아직 주간 단계 기록이 없어요','아직 주간 단계 기록이 없어요')+'</div>'); }
     /* 2.504 — 옛 문구는 "목표 탭에서 시작해요" 였는데 그 자리가 2.412 에서 사라져 **없는 문**을 가리켰다.
        안내문 자리를 그대로 문으로 만든다(코치가 남의 문서를 볼 때는 버튼 없이 사실만). */
     else h+='<div class="mr-empty">'+mine('아직 없어요','아직 없어요')+'</div>'
@@ -13934,7 +13934,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           return '<div><span>'+esc(c.cat)+'</span><span class="b"><i style="width:'+Math.round(v/_mx*100)+'%"></i>'+(cv?'<em style="left:'+Math.round(cv/_mx*100)+'%"></em>':'')+'</span><span class="v">'+(v?(Math.round(v*10)/10):'–')+'</span></div>'; }).join('')+'</div>'; } }catch(_){ _axes=''; }
       h+='<div class="mr-sec"><div class="mr-k">능력 레이더'+(ed&&ed.hasCoach?' <small>셀프 · 코치</small>':'')+'</div>'
         +(radar?'<div class="mr-eye"><div class="mr-radar">'+radar+'</div>'+_axes+'</div>'+(ed.hasCoach?'<div class="mr-lg"><span><i class="s"></i>셀프</span><span><i class="c"></i>코치</span></div>':'')
-          :'<div class="mr-empty">'+mine('내 프로필 › 셀프 평가를 하면 그려져요','아직 셀프 평가 전이에요')+'</div>')+'</div>';
+          :'<div class="mr-empty">'+mine('아직 셀프 평가 전이에요','아직 셀프 평가 전이에요')+'</div>')+'</div>';
     }
     /* ⚠ 2.447 — 비었을 때 '0/2' 는 셈이 아니라 잔소리다. 고른 것이 있을 때만 센다 */
     if(picks.length||tagArr.length||!_stepsNeeded){   /* 2.647 — 빈 무기는 순서 카드가 대신 */
@@ -13947,7 +13947,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<div class="mr-sec"><div class="mr-k">팀 기준 대비 <small>'+(fit?esc(fit.pos)+' 요구 '+fit.req+'개':'자리 요구')+'</small></div>'
       +(fit?'<div class="mr-kpi"><div class="ok"><b>'+fit.met+'</b><i>충족</i></div><div class="no"><b>'+fit.short+'</b><i>미달</i></div><div><b>'+fit.un+'</b><i>미평가</i></div></div>'
           +(fit.shorts.length?'<div class="mr-list">'+fit.shorts.slice(0,5).map(function(x){return '<div><span>'+esc(x.n)+'</span><em>+'+x.gap+'</em></div>';}).join('')+'</div>':'<div class="mr-note">요구를 모두 충족해요</div>')
-          :'<div class="mr-empty">'+(pos?esc(pos)+mine(' 자리 요구를 코치가 정하면 여기에',' 자리 요구가 아직 없어요'):mine('내 프로필에서 포지션을 정하면 팀 기준과 견줘요','포지션이 아직 없어요'))+'</div>')+'</div>';
+          :'<div class="mr-empty">'+(pos?esc(pos)+mine(' 자리 요구를 코치가 정하면 여기에',' 자리 요구가 아직 없어요'):mine('포지션이 아직 없어요','포지션이 아직 없어요'))+'</div>')+'</div>';
     /* ③ 기록 · 리뷰 — 2.501 위계: 묶음마다 제목을 두고 그리드를 끊는다(빈 칸 order 규칙도 묶음 안에서만 돈다) */
     h+='</div>'; var _done0=h.length;   /* 2.647 */
     h+='<div class="mr-group">일지에 남긴 기록 <small>일지 작성 기준 · 실제 출전 횟수와 다를 수 있어요</small></div><div class="mr-grid">';
@@ -13956,7 +13956,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var cal=null; try{ cal=mrCal12(); }catch(_){}
       h+='<div class="mr-sec"><div class="mr-k">최근 12주 <small>'+(cal?('기록한 날 '+cal.total+' / 84'):'')+'</small></div>'+(cal?cal.html:'');
       var ef=rpEffort12();
-      if(!ef.days&&!(mo&&mo.days)){ h+='<div class="mr-empty" style="margin-top:10px">'+mine('일지에 기록을 남기면 여기에 쌓여요','아직 기록이 없어요')+'</div></div>'; return; }
+      if(!ef.days&&!(mo&&mo.days)){ h+='<div class="mr-empty" style="margin-top:10px">'+mine('아직 기록이 없어요','아직 기록이 없어요')+'</div></div>'; return; }
       var mc=(mo&&mo.cnt)||{}, z=function(v){ return '<td class="'+(v?'':'z')+'">'+v+'</td>'; };
       var rowsT=[['팀 훈련',mc.team||0,ef.team],['경기',mc.match||0,ef.match],['개인 운동',mc.solo||0,ef.solo],['휴식',mc.rest||0,ef.rest],['재활 · 부상',(mc.rehab||0)+(mc.injury||0),ef.rehab+ef.injury],['초점 시도',(mo&&mo.tries)||0,ef.tryDays],['한 줄',(mo&&mo.memo)||0,ef.memo]];
       h+='<div class="mr-k mr-k2">활동별로 기록한 날</div><table class="mr-stat"><tr><th></th><th>'+((mo&&mo.m)||(today.getMonth()+1))+'월</th><th>12주</th></tr>'
@@ -13975,7 +13975,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var slp=rpWeekly12(function(lg){ return lg.sleepq?(SLEEP_H[lg.sleepq]||null):null; });
       var cN=cond.filter(function(v){return v!=null;}), sN=slp.filter(function(v){return v!=null;});
       h+='<div class="mr-sec"><div class="mr-k">컨디션 · 수면 <small>최근 12주 · 주 평균</small></div>';
-      if(!cN.length&&!sN.length){ h+='<div class="mr-empty">'+mine('일지에서 컨디션·수면시간을 고르면 흐름이 그려져요','아직 컨디션·수면 기록이 없어요')+'</div></div>'; return; }
+      if(!cN.length&&!sN.length){ h+='<div class="mr-empty">'+mine('아직 컨디션·수면 기록이 없어요','아직 컨디션·수면 기록이 없어요')+'</div></div>'; return; }
       var CL=['','최악','안 좋음','괜찮음','좋음','최고'];
       if(cN.length){
         var ca=cN.reduce(function(a,b){return a+b;},0)/cN.length;
@@ -13996,7 +13996,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +((rv.develop||[]).length?'<div class="mr-row"><i>발전</i><div class="mr-chips dev">'+rv.develop.map(function(x){return '<span>'+esc(x)+'</span>';}).join('')+'</div></div>':'')
           +((rv.goals||[]).length?'<div class="mr-row"><i>목표</i><div class="mr-list">'+rv.goals.slice(0,3).map(function(g2,i){return '<div><span>'+(i+1)+'. '+esc(g2.t||'')+'</span></div>';}).join('')+'</div></div>':'')
           +(rv.note?'<div class="mr-note">'+esc(rv.note)+'</div>':'')
-        :'<div class="mr-empty">'+mine('6주마다 코치와 리뷰하면 여기에 쌓여요','아직 성장 리뷰가 없어요')+'</div>')+'</div>';
+        :'<div class="mr-empty">'+mine('아직 성장 리뷰가 없어요','아직 성장 리뷰가 없어요')+'</div>')+'</div>';
     /* ══ 2.379 · 내가 쓴 한 줄 ═══════════════════════════════════════════════════════
        리포트에 사람의 목소리가 없었다 — 숫자와 도형뿐이었다. 코치의 말 옆에 **선수 자신의 말**을 둔다.
        그래야 이 문서가 성적표가 아니라 자기 기록장이 되고, 나중에 다시 꺼내 볼 이유가 생긴다.
@@ -14262,7 +14262,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<div class="td-body"><div class="q-body">'
       +'<div class="q-half"><div class="q-lbl"><label for="msH">키</label><span id="msHd" class="w-delta">'+dHTML(rec&&rec.h,prev&&prev.h,'cm')+'</span></div><div class="w-row"><input id="msH" type="number" inputmode="decimal" step="0.1" min="100" max="220" value="'+((rec&&rec.h)||'')+'" placeholder="'+((prev&&prev.h)||'000.0')+'"><span>cm</span></div></div>'
       +'<div class="q-half"><div class="q-lbl"><label for="msW">몸무게</label><span id="msWd" class="w-delta">'+dHTML(rec&&rec.w,prev&&prev.w,'kg')+'</span></div><div class="w-row"><input id="msW" type="number" inputmode="decimal" step="0.1" min="20" max="150" value="'+((rec&&rec.w)||'')+'" placeholder="'+((prev&&prev.w)||'00.0')+'"><span>kg</span></div></div>'
-      +'</div>'+(rateTx?'<div class="td-lb" style="margin-top:8px">'+rateTx+(rate>=8?' — 코치와 훈련량 이야기해요':'')+'</div>':'')
+      +'</div>'+(rateTx?'<div class="td-lb" style="margin-top:8px">'+rateTx+''+'</div>':'')
       +'<div class="td-foot" style="justify-content:flex-end"><button type="button" class="td-skip" data-ms-skip>이번 주는 건너뛰기</button></div></div></section>';
   }
   function bindMeasureCard(){
@@ -14294,7 +14294,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var lbs=gs.map(function(g){ var v=+((g.sc||{})[wk]||0); var o=QG_SCALE.filter(function(x){return x[0]===v;})[0]; return o?o[1]:''; }).filter(Boolean);
       return '<div class="td-wkline ms-line"><b>이번 주 나는 ✓</b><span class="sep">·</span><span>'+esc(lbs.join(' · '))+'</span></div>';
     }
-    var h='<section class="card td-card ws-card"><div class="td-top"><b>이번 주 나는</b><span>내 성장 문장 — 지금 어디까지</span><span class="sp"></span><span class="td-pill">10초</span></div><div class="td-body">';
+    var h='<section class="card td-card ws-card"><div class="td-top"><b>이번 주 나는</b><span class="sp"></span><span class="td-pill">10초</span></div><div class="td-body">';
     unset.forEach(function(g){
       h+='<div class="ws-g"><div class="td-thline">“'+esc(g.t)+'”</div><div class="td-emo">'
         +QG_SCALE.map(function(o){ return '<button type="button" class="td-chip" data-ws-sc="'+o[0]+'" data-ws-g="'+esc(g.id)+'"><small>'+o[1]+'</small></button>'; }).join('')+'</div></div>';
@@ -14370,7 +14370,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var all=mtList().slice().sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
     if(mtCur){ var cur=all.filter(function(m){return m.id===mtCur;})[0]; if(cur)return rMatchDetail(cur); mtCur=''; }
     var up=all.filter(mtUpcoming).reverse(), past=all.filter(function(m){return !mtUpcoming(m);});
-    var h='<section class="card mt-head"><div class="mt-title"><h3>경기</h3><span class="mt-cnt">'+all.length+'</span></div><p class="mt-sub">팀 경기 일정 · 들어가서 '+(ro()?'선수의':'내')+' 리뷰를 쓰고, 팀 리뷰는 코치가 공개한 경기에서 보여요.</p></section>';
+    var h='<section class="card mt-head"><div class="mt-title"><h3>경기</h3><span class="mt-cnt">'+all.length+'</span></div><p class="mt-sub">팀 경기 일정</p></section>';
     if(!all.length)return h+'<section class="card mt-empty"><b>아직 팀 경기가 없어요</b><p>코치가 팀 › 경기에 경기를 만들면 여기에 보여요.</p></section>';
     /* 2.468 — 맡아 본 롤(밀린 일 8/24, 3판): 선수가 경기마다 스스로 적는 포지션·출전·분(matchSelf)을
        모아 보는 거울. 한 유형으로 몰지 않는다 — 여러 롤 경험이 그대로 보이면 된다. 읽기 전용·새 저장 없음. */
@@ -14456,7 +14456,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     var _fcTx=''; try{ var _f=focusOf(ymd(mondayOf(new Date(String(m.date||'')+'T00:00:00')))); _fcTx=_f&&_f.text?String(_f.text):''; }catch(_){ _fcTx=''; }   /* 2.782 — 그 주 초점을 «시도한 것» 자리에 미리 보여 준다(placeholder — 저장은 선수가 적을 때만) */
     h+='<section class="card mt-card mt-self"><div class="mt-lb" style="margin-top:0">'+(ro()?'선수의 되돌아보기':'경기 뒤 · 되돌아보기')+(!ro()?' <small>위 임무를 보면서</small>':'')+(r.at?' <small>'+esc(ymd(new Date(r.at)))+' 저장</small>':'')+'</div>';
-    if(future&&!ro())h+='<p class="mt-sum" style="margin-top:0;color:var(--text-3)">경기 전이에요 — 지금 "이 경기에서 시도할 것"을 먼저 적어 둘 수 있어요.</p>';
+    if(future&&!ro())h+='<p class="mt-sum" style="margin-top:0;color:var(--text-3)">경기 전이에요</p>';
     if(ro()){
       h+=mtSelfHas(m.id)?((r.tried?mtRvItem('memo','시도한 것',r.tried):'')+(r.good?mtRvItem('good','잘 된 장면',r.good):'')+(r.better?mtRvItem('imp','다음엔 이렇게',r.better):'')+(visionLinkOf(r)?mtRvItem('memo','내 방향 행동',visionLinkOf(r).text):'')+(sc2?'<div class="mt-next"><div><span>내 평점</span>'+esc(mtSc5Lb(sc2))+'</div></div>':''))
         :'<p class="mt-sum" style="margin-top:0;color:var(--text-3)">선수가 아직 안 썼어요.</p>';
@@ -14487,7 +14487,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         if(rows)h+='<div class="mt-phs"><div class="mt-lb">국면 평가</div>'+rows+'</div>'; }
       h+='</section>';
     }else if(!future){
-      h+='<section class="card mt-empty"><b>팀 리뷰는 아직 비공개예요</b><p>'+(isCoach()?'팀 › 경기 › 리뷰에서 "선수에게 팀 리뷰 공개"를 켜면 여기에 보여요.':'코치가 공개하면 여기에 보이고, 그 전에 '+who+' 리뷰를 먼저 써 두면 대조할 수 있어요.')+'</p></section>';
+      h+='<section class="card mt-empty"><b>팀 리뷰는 아직 비공개예요</b><p>'+(isCoach()?'팀 › 경기 › 리뷰에서 "선수에게 팀 리뷰 공개"를 켜면 여기에 보여요.':'코치가 공개하면 여기에 보여요.')+'</p></section>';
     }
     /* 2.333 — 옛 이미지노트에 그 경기 날짜로 적어 둔 것이 있으면 **읽어서** 보여준다.
        ⚠ 옮겨 쓰지 않는다(자동 이관은 사용자가 안 시킨 쓰기다) — 보고 옮기고 싶으면 위 칸에 다시 쓰면 된다. */
@@ -15258,10 +15258,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<section class="rp2 rp2-page">'+rpHead(T,'2 · 해 온 것')+'<div class="rp2-one">'
       +rpHeatBlock(12)
       +rpSec('이번 달',(today.getMonth()+1)+'월')+rpMonthKpi()
-      +rpSec('일지에 남긴 기록','최근 12주 · 일지 작성 기준')+(ef&&ef.days?'<div class="rp2-kpi four"><div><b>'+ef.days+'</b><i>기록한 날</i></div><div><b>'+ef.tryDays+'</b><i>초점 시도</i></div><div><b>'+ef.team+'</b><i>훈련</i></div><div><b>'+ef.match+'</b><i>경기</i></div></div><div class="rp2-kpi four"><div><b>'+ef.solo+'</b><i>개인운동</i></div><div><b>'+ef.rest+'</b><i>휴식</i></div><div><b>'+(ef.rehab+ef.injury)+'</b><i>재활·부상</i></div><div><b>'+ef.memo+'</b><i>한 줄</i></div></div>':rpEmpty('일지에 기록을 남기면 여기에 쌓여요'))
+      +rpSec('일지에 남긴 기록','최근 12주 · 일지 작성 기준')+(ef&&ef.days?'<div class="rp2-kpi four"><div><b>'+ef.days+'</b><i>기록한 날</i></div><div><b>'+ef.tryDays+'</b><i>초점 시도</i></div><div><b>'+ef.team+'</b><i>훈련</i></div><div><b>'+ef.match+'</b><i>경기</i></div></div><div class="rp2-kpi four"><div><b>'+ef.solo+'</b><i>개인운동</i></div><div><b>'+ef.rest+'</b><i>휴식</i></div><div><b>'+(ef.rehab+ef.injury)+'</b><i>재활·부상</i></div><div><b>'+ef.memo+'</b><i>한 줄</i></div></div>':rpEmpty('아직 기록이 없어요'))
       +rpSec('컨디션 · 수면','최근 12주 · 주 평균')+((cN.length||sN.length)?'<div class="rp2-3l wide">'
           +(cN.length?'<div><i>컨디션 · 평균 '+CL[Math.round(cN.reduce(function(a,b){return a+b;},0)/cN.length)]+'</i><b>'+rpSpark(cond,1,5,RP_ACC)+'</b></div>':'')
-          +(sN.length?'<div><i>수면 · 평균 '+(Math.round(sN.reduce(function(a,b){return a+b;},0)/sN.length*10)/10)+'시간</i><b>'+rpSpark(slp,5,10,'#2E7D63')+'</b></div>':'')+'</div>':rpEmpty('일지에서 컨디션·수면시간을 고르면 흐름이 그려져요'))
+          +(sN.length?'<div><i>수면 · 평균 '+(Math.round(sN.reduce(function(a,b){return a+b;},0)/sN.length*10)/10)+'시간</i><b>'+rpSpark(slp,5,10,'#2E7D63')+'</b></div>':'')+'</div>':rpEmpty('아직 컨디션·수면 기록이 없어요'))
       +rp2FocusHist()
       +'</div>'+rpFoot(2,3)+'</section>';
     /* ── 3쪽 주고받은 말 ── */
@@ -15494,7 +15494,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       });
     }else{
       c.fillStyle='#8A9099'; c.font='600 13px '+F;
-      c.fillText('성장 문장이 아직 없어요 — 아이와 함께 첫 문장을 정해보세요',M,y+24); y+=48;
+      c.fillText('성장 문장이 아직 없어요',M,y+24); y+=48;
     }
     /* 몸의 성장 */
     y+=16;
@@ -15516,7 +15516,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(rate!=null&&rate>=8){ c.fillStyle='#B4552D'; c.font='700 12px '+F;
         c.fillText('성장 속도 +'+rate+'cm/년',M,y); y+=22; }
     }else{
-      c.fillStyle='#8A9099'; c.font='600 13px '+F; c.fillText('키·몸무게 기록이 아직 없어요 — 매주 수요일에 함께 재요',M,y+18); y+=40;
+      c.fillStyle='#8A9099'; c.font='600 13px '+F; c.fillText('키·몸무게 기록이 아직 없어요',M,y+18); y+=40;
     }
     /* 잘된 것 · 코치 한마디 */
     y+=14;
