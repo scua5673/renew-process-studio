@@ -88,3 +88,19 @@ test('client accepts the exact length limit and rejects over-limit data before s
  // must not leave that unaccepted photo in canonical variants on a later edit.
  const live=clientFixture();await live.client.prepare();const accepted=clone(live.client.state.doc);S.edit(live.client.state.doc,'db:db1','profile.photo','data:'+('x'.repeat(S.MAXLEN)),st(600));assert.throws(()=>live.client.save(live.client.state.doc),/저장 한도/);assert.deepEqual(live.client.state.doc,accepted);S.edit(live.client.state.doc,'db:db1','club','small edit after rejection',st(601));await live.client.save(live.client.state.doc);assert.equal(live.writes(),1);
 });
+
+test('시즌에 담아 둔 보관: 꼬리표는 보관 도장과 함께 가고, 풀면 걷힌다 · 다시 맞춰도 그대로',()=>{
+  const S=require('../studio/scouting-store.js');
+  const base=S.reconcile(null,{v:1,players:[{id:'t1',dbId:'c1',type:'target',name:'가',posId:'p',levels:{}},{id:'t2',dbId:'c2',type:'target',name:'나',posId:'p',levels:{}}]});
+  const a=S.copy(base);S.archive(a,'db:c1',1000,{at:1000,id:'x'},'2026');S.archive(a,'db:c2',1000,{at:1000,id:'x'});
+  const saved=S.reconcile(base,a),C=saved.scoutRegistry.candidates;
+  assert.equal(C['db:c1'].archiveSeason,'2026');assert.equal(C['db:c1'].archivedAt,1000);
+  assert.equal(C['db:c2'].archiveSeason,undefined,'예전 «후보 보관»은 꼬리표 없음');assert.equal(C['db:c2'].archivedAt,1000);
+  assert.ok(saved.players.every(p=>p._scoutHidden),'담아 둔 후보의 배치는 숨는다');
+  assert.deepEqual(S.reconcile(saved,S.copy(saved)),saved,'다시 맞춰도 그대로');
+  const old=S.reconcile(saved,S.copy(base));assert.equal(old.scoutRegistry.candidates['db:c1'].archiveSeason,'2026','꼬리표를 모르는 옛 사본이 이겨도 남는다');
+  const b=S.copy(saved);S.archive(b,'db:c1',0,{at:2000,id:'x'});
+  const back=S.reconcile(saved,b);assert.equal(back.scoutRegistry.candidates['db:c1'].archiveSeason,undefined);assert.equal(back.scoutRegistry.candidates['db:c1'].archivedAt,0);
+  const moved=S.copy(saved);S.archive(moved,'db:c1',3000,{at:3000,id:'x'},'2028');
+  assert.equal(S.reconcile(back,moved).scoutRegistry.candidates['db:c1'].archiveSeason,'2028','더 새 도장이 이긴다');
+});
