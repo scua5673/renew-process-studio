@@ -125,7 +125,7 @@ try{
   await pick('#pwTeam',n1+' 시즌 시작');await dlg.waitFor();
   await dlg.getByRole('button',{name:n1+' 시즌 시작',exact:true}).click();
   await frame.waitForFunction(()=>!document.getElementById('pwSeason')&&tmOurs().length===16);
-  for(let i=0;i<60;i++){let t=null;try{t=await tags();}catch(e){}if(t&&t['서지훈']===cur&&t['문건우']==='')break;await page.waitForTimeout(400);}   /* 스카우팅 넘기기는 후보 문서가 풀린 뒤 따라온다 */
+  {let t=null,ok=false;for(let i=0;i<150&&!ok;i++){t=null;try{t=await tags();}catch(e){}ok=!!(t&&t['서지훈']===cur&&t['문건우']==='');if(!ok)await page.waitForTimeout(400);}assert.ok(ok,'다시 시작한 뒤 스카우팅 넘기기가 60초 안에 따라와야 한다 — 지금 꼬리표 '+JSON.stringify(t));}   /* 스카우팅 넘기기는 후보 문서가 풀린 뒤 따라온다 */
   step='scout-after';
   await tab('scouting');
   await frame.locator('#pwScout [data-pw-view="list"]').click();
