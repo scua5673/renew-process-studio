@@ -22,7 +22,7 @@
     tombstones=object(tombstones)?tombstones:{};
     var byPlayer=Object.create(null),rows=Object.create(null);
     (Array.isArray(players)?players:[]).forEach(function(p){
-      if(!object(p)||p.type==='target'||!identity(p.name))return;
+      if(!object(p)||p.type==='target'||p.grad||!identity(p.name))return;
       var id=identity(p.id);if(!id||tombstones[id])return;
       if(!rows[id])rows[id]={count:0,inGroup:false};
       rows[id].count++;if(!group||identity(p.grp)===group)rows[id].inGroup=true;
