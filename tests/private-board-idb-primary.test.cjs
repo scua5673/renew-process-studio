@@ -64,9 +64,19 @@ test('a real IDB error followed by borrowed-view interruption remains a failed s
  const h=draftHarness(),old=h.record('{}'),gate=defer();h.idb.set(h.key,old);h.observe(null,old);h.hooks.get=async()=>{await gate.promise;throw Error('synthetic actual IDB failure');};
  const work=h.api.write();work.catch(()=>{});await tick();h.borrow();gate.resolve();await assert.rejects(work,/synthetic actual IDB failure/);assert.equal(h.api.snapshot().failed,true);assert.equal(h.states.at(-1),'fail');assert.equal(h.api.pending(),true);assert.equal(h.idb.get(h.key),old);assert.equal(h.local.size,0);
 });
+/* 3.336 — 남의 원문은 보관한 뒤 이어 쓴다(board-draft-adopt-3336). 보관을 못 해 생긴 진짜 충돌은 예전처럼 빌린 화면에서도 «대기»로 낮추지 않는다.
+   (시험 기대를 일부러 고친 곳 — 예전엔 남의 원문만으로 충돌이었다) */
 test('a real foreign-source conflict is not downgraded by a later borrowed view',async()=>{
- const h=draftHarness(),foreign=h.record('{"source":"foreign original"}',99),gate=defer();h.idb.set(h.key,foreign);let recovering=false;h.hooks.get=async k=>{if(k!==h.key){recovering=true;await gate.promise;}};
- const work=h.api.write();work.catch(()=>{});await tick();assert.equal(recovering,true);h.borrow();gate.resolve();await assert.rejects(work,e=>e.psConflict===true);assert.equal(h.api.snapshot().failed,true);assert.equal(h.states.at(-1),'fail');assert.equal(h.api.pending(),true);assert.equal(h.idb.get(h.key),foreign);assert.equal(h.local.size,0);
+ const h=draftHarness(),foreign=h.record('{"source":"foreign original"}',99),gate=defer();h.idb.set(h.key,foreign);let recovering=false;
+ h.hooks.cas=k=>{if(k.includes(':kept:split-'))throw Error('synthetic archive failure');};h.hooks.get=async k=>{if(k!==h.key&&!k.includes(':kept:split-')){recovering=true;await gate.promise;}};
+ const work=h.api.write();work.catch(()=>{});await tick();await tick();await tick();assert.equal(recovering,true);h.borrow();gate.resolve();await assert.rejects(work,e=>e.psConflict===true);assert.equal(h.api.snapshot().failed,true);assert.equal(h.states.at(-1),'fail');assert.equal(h.api.pending(),true);assert.equal(h.idb.get(h.key),foreign);assert.equal(h.local.size,0);
+ await assert.rejects(h.api.ready(),e=>e.psConflict===true&&!e.psDeferred,'the borrowed view reports the same conflict');
+});
+test('a borrowed view that interrupts the archive of a foreign source stays pending, and the board return finishes it',async()=>{
+ const h=draftHarness(),foreign=h.record('{"source":"foreign original"}',99),gate=defer();h.idb.set(h.key,foreign);let archiving=false;h.hooks.get=async k=>{if(k.includes(':kept:split-')){archiving=true;await gate.promise;}};
+ const source=h.raw,work=h.api.write();work.catch(()=>{});await tick();assert.equal(archiving,true);h.borrow();gate.resolve();await assert.rejects(work,e=>e.psDeferred===true);
+ assert.equal(h.idb.get(h.key),foreign,'never replaced while the board is borrowed');assert.equal(h.api.pending(),true);assert.notEqual(h.states.at(-1),'fail');
+ delete h.hooks.get;h.returnToBoard();await h.api.ready();assert.ok(split(h).includes(foreign));assert.equal(JSON.parse(h.idb.get(h.key)).raw,source);assert.equal(h.api.pending(),false);
 });
 test('ordinary unsaved edits and already committed lifecycle flushes never recreate LS copies',async()=>{
  const h=draftHarness();await h.api.ready();assert.equal(h.local.has(h.key),false);assert.equal(JSON.parse(h.idb.get(h.key)).raw,h.raw);await h.api.write({lifecycle:true});assert.equal(h.writes.filter(x=>x[0]==='local').length,0);

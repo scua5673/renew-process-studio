@@ -48,6 +48,8 @@ suites.selection.push('board-phone-board-3327');   /* 3.320 — 폰보드: 폰 �
 suites.selection.push('board-vision-carry-3271','board-position-direct-3271');   /* 3.271 — 시야 · 시선은 이 페이지에만 + 이 장면부터 뒤로(756c0a48) · 오른쪽 클릭 창의 포지션(0033117a) */
 suites.board.push('board-page-undo-3271');
 suites.board.push('board-draft-divergent-3302');   /* 3.302 — 초안의 두 사본이 달라도 편집이 저장되고 알약이 뜨지 않는다 · 두 사본은 보관 키에 그대로 · 보관 실패면 예전처럼 막음 · 저장 뒤 알약 걷힘 */
+suites.board.push('board-draft-two-window-3336');   /* 3.336 — 같은 계정 창 둘: 다른 창이 초안 칸을 고친 뒤에도 이 창의 편집이 저장되고 새 판 적용 장벽이 막히지 않는다 · 다른 창의 초안은 보관 키에 그대로 */
+suites.board.push('board-train-grid-3338');   /* 3.338 — 훈련 격자: 운동장 가운데 기준 · 칸이 딱 맞게(11인제 · 8인제 · 운동장 여럿은 카드마다) · 격자 자석은 그 카드 칸 · 선 골대(둥근 ㄷ 자 · 망 없음 · 3D 입구 여섯) · 내보내기 */
 suites.selection.push('training-grid-snap-3302');   /* 3.302 — 훈련 편집기는 격자에 붙는 것이 기본: 놓기 · 끌기 · ⌘/Ctrl 로 한 번 자유 · 선 끝은 선수에 묶임 · 끄기 · 나가면 작전판 그대로 */
 suites.board.push('anim-token-over-handle-3302');   /* 3.302 — 장면 사이에 조금 움직인 선수: 곡선 손잡이가 덮어도 토큰이 잡혀 끌린다 · 긴 동선의 손잡이는 그대로 */
 suites.selection.push('board-motion-marks-3302');   /* 3.302 — 잔상은 가늘어지는 꼬리 하나 · «시야» 단추가 끔 → 방향 표식 → 시야 → 끔 · 뒤 장면까지 · 재생 · 내보내기 */
@@ -87,6 +89,7 @@ suites.boardperf.push('xss-synced-docs-team');   /* 3.272 — 명단 · 경기 �
 suites.boardperf.push('depth-panel-reorder-3273');   /* 3.273 — «선택한 포지션» 목록에서 끌어 순서 · 이름을 누르면 프로필 바로 */
 suites.entry.push('oauth-callback-gate');   /* 3.272 — 남이 만든 #access_token 링크로는 로그인되지 않는다 · 단추로 시작한 로그인 · 초대 링크 · 다른 창 콜백 · 관리자 화면은 그대로 */
 suites.entry.push('logout-direct-pages');   /* 3.272 — 로그아웃한 기기에서 팀 화면을 주소로 바로 열어도 자료를 그리지 않는다(data-lock-guard.js) */
+suites.idp.push('roster-quick-edit-3339');   /* 3.339 — 선수단 «명단» 표에서 바로 넣기(Enter · 맨 위 초록 줄) · 여러 명 골라 조 바꾸기 · 명단에서 빼기(삭제 기록 먼저) · 스카우팅에서 불러오기(후보 원장 그대로) · 잠긴 명단 · PS_SIZE=ipad|phone 도 */
 const PER_TEST_MS={'board-drag-performance':360000};   /* 3.012 — 한 테스트 한도(기본 240초)의 예외. 위 boardperf 참고 */
 /* 3.012 — 엔진과 상관없이 Chromium 을 직접 띄우는 시험(PS_BROWSER_ENGINE 을 읽지 않는다). WebKit 잡에서는 Chrome 경로가 없어 바로 죽거나
    Chromium 을 한 번 더 돌릴 뿐이라, WebKit 잡에서는 건너뛰고 그렇다고 적는다 — Chromium 잡이 그대로 지킨다. */

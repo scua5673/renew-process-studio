@@ -15,7 +15,8 @@ try{
   if(size==='phone'){
     await f.locator('#pwTeam .pw-table tbody tr').first().waitFor();
     assert.equal(await f.locator('#pwTeam [data-pw-view=list]').getAttribute('aria-pressed'),'true');
-    const first=await f.locator('#pwTeam .pw-name').first().boundingBox();assert.ok(first.y<590,'first player reachable '+first.y);
+    // 3.339 — 표 위에 넣기 줄(폰 54px)이 생겨 590 → 625(일부러 고침). 첫 선수 줄은 아래 메뉴(약 745) 위에 그대로 다 보인다.
+    const first=await f.locator('#pwTeam .pw-name').first().boundingBox();assert.ok(first.y<625,'first player reachable '+first.y);
     const summary=f.locator('.pw-team-summary');assert.equal(await summary.getAttribute('open'),null);
     await summary.locator('summary').click();assert.equal(await summary.locator('.tm-hero').isVisible(),true);
     await summary.locator('summary').click();assert.equal(await summary.locator('.tm-hero').isVisible(),false);
