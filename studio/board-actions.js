@@ -35,7 +35,7 @@
       'body.fmdark #ps-act-pop{background:rgba(28,32,42,.96);color:#e8ebf0}body.fmdark #ps-act-pop button{background:rgba(255,255,255,.08);color:#e8ebf0}';
     doc.head.appendChild(st);
     var btn = doc.createElement('button'); btn.type = 'button'; btn.id = 'actBtn'; btn.className = 'gk-btn'; btn.style.setProperty('display', 'none', 'important');
-    btn.title = '이 장면 → 다음 장면 동안 이 선수의 동작(3D «사람»에서 보여요)';
+    btn.title = '이 장면 → 다음 장면 동안 이 선수의 동작(3D «사람»에서 보입니다)';
     var anchor = doc.getElementById('lookBtn'); if (anchor && anchor.parentNode === ctl) ctl.insertBefore(btn, anchor.nextSibling); else ctl.appendChild(btn);
     var pop = doc.createElement('div'); pop.id = 'ps-act-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', '선수 동작'); doc.body.appendChild(pop);
     // 작전판의 전역(anim · animActive · sel)은 같은 문서의 다른 스크립트라 이름으로 읽는다
@@ -56,7 +56,7 @@
     }
     function fill(c) {
       var a = getAct(c.frame, c.p.id), gk = win.PSBroadcast.isGK(c.p);
-      var h = '<h4>' + (c.p.name || ('#' + (c.p.num || ''))) + ' — 장면 ' + (c.idx + 1) + ' → ' + (c.idx + 2) + '</h4><div class="sub">고르지 않으면 «자동» — 공 가까운 선수가 차고 받아요</div>';
+      var h = '<h4>' + (c.p.name || ('#' + (c.p.num || ''))) + ' — 장면 ' + (c.idx + 1) + ' → ' + (c.idx + 2) + '</h4><div class="sub">고르지 않으면 «자동» — 공 가까운 선수가 차고 받습니다</div>';
       var groups = gk ? [ACTS[0], ACTS[3], ACTS[1], ACTS[2]] : ACTS;
       groups.forEach(function (g) { h += '<div class="grp">' + g.group + '</div><div class="row">' + g.items.map(function (it) { return '<button type="button" data-act="' + it[0] + '"' + (it[0] === a ? ' class="on"' : '') + '>' + it[1] + '</button>'; }).join('') + '</div>'; });
       pop.innerHTML = h;

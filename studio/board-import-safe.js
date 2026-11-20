@@ -96,7 +96,7 @@
             try { added = append(pages) || 0; } catch (_) { added = 0; }
             if (added > 0) {
               try { ov.remove(); } catch (_) {}
-              say('«' + name + '» ' + added + '페이지를 가져왔어요 · 보관함 원본은 그대로예요');
+              say('«' + name + '» ' + added + '페이지를 가져왔습니다 · 보관함 원본은 그대로입니다');
             }
             return undefined;
           }
@@ -106,7 +106,7 @@
           if (count() > before) {
             var r = run(self, args);
             var at = count(); try { at = win.__psPages.pageInfo().idx + 1; } catch (_) {}
-            say('«' + name + '»을(를) 새 페이지(' + at + '번째)로 가져왔어요 · 원래 페이지는 그대로예요');
+            say('«' + name + '»을(를) 새 페이지(' + at + '번째)로 가져왔습니다 · 원래 페이지는 그대로입니다');
             return r;
           }
           // 새 페이지를 못 만들면 덮기 전에 묻는다

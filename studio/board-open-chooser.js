@@ -95,7 +95,7 @@
       var f = info.draft.folder ? String(info.draft.folder).split('/').filter(Boolean).pop() : '';
       return { label: '이어서', name: info.draft.name || '보관함 작전판', meta: '보관함 · 저장 안 한 변경' + (f ? ' · ' + f : '') };
     }
-    if (info.empty) return { label: '이어서', name: '빈 보드로 시작', meta: '운동장만 있어요' };
+    if (info.empty) return { label: '이어서', name: '빈 보드로 시작', meta: '운동장만 있습니다' };
     var parts = [];
     if (info.pages > 1) parts.push('페이지 ' + info.pages);
     if (info.frames > 1) parts.push('장면 ' + info.frames);
@@ -231,7 +231,7 @@
     close(win);
     try {
       if (typeof win.__psVaultOpenItem === 'function') { win.__psVaultOpenItem(d, ro); return true; }
-    } catch (e) { try { if (typeof win.toast === 'function') win.toast('지금은 열 수 없어요 — 보관함에서 열어 주세요'); } catch (_) {} }
+    } catch (e) { try { if (typeof win.toast === 'function') win.toast('지금은 열 수 없습니다 — 보관함에서 열어 주세요'); } catch (_) {} }
     return false;
   }
   function render(win, items) {
@@ -242,7 +242,7 @@
     var box = el(doc, 'section', 'oc'); box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', ID + 'Title'); box.tabIndex = -1;
     /* 머리 */
     var h = el(doc, 'div', 'oc-h'), ht = el(doc, 'div'), h2 = el(doc, 'h2', null, '불러오기'); h2.id = ID + 'Title';
-    ht.appendChild(h2); ht.appendChild(el(doc, 'p', null, isPhone ? '폰에서는 보기로 열어요' : '어느 작전판으로 시작할까요?'));
+    ht.appendChild(h2); ht.appendChild(el(doc, 'p', null, isPhone ? '폰에서는 보기로 엽니다' : '어느 작전판으로 시작할까요?'));
     var x = el(doc, 'button', 'oc-x', '×'); x.type = 'button'; x.setAttribute('aria-label', '닫기 · 이어서'); x.onclick = function () { close(win); };
     h.appendChild(ht); h.appendChild(x); box.appendChild(h);
     /* 타일 */
@@ -289,7 +289,7 @@
     function draw() {
       list.textContent = '';
       var rows = filter(items, state);
-      if (!rows.length) { list.appendChild(el(doc, 'div', 'oc-empty', state.q ? '«' + state.q + '» 이름의 작전판이 없어요' : '이 폴더에 작전판이 없어요')); return; }
+      if (!rows.length) { list.appendChild(el(doc, 'div', 'oc-empty', state.q ? '«' + state.q + '» 이름의 작전판이 없습니다' : '이 폴더에 작전판이 없습니다')); return; }
       rows.forEach(function (d) {
         var r = el(doc, 'button', 'oc-row'); r.type = 'button'; r.dataset.libId = d.libId || '';
         r.appendChild(thumb(win, d, isPhone ? 56 : 72, isPhone ? 38 : 46));
@@ -332,7 +332,7 @@
       row = el(doc, 'div', 'menurow'); row.id = ROW_ID; row.setAttribute('data-bs-tab', 'view');
       row.appendChild(el(doc, 'span', 'menulbl', '앱을 열 때'));
       var seg = el(doc, 'div', 'seg'); seg.id = SEG_ID; seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', '앱을 열 때');
-      [['1', '불러오기 창', '앱을 열면 작업 보드 위에 보관함 작전판을 고르는 창이 떠요'], ['0', '바로 보드', '앱을 열면 마지막 작업 보드가 바로 보여요']].forEach(function (o) {
+      [['1', '불러오기 창', '앱을 열면 작업 보드 위에 보관함 작전판을 고르는 창이 뜹니다'], ['0', '바로 보드', '앱을 열면 마지막 작업 보드가 바로 보입니다']].forEach(function (o) {
         var b = el(doc, 'button', null, o[1]); b.type = 'button'; b.dataset.v = o[0]; b.title = o[2];
         b.addEventListener('click', function (e) { e.stopPropagation(); try { if (o[0] === '1') win.localStorage.removeItem(PREF); else win.localStorage.setItem(PREF, '0'); } catch (_) {} syncSeg(win); });
         seg.appendChild(b);

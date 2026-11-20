@@ -19,7 +19,7 @@ test('3.014 «새 보드» saves at once without writing the empty board into li
   assert.match(board,/else if\(!o\.quiet\)toast\(\(?_wbt\?\("보드에 저장됨 ✓"/,'quiet keeps the success toast for the caller');
   const nb=/function newBoard\(\)\{[\s\S]*?\n  \}\n/.exec(board);assert.ok(nb,'newBoard');
   assert.match(nb[0],/pages=null; idx=0; _singleLink=null;/,'one page, no vault link');
-  assert.match(nb[0],/_nbSave\("새 보드로 시작했어요"/);
+  assert.match(nb[0],/_nbSave\("새 보드로 시작했습니다"/);
   assert.match(board,/function _nbSave\(msg\)\{ var s=window\.__boardSaveExplicit; Promise\.resolve\(s\?s\(\{noLink:true,quiet:true\}\):false\)/);
 });
 

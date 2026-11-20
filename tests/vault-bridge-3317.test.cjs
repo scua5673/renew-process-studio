@@ -81,7 +81,7 @@ test('«돌아가기»는 그 자료를 편집으로 다시 열고 초안 내용
   assert.equal(w.__vaultManualDirty,false,'불러오는 동안은 아직');
   await w.tick(600);
   assert.equal(w.__vaultManualDirty,true,'불러온 뒤 «변경 있음»');assert.equal(w.scheduled,1);
-  assert.equal(w.saveBtn.clicks,0);assert.ok(w.toasts.some(t=>/다시 열었어요/.test(t)));
+  assert.equal(w.saveBtn.clicks,0);assert.ok(w.toasts.some(t=>/다시 열었습니다/.test(t)));
 });
 
 test('«저장하고 닫기»는 다시 연 뒤 저장 단추를 누른다 · 자료가 지워졌으면 예전처럼 새 작전판으로',async()=>{
@@ -106,7 +106,7 @@ test('새로 만들던 초안(libId 없음)의 띠와 되살리기는 예전 그
 test('불러오기 창의 «이어서»: 고치다 둔 보관함 자료가 있으면 그 자료, 아니면 예전 그대로',()=>{
   assert.deepEqual(OC.workMeta({draft:{name:'4-3-3 빌드업',folder:'팀/전술'}}),{label:'이어서',name:'4-3-3 빌드업',meta:'보관함 · 저장 안 한 변경 · 전술'});
   assert.deepEqual(OC.workMeta({draft:{}}),{label:'이어서',name:'보관함 작전판',meta:'보관함 · 저장 안 한 변경'});
-  assert.deepEqual(OC.workMeta({empty:true}),{label:'이어서',name:'빈 보드로 시작',meta:'운동장만 있어요'});
+  assert.deepEqual(OC.workMeta({empty:true}),{label:'이어서',name:'빈 보드로 시작',meta:'운동장만 있습니다'});
   assert.deepEqual(OC.workMeta({pages:1,frames:0}),{label:'이어서',name:'작업 보드',meta:'마지막에 보던 판 그대로'});
   const src=fs.readFileSync(path.join(__dirname,'../studio/board-open-chooser.js'),'utf8');
   assert.match(src,/vd\.pending\(\)\.then\(function \(rec\)/);assert.match(src,/cont\.onclick = function \(\) \{ close\(win\); vd\.restore\(\); \}/);

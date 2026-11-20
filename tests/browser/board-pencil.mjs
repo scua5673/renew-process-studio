@@ -101,7 +101,7 @@ try{
       seen:localStorage.getItem('ps_board_pen_seen_v1')};
   });
   assert.equal(finger.added,0,'a finger draws nothing once the pencil is in use');
-  assert.match(finger.hint,/펜슬로 그려요 · 손가락으로는 선수를 옮깁니다/);
+  assert.match(finger.hint,/펜슬로 그립니다 · 손가락으로는 선수를 옮깁니다/);
   assert.equal(finger.act,'손가락도 그리기','the hint carries the way out');assert.ok(finger.clickable,'and can be tapped');
   assert.ok(finger.chip.shown&&finger.chip.pressed==='true'&&finger.chip.label==='펜슬 전용','the «펜슬 전용» chip is visible and on '+JSON.stringify(finger.chip));
   assert.ok(finger.chip.pill&&finger.chip.labelInside,'a pill with its label inside — the dock does not squeeze it to an icon '+JSON.stringify(finger.chip));

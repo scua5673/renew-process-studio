@@ -38,7 +38,7 @@ try{
   await settle(f);
   await pick(f,'calm');
   assert.equal(await toastBtn(f),'이 페이지만');
-  assert.match(await toastText(f),/피치를 모든 페이지에 적용했어요 \(다른 페이지 1개\)/);
+  assert.match(await toastText(f),/피치를 모든 페이지에 적용했습니다 \(다른 페이지 1개\)/);
   const after=await f.evaluate(()=>window.__psPages.pg().map(p=>[p.snap.pitchTheme,p.snap.pitchImg||null]));
   assert.deepEqual(after[0],['calm',null],'the other page took the pitch');
   assert.deepEqual(after[2],['','@photo:0123456789abcdef-160x90'],'a page with its own photo keeps it');

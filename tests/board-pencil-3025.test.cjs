@@ -74,7 +74,7 @@ test('3.025 pencil-only is a visible, switchable device setting, not a hidden mo
   /* the hint carries a way out and does not fire once only */
   const hint=cut(/function _inkFingerHint\(\)\{[\s\S]*?\n  \}catch\(_\)\{\}\}/,'_inkFingerHint');
   assert.match(hint,/if\(now-_inkHintAt<12000\)return;/,'rate limited, never once-only');
-  assert.match(hint,/toast\("펜슬로 그려요 · 손가락으로는 선수를 옮깁니다"\);/);
+  assert.match(hint,/toast\("펜슬로 그립니다 · 손가락으로는 선수를 옮깁니다"\);/);
   assert.match(hint,/b\.textContent="손가락도 그리기";/);assert.match(hint,/_inkPenOnlySet\(false\)/);
   assert.match(hint,/t\.style\.pointerEvents="auto"/);assert.match(hint,/t\.style\.pointerEvents="none";setTimeout/,'click-through again when it goes');
   assert.match(board,/t\.textContent=msg;t\.style\.pointerEvents="none";/,'a plain toast is click-through again');

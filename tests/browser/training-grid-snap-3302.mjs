@@ -50,7 +50,7 @@ try{
   await drag([324,290],[463,342]);
   c=await cone();assert.equal(await onGrid(c),true,'a dragged cone stays on the grid: '+JSON.stringify(c));
   assert.ok(Math.abs(c.x-463)<=11&&Math.abs(c.y-342)<=10.5,'…at the intersection nearest the pointer: '+JSON.stringify(c));
-  await f.waitForFunction(()=>/훈련 격자 칸에 맞춰 놓여요/.test((document.getElementById('cs-ftoast')||{}).textContent||''),null,{timeout:5000});
+  await f.waitForFunction(()=>/훈련 격자 칸에 맞춰 놓입니다/.test((document.getElementById('cs-ftoast')||{}).textContent||''),null,{timeout:5000});
   assert.deepEqual(await keys(),{edit:'1',board:null},'told once — remembered on this device');
   fs.mkdirSync(output,{recursive:true});await page.screenshot({path:output+'/snapped.png'});
 

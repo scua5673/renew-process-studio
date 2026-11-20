@@ -168,7 +168,7 @@
       if (!b) {
         b = doc.createElement('button'); b.type = 'button'; b.id = 'animSpeedAll'; b.className = 'btn';
         b.textContent = '모든 장면';
-        b.addEventListener('click', function (e) { e.stopPropagation(); speedAll = !speedAll; ls(SPEED_ALL, speedAll ? '1' : '0'); paintSpeed(); toast(speedAll ? '속도를 바꾸면 모든 장면에 같이 적용돼요' : '속도를 바꾸면 고른 장면에만 적용돼요'); });
+        b.addEventListener('click', function (e) { e.stopPropagation(); speedAll = !speedAll; ls(SPEED_ALL, speedAll ? '1' : '0'); paintSpeed(); toast(speedAll ? '속도를 바꾸면 모든 장면에 같이 적용됩니다' : '속도를 바꾸면 고른 장면에만 적용됩니다'); });
       }
       if (b.previousElementSibling !== s) s.parentNode.insertBefore(b, s.nextSibling);   // 보드가 속도 칸을 다른 묶음으로 옮겨도 바로 옆에
       return b;
@@ -204,7 +204,7 @@
       [[book ? '이름 넣기' : '페이지 이름', 1], ['빼기', 0]].forEach(function (r) {
         var b = doc.createElement('button'); b.type = 'button'; b.setAttribute('data-cap', String(r[1])); b.textContent = r[0];
         b.style.cssText = 'flex:1 1 auto;padding:9px 6px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--panel2,#F1F2F4);color:var(--txt,#14161A);font-family:inherit;font-weight:600;font-size:13px;cursor:pointer';
-        b.title = r[1] ? '장면 자막이 없는 장면에 ' + (book ? '시퀀스 · 단계' : '페이지') + ' 이름을 아래 자막으로' : '장면에 직접 쓴 자막만 — 이름은 넣지 않아요';
+        b.title = r[1] ? '장면 자막이 없는 장면에 ' + (book ? '시퀀스 · 단계' : '페이지') + ' 이름을 아래 자막으로' : '장면에 직접 쓴 자막만 — 이름은 넣지 않습니다';
         b.addEventListener('click', function () { capOn = !!r[1]; ls(CAP, capOn ? '1' : '0'); paintCap(); });
         sg.appendChild(b);
       });
@@ -323,7 +323,7 @@
       queueThumbs(recs, meet);
       var word = meet ? '슬라이드' : '페이지', n = recs.length;
       win.setTimeout(function () {   // 보드의 «장면 N개에 모두» 알림 뒤에 — 이 알림이 남는다
-        toast('피치를 모든 ' + word + '에 적용했어요 (다른 ' + word + ' ' + n + '개)');
+        toast('피치를 모든 ' + word + '에 적용했습니다 (다른 ' + word + ' ' + n + '개)');
         try {
           var t = doc.getElementById('cs-ftoast'); if (!t) return;
           var b = doc.createElement('button'); b.type = 'button'; b.className = 'ftoast-act'; b.textContent = '이 ' + word + '만';
@@ -379,7 +379,7 @@
       clearTimeout(kitT); kitT = win.setTimeout(function () {   // 고르는 동안은 알리지 않고, 멈추면 한 번
         try { if (win.__meetSyncCur) win.__meetSyncCur({ thumb: true }); } catch (_) {}
         var n = run.recs.length;
-        toast('유니폼을 모든 슬라이드에 적용했어요 (다른 슬라이드 ' + n + '장)');
+        toast('유니폼을 모든 슬라이드에 적용했습니다 (다른 슬라이드 ' + n + '장)');
         try {
           var t = doc.getElementById('cs-ftoast'); if (!t) return;
           var b = doc.createElement('button'); b.type = 'button'; b.className = 'ftoast-act'; b.textContent = '이 슬라이드만';
@@ -460,7 +460,7 @@
       win.setTimeout(function () {   // 보드의 «N명 불러옴» 알림 · 미팅 유니폼 알림(7, 450ms) 뒤에 — 이어 쓴다
         var base = ((doc.getElementById('cs-ftoast') || {}).textContent || '').trim();
         if (!/명 불러옴/.test(base)) base = '';   // 보드의 «N명 불러옴»만 이어 쓴다(미팅 유니폼 알림 등 다른 알림은 덮는다)
-        toast((base ? base + ' · ' : '') + msg + '에도 넣었어요');
+        toast((base ? base + ' · ' : '') + msg + '에도 넣었습니다');
         try {
           var t = doc.getElementById('cs-ftoast'); if (!t) return;
           var b = doc.createElement('button'); b.type = 'button'; b.className = 'ftoast-act'; b.textContent = label;

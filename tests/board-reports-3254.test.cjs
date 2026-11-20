@@ -143,7 +143,7 @@ test('영상 배선 — 사진도 운동장 틀, 사진이 못 덮는 쪽은 어
   assert.match(b,/try\{ if\(window\.__psReelVB\)_segVB\[g\]\.rb=__psReelVB\(_segVB\[g\]\.raw\.slice\(\)\); \}catch\(_\)\{\}/);
   assert.match(b,/sg\.reel=_toAr\(\(!_fit&&sg\.rb\)\?sg\.rb:sg\.raw\)/);
   assert.doesNotMatch(b,/needW=2\*Math\.max\(cx-uvb\[0\]/,'board.html 의 옛 틀도 놓인 것으로 커지지 않는다');
-  assert.match(b,/운동장은 영상마다 같은 자리 · 같은 크기예요 — 운동장 둘레 밖에 둔 것까지 담으려면 «훈련 구역»을 고르세요\./);
+  assert.match(b,/운동장은 영상마다 같은 자리 · 같은 크기입니다 — 운동장 둘레 밖에 둔 것까지 담으려면 «훈련 구역»을 고르세요\./);
 });
 
 test('배포 묶음 — 새 브라우저 시험이 board2 묶음에 있다',()=>{
