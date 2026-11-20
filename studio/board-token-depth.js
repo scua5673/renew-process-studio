@@ -128,8 +128,6 @@
     var host = node(doc, 'svg', { id: 'psChipDefs', width: '0', height: '0', 'aria-hidden': 'true', focusable: 'false' });
     host.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
     var defs = node(doc, 'defs');
-    defs.appendChild(gradient(doc, 'linearGradient', 'psChipGloss', { x1: '0', y1: '0', x2: '.55', y2: '1' },
-      [['0', '#fff', '.55'], ['.4', '#fff', '.08'], ['.7', '#000', '0'], ['1', '#000', '.22']]));
     defs.appendChild(gradient(doc, 'linearGradient', 'psChipEdge', { x1: '0', y1: '0', x2: '1', y2: '0' },
       [['0', '#000', '.38'], ['.3', '#fff', '.12'], ['.55', '#fff', '.04'], ['1', '#000', '.42']]));
     host.appendChild(defs); doc.body.appendChild(host);
@@ -408,18 +406,12 @@
     var R = CHIP_R, h = CHIP_H, turn = 'rotate(' + (Math.round((+(opts && opts.dir) || 0) * 10) / 10) + ')';
     // Counter-rotated so the shirt and the name stay upright; elevation is then always straight up.
     var body = node(doc, 'g', { 'class': 'ps-chip', 'data-k': String(size.k), 'data-shape': kind, transform: chipTransform(item, size.k) });
-    // Floodlights on four corner masts: four faint shadows in an X plus a contact shadow, as on a lit pitch.
+    // 3.346 — no lighting in the 3D view: only a contact shadow under the chip (the mood shadows of 3.029 are gone).
     // Flat fills, not gradients: Safari repaints every chip on each drag frame and radial gradients made that slow.
-    // 3.029 — the light follows the board's mood (opts.mood): night = the four masts, day = one short shadow under a high sun, dusk = one long shadow.
     if (kind === 'person') {
-      var mood = opts && opts.mood, pz = personPose(opts && opts.pose), shadowHost = body;
+      var pz = personPose(opts && opts.pose), shadowHost = body;
       if (pz.dive) { var de0 = 1 - Math.pow(1 - pz.dive.t, 2); shadowHost = node(doc, 'g', { transform: 'translate(' + r1(pz.dive.dir * 120 * pz.dive.reach * de0 * .8) + ',0)' }); body.appendChild(shadowHost); }   // 다이빙: 그림자도 따라간다
-      // A standing player: a contact shadow at the feet and a cast shadow on the grass that follows the light.
-      if (mood === 'day') shadowHost.appendChild(node(doc, 'ellipse', { cx: 4, cy: 2, rx: 17, ry: 6.5, fill: '#000', 'fill-opacity': '.26', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
-      else if (mood === 'dusk') shadowHost.appendChild(node(doc, 'path', { d: 'M-8 1L-10 -4L95 -14L100 -6L94 4Z', fill: '#000', 'fill-opacity': '.26', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
-      else [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(function (o) {
-        shadowHost.appendChild(node(doc, 'path', { d: 'M-7 0L7 0L' + (o[0] * 38 + 6) + ' ' + (o[1] * 26) + 'L' + (o[0] * 38 - 6) + ' ' + (o[1] * 26) + 'Z', fill: '#000', 'fill-opacity': '.11', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
-      });
+      // A standing player: a contact shadow at the feet (3.346 — no cast shadows: the 3D view has no lighting).
       shadowHost.appendChild(node(doc, 'ellipse', { cx: 0, cy: 0, rx: 15, ry: 5.5, fill: '#000', 'fill-opacity': '.34', 'pointer-events': 'none' }));
       // 3.072 — a low, turned camera (the broadcast view) foreshortens the board: opts.stand = { rot, sy } turns the player
       // back upright on screen and stretches him so he stands at his real height instead of lying on the grass.
@@ -429,12 +421,6 @@
       stand.appendChild(personFigure(doc, fill, stroke, label, opts && opts.pose));
       body.appendChild(stand);
     } else {
-    var mood = opts && opts.mood;
-    if (mood === 'day') body.appendChild(node(doc, 'ellipse', { cx: 3, cy: 3, rx: R + 2, ry: R * .8, fill: '#000', 'fill-opacity': '.22', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
-    else if (mood === 'dusk') body.appendChild(node(doc, 'ellipse', { cx: R * 1.1, cy: 3, rx: R * 2.1, ry: R * .62, fill: '#000', 'fill-opacity': '.3', 'pointer-events': 'none', 'class': 'ps-chip-shadow', transform: 'rotate(12)' }));
-    else [[6, 5], [-6, 5], [6, -3], [-6, -3]].forEach(function (o) {
-      body.appendChild(node(doc, 'ellipse', { cx: o[0], cy: o[1], rx: R + 2, ry: R, fill: '#000', 'fill-opacity': '.1', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
-    });
     body.appendChild(node(doc, 'ellipse', { cx: 1, cy: 1.5, rx: R + 1.5, ry: R + .5, fill: '#000', 'fill-opacity': '.26', 'pointer-events': 'none' }));
     // At height z; a shaper's teardrop turns with its heading (ps-chip-turn), everything else stays upright.
     function at(z, el, turns) {
@@ -451,7 +437,7 @@
     } else {
       for (var y = 0; y < h; y += 2) body.appendChild(at(y, outline(doc, 'shirt', { fill: y ? side : foot, stroke: y ? side : foot, 'stroke-width': '.8', 'stroke-linejoin': 'round' })));
     }
-    // Top: the token's own face, then a gloss over it — one group at the chip's height (fewer nodes to paint per frame).
+    // Top: the token's own face (3.346 — no gloss over it) — one group at the chip's height (fewer nodes to paint per frame).
     var lid = node(doc, 'g', { transform: 'translate(0,' + (-h) + ')' });
     if (kind === 'shaper') { var beak = node(doc, 'g', { 'class': 'ps-chip-turn', transform: turn }); beak.appendChild(outline(doc, 'shaper', { fill: '#ffffff', stroke: 'rgba(10,14,22,.5)', 'stroke-width': '1.1', 'stroke-linejoin': 'round' })); lid.appendChild(beak); }
     var top = kind === 'shirt' ? 'shirt' : 'circle';
@@ -460,7 +446,6 @@
     var jersey = original.querySelector('.ps-jersey');
     if (jersey) lid.appendChild(jersey.cloneNode(true));
     else if (kind === 'shirt') { var acc = original.querySelector('path:not(.tok-c)'); if (acc) lid.appendChild(acc.cloneNode(true)); }
-    lid.appendChild(outline(doc, top, { fill: 'url(#psChipGloss)', 'pointer-events': 'none' }));
     var text = label && label.textContent;
     if (text) { var n = label.cloneNode(true); n.setAttribute('x', '0'); n.setAttribute('pointer-events', 'none'); lid.appendChild(n); }
     body.appendChild(lid);
