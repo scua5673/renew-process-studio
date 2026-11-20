@@ -16,7 +16,7 @@ try{
     const rects=[...document.querySelectorAll('#ps-multipitch [data-pitch-rect]')].map(g=>{
       const [x,y,w,h]=g.getAttribute('data-pitch-rect').split(',').map(Number),r=g.getBoundingClientRect();
       const c=g.querySelector('circle'),cr=c?.getBoundingClientRect();
-      return {x,y,w,h,screen:{x:r.x,y:r.y,w:r.width,h:r.height},circle:cr?{w:cr.width,h:cr.height}:null};
+      return {x,y,w,h,dir:g.getAttribute('data-pitch-dir')||'v',screen:{x:r.x,y:r.y,w:r.width,h:r.height},circle:cr?{w:cr.width,h:cr.height}:null};
     });
     const vr=svg.getBoundingClientRect();
     return {orientation:state.orientation,flip:state.spFlip,spec:state.pitchSpec||'fifa',base:window.__baseVB,rects,svg:{x:vr.x,y:vr.y,w:vr.width,h:vr.height},view:[v.x,v.y,v.width,v.height],matrix:[m.a,m.b,m.c,m.d,m.e,m.f]};
@@ -27,7 +27,9 @@ try{
   const check=(q,n,ratio)=>{
     assert.equal(q.rects.length,n);
     for(const r of q.rects){
-      assert.ok(Math.abs(r.w/r.h-ratio)<.00001,'pitch ratio '+JSON.stringify(q));
+      /* 3.340 — 일부러 고친 기대: 운동장 여럿 새 배치(개수를 고르면 — 4 · 6 은 가로 카드, 골대 좌 · 우)는 폭 ÷ 길이를 카드 방향으로 잰다 */
+      assert.ok(Math.abs((r.dir==='h'?r.h/r.w:r.w/r.h)-ratio)<.00001,'pitch ratio '+JSON.stringify(q));
+      if(n>=4&&n!==5)assert.equal(r.dir,'h','4 · 6 은 가로 카드 '+JSON.stringify(q));
       const a=r.screen,b=q.svg;
       assert.ok(a.x>=b.x-2&&a.y>=b.y-2&&a.x+a.w<=b.x+b.w+2&&a.y+a.h<=b.y+b.h+2,'whole pitch and goals fit the viewport '+JSON.stringify(q));
     }
