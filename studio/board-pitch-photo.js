@@ -56,7 +56,7 @@ function videoBox(s,pr,m,w,h,ar){
 }
 /* 설정 줄 아래 안내 — st: none | here | missing */
 function note(st,tilt){
-  var s=st==='here'?'이 기기에만 저장돼요 · 다른 기기 · 팀 · 커뮤니티에는 운동장으로 보여요':st==='missing'?'다른 기기에서 넣은 사진이라 이 기기에는 없어요 — 운동장으로 보여요':'경기 화면 캡처를 깔고 그 위에 그려요 · 사진은 이 기기에만 저장돼요';
+  var s=st==='here'?'이 기기에만 저장돼요 · 다른 기기 · 팀 · 커뮤니티에는 운동장으로 보여요':st==='missing'?'다른 기기에서 넣은 사진이라 이 기기에는 없어요 — 운동장으로 보여요':'경기 캡처 위에 그려요 · 이 기기에만 저장돼요';
   return (tilt&&st!=='none')?s+' · 3D 보기에서는 보이지 않아요':s;}
 /* 장면 · 페이지 묶음에서 사진 참조를 모은다(겹치지 않게) */
 function refsIn(o,out,depth){out=out||[];if(!o||typeof o!=='object'||(depth|0)>6)return out;
