@@ -400,9 +400,9 @@
       var a=A(),target=a.slides,scope=owner(),curId=win.__curVaultId||'',closed=false;
       var ov=el('div');ov.id='psMeetImport';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','미팅에 보관함 자료 가져오기');
       var box=el('div','mi-box'),hd=el('div','mi-head'),title=el('b','','보관함에서 가져오기'),x=el('button','','닫기');x.type='button';hd.append(title,x);box.appendChild(hd);
-      var help=el('p','','선택한 장을 미팅 끝에 복사해 추가합니다. 원본 자료는 그대로 유지돼요.');box.appendChild(help);
+      var help=el('p','','선택한 장을 미팅 끝에 복사해 추가합니다. 원본 자료는 그대로 유지됩니다.');box.appendChild(help);
       var search=el('input');search.type='search';search.placeholder='자료 이름 검색';search.setAttribute('aria-label','가져올 보관함 자료 검색');search.style.width='100%';box.appendChild(search);
-      var list=el('div','mi-list'),status=el('p','','자료를 불러오는 중이에요.');status.setAttribute('role','status');list.appendChild(status);box.appendChild(list);
+      var list=el('div','mi-list'),status=el('p','','자료를 불러오는 중입니다.');status.setAttribute('role','status');list.appendChild(status);box.appendChild(list);
       var foot=el('div','mi-foot'),back=el('button','','자료 다시 고르기'),go=el('button','mi-go','선택한 장 추가');back.type=go.type='button';foot.append(back,go);foot.hidden=true;box.appendChild(foot);ov.appendChild(box);doc.body.appendChild(ov);
       var source=[],available=[];
       function valid(){return !closed&&mayImport()&&owner()===scope&&A()&&A().slides===target&&(win.__curVaultId||'')===curId;}
@@ -410,38 +410,38 @@
       function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeImport();}}
       importerClose=closeImport;doc.addEventListener('keydown',key,true);x.onclick=closeImport;
       function pickItem(item){
-        if(!valid()){closeImport();toast('팀이나 미팅이 바뀌어 가져오기를 멈췄어요');return;}
+        if(!valid()){closeImport();toast('팀이나 미팅이 바뀌어 가져오기를 멈췄습니다');return;}
         source=item.type==='meeting'?item.slides:(win.__meetSlidesFromBoard?win.__meetSlidesFromBoard(item):[]);
         source=(Array.isArray(source)?source:[]).filter(function(sl){return sl&&sl.snap&&typeof sl.snap==='object';});
-        if(!source.length){toast('가져올 운동장이 있는 장이 없어요');return;}
+        if(!source.length){toast('가져올 운동장이 있는 장이 없습니다');return;}
         list.textContent='';search.hidden=true;foot.hidden=false;title.textContent=item.name||'제목 없는 자료';
         source.forEach(function(sl,i){var lb=el('label'),cb=el('input');cb.type='checkbox';cb.value=i;cb.checked=true;lb.append(cb,doc.createTextNode((i+1)+'. '+(sl.title||'제목 없는 장')));list.appendChild(lb);});
         function selected(){return [].filter.call(list.querySelectorAll('input'),function(c){return c.checked;}).map(function(c){return +c.value;});}
         function count(){var n=selected().length;go.disabled=!n;go.textContent='선택한 '+n+'장 추가';}
         list.onchange=count;count();
         go.onclick=function(){
-          if(!valid()){closeImport();toast('팀이나 미팅이 바뀌어 가져오기를 멈췄어요');return;}
+          if(!valid()){closeImport();toast('팀이나 미팅이 바뀌어 가져오기를 멈췄습니다');return;}
           var chosen=selected();if(!chosen.length)return;
-          var copies;try{copies=chosen.map(function(i){return JSON.parse(JSON.stringify(source[i]));});}catch(_){toast('자료를 복사하지 못했어요. 다시 골라 주세요');return;}
-          try{if(win.__meetSyncCur)win.__meetSyncCur({thumb:true});}catch(_){toast('현재 장을 확인하지 못해 가져오기를 멈췄어요');return;}
+          var copies;try{copies=chosen.map(function(i){return JSON.parse(JSON.stringify(source[i]));});}catch(_){toast('자료를 복사하지 못했습니다. 다시 골라 주세요');return;}
+          try{if(win.__meetSyncCur)win.__meetSyncCur({thumb:true});}catch(_){toast('현재 장을 확인하지 못해 가져오기를 멈췄습니다');return;}
           if(!valid())return;
           var at=target.length;copies.forEach(function(sl){target.push(sl);});
-          win.__meet.go(at,'first');if(win.__ksRender)win.__ksRender();closeImport();toast(copies.length+'장을 미팅에 복사했어요');
+          win.__meet.go(at,'first');if(win.__ksRender)win.__ksRender();closeImport();toast(copies.length+'장을 미팅에 복사했습니다');
         };
       }
       function render(){
         if(!valid()){closeImport();return;}
         list.textContent='';list.onchange=null;search.hidden=false;foot.hidden=true;title.textContent='보관함에서 가져오기';
         var q=search.value.trim().toLocaleLowerCase(),found=available.filter(function(it){return !q||String(it.name||'').toLocaleLowerCase().indexOf(q)>=0;});
-        if(!found.length){list.appendChild(el('p','','가져올 미팅이나 작전판이 없어요.'));return;}
+        if(!found.length){list.appendChild(el('p','','가져올 미팅이나 작전판이 없습니다.'));return;}
         found.slice(0,100).forEach(function(it){var b=el('button','',(it.name||'제목 없는 자료')+' · '+(it.type==='meeting'?'미팅':'작전판'));b.type='button';b.onclick=function(){pickItem(it);};list.appendChild(b);});
-        if(found.length>100)list.appendChild(el('p','','100개를 표시했어요. 이름을 검색해 범위를 좁혀 주세요.'));
+        if(found.length>100)list.appendChild(el('p','','100개를 표시했습니다. 이름을 검색해 범위를 좁혀 주세요.'));
       }
       back.onclick=render;search.oninput=render;
       Promise.resolve().then(function(){return win.libGet();}).then(function(items){
         if(!valid()){closeImport();return;}
         available=(items||[]).filter(function(it){return it&&it.libId!==curId&&(it.type==='board'||it.type==='meeting')&&(it.snap||it.pages||it.slides);});render();
-      },function(){if(!closed){list.textContent='';list.appendChild(el('p','','보관함 자료를 불러오지 못했어요. 창을 닫고 다시 시도해 주세요.'));}});
+      },function(){if(!closed){list.textContent='';list.appendChild(el('p','','보관함 자료를 불러오지 못했습니다. 창을 닫고 다시 시도해 주세요.'));}});
       search.focus();
     }
     importLibrary.can=mayImport;win.__meetImportLibrary=importLibrary;
@@ -498,7 +498,7 @@
       var hd = el('div', 'mf-hd'); hd.appendChild(el('b', '', ttl));
       var x = el('button', 'mf-x', '×'); x.type = 'button'; x.setAttribute('aria-label', o.path === 'match' ? '만들지 않고 닫기' : '카테고리만 두고 닫기'); hd.appendChild(x); box.appendChild(hd);
       var sub = el('div', 'mf-sub'); box.appendChild(sub);
-      function subText() { if(o.path==='vault')return o.start==='categories'?'카테고리 이름과 빈 운동장으로 시작해요. 필요한 장만 고르고, 보관함 자료는 나중에 복사해 더할 수 있어요.':o.start==='empty'?'빈 운동장 한 장에서 시작해요. 제목과 내용을 직접 넣거나 보관함 자료를 더하세요.':(o.kind==='opp'?'상대 분석 6장 — ':'경기 준비 10장 — ')+'기본 배치가 들어 있는 자료에서 필요한 장만 골라 시작해요.'; return o.lookOnly ? '고른 운동장을 모든 장에 넣어요.' : (o.kind === 'opp' ? '상대 분석 6장 — 상대 BEST와 상대 분석의 국면(공격 시 · 수비 시 · 두 전환 · 세트피스) 차례로 채워요. 팀 운영 › 경기 › 상대 분석에 붙여요.' : '운동장과 우리 팀 · 상대 팀 포메이션으로 10장을 채워요. 장마다(블록 · 빌드업 · 코너킥) 자리를 맞춰 놓아요.'); }
+      function subText() { if(o.path==='vault')return o.start==='categories'?'카테고리 이름과 빈 운동장으로 시작합니다.':o.start==='empty'?'빈 운동장 한 장에서 시작합니다. 제목과 내용을 직접 넣거나 보관함 자료를 더하세요.':(o.kind==='opp'?'상대 분석 6장 — ':'경기 준비 10장 — ')+'기본 배치가 들어 있는 자료에서 필요한 장만 골라 시작합니다.'; return o.lookOnly ? '고른 운동장을 모든 장에 넣습니다.' : (o.kind === 'opp' ? '상대 분석 6장 — 상대 BEST와 상대 분석의 국면(공격 시 · 수비 시 · 두 전환 · 세트피스) 차례로 채웁니다. 팀 운영 › 경기 › 상대 분석에 붙입니다.' : '운동장과 우리 팀 · 상대 팀 포메이션으로 10장을 채웁니다. 장마다(블록 · 빌드업 · 코너킥) 자리를 맞춰 놓습니다.'); }
       var kseg = null;
       if (o.canKind) {   // 3.133 — 자료 종류(팀 운영 › 경기의 어느 칸에 붙일 자료인가)
         kseg = el('div', 'mf-kind'); kseg.setAttribute('role', 'group'); kseg.setAttribute('aria-label', '자료 종류');
@@ -618,7 +618,7 @@
       if (live.length !== items.length) return 0;   // 그새 슬라이드를 고쳤다 — 건드리지 않는다
       var was = fmtOf(items[0] && items[0].snap), d = DEF[fmt], src, lk = normLook(c.look, ohOf(items[0]));
       if(c.start){
-        if(a.slides.length!==items.length||items.some(function(it,i){return a.slides[i]!==it;})){toast('미팅 구성이 바뀌어 시작 설정을 적용하지 않았어요');return 0;}
+        if(a.slides.length!==items.length||items.some(function(it,i){return a.slides[i]!==it;})){toast('미팅 구성이 바뀌어 시작 설정을 적용하지 않았습니다');return 0;}
         var chosen=startSlides(built(fmt,JSON.parse(JSON.stringify(base||{})),lk.oh,c,c.kind),c.start,c.chosen);
         if(!chosen.length)return 0;
         var po=lk.oh==='h'?'landscape':'portrait',put=lookSnap(lk);
@@ -669,8 +669,8 @@
     function lookText(lk) { return (lk.pitch === 'custom' ? '직접 색' : name(PITCHES, lk.pitch)) + ' · ' + name(GRIDS, lk.grid) + ' · ' + (lk.oh === 'h' ? '가로' : '세로'); }
     function said(c, fmt, n) {
       var d = DEF[fmt]; if (!n) return;
-      if(c.start&&c.start!=='filled'){toast(n+'장으로 시작했어요 — '+(c.start==='categories'?'카테고리와 빈 운동장':c.start==='empty'?'빈 한 장':'기본 자료 포함'));return;}
-      toast(n + '장을 채웠어요 — ' + (c.kind === 'opp' ? '상대 분석 · ' : '') + (c.us === d.us && c.op === d.op ? (fmt === '8' ? '8 대 8 기본 포메이션' : '기본 포메이션') : '우리 ' + label(c.us) + ' · 상대 ' + label(c.op)) + ' · ' + lookText(normLook(c.look)));
+      if(c.start&&c.start!=='filled'){toast(n+'장으로 시작했습니다 — '+(c.start==='categories'?'카테고리와 빈 운동장':c.start==='empty'?'빈 한 장':'기본 자료 포함'));return;}
+      toast(n + '장을 채웠습니다 — ' + (c.kind === 'opp' ? '상대 분석 · ' : '') + (c.us === d.us && c.op === d.op ? (fmt === '8' ? '8 대 8 기본 포메이션' : '기본 포메이션') : '우리 ' + label(c.us) + ' · 상대 ' + label(c.op)) + ' · ' + lookText(normLook(c.look)));
     }
     // 새 미팅의 토큰 — 지금 판보다 «＋» 한 칸 크게(사용자 «미팅 자료 토큰은 지금보다 1단계 크게»). tokV:2 = 2.977 뒤의 크기(옛 기본으로 줄여 읽지 않는다)
     function curTok() { try { return (typeof state !== 'undefined' && state && +state.tokenScale) || 0; } catch (_) { return 0; } }

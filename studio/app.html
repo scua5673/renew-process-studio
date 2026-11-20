@@ -36,7 +36,7 @@
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
 <script src="learning-off.js"></script><script src="i18n.js"></script>
-<script src="autosave-status.js?v=3.346"></script>
+<script src="autosave-status.js?v=3.350"></script>
 <script src="sync-confirmation.js"></script>
 <script src="sync-diagnosis.js"></script>
 <script src="sync-diagnosis-ui.js"></script>
@@ -534,7 +534,7 @@
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
 <script src="playbook-data.js"></script><script src="playbook-shell.js"></script>
-<script>window.PS_BUILD='3.346';</script>
+<script>window.PS_BUILD='3.350';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -710,7 +710,7 @@ function psAutoReloadWhenSafe(manualOnly){
   if(window.__psReloading)return;
   var go=function(manual){
     if(window.__psReloading){
-      if(manual)psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있어요.',true);
+      if(manual)psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있습니다.',true);
       return;
     }
     if(manual){window.__psUpdateLater=false;psShowUpdBand();}
@@ -721,7 +721,7 @@ function psAutoReloadWhenSafe(manualOnly){
     }
     window.__psReloading=1;
     try{if(window.PSUpdateClient)PSUpdateClient.record('saving');}catch(_){}
-    if(manual)psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있어요.',true);
+    if(manual)psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있습니다.',true);
     var active=true,timer,track={};   /* 2.925 — track.pending = 아직 저장 확인이 안 끝난 화면 */
     /* 3.060 — 업데이트 진행 카드(update-progress.js): 저장 확인 70→95% · 다시 여는 중 100%. 숨은 탭은 보일 사람이 없어 그리지 않는다.
        스스로 하는 시도가 실패하면 카드를 조용히 «준비됨»으로 돌리고, 누른 시도만 «미뤘어요»와 이유를 보인다. */
@@ -824,12 +824,12 @@ function psShowUpdBand(){
     var icDots='<span class="psi-ic"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg></span>';
     var b=browserKind(), where='', steps='';
     if(m==='prompt'){
-      where='이 브라우저는 한 번에 설치할 수 있어요';
+      where='이 브라우저는 한 번에 설치할 수 있습니다';
       steps='<li>아래 <b>지금 설치</b> 를 누르면</li><li>브라우저가 묻는 창에서 <b>설치</b> 를 한 번 더</li>';
     }else if(b==='ios-safari'){
       where='아이폰·아이패드 · 사파리';
       steps='<li>화면 아래(아이패드는 위) <b>공유</b> '+icShare+'</li>'
-           +'<li>목록을 내려 <b>홈 화면에 추가</b><i>안 보이면 목록 맨 아래 «작업 편집» 에서 켤 수 있어요</i></li>'
+           +'<li>목록을 내려 <b>홈 화면에 추가</b><i>안 보이면 목록 맨 아래 «작업 편집» 에서 켤 수 있습니다</i></li>'
            +'<li>오른쪽 위 <b>추가</b></li>';
     }else if(b==='ios-chrome'||b==='ios-edge'||b==='ios-firefox'){
       where='아이폰·아이패드 · '+(b==='ios-chrome'?'크롬':(b==='ios-edge'?'엣지':'파이어폭스'));
@@ -843,14 +843,14 @@ function psShowUpdBand(){
       where='안드로이드 · '+(b==='and-chrome'?'크롬':'파이어폭스');
       steps='<li>오른쪽 위 <b>⋮</b> '+icDots+' 메뉴</li>'
            +'<li><b>앱 설치</b> 또는 <b>홈 화면에 추가</b></li>'
-           +'<li><b>설치</b><i>메뉴에 안 보이면 이 페이지를 잠깐 쓰다가 다시 열어 보세요 — 크롬은 조금 써 본 사이트에만 이 항목을 줍니다</i></li>';
+           +'<li><b>설치</b><i>메뉴에 안 보이면 이 페이지를 잠깐 쓰다가 다시 열어 보세요</i></li>';
     }else if(b==='desk-safari'){
       where='맥 · 사파리';
       steps='<li>메뉴 막대 <b>파일 › Dock에 추가</b><i>사파리 17 이상에서 됩니다</i></li>'
            +'<li>이름을 확인하고 <b>추가</b></li>';
     }else if(b==='desk-firefox'){
       where='데스크톱 · 파이어폭스';
-      steps='<li>파이어폭스는 아직 앱 설치를 지원하지 않습니다<i>크롬·엣지·사파리로 열면 설치할 수 있어요. 지금 이대로 써도 기능은 모두 같습니다</i></li>';
+      steps='<li>파이어폭스는 아직 앱 설치를 지원하지 않습니다<i>크롬·엣지·사파리로 열면 설치할 수 있습니다.</i></li>';
     }else{
       where='데스크톱 · '+(b==='desk-edge'?'엣지':'크롬');
       steps='<li>주소창 오른쪽 끝 <b>설치</b> '+icInst+'</li>'
@@ -862,7 +862,7 @@ function psShowUpdBand(){
       +'<button type="button" class="psi-x" aria-label="닫기">×</button>'
       +'<h3>앱으로 설치하면</h3>'
       +'<ul class="psi-why">'
-        +'<li><b>주소창 없이</b> 전체 화면으로 열립니다 — 운동장이 그만큼 커집니다</li>'
+        +'<li><b>주소창 없이</b> 전체 화면으로 열립니다</li>'
         +'<li>홈 화면·독에 <b>아이콘</b>이 생겨 한 번에 들어옵니다</li>'
         +'<li><b>인터넷이 없어도</b> 열리고, 적은 것은 다시 연결될 때 저장됩니다</li>'
       +'</ul>'
@@ -908,19 +908,18 @@ function psShowUpdBand(){
   window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); window.__psInstallDeferred=e; sync(); });
   window.addEventListener('appinstalled',function(){ window.__psInstallDeferred=null;
     try{ var w=document.getElementById('psInstallSheet'); if(w)w.remove(); }catch(_){}
-    try{ if(window.toast)toast('앱이 설치됐어요 ✓'); }catch(_){} sync(); });
+    try{ if(window.toast)toast('앱이 설치됐습니다 ✓'); }catch(_){} sync(); });
 
   /* 2.273 — 앱 설정 › 기기 '앱·오프라인' 행: 설치 상태 + 오프라인 준비를 말한다(이미 되던 것을 보이게) */
   function pwaPanel(){ try{
     var st=document.getElementById('psPwaStatus'); if(!st)return;
     var m=mode();
     /* 2.455 — 줄 하나가 **무엇이 좋아지는지**를 말한다. 방법은 옆 버튼이 열어 주는 안내가 맡는다 */
-    var line1=(m==='installed')?'전용 앱으로 실행 중 ✓ — 주소창 없이 전체 화면'
-      :'설치하면 주소창 없이 전체 화면으로 열리고, 홈 화면에 아이콘이 생깁니다'
-        +(m==='prompt'?'':' — 옆 버튼이 이 기기의 방법을 알려 줘요');
-    st.innerHTML=line1+'<br><span id="psPwaOff">오프라인 준비 확인 중…</span>';
+    var line1=(m==='installed')?'전용 앱으로 실행 중 ✓'
+      :'';
+    st.innerHTML=(line1?line1+'<br>':'')+'<span id="psPwaOff">오프라인 준비 확인 중…</span>';
     try{ caches.keys().then(function(ks){ var ok=ks.some(function(k){return /^process-/.test(k);});
-      var o=document.getElementById('psPwaOff'); if(o)o.textContent=ok?'오프라인 준비됨 ✓ — 인터넷 없이도 열리고, 작업은 재연결 때 자동 동기화돼요':'오프라인 준비 중 — 인터넷 상태에서 한 번 더 열면 저장돼요'; }); }catch(_){}
+      var o=document.getElementById('psPwaOff'); if(o)o.textContent=ok?'오프라인 준비됨 ✓':'오프라인 준비 중 — 인터넷 상태에서 한 번 더 열면 저장됩니다'; }); }catch(_){}
   }catch(_){} }
 
   if(document.readyState!=='loading')sync(); else document.addEventListener('DOMContentLoaded',sync);
@@ -1376,8 +1375,8 @@ window.psFailAlert=function(lead,e,stage){
       <div class="gearpop" id="gearPop">
         <div class="gp-head"><span class="gp-titlebox"><span>앱 설정</span><span class="gp-scope">앱 전체</span></span><button class="gp-close" id="gearClose" type="button" title="앱 설정 닫기" aria-label="앱 설정 닫기">×</button></div>
         <div class="gp-section-title">도움말·도구</div>
-        <div class="gp-row"><span class="gp-lb">오류 제보</span><span style="font-size:12px;color:var(--dim)">제보·답변·오류 로그</span><button type="button" id="psSupportSettingsOpen" class="btn">열기</button></div>
-        <p id="psHelpIntro" class="gp-help-intro">필요한 안내를 새 웹페이지로 엽니다.</p>
+        <div class="gp-row"><span class="gp-lb">오류 제보</span><span style="font-size:12px;color:var(--dim)"></span><button type="button" id="psSupportSettingsOpen" class="btn">열기</button></div>
+        <p id="psHelpIntro" class="gp-help-intro" style="margin:0"></p>
         <a id="guideOpen" class="gp-help-link" href="/guide/quick.html?lang=ko" target="_blank" rel="noopener noreferrer" aria-label="앱 사용법 — 새 탭에서 열기"><span><b>앱 사용법</b><small>주요 메뉴와 저장·공유 · 6개 언어</small></span><span class="gp-help-new" aria-hidden="true">↗</span></a>
         <a id="fullGuideOpen" class="gp-help-link" href="/guide/index.html" target="_blank" rel="noopener noreferrer" aria-label="전체 사용 설명서 — 새 탭에서 열기"><span><b>전체 사용 설명서</b><small>보드·훈련·팀·선수 기능을 자세히</small></span><span class="gp-help-new" aria-hidden="true">↗</span></a>
         <a id="teamGuideOpen" class="gp-help-link" href="/guide/team.html" target="_blank" rel="noopener noreferrer" aria-label="팀 운영 안내 — 새 탭에서 열기"><span><b>팀 운영 안내</b><small>멤버 초대부터 일정·경기·선수 성장까지</small></span><span class="gp-help-new" aria-hidden="true">↗</span></a>
@@ -1503,7 +1502,7 @@ window.psFailAlert=function(lead,e,stage){
              무엇보다 이 앱은 화면 파일을 캐시 우선으로 연다(sw.js) — 새 버전을 올려도 앱을 완전히 껐다 켜기 전까지
              옛 화면이 남는다. 이 버튼은 캐시와 서비스워커만 비우고 다시 연다. **기록은 건드리지 않는다.** -->
         <div class="gp-row"><span class="gp-lb">새로고침</span>
-          <span style="font-size:11px;font-weight:600;color:#646A73;line-height:1.4">최신 버전을 다시 받아옵니다</span>
+          <span style="font-size:11px;font-weight:600;color:#646A73;line-height:1.4"></span>
           <button type="button" id="psHardReload" title="캐시를 비우고 최신 버전으로 다시 엽니다 (기록은 지워지지 않습니다)"
             style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font-family:Pretendard,system-ui;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap">최신으로 새로고침</button>
         </div>
@@ -1657,7 +1656,7 @@ window.psFailAlert=function(lead,e,stage){
     <div class="tms-g"><i>도움</i><button type="button" data-am="settings">앱 설정</button><button type="button" data-am="support">오류 제보</button><button type="button" data-am="guide">사용법</button></div>
   </div>
   <div class="ps-updpop" id="psUpdPop" role="dialog" aria-labelledby="psUpdPopT" hidden>
-    <div class="pup-h"><b id="psUpdPopT">새 판이 준비됐어요</b><span class="pup-v" id="psUpdPopV"></span><button type="button" class="pup-x" data-upd="close" aria-label="닫기">×</button></div>
+    <div class="pup-h"><b id="psUpdPopT">새 판이 준비됐습니다</b><span class="pup-v" id="psUpdPopV"></span><button type="button" class="pup-x" data-upd="close" aria-label="닫기">×</button></div>
     <div class="pup-body" id="psUpdPopBody"></div>
     <p class="pup-msg" id="psUpdPopMsg" data-upd-msg hidden></p>
     <p class="pup-note" id="psUpdPopNote"></p>
@@ -1814,7 +1813,7 @@ window.psFailAlert=function(lead,e,stage){
     </span>
     <!-- 2.480 — 게임모델 안내줄 병합(사용자 "여기도 마찬가지"): iframe 안 .gm-toline 을 접고 셸 서브바 오른쪽으로.
          버튼은 gmToLearn 과 같은 통로(openLearnArea gmhow)를 셸 자신에게 쏜다 -->
-    <span class="tn-subnote" id="psGmLearnNote" hidden>만드는 법은 <b>학습 › 스튜디오로 배우는 코칭</b>에 있어요<button type="button" id="psGmLearnBtn">학습에서 보기 ›</button></span>
+    <span class="tn-subnote" id="psGmLearnNote" hidden>만드는 법은 <b>학습 › 스튜디오로 배우는 코칭</b>에 있습니다<button type="button" id="psGmLearnBtn">학습에서 보기 ›</button></span>
   </div>
   <style id="ps-2176-ctx">/* 2.176 — 팀 내비 컨텍스트 바 */
   .teamnav .tn-ctx{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--dim,#6f7580);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;margin-right:4px}
@@ -1894,7 +1893,7 @@ window.psFailAlert=function(lead,e,stage){
   </div>
   <div id="psReleaseNotes" style="margin-left:var(--ps-side-w,0px)" hidden></div>
   <div id="updBanner" style="display:none;background:#14161A;color:#F4F5F8;font-size:12px;font-weight:600;padding:7px 14px;align-items:center;gap:10px;margin-left:var(--ps-side-w)" role="status">
-    <span id="updMessage">새 판이 있어요 · 하던 일을 저장하고 다시 열면 적용돼요</span>
+    <span id="updMessage">새 판이 있습니다 · 하던 일을 저장하고 다시 열면 적용됩니다</span>
     <span style="margin-left:auto;display:inline-flex;gap:6px;flex:0 0 auto">
       <button id="updNow" type="button" style="border:0;background:#fff;color:#14161A;font-weight:800;font-size:12px;border-radius:999px;padding:5px 12px;cursor:pointer;font-family:inherit">다시 열기</button>
       <button id="updLater" type="button" style="border:0;background:transparent;color:#8A9099;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;padding:5px 6px">나중에</button>
@@ -1996,7 +1995,7 @@ window.psFailAlert=function(lead,e,stage){
         if(!ok){ utx.innerHTML='<b>되돌리지 못했어요</b><span>설정 › 데이터 › 상태에서 자료를 확인하거나, 운영진에게 팀 기록 확인을 요청하세요</span>'; return; }
         uDone={label:(S.label?S.label(k):k),at:u?new Date(u.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'',n:u?(u.before-u.after):0};
         drawUndo(); setTimeout(function(){ uDone=null; drawUndo(); },6000);
-      }).catch(function(){ udo.disabled=false; udo.textContent='되돌리기'; utx.innerHTML='<b>되돌리지 못했어요</b><span>잠시 뒤 다시 눌러 주세요 — 자료는 그대로 있어요</span>'; });   /* 2.916 — 처리 안 된 거부 막기 */
+      }).catch(function(){ udo.disabled=false; udo.textContent='되돌리기'; utx.innerHTML='<b>되돌리지 못했어요</b><span>잠시 뒤 다시 눌러 주세요 — 자료는 그대로 있습니다</span>'; });   /* 2.916 — 처리 안 된 거부 막기 */
     });
     ucl.addEventListener('click',function(){ var S=window.PSSync, k=ub.getAttribute('data-k'); uDone=null; try{ if(S&&S.undo&&k)S.undo.dismiss(k); }catch(_){} drawUndo(); });
     /* 2.629 — 항목 단위 병합에서 내 것이 밀린 항목 */
@@ -2025,7 +2024,7 @@ window.psFailAlert=function(lead,e,stage){
   <div class="frames">
     <div class="loading ps-boot-screen" id="loading" role="status" aria-live="polite"><span id="psBootMessage">불러오는 중…</span><button type="button" id="psBootRetry">다시 열기</button></div>
     <!-- 3.036 — 안전 모드(앱이 연달아 멈춘 뒤의 부팅): 작전판을 미리 열지 않고 이 판으로 연다 -->
-    <div id="psSafePanel" hidden role="region" aria-label="안전 모드"><div class="ps-safe-card"><h2>안전 모드로 열었어요</h2><p>앱이 연달아 멈춰서 작전판을 미리 열지 않았어요. 아래 단추로 열 수 있어요. 계속 멈추면 아이패드를 다시 시작한 뒤 열어 보세요.</p><div class="ps-safe-row"><button type="button" class="pri" id="psSafeOpen">작전판 열기</button><button type="button" id="psSafeNormal">평소대로 열기</button></div></div></div>
+    <div id="psSafePanel" hidden role="region" aria-label="안전 모드"><div class="ps-safe-card"><h2>안전 모드로 열었습니다</h2><p>앱이 연달아 멈춰서 작전판을 미리 열지 않았습니다. 아래 단추로 열 수 있습니다. 계속 멈추면 아이패드를 다시 시작한 뒤 열어 보세요.</p><div class="ps-safe-row"><button type="button" class="pri" id="psSafeOpen">작전판 열기</button><button type="button" id="psSafeNormal">평소대로 열기</button></div></div></div>
     <iframe id="fBoard" title="작전판" allow="fullscreen" allowfullscreen></iframe>
     <iframe id="fProcess" title="훈련 일정" style="display:none"></iframe>
     <iframe id="fGameModel" title="게임 모델" style="display:none"></iframe>
@@ -2045,8 +2044,8 @@ window.psFailAlert=function(lead,e,stage){
     <div id="printView" style="display:none;position:absolute;inset:0;overflow:auto;background:var(--bg)">
       <div style="max-width:880px;margin:0 auto;padding:26px 18px 60px">
         <button id="printBack" style="border:1px solid var(--line);background:var(--bar2);color:var(--dim);font-family:inherit;font-weight:600;font-size:12px;padding:7px 12px;border-radius:10px;cursor:pointer;margin-bottom:12px">← 보관함</button>
-        <h2 style="font-size:19px;font-weight:800;margin:0 0 4px;color:var(--txt)">양식 — 펜으로 쓰는 1장 폼</h2>
-        <div style="color:var(--dim);font-size:13px;margin-bottom:18px">펜으로 기입하는 1장짜리 폼이에요. 누르면 미리보기가 뜨고, 인쇄하거나 PDF로 저장할 수 있어요.</div>
+        <h2 style="font-size:19px;font-weight:800;margin:0 0 4px;color:var(--txt)">양식</h2>
+        <div style="color:var(--dim);font-size:13px;margin-bottom:18px"></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">
           <button class="pcard" data-pr="month"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span><b>월간 양식</b><span>이번 달 달력 + 기입 칸</span></button>
           <button class="pcard" data-pr="week"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7 14h10"/></svg></span><b>주간 양식</b><span>월~일 7칸 괘선 폼</span></button>
@@ -2063,7 +2062,7 @@ window.psFailAlert=function(lead,e,stage){
           <button class="pcard" data-pr="f_load"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 16l3-5 3 3 4-7"/></svg></span><b>RPE · 부하 로그</b><span>주간 시간·RPE·부하</span></button>
           <button class="pcard" data-pr="f_pitch"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 12h18M12 4v16"/><circle cx="12" cy="12" r="2.4"/></svg></span><b>피치 다이어그램</b><span>빈 풀피치 + 메모</span></button><button class="pcard" data-pr="f_season"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v16H3zM3 9h18M8 3v4M16 3v4"/><path d="M7 13h3M7 17h3M14 13h3"/></svg></span><b>시즌 플랜</b><span>목표·시기구분·월별 중점</span></button><button class="pcard" data-pr="f_mdweekly"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v3M16 3v3M7 13h2M11 13h2M15 13h2M7 17h2M11 17h2"/></svg></span><b>주간 트레이닝 (MD)</b><span>MD-4~MD 일자별 계획·부하</span></button><button class="pcard" data-pr="f_prematch"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H7l-3 3z"/><path d="M8 9h8M8 12h5"/></svg></span><b>경기 전 미팅</b><span>게임플랜·상대 키포인트·역할</span></button><button class="pcard" data-pr="f_halftime"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><b>하프타임 노트</b><span>관찰·유지·변경·개인 지시</span></button><button class="pcard" data-pr="f_selfreview"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5L12 21l-5-2.9 1-5.5-4-3.9 5.5-.8z"/></svg></span><b>코치 셀프 리뷰</b><span>준비·소통·판단 자기평가</span></button><button class="pcard" data-pr="f_seasoncard"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M5 16c.6-1.8 2-2.6 3-2.6s2.4.8 3 2.6M14 9h5M14 12h5M14 15h3"/></svg></span><b>시즌 평가 카드</b><span>출전기록·평가·성장 요약</span></button><button class="pcard" data-pr="f_1on1"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3 20a6 6 0 0 1 12 0M15 19a5 5 0 0 1 6 0"/></svg></span><b>면담 기록</b><span>주제·의견·피드백·합의</span></button><button class="pcard" data-pr="f_injury"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg></span><b>부상 기록</b><span>개요·재활 경과·복귀 기준</span></button><button class="pcard" data-pr="f_cornell"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M3 16h18"/></svg></span><b>코넬 노트</b><span>키워드+노트+요약 구조</span></button><button class="pcard" data-pr="f_grid"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></span><b>모눈 / 괘선</b><span>5mm 모눈 자유 메모</span></button><button class="pcard" data-pr="f_recommend"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5L12 16l-5 2.2 1-5.5-4-3.9 5.5-.8z"/><path d="M9 19l-1 3 4-2 4 2-1-3"/></svg></span><b>영입 추천서</b><span>적합성·리스크·추천 등급</span></button><button class="pcard" data-pr="f_compare"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16M3 9h18"/></svg></span><b>선수 비교표</b><span>A·B·C 항목별 비교</span></button><button class="pcard" data-pr="f_gmcanvas"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/></svg></span><b>게임모델 캔버스</b><span>세 문장 · 4국면 · 원칙</span></button><button class="pcard" data-pr="f_4corner"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18M3 12h18"/></svg></span><b>4코너 진단</b><span>기술·전술·피지컬·심리</span></button><button class="pcard" data-pr="f_coachcap"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M15 10l2 2 4-4"/></svg></span><b>코치 자기역량 맵</b><span>자신있음·배우는 중·위임</span></button>
         </div>
-        <div style="margin-top:22px;background:var(--bar);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--dim)">✍︎ 기입한 내용이 채워진 출력은 <b>일정</b>·<b>팀</b> 탭 안의 출력 버튼에서 — 입력한 일정·라인업·시즌 리포트가 그대로 폼에 들어갑니다.</div>
+        <div style="margin-top:22px;background:var(--bar);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--dim)">✍︎ 기입한 내용이 채워진 출력은 <b>일정</b>·<b>팀</b> 탭 안의 출력 버튼에서 뽑습니다.</div>
       </div>
     </div>
   </div>
@@ -2211,7 +2210,7 @@ window.psFailAlert=function(lead,e,stage){
       try{
         loading.classList.add('ps-boot-slow');
         var msg=document.getElementById('psBootMessage');
-        if(msg&&!window.__psBootRetryRequested)msg.textContent='보드를 준비하고 있습니다. 연결이 느리면 시간이 조금 더 걸릴 수 있어요.';
+        if(msg&&!window.__psBootRetryRequested)msg.textContent='보드를 준비하고 있습니다.';
       }catch(_){}
       clearTimeout(window.__psBootCheck);
       window.__psBootCheck=setTimeout(function(){revealAfterTidy('waiting');},500);
@@ -3303,7 +3302,7 @@ window.psFailAlert=function(lead,e,stage){
         (function(_nm){ psBoardThen(function(){ try{
           var bw=fBoard.contentWindow;
           var ok=bw.__psPages&&bw.__psPages.openByName&&bw.__psPages.openByName(_nm);
-          if(!ok&&bw.toast)bw.toast('"'+_nm+'" 페이지가 없어요 — 페이지 바의 [미팅 세트]로 한 번에 만들 수 있어요');
+          if(!ok&&bw.toast)bw.toast('"'+_nm+'" 페이지가 없습니다 — 페이지 바의 [미팅 세트]로 한 번에 만들 수 있습니다');
         }catch(_){}},150); })(d.name);
       } else if(d.source==='scout' && fScout && e.source===fScout.contentWindow && (d.type==='openMeeting'||d.type==='meetingFromMatch')){
         /* 2.928 — 경기 준비의 «이 경기 미팅»: 보관함 미팅 열기(▶ 슬라이드쇼)·«경기 자료로 만들기». 보관함 쓰기·열기는 작전판(보관함) 한 곳에서 */
@@ -3335,8 +3334,8 @@ window.psFailAlert=function(lead,e,stage){
         showApp('board');
         (function(_src,_new){setTimeout(function(){try{
           var bw=fBoard.contentWindow,ok=bw.__psPages&&bw.__psPages.duplicateByName&&bw.__psPages.duplicateByName(_src,_new);
-          if(!ok&&bw.toast)bw.toast('"'+_src+'" 페이지를 찾지 못했어요 — 준비 장면의 페이지 이름을 확인해 주세요');
-          else if(ok&&bw.toast)bw.toast('"'+_new+'" 리뷰 사본을 만들었어요');
+          if(!ok&&bw.toast)bw.toast('"'+_src+'" 페이지를 찾지 못했습니다 — 준비 장면의 페이지 이름을 확인해 주세요');
+          else if(ok&&bw.toast)bw.toast('"'+_new+'" 리뷰 사본을 만들었습니다');
         }catch(_){}},150);})(d.sourceName,d.newName);
       } else if(d.source==='scout' && d.type==='teamViewNow'){
         /* 2.908 — scout 안의 문으로 화면이 바뀌면 메뉴 불빛만 따라간다(프레임·보기는 이미 그 자리) */
@@ -3985,7 +3984,7 @@ window.psFailAlert=function(lead,e,stage){
     var out=pushInFlight?autosaveView({kind:'busy'}):(view.kind==='bad'?view:(pushNotice?pushNotice.view:view));
     out=window.PSAutosaveStatus&&PSAutosaveStatus.combine?PSAutosaveStatus.combine(out,localSaveStatus&&localSaveStatus.read()):(out.kind==='bad'?out:autosaveView({kind:'unknown'}));
     /* Legacy child notice; never substitutes a server acknowledgement. */
-    if(!localSaveStatus&&window.__psBoardDirty&&scope&&out.kind!=='bad'&&out.kind!=='busy'&&out.kind!=='held')return {kind:'pending',text:'보드 · 저장 전',detail:'작전판에 저장하지 않은 변경이 있어요. 보드 화면의 «보드 저장»을 누르면 저장돼요. 그전에도 이 기기에는 초안으로 남아 있어요.',action:'',attention:true,complete:false};
+    if(!localSaveStatus&&window.__psBoardDirty&&scope&&out.kind!=='bad'&&out.kind!=='busy'&&out.kind!=='held')return {kind:'pending',text:'보드 · 저장 전',detail:'작전판에 저장하지 않은 변경이 있습니다. 보드 화면의 «보드 저장»을 누르면 저장됩니다. 그전에도 이 기기에는 초안으로 남아 있습니다.',action:'',attention:true,complete:false};
     return out;
   }
   window.__psAutosaveView=saveView;
@@ -4073,15 +4072,15 @@ window.psFailAlert=function(lead,e,stage){
           busy(true,which);
           Promise.resolve(PSSync.bulk[which]()).then(function(r){
             r=r||{};
-            if(r.error){ say('실패 — '+r.error,true); try{ if(window.toast)toast('하지 못했어요 — '+r.error); }catch(_){} return; }
+            if(r.error){ say('실패 — '+r.error,true); try{ if(window.toast)toast('하지 못했습니다 — '+r.error); }catch(_){} return; }
             if(which==='pull'){
-              say('가져왔습니다 · '+r.n+'개'+(r.skipped&&r.skipped.length?(' (건너뜀 '+r.skipped.length+')'):'')+' — 새로고침하면 보여요');
+              say('가져왔습니다 · '+r.n+'개'+(r.skipped&&r.skipped.length?(' (건너뜀 '+r.skipped.length+')'):'')+' — 새로고침하면 보입니다');
               try{ if(window.toast)toast('팀 자료를 가져왔어요 ✓'); }catch(_){}
               setTimeout(function(){ _cfm('가져온 자료를 화면에 반영하려면 다시 열어야 합니다.\n지금 새로고침할까요?',function(){ (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload()); }); },400);
             } else {
               var denied=Math.max(0,(+r.total||0)-(+r.n||0));
               say('올렸습니다 · '+r.n+'개'+(denied?(' (권한으로 제외 '+denied+'개)'):''),!!denied);
-              try{ if(window.toast)toast(denied?('팀에 '+r.n+'개 올리고 '+denied+'개는 권한으로 제외했어요'):'팀에 올렸어요 ✓'); }catch(_){}
+              try{ if(window.toast)toast(denied?('팀에 '+r.n+'개 올리고 '+denied+'개는 권한으로 제외했어요'):'팀에 올렸습니다 ✓'); }catch(_){}
             }
           }).catch(function(e){ say('실패 — '+String(e&&e.message||e).slice(0,80),true); })
             .then(function(){ busy(false); setTimeout(function(){ try{__psRefreshPushState();}catch(_){} },300); });
@@ -4244,7 +4243,7 @@ window.psFailAlert=function(lead,e,stage){
   d.addEventListener('click',function(){
     if(!fileDataUnlocked(true))return;
     if(window.PSTeamFiles&&PSTeamFiles.active&&PSTeamFiles.active()){
-      PSTeamFiles.exportCurrent().catch(function(e){psFailAlert('파일을 저장하지 못했어요. 자료는 그대로예요 — 기기의 저장 공간을 확인하고 다시 시도해 주세요.',e,'file_export');});
+      PSTeamFiles.exportCurrent().catch(function(e){psFailAlert('파일을 저장하지 못했습니다. 자료는 그대로입니다 — 기기의 저장 공간을 확인하고 다시 시도해 주세요.',e,'file_export');});
       return;
     }
     var ctx=backupContext(),data=Object.create(null),localData=Object.create(null);
@@ -4793,7 +4792,7 @@ window.psFailAlert=function(lead,e,stage){
           }).catch(function(e){
             if(e&&e.psWorkspaceChanged)alert('파일을 가져오는 동안 선택한 팀이 바뀌어 중단했습니다.\n\n원래 팀을 다시 선택한 뒤 자료를 확인하고 다시 시도해 주세요.');
             else if(e&&e.psRestoreFailed)psFailAlert('파일 가져오기를 멈췄지만, 원래 자료로 되돌린 것도 확인하지 못했어요.\n\n이 기기에서 더 고치지 말고 바로 알려 주세요.',e,'file_import_restore');
-            else psFailAlert('파일을 가져오지 못했어요. 지금 자료는 그대로예요.',e,'file_import');
+            else psFailAlert('파일을 가져오지 못했습니다. 지금 자료는 그대로입니다.',e,'file_import');
             u.disabled=false;u.textContent='파일 가져오기';
           });
           return;
@@ -4832,7 +4831,7 @@ window.psFailAlert=function(lead,e,stage){
       btn.disabled=true; var t=btn.textContent; btn.textContent='내보내는 중…';
       PSTeamFiles.exportAll().then(function(r){ btn.textContent='내려받았어요 ✓'; setTimeout(function(){ btn.textContent=t; btn.disabled=false; },2500);
         try{ if(window.PSSync&&PSSync.event)PSSync.event('team_export',{status:'ok',feature:'app',meta:{stage:'all',source:String(r&&r.keys||0)}}); }catch(_){} })
-      .catch(function(e){ btn.textContent=t; btn.disabled=false; psFailAlert('팀 전체 내보내기를 하지 못했어요.',e,'team_export'); });
+      .catch(function(e){ btn.textContent=t; btn.disabled=false; psFailAlert('팀 전체 내보내기를 하지 못했습니다.',e,'team_export'); });
     };
   })();
   /* v319 — 내 데이터 삭제(개인정보 파기 요청): 서버 RPC ps_delete_my_data + 이 기기 데이터 삭제.
@@ -4846,9 +4845,9 @@ window.psFailAlert=function(lead,e,stage){
       var _ask=window.psPrompt||function(m,d,ok){var v=prompt(m,d);if(v!=null)ok(v);};
       _cfm('내 데이터를 영구 삭제합니다.\n\n· 서버: 개인 워크스페이스(보관함·팀·훈련·분석 전체), 커뮤니티 게시물, 아이디\n· 이 기기: 저장된 모든 앱 데이터\n\n삭제 전에 [내보내기]로 백업 파일을 받아두시길 강력히 권합니다.\n계속할까요?',function(){
         _ask('정말 삭제하려면 "삭제"라고 입력하세요','',function(typed){
-          if(!/^(삭제|delete)$/i.test(String(typed||'').trim())){alert('취소했어요');return}
+          if(!/^(삭제|delete)$/i.test(String(typed||'').trim())){alert('취소했습니다');return}
           run();
-        },function(){alert('취소했어요');});
+        },function(){alert('취소했습니다');});
       });
       function run(){
       btn.disabled=true;btn.textContent='삭제 중…';
@@ -4878,7 +4877,7 @@ window.psFailAlert=function(lead,e,stage){
         });
       }).catch(function(e){
         btn.disabled=false;btn.textContent='내 데이터 삭제';
-        psFailAlert((e&&e.psText)||'서버에서 지우지 못했어요. 이 기기의 자료도 지우지 않았어요 — 인터넷 연결을 확인하고 다시 시도해 주세요.',e,'data_delete');
+        psFailAlert((e&&e.psText)||'서버에서 지우지 못했습니다. 이 기기의 자료도 지우지 않았습니다 — 인터넷 연결을 확인하고 다시 시도해 주세요.',e,'data_delete');
       });
       }   /* run() 끝 — 1.847 */
     };
@@ -4988,8 +4987,8 @@ window.psFailAlert=function(lead,e,stage){
     if(!((d.source==='board'||d.source==='scout')&&d.type==='shareData'&&d.payload))return;
     if(!shareDataUnlocked())return;
     var pl=d.payload; function cl(o){return JSON.parse(JSON.stringify(o));} var tiers=[];
-    if(pl.kind==='drill'){tiers.push({obj:pl});var a2=cl(pl);a2.sceneSnaps=[];tiers.push({obj:a2});var a3=cl(pl);a3.sceneSnaps=[];delete a3.snap;tiers.push({obj:a3,note:'(용량이 커서 다이어그램은 제외했어요)'});}
-    else if(pl.kind==='board'){if(!pl.snap){alert('이 항목은 링크 공유를 지원하지 않아요 — 파일 내보내기(JSON)를 사용하세요');return;}function strip(sn){try{var c=cl(sn);c.customImages=[];if(c.players)c.players=c.players.map(function(p){if(p&&p.team==='img'){p=cl(p);p.team='blue';}return p;});return c;}catch(_){return sn;}}tiers.push({obj:pl});var b2=cl(pl);delete b2.thumb;tiers.push({obj:b2});var b3=cl(pl);delete b3.thumb;b3.snap=strip(pl.snap);tiers.push({obj:b3,note:'(용량이 커서 사진은 제외했어요)'});}
+    if(pl.kind==='drill'){tiers.push({obj:pl});var a2=cl(pl);a2.sceneSnaps=[];tiers.push({obj:a2});var a3=cl(pl);a3.sceneSnaps=[];delete a3.snap;tiers.push({obj:a3,note:'(용량이 커서 다이어그램은 제외했습니다)'});}
+    else if(pl.kind==='board'){if(!pl.snap){alert('이 항목은 링크 공유를 지원하지 않아요 — 파일 내보내기(JSON)를 사용하세요');return;}function strip(sn){try{var c=cl(sn);c.customImages=[];if(c.players)c.players=c.players.map(function(p){if(p&&p.team==='img'){p=cl(p);p.team='blue';}return p;});return c;}catch(_){return sn;}}tiers.push({obj:pl});var b2=cl(pl);delete b2.thumb;tiers.push({obj:b2});var b3=cl(pl);delete b3.thumb;b3.snap=strip(pl.snap);tiers.push({obj:b3,note:'(용량이 커서 사진은 제외했습니다)'});}
     else {tiers.push({obj:pl});}
     function copy(url,note){function fb(){psPrompt('아래 링크를 복사해 전달하세요',url,function(){});}var msg='공유 링크가 복사됐어요 ✓ 붙여넣어 전달하세요'+(note?('\n'+note):'');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){alert(msg);},fb);}else fb();}
     /* 2.725 — 짧은 링크(사용자 "주소 최대한 짧게·누르면 바로 복사"). 보드가 누르는 순간(제스처 안에서) id 를 만들어 /s/<id> 를 먼저 복사해 두고,
@@ -5000,7 +4999,7 @@ window.psFailAlert=function(lead,e,stage){
       return fetch(cfg.url+'/rest/v1/ps_share',{method:'POST',headers:{'Content-Type':'application/json',apikey:cfg.anonKey,Authorization:'Bearer '+((s&&s.at)||''),Prefer:'return=minimal'},body:JSON.stringify({id:sid,v:z,kind:pl.kind||null})})
         .then(function(r){if(!r.ok)throw new Error('share '+r.status);});}
     function longLink(i,z){var url=location.href.split('#')[0]+'#share='+z;if(url.length>60000){go(i+1);return;}copy(url,tiers[i].note);}
-    function go(i){if(i>=tiers.length){alert('내용이 너무 커서 링크로 만들 수 없어요 — 파일 내보내기(JSON)를 사용하세요');return;}
+    function go(i){if(i>=tiers.length){alert('내용이 너무 커서 링크로 만들 수 없습니다 — 파일 내보내기(JSON)를 사용하세요');return;}
       zips(JSON.stringify(tiers[i].obj)).then(function(z){
         if(sid&&z.length<=2900000){
           upload(z).then(function(){ if(d.copied){ if(tiers[i].note)alert(tiers[i].note); } else copy(shortUrl(),tiers[i].note); },
@@ -5112,12 +5111,12 @@ window.psFailAlert=function(lead,e,stage){
       }
       if(obj.kind==='session'&&obj.drills&&obj.drills.length){
         var imps=document.createElement('button');imps.className='pri';imps.textContent='내 보관함에 담기';
-        imps.onclick=function(){try{document.getElementById('fBoard').contentWindow.__importSessionDrills(obj.drills);var bt=document.querySelector('#appSeg button[data-app="design"]');if(bt)bt.click();close();}catch(e){alert('담기에 실패했어요');}};
+        imps.onclick=function(){try{document.getElementById('fBoard').contentWindow.__importSessionDrills(obj.drills);var bt=document.querySelector('#appSeg button[data-app="design"]');if(bt)bt.click();close();}catch(e){alert('담기에 실패했습니다');}};
         act.appendChild(imps);
       }
       if(obj.kind==='drill'){
         var impd=document.createElement('button');impd.className='pri';impd.textContent='내 보관함에 담기';
-        impd.onclick=function(){try{var ovv=(obj.secs||[]).map(function(s){return s[0]+': '+s[1];}).join('\n');document.getElementById('fBoard').contentWindow.__importSessionDrills([{name:obj.name,minutes:obj.minutes,per:obj.minutes,sets:obj.sets,rpe:obj.rpe,overview:ovv,snap:obj.snap}]);var bt=document.querySelector('#appSeg button[data-app="design"]');if(bt)bt.click();close();}catch(e){alert('담기에 실패했어요');}};
+        impd.onclick=function(){try{var ovv=(obj.secs||[]).map(function(s){return s[0]+': '+s[1];}).join('\n');document.getElementById('fBoard').contentWindow.__importSessionDrills([{name:obj.name,minutes:obj.minutes,per:obj.minutes,sets:obj.sets,rpe:obj.rpe,overview:ovv,snap:obj.snap}]);var bt=document.querySelector('#appSeg button[data-app="design"]');if(bt)bt.click();close();}catch(e){alert('담기에 실패했습니다');}};
         act.appendChild(impd);
       }
       var cl=document.createElement('button');cl.textContent='닫기';cl.onclick=close;act.appendChild(cl);
@@ -5218,7 +5217,7 @@ window.psFailAlert=function(lead,e,stage){
   try{ var st=document.createElement('style'); st.id='ps-2713-side'; st.textContent='#psSideFold,#psSideTab,#psSideHint{display:none!important;position:fixed!important}@media (min-width:768px){#psSideFold{display:flex!important}body.ps-side-folded #psSideFold{display:none!important}body.ps-side-folded #psSideTab{display:flex!important}body.ps-side-folded #psSideHint.on{display:block!important}}'; document.head.appendChild(st); }catch(_){}
   var f=document.createElement('button'); f.type='button'; f.id='psSideFold'; f.textContent='‹'; f.title='사이드바 접기 (⌘\\)'; f.setAttribute('aria-label','사이드바 접기'); document.body.appendChild(f);   /* 2.708 — 앱 바 밖(body) */
   var tab=document.createElement('button'); tab.type='button'; tab.id='psSideTab'; tab.textContent='›'; tab.title='사이드바 펼치기 (⌘\\)'; tab.setAttribute('aria-label','사이드바 펼치기'); document.body.appendChild(tab);
-  var hint=document.createElement('div'); hint.id='psSideHint'; hint.textContent='여기를 누르면 사이드바가 다시 펼쳐져요 (⌘\\)'; document.body.appendChild(hint); var hintT=null;   /* 2.707 */
+  var hint=document.createElement('div'); hint.id='psSideHint'; hint.textContent='여기를 누르면 사이드바가 다시 펼쳐집니다 (⌘\\)'; document.body.appendChild(hint); var hintT=null;   /* 2.707 */
   function apply(on,save){ document.body.classList.toggle('ps-side-folded',!!on); if(save){ try{ localStorage.setItem(KEY,on?'1':'0'); }catch(_){} } try{ window.dispatchEvent(new Event('resize')); }catch(_){} }
   window.__psSideFold=function(a){ var on=document.body.classList.contains('ps-side-folded'); apply(a==='open'?false:(a==='close'?true:!on),true); };
   f.addEventListener('click',function(e){ e.stopPropagation(); apply(true,true); try{ hint.classList.add('on'); if(hintT)clearTimeout(hintT); hintT=setTimeout(function(){ hint.classList.remove('on'); },2600); }catch(_){} });   /* 2.707 — 접는 순간 안내 */
@@ -5295,7 +5294,7 @@ window.psFailAlert=function(lead,e,stage){
         }
       }catch(_){
         if(n<10){setTimeout(function(){tryBuild(n+1);},300);}
-        else alert('아직 준비 중이에요 — 잠시 후 다시 시도해주세요');
+        else alert('아직 준비 중입니다 — 잠시 후 다시 시도해주세요');
       }
     })(0);
   });
@@ -5562,7 +5561,7 @@ window.__buildScoutForm=function(k){
      +'<div class="sec">나의 강점은 ___이다 (나머지는 위임한다)</div><div class="box">'+lines(2)+'</div>'
      +'<div class="sec">4국면 — 한 줄 원칙</div><table><tr><th style="width:30mm">국면</th><th>우리는 이렇게 한다</th></tr>'+lblRows(['공격 조직','수비 전환','수비 조직','공격 전환'])+'</table>'
      +'<div class="sec">타협하지 않을 원칙 3가지</div><div class="box">'+lines(3)+'</div>'
-     +'<div style="margin-top:3mm;font-size:10px;color:#7b828f;font-weight:600">시즌이 끝나면 다시 씁니다 — 고쳐 쓴 흔적이 성장의 기록입니다.</div>';
+     ;
   } else if(k==='f_4corner'){
     body=head('4코너 진단','FOUR CORNER REVIEW · PROCESS STUDIO')
      +'<div class="meta">'+fld('선수')+fld('포지션 / 연령')+fld('작성일 / 작성자')+'</div>'
@@ -5579,7 +5578,7 @@ window.__buildScoutForm=function(k){
      +_cc.map(function(l){return '<tr><td style="font-weight:600;color:#4b5563;height:9mm">'+l+'</td><td></td><td></td><td></td></tr>';}).join('')+'</table>'
      +'<div class="sec">올해 배울 것 (배우는 중 → 계획)</div><div class="box">'+lines(3)+'</div>'
      +'<div class="sec">위임 · 도움 요청 (누구에게 · 무엇을)</div><div class="box">'+lines(3)+'</div>'
-     +'<div style="margin-top:3mm;font-size:9px;color:#7b828f;font-weight:600">모든 것을 잘하는 코치는 없습니다 — 강점을 쓰고, 나머지는 위임합니다.</div>';
+     ;
   } else if(k==='f_seasoncard'){
     body=head('시즌 평가 카드','SEASON REVIEW CARD · PROCESS STUDIO')
      +'<div class="meta">'+fld('선수')+fld('포지션')+fld('시즌')+'</div>'
@@ -5638,7 +5637,7 @@ window.__buildScoutForm=function(k){
   try{last=+localStorage.getItem(KEY)||0;sn=+localStorage.getItem(SN)||0;}catch(_){}
   if(dataSize()>20000 && now-last>7*D && now-sn>3*D){
     var days=last?Math.floor((now-last)/D):0;
-    document.getElementById('bkMsg').textContent=''+(last?('마지막 백업이 '+days+'일 전이에요'):'아직 백업한 적이 없어요')+' — 데이터는 이 기기 브라우저에만 저장됩니다';
+    document.getElementById('bkMsg').textContent=''+(last?('마지막 백업이 '+days+'일 전입니다'):'아직 백업한 적이 없어요')+' — 데이터는 이 기기 브라우저에만 저장됩니다';
     bn.style.display='flex';
   }
   /* 클릭이 아니라 실제 백업 성공 시점에만 기록·배너 숨김 (공유 취소 시 오기록 방지) */
@@ -7917,18 +7916,18 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="sync-sched-blob.js"></script>
 <script src="sync-observability.js"></script>
 <script src="idp-pub-wipe.js"></script>
-<script src="autosave-journal.js?v=3.346"></script>
-<script src="autosave-merge.js?v=3.346"></script>
-<script src="autosave-runtime.js?v=3.346"></script>
-<script src="autosave-recovery.js?v=3.346"></script>
+<script src="autosave-journal.js?v=3.350"></script>
+<script src="autosave-merge.js?v=3.350"></script>
+<script src="autosave-runtime.js?v=3.350"></script>
+<script src="autosave-recovery.js?v=3.350"></script>
 <script src="roster-outbox.js"></script>
 <script src="sync-items-stale.js"></script>
 <script src="permissions-filter.js"></script>
-<script src="popover-dismiss.js"></script><script src="oauth-gate.js"></script><script src="account-hygiene.js"></script><script src="lib-diet.js"></script><script src="sync.js?v=3.346"></script>
+<script src="popover-dismiss.js"></script><script src="oauth-gate.js"></script><script src="account-hygiene.js"></script><script src="lib-diet.js"></script><script src="sync.js?v=3.350"></script>
 <script src="team-files.js"></script>
 <script src="sync-stall-report.js"></script><script src="items-stale-nudge.js"></script>
 <script src="account-delete.js"></script>
-<link rel="stylesheet" href="support.css?v=3.346">
+<link rel="stylesheet" href="support.css?v=3.350">
 <link rel="stylesheet" href="support-image.css?v=20261023">
 <script src="support-image.js?v=20261023"></script>
 <script src="support.js?v=20261023"></script>
@@ -7986,12 +7985,12 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
   }
   function fill(){
     var md=st.open,T=$('psUpdPopT'),V=$('psUpdPopV'),B=$('psUpdPopBody'),N=$('psUpdPopNote'),BT=$('psUpdPopBtns');if(!T)return;
-    if(md==='ready'){var e=st.next&&st.next.entry;T.textContent='새 판이 준비됐어요';V.textContent=e?verOf(e):'';B.innerHTML=e?entHtml(e,true,true):'';
-      N.textContent='하던 일은 저장한 뒤 같은 화면으로 다시 열려요. 입력을 멈추면 저절로도 바뀝니다.';BT.hidden=false;}
+    if(md==='ready'){var e=st.next&&st.next.entry;T.textContent='새 판이 준비됐습니다';V.textContent=e?verOf(e):'';B.innerHTML=e?entHtml(e,true,true):'';
+      N.hidden=false;N.textContent='하던 일은 저장한 뒤 같은 화면으로 다시 열립니다. 입력을 멈추면 저절로도 바뀝니다.';BT.hidden=false;}
     else{var n=news(),sn=st.sn,cut=-1;n.forEach(function(x,i){if(cut<0&&x.id===sn)cut=i;});
       T.textContent='새 기능';V.textContent=verOf(n[0])?('최신 '+verOf(n[0])):'';
       B.innerHTML=n.map(function(x,i){return entHtml(x,cut<0?i===0:i<cut,false);}).join('');   /* 3.057 — 지난번에 본 판 뒤로 새로 온 판은 «새로» */
-      N.textContent='판마다 바뀐 것을 최신부터 모두 적어 두었어요.';BT.hidden=true;}
+      N.textContent='';N.hidden=true;BT.hidden=true;}
   }
   function bottomNav(){var t=document.body.classList.contains('ps-team-open')?$('teamBottom'):$('appSeg');
     try{var r=t&&t.getBoundingClientRect();if(r&&r.height>0&&r.top>innerHeight/2)return r.top;}catch(_){}return innerHeight-64;}
@@ -8026,12 +8025,12 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     if(w)w.hidden=!md;
     if(b){b.classList.toggle('is-ready',md==='ready');b.classList.toggle('has-dot',!!dot);
       if(lb)lb.textContent=md==='ready'?'업데이트':'새 기능';
-      b.title=md==='ready'?'새 판이 준비됐어요':'업데이트 기록 — 판마다 바뀐 것';b.setAttribute('aria-label',b.title);}
+      b.title=md==='ready'?'새 판이 준비됐습니다':'업데이트 기록 — 판마다 바뀐 것';b.setAttribute('aria-label',b.title);}
     var v=st.next&&st.next.entry?verOf(st.next.entry):'';
     [].forEach.call(document.querySelectorAll('[data-upd-row]'),function(r){
       r.hidden=!md;r.classList.toggle('news',md==='news');
       var tx=r.querySelector('[data-upd-rowtext]'),bt=r.querySelector('[data-upd="row"]');if(!tx||!bt)return;
-      if(md==='ready'){tx.innerHTML='<b>새 판이 준비됐어요</b>'+(v?' · '+esc(v):'');bt.setAttribute('data-upd-now','');bt.setAttribute('data-upd-label','적용');if(!bt.disabled)bt.textContent='적용';}
+      if(md==='ready'){tx.innerHTML='<b>새 판이 준비됐습니다</b>'+(v?' · '+esc(v):'');bt.setAttribute('data-upd-now','');bt.setAttribute('data-upd-label','적용');if(!bt.disabled)bt.textContent='적용';}
       else if(md==='news'){tx.innerHTML='<b>새 기능</b> · '+esc((verOf(first)?verOf(first)+' · ':'')+titleOf(first));bt.removeAttribute('data-upd-now');bt.removeAttribute('data-upd-label');bt.disabled=false;bt.textContent='보기';}
     });
     if(st.open){if(st.open==='news'&&!md)closePop();else{fill();place();}}
@@ -8194,7 +8193,7 @@ html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button:not(#_):not(#__){m
 html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button:not(#_):not(#__):not(#___){min-height:44px!important}
 }
 </style>
-<link rel="stylesheet" href="team-mobile.css?v=3.346">
+<link rel="stylesheet" href="team-mobile.css?v=3.350">
 <link rel="stylesheet" href="mobile-navigation.css">
 <script src="board-phone-nav.js"></script><script src="mobile-navigation.js"></script>
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">

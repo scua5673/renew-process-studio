@@ -48,7 +48,7 @@
       if (typeof scale === 'function') win.scaleAll = function (f) {
         if (!active()) return scale(f);
         var up = f > 1, d = up ? STEP * 2 : -STEP * 2, a = clamp(K[0] + d), b = clamp(K[1] + d);
-        if (a === K[0] && b === K[1]) { try { toast(up ? '실제 비율 크기가 가장 커요 (' + label(MAX) + ')' : '실제 비율 크기가 가장 작아요 (실제 크기)'); } catch (_) {} return; }
+        if (a === K[0] && b === K[1]) { try { toast(up ? '실제 비율 크기가 가장 큽니다 (' + label(MAX) + ')' : '실제 비율 크기가 가장 작습니다 (실제 크기)'); } catch (_) {} return; }
         try { _lookFreeze(); } catch (_) {}
         K = [a, b]; sync(); redraw(); save();
         try { toast('실제 비율 크기 — 선수 ' + label(a) + ' · 공 ' + label(b)); } catch (_) {}

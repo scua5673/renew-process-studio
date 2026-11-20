@@ -10,7 +10,7 @@ const src=fs.readFileSync(path.join(__dirname,'..','studio','board.html'),'utf8'
 
 test('the side panel field writes the top line to every slide and says so',()=>{
   assert.match(src,/ed\.querySelector\("#ksBrand"\)\.addEventListener\("input",function\(e\)\{var f=frames\(\)\[idx\(\)\];if\(f\)\{var _bv=e\.target\.value;frames\(\)\.forEach\(function\(s\)\{s\.pageBrand=_bv;\}\);ovRender\(\);\}/);
-  assert.match(src,/<input id="ksBrand" maxlength="80" placeholder="PROCESS"><p class="ks-tip">모든 슬라이드에 같이 적용돼요\./);
+  assert.match(src,/<input id="ksBrand" maxlength="80" placeholder="PROCESS"><p class="ks-tip">모든 슬라이드에 같이 적용됩니다\./);
 });
 
 test('editing the top line on the paper writes text and look to every slide, Esc puts each slide back',()=>{

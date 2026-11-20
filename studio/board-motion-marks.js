@@ -11,7 +11,7 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (!root) return;
   root.PSMotionMarks = api;
-  if (root.document) root.document.addEventListener('DOMContentLoaded', function () { try { api.install(root); } catch (_) {} });
+  if (root.document) root.document.addEventListener('DOMContentLoaded', function () { try { api.install(root); } catch (_) {} try { api.installTab(root); } catch (e) { root.console && root.console.warn('motion tab', e); } });
 })(typeof window === 'undefined' ? null : window, function () {
   'use strict';
   var NS = 'http://www.w3.org/2000/svg', MAX_PTS = 36;
@@ -138,7 +138,7 @@
         ps.forEach(function (p) { p.dirMark = true; try { win._ensureDir(p); } catch (_) {} });
         carry(ps, true, was);
         try { win.renderTokens(); win.updateDelUI(); } catch (_) {} try { win.positionSelCtl(); } catch (_) {} try { win.boardSaveLive(); } catch (_) {}
-        try { win.toast('방향 표식 — 한 번 더 누르면 시야 부채꼴 · 노란 손잡이로 돌려요'); } catch (_) {}
+        try { win.toast('방향 표식 — 한 번 더 누르면 시야 부채꼴 · 노란 손잡이로 돌립니다'); } catch (_) {}
         return;
       }
       var r = inner.apply(this, arguments);
@@ -160,5 +160,130 @@
     return true;
   }
 
-  return {taper: taper, head: head, markGeom: markGeom, markPath: markPath, marked: marked, step: step, flagCarry: flagCarry, install: install, MAX_PTS: MAX_PTS};
+  /* ── ③ 보드 설정 › «움직임» 탭(3.347, 사용자 11/21 FmStadio 1.8 영상 «잔상 · 시선을 보드 설정에서 쉽게» → 목업 B안) ─────────────
+     묶음(공 · 판 위의 팀)마다 잔상 길이(끔 · 1~5)와 시선(끔 · 공 보기)을 한 번에 적는다. 값은 지금처럼 토큰에(trail · lookAt · dirMark) —
+     보드 설정은 여러 토큰에 같은 값을 적는 손잡이일 뿐이라 새 저장 칸이 없고 옛 보드 · 내보내기 · 미팅이 그대로 돈다.
+     «공 보기»는 방향 표식(작은 삼각형)으로 보인다 — 부채꼴(vis)은 켜지 않는다. 토큰 하나만 다르게는 원래의 «잔상» · «시선» 단추. */
+  function fieldOf(st, has) {
+    var out = [], by = {}, ps = (st && st.players) || [];
+    if (st && st.ball) out.push({key: 'ball', toks: [st.ball]});
+    ps.forEach(function (p) {
+      if (!p || p.coach || typeof p.team !== 'string' || (has && !has(p.team))) return;
+      if (!by[p.team]) { by[p.team] = {key: p.team, toks: []}; out.push(by[p.team]); }
+      by[p.team].toks.push(p);
+    });
+    return out;
+  }
+  // 묶음의 지금 값 — 다 같으면 그 값, 섞였으면 -1 / 'mix'
+  function trailOf(toks) { var v = null; for (var i = 0; i < (toks || []).length; i++) { var n = +(toks[i].trail || 0); n = n > 0 ? Math.min(5, Math.round(n)) : 0; if (v === null) v = n; else if (v !== n) return -1; } return v === null ? 0 : v; }
+  function lookOf(toks) { var on = 0, off = 0; (toks || []).forEach(function (p) { if (p.lookAt === 'ball') on++; else if (!p.lookAt) off++; else { on++; off++; } }); return on && off ? 'mix' : on ? 'ball' : 'off'; }
+  function setTrail(toks, n) { n = Math.max(0, Math.min(5, Math.round(+n || 0))); var ch = []; (toks || []).forEach(function (p) { if (+(p.trail || 0) === n) return; if (n) p.trail = n; else delete p.trail; ch.push(p); }); return ch; }
+  // 공 보기: lookAt 'ball' + 방향 표식. 끄면 이 길로 켠 표식도 같이 걷는다(부채꼴 vis 는 손대지 않는다)
+  function setLook(toks, on) {
+    var ch = [];
+    (toks || []).forEach(function (p) {
+      if (on) { if (p.lookAt === 'ball' && (p.dirMark || p.vis)) return; p.lookAt = 'ball'; if (!p.vis) p.dirMark = true; }
+      else { if (!p.lookAt) return; delete p.lookAt; delete p.dirMark; if (!p.dirFix) p.dirBall = 1; }
+      ch.push(p);
+    });
+    return ch;
+  }
+
+  function installTab(win) {
+    if (!win || win.__psMotionTab) return false;
+    var doc = win.document, tries = 0, tab = null, sig = '';
+    win.__psMotionTab = 1;
+    function S() { return typeof state !== 'undefined' ? state : null; }
+    function groups() { var T = win.PSTeams; return fieldOf(S(), T && T.has).map(function (g) { g.label = g.key === 'ball' ? '공' : ((T && T.name(g.key)) || g.key); return g; }); }
+    function panel() { return doc.getElementById('cmd-board-settings-pop'); }
+    function shown() { var p = panel(); return !!p && p.getAttribute('data-bs-tab') === 'motion'; }
+    function el(tag, cls, text) { var e = doc.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; e.setAttribute('data-bs-tab', 'motion'); return e; }
+    function seg(kind, key, label, items) {
+      var row = el('div', 'menurow ps-mt-row'), l = doc.createElement('span'), s = doc.createElement('div');
+      l.className = 'menulbl'; l.textContent = label; s.className = 'seg ' + (kind === 'trail' ? 'ps-mt-six' : 'ps-mt-two'); s.setAttribute('role', 'group');
+      s.setAttribute('aria-label', label + (kind === 'trail' ? ' 잔상' : ' 시선')); s.setAttribute('data-mt', kind); s.setAttribute('data-mt-key', key);
+      items.forEach(function (it) { var b = doc.createElement('button'); b.type = 'button'; b.setAttribute('data-v', it[0]); b.textContent = it[1]; b.setAttribute('aria-pressed', 'false'); s.appendChild(b); });
+      row.appendChild(l); row.appendChild(s); return row;
+    }
+    function build(gs) {
+      var menu = doc.getElementById('viewMenu'); if (!menu) return;
+      [].slice.call(menu.querySelectorAll(':scope > [data-bs-tab="motion"]')).forEach(function (n) { n.remove(); });
+      var f = doc.createDocumentFragment(), teams = gs.filter(function (g) { return g.key !== 'ball'; }), h;
+      if (!gs.length) f.appendChild(el('div', 'bs-hint ps-mt-empty', '선수나 공을 놓으면 여기서 잔상 · 시선을 켤 수 있어요'));
+      else {
+        h = el('div', 'bs-sec bs-first', '잔상 · 지난 장면 수'); h.setAttribute('role', 'heading'); h.setAttribute('aria-level', '3'); f.appendChild(h);
+        gs.forEach(function (g) { f.appendChild(seg('trail', g.key, g.label, [['0', '끔'], ['1', '1'], ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5']])); });
+        if (teams.length) {
+          h = el('div', 'bs-sec', '시선'); h.setAttribute('role', 'heading'); h.setAttribute('aria-level', '3'); f.appendChild(h);
+          teams.forEach(function (g) { f.appendChild(seg('look', g.key, g.label, [['off', '끔'], ['ball', '공 보기']])); });
+        }
+        f.appendChild(el('div', 'bs-hint', '토큰 하나만 다르게는 «잔상» «시선» 단추'));
+      }
+      menu.appendChild(f);
+    }
+    function sync() {
+      if (!shown()) return;
+      var gs = groups(), now = gs.map(function (g) { return g.key; }).join('|') || '-';
+      if (now !== sig) { build(gs); sig = now; }
+      gs.forEach(function (g) {
+        [['trail', String(trailOf(g.toks))], ['look', lookOf(g.toks)]].forEach(function (kv) {
+          var s = doc.querySelector('#viewMenu .seg[data-mt="' + kv[0] + '"][data-mt-key="' + g.key + '"]'); if (!s) return;
+          [].forEach.call(s.children, function (b) { var on = b.getAttribute('data-v') === kv[1]; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+        });
+      });
+    }
+    function call(name) { var f = win[name]; return typeof f === 'function' ? f.apply(win, [].slice.call(arguments, 1)) : undefined; }
+    function say(t) { call('toast', t); }
+    function click(e) {
+      var b = e.target.closest && e.target.closest('#viewMenu .seg[data-mt] > button'); if (!b) return;
+      e.stopPropagation();
+      var s = b.parentNode, kind = s.getAttribute('data-mt'), key = s.getAttribute('data-mt-key'), v = b.getAttribute('data-v');
+      var g = groups().filter(function (x) { return x.key === key; })[0]; if (!g) { sig = ''; sync(); return; }
+      var same = kind === 'trail' ? String(trailOf(g.toks)) === v : lookOf(g.toks) === v; if (same) return;
+      call('pushUndo');
+      var ch, n;
+      if (kind === 'trail') { n = +v; ch = setTrail(g.toks, n); call('_tokPropAll', ch, ['trail']); say(n ? '잔상 ' + n + '단계 · ' + g.label : '잔상 끔 · ' + g.label); }
+      else { ch = setLook(g.toks, v === 'ball'); if (v === 'ball') ch.forEach(function (p) { call('_ensureDir', p); }); call('_tokPropAll', ch, ['lookAt', 'dirMark', 'dirBall']); say(v === 'ball' ? '공 보기 · ' + g.label + ' · 공이 움직여도 따라 봐요' : '시선 끔 · ' + g.label); }
+      call('renderTokens'); call('updateDelUI'); call('boardSaveLive');
+      sync();
+    }
+    function pick() {
+      var p = panel(); if (!p || typeof p.__psSelectTab !== 'function') return;
+      p.__psSelectTab('look');   // 창의 칸 배치(보이는 칸 · 자리 잡기)는 본문에 맡기고 표식만 바꾼다
+      p.setAttribute('data-bs-tab', 'motion');
+      var chip = p.querySelector('.cmd-board-settings-scope'); if (chip) { chip.textContent = '바로 적용'; chip.title = '누르면 이 보드의 토큰에 바로 들어가요'; }
+      mark(); sync();
+    }
+    function mark() {
+      var p = panel(); if (!p || !tab) return; var on = p.getAttribute('data-bs-tab') === 'motion';
+      tab.classList.toggle('on', on); tab.setAttribute('aria-selected', on ? 'true' : 'false'); tab.tabIndex = on ? 0 : -1;
+      if (on) [].forEach.call(p.querySelectorAll('.cmd-board-settings-tabs > button'), function (b) { if (b !== tab) { b.classList.remove('on'); b.setAttribute('aria-selected', 'false'); b.tabIndex = -1; } });
+    }
+    function mount() {
+      var p = panel(), tabs = p && p.querySelector('.cmd-board-settings-tabs'), menu = doc.getElementById('viewMenu');
+      if (!p || !tabs || !menu || typeof p.__psSelectTab !== 'function') { if (++tries < 80) win.setTimeout(mount, 250); return; }
+      if (doc.getElementById('cmd-board-settings-motion-tab')) return;
+      tab = doc.createElement('button'); tab.type = 'button'; tab.id = 'cmd-board-settings-motion-tab'; tab.textContent = '움직임'; tab.setAttribute('role', 'tab'); tab.setAttribute('aria-selected', 'false'); tab.tabIndex = -1;
+      tab.title = '재생할 때의 잔상 · 시선을 묶음마다 한 번에';
+      tabs.insertBefore(tab, tabs.querySelector('.bs-tab-me'));
+      tab.addEventListener('click', pick);
+      doc.addEventListener('click', click, true);
+      new win.MutationObserver(function () { mark(); sync(); }).observe(p, {attributes: true, attributeFilter: ['data-bs-tab', 'class', 'aria-hidden']});
+      var ui = win.updateDelUI; if (typeof ui === 'function') win.updateDelUI = function () { var r = ui.apply(this, arguments); if (shown()) { try { sync(); } catch (e) { win.console && win.console.warn('motion tab', e); } } return r; };
+      var P = 'html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop', st = doc.createElement('style'); st.id = 'ps-motion-tab-css';
+      st.textContent = [
+        P + ':not([data-bs-tab="motion"]) #viewMenu > [data-bs-tab="motion"]{display:none!important}',
+        P + ' .cmd-board-settings-tabs>button{flex:1 1 auto!important;white-space:nowrap!important;padding:0 6px!important;letter-spacing:-.02em!important}',   // 탭 다섯 — «선수 표시»가 두 줄로 꺾이지 않게 폭을 글자만큼
+        P + ' .seg.ps-mt-six{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important}',
+        P + ' .seg.ps-mt-two{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}',
+        P + ' .seg.ps-mt-six>button,' + P + ' .seg.ps-mt-two>button{min-width:0!important;min-height:36px!important;padding:0 2px!important;font-variant-numeric:tabular-nums}'
+      ].join('\n');
+      doc.head.appendChild(st);
+    }
+    mount();
+    return true;
+  }
+
+  return {taper: taper, head: head, markGeom: markGeom, markPath: markPath, marked: marked, step: step, flagCarry: flagCarry, install: install, MAX_PTS: MAX_PTS,
+    fieldOf: fieldOf, trailOf: trailOf, lookOf: lookOf, setTrail: setTrail, setLook: setLook, installTab: installTab};
 });

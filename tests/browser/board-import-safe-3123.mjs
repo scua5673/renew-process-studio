@@ -40,7 +40,7 @@ try{
   assert.deepEqual([now.count,now.idx,now.cur],[2,1,['red:900']],JSON.stringify(now));
   assert.equal(now.pages[0],'blue:200 > blue:400 > blue:600','원래 페이지 장면 셋 그대로');
   assert.equal(now.pages[1],'red:900 > red:700','가져온 판은 새 페이지에');
-  assert.ok((await bf.evaluate(()=>window.__t)).some(m=>/새 페이지\(2번째\)로 가져왔어요 · 원래 페이지는 그대로/.test(m)));
+  assert.ok((await bf.evaluate(()=>window.__t)).some(m=>/새 페이지\(2번째\)로 가져왔습니다 · 원래 페이지는 그대로/.test(m)));
   await shot('2-new-page');
 
   // 2) 빈 페이지에서는 예전처럼 그 자리에

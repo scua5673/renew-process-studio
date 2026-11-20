@@ -70,7 +70,7 @@
     var doc=win.document,M=win.__meet;
     var upgradeMeeting=win.__meetUpgrade,upgradeText=win.__meetUpgradeText;
     win.__meetUpgrade=function(){var r=upgradeMeeting.apply(this,arguments)||{},changed=upgrade(M.frames());changed.forEach(thumb);if(changed.length){r.reserve=changed.length;r.changed=true;}return r;};
-    win.__meetUpgradeText=function(r){var text=upgradeText.apply(this,arguments);return r&&r.reserve?((r.best||r.names||r.brand)?text+' · ':'예전에 만든 미팅을 새 규칙으로 맞췄어요 — ')+'리저브 번호·크기 '+r.reserve+'장':text;};
+    win.__meetUpgradeText=function(r){var text=upgradeText.apply(this,arguments);return r&&r.reserve?((r.best||r.names||r.brand)?text+' · ':'예전에 만든 미팅을 새 규칙으로 맞췄습니다 — ')+'리저브 번호·크기 '+r.reserve+'장':text;};
     function editable(){return M&&doc.body.classList.contains('meet-mode')&&!win.__vaultReadOnly&&!(win.communityBoardReadOnly&&win.communityBoardReadOnly())&&!win.__meetVideoBusy&&!win.__animExport;}
     function current(){return M&&M.frames()[M.idx()];}
     function canAddPlayers(){return editable()&&isReserve(current())&&!doc.body.classList.contains('focus-board')&&!win.__ksNav&&!win.__psThumbCapturing;}
@@ -83,14 +83,14 @@
       win.pushUndo();current().reserve=true;
       plan.forEach(function(p){st.players.push({id:uid++,team:'blue',num:p.num,pos:'',x:p.x,y:p.y,meetingRole:'reserve'});});
       win.renderTokens();M.saveCur();if(win.__vaultAutoSaveSchedule)win.__vaultAutoSaveSchedule();
-      win.toast('리저브에 '+count+'명을 추가했어요 — 이 페이지에만 적용돼요');return true;
+      win.toast('리저브에 '+count+'명을 추가했습니다 — 이 페이지에만 적용됩니다');return true;
     }
     function askPlayers(){
       if(!canAddPlayers()||doc.getElementById('psReservePlayers'))return;
       var owner=current(),d=doc.createElement('dialog');d.id='psReservePlayers';d.setAttribute('aria-labelledby','psReservePlayersTitle');
-      d.innerHTML='<form><h3 id="psReservePlayersTitle">리저브 선수 추가</h3><p>선수 추가와 수정은 이 페이지에만 적용돼요.</p><label>추가할 인원<input name="count" aria-label="추가할 인원" type="number" min="1" max="30" step="1" value="1" required></label><div class="rp-actions"><button type="button" data-cancel>취소</button><button type="submit">추가</button></div></form>';
+      d.innerHTML='<form><h3 id="psReservePlayersTitle">리저브 선수 추가</h3><p>선수 추가와 수정은 이 페이지에만 적용됩니다.</p><label>추가할 인원<input name="count" aria-label="추가할 인원" type="number" min="1" max="30" step="1" value="1" required></label><div class="rp-actions"><button type="button" data-cancel>취소</button><button type="submit">추가</button></div></form>';
       var st=typeof state!=='undefined'?state:null;
-      d.querySelector('p').textContent='현재 '+((st&&st.players)||[]).filter(function(p){return !p.coach;}).length+'명 · 선수 추가와 수정은 이 페이지에만 적용돼요.';
+      d.querySelector('p').textContent='현재 '+((st&&st.players)||[]).filter(function(p){return !p.coach;}).length+'명 · 선수 추가와 수정은 이 페이지에만 적용됩니다.';
       function close(){d.close();}
       function key(e){if(!d.open)return;e.stopImmediatePropagation();if(e.key==='Escape'){e.preventDefault();close();}}
       d.addEventListener('close',function(){win.removeEventListener('keydown',key,true);win.removeEventListener('keyup',key,true);d.remove();var b=doc.getElementById('psReservePlayersAdd');if(b)b.focus();});

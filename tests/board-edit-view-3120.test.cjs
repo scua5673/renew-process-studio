@@ -52,7 +52,7 @@ test('3D picked inside the editor belongs to that training: device setting untou
   b.win.__setTilt(true);
   assert.deepEqual(b.calls.at(-1),[true,true],'기기 설정을 쓰지 않는다(transient)');
   assert.equal(b.ls.get('ps_board_tilt3d'),'0');assert.equal(b.win.__edTilt,true,'이 훈련의 값');
-  assert.equal(b.drafts(),1,'임시본에 바로(기다리지 않고)');assert.match(b.toasts.at(-1),/이 훈련에 저장돼요/);
+  assert.equal(b.drafts(),1,'임시본에 바로(기다리지 않고)');assert.match(b.toasts.at(-1),/이 훈련에 저장됩니다/);
   b.win.switchTo({edTilt:false});assert.equal(b.tilt(),false,'다른 훈련은 평면');
   b.win.switchTo({edTilt:true});assert.equal(b.tilt(),true,'돌아오면 3D');
   b.win.closeEditor();assert.equal(b.tilt(),false,'나가면 들어오기 전 보기(평면)');assert.equal(b.ls.get('ps_board_tilt3d'),'0');

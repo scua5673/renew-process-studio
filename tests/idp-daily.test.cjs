@@ -85,7 +85,7 @@ test('same id with a new revision and wording does not select the new behavior a
 test('legacy id-only evidence remains current-reference text, even when it matches the daily question',()=>{
   const {c}=harness();const html=c.rVisionDaily({visionBehaviorId:'scan'},'공 받기 전에 두 번 확인한다');
   assert.match(html,/현재 문구 참고/);assert.match(html,/당시 문구는 저장되지 않아/);
-  assert.doesNotMatch(html,/이 행동을 오늘 기록에 연결했어요/);assert.doesNotMatch(html,/class="on" data-vd-b="scan"/);
+  assert.doesNotMatch(html,/이 행동을 오늘 기록에 연결했습니다/);assert.doesNotMatch(html,/class="on" data-vd-b="scan"/);
 });
 test('unresolved legacy connection remains visible and can be explicitly cleared',()=>{
   const {c}=harness({vision:undefined});const html=c.rVisionDaily({visionBehaviorId:'missing'});

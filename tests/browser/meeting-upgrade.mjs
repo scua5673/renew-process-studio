@@ -67,7 +67,7 @@ try{
   assert.deepEqual(s.n9,['-','박지성','차범근','-','-','-','-','-','-'],'장마다 다른 9번 이름은 그대로');
   assert.deepEqual(s.brand,Array(9).fill('프로세스FC 미팅'));
   const toasts=await bf.evaluate(()=>window.__toasts.slice());
-  assert.ok(toasts.some(t=>/^예전에 만든 미팅을 새 규칙으로 맞췄어요 — BEST 11 배치 · 이름 8곳 · 맨 위 문구 8장$/.test(t)),JSON.stringify(toasts));
+  assert.ok(toasts.some(t=>/^예전에 만든 미팅을 새 규칙으로 맞췄습니다 — BEST 11 배치 · 이름 8곳 · 맨 위 문구 8장$/.test(t)),JSON.stringify(toasts));
   assert.equal(await bf.evaluate(()=>window.__meetUpgrade().changed),false,'다시 돌려도 바꿀 것이 없다');
   // 자동 저장 — 보관함 원본과 서버 행까지
   /* waitForFunction 은 비동기 조건의 Promise 를 참으로 읽는다 — 직접 되묻는다 */

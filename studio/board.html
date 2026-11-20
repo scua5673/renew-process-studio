@@ -3745,7 +3745,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
             <button class="cdot" data-col="#2f6df0" style="background:#2f6df0" title="파랑"></button>
             <button class="cdot" data-col="#f2f4f7" style="background:#f2f4f7" title="흰색"></button>
             <button class="cdot" data-col="#808080" style="background:#808080" title="회색" aria-label="회색"></button>
-            <input type="color" id="equipColCustom" class="cdot cdot-custom" title="직접 색 선택 — 고르면 고정색에 남아요">
+            <input type="color" id="equipColCustom" class="cdot cdot-custom" title="직접 색 선택 — 고르면 고정색에 남습니다">
             <span id="myDots" style="display:contents"></span><!-- 내가 고른 색(고정) -->
             <button class="cdot cdot-reset" id="colReset" title="팀 색으로 되돌리기" style="display:none">↺</button>
             <span class="color-pop-actions"><button type="button" id="myColPin">＋ 현재 색 고정</button><button type="button" id="myColEdit" aria-pressed="false">편집</button></span>
@@ -3821,7 +3821,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
       <div id="drillFiles"></div>
       <div class="sess-hint" id="sessHint">
         <button class="sh-x" id="sessHintX" title="닫기" aria-label="닫기">×</button>
-        여기는 훈련 라이브러리예요 — 드릴을 만들어 쌓아두면, 일정 탭에서 날짜별 훈련에 가져다 쓸 수 있습니다
+        여기는 훈련 라이브러리입니다 — 드릴을 만들어 쌓아두면, 일정 탭에서 날짜별 훈련에 가져다 쓸 수 있습니다
       </div>
       <div class="sess-head">
         <div class="acts">
@@ -3853,7 +3853,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
         <div class="ds-card">
           <div class="ds-title">훈련 만들기</div>
           <div class="ds-sub">어떻게 시작할까요?</div>
-          <button class="ds-opt" id="newDrillBtn"><b>빈 작전판에서 그리기</b><span>새 화면을 열어 드릴을 그려요</span></button>
+          <button class="ds-opt" id="newDrillBtn"><b>빈 작전판에서 그리기</b><span>새 화면을 열어 드릴을 그립니다</span></button>
           <button class="ds-opt" id="importBoardBtn"><b>작전판 장면 가져오기</b><span>지금 작전판 배치를 그대로 드릴로</span></button>
           <button class="ds-cancel" id="dsCancel">닫기</button>
         </div>
@@ -3954,7 +3954,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
       <button class="lr-htag on" id="libTagActive" style="display:none" title="태그 필터 해제"></button>
     </div>
     <div class="lib-tray" id="libTray">
-      <div class="lt-cards" id="libTrayCards"><span class="lt-hint">드릴을 체크하면 여기 쌓여요</span></div>
+      <div class="lt-cards" id="libTrayCards"><span class="lt-hint">드릴을 체크하면 여기 쌓입니다</span></div>
       <button class="lt-build" id="libTrayBuild" disabled><span class="b1">세션 설계</span><span class="b2">이 0개 드릴로</span></button>
       <button class="lt-cancel" id="libTrayCancel" title="선택 모드 종료">취소</button>
     </div>
@@ -4130,8 +4130,8 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
     <section class="tw-screen" id="twSetup">
       <div class="tw-wrap">
         <div class="tw-kicker">1 / 4 · 세션 설정</div>
-        <div class="tw-title">오늘 훈련의 기준부터 정합니다</div>
-        <div class="tw-sub">세션 전체 정보입니다. 개별 훈련의 이름·시간·작전판은 다음 단계에서 구성합니다.</div>
+        <div class="tw-title">오늘 훈련의 기준</div>
+        <div class="tw-sub"></div>
         <div class="tw-card tw-grid">
           <div class="tw-field wide"><label for="twName">세션 이름</label><input id="twName" placeholder="예: 7월 29일 화요일 훈련"></div>
           <div class="tw-field"><label for="twDate">날짜</label><input id="twDate" type="date"></div>
@@ -4145,8 +4145,8 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
     <section class="tw-screen" id="twCompose">
       <div class="tw-wrap">
         <div class="tw-kicker">2 / 4 · 훈련 구성</div>
-        <div class="tw-title">훈련 순서와 시간을 구성합니다</div>
-        <div class="tw-sub" id="twComposeSub">훈련을 선택하면 상세 설계 단계에서 바로 편집할 수 있습니다.</div>
+        <div class="tw-title">훈련 순서와 시간</div>
+        <div class="tw-sub" id="twComposeSub"></div>
         <div id="twDrillList"></div>
         <div class="tw-actions"><button type="button" class="btn primary" id="twAddBlank">＋ 빈 훈련 추가</button><button type="button" class="btn" id="twOpenLibrary">보관함에서 불러오기</button></div>
       </div>
@@ -4155,7 +4155,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
       <div class="tw-wrap">
         <div class="tw-kicker">4 / 4 · 검토·저장</div>
         <div class="tw-title" id="twReviewTitle">훈련 세션 검토</div>
-        <div class="tw-sub">순서와 전체 시간을 확인한 뒤 이름·폴더·태그를 지정해 저장합니다.</div>
+        <div class="tw-sub"></div>
         <div class="tw-summary"><div class="tw-stat"><span>총 시간</span><b id="twTotalMin">0분</b></div><div class="tw-stat"><span>예상 인원</span><b id="twReviewPlayers">-</b></div><div class="tw-stat"><span>평균 강도</span><b id="twAvgRpe">-</b></div></div>
         <div class="tw-card" id="twReviewList"></div>
       </div>
@@ -4208,18 +4208,18 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <div class="cs-onboard" id="csOnboard">
   <div class="cob-bd" id="cobBd"></div>
   <div class="cob-card">
-    <div class="cob-t">메뉴에 더 있어요 ▾</div>
-    <div class="cob-d">상단 <b>보기</b>·<b>더보기</b>에 포메이션, 그리드(5레인·20존·삼등분), 명단, 저장·내보내기가 들어있어요.</div>
+    <div class="cob-t">메뉴에 더 있습니다 ▾</div>
+    <div class="cob-d">상단 <b>보기</b>·<b>더보기</b>에 포메이션, 그리드(5레인·20존·삼등분), 명단, 저장·내보내기가 들어있습니다.</div>
     <button class="cob-ok" id="cobOk">알겠어요</button>
   </div>
 </div>
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.346"></script>
+<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.350"></script>
 <script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-bounds.js"></script><script src="board-rescue.js"></script><script src="board-mow.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script><script src="board-train-grid.js"></script><script src="board-multipitch.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-tv-fold.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-sched-show.js"></script><script src="board-anim-pause.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.346"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script><script src="board-phone-board.js"></script>
+<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-sched-show.js"></script><script src="board-anim-pause.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.350"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script><script src="board-phone-board.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -5248,7 +5248,7 @@ function openTokenPhotoCrop(img,targets){
   if(psPhoneBoardReadOnly()||window.__vaultReadOnly||communityBoardReadOnly())return;
   const ov=document.createElement('div');ov.id='tokenPhotoCrop';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','사진 영역 편집');
   ov.style.cssText='position:fixed;inset:0;z-index:10000;background:#0009;display:grid;place-items:center;padding:16px';
-  ov.innerHTML='<div style="background:var(--panel,#fff);color:var(--ink,#14161a);padding:20px;border-radius:16px;width:min(360px,100%);box-sizing:border-box"><h3 style="margin:0 0 8px">사진 영역 편집</h3><p style="font-size:13px">사진을 끌어서 위치를 맞추고 확대하세요.</p><canvas width="280" height="280" style="display:block;width:100%;max-width:280px;margin:auto;border-radius:50%;touch-action:none;cursor:grab" aria-label="토큰 사진 미리보기"></canvas><label style="display:block;margin-top:16px">확대 <input type="range" min="0.5" max="4" step="0.01" value="1" aria-label="사진 확대" style="width:100%"></label><label>좌우 <input type="range" min="0" max="100" value="50" aria-label="사진 좌우 위치" style="width:100%"></label><label>위아래 <input type="range" min="0" max="100" value="50" aria-label="사진 위아래 위치" style="width:100%"></label><div style="margin-top:12px"><div style="font-size:12px;font-weight:700;margin-bottom:6px">배경색 <span style="font-weight:500;color:var(--txt-dim,#646A73)">— 얼굴을 원보다 작게 줄이거나 투명 PNG 면 이 색이 둘레에 깔려요</span></div><div data-bgs style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn" data-cancel>취소</button><button class="btn primary" data-save>적용</button></div></div>';
+  ov.innerHTML='<div style="background:var(--panel,#fff);color:var(--ink,#14161a);padding:20px;border-radius:16px;width:min(360px,100%);box-sizing:border-box"><h3 style="margin:0 0 8px">사진 영역 편집</h3><p style="font-size:13px">사진을 끌어서 위치를 맞추고 확대하세요.</p><canvas width="280" height="280" style="display:block;width:100%;max-width:280px;margin:auto;border-radius:50%;touch-action:none;cursor:grab" aria-label="토큰 사진 미리보기"></canvas><label style="display:block;margin-top:16px">확대 <input type="range" min="0.5" max="4" step="0.01" value="1" aria-label="사진 확대" style="width:100%"></label><label>좌우 <input type="range" min="0" max="100" value="50" aria-label="사진 좌우 위치" style="width:100%"></label><label>위아래 <input type="range" min="0" max="100" value="50" aria-label="사진 위아래 위치" style="width:100%"></label><div style="margin-top:12px"><div style="font-size:12px;font-weight:700;margin-bottom:6px">배경색 <span style="font-weight:500;color:var(--txt-dim,#646A73)">— 얼굴을 원보다 작게 줄이거나 투명 PNG 면 이 색이 둘레에 깔립니다</span></div><div data-bgs style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"></div></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn" data-cancel>취소</button><button class="btn primary" data-save>적용</button></div></div>';
   const canvas=ov.querySelector('canvas'),ctx=canvas.getContext('2d'),inputs=ov.querySelectorAll('input');let zoom=1,fx=.5,fy=.5,drag=null;
   /* 2.975 — 사진 배경색(사용자 "토큰에 사진 넣을 때 선수 얼굴을 넣고 배경색상을 정할 수 있게"). 저장 사진은 투명 둘레 그대로, 색은 토큰의 imgBg 로 따로 — 나중에 정보 창에서 바꿀 수 있게 */
   let bgc=(function(){ try{ var t=targets.find(function(p){return p&&p.imgBg;}); if(t&&/^#[0-9a-f]{6}$/i.test(t.imgBg))return t.imgBg; var p0=targets[0]; if(p0){ var c=String(teamHex&&p0.team?(state.teamColors&&state.teamColors[p0.team])||teamHex(p0.team):""); if(/^#[0-9a-f]{6}$/i.test(c))return c; } }catch(_){} return "#1b1e24"; })();
@@ -5272,7 +5272,7 @@ function openTokenPhotoCrop(img,targets){
   ov.onkeydown=e=>{e.stopPropagation();if(e.key==='Escape')close();if(e.key==='Tab'){const all=[...ov.querySelectorAll('input,button')],i=all.indexOf(document.activeElement);if((e.shiftKey&&i<=0)||(!e.shiftKey&&i===all.length-1)){e.preventDefault();all[e.shiftKey?all.length-1:0].focus();}}};
   ov.querySelector('[data-save]').onclick=()=>{
     const ps=targets.filter(p=>state.players.includes(p));if(!ps.length){close();return;}
-    try{const out=document.createElement('canvas');out.width=out.height=256;drawTo(out.getContext('2d'),256,false);const data=out.toDataURL('image/png');pushUndo();ps.forEach(p=>{p.img=data;p.imgBg=bgc;try{psSyncTokenAll(p,["img","imgBg"]);}catch(_){}});renderTokens();updateDelUI();autoSaveAnimFrame();boardSaveLive();close();toast('선택한 사진 영역을 적용했어요');}catch(_){toast('사진을 처리하지 못했어요');}
+    try{const out=document.createElement('canvas');out.width=out.height=256;drawTo(out.getContext('2d'),256,false);const data=out.toDataURL('image/png');pushUndo();ps.forEach(p=>{p.img=data;p.imgBg=bgc;try{psSyncTokenAll(p,["img","imgBg"]);}catch(_){}});renderTokens();updateDelUI();autoSaveAnimFrame();boardSaveLive();close();toast('선택한 사진 영역을 적용했습니다');}catch(_){toast('사진을 처리하지 못했습니다');}
   };
   document.body.appendChild(ov);draw();inputs[0].focus();
 }
@@ -5783,7 +5783,7 @@ function tokClipCopy(){
   toast(_tokClip.length+"개 복사"); return true;
 }
 function tokClipPaste(){
-  if(!_tokClip||!_tokClip.length){ toast("복사한 항목이 없어요"); return false; }
+  if(!_tokClip||!_tokClip.length){ toast("복사한 항목이 없습니다"); return false; }
   pushUndo(); _tokClipN++; var dx=44*_tokClipN, dy=22*_tokClipN; var copies=[];
   _tokClip.forEach(function(it){ var o=JSON.parse(JSON.stringify(it.o)), c;
     if(it.t==="player"){ c=Object.assign({},o,{id:uid++,x:o.x+dx,y:o.y+dy}); state.players.push(c); copies.push(c); }
@@ -6009,7 +6009,7 @@ function _dirLive(){ try{ return tokShape==="shaper"||(state.players||[]).some(f
 function toggleBallLook(){ var ps=(selectedPlayers(false)||[]).filter(_shaperOn); if(!ps.length)return; var on=!ps.every(_dirWantsBall); pushUndo();
   ps.forEach(function(p){ if(on){ delete p.dirFix; delete p.lookAt; p.dirBall=1; } else _dirFixNow(p,_dirOf(p)); });
   renderTokens(); updateDelUI(); try{positionSelCtl();}catch(_){} try{boardSaveLive();}catch(_){}
-  try{toast(on?(ps.length>1?(ps.length+"명이 볼을 봐요 — 볼이 움직이면 따라 돌아요"):"볼을 봐요 — 볼이 움직이면 따라 돌아요"):"지금 방향으로 고정 — 핸들이나 ↺↻ 로 돌려요");}catch(_){} }
+  try{toast(on?(ps.length>1?(ps.length+"명이 볼을 봅니다 — 볼이 움직이면 따라 돕니다"):"볼을 봅니다 — 볼이 움직이면 따라 돕니다"):"지금 방향으로 고정 — 핸들이나 ↺↻ 로 돌립니다");}catch(_){} }
 /* ══ 2.680 · 잔상(trail)·시선(lookAt) — 사용자가 보낸 애니메이션 도구 소개(트레일 1~5단계 · 오리엔테이션 타겟 추적)를 이 판에 맞춰 넣었다.
    잔상: p.trail = 1~5 = 재생 때 남기는 «지난 장면 수». renderInterp 마다 자리를 기록하고 trailLayer 에 옅은 선으로 그린다. 재생이 끝나면 지운다.
    시선: p.lookAt = 토큰 id('ball' 포함). renderTokens 때마다 대상 쪽으로 p.dir 을 다시 계산하므로 재생 중 대상이 움직여도 따라본다(시야 콘이 방향을 보여 준다). ══ */
@@ -6037,17 +6037,17 @@ function trailTargets(){ var ps=selectedPlayers(false)||[]; ps=ps.filter(functio
   if(!ps.length&&sel&&sel.type==="ball"&&state.ball)ps=[state.ball]; return ps; }
 function cycleTrail(){ var ps=trailTargets(); if(!ps.length)return; var cur=+(ps[0].trail||0),next=cur>=5?0:cur+1; pushUndo();
   ps.forEach(function(p){ if(next)p.trail=next; else delete p.trail; }); _tokPropAll(ps,["trail"]); updateDelUI(); try{boardSaveLive();}catch(_){}
-  try{toast(next?("잔상 "+next+"단계 — 재생·영상에서 지난 "+next+"장면의 길이 남아요"):"잔상 끔");}catch(_){} }
+  try{toast(next?("잔상 "+next+"단계 — 재생·영상에서 지난 "+next+"장면의 길이 남습니다"):"잔상 끔");}catch(_){} }
 var _lookPick=null;
 function toggleLookAt(){ var ps=(selectedPlayers(false)||[]).filter(function(p){return !p.coach;}); if(!ps.length)return;
   if(ps.every(function(p){return !!p.lookAt;})){ pushUndo(); ps.forEach(function(p){delete p.lookAt; if(!p.dirFix)p.dirBall=1;}); _tokPropAll(ps,["lookAt","dirBall"]); renderTokens(); updateDelUI(); try{boardSaveLive();}catch(_){} try{toast("시선 끔");}catch(_){} return; }   /* 2.986 — 시선을 끈 쉐이퍼는 다시 볼을 본다 */
   /* 2.980 — 선수들과 공을 함께 골랐으면 대상을 다시 묻지 않는다(터치에서 한 번에) */
-  if(_ballInMulti()){ _lookPick=ps.slice(); lookPickTarget({id:"ball"}); try{toast(ps.length+"명이 공을 바라봐요 — 공이 움직여도 따라봐요");}catch(_){} return; }
+  if(_ballInMulti()){ _lookPick=ps.slice(); lookPickTarget({id:"ball"}); try{toast(ps.length+"명이 공을 바라봅니다 — 공이 움직여도 따라봅니다");}catch(_){} return; }
   _lookPick=ps.slice(); try{toast("바라볼 선수나 공을 누르세요 (Esc 취소)");}catch(_){} }
 function lookPickTarget(t){ if(!_lookPick)return false; var ps=_lookPick; _lookPick=null; var id=t&&t.id; if(id==null)return true; pushUndo();
   ps.forEach(function(p){ if(p.id===id)return; p.lookAt=id; p.vis=true; _ensureDir(p); if(!p.visW)p.visW=52; if(!p.visR)p.visR=M2U(18); });
   _tokPropAll(ps.filter(function(p){return p.id!==id;}),["lookAt","vis","visW","visR"]);   /* 2.980 — 모든 장면에서 계속 바라본다 */
-  renderTokens(); updateDelUI(); try{boardSaveLive();}catch(_){} try{toast("시선 고정 — 대상이 움직여도 계속 바라봐요");}catch(_){} return true; }
+  renderTokens(); updateDelUI(); try{boardSaveLive();}catch(_){} try{toast("시선 고정 — 대상이 움직여도 계속 바라봅니다");}catch(_){} return true; }
 function applyLookAt(){ (state.players||[]).forEach(function(p){ if(!p||!p.lookAt)return; var t=_linkPt(p.lookAt); if(!t)return;
   p.dir=Math.round(((Math.atan2(t.y-p.y,t.x-p.x)*180/Math.PI)%360+360)%360); }); }
 var _trail={};
@@ -6074,7 +6074,7 @@ function toggleVision(){ var ps=selectedPlayers(false);if(!ps.length)return;var 
   try{toast(ps.length>1?(ps.length+"명 시야 "+(on?"표시":"끔")):(on?"시야 표시 — ↺↻ 방향, ◂▸ 넓이, 사각 토글":"시야 끔"));}catch(_){} }
 function toggleShaper(){ var ps=selectedPlayers(false);if(!ps.length)return;var on=!ps.every(function(p){return !!p.shaper;});pushUndo();ps.forEach(function(p){p.shaper=on;if(on)_ensureDir(p);});
   renderTokens();updateDelUI();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}
-  try{toast(ps.length>1?(ps.length+"명 쉐이퍼 "+(on?"적용 — 볼을 봐요":"끔")):(on?"쉐이퍼 — 볼을 봐요 · 핸들이나 ↺↻ 로 돌리면 그 방향으로 고정":"쉐이퍼 끔"));}catch(_){} }
+  try{toast(ps.length>1?(ps.length+"명 쉐이퍼 "+(on?"적용 — 볼을 봅니다":"끔")):(on?"쉐이퍼 — 볼을 봅니다 · 핸들이나 ↺↻ 로 돌리면 그 방향으로 고정":"쉐이퍼 끔"));}catch(_){} }
 function visWidth(delta){ var ps=selectedPlayers(false).filter(function(p){return !!p.vis;});if(!ps.length)return;pushUndo();ps.forEach(function(p){p.visW=Math.max(22,Math.min(88,(p.visW||52)+delta));});renderTokens();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){} }
 function toggleBlind(){ var ps=selectedPlayers(false).filter(function(p){return !!p.vis;});if(!ps.length)return;var on=!ps.every(function(p){return p.blind===true;});pushUndo();ps.forEach(function(p){p.blind=on;});renderTokens();updateDelUI();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){} }
 /* ══ 2.554 · 선택 바를 **천장에 가로로** ═══════════════════════════════════════
@@ -6598,13 +6598,13 @@ function applyNamesAllScenes(){
   if(pg&&pg.pages)parts.push("페이지 "+pg.pages+"개");
   if(fr)parts.push("애니 장면 "+fr+"개");
   if(sit&&sit.frames)parts.push("'"+sit.name+"' 장면 "+sit.frames+"개");
-  if(!parts.length){toast("적용할 곳이 없어요 — 페이지·애니 장면을 만들거나 게임플랜 상황을 선택해주세요");return;}
+  if(!parts.length){toast("적용할 곳이 없습니다 — 페이지·애니 장면을 만들거나 게임플랜 상황을 선택해주세요");return;}
   toast(parts.join(" · ")+"에 이름 적용 ✓");}
 function renderRoster(){
   const panel=document.getElementById("rosterPanel");if(!panel)return;panel.innerHTML="";
   const ps=state.players.slice().sort((a,b)=>(a.team>b.team?1:a.team<b.team?-1:0)||((+a.num||0)-(+b.num||0)));
   const head=document.createElement("div");head.className="rs-head";head.textContent="명단 · "+ps.length+"명";panel.appendChild(head);
-  if(!ps.length){const e=document.createElement("div");e.className="rs-empty";e.textContent="선수를 배치하면 번호 옆에 이름을 한 번에 적을 수 있어요.";panel.appendChild(e);return;}
+  if(!ps.length){const e=document.createElement("div");e.className="rs-empty";e.textContent="선수를 배치하면 번호 옆에 이름을 한 번에 적을 수 있습니다.";panel.appendChild(e);return;}
   const ab=document.createElement("button");ab.className="rs-apply";ab.textContent="이름 전체 장면 적용";
   ab.title="이 화면의 선수 이름을 모든 장면(애니 · 선택한 게임플랜 상황)에 한 번에 반영";
   ab.onclick=applyNamesAllScenes;panel.appendChild(ab);
@@ -7143,11 +7143,11 @@ function addText(u,existing){
       var after=JSON.stringify([v,_fs,_tc||null,_bg||null,_w||0,_al,_bgOp,_ts]);
       if(before!==after){pushUndo();Object.assign(d,_ts);d.text=v;d.size=_fs;if(_tc)d.textColor=_tc;else delete d.textColor;
         if(_bg)d.bg=_bg;else delete d.bg;if(_bgOp<1)d.bgOp=_bgOp;else delete d.bgOp;if(_w)d.w=_w;else delete d.w;if(_al!=="center")d.align=_al;else delete d.align;}   /* 2.578 */
-      _activateMoveTool();renderDrawings();selectItem("drawing",d);toast(before!==after?"텍스트 수정 완료":"변경된 내용이 없어요");
+      _activateMoveTool();renderDrawings();selectItem("drawing",d);toast(before!==after?"텍스트 수정 완료":"변경된 내용이 없습니다");
     }else if(v.trim()){
       pushUndo();const nd=Object.assign({type:"text",pts:[{x:u.x,y:u.y}],text:v,color:_baseColor,size:_fs},_ts);
       if(_bgOp<1)nd.bgOp=_bgOp;if(_tc)nd.textColor=_tc;if(_bg)nd.bg=_bg;if(_w)nd.w=_w;if(_al!=="center")nd.align=_al;state.drawings.push(nd);   /* 2.578 */
-      _activateMoveTool();renderDrawings();selectItem("drawing",nd);toast("텍스트 추가 완료 — 다시 탭하거나 ‘내용 수정’을 누르세요");
+      _activateMoveTool();renderDrawings();selectItem("drawing",nd);toast("텍스트 추가 완료");
     }
   }
   function outside(e){if(closed||ed.contains(e.target)||bar.contains(e.target)||hd.contains(e.target))return;finish(true);}
@@ -7223,14 +7223,14 @@ function _inkPalm(e){return !!e&&e.pointerType==="touch"&&((!!_draw&&_drawPtype=
 function _inkFingerOnly(e){return !!e&&e.pointerType==="touch"&&_penSeen&&_penOnly&&isDraw();}
 function _inkPenSeen(){if(_penSeen)return;_penSeen=true;try{localStorage.setItem("ps_board_pen_seen_v1","1");}catch(_){}_inkPenSync();}
 function _inkPenOnlySet(on,quiet){_penOnly=!!on;try{localStorage.setItem("ps_board_pen_only_v1",on?"1":"0");}catch(_){}_inkPenSync();
-  if(!quiet)toast(on?"펜슬로만 그려요 · 손가락은 선수를 옮깁니다":"손가락으로도 그려요");}
+  if(!quiet)toast(on?"펜슬로만 그립니다 · 손가락은 선수를 옮깁니다":"손가락으로도 그립니다");}
 function _inkPenSync(){document.body.classList.toggle("pen-seen",_penSeen);const b=document.getElementById("penOnlyBtn");if(!b)return;
   b.setAttribute("aria-pressed",_penOnly?"true":"false");
   b.title=_penOnly?"펜슬로만 그립니다 · 손가락은 선수를 옮깁니다 · 누르면 손가락으로도 그립니다":"손가락으로도 그립니다 · 누르면 펜슬로만 그립니다";
   const lb=b.querySelector(".po-lb");if(lb)lb.textContent=_penOnly?"펜슬 전용":"손가락도 그리기";}
 /* 손가락이 빈 곳을 그으려 했을 때(펜슬 전용) — 안내 + 바로 끌 수 있는 단추. 아이패드를 건네받은 사람도 길을 찾게 한 번으로 끝내지 않고 12초에 한 번. */
 function _inkFingerHint(){const now=Date.now();if(now-_inkHintAt<12000)return;_inkHintAt=now;
-  toast("펜슬로 그려요 · 손가락으로는 선수를 옮깁니다");
+  toast("펜슬로 그립니다 · 손가락으로는 선수를 옮깁니다");
   try{const t=document.getElementById("cs-ftoast");if(!t)return;
     const b=document.createElement("button");b.type="button";b.className="ftoast-act";b.textContent="손가락도 그리기";
     b.addEventListener("click",function(ev){ev.stopPropagation();_inkPenOnlySet(false);});
@@ -7346,7 +7346,7 @@ function _anchorEnds(d){ if(!d||!ANCHOR_TYPES[d.type]||!d.pts||d.pts.length<2)re
 function _anchorOne(d,i){ if(!d||!ANCHOR_TYPES[d.type])return; var id=_tokenNear(d.pts&&d.pts[i]); d.tk=d.tk||[null,null]; d.tk[i]=id;
   if(d.tk[0]!=null&&d.tk[0]===d.tk[1])d.tk[i]=null; if(d.tk[0]==null&&d.tk[1]==null)delete d.tk; }
 function _hasAnchored(id){ return id!=null&&(state.drawings||[]).some(function(d){ return d&&d.tk&&(d.tk[0]===id||d.tk[1]===id); }); }
-function _anchorHint(){ try{ var K="cs_hint_anchor_v1"; if(localStorage.getItem(K))return; localStorage.setItem(K,"1"); toast("선 끝이 선수에 묶였어요 — 장면에서 선수가 움직이면 선도 따라가요"); }catch(_){} }
+function _anchorHint(){ try{ var K="cs_hint_anchor_v1"; if(localStorage.getItem(K))return; localStorage.setItem(K,"1"); toast("선 끝이 선수에 묶였습니다"); }catch(_){} }
 function linkPreview(){
   try{if(_linkTmp)_linkTmp.remove();}catch(_){} _linkTmp=null;
   if(!_link||!_link.ids.length)return;
@@ -7359,7 +7359,7 @@ function linkTap(p){
   const ids=_link.ids,id=p.id;
   if(ids.length>=3&&id===ids[0]){linkFinish(true);return;}
   if(ids.length&&id===ids[ids.length-1]){linkFinish(false);return;}
-  if(ids.indexOf(id)>=0){toast("이미 이은 선수예요");return;}
+  if(ids.indexOf(id)>=0){toast("이미 이은 선수입니다");return;}
   ids.push(id);linkPreview();
   toast(ids.length===1?"다음 선수를 누르세요 · 빈 곳을 누르면 완료":(ids.length+"개 연결 · 처음 것을 다시 누르면 다각형"));
 }
@@ -7367,12 +7367,12 @@ function linkFinish(closed){
   if(!_link)return;
   const L=_link,ids=L.ids;_link=null;
   try{if(_linkTmp)_linkTmp.remove();}catch(_){} _linkTmp=null;
-  if(ids.length<2){if(ids.length)toast("선수를 2명 이상 눌러야 선이 돼요");return;}
+  if(ids.length<2){if(ids.length)toast("선수를 2명 이상 눌러야 선이 됩니다");return;}
   pushUndo();
   state.drawings.push({type:"link",ids:ids,closed:!!closed,color:L.color,lw:L.lw,op:L.op,pts:[],
     dot:(state.drawLineStyle==="dot")||undefined,dash:(state.drawLineStyle==="dash")||undefined,fillStyle:(state.drawFillStyle&&state.drawFillStyle!=="solid")?state.drawFillStyle:undefined});
   renderDrawings();try{autoSaveAnimFrame();}catch(_){}
-  toast(closed?"다각형 완성 — 선수가 움직이면 같이 움직여요":"연결선 완성 — 선수가 움직이면 같이 움직여요");
+  toast(closed?"다각형 완성":"연결선 완성");
 }
 function linkCancel(){_link=null;try{if(_linkTmp)_linkTmp.remove();}catch(_){} _linkTmp=null;}
 /* ══ 2.980 · 다각형(poly) — 운동장 위 자리를 차례로 눌러 그리는 구역·꺾은선(FMStadio «polygons»).
@@ -7396,7 +7396,7 @@ function polyTap(u){
   if(n>=3&&Math.hypot(u.x-P[0].x,u.y-P[0].y)<=POLY_SNAP){polyFinish(true);return;}
   if(n>=2&&Math.hypot(u.x-P[n-1].x,u.y-P[n-1].y)<=POLY_SNAP){polyFinish(false);return;}
   if(n&&Math.hypot(u.x-P[n-1].x,u.y-P[n-1].y)<=4)return;   /* 같은 자리를 두 번(더블탭의 둘째) */
-  if(n>=40){toast("꼭짓점은 40개까지예요 — Enter 로 마무리하세요");return;}
+  if(n>=40){toast("꼭짓점은 40개까지입니다 — Enter 로 마무리하세요");return;}
   P.push({x:u.x,y:u.y});polyPreview();
   toast(P.length===1?"다음 꼭짓점을 누르세요 · Esc 취소":P.length===2?"계속 누르세요 · 마지막 점을 다시 누르면 꺾은선":("꼭짓점 "+P.length+"개 · 처음 점(노란 원)을 누르거나 Enter = 다각형"));
 }
@@ -7404,14 +7404,14 @@ function polyFinish(closed,quiet){   /* quiet = 도구를 바꾸며 마무리(�
   if(!_poly)return null;
   const L=_poly,pts=L.pts;_poly=null;
   try{if(_polyTmp)_polyTmp.remove();}catch(_){} _polyTmp=null;
-  if(pts.length<2){if(pts.length&&!quiet)toast("꼭짓점을 2개 이상 눌러야 선이 돼요");return null;}
+  if(pts.length<2){if(pts.length&&!quiet)toast("꼭짓점을 2개 이상 눌러야 선이 됩니다");return null;}
   if(pts.length<3)closed=false;
   pushUndo();
   const d={type:"poly",pts:pts,closed:!!closed,color:L.color,lw:L.lw,op:L.op,
     dot:(state.drawLineStyle==="dot")||undefined,dash:(state.drawLineStyle==="dash")||undefined,fillStyle:(state.drawFillStyle&&state.drawFillStyle!=="solid")?state.drawFillStyle:undefined};
   state.drawings.push(d);renderDrawings();
   window.__lastDrawn=d;try{autoSaveAnimFrame();}catch(_){}
-  if(!quiet){toast(closed?"다각형 완성 — 꼭짓점을 끌어 모양을 고쳐요":"꺾은선 완성");if(closed){try{afterDrawZone(d);}catch(_){}}}
+  if(!quiet){toast(closed?"다각형 완성":"꺾은선 완성");if(closed){try{afterDrawZone(d);}catch(_){}}}
   return d;
 }
 function polyCancel(){_poly=null;try{if(_polyTmp)_polyTmp.remove();}catch(_){} _polyTmp=null;}
@@ -7573,15 +7573,15 @@ function syncEqColorTrigger(){
 const CUSTOM_EQUIP_KEY="cs_custom_equipment_v1";
 const ROLE_COLOR_KEY="cs_role_token_colors_v1";
 function loadCustomEquipLib(){try{var a=JSON.parse(localStorage.getItem(CUSTOM_EQUIP_KEY)||"[]");return Array.isArray(a)?a:[];}catch(_){return [];}}
-function saveCustomEquipLib(a){try{localStorage.setItem(CUSTOM_EQUIP_KEY,JSON.stringify((a||[]).slice(-12)));return true;}catch(_){if(typeof toast==="function")toast("장비 보관 공간이 가득 찼어요");return false;}}
+function saveCustomEquipLib(a){try{localStorage.setItem(CUSTOM_EQUIP_KEY,JSON.stringify((a||[]).slice(-12)));return true;}catch(_){if(typeof toast==="function")toast("장비 보관 공간이 가득 찼습니다");return false;}}
 function mergeCustomEquip(a,b){var seen={},out=[];(a||[]).concat(b||[]).forEach(function(x){if(x&&x.id&&x.src&&!seen[x.id]){seen[x.id]=1;out.push(x);}});return out.slice(-12);}
 function loadRoleColors(){var d={N:"#f2c94c",T:"#8b5cf6",S:"#20a67a"};try{var x=JSON.parse(localStorage.getItem(ROLE_COLOR_KEY)||"null");if(x&&typeof x==="object")Object.assign(d,x);}catch(_){}return d;}
 function roleColor(v){return loadRoleColors()[String(v||"").toUpperCase()]||null;}
 /* ── 2.805 · 내가 고른 고정색 ── */
 var MY_COL_KEY="cs_my_cols_v1", MY_COL_MAX=6, myColEditing=false;
 function myColList(){ try{ var a=JSON.parse(localStorage.getItem(MY_COL_KEY)||"[]"),seen={}; return Array.isArray(a)?a.filter(function(c){if(typeof c!=="string"||!/^#[0-9a-f]{6}$/i.test(c)||seen[c.toLowerCase()])return false;seen[c.toLowerCase()]=1;return true;}).map(function(c){return c.toLowerCase();}).slice(0,MY_COL_MAX):[]; }catch(_){ return []; } }
-function myColSave(a){try{var raw=JSON.stringify(a);localStorage.setItem(MY_COL_KEY,raw);if(localStorage.getItem(MY_COL_KEY)!==raw)throw new Error("color preference not saved");return true;}catch(_){try{toast("고정색을 기억하지 못했어요. 다시 시도해 주세요.");}catch(_){}return false;}}
-function myColAdd(hex){ hex=String(hex||"").toLowerCase(); if(!/^#[0-9a-f]{6}$/.test(hex))return false; var a=myColList();if(a.indexOf(hex)>=0)return true;if(a.length>=MY_COL_MAX){try{toast("고정색은 6개까지예요. 편집에서 하나를 빼 주세요.");}catch(_){}return false;}a.push(hex);return myColSave(a); }
+function myColSave(a){try{var raw=JSON.stringify(a);localStorage.setItem(MY_COL_KEY,raw);if(localStorage.getItem(MY_COL_KEY)!==raw)throw new Error("color preference not saved");return true;}catch(_){try{toast("고정색을 기억하지 못했습니다. 다시 시도해 주세요.");}catch(_){}return false;}}
+function myColAdd(hex){ hex=String(hex||"").toLowerCase(); if(!/^#[0-9a-f]{6}$/.test(hex))return false; var a=myColList();if(a.indexOf(hex)>=0)return true;if(a.length>=MY_COL_MAX){try{toast("고정색은 6개까지입니다. 편집에서 하나를 빼 주세요.");}catch(_){}return false;}a.push(hex);return myColSave(a); }
 function myColRemove(hex){ hex=String(hex||"").toLowerCase();return myColSave(myColList().filter(function(c){return c!==hex;})); }
 function applyPickedColor(hex){ if(sel&&(sel.type==="equip"||sel.type==="player")){pushUndo();sel.ref.color=hex;if(sel.type==="player")rememberRoleColor(sel.ref,hex);renderTokens();updateDelUI();}else if(typeof multiSel!=="undefined"&&multiSel.length)applyMultiTokenColor(hex); }
 function renderMyDots(){ var host=document.getElementById("myDots"); if(!host)return; var cur=""; try{ cur=String((sel&&sel.ref&&sel.ref.color)||"").toLowerCase(); }catch(_){}
@@ -7602,9 +7602,9 @@ function _addEquipImage(file){if(!file)return;const rd=new FileReader();
       let src;try{const cv=document.createElement("canvas");cv.width=w;cv.height=hh;cv.getContext("2d").drawImage(img,0,0,w,hh);src=cv.toDataURL("image/png");}catch(_){src=rd.result;}
       var item={id:"im"+Date.now().toString(36)+"_"+(uid++),src:src,name:String(file.name||"내 장비").slice(0,40)};
       state.customImages=mergeCustomEquip(state.customImages,[item]);saveCustomEquipLib(mergeCustomEquip(loadCustomEquipLib(),[item]));
-      renderBench();if(typeof toast==="function")toast("내 장비에 저장됨 — 다음 작전판에서도 사용할 수 있어요");};
-    img.onerror=function(){if(typeof toast==="function")toast("이미지를 읽지 못했어요");};img.src=rd.result;};
-  rd.onerror=function(){if(typeof toast==="function")toast("파일을 읽지 못했어요");};rd.readAsDataURL(file);}
+      renderBench();if(typeof toast==="function")toast("내 장비에 저장됨");};
+    img.onerror=function(){if(typeof toast==="function")toast("이미지를 읽지 못했습니다");};img.src=rd.result;};
+  rd.onerror=function(){if(typeof toast==="function")toast("파일을 읽지 못했습니다");};rd.readAsDataURL(file);}
 /* 3.320 — 훈련 편집기에서 장비를 놓을 때도 선수 불러오기와 같은 크기로(사용자 «장비도 마찬가지»). 이미 크면 그대로 · 이 판에만 · 3.338 [5] → [1](사용자 «4단계 줄여서») */
 function _editorTokBoost(){var L=tokScaleLevels(),t=Math.round(L[1]*100)/100;if((state.tokenScale||L[0])<t-0.001)state.tokenScale=t;}
 function dropToken(cat,val,u,color,extra){
@@ -7706,8 +7706,8 @@ function renderBench(){const box=$("benchItems");if(!box)return;box.innerHTML=""
 /* 2.977 — 기본 토큰 크기를 사다리 두 칸 아래로(사용자 «기본 토큰 크기 2단계 작게»). 선수·장비·공이 함께 작아진다(사용자 «장비도 작게»).
    사다리는 아래로 두 칸이 늘었을 뿐 — [2] 가 예전 기본이라 «＋» 두 번이면 예전 크기, 그 위로는 예전 사다리 그대로(최대 크기도 같다). */
 function tokScaleLevels(){var b=defaultTokenScale(),o=_tokOldDefault();return [b,b*1.25,o,o*1.25,o*1.55,o*1.9,o*2.3];}   /* 7단계: [0]=기본(최소) · [2]=예전 기본 … [6]=최대 */
-function scaleAll(f){if(_realScaleOn()){try{toast("실제 비율에서는 토큰 크기가 운동장에 맞춰 고정돼요 — «비율 › 보기 좋게»에서 바꿀 수 있어요");}catch(_){}return;}var L=tokScaleLevels();var cur=state.tokenScale||L[0];var idx=0,bd=1e9;for(var i=0;i<L.length;i++){var d=Math.abs(L[i]-cur);if(d<bd){bd=d;idx=i;}}var nidx=(f>1)?Math.min(L.length-1,idx+1):Math.max(0,idx-1);
-  if(nidx===idx){try{toast(f>1?"가장 큰 크기예요":"가장 작은 크기예요 — 기본이 최소");}catch(_){}return;}   /* 한계에서 무반응처럼 느껴지지 않게 */
+function scaleAll(f){if(_realScaleOn()){try{toast("실제 비율에서는 토큰 크기가 운동장에 맞춰 고정됩니다 — «비율 › 보기 좋게»에서 바꿀 수 있습니다");}catch(_){}return;}var L=tokScaleLevels();var cur=state.tokenScale||L[0];var idx=0,bd=1e9;for(var i=0;i<L.length;i++){var d=Math.abs(L[i]-cur);if(d<bd){bd=d;idx=i;}}var nidx=(f>1)?Math.min(L.length-1,idx+1):Math.max(0,idx-1);
+  if(nidx===idx){try{toast(f>1?"가장 큰 크기입니다":"가장 작은 크기입니다");}catch(_){}return;}   /* 한계에서 무반응처럼 느껴지지 않게 */
   idx=nidx;_lookFreeze();state.tokenScale=Math.round(L[idx]*100)/100;renderTokens();try{boardSaveLive();}catch(_){}}   /* 2.929 — 기기에 안 쓴다(이 보드에만) */
 function _tokOldDefault(){try{if(window.innerWidth>=1024)return 0.55;if(Math.min(window.innerWidth,window.innerHeight)<=480)return 0.60;}catch(_){}return 0.70;}   /* 2.976 까지의 기본(데스크톱 0.55 · 폰 0.60 · 태블릿 0.70) */
 function defaultTokenScale(){return Math.round(_tokOldDefault()/1.55*1000)/1000;}   /* 2.977 — 두 칸 아래(0.355 · 0.387 · 0.452) */
@@ -7878,12 +7878,12 @@ function boardDefaultSnap(src){
 function boardDefaultRead(){try{var raw=localStorage.getItem(BOARD_DEFAULT_KEY);if(!raw)return null;var data=JSON.parse(raw);var snap=data&&(data.snap||data);return snap?boardDefaultSnap(snap):null;}catch(_){return null;}}
 function boardDefaultSave(){
   try{var __ds=boardDefaultSnap(captureSnap()),__dn=(__ds.players||[]).length;localStorage.setItem(BOARD_DEFAULT_KEY,JSON.stringify({v:1,at:Date.now(),snap:__ds}));
-    try{toast("지금 보드를 «새 보드» 기본 세팅으로 정했어요"+(__dn?(" · 선수 "+__dn+"명"):"")+" · 이 보드는 «저장»으로 저장해요");}catch(_){}   /* 3.031 — 보드 저장이 아니라는 것을 말한다 */
+    try{toast("지금 보드를 «새 보드» 기본 세팅으로 정했습니다"+(__dn?(" · 선수 "+__dn+"명"):"")+" · 이 보드는 «저장»으로 저장합니다");}catch(_){}   /* 3.031 — 보드 저장이 아니라는 것을 말한다 */
     try{window.__syncBoardDefaultUI&&window.__syncBoardDefaultUI();}catch(_){}
-    return true;}catch(_){try{toast("기본 세팅을 저장하지 못했어요");}catch(__){}return false;}
+    return true;}catch(_){try{toast("기본 세팅을 저장하지 못했습니다");}catch(__){}return false;}
 }
 function boardDefaultClear(){
-  try{localStorage.removeItem(BOARD_DEFAULT_KEY);try{toast("기본 세팅을 해제했어요");}catch(_){}
+  try{localStorage.removeItem(BOARD_DEFAULT_KEY);try{toast("기본 세팅을 해제했습니다");}catch(_){}
     try{window.__syncBoardDefaultUI&&window.__syncBoardDefaultUI();}catch(_){}
     return true;}catch(_){return false;}
 }
@@ -7898,20 +7898,20 @@ function lookPresetList(){ try{ var a=JSON.parse(localStorage.getItem(LOOK_PRESE
   return a.filter(function(x){ return x&&typeof x==="object"&&lookPresetName(x.name)&&x.look&&typeof x.look==="object"; }).slice(0,LOOK_PRESET_MAX); }catch(_){ return []; } }
 function lookPresetWrite(a){ try{ localStorage.setItem(LOOK_PRESET_KEY,JSON.stringify(a.slice(0,LOOK_PRESET_MAX))); return true; }catch(_){ return false; } }
 function lookPresetSave(name){ name=lookPresetName(name); if(!name)return false;
-  var snap; try{ snap=dc(captureSnap()); }catch(_){ try{toast("내 스타일을 저장하지 못했어요");}catch(__){} return false; }
+  var snap; try{ snap=dc(captureSnap()); }catch(_){ try{toast("내 스타일을 저장하지 못했습니다");}catch(__){} return false; }
   var a=lookPresetList(),i=-1; a.forEach(function(x,j){ if(x.name===name)i=j; });
   var rec={v:2,name:name,at:Date.now(),snap:snap,look:lookNow(),pitchTheme:snap.pitchTheme||"",pitchCustom:snap.pitchCustom||null};
-  if(i<0&&a.length>=LOOK_PRESET_MAX){ try{toast("내 스타일은 "+LOOK_PRESET_MAX+"개까지예요 — 하나를 지우고 저장하세요");}catch(_){} return false; }
+  if(i<0&&a.length>=LOOK_PRESET_MAX){ try{toast("내 스타일은 "+LOOK_PRESET_MAX+"개까지입니다 — 하나를 지우고 저장하세요");}catch(_){} return false; }
   if(i>=0)a[i]=rec; else a.push(rec);
-  if(!lookPresetWrite(a)){ try{toast("내 스타일을 저장하지 못했어요");}catch(_){} return false; }
-  try{toast(i>=0?"«"+name+"» 설정을 지금 값으로 바꿨어요":"«"+name+"» 설정을 저장했어요");}catch(_){}
+  if(!lookPresetWrite(a)){ try{toast("내 스타일을 저장하지 못했습니다");}catch(_){} return false; }
+  try{toast(i>=0?"«"+name+"» 설정을 지금 값으로 바꿨습니다":"«"+name+"» 설정을 저장했습니다");}catch(_){}
   try{window.__syncLookPresetUI&&window.__syncLookPresetUI();}catch(_){} return true; }
 function lookPresetApply(name){ var r=null; lookPresetList().forEach(function(x){ if(x.name===name)r=x; }); if(!r)return false;
   pushUndo();
   _lookFreeze();
   if(r.v===2&&r.snap&&typeof r.snap==="object"){
     try{stopAnim();loadSnap(dc(r.snap));autoOrient=false;}
-    catch(_){try{toast("내 스타일을 적용하지 못했어요");}catch(__){}return false;}
+    catch(_){try{toast("내 스타일을 적용하지 못했습니다");}catch(__){}return false;}
   }else{
   var ch={}; try{ var m=lookNow(); for(var k in r.look)m[k]=r.look[k]; m.tokV=2; ch=lookApply(lookOf(m)); }catch(_){}   /* lookOf 가 칸마다 검사한다(옛·깨진 값은 기본값) */
   try{ if(window.__applyPitch&&(r.pitchTheme!=null||r.pitchCustom))window.__applyPitch(r.pitchTheme||"",r.pitchCustom||null); }catch(_){}
@@ -7922,9 +7922,9 @@ function lookPresetApply(name){ var r=null; lookPresetList().forEach(function(x)
   try{ lookStampScenes(); }catch(_){}
   try{ autoSaveAnimFrame(); }catch(_){}
   try{ boardSaveLive(); }catch(_){}
-  try{ toast("«"+name+"» 설정을 적용했어요"); }catch(_){} return true; }
+  try{ toast("«"+name+"» 설정을 적용했습니다"); }catch(_){} return true; }
 function lookPresetDelete(name){ var a=lookPresetList(),b=a.filter(function(x){ return x.name!==name; }); if(b.length===a.length)return false;
-  if(!lookPresetWrite(b))return false; try{toast("«"+name+"» 설정을 지웠어요");}catch(_){}
+  if(!lookPresetWrite(b))return false; try{toast("«"+name+"» 설정을 지웠습니다");}catch(_){}
   try{window.__syncLookPresetUI&&window.__syncLookPresetUI();}catch(_){} return true; }
 window.__lookPresets={list:lookPresetList,save:lookPresetSave,apply:lookPresetApply,remove:lookPresetDelete};
 /* ══ 2.978 · 실사 잔디 톤 ═══════════════════════════════════════════════════════
@@ -8040,7 +8040,7 @@ window.__setPitchN=function(n){var _nn=(+n>0?+n:1);try{if(_nn>1&&isBlankSpec())w
 /* 운동장 범위: 전체 / 1·2·3분기. 2/4는 기존 하프와 호환하고, 옛 스냅의 area=half도 그대로 읽는다. */
 window.__getPitchView=function(){return pitchViewKey();};
 window.__setPitchSide=function(side){ var cur=state.pvSide==="opp"?"opp":"own", nx=(side==="toggle")?(cur==="opp"?"own":"opp"):(side==="opp"?"opp":"own"); if(nx===cur)return;
-  if(pitchViewKey()==="full"){ state.pvSide=nx; try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){} toast("범위를 1/4·2/4·3/4 로 고르면 "+(nx==="opp"?"상대 쪽":"우리 쪽")+"을 확대해요"); try{_viewScenesMatch("side");}catch(_){} try{boardSaveLive();}catch(_){} return; }
+  if(pitchViewKey()==="full"){ state.pvSide=nx; try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){} toast("범위를 1/4·2/4·3/4 로 고르면 "+(nx==="opp"?"상대 쪽":"우리 쪽")+"을 확대합니다"); try{_viewScenesMatch("side");}catch(_){} try{boardSaveLive();}catch(_){} return; }
   try{pushUndo();}catch(_){} state.pvSide=nx; if(state.fieldMode!=="standard")state.fieldMode="standard";
   var _r=function(){try{applyView();}catch(_){}try{buildPitch();}catch(_){}try{buildLines();}catch(_){}try{buildGrid();}catch(_){}try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}try{updateDelUI();}catch(_){}};
   _r();try{setTimeout(_r,60);}catch(_){}try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){} var _vr=null;try{_vr=_viewScenesMatch("side");}catch(_){} toast((nx==="opp"?"상대 쪽 확대":"우리 쪽 확대")+((_vr&&_vr.n)?_viewScenesNote(_vr):"")); try{boardSaveLive();}catch(_){} };   /* 2.982 */
@@ -8140,7 +8140,7 @@ function _rotFinish(activeMir,word){ var r=_rotScenesMatch(activeMir,false);
   try{ if(r.n){ renderAnimFrames(); if(document.body.classList.contains("editing")&&typeof renderSceneStrip==="function")renderSceneStrip(); } }catch(_){}
   try{boardSaveLive();}catch(_){}
   try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){}
-  try{ if(r.n)toast("장면 "+r.total+"개를 모두 "+(word?(word+"로 맞췄어요"):"함께 돌렸어요")); }catch(_){}
+  try{ if(r.n)toast("장면 "+r.total+"개를 모두 "+(word?(word+"로 맞췄습니다"):"함께 돌렸습니다")); }catch(_){}
   return r; }
 /* ══ 2.982 · 운동장 설정(범위·확대 쪽·개수·규격·피치)도 누르면 이 애니메이션의 모든 장면에 ══
    방향과 같은 병이었다: 이 값들은 장면 스냅마다 따로 저장돼, 누르면 지금 장면만 바뀌고 다른 장면을 누르면 되돌아갔다(사용자 «네 전부 해줘요»).
@@ -8170,7 +8170,7 @@ function _viewScenesMatch(kind){ var keys=_VIEW_KEYS[kind]||[], n=0, total=0, cu
   if(n){ try{autoSaveAnimFrame();}catch(_){} try{renderAnimFrames();}catch(_){} }
   return {n:n,total:total}; }
 function _viewScenesNote(r){ return (r&&r.n)?(" · 장면 "+r.total+"개 모두"):""; }
-function _viewScenesToast(r,what){ try{ if(r&&r.n)toast(what+" 장면 "+r.total+"개에 모두 적용했어요"); }catch(_){} return r; }
+function _viewScenesToast(r,what){ try{ if(r&&r.n)toast(what+" 장면 "+r.total+"개에 모두 적용했습니다"); }catch(_){} return r; }
 /* 2.983 — 개수·피치도 ⌘Z 한 걸음. 색상 고르개는 끄는 동안 input 이 줄줄이 오므로 «한 번 끌기»(입력 사이 0.9초 안)를 한 걸음으로 묶는다 */
 var _viewUndoT=null;
 function _viewUndoOnce(){ if(!_viewUndoT){ try{pushUndo();}catch(_){} } try{clearTimeout(_viewUndoT);}catch(_){} _viewUndoT=setTimeout(function(){ _viewUndoT=null; },900); }
@@ -8343,7 +8343,7 @@ try{document.addEventListener("input",function(e){ try{ var t=e.target; if(t&&e.
 function undoLast(){if(psPhoneBoardReadOnly())return psPhoneBoardNotice();try{if(typeof animPlaying!=="undefined"&&animPlaying){animRestore=null;stopAnim();}}catch(_){}if(!undoStack.length){toast("되돌릴 작업이 없어요");return;}var _ue=null;try{redoStack.push(_boardHistoryEntry());if(redoStack.length>50)redoStack.shift();_ue=undoStack.pop();_undoEntry(_ue);}catch(_){}toast("되돌렸습니다 ↩");  /* 2.927 — «보드 가져오기»를 되돌리면 그 연결도 끊는다(안 그러면 «보드 저장» 때 예전 보드가 보관함 자료를 덮는다) */
   try{ if(_ue&&_ue.__linkMark&&window.__psPages&&window.__psPages.linkClear){ window.__psPages.linkClear(_ue.__linkMark); toast("가져오기를 되돌렸어요 · 보관함 연결도 끊었어요"); } }catch(_){}
 }
-function redoLast(){if(psPhoneBoardReadOnly())return psPhoneBoardNotice();try{if(typeof animPlaying!=="undefined"&&animPlaying){animRestore=null;stopAnim();}}catch(_){}if(!redoStack.length){toast("다시 실행할 작업이 없어요");return;}try{undoStack.push(_boardHistoryEntry());if(undoStack.length>50)undoStack.shift();_undoEntry(redoStack.pop());}catch(_){}toast("다시 실행 ↪");}
+function redoLast(){if(psPhoneBoardReadOnly())return psPhoneBoardNotice();try{if(typeof animPlaying!=="undefined"&&animPlaying){animRestore=null;stopAnim();}}catch(_){}if(!redoStack.length){toast("다시 실행할 작업이 없습니다");return;}try{undoStack.push(_boardHistoryEntry());if(undoStack.length>50)undoStack.shift();_undoEntry(redoStack.pop());}catch(_){}toast("다시 실행 ↪");}
 function clearBoardHistory(){undoStack.length=0;redoStack.length=0;}
 try{window.__clearBoardHistory=clearBoardHistory;}catch(_){}
 
@@ -8630,7 +8630,7 @@ function _boardLiveWriteNow(recovery){
     if(boardPrivateCurrent(owner)&&!recovery)try{
       var durable=_boardPrivateRecord&&_boardPrivateDurableToken===_boardPrivateRecord.token;
       if(!durable)toast("기기에 저장하지 못했습니다 — 앱을 닫지 말고 다시 시도해 주세요");
-      else if(!localOnly)toast("이 기기에만 저장됨 · 인터넷이 연결되면 자동으로 올라가요");   /* 3.039 — 같은 상태를 세 가지로 말하던 것을 하나로(CP-15) */
+      else if(!localOnly)toast("이 기기에만 저장됨 · 인터넷이 연결되면 자동으로 올라갑니다");   /* 3.039 — 같은 상태를 세 가지로 말하던 것을 하나로(CP-15) */
     }catch(_){}
     return false;
   });
@@ -8706,9 +8706,9 @@ function boardDraftBarShow(o,d){
     }
     var bar=document.createElement("div");bar.id="boardDraftBar";bar.setAttribute("role","status");
     bar.innerHTML='<span class="bd-tx"></span><button type="button" class="bd-keep">되살리기</button><button type="button" class="bd-drop">버리기</button>';
-    bar.querySelector(".bd-tx").textContent="저장하지 않은 작업이 있어요 · "+boardDraftAgo(d.at);
+    bar.querySelector(".bd-tx").textContent="저장하지 않은 작업이 있습니다 · "+boardDraftAgo(d.at);
     bar.querySelector(".bd-keep").onclick=function(){ window.__boardDraftRestore(); };
-    bar.querySelector(".bd-drop").onclick=function(){ boardDraftClear(o); try{toast("저장 안 한 작업을 버렸어요");}catch(_){} };
+    bar.querySelector(".bd-drop").onclick=function(){ boardDraftClear(o); try{toast("저장 안 한 작업을 버렸습니다");}catch(_){} };
     document.body.appendChild(bar);_boardDraftBar=bar;
   }catch(_){}
 }
@@ -8776,7 +8776,7 @@ function boardManualStatus(){
   var _chg=boardManualChanged(); try{ if(typeof window.__psSaveBarSync==='function')window.__psSaveBarSync(_chg); }catch(_){}
   try{ document.body.classList.toggle('ps-board-dirty',!!_chg); }catch(_){}   /* 3.039 — 바뀐 게 있으면 채운 단추는 «보드 저장» 하나(UX-9 · DS-5): «보관함 저장»은 테두리로 */
   try{ if(_chg!==_boardDirtyPosted){ _boardDirtyPosted=_chg; parent.postMessage({source:'board',type:'boardDirty',changed:_chg},location.origin); } }catch(_){}   /* 3.038 — 셸 저장 표시 «보드 · 저장 전»(app.html saveView) */
-  try{var b=document.getElementById('boardManualSave');if(b){/* 2.907 — «보드 저장»: 보관함의 «저장하기»와 이름이 같아 보관함에 들어간 줄 알았다(오류 제보). 바뀐 표시는 점 하나 — 768px 띠에 «· 변경됨»까지 들어가지 않는다. */b.textContent=_boardManualSaving?'저장 중…':(_chg?'저장 ●':'저장');b.disabled=_boardManualSaving;b.title=(_chg?'저장하지 않은 변경이 있어요 — ':'')+'작업 보드를 저장하고, 보관함 자료와 이어져 있으면 그 자료에도 저장해요(아니면 보관함에 담을지 물어요)';b.setAttribute('aria-label',_chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장');b.classList.toggle('dirty',!!_chg);}}catch(_){}
+  try{var b=document.getElementById('boardManualSave');if(b){/* 2.907 — «보드 저장»: 보관함의 «저장하기»와 이름이 같아 보관함에 들어간 줄 알았다(오류 제보). 바뀐 표시는 점 하나 — 768px 띠에 «· 변경됨»까지 들어가지 않는다. */b.textContent=_boardManualSaving?'저장 중…':(_chg?'저장 ●':'저장');b.disabled=_boardManualSaving;b.title=(_chg?'저장하지 않은 변경이 있습니다 — ':'')+'작업 보드를 저장하고, 보관함 자료와 이어져 있으면 그 자료에도 저장해요(아니면 보관함에 담을지 뭅니다)';b.setAttribute('aria-label',_chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장');b.classList.toggle('dirty',!!_chg);}}catch(_){}
 }
 /* 2.927 — «보드 가져오기»로 이어진 보관함 자료에 지금 보드를 같은 내용으로 저장한다(사용자 «가져와서 토큰 움직이고 저장하면 보관함 것도 똑같이»).
    ⚠ 보관함(ps_library)엔 판 역사가 없다(2.907) — 그래서 확실히 같은 자료일 때만 쓴다:
@@ -8825,7 +8825,7 @@ async function boardLinkWriteBack(onlyCurrent){
   return out;
 }
 function boardLinkSaveText(r){
-  var ok=[],no=[]; (r||[]).forEach(function(x){ if(x.ok)ok.push("‘"+x.name+"’"); else if(x.denied)no.push("보관함 ‘"+x.name+"’: 만든 사람만 바꿀 수 있어 그대로 두고 연결을 끊었어요"); else if(x.empty)no.push("보드가 비어 있어 보관함 ‘"+x.name+"’ 연결을 끊었어요(자료는 그대로)"); else if(x.gone)no.push("보관함에 ‘"+x.name+"’ 자료가 없어 연결을 끊었어요"); else if(x.err)no.push("보관함 저장 실패 — 다시 «보드 저장»을 눌러 주세요"); });
+  var ok=[],no=[]; (r||[]).forEach(function(x){ if(x.ok)ok.push("‘"+x.name+"’"); else if(x.denied)no.push("보관함 ‘"+x.name+"’: 만든 사람만 바꿀 수 있어 그대로 두고 연결을 끊었습니다"); else if(x.empty)no.push("보드가 비어 있어 보관함 ‘"+x.name+"’ 연결을 끊었어요(자료는 그대로)"); else if(x.gone)no.push("보관함에 ‘"+x.name+"’ 자료가 없어 연결을 끊었습니다"); else if(x.err)no.push("보관함 저장 실패 — 다시 «보드 저장»을 눌러 주세요"); });
   return (ok.length?(" · 보관함 "+ok.join("·")+"에도 저장됨"):"")+(no.length?(" · "+no.join(" · ")):"");
 }
 window.__boardLinkWriteBack=boardLinkWriteBack;
@@ -8833,7 +8833,7 @@ async function boardSaveExplicit(o){
   if(psPhoneBoardReadOnly())return psPhoneBoardNotice();   /* 3.014 — o.noLink: 보관함 연결 되쓰기 없이 · o.quiet: 성공 알림 없이(«새 보드»·«이전 보드»가 제 알림을 띄운다) */
   o=(o&&typeof o==="object"&&!o.type)?o:{};
   if((_boardManualSaving&&boardPrivateCurrent(_boardManualSaving))||_vaultBoardContext||window.__vaultEdit)return false;
-  if(!_boardPrivateLoaded||!boardPrivateCurrent(_boardPrivateOwner)){toast("보드를 아직 불러오는 중이에요 — 잠시 뒤 «저장»을 다시 눌러 주세요. 계속되면 다시 로그인해 주세요");   /* 3.039 — «보드 연결»은 확인할 방법이 없는 말이었다(피드백 CP-17) */return false;}
+  if(!_boardPrivateLoaded||!boardPrivateCurrent(_boardPrivateOwner)){toast("보드를 아직 불러오는 중입니다 — 잠시 뒤 «저장»을 다시 눌러 주세요. 계속되면 다시 로그인해 주세요");   /* 3.039 — «보드 연결»은 확인할 방법이 없는 말이었다(피드백 CP-17) */return false;}
   restoreAnimBeforeCapture();
   var owner=_boardPrivateOwner,seq=_boardPrivateEditSeq,previous=_boardPrivateRecord;
   var _hadOffer=!!window.__boardDraftPending;if(_hadOffer)try{boardDraftBarHide();}catch(_){}   /* 3.038 리뷰 — 띠를 둔 채 저장하면 지금 화면을 고른 것: 띠를 먼저 거둬 저장 중 «되살리기»가 끼어들지 않게 */
@@ -8845,7 +8845,7 @@ async function boardSaveExplicit(o){
       if(ok||(durable&&_boardPrivateRecord!==previous)){_boardManualDirty=false;try{boardDraftClear(owner);}catch(_){}   /* 3.038 — 저장했으니 기기 초안은 지운다 */
         var _wb=[]; if(!o.noLink){ try{ _wb=await boardLinkWriteBack(false); }catch(e){ _wb=[{err:true}]; } }   /* 2.927 — 가져온 보관함 자료에도 */
         var _wbt=boardLinkSaveText(_wb);
-        if(!ok)toast("이 기기에만 저장됨 · 인터넷이 연결되면 자동으로 올라가요"+_wbt);else if(!o.quiet)toast((_wbt?("보드에 저장됨 ✓"+_wbt):"보드에 저장됨 ✓")+(_hadOffer?" · 저장 안 했던 이전 작업은 버렸어요":""));}
+        if(!ok)toast("이 기기에만 저장됨 · 인터넷이 연결되면 자동으로 올라갑니다"+_wbt);else if(!o.quiet)toast((_wbt?("보드에 저장됨 ✓"+_wbt):"보드에 저장됨 ✓")+(_hadOffer?" · 저장 안 했던 이전 작업은 버렸습니다":""));}
     }
     return !!ok;
   }finally{if(_boardManualSaving===owner)_boardManualSaving=false;boardManualStatus();}
@@ -8865,7 +8865,7 @@ async function boardSaveOne(){
   var ask=!linked&&!empty&&!_boardVaultDeclined&&typeof window.__vaultSave==="function";
   var ok=await boardSaveExplicit(ask?{quiet:true}:{});
   if(!ask||!ok)return ok;
-  window.__vaultSave({ oncancel:function(){ _boardVaultDeclined=true; try{ toast("보드에 저장됨 ✓ · 보관함에는 담지 않았어요"); }catch(_){} } });
+  window.__vaultSave({ oncancel:function(){ _boardVaultDeclined=true; try{ toast("보드에 저장됨 ✓ · 보관함에는 담지 않았습니다"); }catch(_){} } });
   return ok;
 }
 window.__boardSaveOne=boardSaveOne;
@@ -8873,8 +8873,8 @@ window.__boardSaveOne=boardSaveOne;
    훈련 편집기는 «저장하기»가 저장과 닫기를 함께 하므로 ⌘S 는 임시 저장(초안)만 한다. */
 window.__psSaveShortcut=function(){ try{
   if(psPhoneBoardReadOnly())return psPhoneBoardNotice();
-  if(document.body.classList.contains("editing")){ try{saveEditorDraft();}catch(_){} toast("작업 중인 훈련을 임시 저장했어요 · 보관함에 넣기는 «저장하기»"); return; }
-  if(window.__vaultViewMode&&window.__vaultEdit){ if(window.__vaultReadOnly){ toast("보기 전용이라 저장하지 않아요"); return; } if(window.__vaultSaveOnly&&window.__vaultSaveOnly())return; }
+  if(document.body.classList.contains("editing")){ try{saveEditorDraft();}catch(_){} toast("작업 중인 훈련을 임시 저장했습니다 · 보관함에 넣기는 «저장하기»"); return; }
+  if(window.__vaultViewMode&&window.__vaultEdit){ if(window.__vaultReadOnly){ toast("보기 전용이라 저장하지 않습니다"); return; } if(window.__vaultSaveOnly&&window.__vaultSaveOnly())return; }
   if(window.__vaultEdit){ var cs=document.getElementById("vCreateSave"); if(cs&&cs.offsetParent!==null){ cs.click(); return; } }
   boardSaveOne();   /* 3.077 — 단추와 같은 «저장» */
 }catch(e){ try{console.warn("save shortcut",e);}catch(_){} } };
@@ -8982,7 +8982,7 @@ async function restoreLiveBoard(){
     try{var ed=await boardStore.get(EDRAFT_KEY);if(current()&&ed&&ed.trainings&&ed.trainings.length)window.__editorDraft=ed;}catch(_){}
     try{if(current()&&typeof boardDraftOffer==='function')boardDraftOffer(owner,chosen).catch(function(){});}catch(_){}   /* 3.038 — 저장본보다 새 기기 초안이 있으면 «되살리기» 띠 */
     return current();
-  }catch(e){if(current())try{toast('내 보드를 불러오지 못했어요. 이 기기에 있는 작업은 그대로예요 — 인터넷 연결을 확인하고 보드를 다시 열어 주세요');   /* 3.039 — «개인 보드» · «원문»은 내부 말(피드백 CP-16) */}catch(_){}return false;}finally{if(window.__boardRestoring===generation)window.__boardRestoring=0;}
+  }catch(e){if(current())try{toast('내 보드를 불러오지 못했습니다. 이 기기에 있는 작업은 그대로입니다 — 인터넷 연결을 확인하고 보드를 다시 열어 주세요');   /* 3.039 — «개인 보드» · «원문»은 내부 말(피드백 CP-16) */}catch(_){}return false;}finally{if(window.__boardRestoring===generation)window.__boardRestoring=0;}
 }
 /* 3.038 — 개인 보드 본문(또는 기기 초안)을 화면에 올린다. restoreLiveBoard 와 «되살리기»(__boardDraftRestore)가 같은 길을 쓴다. */
 function boardLiveApply(live){
@@ -9146,10 +9146,10 @@ function exportPPTX(){
     };
     (function next(){
       if(i>=scenes.length){ try{loadSnap(save);renderTokens();renderDrawings();updateDelUI();}catch(_){}
-        pptx.writeFile({fileName:_animExportName("pptx","PROCESS-STUDIO")}).then(function(){try{toast(nAnim?("PPT 저장됨 \u2713 — 장면 슬라이드 "+nAnim+"개는 발표 화면에서 움직여요"):"PPT 저장됨 \u2713");}catch(_){}}).catch(function(){try{toast("PPT 저장 실패");}catch(_){}}).then(function(){done();});
+        pptx.writeFile({fileName:_animExportName("pptx","PROCESS-STUDIO")}).then(function(){try{toast(nAnim?("PPT 저장됨 \u2713 — 장면 슬라이드 "+nAnim+"개는 발표 화면에서 움직입니다"):"PPT 저장됨 \u2713");}catch(_){}}).catch(function(){try{toast("PPT 저장 실패");}catch(_){}}).then(function(){done();});
         return; }
       var sc=scenes[i];
-      if(window.PSMeetCover&&PSMeetCover.isCover(sc)){PSMeetCover.ppt(pptx,sc.cover).then(function(){i++;next();}).catch(function(){toast("표지를 만들지 못했어요");done();});return;}
+      if(window.PSMeetCover&&PSMeetCover.isCover(sc)){PSMeetCover.ppt(pptx,sc.cover).then(function(){i++;next();}).catch(function(){toast("표지를 만들지 못했습니다");done();});return;}
       picOf(sc, function(png,w,h,isAnim){
         var sl=pptx.addSlide(); sl.background={color:"0C0F14"};
         var N=scenes.length, no=i+1;
@@ -9254,7 +9254,7 @@ function resetLaterAnimTokens(){
   anim.frames[animActive].snap=snap;anim.frames[animActive].thumb=boardThumbSVG();
   applyTokensToLaterFrames(anim.frames,animActive,snap);
   renderAnimFrames();renderOnion();updateMotionPaths();boardSaveLive();
-  toast(animActive<anim.frames.length-1?'현재 토큰을 '+(animActive+2)+'번부터 마지막 장면까지 적용했어요':'현재 장면을 갱신했어요');
+  toast(animActive<anim.frames.length-1?'현재 토큰을 '+(animActive+2)+'번부터 마지막 장면까지 적용했습니다':'현재 장면을 갱신했습니다');
 }
 
 function animMoveSpeed(f){var v=+(f&&f.moveSpeed);return v>0?v:1;}
@@ -9566,9 +9566,9 @@ window.__bkStage={
   refresh:function(){ try{renderAnimFrames();}catch(_){} },
   go:function(k){ var st=bkStagesOf(anim.frames); if(!st[k])return false; return selectAnimFrame(st[k].from); },
   play:function(k){ var st=bkStagesOf(anim.frames); if(!st[k])return false;
-    if(st[k].to<=st[k].from){ try{selectAnimFrame(st[k].from);}catch(_){} try{toast("이 단계는 장면이 하나예요 — 장면을 더 넣으면 움직입니다");}catch(_){} return false; }
+    if(st[k].to<=st[k].from){ try{selectAnimFrame(st[k].from);}catch(_){} try{toast("이 단계는 장면이 하나입니다");}catch(_){} return false; }
     return playAnimRange(st[k].from,st[k].to); },
-  playSeq:function(){ if(animPlaying){try{stopAnim();}catch(_){}} if(anim.frames.length<2){ try{toast("장면을 2개 이상 만들면 재생할 수 있어요");}catch(_){} return false; }
+  playSeq:function(){ if(animPlaying){try{stopAnim();}catch(_){}} if(anim.frames.length<2){ try{toast("장면을 2개 이상 만들면 재생할 수 있습니다");}catch(_){} return false; }
     try{selectAnimFrame(0);}catch(_){} animPaused=null; playAnim(); return !!animPlaying; },
   stop:function(){ if(animPlaying){try{stopAnim();}catch(_){}} },
   playing:function(){ return !!animPlaying; }
@@ -9712,7 +9712,7 @@ function _animToggleCarry(key,words){
   if(key==="hl")syncHlBtn(); else syncBlinkBtn();
   _blinkDecor(); try{boardSaveLive();}catch(_){}
 }
-function toggleBlink(){ _animToggleCarry("blink",{pick:"깜박일 토큰을 먼저 선택한 뒤 누르세요",on:"깜박임",off:"깜박임 해제",mix:"깜박임 바꿈",tail:"재생·영상에서 깜박여요"}); }
+function toggleBlink(){ _animToggleCarry("blink",{pick:"깜박일 토큰을 먼저 선택한 뒤 누르세요",on:"깜박임",off:"깜박임 해제",mix:"깜박임 바꿈",tail:"재생·영상에서 깜박입니다"}); }
 try{ var _abb=document.getElementById("animBlinkBtn"); if(_abb)_abb.onclick=function(e){e.stopPropagation();toggleBlink();}; }catch(_){}
 function syncHlBtn(){ try{ var b=document.getElementById("animHlBtn"); if(!b)return;
   var fr=(animActive>=0)?anim.frames[animActive]:null; var n=(fr&&fr.hl&&fr.hl.length)||0;
@@ -9744,7 +9744,7 @@ function runAnimAct(id){ try{
   if(id==="animPrev"||id==="animNext"){ if(animPlaying)stopAnim(); var n=anim.frames.length; if(!n)return; var to=Math.max(0,Math.min(n-1,animActive+(id==="animNext"?1:-1))); if(to!==animActive)selectAnimFrame(to); return; }
   if(id==="animDel"){ if(animActive>=0&&anim.frames[animActive])deleteAnimFrame(animActive); return; }
 }catch(e){ try{console.warn("animAct",e);}catch(_){} } }
-function toggleHl(){ _animToggleCarry("hl",{pick:"강조할 토큰을 먼저 선택한 뒤 누르세요",on:"계속 강조",off:"강조 해제",mix:"강조 바꿈",tail:"재생·영상에서 계속 환하게 보여요"}); }   /* 3.254 — 이 장면부터 뒤로 이어서(제보 7db68045) */
+function toggleHl(){ _animToggleCarry("hl",{pick:"강조할 토큰을 먼저 선택한 뒤 누르세요",on:"계속 강조",off:"강조 해제",mix:"강조 바꿈",tail:"재생·영상에서 계속 환하게 보입니다"}); }   /* 3.254 — 이 장면부터 뒤로 이어서(제보 7db68045) */
 try{ var _ahb=document.getElementById("animHlBtn"); if(_ahb)_ahb.onclick=function(e){e.stopPropagation();toggleHl();}; }catch(_){}
 /* 애니메이션(anim.frames)을 항목에 저장/복원 — 작전판 애니메이션이 보관함·커뮤니티에서 유지되도록 (#13) */
 window.__animFrames=function(strict){ try{
@@ -9955,7 +9955,7 @@ function afSelStatus(){ try{ var out=document.getElementById("cmd-scene-status")
 function afSelIdx(){ var a=[..._afSel].filter(function(i){return i>=0&&i<anim.frames.length;}).sort(function(x,y){return x-y;}); if(!a.length&&animActive>=0)a=[animActive]; return a; }
 function afCloneFrame(f){ try{ return JSON.parse(JSON.stringify(f)); }catch(_){ return null; } }
 function afCopy(){ var idx=afSelIdx(); if(!idx.length)return false; _afClip=idx.map(function(i){return afCloneFrame(anim.frames[i]);}).filter(Boolean); toast("장면 "+idx.length+"개 복사"); return true; }
-function afPaste(){ if(!_afClip||!_afClip.length){ toast("복사한 장면이 없어요"); return false; }
+function afPaste(){ if(!_afClip||!_afClip.length){ toast("복사한 장면이 없습니다"); return false; }
   try{stopAnim();}catch(_){} try{autoSaveAnimFrame();}catch(_){} pushUndo();   /* 2.975 — 붙여넣기도 ⌘Z */
   var idx=afSelIdx(), at=idx.length?idx[idx.length-1]+1:anim.frames.length;
   var clones=_afClip.map(afCloneFrame).filter(Boolean).map(bkFrameCopy);   /* 2.985 */
@@ -10185,22 +10185,22 @@ var PEP=(function(){
     saving:function(){ if(!ov)return; ov.className="save"; pct(0.98); q(".pep-sub").textContent="저장하는 중…"; acts([]); },
     done:function(title,sub){ ensure(); ov.className="done"; pct(1); q(".pep-t").textContent=title; q(".pep-sub").textContent=sub||""; acts([["닫기",close]]); clearTimeout(hideT); hideT=setTimeout(close,3200); },
     /* 아이폰·아이패드 — 다 만든 뒤 저장할 곳을 고르게 한다 */
-    offer:function(blob,name,type){ ensure(); clearTimeout(hideT); ov.className="done"; pct(1); q(".pep-t").textContent="다 만들었어요"; q(".pep-sub").textContent="«"+name+"» — «파일에 저장»을 누르면 폴더를 고를 수 있어요";
+    offer:function(blob,name,type){ ensure(); clearTimeout(hideT); ov.className="done"; pct(1); q(".pep-t").textContent="다 만들었습니다"; q(".pep-sub").textContent="«"+name+"» — «파일에 저장»을 누르면 폴더를 고를 수 있습니다";
       var file=null; try{ file=new File([blob],name,{type:type||blob.type}); }catch(_){}
       var list=[];
-      if(file&&navigator.canShare&&navigator.canShare({files:[file]}))list.push(["파일에 저장",function(){ navigator.share({files:[file],title:name}).then(function(){ api.done("저장했어요 ✓",name); },function(e){ if(e&&e.name==="AbortError")return; dl(blob,name); api.done("내려받았어요 ✓","«"+name+"» — 다운로드에 있어요"); }); },"pep-go"]);
-      list.push(["내려받기",function(){ dl(blob,name); api.done("내려받았어요 ✓","«"+name+"» — 다운로드에 있어요"); }]);
+      if(file&&navigator.canShare&&navigator.canShare({files:[file]}))list.push(["파일에 저장",function(){ navigator.share({files:[file],title:name}).then(function(){ api.done("저장했습니다 ✓",name); },function(e){ if(e&&e.name==="AbortError")return; dl(blob,name); api.done("내려받았습니다 ✓","«"+name+"» — 다운로드에 있습니다"); }); },"pep-go"]);
+      list.push(["내려받기",function(){ dl(blob,name); api.done("내려받았습니다 ✓","«"+name+"» — 다운로드에 있습니다"); }]);
       list.push(["닫기",close]); acts(list); },
     /* 2.974 — 고른 폴더에 쓰지 못했을 때: 말없이 내려받으면 크롬 «다운로드 전 저장 위치 묻기»가 저장 창을 한 번 더 띄웠다(사용자 «맥에서 저장 창이 두 번»). 이유를 말하고 누를 때만 받는다 */
-    retry:function(blob,name){ ensure(); clearTimeout(hideT); ov.className="warn"; pct(1); q(".pep-t").textContent="고른 폴더에 저장하지 못했어요"; q(".pep-sub").textContent="«"+name+"» — «내려받기»를 누르면 다운로드 폴더에 받아요";
-      acts([["내려받기",function(){ dl(blob,name); api.done("내려받았어요 ✓","«"+name+"» — 다운로드에 있어요"); },"pep-go"],["닫기",close]]); },
+    retry:function(blob,name){ ensure(); clearTimeout(hideT); ov.className="warn"; pct(1); q(".pep-t").textContent="고른 폴더에 저장하지 못했습니다"; q(".pep-sub").textContent="«"+name+"» — «내려받기»를 누르면 다운로드 폴더에 받습니다";
+      acts([["내려받기",function(){ dl(blob,name); api.done("내려받았습니다 ✓","«"+name+"» — 다운로드에 있습니다"); },"pep-go"],["닫기",close]]); },
     busy:function(){ return !!(ov&&(ov.className==="make"||ov.className==="save")); },
     close:close, cancelled:function(){ return stop; }
   };
   return api;
 })();
 window.__psExpProg=PEP;
-function _pepCancelErr(){ var e=new Error("내보내기를 멈췄어요"); e.psCancel=1; return e; }
+function _pepCancelErr(){ var e=new Error("내보내기를 멈췄습니다"); e.psCancel=1; return e; }
 /* 저장 창이 없는 애플 터치 기기(아이폰·아이패드 사파리) — 끝난 뒤 공유 시트로 폴더를 고르게 한다 */
 function _animAskSaveIOS(){ try{ return typeof window.showSaveFilePicker!=="function"&&(navigator.maxTouchPoints||0)>1&&/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent||"")&&typeof navigator.share==="function"; }catch(_){ return false; } }
 /* 2.974 — 저장 창은 한 번에 하나(사용자 «맥에서 저장 창이 두 번»): «영상 만들기»를 빠르게 두 번 누르면 두 번째 요청을 크롬이 거절했고,
@@ -10233,12 +10233,12 @@ async function _animExportGuard(run){
   finally{ window.__animExport=0; try{trailReset();}catch(_){} window.__psExportFit=0; window.__psExport169=0;   /* 2.988 · 3.254 */ try{ if(restore)loadSnap(restore); }catch(_){} try{renderOnion();updateMotionPaths();}catch(_){} try{renderAnimFrames();}catch(_){} try{boardSaveLive();}catch(_){} }
 }
 async function exportVideo(opts){ opts=opts||{};
-  if(window.__animExport||PEP.busy()){ try{toast("영상을 만드는 중이에요 — 끝난 뒤 다시 눌러 주세요");}catch(_){} return; }   /* 2.974 — 두 번 돌지 않게 */
+  if(window.__animExport||PEP.busy()){ try{toast("영상을 만드는 중입니다 — 끝난 뒤 다시 눌러 주세요");}catch(_){} return; }   /* 2.974 — 두 번 돌지 않게 */
   const _3d=_t3On();   /* 3.039 — 3D 보기면 3D 영상(GIF 는 평면 그대로) */
   try{ PEP.open((_3d?"3D ":"")+(opts.capN?"미팅 영상 만드는 중":(opts.pageMode?"모든 페이지 영상 만드는 중":"영상 만드는 중"))); }catch(_){}   /* 2.972 — 진행 카드 */
   window.__animExport3d=_3d?1:0;
   try{ return await _animExportGuard(function(){ return _exportVideoRun(opts); }); }
-  catch(e){ if(e&&e.psCancel){ try{PEP.close();}catch(_){} toast("내보내기를 멈췄어요"); return; } try{PEP.close();}catch(_){} try{console.warn("[exportVideo]",e);}catch(_){} toast(e&&e.psUserMessage||"영상을 만들지 못했어요 — 다시 해 주세요"); }
+  catch(e){ if(e&&e.psCancel){ try{PEP.close();}catch(_){} toast("내보내기를 멈췄습니다"); return; } try{PEP.close();}catch(_){} try{console.warn("[exportVideo]",e);}catch(_){} toast(e&&e.psUserMessage||"영상을 만들지 못했습니다 — 다시 해 주세요"); }
   finally{ window.__animExport3d=0; if(opts.target&&!opts.__saved)await _animDropTarget(opts.target); try{ if(PEP.busy())PEP.close(); }catch(_){} }   /* 2.969 — 중간에 멈추면 고른 자리의 빈 파일을 치운다 · 2.972 — 끝나지 않은 진행 카드는 닫는다(앞에서 돌아간 경우) */
 }
 /* ══ 2.975 · 영상은 16:9 — 운동장을 가운데, 터치라인 밖 잔디 폭은 일정하게(사용자 "16:9 비율로 여백없이" · "터치라인이 있으면 잔디 여백을 일정하게 · 가운데 정렬") ══
@@ -10427,7 +10427,7 @@ async function _exportVideoRun(opts){
   opts=opts||{};
   const FR=opts.frames||anim.frames;   /* 2.976 — «모든 페이지»는 페이지들의 장면을 이어 붙인 사본을 넘긴다(지금 페이지의 anim.frames 는 그대로) */
   if(FR.length<2){toast("장면을 2개 이상 만들어주세요");return;}
-  if(typeof MediaRecorder==="undefined"&&typeof VideoEncoder!=="function"){toast("이 브라우저는 영상 저장을 지원하지 않아요");return;}
+  if(typeof MediaRecorder==="undefined"&&typeof VideoEncoder!=="function"){toast("이 브라우저는 영상 저장을 지원하지 않습니다");return;}
   stopAnim();const restore=captureSnap();
   if(window.PSMeetCover&&FR.some(f=>f.cover))await PSMeetCover.ready(FR.map(f=>f.cover));
   // 캔버스 크기는 영상 내내 고정이어야 하므로, 전 장면의 콘텐츠 경계 합집합으로 viewBox를 한 번 확정
@@ -10626,7 +10626,7 @@ async function _exportVideoRun(opts){
     blob=_mp4Mux(samples,avcC,canvas.width,canvas.height,fps); mime="video/mp4"; ext="mp4";
   }catch(e){ if(e&&e.psCancel)throw e; try{console.warn("[export] WebCodecs → MediaRecorder",e);}catch(_){} blob=null; } }
   if(!blob){
-    if(typeof MediaRecorder==="undefined"){ toast("이 브라우저는 영상 저장을 지원하지 않아요"); return; }
+    if(typeof MediaRecorder==="undefined"){ toast("이 브라우저는 영상 저장을 지원하지 않습니다"); return; }
     _recStart();
     try{
     let nextP=produce(0); await nextP; const t0=performance.now()+T;   /* 첫 장이 준비된 뒤에 시계를 건다(예전엔 첫 두 장이 몰렸다) */
@@ -10652,7 +10652,7 @@ async function _exportVideoRun(opts){
   if(_saved==="offer")return;   /* 2.972 — 아이폰·아이패드: 카드가 «파일에 저장»을 묻는 중 */
   const _K=ext==="mp4"?"MP4":"WebM";
   if(_saved){PEP.done(_K+" 저장됨 ✓","고른 폴더에 «"+_saved+"»");return;}
-  PEP.done(_K+" 저장됨 ✓",ext==="mp4"?"다운로드 폴더에 «"+_animExportName(ext,opts.fileBase)+"»":"크롬·카톡PC에서 재생돼요 — 맥 QuickTime 용 MP4 는 사파리에서 저장하세요");}
+  PEP.done(_K+" 저장됨 ✓",ext==="mp4"?"다운로드 폴더에 «"+_animExportName(ext,opts.fileBase)+"»":"크롬·카톡PC에서 재생됩니다 — 맥 QuickTime 용 MP4 는 사파리에서 저장하세요");}
 
 /* ===== 영상 내보내기 옵션 시트 — 화질(720p/1080p)·FPS(15/30) 선택 후 exportVideo 실행 (FM Stadio 참고) ===== */
 function exportVideoSheet(mode){
@@ -10663,7 +10663,7 @@ function exportVideoSheet(mode){
      모든 페이지 = 장면이 2개 이상인 페이지를 페이지 순서대로 한 영상에. 고른 쪽은 이 기기에 기억한다. */
   var PG=meeting?null:animPagesForExport(), curOK=anim.frames.length>=2, allN=(PG&&PG.all.length>1)?PG.on.length:0;
   var showScope=!meeting&&allN>0&&!(allN===1&&curOK);   /* 애니메이션이 지금 페이지에만 있으면 고를 것이 없다 */
-  if(meeting){ if(!(anim.slides&&anim.slides.length)){try{toast("슬라이드가 아직 없어요");}catch(_){}return;} }
+  if(meeting){ if(!(anim.slides&&anim.slides.length)){try{toast("슬라이드가 아직 없습니다");}catch(_){}return;} }
   else if(!curOK&&!allN){try{toast("장면을 2개 이상 만들어주세요");}catch(_){}return;}
   var old=document.getElementById("evSheet"); if(old)old.remove();
   var opt={height:1080,fps:30,reel:0,hold:3,scope:0,fit:0};
@@ -10716,20 +10716,20 @@ function exportVideoSheet(mode){
     var d=ov.querySelector("#evDesc"), pl=ov.querySelector("#evPages"), all=showScope&&opt.scope===1, n=pickedPages().length;
     if(d)d.textContent=(meeting?('슬라이드 '+anim.slides.length+'장을 차례로 — 장면이 있는 슬라이드는 움직이고, 제목은 아래 자막으로 들어갑니다. ')
       :(all?(window.__vaultBook?'고른 시퀀스를 순서대로 한 파일에 담습니다 — 아래 자막에 시퀀스와 단계 이름이 들어갑니다. ':'고른 페이지를 페이지 순서대로 한 파일에 담습니다 — 페이지가 바뀔 땐 바로 넘어가고, 장면 자막이 없으면 페이지 이름이 아래 자막으로 들어갑니다. '):''))
-      +((meeting&&window.PSMeetCover&&PSMeetCover.videoLabel(anim.slides))||((!meeting&&opt.fit)?(opt.reel?'MP4(릴스 9:16 · 훈련 구역을 가운데 크게)로 저장합니다. ':'MP4(훈련 구역에 맞춘 화면)로 저장합니다 — 선수·장비·그림이 있는 곳만 크게 담고, 화면비는 구역 모양에 가까운 것(16:9 · 4:3 · 1:1)을 고릅니다. '):((!meeting&&opt.reel)?'MP4(릴스 9:16 · 운동장 가운데)로 저장합니다. 운동장은 영상마다 같은 자리 · 같은 크기예요. ':'MP4(16:9 · 운동장 가운데)로 저장합니다. 운동장은 영상마다 같은 자리 · 같은 크기예요 — 운동장 둘레 밖에 둔 것까지 담으려면 «훈련 구역»을 고르세요. ')))
+      +((meeting&&window.PSMeetCover&&PSMeetCover.videoLabel(anim.slides))||((!meeting&&opt.fit)?(opt.reel?'MP4(릴스 9:16 · 훈련 구역을 가운데 크게)로 저장합니다. ':'MP4(훈련 구역에 맞춘 화면)로 저장합니다 — 선수·장비·그림이 있는 곳만 크게 담고, 화면비는 구역 모양에 가까운 것(16:9 · 4:3 · 1:1)을 고릅니다. '):((!meeting&&opt.reel)?'MP4(릴스 9:16 · 운동장 가운데)로 저장합니다. 운동장은 영상마다 같은 자리 · 같은 크기입니다. ':'MP4(16:9 · 운동장 가운데)로 저장합니다. 운동장은 영상마다 같은 자리 · 같은 크기입니다 — 운동장 둘레 밖에 둔 것까지 담으려면 «훈련 구역»을 고르세요. ')))
       +(_t3On()?'지금 보는 3D 경기장(카메라 · 분위기)으로 만듭니다 — 평면 영상은 보드 설정에서 3D 를 끄고 만드세요. ':'')   /* 3.039 */
       +'브라우저가 MP4 를 못 만들면 WebM 으로 저장됩니다.';
     if(pl){ pl.hidden=!all; var hn=pl.querySelector("#evPickN"), ha=pl.querySelector("#evPickAll"); if(hn)hn.textContent="내보낼 "+_pw+" "+n+" / "+PG.on.length; if(ha)ha.textContent=(n===PG.on.length)?"모두 빼기":"모두 고르기"; }
     var go=ov.querySelector("#evGo"); if(go&&!go.__busy){ var none=all&&!n; go.disabled=none; go.style.opacity=none?".5":""; go.textContent=none?(_pw+"를 골라 주세요"):(all?("영상 만들기 · "+_pw+" "+n+"개"):"영상 만들기"); }
   }
-  if(showScope&&!curOK){ var _b0=ov.querySelector('.ev-seg[data-key="scope"] .ev-b[data-v="0"]'); if(_b0){ _b0.disabled=true; _b0.style.opacity=".45"; _b0.style.cursor="not-allowed"; _b0.title="이 페이지는 장면이 하나예요 — 여러 페이지에서 골라 만들어요"; } }
+  if(showScope&&!curOK){ var _b0=ov.querySelector('.ev-seg[data-key="scope"] .ev-b[data-v="0"]'); if(_b0){ _b0.disabled=true; _b0.style.opacity=".45"; _b0.style.cursor="not-allowed"; _b0.title="이 페이지는 장면이 하나입니다 — 여러 페이지에서 골라 만듭니다"; } }
   if(showScope)buildPicker();
   ov.querySelectorAll(".ev-seg").forEach(function(sg){ sg.addEventListener("click",function(e){ var b=e.target.closest(".ev-b"); if(!b||b.disabled)return;
     opt[sg.getAttribute("data-key")]=+b.getAttribute("data-v");
     [].forEach.call(sg.querySelectorAll(".ev-b"),function(x){ x.classList.toggle("on",x===b); x.style.background=(x===b)?"var(--blue,#14213D)":"var(--panel2,#F1F2F4)"; x.style.color=(x===b)?"#fff":"var(--txt,#14161A)"; x.style.borderColor=(x===b)?"var(--blue,#14213D)":"var(--line,#E3E6EA)"; });
     var _sk=sg.getAttribute("data-key"); if(_sk==="scope"||_sk==="fit"||_sk==="reel")paintScope(); }); });
   paintScope();
-  if(_no4k){ var _b4=ov.querySelector('.ev-seg[data-key="height"] .ev-b[data-v="2160"]'); if(_b4){ _b4.disabled=true; _b4.style.opacity=".45"; _b4.style.cursor="not-allowed"; _b4.title="4K 는 맥 · PC 에서 만들어 주세요 — 아이폰 · 아이패드는 메모리가 모자라요"; } }
+  if(_no4k){ var _b4=ov.querySelector('.ev-seg[data-key="height"] .ev-b[data-v="2160"]'); if(_b4){ _b4.disabled=true; _b4.style.opacity=".45"; _b4.style.cursor="not-allowed"; _b4.title="4K 는 맥 · PC 에서 만들어 주세요 — 아이폰 · 아이패드는 메모리가 모자랍니다"; } }
   ov.querySelectorAll(".ev-b.on").forEach(function(x){ x.style.background="var(--blue,#14213D)"; x.style.color="#fff"; x.style.borderColor="var(--blue,#14213D)"; });
   function close(){ try{ov.remove();}catch(_){} }
   ov.querySelector("#evCancel").onclick=close;
@@ -10752,7 +10752,7 @@ function exportVideoSheet(mode){
    판(snap)은 사본으로 넘긴다(엔진이 장면 설정을 맞춰 쓰는 일이 슬라이드 원본에 남지 않게). */
 async function exportMeetingVideo(opts){
   opts=opts||{};
-  if(!(anim.slides&&anim.slides.length)){toast("슬라이드가 아직 없어요");return;}
+  if(!(anim.slides&&anim.slides.length)){toast("슬라이드가 아직 없습니다");return;}
   try{ if(window.__meetSyncCur)window.__meetSyncCur({thumb:true}); }catch(_){}
   const hold=Math.max(1,+opts.hold||3), seq=[], NS=anim.slides.length, cl=x=>x?JSON.parse(JSON.stringify(x)):x;
   anim.slides.forEach(function(sl,si){ if(!sl||!sl.snap)return;
@@ -10760,7 +10760,7 @@ async function exportMeetingVideo(opts){
     const sc=(Array.isArray(sl.frames)&&sl.frames.length>1)?sl.frames:[{snap:sl.snap}];
     sc.forEach(function(f,k){ const last=k===sc.length-1; seq.push({snap:cl(f.snap||sl.snap),curves:last?null:cl(f.curves),hl:cl(f.hl),blink:cl(f.blink),moveSpeed:last?1:f.moveSpeed,dur:last?.8:(f.dur||1),cap:cap,capNo:si,cover:cl(sl.cover),cut:!!sl.cover||(k===0&&!!(anim.slides[si-1]&&anim.slides[si-1].cover)),hold:last?hold:(animHold||.6)}); });
   });
-  if(!seq.length){toast("슬라이드가 아직 없어요");return;}
+  if(!seq.length){toast("슬라이드가 아직 없습니다");return;}
   if(seq.length===1){ seq[0].hold=hold/2; seq.push(Object.assign({},seq[0],{snap:cl(seq[0].snap)})); }
   if(window.PSMeetSlide)PSMeetSlide.edges(seq);   /* 3.256 — 슬라이드 사이는 같은 팀 · 번호만 잇는다 */
   const keep=anim.frames, keepA=animActive;
@@ -10790,7 +10790,7 @@ function animPagesSequence(on){ var seq=[];
         title:pg.title||"",titleColor:pg.titleColor||""})); }); });
   return seq; }
 async function exportPagesVideo(opts){ opts=opts||{};
-  var P=animPagesForExport(); if(!P||!P.on.length){ toast("애니메이션이 있는 페이지가 없어요"); return; }
+  var P=animPagesForExport(); if(!P||!P.on.length){ toast("애니메이션이 있는 페이지가 없습니다"); return; }
   var on=P.on; if(Array.isArray(opts.pick)){ var want={}; opts.pick.forEach(function(i){ want[i]=1; }); on=on.filter(function(p){ return !!want[p.i]; }); }   /* 고른 페이지만(페이지 순서는 그대로) */
   if(!on.length){ toast("내보낼 페이지를 골라 주세요"); return; }
   var seq=animPagesSequence(on); if(seq.length<2){ toast("장면을 2개 이상 만들어주세요"); return; }
@@ -10869,7 +10869,7 @@ function _gifBakeOverlay(ctx,W,H,cap,idx,N,title,titleColor){
 }
 async function exportGif(){
   if(!psVaultRequireLogin())return;
-  if(_animExportBusy()){ try{toast("만드는 중이에요 — 끝난 뒤 다시 눌러 주세요");}catch(_){} return; }   /* 2.974 */
+  if(_animExportBusy()){ try{toast("만드는 중입니다 — 끝난 뒤 다시 눌러 주세요");}catch(_){} return; }   /* 2.974 */
   if(anim.frames.length<2){toast("장면을 2개 이상 만들어주세요");return;}
   var t=await _animPickSaveTarget(_animExportName("gif"),"gif"); if(t===false)return;   /* 2.969 — 저장 위치 먼저(취소면 만들지 않는다) */
   return _animExportGuard(function(){ return _exportGifRun(t); });
@@ -10929,14 +10929,14 @@ async function _exportGifRun(target){
   const _N=anim.frames.length;
   try{
     const g=await _gifEncode((window.__vaultBook?bkCapFrames(anim.frames,window.__psPages&&window.__psPages.curName?window.__psPages.curName():""):anim.frames),{hold:animHold||.6,fps:25,title:anim.title,titleColor:anim.titleColor,isCancelled:PEP.cancelled,onProgress:function(fr,i){ PEP.set(fr,"장면 "+((i|0)+1)+" / "+_N); },ratio:"16:9"});   /* 2.682 — 12fps 는 끊겨 보였다(사용자) → 25fps(GIF 지연 4cs) */
-    if(g.tooLong){PEP.close();toast("애니메이션이 너무 길어요 — 장면 수·시간을 줄여주세요 (약 20초 이내)");loadSnap(restore);await _animDropTarget(target);return;}
+    if(g.tooLong){PEP.close();toast("애니메이션이 너무 깁니다 — 장면 수·시간을 줄여주세요 (약 20초 이내)");loadSnap(restore);await _animDropTarget(target);return;}
     loadSnap(restore);
     PEP.saving();
     const blob=new Blob([g.bytes],{type:"image/gif"});
     const _saved=await _animSaveBlob(blob,_animExportName("gif"),target||null);   /* 2.969 — 고른 폴더에 */
     if(_saved==="offer")return;
     PEP.done("GIF 저장됨 ✓",_saved?("고른 폴더에 «"+_saved+"»"):("다운로드 폴더에 «"+_animExportName("gif")+"» — 채팅방에 올리면 자동재생"));
-  }catch(e){try{loadSnap(restore);}catch(_){}await _animDropTarget(target);PEP.close();toast(e&&e.psCancel?"내보내기를 멈췄어요":"GIF 생성에 실패했어요");}
+  }catch(e){try{loadSnap(restore);}catch(_){}await _animDropTarget(target);PEP.close();toast(e&&e.psCancel?"내보내기를 멈췄습니다":"GIF 생성에 실패했습니다");}
 }
 
 let toastT;
@@ -11191,7 +11191,7 @@ async function seedTemplates(){
       d.savedAt=Date.now();normalizeDrill(d);return d;});
     if(!add.length)return 0;
     await libWrite(add.concat(lib));libTouch();return add.length;});   /* 2.934 — 보관함이 바뀌었다는 신호(cs_lib_rev): 일정·플레이북이 목록을 새로 읽는다 */
-  if(!n){toast("기본 템플릿이 이미 있어요");return;}
+  if(!n){toast("기본 템플릿이 이미 있습니다");return;}
   renderLib();renderLibDock();toast("기본 템플릿 "+n+"개 추가됨 ✓");
 }
 /* ===== 드릴 라이브러리(은행) ===== */
@@ -11305,7 +11305,7 @@ function psVaultHideLock(){
 function psVaultRequireLogin(){
   if(psVaultUnlocked())return true;
   /* 캔버스에서 보관함 동작(저장 등)을 누르면 전체 잠금 대신 안내만 — 그림은 계속 그릴 수 있게 */
-  if((window.__csView||'board')!=='session'){ try{toast('로그인하면 보관함에 저장할 수 있어요');}catch(_){}; return false; }
+  if((window.__csView||'board')!=='session'){ try{toast('로그인하면 보관함에 저장할 수 있습니다');}catch(_){}; return false; }
   psVaultShowLock();return false;
 }
 /* 숨은 보관함도 부팅 중 다시 그려진다. 자료 확인 전에는 읽지 않고 기다리며,
@@ -11458,7 +11458,7 @@ async function renderLib(){if(!psVaultRenderReady())return;const grid=$("libGrid
   const ta=$("libTagActive");if(ta){ta.style.display=libFilter.tag?"":"none";if(libFilter.tag)ta.textContent="#"+libFilter.tag+" ×";}
   updateLibSelBar();
   const cnt=$("libCount");if(cnt)cnt.textContent=lib.length+"개 저장됨"+(arr.length!==lib.length?(" · "+arr.length+"개 표시"):"");
-  if(!arr.length){grid.innerHTML='<div class="lib-empty">'+(lib.length?"조건에 맞는 드릴이 없어요.":"저장된 드릴이 없어요. 세션의 드릴 카드에서 버튼으로 저장하세요.")+'</div>';return;}
+  if(!arr.length){grid.innerHTML='<div class="lib-empty">'+(lib.length?"조건에 맞는 드릴이 없습니다.":"저장된 드릴이 없습니다. 세션의 드릴 카드에서 버튼으로 저장하세요.")+'</div>';return;}
   arr.forEach(d=>grid.appendChild(libCard(d)));}
 function openLib(){if(!psVaultRequireLogin())return;document.getElementById("drillLib").classList.add("on");renderLib();updateLibSessInfo();const sb=document.getElementById("libSeed");if(sb&&!sb.__w){sb.__w=1;sb.onclick=seedTemplates;}}
 function closeLib(){document.getElementById("drillLib").classList.remove("on");if(libSel)setLibSelMode(false);}
@@ -11488,7 +11488,7 @@ function renderDrillFiles(){
     var arr=lib.filter(function(d){return !q||((d.name||"").toLowerCase().indexOf(q)>=0)||((d.tags||[]).join(" ").toLowerCase().indexOf(q)>=0);});
     var cnt=document.getElementById("dfCount");if(cnt)cnt.textContent=lib.length+"개";
     box.innerHTML="";
-    if(!arr.length){box.innerHTML='<div class="df-empty">'+(lib.length?"검색 결과가 없어요":"드릴이 없어요 — ＋ 새 드릴로 시작하세요")+'</div>';return;}
+    if(!arr.length){box.innerHTML='<div class="df-empty">'+(lib.length?"검색 결과가 없습니다":"드릴이 없습니다 — ＋ 새 드릴로 시작하세요")+'</div>';return;}
     arr.forEach(function(d){box.appendChild(dfRow(d));});
   });
 }
@@ -11523,7 +11523,7 @@ async function renderLibDock(){
   if(cnt)cnt.textContent=lib.length?(arr.length===lib.length?lib.length+"개":arr.length+"/"+lib.length+"개"):"";
   strip.innerHTML="";
   if(!arr.length){const em=document.createElement("div");em.className="ld-empty";
-    em.textContent=lib.length?"조건에 맞는 드릴이 없어요":"드릴이 없어요 — 전체 라이브러리 ⤢ 에서 기본 템플릿을 추가하세요";
+    em.textContent=lib.length?"조건에 맞는 드릴이 없습니다":"드릴이 없습니다 — 전체 라이브러리 ⤢ 에서 기본 템플릿을 추가하세요";
     strip.appendChild(em);return;}
   arr.forEach(d=>{
     const c=document.createElement("div");c.className="ld-card";
@@ -11571,7 +11571,7 @@ async function renderLibTray(){
   const bt=$("libTrayBuild");
   if(bt){bt.disabled=!n;const b2=bt.querySelector(".b2");if(b2)b2.textContent="이 "+n+"개 드릴로";}
   wrap.innerHTML="";
-  if(!n){wrap.innerHTML='<span class="lt-hint">드릴을 체크하면 여기 쌓여요</span>';return;}
+  if(!n){wrap.innerHTML='<span class="lt-hint">드릴을 체크하면 여기 쌓입니다</span>';return;}
   libSel.forEach((id,i)=>{
     const d=byId[id];
     const card=document.createElement("div");card.className="lt-card";
@@ -11591,7 +11591,7 @@ async function exportDrillPack(){
   const lib=await libGet();
   const useSel=!!(libSel&&libSel.length);
   const arr=useSel?libSel.map(id=>lib.find(d=>d.libId===id)).filter(Boolean):lib.filter(d=>!isTpl(d));   // 선택 시 트레이 순서 유지
-  if(!arr.length){toast(useSel?"선택된 드릴이 없어요":"내보낼 내 드릴이 없어요 (기본 템플릿 제외)");return;}
+  if(!arr.length){toast(useSel?"선택된 드릴이 없습니다":"내보낼 내 드릴이 없습니다 (기본 템플릿 제외)");return;}
   const now=new Date();
   const ymd=now.getFullYear()+String(now.getMonth()+1).padStart(2,"0")+String(now.getDate()).padStart(2,"0");
   const pack={type:"process-studio-drillpack",version:1,date:now.toISOString(),drills:arr.map(d=>dc(d))};
@@ -11613,8 +11613,8 @@ function __sanitizeSnap(sn){
 async function importDrillPack(file){
   if(!psVaultRequireLogin())return;
   let pack;
-  try{pack=JSON.parse(await file.text());}catch(_){toast("파일을 읽을 수 없어요");return;}
-  if(!pack||pack.type!=="process-studio-drillpack"||!Array.isArray(pack.drills)){toast("드릴 팩 파일이 아니에요");return;}
+  try{pack=JSON.parse(await file.text());}catch(_){toast("파일을 읽을 수 없습니다");return;}
+  if(!pack||pack.type!=="process-studio-drillpack"||!Array.isArray(pack.drills)){toast("드릴 팩 파일이 아닙니다");return;}
   /* 2.994 — 읽고-쓰기를 libTurn 한 차례로(중복 판정도 그 차례에 읽은 목록으로) */
   const r=await libTurn(async()=>{
     const lib=await libGet();
@@ -11730,7 +11730,7 @@ async function letterPackSave(pack){
   card.trainings.forEach(function(t){ try{ normalizeDrill(t); }catch(_){} });   /* 주제 분류(focus)가 이 판이 아는 값이게 — 수비 세션이 «공격»으로 남지 않는다 */
   await libTurn(async function(){ var lib=await libGet(); await libWrite([card].concat(lib)); libTouch(); });
   letterPackShow(card.libId);
-  toast("훈련 "+card.trainings.length+"개를 보관함에 담았어요 ✓");
+  toast("훈련 "+card.trainings.length+"개를 보관함에 담았습니다 ✓");
   try{ parent.postMessage({source:"board",type:"letterPackSaved",libId:card.libId,issue:card.letter.issue},location.origin); }catch(_){}
   return card.libId;
 }
@@ -11748,7 +11748,7 @@ function letterPackSheet(pack,info,lib){
     +'<div id="lpTitle" style="margin-top:6px;font-size:18px;font-weight:800;line-height:1.35;word-break:keep-all">'+esc(info.session)+'</div>'
     +'<div style="margin-top:4px;font-size:12px;color:#646A73">훈련 '+info.trainings.length+'개'+(info.minutes?(" · "+info.minutes+"분"):"")+'</div>'
     +'<ol id="lpList" style="list-style:none;margin:12px 0 0;padding:0;border-bottom:1px solid var(--line,#E3E6EA)">'+rows+'</ol>'
-    +'<p id="lpNote" style="margin:12px 0 0;font-size:12px;line-height:1.55;color:#646A73;word-break:keep-all">'+(had?('이 세션은 보관함에 <b style="color:inherit">‘'+esc(had.name||"")+'’</b> 카드로 담겨 있어요.'):('훈련 '+info.trainings.length+'개가 카드 한 장으로 보관함에 들어갑니다. 담은 뒤에는 내 훈련처럼 고쳐 쓰고, 일정에서 가져다 쓸 수 있어요.'))+'</p>'
+    +'<p id="lpNote" style="margin:12px 0 0;font-size:12px;line-height:1.55;color:#646A73;word-break:keep-all">'+(had?('이 세션은 보관함에 <b style="color:inherit">‘'+esc(had.name||"")+'’</b> 카드로 담겨 있습니다.'):('훈련 '+info.trainings.length+'개가 카드 한 장으로 보관함에 들어갑니다. 담은 뒤에는 내 훈련처럼 고쳐 쓰고, 일정에서 가져다 쓸 수 있습니다.'))+'</p>'
     +'<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:14px"><button id="lpCancel" type="button" style="'+bt+'border:1px solid var(--line,#d2d6dd);background:var(--panel2,#F1F2F4);color:inherit">취소</button>'
     +(had?('<button id="lpAgain" type="button" style="'+bt+'border:1px solid var(--ps-navy,#14213D);background:transparent;color:var(--ps-navy,#14213D)">한 장 더 담기</button><button id="lpShow" type="button" style="'+bt+'border:0;background:var(--ps-navy,#14213D);color:#fff;font-weight:800">보관함에서 보기</button>')
          :('<button id="lpOk" type="button" style="'+bt+'border:0;background:var(--ps-navy,#14213D);color:#fff;font-weight:800">보관함에 담기</button>'))+'</div>';
@@ -11756,7 +11756,7 @@ function letterPackSheet(pack,info,lib){
   var busy=false;
   var save=function(e){ if(e)e.stopPropagation(); if(busy)return; busy=true;
     card.querySelectorAll("button").forEach(function(b){ b.disabled=true; b.style.opacity=".6"; });
-    letterPackSave(pack).then(function(){ letterPackDone(); },function(er){ letterPackDone(); try{ toast((er&&er.psVaultLocked)?"보관함에 담으려면 먼저 로그인해 주세요":"보관함에 담지 못했어요 — 연결을 확인하고 레터에서 다시 눌러 주세요"); }catch(_){} }); };
+    letterPackSave(pack).then(function(){ letterPackDone(); },function(er){ letterPackDone(); try{ toast((er&&er.psVaultLocked)?"보관함에 담으려면 먼저 로그인해 주세요":"보관함에 담지 못했습니다 — 연결을 확인하고 레터에서 다시 눌러 주세요"); }catch(_){} }); };
   var q=function(id){ return card.querySelector("#"+id); };
   q("lpCancel").onclick=function(e){ e.stopPropagation(); letterPackDone(); };
   if(q("lpOk"))q("lpOk").onclick=save;
@@ -11782,11 +11782,11 @@ window.__letterPackOpen=function(req){
     .then(function(txt){ if(txt.length>LETTER_PACK_MAX)throw new Error("big");
       var pack=JSON.parse(txt),info=letterPackRead(pack); if(!info)throw new Error("shape");
       return libGet().then(function(lib){ letterPackSheet(pack,info,lib); }); })
-    .catch(function(e){ letterPackDone(); try{ toast((e&&e.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요":"훈련 세션을 받지 못했어요 — 연결을 확인하고 레터에서 다시 눌러 주세요"); }catch(_){} })
+    .catch(function(e){ letterPackDone(); try{ toast((e&&e.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요":"훈련 세션을 받지 못했습니다 — 연결을 확인하고 레터에서 다시 눌러 주세요"); }catch(_){} })
     .then(function(){ try{ clearTimeout(tm); }catch(_){} });
 };
 async function libSelAddToSession(){
-  if(!libSel||!libSel.length){toast("선택된 드릴이 없어요");return;}
+  if(!libSel||!libSel.length){toast("선택된 드릴이 없습니다");return;}
   const ids=libSel.slice();   // 트레이(클릭) 순서 유지
   for(const id of ids)await addLibToSession(id);   // session.drills 끝에 순서대로 push
   toast(ids.length+"개 드릴로 세션 구성 ✓");
@@ -11829,7 +11829,7 @@ function sessCard(name,s){const c=document.createElement("div");c.className="lib
   const ld=document.createElement("button");ld.className="btn primary";ld.textContent="불러오기";
   ld.onclick=async()=>{await loadSession(name);await refreshSessions(name);closeSessLib();toast('"'+(s.title||name)+'" 불러옴');};
   const cp=document.createElement("button");cp.className="btn";cp.textContent="복제";
-  cp.onclick=async()=>{await loadSession(name);session.linkId="ln"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);session.title=(s.title||name)+" 복사";if($("sTitle"))$("sTitle").value=session.title;closeSessLib();toast("복제됨 — 저장 시 새 이름으로");};
+  cp.onclick=async()=>{await loadSession(name);session.linkId="ln"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);session.title=(s.title||name)+" 복사";if($("sTitle"))$("sTitle").value=session.title;closeSessLib();toast("복제됨");};
   const del=document.createElement("button");del.className="btn ghost danger";del.textContent="삭제";
   del.onclick=()=>{psConfirm('"'+(s.title||name)+'" 세션을 삭제할까요?',async()=>{const all=(await boardStore.get(SESS_KEY))||{};delete all[name];await boardStore.set(SESS_KEY,all);renderSessLib();refreshSessions();});};
   act.append(ld,cp,del);bd.appendChild(act);c.appendChild(bd);return c;}
@@ -11838,7 +11838,7 @@ async function renderSessLib(){const grid=$("sessLibGrid");if(!grid)return;const
   if(sessLibQ)names=names.filter(n=>((all[n].title||n).toLowerCase().includes(sessLibQ.toLowerCase())));
   const cnt=$("sessLibCount");if(cnt)cnt.textContent=totalN+"개 세션"+(names.length!==totalN?(" · "+names.length+"개 표시"):"");
   grid.innerHTML="";
-  if(!names.length){grid.innerHTML='<div class="lib-empty">'+(totalN?"조건에 맞는 세션이 없어요.":'저장된 훈련 세션이 없어요. 세션 화면 상단 "저장"으로 저장하세요.')+'</div>';return;}
+  if(!names.length){grid.innerHTML='<div class="lib-empty">'+(totalN?"조건에 맞는 세션이 없습니다.":'저장된 훈련 세션이 없습니다. 세션 화면 상단 "저장"으로 저장하세요.')+'</div>';return;}
   names.sort((a,b2)=>String(all[b2].date||"").localeCompare(String(all[a].date||"")));   // 최근 훈련부터
   names.forEach(n=>grid.appendChild(sessCard(n,all[n])));}
 function openSessLib(){document.getElementById("sessLib").classList.add("on");renderSessLib();}
@@ -11875,7 +11875,7 @@ function squadSave(){var raw=JSON.stringify(squad),ro=false;try{ro=document.body
 function renderSquad(){const box=$("squadList");if(!box)return;box.innerHTML="";
   if($("squadName"))$("squadName").value=squad.name||"";
   if($("squadCount"))$("squadCount").textContent=(squad.players.length)+"명";
-  if(!squad.players.length){box.innerHTML='<div class="sq-empty">선수가 없어요. ＋ 선수 추가로 시작하세요.</div>';return;}
+  if(!squad.players.length){box.innerHTML='<div class="sq-empty">선수가 없습니다. ＋ 선수 추가로 시작하세요.</div>';return;}
   squad.players.forEach((pl,i)=>{
     const row=document.createElement("div");row.className="sq-row";
     const num=document.createElement("input");num.className="inp c-num";num.value=pl.num??"";num.placeholder="#";num.oninput=()=>{pl.num=num.value;squadSave();};
@@ -11918,7 +11918,7 @@ function _sqAssign(slots,pool,startersOnly){ pool=pool.slice(); var picked=slots
 function _sqDress(t,pl){ if(pl){ t.name=((pl.name||"").trim()||null); if(pl.num!=null&&String(pl.num)!=="")t.num=pl.num; if(!t.pos&&pl.pos)t.pos=pl.pos; if(pl.id)t.sqId=pl.id; } else { t.name=null; delete t.sqId; } }
 function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice();
   /* 1.699 — 조(A팀·B팀…)만 올리기. grp 은 선수단 거울(cs_squad_v1)에 함께 실린다(scout 미러). */
-  if(opts.group){sq=sq.filter(p=>p&&String(p.grp||"").trim()===opts.group); if(!sq.length){toast(opts.group+" 선수가 없어요 — 팀 탭에서 조를 지정하세요");return;}}
+  if(opts.group){sq=sq.filter(p=>p&&String(p.grp||"").trim()===opts.group); if(!sq.length){toast(opts.group+" 선수가 없습니다 — 팀 탭에서 조를 지정하세요");return;}}
   if(opts.startersOnly)sq=sq.filter(p=>p&&p.bench!==true);
   /* 오늘 못 뛰는 선수는 기본 배치에서 제외한다. 1.773의 '전체 선수'만 includeUnavailable로 출결 상태를 무시한다. */
   var _out=0;
@@ -11927,7 +11927,7 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
     _out=sq.filter(p=>p&&!_available(p)).length;
     if(_out)sq=sq.filter(p=>p&&_available(p));
   }
-  if(!sq.length){toast(opts.startersOnly?"선발 선수가 없어요 — 팀 탭에서 선발을 지정하세요":(_out?"훈련 가능한 선수가 없어요 — 팀 탭에서 상태를 확인하세요":"선수단에 선수가 없어요 — 팀 탭에서 선수를 추가하세요"));return;}
+  if(!sq.length){toast(opts.startersOnly?"선발 선수가 없습니다 — 팀 탭에서 선발을 지정하세요":(_out?"훈련 가능한 선수가 없습니다 — 팀 탭에서 상태를 확인하세요":"선수단에 선수가 없습니다 — 팀 탭에서 선수를 추가하세요"));return;}
   if(_out){try{toast("훈련 가능 "+sq.length+"명 배치 · 부상·휴식 "+_out+"명 제외");}catch(_){}}
   if(opts.startersOnly||opts.byPosition!==false){   /* 2.683 — 조·전체 불러오기도 포지션대로 자동 배치(사용자). 11명은 포메이션 자리, 나머지는 오른쪽 대기줄 */
     var formEl=document.getElementById("formHome"),formKey=(formEl&&formEl.value)||squad.form||"433";
@@ -11944,7 +11944,7 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
        포메이션에 없는 포지션(예: 433 의 LM)은 그 포지션의 기본 자리에 선다. 포지션이 없는 선수만 오른쪽 대기줄. 선발(startersOnly)만 예전처럼 채운다. */
     var _as=_sqAssign(slots,pool,!!opts.startersOnly); picked=_as.picked; var extra=_as.extra; pool=[];   /* 2.975 — 판 위 자리와 다른 페이지가 같은 규칙을 쓰게 함수로 */
     sq=picked.filter(Boolean).concat(opts.startersOnly?[]:pool.concat(extra));opts.formationSlots=slots;opts.formationPicked=picked;opts.formationExtra=opts.startersOnly?[]:extra;
-    if(!sq.length){toast("이 포메이션에 배치할 실제 선수가 없어요 — 팀 메뉴에서 이름과 포지션을 등록하세요");return;}
+    if(!sq.length){toast("이 포메이션에 배치할 실제 선수가 없습니다 — 팀 메뉴에서 이름과 포지션을 등록하세요");return;}
   }
   pushUndo();
   var _uid0=uid;
@@ -12105,9 +12105,9 @@ async function refreshSessions(sel){const all=await boardStore.get(SESS_KEY)||{}
 async function saveSession(){const title=((session.title||"").trim())||("세션 "+(session.date||new Date().toLocaleDateString()));
   session.title=title;const all=await boardStore.get(SESS_KEY)||{};
   all[title]={title,date:session.date,time:session.time,md:session.md,players:session.players,pGk:session.pGk,pField:session.pField,pRehab:session.pRehab,pOut:session.pOut,drills:session.drills};
-  await boardStore.set(SESS_KEY,all);await refreshSessions(title);toast(`"${title}" 기록에 저장됨 — ⋯ 세션 ▾ 불러오기에서 확인`);try{window.__autoSyncToWeek&&window.__autoSyncToWeek();}catch(_){}}
+  await boardStore.set(SESS_KEY,all);await refreshSessions(title);toast(`"${title}" 기록에 저장됨`);try{window.__autoSyncToWeek&&window.__autoSyncToWeek();}catch(_){}}
 async function saveSessionPrompt(){
-  if(!session.drills.length){toast("드릴이 없어요 — 먼저 구성하세요");return;}
+  if(!session.drills.length){toast("드릴이 없습니다 — 먼저 구성하세요");return;}
   const def=session.title||("세션 "+new Date().toLocaleDateString());
   psPrompt("훈련 세션 이름으로 저장",def,async function(t){
   session.title=(t.trim()||def);if($("sTitle"))$("sTitle").value=session.title;
@@ -12293,10 +12293,10 @@ async function _ppbPostPdfToNote(blob,name,meta,requestId){
 }
 async function _ppbSendToNote(){
   var f=$("ppbFrame"),doc=f&&f.contentDocument,btn=$("ppbNote");
-  if(!doc||!doc.body){toast("미리보기가 아직 준비되지 않았어요");return;}
+  if(!doc||!doc.body){toast("미리보기가 아직 준비되지 않았습니다");return;}
   if(btn){btn.disabled=true;btn.textContent="노트 만드는 중…";}
   try{var blob=await _ppbPdfBlobFromDocument(doc,f.classList.contains("land"));await _ppbPostPdfToNote(blob,_ppbFname,{kind:"training-pdf",sourceName:_ppbFname});toast("개인 노트로 보내는 중…");}
-  catch(e){toast("개인 노트용 PDF를 만들지 못했어요");}
+  catch(e){toast("개인 노트용 PDF를 만들지 못했습니다");}
   finally{if(btn){btn.disabled=false;btn.textContent="개인 노트로";}}
 }
 /* 2.898 — «다른 이름으로 저장» 창(사용자 «원하는 곳에 저장»). 크롬·엣지 데스크톱만 된다.
@@ -12309,7 +12309,7 @@ async function _ppbPickSaveTarget(name){
 }
 async function _ppbSavePdf(){
   var f=$("ppbFrame"),doc=f&&f.contentDocument;
-  if(!doc||!doc.body){toast("미리보기가 아직 준비되지 않았어요");return;}
+  if(!doc||!doc.body){toast("미리보기가 아직 준비되지 않았습니다");return;}
   var land=f.classList.contains("land"),fname=_animExportName("pdf",_pdfSafeName(_ppbFname));
   var target=await _ppbPickSaveTarget(fname);
   if(target===false)return;   /* 취소 — 아무것도 저장하지 않는다 */
@@ -12326,7 +12326,7 @@ async function _ppbSavePdf(){
     setTimeout(function(){URL.revokeObjectURL(a.href);},5000);
     toast("PDF 저장됨 ✓ — "+fname);
   }catch(e){
-    toast("이 브라우저에선 바로 저장이 안 돼요 — [인쇄]에서 'PDF로 저장'을 사용하세요");
+    toast("이 브라우저에선 바로 저장이 안 됩니다 — [인쇄]에서 'PDF로 저장'을 사용하세요");
   }finally{
     if(btn){btn.disabled=false;btn.textContent="PDF 내려받기";}
   }
@@ -12587,7 +12587,7 @@ async function vaultPdfPayload(d,fname){
   var blob=await _ppbPdfBlobFromHtml(spec.html);return {name:nm,buffer:await blob.arrayBuffer(),libId:d.libId||"",savedAt:d.savedAt||0};
 }
 async function sendVaultItemToNote(d){
-  if(!psVaultRequireLogin())return;try{toast("개인 노트용 PDF 만드는 중…");var p=await vaultPdfPayload(d);parent.postMessage({source:"board",type:"notePdfReady",requestId:"vd"+Date.now().toString(36),name:p.name,buffer:p.buffer,meta:{kind:"vault",libId:p.libId,sourceSavedAt:p.savedAt,sourceName:p.name}},_noteBridgeOrigin(),[p.buffer]);toast("개인 노트로 보내는 중…");}catch(e){toast("개인 노트로 보내지 못했어요");}
+  if(!psVaultRequireLogin())return;try{toast("개인 노트용 PDF 만드는 중…");var p=await vaultPdfPayload(d);parent.postMessage({source:"board",type:"notePdfReady",requestId:"vd"+Date.now().toString(36),name:p.name,buffer:p.buffer,meta:{kind:"vault",libId:p.libId,sourceSavedAt:p.savedAt,sourceName:p.name}},_noteBridgeOrigin(),[p.buffer]);toast("개인 노트로 보내는 중…");}catch(e){toast("개인 노트로 보내지 못했습니다");}
 }
 /* 개인 노트는 보관함 키를 직접 읽지 않는다. 이 좁은 API만 libGet()의 잠금·복구 규칙을 통과한다. */
 window.addEventListener("message",function(e){
@@ -12601,12 +12601,12 @@ window.addEventListener("message",function(e){
         return {libId:d.libId||"",name:d.name||"훈련",type:d.type||"train",folder:d.folder||"",savedAt:d.savedAt||d.editedAt||0,count:trs.length,minutes:mins,focusLabel:fo&&fo.label||"",thumb:d.thumb||((trs[0]&&trs[0].thumb)||"")};
       });
       parent.postMessage({source:"board",type:"noteVaultListResult",requestId:m.requestId||"",items:items},_noteBridgeOrigin());
-    }).catch(function(err){parent.postMessage({source:"board",type:"noteVaultListResult",requestId:m.requestId||"",items:[],error:(err&&err.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요.":"보관함 훈련을 불러오지 못했어요."},_noteBridgeOrigin());});return;
+    }).catch(function(err){parent.postMessage({source:"board",type:"noteVaultListResult",requestId:m.requestId||"",items:[],error:(err&&err.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요.":"보관함 훈련을 불러오지 못했습니다."},_noteBridgeOrigin());});return;
   }
   if(m.type==="noteVaultImportRequest"){
     libGet().then(function(lib){var d=(lib||[]).find(function(x){return x&&x.libId===m.libId;});if(!d)throw new Error("missing");return vaultPdfPayload(d);}).then(function(p){
       parent.postMessage({source:"board",type:"notePdfReady",requestId:m.requestId||"",name:p.name,buffer:p.buffer,meta:{kind:"vault",libId:p.libId,sourceSavedAt:p.savedAt,sourceName:p.name}},_noteBridgeOrigin(),[p.buffer]);
-    }).catch(function(err){parent.postMessage({source:"board",type:"noteVaultError",requestId:m.requestId||"",error:(err&&err.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요.":"훈련 PDF를 만들지 못했어요."},_noteBridgeOrigin());});
+    }).catch(function(err){parent.postMessage({source:"board",type:"noteVaultError",requestId:m.requestId||"",error:(err&&err.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요.":"훈련 PDF를 만들지 못했습니다."},_noteBridgeOrigin());});
   }
 });
 /* 같은 출처 셸의 진단·향후 확장용 좁은 API. 보관함 읽기는 여전히 libGet 잠금을 통과한다. */
@@ -13023,7 +13023,7 @@ async function openBoardImport(){
   hd.innerHTML='<div style="min-width:0;flex:1"><b style="font-size:17px">보드 가져오기</b><div style="font-size:12px;color:var(--txt-dim,#718096);margin-top:4px">'+(_capImp?'보관함의 작전판만 보입니다 · 지금 첨부하는 판에 올려요 — 보관함 자료는 그대로예요 · ⌘Z 로 되돌리기':'보관함의 작전판만 보입니다 · 지금 페이지에 올리고, «보드 저장»하면 이 자료도 같은 내용으로 저장돼요(연결 표시의 ×로 끊기) · ⌘Z 로 되돌리기')+'</div></div>';
   var close=document.createElement("button"); close.type="button"; close.className="btn"; close.textContent="닫기"; close.onclick=function(){ov.remove();}; hd.appendChild(close); sh.appendChild(hd);
   var list=document.createElement("div"); list.style.cssText="display:grid;gap:8px";
-  if(!items.length){ var empty=document.createElement("div"); empty.style.cssText="padding:28px 12px;text-align:center;color:var(--txt-dim,#718096)"; empty.textContent="보관함에 저장한 작전판이 없어요 — 보드에서 «보관함 저장»으로 만들 수 있어요."; list.appendChild(empty); }
+  if(!items.length){ var empty=document.createElement("div"); empty.style.cssText="padding:28px 12px;text-align:center;color:var(--txt-dim,#718096)"; empty.textContent="보관함에 저장한 작전판이 없습니다 — 보드에서 «보관함 저장»으로 만들 수 있습니다."; list.appendChild(empty); }
   items.forEach(function(d){
     var b=document.createElement("button"); b.type="button"; b.className="btn"; b.style.cssText="width:100%;height:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;text-align:left";
     var left=document.createElement("span"); left.style.cssText="min-width:0;display:flex;align-items:center;gap:10px";
@@ -13053,7 +13053,7 @@ async function openBoardImport(){
       try{ if(window.__psPages&&window.__psPages.linkTag)window.__psPages.linkTag(_canLink?{libId:d.libId,name:d.name||"작전판",srcPage:0,multi:np>1}:null); }catch(_){}
       try{ if(window.__psPages&&window.__psPages.refresh)window.__psPages.refresh(); }catch(_){}
       ov.remove();
-      try{ toast("«"+(d.name||"작전판")+"» 가져옴"+(np>1?(" · 첫 페이지(전체 "+np+"페이지)"):"")+(_capNow?" · 보관함 자료는 그대로예요":(_canLink?" · «저장»하면 보관함에도 저장돼요":" · 남이 만든 자료라 보관함엔 저장되지 않아요"))+" · ⌘Z 되돌리기"); }catch(_){}
+      try{ toast("«"+(d.name||"작전판")+"» 가져옴"+(np>1?(" · 첫 페이지(전체 "+np+"페이지)"):"")+(_capNow?" · 보관함 자료는 그대로입니다":(_canLink?" · «저장»하면 보관함에도 저장됩니다":" · 남이 만든 자료라 보관함엔 저장되지 않습니다"))+" · ⌘Z 되돌리기"); }catch(_){}
     };
     list.appendChild(b);
   });
@@ -13082,7 +13082,7 @@ async function openTrainingWizardImport(){
       var _added=src.slice(0,room).map(_drillToTraining);_trainAdoptCardFrames(_added,d.frames,0);   /* 2.613 — 옛 카드의 카드 단위 애니메이션도 따라온다 */
       _added.forEach(function(t){editorTrainings.push(t);});
       editorTrainIdx=editorTrainings.length-1;_activateTraining(editorTrainIdx);trainingWizardRenderCompose();ov.remove();
-      toast("보관함 훈련 "+Math.min(src.length,room)+"개를 복사했어요");
+      toast("보관함 훈련 "+Math.min(src.length,room)+"개를 복사했습니다");
     };
     list.appendChild(b);
   });
@@ -13196,7 +13196,7 @@ function paintRpe5(){
 function buildEditorFields(){
   var box=$("epFields");if(!box)return;
   box.innerHTML=""; box.style.display="";   /* 2.690 — 커뮤니티 보기 전용(2.575)이 남긴 display:none 을 되돌린다(사용자 "훈련 설명·코칭 포인트 칸이 사라졌다") */
-  var head=document.createElement("div");head.className="ep-memo-head";head.innerHTML='<div><div class="ep-memo-title">훈련 메모</div><div class="ep-memo-sub">훈련 방법과 코칭 포인트를 적어두세요 — 항목은 아래에서 추가할 수 있어요.</div></div>';
+  var head=document.createElement("div");head.className="ep-memo-head";head.innerHTML='<div><div class="ep-memo-title">훈련 메모</div><div class="ep-memo-sub">훈련 방법과 코칭 포인트를 적어두세요</div></div>';
   box.appendChild(head);
   /* 1.768 — 탭은 제거하되 저장된 모든 메모 항목은 한 흐름에서 계속 편집할 수 있게 한다. */
   var pane=document.createElement("div");pane.className="ep-memo-pane on";box.appendChild(pane);
@@ -13269,7 +13269,7 @@ function syncEpRosterUI(opts){
 }
 /* 1.931 — 게임모델 국면 다중 선택 칩(사용자: 국면 평가에 있는 것 다 나오고 여러 개 고르게) */
 /* 2.279 — 게임모델을 아직 안 만든 팀·개인도 국면을 고를 수 있어야 한다(사용자 "훈련 설계 들어가서 게임모델 국면 누구나 다 뜨게").
-   지금까지는 cs_gamemodel_v1 이 비면 '국면이 없어요' 한 줄만 뜨고 **한 개도 못 골랐다**.
+   지금까지는 cs_gamemodel_v1 이 비면 '국면이 없습니다' 한 줄만 뜨고 **한 개도 못 골랐다**.
    gamemodel.html 의 seed() 기본 골격과 같은 네 국면을 편집기도 쓴다 — 이름·순서가 같아야 나중에 팀이 게임모델을 만들어도 말이 안 어긋난다.
    id 는 **고정**(std_*)이어야 한다: 렌더할 때마다 새로 만들면 gmPhases 에 저장한 선택이 다음에 열 때 풀린다.
    세트피스·경합은 기본에서 뺀다(1.992 사용자 결정 그대로 — 게임모델 화면에서 ＋ 로 추가하는 것). */
@@ -13394,7 +13394,7 @@ function gridAdd(opts){ opts=opts||{}; if(!isBlankSpec())return null;
   if(!spot){   /* 자리가 없으면 판을 한 단계 넓힌다(내용이 함께 줄어 옆자리가 생긴다) */
     var cur=pitchSpec().m,nxt=(cur<30)?30:((cur<45)?45:0);
     if(nxt){ try{window.__setGridArea(nxt,{quiet:true});}catch(_){} undone=true; mp=mppNow(); spot=_gridSpot(wm*mp,hm*mp);
-      if(spot){ try{toast("그리드가 다 보이게 판을 "+nxt+"m 로 넓혔어요");}catch(_){} } }
+      if(spot){ try{toast("그리드가 다 보이게 판을 "+nxt+"m 로 넓혔습니다");}catch(_){} } }
     if(!spot){ var lb=_gridBox(_gridList().slice(-1)[0]); spot={x:lb.x+2*mp,y:lb.y+2*mp}; } }
   var w=wm*mp,h=hm*mp,d={type:"rectline",grid:1,color:_gridInk(),lw:1,pts:[{x:_gridF(spot.x),y:_gridF(spot.y)},{x:_gridF(spot.x+w),y:_gridF(spot.y+h)}]};
   if(shape!=="rect")d.shape=shape;
@@ -13629,7 +13629,7 @@ function epSquadInfo(){
   try{ if(!sq||!(sq.players||[]).some(function(p){return p&&String(p.name||"").trim();})){
     var t=JSON.parse(localStorage.getItem("scout_tool_v1")||"null");
     if(t&&Array.isArray(t.players)){ var posNm={}; (t.positions||[]).forEach(function(po){ if(po&&po.id)posNm[po.id]=po.name||""; });
-      var pl=t.players.filter(function(p){ return p&&p.type!=="target"&&String(p.name||"").trim(); }).map(function(p){
+      var pl=t.players.filter(function(p){ return p&&p.type!=="target"&&!p.grad&&String(p.name||"").trim(); }).map(function(p){
         var st=String(p.status||"ok"); return {id:p.id,name:p.name,num:p.num||"",pos:posNm[p.posId]||p.pos||"",grp:p.grp||p.group||"",status:st}; });
       if(pl.length)sq={players:pl,_from:"scout_tool_v1"}; } } }catch(_){}
   if(!sq||!Array.isArray(sq.players)) sq=(typeof squad!=="undefined"&&squad)||{players:[]};
@@ -13674,7 +13674,7 @@ function epAutoRoster(){
 function epLoadSquadGroup(grp){
   var info=epSquadInfo();
   var pool=info.players.filter(function(p){ return !grp || String(p.grp||"").trim()===grp; });
-  if(!pool.length){ try{toast((grp||"선수단")+" 선수가 없어요");}catch(_){} return; }
+  if(!pool.length){ try{toast((grp||"선수단")+" 선수가 없습니다");}catch(_){} return; }
   /* 총인원 채우기: GK=정상+GK, 필드=정상 필드, 재활=rehab, 부상·불참=그 외 비정상 */
   function isGK(p){return /GK|GOALKEEPER|골키퍼|키퍼/.test(String(p.pos||"").toUpperCase());}
   var gk=0,fd=0,rh=0,ot=0;
@@ -13711,7 +13711,7 @@ async function openLibDrawEditor(libId, readOnly, opts){
     editorTrainings=_work.trainings;editorTrainIdx=Math.min(+_work.trainIdx||0,editorTrainings.length-1);
     _trainAdoptCardFrames(editorTrainings,_work.frames,editorTrainIdx);   /* 2.613 — 2.612 이전 임시본(frames 가 최상위) 호환 */
     editorFileName=_work.fileName||editorFileName;_activateTraining(editorTrainIdx);
-    setTimeout(function(){try{toast("저장하지 못한 수정 내용을 이어서 열었어요");}catch(_){}},180);
+    setTimeout(function(){try{toast("저장하지 못한 수정 내용을 이어서 열었습니다");}catch(_){}},180);
     editorSaveStatus("임시본 복구됨",true);
   }else{loadEditorTrainings(d);_activateTraining(0);editorSaveStatus(editorReadOnly?"":"변경하면 자동 임시저장",false);}
   /* 2.946 — 일정의 훈련 줄(워밍업·패스…)에서 열면 **그 훈련**으로 연다(사용자 제보 «워밍업을 누르면 워밍업 애니메이션»).
@@ -13862,7 +13862,7 @@ window.__commView=function(post, editMode){
       if(panel){ var ob=document.getElementById("epRoBanner"); if(ob)ob.remove();
         var eb=document.createElement("div"); eb.id="epRoBanner";
         eb.style.cssText="margin:0 0 10px;padding:9px 12px;border-radius:10px;background:rgba(47,165,107,.12);border:1px solid rgba(47,165,107,.35);font-size:12px;font-weight:600;color:var(--txt);line-height:1.5;";
-        eb.innerHTML='<b>커뮤니티 글 편집 중</b> — 오른쪽 위 <b>완료</b>를 누르면 커뮤니티에 그대로 반영돼요.';
+        eb.innerHTML='<b>커뮤니티 글 편집 중</b> — 오른쪽 위 <b>완료</b>를 누르면 커뮤니티에 그대로 반영됩니다.';
         panel.insertBefore(eb,panel.firstChild);
       }
     } else {
@@ -13884,9 +13884,9 @@ window.__commView=function(post, editMode){
           if(post.proc){ try{parent.postMessage({source:"board",type:"commAct",act:"copy",id:post.id},"*");}catch(_){} return; }   /* 확인 창은 보관함에서 뜬다 — 여기서 «담겼어요»라고 말하지 않는다 */
           cb.disabled=true; cb.textContent="담는 중…";
           try{parent.postMessage({source:"board",type:"commAct",act:"copy",id:post.id},"*");}catch(_){}
-          setTimeout(function(){cb.textContent="✓ 담겼어요";toast("내 보관함에 담겼어요 — 보관함에서 확인");},450); };
+          setTimeout(function(){cb.textContent="✓ 담겼습니다";toast("내 보관함에 담겼습니다");},450); };
         var rb=document.getElementById("commRepBtn");
-        if(rb)rb.onclick=function(){ try{parent.postMessage({source:"board",type:"commAct",act:"report",id:post.id},"*");}catch(_){} toast("신고가 접수됐어요"); rb.disabled=true; };
+        if(rb)rb.onclick=function(){ try{parent.postMessage({source:"board",type:"commAct",act:"report",id:post.id},"*");}catch(_){} toast("신고가 접수됐습니다"); rb.disabled=true; };
         var db=document.getElementById("commDelBtn");
         if(db)db.onclick=function(){ psConfirm("이 게시물을 커뮤니티에서 삭제할까요?",function(){
           try{parent.postMessage({source:"board",type:"commAct",act:"delete",id:post.id},"*");}catch(_){}
@@ -13990,7 +13990,7 @@ function openEditor(id,type){
        닫을 때 되돌린다(__edTiltPrev). 편집기 안에서 3D 를 직접 켜면 그 뜻대로 두고, 껐다 켰다 해 설정 값이 «0»이 됐으면 되돌리지 않는다. 처음 한 번만 짧게 알린다. */
     try{ window.__edTiltPrev=document.body.classList.contains("bc-tilt3d");
       if(window.__edTiltPrev&&window.__setTilt){ window.__setTilt(false,{transient:true,quiet:true});
-        try{ if(localStorage.getItem("ps_editor_flat_told")!=="1"){ localStorage.setItem("ps_editor_flat_told","1"); setTimeout(function(){ try{toast("훈련 편집기는 평면으로 열려요 — 나가면 3D 로 돌아갑니다");}catch(_){} },600); } }catch(_){} } }catch(_){}
+        try{ if(localStorage.getItem("ps_editor_flat_told")!=="1"){ localStorage.setItem("ps_editor_flat_told","1"); setTimeout(function(){ try{toast("훈련 편집기는 평면으로 열립니다 — 나가면 3D 로 돌아갑니다");}catch(_){} },600); } }catch(_){} } }catch(_){}
     /* 1.962 — 편집기로 들어가기 전, 지금 보드를 라이브에 확정 저장(디바운스 대기 중이던 것 포함). 편집 중엔 라이브 저장이 멈춘다(_boardLiveWriteNow) */
     try{ if(!window.__vaultEdit&&typeof _boardLiveWriteNow==="function"){ try{clearTimeout(_bliveT);_bliveT=null;}catch(_){} boardFlushLive(); } }catch(_){}
   }
@@ -14020,7 +14020,7 @@ function openEditor(id,type){
     /* 2.278 — 임시 저장 초안은 **같은 종류일 때만** 이어 받는다. 세트피스 편집기를 저장 없이 닫고 '훈련'을 열면
        세트피스 초안이 훈련으로 복원돼(옛 판에선 이름·분이, 2.278 부터는 양식까지) 훈련에 세트피스가 샜다. */
     try{ var _stT=""; try{ var _st0=window.__editorDraft&&window.__editorDraft.trainings&&window.__editorDraft.trainings[0]; _stT=(_st0&&_st0.draft&&_st0.draft.type)||"train"; }catch(_){}
-      if(!window.__psNoDraft && _ety!=="setpiece" && _stT!=="setpiece" && window.__editorDraft && window.__editorDraft.trainings && window.__editorDraft.trainings.length){ editorTrainings=window.__editorDraft.trainings; editorTrainIdx=Math.min(window.__editorDraft.trainIdx||0,editorTrainings.length-1); _trainAdoptCardFrames(editorTrainings,window.__editorDraft.frames,editorTrainIdx); window.__editorDraft=null; _draftUsed=true; setTimeout(function(){try{toast("저장 안 한 훈련을 이어서 불러왔어요");}catch(_){}},250); } }catch(_){}
+      if(!window.__psNoDraft && _ety!=="setpiece" && _stT!=="setpiece" && window.__editorDraft && window.__editorDraft.trainings && window.__editorDraft.trainings.length){ editorTrainings=window.__editorDraft.trainings; editorTrainIdx=Math.min(window.__editorDraft.trainIdx||0,editorTrainings.length-1); _trainAdoptCardFrames(editorTrainings,window.__editorDraft.frames,editorTrainIdx); window.__editorDraft=null; _draftUsed=true; setTimeout(function(){try{toast("저장 안 한 훈련을 이어서 불러왔습니다");}catch(_){}},250); } }catch(_){}
     if(!_draftUsed){ loadEditorTrainings(null,((_ety==="setpiece")?"세트피스 ":"훈련 ")+(session.drills.length+1),_ety); }
     _activateTraining(_draftUsed?editorTrainIdx:0);
     if(_ety==="setpiece"){ __spPrevPitch=document.documentElement.dataset.pitch||""; __spPrevLines=state.lines; __spPrevGrid=state.gridType; try{if(window.__setSpField)window.__setSpField();}catch(_){} }}
@@ -14055,7 +14055,7 @@ function openEditor(id,type){
         else if(_dp.phaseId){ editorDraft.gmPhases=[String(_dp.phaseId)]; editorDraft.gmPhaseNames=[_pn]; } }
     } }catch(_){}
   fillEditorPanel();renderSceneStrip();renderTrainingTabs();
-  try{ if(type!=="setpiece"&&epAutoRoster()){ setTimeout(function(){try{toast(window.__rosterFromAtt?"출석의 그 날 인원으로 채웠어요 — 필요하면 고치세요":"훈련 인원을 선수단에서 채웠어요 — 필요하면 고치세요");window.__rosterFromAtt=false;}catch(_){}},400); } }catch(_){}   /* 1.968 · 2.182 — 비어 있으면 기존 훈련에서도 자동 계산(사용자) */
+  try{ if(type!=="setpiece"&&epAutoRoster()){ setTimeout(function(){try{toast(window.__rosterFromAtt?"출석의 그 날 인원으로 채웠습니다":"훈련 인원을 선수단에서 채웠습니다");window.__rosterFromAtt=false;}catch(_){}},400); } }catch(_){}   /* 1.968 · 2.182 — 비어 있으면 기존 훈련에서도 자동 계산(사용자) */
   moveBoardTo($("editorBoardWrap"));$("editorModal").classList.add("on");document.body.classList.add("editing");try{parent.postMessage({source:"board",type:"editorState",open:true},"*");}catch(_){}try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}try{applyView();}catch(_){}try{renderBench();}catch(_){}renderTokens();
   try{renderAnimFrames();_animFitPad();}catch(_){}   /* 2.613 — 훈련별 애니메이션은 _activateTraining 이 올렸다 */
   const _ep=$("editorPanel");if(_ep)_ep.scrollTop=0;
@@ -14087,12 +14087,12 @@ function editorCardForPdf(){
   return d;
 }
 function editorExportPdf(){
-  if(!editorTrainings||!editorTrainings.length){ try{toast("내보낼 훈련이 없어요");}catch(_){} return; }
+  if(!editorTrainings||!editorTrainings.length){ try{toast("내보낼 훈련이 없습니다");}catch(_){} return; }
   try{ restoreAnimBeforeCapture(); }catch(_){}   /* 재생 중이면 편집 화면으로 되돌린 뒤 캡처 */
   try{ captureActiveTraining(); }catch(_){}
   var d=null; try{ d=editorCardForPdf(); }catch(_){ d=null; }
-  if(!d){ try{toast("PDF를 만들지 못했어요 — 다시 눌러 주세요");}catch(_){} return; }
-  try{ printDrill(d,d.name); }catch(e){ try{toast("PDF를 만들지 못했어요 — 다시 눌러 주세요");}catch(_){} }
+  if(!d){ try{toast("PDF를 만들지 못했습니다 — 다시 눌러 주세요");}catch(_){} return; }
+  try{ printDrill(d,d.name); }catch(e){ try{toast("PDF를 만들지 못했습니다 — 다시 눌러 주세요");}catch(_){} }
 }
 function closeEditor(save){
   if(editorReadOnly||psPhoneBoardReadOnly())save=false;   /* 보기 전용 — 저장 차단(남의 훈련은 수정 불가) */
@@ -14453,7 +14453,7 @@ function mcSetScore(team,delta){const before=matchClock[team]||0;matchClock[team
 function _evName(t){return t==="home"?matchClock.homeName:matchClock.awayName;}
 function renderLog(){const h=document.getElementById("matchHud");if(!h)return;const list=h.querySelector("#sbLogList");if(!list)return;
   const ev=matchClock.events||[];
-  if(!ev.length){list.innerHTML='<div class="sb-log-empty">아직 득점 기록이 없어요</div>';return;}
+  if(!ev.length){list.innerHTML='<div class="sb-log-empty">아직 득점 기록이 없습니다</div>';return;}
   list.innerHTML=ev.map(e=>'<div class="sb-log-row"><b>'+(e.half===1?"전반":"후반")+" "+e.min+"\u2032</b><span>"+_evName(e.team)+"</span></div>").join("");}
 function logText(){let s=matchClock.homeName+" "+matchClock.home+" - "+matchClock.away+" "+matchClock.awayName+"\n";
   (matchClock.events||[]).forEach(e=>{s+=(e.half===1?"전반":"후반")+" "+e.min+"' "+_evName(e.team)+"\n";});return s;}
@@ -14544,7 +14544,7 @@ function matchHudEl(){let h=document.getElementById("matchHud");if(h)return h;
   h.querySelector("#sbLogCopy").onclick=()=>{const txt=logText();
     try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt);toast("기록 복사됨");}
       else{const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();toast("기록 복사됨");}}catch(_){toast("복사 실패");}};
-  h.querySelector("#sbLogClear").onclick=()=>{matchClock.events=[];renderLog();mcSave();toast("기록 지웠어요");};
+  h.querySelector("#sbLogClear").onclick=()=>{matchClock.events=[];renderLog();mcSave();toast("기록 지웠습니다");};
   h.querySelector("#sbHalfBtn").onclick=()=>{mcSwitchHalf();menu.classList.remove("open");};
   const mi=h.querySelector("#sbMin");
   mi.onchange=e=>{matchClock.halfMin=Math.max(1,Math.min(60,+e.target.value||45));mcRender();mcSave();};
@@ -14691,7 +14691,7 @@ function mnEl(){let p=document.getElementById("matchNotes");if(p)return p;
   p=document.createElement("div");p.id="matchNotes";p.className="mn-panel";
   p.innerHTML='<div class="mn-head"><div class="mn-tabs" id="mnTabs"></div><button class="mn-close" id="mnClose">×</button></div>'
     +'<div class="mn-input"><select id="mnWho" style="display:none"></select>'
-    +'<input id="mnText" type="text" placeholder="메모 입력 — 클락 시간이 자동으로 붙어요" maxlength="120">'
+    +'<input id="mnText" type="text" placeholder="메모 입력 — 클락 시간이 자동으로 붙습니다" maxlength="120">'
     +'<button class="mn-add" id="mnAdd">추가</button></div>'
     +'<div class="mn-list" id="mnList"></div>';
   stage.appendChild(p);
@@ -14710,7 +14710,7 @@ function mnRender(){const p=document.getElementById("matchNotes");if(!p)return;
   const who=p.querySelector("#mnWho");
   if(mnCat==="player"){who.style.display="";who.innerHTML=mnPlayerOpts();}else{who.style.display="none";}
   const list=p.querySelector("#mnList"),arr=matchNotes[mnCat]||[];
-  if(!arr.length){list.innerHTML='<div class="mn-empty">아직 메모가 없어요. 경기 보면서 떠오르는 걸 적어두세요.</div>';return;}
+  if(!arr.length){list.innerHTML='<div class="mn-empty">아직 메모가 없습니다.</div>';return;}
   list.innerHTML=arr.map((n,i)=>`<div class="mn-item"><span class="mn-t">${PSSafe.html(n.t)}</span>${n.who?`<span class="mn-who">${PSSafe.html(n.who)}</span>`:""}<span class="mn-tx">${(n.txt||"").replace(/</g,"&lt;")}</span><button class="mn-x" data-i="${i}">×</button></div>`).join("");
   [...list.querySelectorAll(".mn-x")].forEach(x=>x.onclick=()=>{arr.splice(+x.dataset.i,1);mnSave();mnRender();});}
 function mnAdd(){const p=document.getElementById("matchNotes");if(!p)return;
@@ -15189,7 +15189,7 @@ window.__tiltBootSafe=false; window.__tiltBootOk=true;
     var o=read(),now=Date.now(),died=recent(o[me],now),k;
     if(!died&&fresh)for(k in o)if(k!==me&&recent(o[k],now)){ died=true; delete o[k]; }
     if(died){ window.__tiltBootSafe=true; window.__tiltBootOk=false; delete o[me]; try{ write(o); }catch(_){} localStorage.setItem("ps_board_tilt3d","0");
-      var msg="3D 보기를 여는 중에 화면이 멈춰서 이번엔 평면으로 열었어요 · 보드 설정 › 보드 보기에서 다시 켤 수 있어요";
+      var msg="3D 보기를 여는 중에 화면이 멈춰서 이번엔 평면으로 열었습니다 · 보드 설정 › 보드 보기에서 다시 켤 수 있습니다";
       var say=function(n){ if(shown()){ window.__tiltBootSafeShown=Date.now(); [0,1500,3000,4500].forEach(function(ms){ setTimeout(function(){ try{ toast(msg); }catch(_){} },ms); }); return; }   /* 짧은 알림(1.7초)을 6초쯤 이어 보인다 */
         if(n<240)setTimeout(function(){ say(n+1); },500); };   /* 작전판이 실제로 보일 때 — 셸은 부팅 막 뒤나 다른 화면 뒤에서 미리 부팅한다 */
       setTimeout(function(){ say(0); },1600); return; }
@@ -15326,7 +15326,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
         mark(); })();
       /* 2.902 — 새 장면에서 화살표 모두 지우기(FmStadio «Animate all arrows out»): 다음 장면을 만들고 선 종류만 뺀다. 구역·글·다각형은 남긴다. */
       (function(){ var bt=pop.querySelector("#lsClearNext"); if(!bt)return; bt.onclick=function(e){ e.stopPropagation();
-        var LT=/^(pass|run|dribble|shot|line|dashline|free)$/; if(!(state.drawings||[]).some(function(d){return LT.test(d.type);})){ try{toast("지울 화살표·선이 없어요");}catch(_){} return; }
+        var LT=/^(pass|run|dribble|shot|line|dashline|free)$/; if(!(state.drawings||[]).some(function(d){return LT.test(d.type);})){ try{toast("지울 화살표·선이 없습니다");}catch(_){} return; }
         close(); try{ var add=document.getElementById("animAdd"); if(!add)return; add.click(); }catch(_){ return; }
         state.drawings=(state.drawings||[]).filter(function(d){return !LT.test(d.type);}); try{sel=null;multiSel=[];}catch(_){}
         renderDrawings(); try{autoSaveAnimFrame();}catch(_){} try{boardSaveLive();}catch(_){} try{toast("장면 "+(animActive+1)+": 화살표를 뺐어요 · 재생하면 서서히 사라져요");}catch(_){} }; })();
@@ -15344,7 +15344,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
         seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var on=b.dataset.v==="lob"; if(!selOnly)state.drawLob=on;
           var sd=selDraws().filter(function(d){return d.type==="pass";});
           if(sd.length){ pushUndo(); sd.forEach(function(d){ if(on)d.lob=true; else delete d.lob; }); renderDrawings(); try{boardSaveLive();}catch(_){} }
-          else if(selDraws().length){ try{toast("로빙은 패스 화살표에만 적용돼요");}catch(_){} }
+          else if(selDraws().length){ try{toast("로빙은 패스 화살표에만 적용됩니다");}catch(_){} }
           mark(); }; });
         mark();
       })();
@@ -15728,7 +15728,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
       function applyMap(m){[].forEach.call(rows.querySelectorAll("button[data-tool]"),function(b){b.dataset.key=m[b.dataset.tool]||"";b.textContent=toolKeyName(b.dataset.key);});}
       function close(){toolKeyOpen=false;try{ov.remove();}catch(_){}}box.querySelector("#dkClose").onclick=close;box.querySelector("#dkCancel").onclick=close;ov.onclick=function(e){if(e.target===ov)close();};
       box.querySelector("#dkReset").onclick=function(){applyMap(toolKeyDefaults());};box.querySelector("#dkClear").onclick=function(){applyMap({});};
-      box.querySelector("#dkSave").onclick=function(){var m={};[].forEach.call(rows.querySelectorAll("button[data-tool]"),function(b){m[b.dataset.tool]=b.dataset.key||"";});saveToolKeys(m);toast("도구 단축키가 저장됐어요");close();};
+      box.querySelector("#dkSave").onclick=function(){var m={};[].forEach.call(rows.querySelectorAll("button[data-tool]"),function(b){m[b.dataset.tool]=b.dataset.key||"";});saveToolKeys(m);toast("도구 단축키가 저장됐습니다");close();};
       var mq=window.matchMedia&&window.matchMedia("(max-width:560px)");if(mq&&mq.matches)rows.style.gridTemplateColumns="1fr";
     };
     /* 2.495 — 「단축키」 탭 인라인 도구 편집기(즉시 저장) */
@@ -15767,11 +15767,11 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
           if(PEN_COLS[+String(t).replace(/^pen/,"")]&&/^pen\d+$/.test(t)){ try{ var dot=document.createElement("i"); dot.style.cssText="display:inline-block;width:12px;height:12px;border-radius:50%;flex:0 0 12px;border:1px solid rgba(0,0,0,.18);background:"+PEN_COLS[+t.slice(3)][0]; n.insertBefore(dot,n.firstChild); }catch(_){} }
           /* 2.975 — 조합 받기. 수정키만 눌렀다 떼면 «⇧ 톡» 같은 수정키 단축키, 수정키를 누른 채 다른 키를 누르면 그 조합. */
           var assign=function(k){ k=comboFix(k); if(!k)return;
-            if(_KC_RESERVED[k]){ toast(comboLabel(k)+" 는 브라우저·운영체제가 먼저 가져가요 — 다른 키를 눌러주세요"); kb.textContent="키 입력…"; return; }
+            if(_KC_RESERVED[k]){ toast(comboLabel(k)+" 는 브라우저·운영체제가 먼저 가져갑니다 — 다른 키를 눌러주세요"); kb.textContent="키 입력…"; return; }
             var m=loadToolKeys(); KEY_IDS.forEach(function(x){ if(x!==kb.dataset.tool&&m[x]===k)m[x]=""; }); m[kb.dataset.tool]=k; saveToolKeys(m);
             [].forEach.call(rows.querySelectorAll("button[data-key]"),function(o){ if(o!==kb&&o.dataset.key===k){ o.dataset.key=""; o.textContent="키 선택"; } });
             kb.dataset.key=k; kb.textContent=toolKeyName(k);
-            var bi=comboBuiltinName(k); if(bi)toast(comboLabel(k)+" — 원래 «"+bi+"» 키예요. 이제 이 동작이 먼저 실행돼요"+(/^(left|right|up|down)$/.test(k)?" (토큰을 고른 동안은 미세 이동)":"")); };
+            var bi=comboBuiltinName(k); if(bi)toast(comboLabel(k)+" — 원래 «"+bi+"» 키입니다. 이제 이 동작이 먼저 실행됩니다"+(/^(left|right|up|down)$/.test(k)?" (토큰을 고른 동안은 미세 이동)":"")); };
           kb.onclick=function(e){ e.stopPropagation(); kb.textContent="키 입력…"; kb._modOnly=""; kb.focus(); };
           kb.addEventListener("blur",function(){ kb._modOnly=""; kb.textContent=toolKeyName(kb.dataset.key); });
           kb.addEventListener("keydown",function(e){ e.preventDefault(); e.stopImmediatePropagation();
@@ -15779,7 +15779,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
             if(_KC_MOD[e.key]){ var held=[]; if(e.metaKey)held.push("cmd"); if(e.ctrlKey)held.push("ctrl"); if(e.altKey)held.push("alt"); if(e.shiftKey)held.push("shift");
               kb._modOnly=(held.length===1)?_KC_MOD[e.key]:""; kb.textContent=(held.length?comboLabel(held.join("+")+"+x").replace(/\+?X$/,""):"")+" …"; return; }
             kb._modOnly="";
-            var k=comboOf(e); if(!k){ toast("이 키는 쓸 수 없어요 — 다른 키를 눌러주세요"); return; }
+            var k=comboOf(e); if(!k){ toast("이 키는 쓸 수 없습니다 — 다른 키를 눌러주세요"); return; }
             assign(k); });
           kb.addEventListener("keyup",function(e){ if(_KC_MOD[e.key]&&kb._modOnly&&kb._modOnly===_KC_MOD[e.key]){ e.preventDefault(); e.stopImmediatePropagation(); var k=kb._modOnly; kb._modOnly=""; assign(k); } });
           r.appendChild(n); r.appendChild(kb); rows.appendChild(r);
@@ -15993,7 +15993,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   if($("lockSelBtn"))$("lockSelBtn").onclick=()=>{var ts=selectedLockables();if(!ts.length)return;var on=!ts.every(function(o){return !!o.locked;});try{pushUndo();}catch(_){}
     ts.forEach(function(o){if(on)o.locked=true;else delete o.locked;});
     try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}try{updateDelUI();}catch(_){}try{positionSelCtl();}catch(_){}try{autoSaveAnimFrame();boardSaveLive();}catch(_){}
-    try{toast(ts.length>1?(ts.length+"개 위치 "+(on?"고정":"고정 해제")):(on?"위치 고정 — 해제 전까지 움직이지 않아요":"위치 고정 해제"));}catch(_){} };
+    try{toast(ts.length>1?(ts.length+"개 위치 "+(on?"고정":"고정 해제")):(on?"위치 고정":"위치 고정 해제"));}catch(_){} };
   if($("visWide"))$("visWide").onclick=()=>visWidth(12);
   if($("visNarrow"))$("visNarrow").onclick=()=>visWidth(-12);
   if($("visBlindBtn"))$("visBlindBtn").onclick=()=>toggleBlind();
@@ -16035,7 +16035,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   function meetStep(dir){
     if(meetSceneStep(dir))return;   /* 2.935 — 발표에서는 이 슬라이드의 장면부터 넘긴다(키노트 빌드처럼) */
     const n=anim.slides.length;
-    if(!n){meetBadge("저장된 슬라이드가 없어요");return;}
+    if(!n){meetBadge("저장된 슬라이드가 없습니다");return;}
     let i=meetIdx+dir;if(i<0)i=0;if(i>n-1)i=n-1;
     if(i===meetIdx&&dir!==0)return;
     meetAutoTok++;meetSettle();
@@ -16238,7 +16238,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
       if(sl===meetBound)(anim.frames||[]).forEach(function(f){ if(f)ch+=put(f.snap); });
       if(ch&&i!==meetIdx){ n++; try{ if(window.__snapToThumb)sl.thumb=window.__snapToThumb(sl.snap)||sl.thumb; }catch(_){} if(Array.isArray(sl.frames))sl.frames.forEach(function(f,k){ if(k>0&&f)delete f.thumb; }); }
     });
-    if(n){ try{if(window.__ksRender)window.__ksRender();}catch(_){} try{boardSaveLive();}catch(_){} try{toast("‘"+(nm||"이름 지움")+"’ — 다른 "+n+"장에도 함께 적용했어요");}catch(_){} }
+    if(n){ try{if(window.__ksRender)window.__ksRender();}catch(_){} try{boardSaveLive();}catch(_){} try{toast("‘"+(nm||"이름 지움")+"’ — 다른 "+n+"장에도 함께 적용했습니다");}catch(_){} }
     return n;
   };
   /* 2.974 — 예전에 만든 미팅도 새 규칙으로(사용자 «이미 만든 미팅도 새 규칙으로»). 보관함에서 고칠 수 있게 열 때 한 번 돈다.
@@ -16290,7 +16290,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     res.changed=!!(res.best||res.names||res.brand);
     return res;
   };
-  window.__meetUpgradeText=function(r){ if(!r||!r.changed)return ""; var a=[]; if(r.best)a.push("BEST 11 배치"); if(r.names)a.push("이름 "+r.names+"곳"); if(r.brand)a.push("맨 위 문구 "+r.brand+"장"); return "예전에 만든 미팅을 새 규칙으로 맞췄어요 — "+a.join(" · "); };
+  window.__meetUpgradeText=function(r){ if(!r||!r.changed)return ""; var a=[]; if(r.best)a.push("BEST 11 배치"); if(r.names)a.push("이름 "+r.names+"곳"); if(r.brand)a.push("맨 위 문구 "+r.brand+"장"); return "예전에 만든 미팅을 새 규칙으로 맞췄습니다 — "+a.join(" · "); };
   window.__meet={
     frames:function(){return anim.slides;},
     idx:function(){return meetIdx;},
@@ -16325,7 +16325,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     if(k2==="ArrowRight"||k2==="PageDown"){e.preventDefault();meetStep(1);}
     else if(k2==="ArrowLeft"||k2==="PageUp"){e.preventDefault();meetStep(-1);}
     else if(k2==="b"||k2==="B"){e.preventDefault();setBlack(document.getElementById("blackOv")?document.getElementById("blackOv").style.display!=="block":true);}
-    else if(k2==="s"||k2==="S"){e.preventDefault();setSpot(!spotOn);meetBadge(spotOn?"스포트라이트 — 마우스를 움직여보세요":"스포트라이트 해제");}
+    else if(k2==="s"||k2==="S"){e.preventDefault();setSpot(!spotOn);meetBadge(spotOn?"스포트라이트":"스포트라이트 해제");}
     else if(k2==="Escape"){if(spotOn){setSpot(false);}setBlack(false);}});
   function setFocus(on){if(on){meetIdx=-1;ensureMeetNav();const c2=document.getElementById("meetCnt");if(c2)c2.textContent=anim.slides.length?("0/"+anim.slides.length):"";setTimeout(meetHint,600);}else{setSpot(false);setBlack(false);if(meetRaf){cancelAnimationFrame(meetRaf);meetRaf=null;}meetAutoTok++;meetSceneFinish();try{_animCapShow(null);}catch(_){}}document.body.classList.toggle("focus-board",on);try{window.__ksScale&&window.__ksScale();}catch(_){}/* 3.011 — 발표 글자 비율 */if(!on){try{renderAnimFrames();}catch(_){}try{renderOnion();}catch(_){}}try{parent.postMessage({source:"board",type:"focusBoard",on:on},"*");}catch(_){}}
   function enterFocus(){document.querySelectorAll(".popmenu.on").forEach(function(m){m.classList.remove("on");});setFocus(true);
@@ -16347,7 +16347,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     const sync=()=>{const on=_dragSnapOn();[...sg.children].forEach(x=>x.classList.toggle("on",(x.dataset.ds==="1")===on));};
     sg.addEventListener("click",e=>{const bt=e.target.closest("button");if(!bt)return;
       try{localStorage.setItem("cs_drag_snap_v1",bt.dataset.ds==="1"?"1":"0");}catch(_){}
-      sync();toast(bt.dataset.ds==="1"?"끌기 자석 켬 — 끌면 행·열에 착 붙어요":"끌기 자석 끔 — ⌘/Ctrl 로는 언제든 붙어요");});
+      sync();toast(bt.dataset.ds==="1"?"끌기 자석 켬":"끌기 자석 끔");});
     sync();})();
   (function(){const sg=$("shapeSeg");if(!sg)return;
     const sync=()=>{[...sg.children].forEach(x=>x.classList.toggle("on",x.dataset.s===tokShape));};
@@ -16392,7 +16392,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   const _ecc=document.getElementById("equipColCustom");if(_ecc)_ecc.oninput=()=>{if(sel&&(sel.type==="equip"||sel.type==="player")){pushUndo();sel.ref.color=_ecc.value;if(sel.type==="player")rememberRoleColor(sel.ref,_ecc.value);renderTokens();updateDelUI();}else if(multiSel.length)applyMultiTokenColor(_ecc.value);};
   /* 직접 고른 색은 기존 개인 팔레트에 기억한다. 고정색은 사용자가 편집에서 뺄 때까지 유지한다. */
   if(_ecc)_ecc.onchange=()=>{ try{ myColAdd(_ecc.value); renderMyDots(); }catch(_){} };
-  if($("myColPin"))$("myColPin").onclick=()=>{if(myColAdd($("colorCtl").dataset.currentColor)){renderMyDots();toast("현재 색을 고정색에 추가했어요");}};
+  if($("myColPin"))$("myColPin").onclick=()=>{if(myColAdd($("colorCtl").dataset.currentColor)){renderMyDots();toast("현재 색을 고정색에 추가했습니다");}};
   if($("myColEdit"))$("myColEdit").onclick=()=>{myColEditing=!myColEditing;renderMyDots();};
   /* 색상 컨트롤 접힘/펼침 — 스와치를 누르면 팔레트가 열리고, 색을 고르거나 바깥을 누르면 닫힘.
      터치는 click이 유실되는 일이 있어(아이패드 제보: 누르면 메뉴가 사라짐) pointerup에서 직접 토글한다. */
@@ -16435,7 +16435,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     const rd=new FileReader();
     rd.onload=function(){const img=new Image();
       img.onload=function(){openTokenPhotoCrop(img,ps);};
-      img.onerror=function(){toast("이미지를 읽지 못했어요");};
+      img.onerror=function(){toast("이미지를 읽지 못했습니다");};
       img.src=rd.result;};
     rd.readAsDataURL(f);
   });
@@ -16474,7 +16474,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
       addDrill({players:[],equipment:[],ball:null,drawings:[],orientation:state.orientation,area:state.area,pitchView:pitchViewKey()},null);
       const d=session.drills[session.drills.length-1];
       d.name=nm;d.minutes=15;d.sets=1;d.rpe=5;d.focus="bp";
-      q.value="";renderSession();toast('"'+nm+'" 블록 추가 — 계속 입력해 쌓으세요');
+      q.value="";renderSession();toast('"'+nm+'" 블록 추가');
       q.focus();});})();
   if($("sessSaveBtn"))$("sessSaveBtn").onclick=saveSessionPrompt;
   if($("sessNewBtn"))$("sessNewBtn").onclick=newSessionBtn;
@@ -16711,7 +16711,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     const payload={title:session.title,md:session.md,drills:session.drills.map(d=>({
       name:d.name,minutes:+d.minutes||0,rpe:+d.rpe||5,focus:d.focus,snap:d.snap||null,thumb:d.thumb||""}))};
     try{parent.postMessage({source:"board",type:"sendToWeek",session:payload},"*");}catch(_){}
-    toast("주간으로 보냈어요 · 요일을 선택하세요");
+    toast("주간으로 보냈습니다 · 요일을 선택하세요");
   };
   $("sessSel").addEventListener("change",e=>loadSession(e.target.value));
   $("editorCancel").onclick=()=>{
@@ -16721,7 +16721,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     if(_wizExit){ /* 1.937 — 저장 없이 보관함으로(사용자): 초안도 남기지 않는다 */
       try{clearEditorDraft();}catch(_){}
       try{parent.postMessage({source:'board',type:'goApp',app:'design'},'*');}catch(_){}
-      try{toast("저장하지 않고 나왔어요");}catch(_){} }
+      try{toast("저장하지 않고 나왔습니다");}catch(_){} }
   };
   $("editorDone").onclick=()=>{
     if(__trainingWizardActive&&__trainingWizardStep===3&&editorLibId==null&&!__commEdit&&!window.__editorSchedLink){
@@ -16879,7 +16879,7 @@ try{PSBoardGuest.mount(window)}catch(_){}try{Promise.resolve(restoreLiveBoard())
     if(!e.target||!e.target.closest||!e.target.closest('#ps-command-dock [data-tip],#ps-command-dock [title]'))return;
     if(localStorage.getItem('ps_dock_tip_hint_v1'))return; localStorage.setItem('ps_dock_tip_hint_v1','1');
     if(_lpShownAt&&Date.now()-_lpShownAt<3000)return;
-    setTimeout(function(){ try{ if(typeof toast==='function')toast('도구 이름은 단추를 길게 누르면 보여요'); }catch(_){} },500);
+    setTimeout(function(){ try{ if(typeof toast==='function')toast('도구 이름은 단추를 길게 누르면 보입니다'); }catch(_){} },500);
   }catch(_){} },true);
 })();
 </script>
@@ -16956,7 +16956,7 @@ window.__importSessionDrills=function(drills){
     /* 2.994 — 썸네일은 먼저 그려 두고, 읽고-쓰기만 libTurn 한 차례로 */
     await libTurn(async function(){var lib=await libGet();items.forEach(function(it){lib.unshift(it);});await libWrite(lib);libTouch();});
     try{renderDrillFiles();}catch(_){}try{renderLibDock();}catch(_){}
-    try{toast(drills.length+"개 드릴을 보관함에 담았어요 ✓");}catch(_){}
+    try{toast(drills.length+"개 드릴을 보관함에 담았습니다 ✓");}catch(_){}
   })();
   return drills.length;
 };
@@ -17102,7 +17102,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(!panel)return;
     var body=panel.querySelector(".sit-body");body.innerHTML="";
     var hint=document.createElement("div");hint.className="sit-hint";
-    hint.textContent="상황·분석 선택 → 운동장에 배치·그림 → ＋장면 쌓기 → ▶ 재생. 메모에 강점·약점·핵심 선수를 적어두세요.";
+    hint.textContent="상황·분석 선택 → 운동장에 배치·그림 → ＋장면 쌓기 → ▶ 재생";
     body.appendChild(hint);
     var mseg=document.createElement("div");mseg.style.cssText="display:flex;gap:6px;margin:2px 3px 9px;";
     [["review","게임 플랜"],["scout","상대 분석"]].forEach(function(gp){var on=(activeGroup===gp[0]);var gb=document.createElement("button");gb.textContent=gp[1];gb.style.cssText="flex:1;border-radius:10px;padding:8px;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;border:1px solid "+(on?"#14213D":"rgba(255,255,255,.12)")+";background:"+(on?"#14213D":"rgba(255,255,255,.06)")+";color:"+(on?"#fff":"#bcd0f5")+";";gb.onclick=function(){activeGroup=gp[0];activeId=null;activeFr=-1;render();};mseg.appendChild(gb);});
@@ -17132,7 +17132,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         if(it.memo&&it.memo.trim()){var mtag=document.createElement("span");mtag.className="tag";mtag.textContent="메모";mtag.title="메모 있음";mtag.style.color="#ffd9a8";mtag.style.borderColor="rgba(255,200,120,.5)";nm.appendChild(mtag);}
         row.appendChild(nm);
         var pb=document.createElement("button");pb.className="ib play";pb.textContent="▶";pb.title="재생";
-        pb.onclick=function(e){e.stopPropagation();if(n>=2){activeId=it.id;render();playFrames(it.frames);}else if(n===1){loadSituationSnap(it.frames[0].snap);}else{T("아직 장면이 없어요");}};
+        pb.onclick=function(e){e.stopPropagation();if(n>=2){activeId=it.id;render();playFrames(it.frames);}else if(n===1){loadSituationSnap(it.frames[0].snap);}else{T("아직 장면이 없습니다");}};
         var eb=document.createElement("button");eb.className="ib";eb.innerHTML="<svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px'><path d='M4 20l1-4L16 5l3 3L8 19z'/><path d='M14 7l3 3'/></svg>";eb.title="이름 변경";
         eb.onclick=function(e){e.stopPropagation();psPrompt("상황 이름",it.name,function(v){v=v.trim();if(v){it.name=v;save();render();}});};
         var xb=document.createElement("button");xb.className="ib";xb.innerHTML="<svg width=15 height=15 fill=none stroke=currentColor stroke-width=2.2 stroke-linecap=round style=vertical-align:-2px><line x1=4 y1=4 x2=11 y2=11 /><line x1=11 y1=4 x2=4 y2=11 /></svg>";xb.title="삭제";
@@ -17147,7 +17147,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           var upd=document.createElement("button");upd.className="eb";upd.textContent="이 장면 갱신";upd.title="선택된 장면을 현재 배치로 덮어쓰기";
           upd.onclick=function(e){e.stopPropagation();if(activeFr>=0&&it.frames[activeFr]){it.frames[activeFr].snap=snap();it.frames[activeFr].thumb=thumb();save();render();T((activeFr+1)+"번 장면 갱신됨");}else{T("먼저 장면 썸네일을 선택하세요");}};
           var pl=document.createElement("button");pl.className="eb prim";pl.textContent="▶ 재생";
-          pl.onclick=function(e){e.stopPropagation();if(n>=2)playFrames(it.frames);else T("장면이 2개 이상이어야 재생돼요");};
+          pl.onclick=function(e){e.stopPropagation();if(n>=2)playFrames(it.frames);else T("장면이 2개 이상이어야 재생됩니다");};
           var clr=document.createElement("button");clr.className="eb warn";clr.textContent="비우기";
           clr.onclick=function(e){e.stopPropagation();if(!it.frames.length)return;psConfirm("'"+it.name+"' 장면을 모두 지울까요?",function(){it.frames=[];activeFr=-1;save();render();});};
           ebrow.appendChild(upd);ebrow.appendChild(pl);ebrow.appendChild(clr);
@@ -17167,7 +17167,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var add2=document.createElement("button");add2.className="sit-add";add2.textContent="＋ 상황(장면)";add2.style.flex="1";add2.title="빈 상황 추가 — 장면을 쌓아 정지/애니메이션 구성";
       add2.onclick=function(){psPrompt("상황 이름","",function(v){v=v.trim();if(!v)return;cat.items.push({id:uid(),name:v,frames:[]});save();render();});};
       var addscr=document.createElement("button");addscr.className="sit-add";addscr.textContent="＋ 화면(정지)";addscr.style.flex="1";addscr.title="지금 운동장 화면을 정지 화면으로 바로 추가";
-      addscr.onclick=function(){var s=snap();if(!s){T("화면을 캡처할 수 없어요");return;}psPrompt("화면 이름","화면 "+(((cat.items||[]).length)+1),function(v){v=(v||"").trim()||"화면";cat.items.push({id:uid(),name:v,frames:[{snap:s,dur:1,thumb:thumb()}]});save();render();T("정지 화면 추가됨");});};
+      addscr.onclick=function(){var s=snap();if(!s){T("화면을 캡처할 수 없습니다");return;}psPrompt("화면 이름","화면 "+(((cat.items||[]).length)+1),function(v){v=(v||"").trim()||"화면";cat.items.push({id:uid(),name:v,frames:[{snap:s,dur:1,thumb:thumb()}]});save();render();T("정지 화면 추가됨");});};
       var arow=document.createElement("div");arow.style.cssText="display:flex;gap:6px;margin-top:5px;";arow.appendChild(add2);arow.appendChild(addscr);cw.appendChild(arow);
       body.appendChild(cw);
     });
@@ -17176,7 +17176,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     body.appendChild(addcat);
     if(activeGroup==="scout"){
       var addanal=document.createElement("button");addanal.className="sit-addcat";addanal.textContent="＋ 기본 분류 (공격·수비·전환·세트피스)";addanal.style.background="rgba(216,90,48,.3)";addanal.title="상대팀 분석용 기본 분류를 한 번에 추가";
-      addanal.onclick=function(){var tpl=[["공격",["빌드업","전진·전개","공격 마무리"]],["수비",["프레스 형태","블록 형태","수비 약점"]],["전환",["공격 전환(역습)","수비 전환"]],["세트피스",["코너킥 공격","코너킥 수비","프리킥"]]];var added=0;tpl.forEach(function(t){if(!data.some(function(c){return c.group==="scout"&&c.cat===t[0];})){data.push({cat:t[0],group:"scout",items:t[1].map(function(n){return {id:uid(),name:n,frames:[]};})});added++;}});if(added){save();render();T("기본 분류 "+added+"개 추가됨");}else{T("이미 기본 분류가 있어요");}};
+      addanal.onclick=function(){var tpl=[["공격",["빌드업","전진·전개","공격 마무리"]],["수비",["프레스 형태","블록 형태","수비 약점"]],["전환",["공격 전환(역습)","수비 전환"]],["세트피스",["코너킥 공격","코너킥 수비","프리킥"]]];var added=0;tpl.forEach(function(t){if(!data.some(function(c){return c.group==="scout"&&c.cat===t[0];})){data.push({cat:t[0],group:"scout",items:t[1].map(function(n){return {id:uid(),name:n,frames:[]};})});added++;}});if(added){save();render();T("기본 분류 "+added+"개 추가됨");}else{T("이미 기본 분류가 있습니다");}};
       body.appendChild(addanal);
     }
   }
@@ -17542,7 +17542,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   }
   function folderSettingsMove(src,ndest){folderSettingsLoad();return folderSettingsSave(folderMapMove(folderMeta,src,ndest,folderMetaMerge),folderMapMove(folderTags,src,ndest,folderTagMerge));}
   function folderSettingsNorm(){folderSettingsLoad();return folderSettingsSave(folderMapNorm(folderMeta,folderMetaMerge),folderMapNorm(folderTags,folderTagMerge));}
-  function folderForeignToast(full,n,verb){try{toast("‘"+folderLeaf(full)+"’에 다른 코치의 자료 "+n+"개가 있어 "+verb+" 수 없어요 — 그 자료는 만든 코치만 옮길 수 있어요");}catch(_){}}
+  function folderForeignToast(full,n,verb){try{toast("‘"+folderLeaf(full)+"’에 다른 코치의 자료 "+n+"개가 있어 "+verb+" 수 없습니다 — 그 자료는 만든 코치만 옮길 수 있습니다");}catch(_){}}
   // 스타일
   var st=document.createElement("style");
   st.textContent=
@@ -18024,11 +18024,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var lst='display:block;font-size:12px;font-weight:600;color:#8A9099;margin:0 0 5px;';
     var folders=[];try{folders=foldersShown().slice().sort();}catch(_){}   /* 2.968 — 보일 폴더만 */
     var fopts='<option value="">루트 (폴더 없음)</option>'+folders.map(function(f){return '<option value="'+esc(f)+'"'+(f===defFolder?' selected':'')+'>'+esc(f)+'</option>';}).join('')+'<option value="__new">＋ 새 폴더…</option>';
-    card.innerHTML='<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px"><div><div style="font-size:16px;font-weight:800;margin-bottom:3px">저장 정보 확인</div><div style="font-size:11px;line-height:1.45;color:#8A9099">'+(opts.board?'이 보드를 보관함에 저장합니다 — 작업 보드는 그대로 남아요.':'이름과 위치를 확인하면 보관함에 저장되고 목록으로 돌아갑니다.')+'</div></div>'+(opts.board?'':'<span style="margin-left:auto;flex:0 0 auto;font-size:11px;font-weight:800;color:var(--ps-navy,#14213D);background:color-mix(in srgb,var(--ps-navy,#14213D) 10%,transparent);padding:4px 8px;border-radius:999px">2 / 3</span>')+'</div>'
+    card.innerHTML='<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px"><div><div style="font-size:16px;font-weight:800;margin-bottom:3px">저장 정보 확인</div><div style="font-size:11px;line-height:1.45;color:#8A9099">'+(opts.board?'이 보드를 보관함에 저장합니다 — 작업 보드는 그대로 남습니다.':'이름과 위치를 확인하면 보관함에 저장되고 목록으로 돌아갑니다.')+'</div></div>'+(opts.board?'':'<span style="margin-left:auto;flex:0 0 auto;font-size:11px;font-weight:800;color:var(--ps-navy,#14213D);background:color-mix(in srgb,var(--ps-navy,#14213D) 10%,transparent);padding:4px 8px;border-radius:999px">2 / 3</span>')+'</div>'
       +'<label style="'+lst+'">이름</label><input id="pssName" type="text" maxlength="40" style="'+ist+'">'
       +'<label style="'+lst+'">폴더</label><select id="pssFolder" style="'+ist+'cursor:pointer;">'+fopts+'</select>'
       +'<label style="'+lst+'">태그 (쉼표로 구분)</label><input id="pssTags" type="text" placeholder="예: 빌드업, 4-3-3" style="'+ist+'"><div id="pssSugg" style="display:flex;flex-wrap:wrap;gap:5px;margin:-6px 0 12px"></div>'
-      +(opts.linked?'<div id="pssLinked" style="margin:0 0 12px;padding:10px 12px;border-radius:10px;background:var(--panel2,#F1F2F4);font-size:12px;line-height:1.45">이 보드는 보관함의 <b>‘'+esc(opts.linked.name)+'’</b>에 저장된 적이 있어요.<button id="pssOver" type="button" style="display:block;width:100%;box-sizing:border-box;margin-top:8px;padding:10px 12px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;border:1px solid var(--ps-navy,#14213D);background:transparent;color:var(--ps-navy,#14213D);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">‘'+esc(opts.linked.name)+'’에 덮어쓰기</button></div>':'')
+      +(opts.linked?'<div id="pssLinked" style="margin:0 0 12px;padding:10px 12px;border-radius:10px;background:var(--panel2,#F1F2F4);font-size:12px;line-height:1.45">이 보드는 보관함의 <b>‘'+esc(opts.linked.name)+'’</b>에 저장된 적이 있습니다.<button id="pssOver" type="button" style="display:block;width:100%;box-sizing:border-box;margin-top:8px;padding:10px 12px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;border:1px solid var(--ps-navy,#14213D);background:transparent;color:var(--ps-navy,#14213D);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">‘'+esc(opts.linked.name)+'’에 덮어쓰기</button></div>':'')
       +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px"><button id="pssCancel" style="padding:11px 18px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;border:1px solid var(--line,#d2d6dd);background:var(--panel2,#F1F2F4);color:inherit">계속 편집</button><button id="pssOk" style="padding:11px 22px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;border:0;background:var(--ps-navy,#14213D);color:#fff">'+(opts.linked?'새 항목으로 저장':'보관함에 저장')+'</button></div>';
     ov.appendChild(card);document.body.appendChild(ov);
     var nm=card.querySelector('#pssName');nm.value=defName||'';
@@ -18052,7 +18052,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function vaultSaveCurrent(_o){
     _o=_o||{};
     /* 2.907 — 작업 보드에서는 _vaultAutoStatus 줄이 없어 실패가 말없이 사라졌다. 오류가 있을 때만 알린다(로그인 안내·권한 안내는 각자 말한다). */
-    function failToast(){if(!_o.silent&&!window.__vaultEdit)try{toast("보관함에 저장하지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){}}
+    function failToast(){if(!_o.silent&&!window.__vaultEdit)try{toast("보관함에 저장하지 못했습니다 — 연결을 확인하고 다시 눌러 주세요");}catch(_){}}
     /* 2.991 — final: 다시 해도 안 되는 실패(로그인 없음·남의 항목). 자동 저장은 이때 다시 시도하지 않는다 */
     function failed(e,final){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");if(e)failToast();if(_o.onerror)_o.onerror(e,!!final);}
     /* 2.991 — 저장하지 않고 끝나는 길도 부른 쪽에 알린다. 자동 저장이 «저장 중» 잠금을 쥔 채 남지 않게 */
@@ -18073,7 +18073,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(type==="meeting"){
       try{ if(window.__meetSyncCur&&document.body.classList.contains("meet-mode"))window.__meetSyncCur({thumb:true}); else if(window.__meet){var mi=window.__meet.idx(); if(mi>=0&&anim.slides[mi]){anim.slides[mi].snap=captureSnap();try{anim.slides[mi].thumb=boardThumbSVG();}catch(_){}}} }catch(_){}   /* 2.935 */
       try{ slides=JSON.parse(JSON.stringify(anim.slides||[])); }catch(_){ slides=[]; }
-      if(!slides.length){ try{toast("저장할 슬라이드가 없어요 — 슬라이드를 추가하세요");}catch(_){} skipped(); return; }
+      if(!slides.length){ try{toast("저장할 슬라이드가 없습니다 — 슬라이드를 추가하세요");}catch(_){} skipped(); return; }
       try{ var _t0=(anim.slides[0]&&anim.slides[0].title)||""; if(_t0)def=_t0; }catch(_){}
     }
     var pend=window.__vaultPending||{};
@@ -18089,7 +18089,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(_lk){
       openSaveSheet(def,(pend.folder||curFolder()||""),[],function(res){
         if(!res){ if(_o.oncancel)try{_o.oncancel();}catch(_){} return; }
-        if(res.overwrite){ boardLinkWriteBack(true).then(function(r){ var okOne=(r||[]).filter(function(x){return x.ok;})[0]; try{ toast(okOne?("보관함 ‘"+okOne.name+"’에 저장했어요 ✓"):(boardLinkSaveText(r).replace(/^ · /,"")||"저장할 연결이 없어요")); }catch(_){} if(_o.after)try{_o.after();}catch(_){} },function(e){failed(e);}); return; }
+        if(res.overwrite){ boardLinkWriteBack(true).then(function(r){ var okOne=(r||[]).filter(function(x){return x.ok;})[0]; try{ toast(okOne?("보관함 ‘"+okOne.name+"’에 저장했습니다 ✓"):(boardLinkSaveText(r).replace(/^ · /,"")||"저장할 연결이 없습니다")); }catch(_){} if(_o.after)try{_o.after();}catch(_){} },function(e){failed(e);}); return; }
         try{ window.__psPages.linkClear(_lk.tag.libId); }catch(_){}
         window.__vaultPending=window.__vaultPending||{};
         window.__vaultPending.name=res.name; window.__vaultPending.folder=res.folder; window.__vaultPending.tags=res.tags;
@@ -18133,7 +18133,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     libTurn(function(){return libGet().then(function(lib){
       var idx=-1; if(curId){for(var _k=0;_k<lib.length;_k++){if(lib[_k].libId===curId){idx=_k;break;}}}
       if(idx>=0 && !canEditItem(lib[idx])){
-        if(!_o.silent)try{toast("만든 사람만 저장할 수 있어요 — 보관함의 ‘복사’를 사용하세요");}catch(_){}
+        if(!_o.silent)try{toast("만든 사람만 저장할 수 있습니다 — 보관함의 ‘복사’를 사용하세요");}catch(_){}
         failed(null,true);return;
       }   /* 팀: 남의 항목은 자동 저장·자동 복사 모두 금지. 복사는 사용자가 보관함에서 명시적으로 선택 */
       if(idx>=0){
@@ -18234,7 +18234,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     _vaultAutoAgain=false;
     if(final||_vaultAutoTries>=VAULT_AUTO_RETRY_MS.length){_vaultAutoTries=0;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");return;}
     var wait=VAULT_AUTO_RETRY_MS[_vaultAutoTries++];
-    _vaultAutoStatus("저장 실패 — 잠시 뒤 다시 저장해요");
+    _vaultAutoStatus("저장 실패 — 잠시 뒤 다시 저장합니다");
     try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=setTimeout(_vaultAutoRun,wait);
   }
   /* 2.975 — «저장»(나가지 않고) 뒤에 늦게 도는 기록·키 떼기가 «변경 있음»을 다시 켜, 나갈 때 «버리고 나갈까요?»가 뜨던 것.
@@ -18396,7 +18396,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var fm=window.__vaultFromMatch, id=window.__curVaultId; if(!fm||!id||window.__vaultReadOnly)return;
     psPrompt("미팅 이름",fm.name||"",function(v){ v=String(v||"").trim().slice(0,40); if(!v||v===fm.name)return;
       meetLibMutate(function(lib){ for(var i=0;i<lib.length;i++){ if(lib[i]&&lib[i].libId===id){ if(!canEditItem(lib[i]))return {ok:false,write:false}; lib[i].name=v; lib[i].editedAt=lib[i].savedAt=Date.now(); return {ok:true}; } } return {ok:false,write:false}; })
-        .then(function(r){ if(r&&r.ok){ fm.name=v; var t=$id("vCreateTitle"); if(t)t.textContent=v; try{toast("이름을 바꿨어요 ✓");}catch(_){} } else { try{toast("이름을 바꾸지 못했어요");}catch(_){} } },function(){ try{toast("이름을 바꾸지 못했어요 — 연결을 확인해 주세요");}catch(_){} });
+        .then(function(r){ if(r&&r.ok){ fm.name=v; var t=$id("vCreateTitle"); if(t)t.textContent=v; try{toast("이름을 바꿨습니다 ✓");}catch(_){} } else { try{toast("이름을 바꾸지 못했습니다");}catch(_){} } },function(){ try{toast("이름을 바꾸지 못했습니다 — 연결을 확인해 주세요");}catch(_){} });
     });
   }
   /* «경기 자료 넣기» — 경기 쪽이 보낸 재료(표지·상대 분석·선발 11·게임플랜·옛 경기 준비 보드)를 골라 지금 미팅 뒤에 붙인다 */
@@ -18405,10 +18405,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var ex=$id("mpPartsOv"); if(ex)ex.remove();
     var ov=document.createElement("div"); ov.id="mpPartsOv";
     var rows=fm.parts.map(function(p,k){ return '<label class="'+(p.ok?"":"off")+'"><input type="checkbox" data-k="'+k+'"'+(p.ok?"":" disabled")+'><b>'+escH(p.label)+'</b><span title="'+escH(p.detail)+'">'+escH(p.detail)+'</span></label>'; }).join("");
-    ov.innerHTML='<div class="mp-card" role="dialog" aria-modal="true" aria-labelledby="mpPartsT"><div class="mp-t" id="mpPartsT">경기 자료 넣기</div><p class="mp-p">고른 것을 지금 미팅 뒤에 슬라이드로 붙여요 — 사본이라 경기 자료를 나중에 고쳐도 이 슬라이드는 그대로예요.</p><div class="mp-parts">'+rows+'</div><div class="mp-foot"><button type="button" class="btn ghost" data-mp-x>취소</button><button type="button" class="btn primary" data-mp-go disabled>고른 것이 없어요</button></div></div>';
+    ov.innerHTML='<div class="mp-card" role="dialog" aria-modal="true" aria-labelledby="mpPartsT"><div class="mp-t" id="mpPartsT">경기 자료 넣기</div><p class="mp-p">고른 것을 지금 미팅 뒤에 슬라이드로 붙입니다 — 사본이라 경기 자료를 나중에 고쳐도 이 슬라이드는 그대로입니다.</p><div class="mp-parts">'+rows+'</div><div class="mp-foot"><button type="button" class="btn ghost" data-mp-x>취소</button><button type="button" class="btn primary" data-mp-go disabled>고른 것이 없습니다</button></div></div>';
     document.body.appendChild(ov);
     function picked(){ var sl=[]; [].forEach.call(ov.querySelectorAll("input[data-k]:checked"),function(x){ var p=fm.parts[+x.getAttribute("data-k")]; if(p&&p.ok)sl=sl.concat(p.slides||[]); }); return sl; }
-    function upd(){ var n=picked().length, g=ov.querySelector("[data-mp-go]"); g.disabled=!n; g.textContent=n?("슬라이드 "+n+"장 넣기"):"고른 것이 없어요"; }
+    function upd(){ var n=picked().length, g=ov.querySelector("[data-mp-go]"); g.disabled=!n; g.textContent=n?("슬라이드 "+n+"장 넣기"):"고른 것이 없습니다"; }
     function close(){ try{ov.remove();}catch(_){} document.removeEventListener("keydown",onKey,true); }
     function onKey(e){ if(e.key==="Escape"){ e.stopPropagation(); close(); } }
     document.addEventListener("keydown",onKey,true);
@@ -18431,7 +18431,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{ window.__meet.go(at,"first"); }catch(_){}
     try{ if(window.__ksRender)window.__ksRender(); }catch(_){}
     try{ window.__vaultAutoSaveSchedule(); }catch(_){}
-    try{toast("슬라이드 "+add.length+"장을 넣었어요 ✓"+(skipped?(" · 그림 "+skipped+"개는 옮기지 못했어요"):""));}catch(_){}
+    try{toast("슬라이드 "+add.length+"장을 넣었습니다 ✓"+(skipped?(" · 그림 "+skipped+"개는 옮기지 못했습니다"):""));}catch(_){}
   }
   /* 셸이 경기 준비 안 편집을 내려놓았다(다른 화면으로 감) — 띠를 보관함의 보통 모양으로 */
   window.addEventListener("message",function(e){ var d=e.data||{}; if(e.source!==parent||d.source!=="app"||d.type!=="matchEditEnd")return;
@@ -18544,7 +18544,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function doCreateSave(){
     if(window.__vaultViewMode){ doViewSaveBack(); return; }   // 보관함에서 연 항목 수정 저장
     var type=(window.__vaultPending&&window.__vaultPending.type)||curType();
-    if(type==="meeting" && !(typeof anim!=="undefined"&&anim.slides&&anim.slides.length)){ try{toast("저장할 슬라이드가 없어요 — 슬라이드를 추가하세요");}catch(_){} return; }
+    if(type==="meeting" && !(typeof anim!=="undefined"&&anim.slides&&anim.slides.length)){ try{toast("저장할 슬라이드가 없습니다 — 슬라이드를 추가하세요");}catch(_){} return; }
     vaultSaveCurrent({after:function(){
       window.__createPrev=null;
       setTimeout(function(){ hideCreateBar(); try{window.__vaultPending=null;}catch(_){} try{var _w=(window.__viewSnaps&&window.__viewSnaps.board)||{players:[],equipment:[],drawings:[],pitchN:1};if(typeof loadSnap==="function"){loadSnap(_w);}}catch(_){} try{setView("session");}catch(_){} try{parent.postMessage({source:'board',type:'goApp',app:'design'},'*');}catch(_){} try{renderDrillFiles();}catch(_){} },80);
@@ -18571,7 +18571,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     ensureCreateBarCss();
     var ov=document.createElement("div");ov.id="vCreateChooser";
     var card=document.createElement("div");card.className="vcc-card";
-    card.innerHTML='<div class="vcc-head"><div><h3>무엇을 만들까요?</h3><p>목적에 맞는 형식을 고르면 필요한 도구만 열립니다.<br>완성 후 이름과 폴더를 확인하고 보관함에 저장합니다.</p></div><button class="vcc-x" type="button" aria-label="만들기 닫기">×</button></div><div class="vcc-grid" id="vccGrid"></div><div class="vcc-foot"><span class="vcc-step">저장 흐름</span><span>내용 만들기 → 이름·폴더 확인 → 저장 완료 → 보관함으로 자동 복귀</span></div>';
+    card.innerHTML='<div class="vcc-head"><div><h3>무엇을 만들까요?</h3></div><button class="vcc-x" type="button" aria-label="만들기 닫기">×</button></div><div class="vcc-grid" id="vccGrid"></div><div class="vcc-foot"><span class="vcc-step">저장 흐름</span><span>내용 만들기 → 이름·폴더 확인 → 저장 완료 → 보관함으로 자동 복귀</span></div>';
     ov.appendChild(card);document.body.appendChild(ov);
     var choices=[
       {type:"train",name:"훈련 설계",desc:"목표·인원·시간·규칙·코칭 포인트와 그림을 한 카드로 만듭니다.",icon:"훈",color:"#1a8f66"},
@@ -18618,11 +18618,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
      끌어다 놓기 마무리(fin)가 부르던 이 2-인자 이동이 그 시트로 들어갔다 →
      `d` 에 libId 문자열이 들어가 `d.libId` 가 undefined → 시트에서 폴더를 골라도 **아무 것도 안 옮겨졌다**.
      이름을 나눠 둔다(2.363 의 svgGrowth 와 같은 사고). 새 이름 지을 땐 먼저 grep 할 것. */
-  function vaultMoveItemTo(libId,dest){dest=folderNorm(dest);libTurn(function(){return libGet().then(function(lib){var it=lib.find(function(x){return x.libId===libId;});if(it){if(!itemMine(it)){try{toast("다른 코치의 자료는 만든 코치만 옮길 수 있어요");}catch(_){}return;}it.folder=dest||"";it.editedAt=Date.now();return libSet(lib).then(function(){renderDrillFiles();});}});});}   /* 2.967 — 경로 정리·시각 올림·남의 자료 막음 · 2.994 — 읽고-쓰기는 libTurn 한 차례로 */
+  function vaultMoveItemTo(libId,dest){dest=folderNorm(dest);libTurn(function(){return libGet().then(function(lib){var it=lib.find(function(x){return x.libId===libId;});if(it){if(!itemMine(it)){try{toast("다른 코치의 자료는 만든 코치만 옮길 수 있습니다");}catch(_){}return;}it.folder=dest||"";it.editedAt=Date.now();return libSet(lib).then(function(){renderDrillFiles();});}});});}   /* 2.967 — 경로 정리·시각 올림·남의 자료 막음 · 2.994 — 읽고-쓰기는 libTurn 한 차례로 */
   function vaultMoveFolder(src,dest){
     /* 2.967 — 경로 정리 · 남의 자료가 있으면 막음 · 옮긴 자료 시각 올림 · 공유·색·태그가 따라감 */
     if(src==null)return; dest=folderNorm(dest); var leaf=String(src).slice(String(src).lastIndexOf("/")+1); var ndest=folderNorm(dest?dest+"/"+leaf:leaf);
-    if(!ndest||ndest===src)return; if(ndest.indexOf(src+"/")===0||dest===src){try{toast&&toast("그 폴더 안으로는 못 옮겨요");}catch(_){}return;}
+    if(!ndest||ndest===src)return; if(ndest.indexOf(src+"/")===0||dest===src){try{toast&&toast("그 폴더 안으로는 못 옮깁니다");}catch(_){}return;}
     libTurn(function(){return libGet().then(function(lib){   /* 2.994 — 읽고-쓰기는 libTurn 한 차례로 */
       var fx=folderForeign(lib,src,itemMine); if(fx.length){folderForeignToast(src,fx.length,"옮길");return;}
       vaultFolders=folderListMove(vaultFolders,src,ndest);
@@ -18759,7 +18759,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var f=ov.querySelector("#veFrame");f.srcdoc=html;ov.style.display="flex";
   }
   function exportFolder(path){
-    libGet().then(function(lib){var items=lib.filter(function(it){var fp=it.folder||"";return path?(fp===path||fp.indexOf(path+"/")===0):true;}).sort(function(a,b){return (a.savedAt||0)-(b.savedAt||0);});if(!items.length){try{toast("이 폴더에 항목이 없어요");}catch(_){}return;}openPrintOverlay(buildFolderPrint(path,items));});
+    libGet().then(function(lib){var items=lib.filter(function(it){var fp=it.folder||"";return path?(fp===path||fp.indexOf(path+"/")===0):true;}).sort(function(a,b){return (a.savedAt||0)-(b.savedAt||0);});if(!items.length){try{toast("이 폴더에 항목이 없습니다");}catch(_){}return;}openPrintOverlay(buildFolderPrint(path,items));});
   }
   function vaultRow(d){
     var ty=d.type||"train";
@@ -18844,7 +18844,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function openItemView(d){ if(!psVaultRequireLogin())return;window.__vvNextItem=d;   /* 2.276 — 보기 바의 편집 버튼용(원샷) */
     if((d.type==='train'||d.type==='setpiece')&&_vaultBoardContext)window.__vaultBoardLeave();
     var ty=d.type||"train"; if(ty==="train"||ty==="setpiece"){ try{openLibDrawEditor(d.libId,true);}catch(_){} } else { openItem(d,true); } }
-  function openItemEdit(d){ if(!psVaultRequireLogin())return;if(!canEditItem(d)){ try{toast("만든 사람만 편집할 수 있어요 — '복사'로 내 훈련을 만드세요");}catch(_){} return; }
+  function openItemEdit(d){ if(!psVaultRequireLogin())return;if(!canEditItem(d)){ try{toast("만든 사람만 편집할 수 있습니다 — '복사'로 내 훈련을 만드세요");}catch(_){} return; }
     if((d.type==='train'||d.type==='setpiece')&&_vaultBoardContext)window.__vaultBoardLeave();
     var ty=d.type||"train"; if(ty==="train"||ty==="setpiece"){ try{openLibDrawEditor(d.libId,false);}catch(_){} } else { openItem(d,false); } }
   window.__psVaultOpenItem=function(d,ro){ return ro?openItemView(d):openItemEdit(d); };   /* 3.297 — 앱을 열면 «불러오기» 창(board-open-chooser.js)의 문 — 보기 · 편집 길 그대로 */
@@ -19006,16 +19006,16 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       return r;
     });
   }
-  function meetSetMatchSay(r,ref){ try{ if(!r||!r.ok){toast(r&&r.reason==="denied"?"만든 사람만 경기와 이을 수 있어요":(r&&r.reason==="gone"?"이 자료를 보관함에서 찾지 못했어요":(r&&r.reason==="type"?"미팅·작전판만 경기와 이을 수 있어요":"경기와 잇지 못했어요 — 다시 눌러 주세요")));return;}
-    toast(ref?("‘"+r.name+"’ — "+meetMatchLong(ref,meetLiveMatch(ref))+"에 연결했어요 ✓ · 경기 준비에서 바로 보여요"):("‘"+r.name+"’ 경기 연결을 끊었어요 · 자료는 보관함에 그대로")); }catch(_){} }
-  window.__meetingSetMatch=function(libId,ref){ return meetSetMatch(String(libId||""),ref).then(function(r){meetSetMatchSay(r,ref?meetRefClean(ref):null);return r;},function(e){try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"경기와 잇지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return {ok:false};}); };
+  function meetSetMatchSay(r,ref){ try{ if(!r||!r.ok){toast(r&&r.reason==="denied"?"만든 사람만 경기와 이을 수 있습니다":(r&&r.reason==="gone"?"이 자료를 보관함에서 찾지 못했습니다":(r&&r.reason==="type"?"미팅·작전판만 경기와 이을 수 있습니다":"경기와 잇지 못했습니다 — 다시 눌러 주세요")));return;}
+    toast(ref?("‘"+r.name+"’ — "+meetMatchLong(ref,meetLiveMatch(ref))+"에 연결했습니다 ✓ · 경기 준비에서 바로 보입니다"):("‘"+r.name+"’ 경기 연결을 끊었습니다 · 자료는 보관함에 그대로")); }catch(_){} }
+  window.__meetingSetMatch=function(libId,ref){ return meetSetMatch(String(libId||""),ref).then(function(r){meetSetMatchSay(r,ref?meetRefClean(ref):null);return r;},function(e){try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"경기와 잇지 못했습니다 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return {ok:false};}); };
   /* 경기 화면 «경기 자료로 미팅 만들기» — 경기 쪽이 슬라이드 재료(경기 보드 형식)를 보내면 여기서 작전판 스냅·썸네일로 바꿔 새 미팅을 만든다.
      사본이다 — 나중에 경기 보드를 고쳐도 이 미팅은 그대로. 저장은 팀 공유(기본, 사용자 승인) 또는 내 자료. */
   window.__meetingFromMatch=function(p){
     p=p||{}; var _inp=!!p.inplace, _fail=function(){ if(_inp)meetMatchDonePost({ref:meetRefClean(p.ref)},true); return false; };
     if(!psVaultRequireLogin())return Promise.resolve(_fail());
     var src=(Array.isArray(p.slides)?p.slides:[]).slice(0,30);
-    if(!src.length&&!p.template){try{toast("옮길 경기 자료가 없어요");}catch(_){} return Promise.resolve(_fail());}
+    if(!src.length&&!p.template){try{toast("옮길 경기 자료가 없습니다");}catch(_){} return Promise.resolve(_fail());}
     var team=psIsTeamWs(),shared=!!p.shared&&team,ref=meetRefClean(p.ref),base=Object.assign(meetBaseSnap(),{pitchTheme:"",pitchCustom:null,pitchImg:null,gridType:"grid15"},window.__meetLook),skipped=0,slides=[];
     /* 2.965 — «기본 9장»(보관함 › 만들기 › 미팅과 같은 BEST 11·블록·빌드업·코너킥)을 뒤에 붙인다. 경기 준비 보드가 빠진 자리를
        새 미팅이 맡으니, 경기에서 만들어도 보관함에서 만든 것과 같은 판으로 시작한다. 선발 11 을 가져왔으면 BEST 11 은 뺀다(같은 장이 둘이 된다) */
@@ -19025,20 +19025,20 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var r=meetSnapFromPct(base,sp); skipped+=r.skipped; try{r.snap.orientation=_oh;}catch(_){} var th=""; try{th=window.__snapToThumb?window.__snapToThumb(r.snap):"";}catch(_){}
       slides.push({pdfOrientation:_po,snap:r.snap,thumb:th||"",title:String(sp.title||"").trim().slice(0,80),points:(Array.isArray(sp.points)?sp.points:[]).map(function(x){return String(x==null?"":x).trim().slice(0,160);}).filter(Boolean).slice(0,10)}); });
     tpl.forEach(function(t){ var th=""; try{th=window.__snapToThumb?window.__snapToThumb(t.snap):"";}catch(_){} slides.push({pdfOrientation:_po,snap:t.snap,thumb:th||"",title:t.title,points:t.points||[]}); });
-    if(!slides.length){try{toast("옮길 경기 자료가 없어요");}catch(_){} return Promise.resolve(_fail());}
+    if(!slides.length){try{toast("옮길 경기 자료가 없습니다");}catch(_){} return Promise.resolve(_fail());}
     var name=String(p.name||"").trim().slice(0,40)||((ref&&ref.opp?(ref.opp+"전 "):"")+"미팅");
     var item={libId:"V"+Date.now().toString(36),type:"meeting",name:name,folder:shared?VAULT_SHARE_FOLDER:"",thumb:slides[0].thumb,snap:slides[0].snap,slides:slides,tags:p.tags||[],savedAt:Date.now()};
     if(ref)item.matchRef=ref;
     stampCreator(item);
     if(shared){ try{ addFolder(VAULT_SHARE_FOLDER); if(!fmetaOf(VAULT_SHARE_FOLDER).shared)setFolderMeta(VAULT_SHARE_FOLDER,"shared",true); }catch(_){} }
     return meetLibMutate(function(lib){ lib.unshift(item); return {ok:true}; }).then(function(){
-      try{toast("슬라이드 "+slides.length+"장으로 미팅을 만들었어요 ✓"+(shared?" · ☁ 팀 공유":"")+(skipped?(" · 그림 "+skipped+"개는 옮기지 못했어요"):""));}catch(_){}
+      try{toast("슬라이드 "+slides.length+"장으로 미팅을 만들었습니다 ✓"+(shared?" · ☁ 팀 공유":"")+(skipped?(" · 그림 "+skipped+"개는 옮기지 못했습니다"):""));}catch(_){}
       try{renderDrillFiles();}catch(_){}
       window.__vaultFromMatch={libId:item.libId,ref:ref,inplace:_inp,parts:Array.isArray(p.parts)?p.parts:null,name:item.name};   /* 2.965 — 만든 뒤 «‹ 경기 준비로» 한 번에 · 2.966 경기 준비 안 편집 */
       try{openItem(item,false);}catch(_){}
       if(_inp)setTimeout(meetMatchReadyPost,60);
       return true;
-    },function(e){ try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"미팅을 만들지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return _fail(); });
+    },function(e){ try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"미팅을 만들지 못했습니다 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return _fail(); });
   };
   /* 3.031 — 작전판 → 슬라이드쇼용 장(미팅 슬라이드와 같은 모양). 페이지 하나 = 장 하나, 제목 = 페이지 이름, 장면(2개 이상)은 그대로 장면으로.
      slide.snap 은 장면 1(미팅 규칙 2.935). 방향은 페이지 것 그대로(가로 h · 세로 v) — 그려 둔 모양으로 보인다. 원본은 건드리지 않는다(사본) */
@@ -19064,7 +19064,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(!psVaultRequireLogin()){ if(_inp)meetMatchDonePost(null,true); return; }
     libGet().then(function(lib){
       var d=null;for(var i=0;i<lib.length;i++){if(lib[i]&&lib[i].libId===libId){d=lib[i];break;}}
-      if(!d||!meetLinkable(d)){try{toast("이 자료를 보관함에서 찾지 못했어요 — 지워졌거나 아직 이 기기에 오지 않았어요");}catch(_){} if(_inp)meetMatchDonePost(null,true); return;}   /* 2.965 — 작전판도 */
+      if(!d||!meetLinkable(d)){try{toast("이 자료를 보관함에서 찾지 못했습니다 — 지워졌거나 아직 이 기기에 오지 않았습니다");}catch(_){} if(_inp)meetMatchDonePost(null,true); return;}   /* 2.965 — 작전판도 */
       var _show=!!(opts.show&&(d.type||"")==="meeting");
       /* 3.031 — 작전판도 «▶ 슬라이드쇼»(오류 제보 81e77b91 «보관함에서 가져오면 슬라이드쇼가 없다»): 페이지를 장으로(장면 그대로) 한
          **보기 전용 미팅**으로 띄운다 — 보관함에는 아무것도 쓰지 않는다(__curVaultId 없음 · 자동 저장 멈춤). 쇼가 끝나면 경기 준비로. */
@@ -19080,7 +19080,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       if(canEditItem(d))openItemEdit(d);else openItemView(d);
       if(_inp)setTimeout(meetMatchReadyPost,60);
       if(_show)setTimeout(function(){try{if(window.__meet&&window.__meet.show)window.__meet.show(true);}catch(_){}},320);
-    }).catch(function(e){try{toast((e&&e.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요":"보관함을 열지 못했어요");}catch(_){} if(_inp)meetMatchDonePost(null,true);});
+    }).catch(function(e){try{toast((e&&e.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요":"보관함을 열지 못했습니다");}catch(_){} if(_inp)meetMatchDonePost(null,true);});
   };
   window.__vaultBackToMatch=function(ref){ meetOpenTeamMatch(ref); };
   function meetOpenTeamMatch(ref){
@@ -19105,10 +19105,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(!o.ro){
       if(lists.up.length)body+='<div class="mm-h">다가오는 경기</div>'+lists.up.map(function(m){return row(m,false);}).join("");
       if(lists.past.length)body+='<div class="mm-h">지난 경기</div>'+lists.past.map(function(m){return row(m,true);}).join("");
-      if(!lists.up.length&&!lists.past.length)body+='<div class="mm-empty">팀 운영 › 경기에 경기가 아직 없어요 — 일정에 경기를 넣으면 여기에 떠요</div>';
+      if(!lists.up.length&&!lists.past.length)body+='<div class="mm-empty">팀 운영 › 경기에 경기가 아직 없습니다 — 일정에 경기를 넣으면 여기에 뜹니다</div>';
     }
     ov.innerHTML='<div class="mm-card"><div class="mm-title">'+(o.ro?"연결된 경기":("이 "+(o.kind||"미팅")+"을 어느 경기와 이을까요?"))+'</div>'
-      +'<div class="mm-sub">'+(o.ro?"만든 사람만 연결을 바꿀 수 있어요":("고르면 그 경기의 «경기 준비»에서 이 "+(o.kind||"미팅")+"이 바로 보여요 · 선수에게는 보이지 않아요"))+'</div>'
+      +'<div class="mm-sub">'+(o.ro?"만든 사람만 연결을 바꿀 수 있습니다":("고르면 그 경기의 «경기 준비»에서 이 "+(o.kind||"미팅")+"이 바로 보입니다 · 선수에게는 보이지 않습니다"))+'</div>'
       +'<div class="mm-list">'+body+'</div>'
       +'<div class="mm-foot">'+((cur&&!o.ro)?'<button type="button" data-mm-unlink>연결 끊기</button>':'')+'<button type="button" class="mm-close" data-mm-close>닫기</button></div></div>';
     document.body.appendChild(ov);
@@ -19135,7 +19135,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     b.textContent=ref?("⚽ "+meetMatchShort(ref,meetLiveMatch(ref))):"⚽ 경기 연결";
     b.title=ref?(meetMatchLong(ref,meetLiveMatch(ref))+" — 눌러서 경기 열기·바꾸기"):"이 미팅을 팀 운영의 경기와 잇기";
     b.onclick=function(){ meetPickSheet({cur:ref,ro:ro,onPick:function(nr){
-      if(pend){ pend.matchRef=nr||null; window.__curMeetRef=nr||null; try{if(window.__ksRender)window.__ksRender();}catch(_){} try{toast(nr?("저장하면 "+meetMatchLong(nr,meetLiveMatch(nr))+"에 연결돼요"):"경기 연결을 뺐어요");}catch(_){} return; }
+      if(pend){ pend.matchRef=nr||null; window.__curMeetRef=nr||null; try{if(window.__ksRender)window.__ksRender();}catch(_){} try{toast(nr?("저장하면 "+meetMatchLong(nr,meetLiveMatch(nr))+"에 연결됩니다"):"경기 연결을 뺐습니다");}catch(_){} return; }
       window.__meetingSetMatch(window.__curVaultId,nr);
     }}); };
     return b;
@@ -19144,7 +19144,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function vxMatchRow(d){
     if(!meetLinkable(d))return "";   /* 2.965 — 작전판도 */
     var ref=d.matchRef||null,mine=canEditItem(d);
-    if(!ref){ if(!mine)return ""; return '<div class="vx-matchrow empty"><span class="t">경기와 잇기<small>팀 운영 › 경기 준비에 이 '+meetKindWord(d)+'이 바로 보여요</small></span><button type="button" data-vx-mpick>경기 고르기</button></div>'; }
+    if(!ref){ if(!mine)return ""; return '<div class="vx-matchrow empty"><span class="t">경기와 잇기<small>팀 운영 › 경기 준비에 이 '+meetKindWord(d)+'이 바로 보입니다</small></span><button type="button" data-vx-mpick>경기 고르기</button></div>'; }
     return '<div class="vx-matchrow"><span class="t">연결된 경기<b>'+esc(meetMatchLong(ref,meetLiveMatch(ref)))+'</b></span><button type="button" data-vx-mopen>경기 열기 ›</button>'+(mine?'<button type="button" data-vx-mpick>바꾸기</button>':'')+'</div>';
   }
   function vxMatchBind(el,d){
@@ -19171,7 +19171,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
        (전에는 "어디서 공유 중"이라고 알려 주기만 하는 눌러도 아무 일 없는 줄이었다). */
     if(psIsTeamWs()&&canEditItem(d))mi(itemShared(d)?("☁ 공유 끄기 — 지금 "+folderLeaf(folderSharedPath(d.folder))+"에서 공유 중"):"☁ 팀과 공유",function(){ itemShareToggle(d); });
     else if(psIsTeamWs()&&folderSharedPath(d.folder))mi("☁ "+folderLeaf(folderSharedPath(d.folder))+" 폴더에서 공유 중",function(){});
-    mi("파일 내보내기(JSON)",function(){try{var now=new Date();var ymd=now.getFullYear()+String(now.getMonth()+1).padStart(2,"0")+String(now.getDate()).padStart(2,"0");var pack={type:"process-studio-drillpack",version:1,date:now.toISOString(),drills:[dc(d)]};var blob=new Blob([JSON.stringify(pack,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=(d.name||"항목")+"-"+ymd+".json";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},3000);try{toast("내보냈어요 \u2713");}catch(_){}}catch(_){}});
+    mi("파일 내보내기(JSON)",function(){try{var now=new Date();var ymd=now.getFullYear()+String(now.getMonth()+1).padStart(2,"0")+String(now.getDate()).padStart(2,"0");var pack={type:"process-studio-drillpack",version:1,date:now.toISOString(),drills:[dc(d)]};var blob=new Blob([JSON.stringify(pack,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=(d.name||"항목")+"-"+ymd+".json";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},3000);try{toast("내보냈습니다 \u2713");}catch(_){}}catch(_){}});
     mi("공유 링크",function(){try{var ty=d.type||"train";var pl;if(ty==="train"||ty==="setpiece"){var f=(focusOf(d.focus)||{});var ovv=(d.overview||d.note||"");var secs=sectionsOf(d).map(function(kv){var k=kv[0],label=kv[1];var v=((k==="overview")?ovv:(d[k]||"")).toString().trim();return v?[label,v]:null;}).filter(Boolean);pl={kind:"drill",name:d.name||"드릴",focusLabel:f.label||"",minutes:(+d.minutes||0),sets:(+d.sets||1),rpe:(d.rpe||5),snap:d.snap||null,secs:secs,sceneSnaps:(d.scenes||[]).map(function(s){return s.snap;}).filter(Boolean)};}else{pl={kind:"board",title:d.name||"",snap:d.snap};}var _sid=null,_cp=false;try{ if(typeof psVaultUnlocked==="function"&&psVaultUnlocked()){ _sid=psShareId(); _cp=psCopySync(location.origin+"/s/"+_sid); if(_cp)toast("공유 링크를 복사했어요 — 바로 붙여넣기 하세요"); } }catch(_){}   /* 2.725 — 누르는 순간 짧은 링크를 먼저 복사(제스처 안에서만 클립보드가 열린다) */
       parent.postMessage({source:"board",type:"shareData",payload:pl,shareId:_sid,copied:_cp},"*");}catch(_){}});
     if(canEdit)mi("삭제",function(){psConfirm((d.name||"이 항목")+" 삭제?",function(){delFromLib(d.libId);});});
@@ -19221,7 +19221,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var sub=document.createElement("div");sub.style.cssText="font-size:12px;color:var(--txt-dim,#9aa4b3);margin:3px 0 13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";sub.textContent=(d.name||"항목");
       card.appendChild(head);card.appendChild(sub);
       function close(){try{ov.remove();}catch(_){}}
-      function moveTo(path){path=folderNorm(path);libTurn(function(){return libGet().then(function(l2){var it=l2.find(function(x){return x.libId===d.libId;});if(it&&!itemMine(it)){try{toast("다른 코치의 자료는 만든 코치만 옮길 수 있어요");}catch(_){}close();return;}close();if(it){it.folder=path||"";it.editedAt=Date.now();return libSet(l2).then(function(){try{toast(path?("‘"+folderLeaf(path)+"’로 이동됨"):"보관함으로 이동됨");}catch(_){}renderDrillFiles();});}});});}   /* 2.994 — libTurn */
+      function moveTo(path){path=folderNorm(path);libTurn(function(){return libGet().then(function(l2){var it=l2.find(function(x){return x.libId===d.libId;});if(it&&!itemMine(it)){try{toast("다른 코치의 자료는 만든 코치만 옮길 수 있습니다");}catch(_){}close();return;}close();if(it){it.folder=path||"";it.editedAt=Date.now();return libSet(l2).then(function(){try{toast(path?("‘"+folderLeaf(path)+"’로 이동됨"):"보관함으로 이동됨");}catch(_){}renderDrillFiles();});}});});}   /* 2.994 — libTurn */
       var nb=document.createElement("button");
       nb.style.cssText="display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1.5px dashed var(--blue,var(--ps-navy,#14213D));background:color-mix(in srgb,var(--ps-navy,#14213D) 8%,transparent);color:var(--blue,var(--ps-navy,#14213D));font-family:inherit;font-size:14px;font-weight:800;padding:13px;border-radius:12px;cursor:pointer;margin-bottom:10px;flex:0 0 auto;";
       nb.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>새 폴더 만들어 이동';
@@ -19251,7 +19251,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   /* 1.523 — 팀 공간의 내 자료도 서버에 **비공개로** 백업된다(sync.js _syncLibrary + ps_library.private).
      그래서 평소에는 경고가 없다. 백업이 실제로 안 되는 두 경우에만 말한다:
        ① 로그인이 없다 ② 서버에 비공개 컬럼이 아직 없다(ps_lib_priv='0').
-     1.522의 '이 기기에만 있어요'를 항상 띄우던 것을 이 조건으로 좁힌 것이다. */
+     1.522의 '이 기기에만 있습니다'를 항상 띄우던 것을 이 조건으로 좁힌 것이다. */
   function paintLocalOnlyNotice(lib){
     try{
       var box=$id("drillFiles"); if(!box)return;
@@ -19735,7 +19735,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var nb=el.querySelector("[data-vx-note]");if(nb)nb.onclick=function(){sendVaultItemToNote(d);};
     var pb=el.querySelector("[data-vx-play]");
     if(pb)pb.onclick=function(e){e.stopPropagation();var _pd=d;
-      try{var _cur=_pg&&_pg[_pi||0];if(_cur&&('fr' in _cur)){_pd={libId:d.libId,frames:_cur.fr||[]};if(!vxFramesOf(_pd)){toast('이 '+(d.book?'시퀀스':'페이지')+'는 장면이 하나예요');return;}}}catch(_){}   /* 2.985 — 여러 페이지 항목은 지금 보이는 페이지의 장면을 튼다(전엔 저장할 때 열려 있던 페이지의 장면이 어느 페이지에서나 돌았다) */
+      try{var _cur=_pg&&_pg[_pi||0];if(_cur&&('fr' in _cur)){_pd={libId:d.libId,frames:_cur.fr||[]};if(!vxFramesOf(_pd)){toast('이 '+(d.book?'시퀀스':'페이지')+'는 장면이 하나입니다');return;}}}catch(_){}   /* 2.985 — 여러 페이지 항목은 지금 보이는 페이지의 장면을 튼다(전엔 저장할 때 열려 있던 페이지의 장면이 어느 페이지에서나 돌았다) */
       vxAnimStart(el.querySelector('.vx-preview-thumb'),_pd);};
     if(_pg){   /* 2.646 — 화살표로 페이지 넘기기: 썸네일(.vx-pg-host)과 캡션만 바꾼다 */
       var _pi=0,_tb=el.querySelector('.vx-preview-thumb');
@@ -19865,7 +19865,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         if(_ghost.length){
           _ghost.forEach(function(d){ d.folder=""; });
           libFix(function(l){ var n=0; l.forEach(function(d){ if(d&&String(d.folder||"").indexOf("__")===0){ d.folder=""; n++; } }); return n; }).catch(function(){});   /* 2.991 — 새로 읽은 목록에(libFix) */
-          try{toast("폴더가 아닌 자리에 있던 자료 "+_ghost.length+"개를 미분류로 옮겼어요");}catch(_){}
+          try{toast("폴더가 아닌 자리에 있던 자료 "+_ghost.length+"개를 미분류로 옮겼습니다");}catch(_){}
         }
         var _gf=vaultFolders.filter(function(p){ return String(p||"").indexOf("__")===0; });
         if(_gf.length&&vaultFoldersReady){
@@ -20004,7 +20004,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       try{ if(_vxSc&&_vxTop&&_vxSc.scrollTop!==_vxTop)_vxSc.scrollTop=_vxTop; }catch(_){}   /* 3.012 — 위 «스크롤 자리» */
       if(!kids.length&&!arr.length){
         if(!q&&!lib.length&&(cf===""||cf==="__all"||cf==="__mine"))items.appendChild(vaultStarter());   /* 3.001 — 팀 공간은 «내 자료»로 열린다(13580) — 보관함이 통째로 비었으면 거기서도 첫 화면(예시)을 보인다 */
-        else{var empty=document.createElement("div");empty.className="df-empty";empty.textContent=(cf==="__fav"?"즐겨찾기한 항목이 없어요 — ☆를 눌러 추가":(cf==="__recent"?"최근 항목이 없어요":(special?(lib.length?"조건에 맞는 항목이 없어요":"비어 있어요 — ＋ 만들기로 시작하세요"):"이 폴더는 비어 있어요 — ＋ 새 폴더 / ＋ 만들기")));items.appendChild(empty);}
+        else{var empty=document.createElement("div");empty.className="df-empty";empty.textContent=(cf==="__fav"?"즐겨찾기한 항목이 없습니다 — ☆를 눌러 추가":(cf==="__recent"?"최근 항목이 없습니다":(special?(lib.length?"조건에 맞는 항목이 없습니다":"비어 있습니다 — ＋ 만들기로 시작하세요"):"이 폴더는 비어 있습니다 — ＋ 새 폴더 / ＋ 만들기")));items.appendChild(empty);}
       }
     });
   };
@@ -20036,10 +20036,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     function vaultStarter(){
     var el=document.createElement('div');el.className='vault-start';
     var seeding=!!_vxSeeding,ex=seeding?null:vxExList();   /* 3.001 — 예시(종류마다 하나). 보기 전용이거나 예시 파일을 못 받았으면 옛 첫 화면 그대로 · «프로세스» 폴더를 넣는 중이면 그 안내만 */
-    el.innerHTML='<div class="vs-head">'+(seeding?'«프로세스» 폴더를 준비하는 중이에요':'보관함이 비어 있어요')+'</div>'
-      +(seeding?'<div class="vs-sub">패턴북 · 훈련 · 세트피스 · 작전판 · 미팅 자료 예시를 넣고 있어요. 잠시만요.</div>'
-       :ex?'<div class="vs-sub">작전판·훈련·세트피스·미팅 자료를 저장해 두고 언제든 다시 여는 공간이에요. 먼저 예시를 열어 보세요.</div>'
-          :'<div class="vs-sub">작전판·세트피스를 저장해 두고 언제든 다시 여는 공간이에요. 빈 판에서 시작하거나, 템플릿을 열어 바로 고쳐 쓰세요.</div>')
+    el.innerHTML='<div class="vs-head">'+(seeding?'«프로세스» 폴더를 준비하는 중입니다':'보관함이 비어 있습니다')+'</div>'
+      +(seeding?'<div class="vs-sub">패턴북 · 훈련 · 세트피스 · 작전판 · 미팅 자료 예시를 넣고 있습니다. 잠시만요.</div>'
+       :ex?'<div class="vs-sub">먼저 예시를 열어 보세요.</div>'
+          :'<div class="vs-sub">빈 판에서 시작하거나, 템플릿을 열어 바로 고쳐 쓰세요.</div>')
       /* 1.986 — 팀 공간에서 비어 보일 때 진단 줄(사용자 제보: 다른 코치 보관함이 빔). 받는 쪽이 왜 못 보는지 바로 읽히게 */
       +(function(){ try{ if(!psIsTeamWs())return ''; var P=window.parent||window; var PP=(P.PSPerms&&P.PSPerms.role)?P.PSPerms:(window.PSPerms&&PSPerms.role?PSPerms:null), rid=PP?PP.role():'', role=(PP&&PP.roleLabel&&/^(executive|staff|player)$/.test(rid))?PP.roleLabel(rid):'';   /* 3.039 — 내부 역할 키(executive · ?) 대신 사람 말(피드백 CP-8). 모르면 줄에서 뺀다 */
           var meta={}; try{ meta=JSON.parse(localStorage.getItem('cs_vault_folder_meta_v1')||'{}')||{}; }catch(_){}
@@ -20079,7 +20079,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function vxExCanWrite(){ try{ return !document.body.classList.contains('ps-viewonly'); }catch(_){ return true; } }
   function vxExList(){ var X=vxEx(); if(!X||!vxExCanWrite())return null; try{ if(!_vxList)_vxList=X.list(); }catch(_){ _vxList=null; } return (_vxList&&_vxList.length)?_vxList:null; }
   function vxExSection(ex){
-    return '<div class="vs-ex" role="group" aria-label="예시로 둘러보기"><div class="vs-ex-h"><b>예시로 둘러보기</b><span>종류마다 하나씩 — 누르면 내 보관함 «프로세스» 폴더에 담기고 바로 열려요. 그대로 고쳐 써도 됩니다.</span></div>'
+    return '<div class="vs-ex" role="group" aria-label="예시로 둘러보기"><div class="vs-ex-h"><b>예시로 둘러보기</b><span>종류마다 하나씩 — 누르면 내 보관함 «프로세스» 폴더에 담기고 바로 열립니다. 그대로 고쳐 써도 됩니다.</span></div>'
       +'<div class="vs-cards">'+ex.map(function(x){ return '<button type="button" class="vs-card vs-exc" data-vx="'+esc(x.key)+'" title="'+esc(x.name)+'">'+x.pic+'<div class="vs-nm">'+esc(x.label)+'</div><div class="vs-tag">'+esc(x.tag)+'</div></button>'; }).join('')+'</div>'
       +'<button type="button" class="vs-ex-all" data-vxall="1">예시 '+ex.length+'개 모두 담기</button></div>';
   }
@@ -20089,7 +20089,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     it.thumb=t(it.snap); (it.trainings||[]).forEach(function(x){ x.thumb=t(x.snap); }); (it.slides||[]).forEach(function(x){ x.thumb=t(x.snap); }); }
   function vaultAddExamples(keys,openKey){
     if(!psVaultRequireLogin())return Promise.resolve(false);
-    var X=vxEx(); if(!X){ try{toast("예시를 불러오지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return Promise.resolve(false); }
+    var X=vxEx(); if(!X){ try{toast("예시를 불러오지 못했습니다 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return Promise.resolve(false); }
     if(!vxExCanWrite()){ try{toast("보기 권한이라 보관함에 담을 수 없어요");}catch(_){} return Promise.resolve(false); }
     try{toast("예시를 담는 중…");}catch(_){}
     /* 그림을 그리기 전에 한 번 쉰다 — 잠근 단추와 안내가 먼저 화면에 그려지게(다섯 개 ≈ 14장) */
@@ -20107,10 +20107,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       });}).then(function(r){
         if(!openKey){ try{ libFilter.folder=X.FOLDER; }catch(_){} }
         try{renderDrillFiles();}catch(_){}
-        try{ toast(r.n?("예시 "+r.n+"개를 «"+X.FOLDER+"» 폴더에 담았어요"+(r.open?" — 여는 중":"")):(r.open?"이미 담아 둔 예시를 열어요":"예시는 이미 «"+X.FOLDER+"» 폴더에 있어요")); }catch(_){}
+        try{ toast(r.n?("예시 "+r.n+"개를 «"+X.FOLDER+"» 폴더에 담았습니다"+(r.open?" — 여는 중":"")):(r.open?"이미 담아 둔 예시를 엽니다":"예시는 이미 «"+X.FOLDER+"» 폴더에 있습니다")); }catch(_){}
         if(r.open){ var it=r.open; setTimeout(function(){ try{openItem(it,false);}catch(_){} },0); }
         return true;
-      },function(e){ try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"예시를 담지 못했어요 — 다시 눌러 주세요");}catch(_){} return false; });
+      },function(e){ try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"예시를 담지 못했습니다 — 다시 눌러 주세요");}catch(_){} return false; });
     });
   }
   /* ── 3.001 · «프로세스» 폴더를 모든 사용자에게 한 번 — 사용자 «프로세스 폴더를 따로 만들어서 거기에 다 넣어줘 기본으로 있는것 처럼» · «모든 사용자에게 한 번씩».
@@ -20147,7 +20147,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       if(r.n){ try{ addFolder(X.FOLDER); }catch(_){}
         if(!r.was){ try{ var cf=libFilter.folder||""; if(cf===""||cf==="__all"||cf==="__mine")libFilter.folder=X.FOLDER; }catch(_){} }
         try{renderDrillFiles();}catch(_){}
-        vxSeedToast("«"+X.FOLDER+"» 폴더에 예시 "+r.n+"개가 준비되어 있어요 — 패턴북 · 훈련 · 세트피스 · 작전판 · 미팅",0); }
+        vxSeedToast("«"+X.FOLDER+"» 폴더에 예시 "+r.n+"개가 준비되어 있습니다 — 패턴북 · 훈련 · 세트피스 · 작전판 · 미팅",0); }
       return true;
     },function(){ return false; });   /* 실패하면 표식을 남기지 않는다 — 다음에 보관함을 열 때 다시 */
   }
@@ -20392,7 +20392,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   }
   var ov=document.createElement("div");ov.id="startForm";
   ov.innerHTML='<div class="sf-card">'
-   +'<h3>포메이션으로 시작</h3><p class="sf-sub">우리 팀과 상대 팀 포메이션을 골라 바로 배치해요. 비워두려면 ‘빈 페이지’.</p>'
+   +'<h3>포메이션으로 시작</h3><p class="sf-sub">우리 팀과 상대 팀 포메이션을 골라 바로 배치합니다. 비워두려면 ‘빈 페이지’.</p>'
    +'<div class="sf-lab"><i style="background:#4d7dff"></i>우리 팀</div>'+grid("blue",ourKey)
    +'<div class="sf-lab"><i style="background:#C24A46"></i>상대 팀</div>'+grid("red",oppKey)
    +'<button class="sf-go" id="sfGo">시작</button>'
@@ -20504,7 +20504,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     trSel.innerHTML='<select id="ksTrSel"><option value="slide">전환: 슬라이드</option><option value="fade">전환: 페이드</option><option value="none">전환: 없음</option></select>';
     /* 2.930 — 페이지 보기(넓은 화면)에서는 이 칸이 오른쪽에 늘 서는 «이 슬라이드» 칸이 된다(맨 위 문구·운동장 편집 줄은 그때만) */
     ed.innerHTML='<div class="kl">이 슬라이드</div><label class="ks-fl" for="ksTitle">제목</label><input id="ksTitle" placeholder="제목 (예: 후방 빌드업)"><label class="ks-fl" for="ksPoints">메모 <span>한 줄에 하나</span></label><textarea id="ksPoints" placeholder="포인트 — 한 줄에 하나"></textarea>'
-      +'<div class="ks-pgonly"><label class="ks-fl" for="ksBrand">맨 위 문구</label><input id="ksBrand" maxlength="80" placeholder="PROCESS"><p class="ks-tip">모든 슬라이드에 같이 적용돼요. 글자 크기·굵기·색은 종이에서 그 글을 누르면 바꿀 수 있어요.</p><div class="ks-sep"></div><div class="ks-fl">운동장</div><button type="button" id="ksEditPitch">운동장 편집 ›</button><p class="ks-tip" id="ksOrientTip"></p></div>';
+      +'<div class="ks-pgonly"><label class="ks-fl" for="ksBrand">맨 위 문구</label><input id="ksBrand" maxlength="80" placeholder="PROCESS"><p class="ks-tip">모든 슬라이드에 같이 적용됩니다.</p><div class="ks-sep"></div><div class="ks-fl">운동장</div><button type="button" id="ksEditPitch">운동장 편집 ›</button><p class="ks-tip" id="ksOrientTip"></p></div>';
     [prog,ov,strip,ed,trSel,zL,zR,hd,top,bot].forEach(function(e){stg.appendChild(e);});
     ed.querySelector("#ksBrand").addEventListener("input",function(e){var f=frames()[idx()];if(f){var _bv=e.target.value;frames().forEach(function(s){s.pageBrand=_bv;});ovRender();}   /* 2.960 — 맨 위 문구는 미팅 전체의 머리글(사용자 «쓰면 다른 페이지도 전부 적용») */});
     ed.querySelector("#ksEditPitch").onclick=function(){try{window.__meetingPageEdit();}catch(_){}};
@@ -20961,11 +20961,11 @@ try{ var _nb=document.getElementById('dfNew');
       clearTimeout(_nbT); _nbUndo=(chain||lose)?{prev:prev,at:Date.now(),fresh:_nbSig()}:null;
       if(_nbUndo)_nbT=setTimeout(function(){ _nbUndo=null; try{render();}catch(_){} },NB_UNDO_MS);
       render(); persist();
-      _nbSave("새 보드로 시작했어요"+(dflt?" · 새 보드 기본 세팅으로":"")+" · 보관함 자료는 그대로예요");
+      _nbSave("새 보드로 시작했습니다"+(dflt?" · 새 보드 기본 세팅으로":"")+" · 보관함 자료는 그대로입니다");
     };
     var what=(c.n>1?("페이지 "+c.n+"개, "):"")+(c.sc?("장면 "+c.sc+"개, "):"");
     if(dn){
-      psChoice("새 보드를 어떻게 시작할까요?\n\n"+(lose?("· 지금 보드의 "+what+"선수·장비·그림은 지워요\n"):"")+"· «새 보드 기본 세팅»에 선수 "+dn+"명 배치가 저장돼 있어요(보드 설정 › 내 화면 › 새 보드 › 기본값)\n· 보관함에 저장한 자료는 그대로예요"+(lose?"\n· 1분 안에는 위 띠의 «↶ 이전 보드»로 되살릴 수 있어요":""),
+      psChoice("새 보드를 어떻게 시작할까요?\n\n"+(lose?("· 지금 보드의 "+what+"선수·장비·그림은 지워요\n"):"")+"· «새 보드 기본 세팅»에 선수 "+dn+"명 배치가 저장돼 있어요(보드 설정 › 내 화면 › 새 보드 › 기본값)\n· 보관함에 저장한 자료는 그대로입니다"+(lose?"\n· 1분 안에는 위 띠의 «↶ 이전 보드»로 되살릴 수 있어요":""),
         [{label:"빈 보드로 시작",primary:true,value:"empty"},{label:"기본 세팅으로 시작 (선수 "+dn+"명)",value:"default"},{label:"취소",value:null}],
         function(v){ if(v==="empty")go(false); else if(v==="default")go(true); });
       return;
@@ -21011,7 +21011,7 @@ try{ var _nb=document.getElementById('dfNew');
     if(_lent)return;
     ensure(); capture();
     var room=MAXP-pages.length;
-    if(room<MEET_SET.length){ _toast("페이지 자리가 부족해요 — "+MEET_SET.length+"개 필요 (남은 "+room+"개)"); return; }
+    if(room<MEET_SET.length){ _toast("페이지 자리가 부족합니다 — "+MEET_SET.length+"개 필요 (남은 "+room+"개)"); return; }
     var go=function(){
       var base=_clone(_snap()||{}); base.drawings=[]; base.equipment=[];   /* 지금 배치(선수·이름·포메이션)는 복사, 그림·장비만 비움 */
       var at=idx;
@@ -21141,7 +21141,7 @@ try{ var _nb=document.getElementById('dfNew');
         ch.setAttribute("aria-label","보관함 연결: "+(_lk.tag.name||"작전판"));
         var cx=document.createElement("button"); cx.type="button"; cx.textContent="×"; cx.title="연결 끊기 — 이제 보드에만 저장"; cx.setAttribute("aria-label","보관함 연결 끊기");
         cx.style.cssText="width:22px;height:22px;min-height:0;padding:0;border:0;border-radius:50%;background:transparent;color:inherit;font-size:15px;line-height:1;cursor:pointer;flex:0 0 auto";
-        cx.onclick=function(e){ e.stopPropagation(); _linkClear(_lk.tag.libId); persist(); render(); _toast("연결을 끊었어요 — 이제 «저장»은 보드에만 저장해요"); };
+        cx.onclick=function(e){ e.stopPropagation(); _linkClear(_lk.tag.libId); persist(); render(); _toast("연결을 끊었습니다 — 이제 «저장»은 보드에만 저장합니다"); };
         ch.appendChild(cx); box.appendChild(ch); } }catch(_){}
     if(manualSave&&(window.innerWidth||0)>=640)box.appendChild(manualSave);
     /* 3.017 — «보드 설정»을 «보드 저장» 옆에(사용자 «보드 설정이 잘 안 보인다» → 1안).
@@ -21440,7 +21440,7 @@ try{ var _nb=document.getElementById('dfNew');
       sp.title=d.canSplit?("장면 "+(d.active+1)+"부터 새 단계로 나눕니다"):"아래 장면 줄에서 단계가 시작할 장면(2번 이후)을 먼저 고르세요";
       sp.onclick=function(){ stopAll(); if(s.split()){ renderStg(true); var k=s.list().cur,el=host.querySelector('.bk-st[data-k="'+k+'"] .bk-sn'); if(el){ try{el.focus();}catch(_){} } } }; hd.appendChild(sp); }
     host.appendChild(hd);
-    if(d.n<2){ host.appendChild(mk("div","bk-hint",ro()?"이 시퀀스는 장면이 하나입니다.":"아래 장면 줄의 ＋ 로 장면을 추가하면 애니메이션이 됩니다. 장면이 생기면 단계로 나눌 수 있어요.")); }
+    if(d.n<2){ host.appendChild(mk("div","bk-hint",ro()?"이 시퀀스는 장면이 하나입니다.":"아래 장면 줄의 ＋ 로 장면을 추가하세요.")); }
     else d.stages.forEach(function(st,k){
       var row=mk("div","bk-st"+(k===d.cur?" on":"")); row.setAttribute("data-k",String(k));
       row.appendChild(mk("span","k",String(k+1)));
@@ -21490,7 +21490,7 @@ try{ var _nb=document.getElementById('dfNew');
   try{ var _up=window.updatePlayUI; if(typeof _up==="function"){ window.updatePlayUI=function(){ var r=_up.apply(this,arguments); try{ if(was&&!inSync)renderStg(); }catch(_){} try{ phoneSync(); }catch(_){} try{ if(mapEl&&S()&&S().playing())closeMap(); }catch(_){} return r; }; } }catch(_){}
   /* 폰 — 페이지 띠 머리의 재생 단추(#bkPhonePlay). 폰에는 장면 줄도 도크도 없어 이 단추가 재생의 유일한 문이다 */
   function phoneSync(){ var b=$id("bkPhonePlay"); if(!b)return; var s=S(),pl=!!(s&&s.playing())||!!allRun,d=null; try{ d=s?s.list():null; }catch(_){}
-    b.textContent=pl?"■ 멈춤":"▶ 재생"; b.setAttribute("aria-pressed",pl?"true":"false"); b.disabled=!pl&&!(d&&d.n>1); b.title=b.disabled?"이 시퀀스에는 장면이 하나뿐이에요":"이 시퀀스를 처음부터 재생"; }
+    b.textContent=pl?"■ 멈춤":"▶ 재생"; b.setAttribute("aria-pressed",pl?"true":"false"); b.disabled=!pl&&!(d&&d.n>1); b.title=b.disabled?"이 시퀀스에는 장면이 하나뿐입니다":"이 시퀀스를 처음부터 재생"; }
   window.__bkPhoneSync=phoneSync;
   window.__bkPhonePlay=function(){ var s=S(); if(!s)return; closeMap(); if(s.playing()||allRun){ stopAll(); s.stop(); } else s.playSeq(); phoneSync(); };
 
@@ -21502,7 +21502,7 @@ try{ var _nb=document.getElementById('dfNew');
     var items=(lib||[]).filter(function(d){ return d&&d.type==="board"&&d.snap&&d.libId!==cur; }).sort(function(a,b){ return (b.savedAt||0)-(a.savedAt||0); });
     var old=$id("bkImpOv"); if(old)old.remove();
     var ov=mk("div"); ov.id="bkImpOv"; var sh=mk("div","bk-sheet"); sh.setAttribute("role","dialog"); sh.setAttribute("aria-label","작전판에서 가져오기");
-    var hd=mk("div","bk-ih"),tx=mk("div","bk-it"); tx.appendChild(mk("b","","작전판에서 가져오기")); tx.appendChild(mk("span","","고른 작전판의 페이지가 애니메이션째 시퀀스로 들어옵니다. 사본을 가져오므로 원본은 그대로예요."));
+    var hd=mk("div","bk-ih"),tx=mk("div","bk-it"); tx.appendChild(mk("b","","작전판에서 가져오기")); tx.appendChild(mk("span","","고른 작전판의 페이지가 애니메이션째 시퀀스로 들어옵니다. 사본을 가져오므로 원본은 그대로입니다."));
     var cl=mk("button","bk-btn","닫기"); cl.type="button"; cl.onclick=function(){ ov.remove(); }; hd.appendChild(tx); hd.appendChild(cl); sh.appendChild(hd);
     var list=mk("div","bk-il");
     function row(d,name,note,live){
@@ -21511,13 +21511,13 @@ try{ var _nb=document.getElementById('dfNew');
       var th=mk("span","bk-ith"),t0=seqs[0].thumb||d.thumb||""; if(t0){ try{ th.innerHTML=(String(t0).indexOf("<svg")===0)?PSSafe.svg(t0):('<img src="'+String(t0).replace(/"/g,"&quot;")+'" alt="">'); }catch(_){} } b.appendChild(th);
       var w=mk("span","bk-ix"); w.appendChild(mk("b","",name)); w.appendChild(mk("small","",(note?note+" · ":"")+(c.seq>1?("페이지 "+c.seq+" · "):"")+"장면 "+c.scene)); b.appendChild(w);
       b.appendChild(mk("span","bk-igo","시퀀스 "+c.seq+"개 가져오기"));
-      b.onclick=function(){ var n=0; try{ n=p.append(seqs); }catch(_){ n=0; } ov.remove(); if(n)tell("«"+name+"»에서 시퀀스 "+n+"개를 가져왔어요 — 원본은 그대로예요"); };
+      b.onclick=function(){ var n=0; try{ n=p.append(seqs); }catch(_){ n=0; } ov.remove(); if(n)tell("«"+name+"»에서 시퀀스 "+n+"개를 가져왔습니다 — 원본은 그대로입니다"); };
       list.appendChild(b);
     }
     var live=null; try{ live=window.__vaultLiveBoardDoc?window.__vaultLiveBoardDoc():null; }catch(_){}
     if(live)row(live,"지금 보드","보드 탭에 그려 둔 판",true);
     items.forEach(function(d){ row(d,d.name||(d.book?"패턴북":"작전판"),(d.book?"패턴북 · ":"")+(d.savedAt?new Date(d.savedAt).toLocaleDateString():"")+(d.folder?(" · "+d.folder):"")); });
-    if(!list.firstChild)list.appendChild(mk("div","bk-hint bk-ie","가져올 작전판이 아직 없어요 — 보드에서 그린 뒤 «보관함 저장»으로 넣어 두면 여기에 보입니다."));
+    if(!list.firstChild)list.appendChild(mk("div","bk-hint bk-ie","가져올 작전판이 아직 없습니다 — 보드에서 그린 뒤 «보관함 저장»으로 넣어 두면 여기에 보입니다."));
     sh.appendChild(list); ov.appendChild(sh); ov.addEventListener("pointerdown",function(e){ if(e.target===ov)ov.remove(); });
     ov.addEventListener("keydown",function(e){ if(e.key==="Escape"){ e.stopPropagation(); ov.remove(); } });
     document.body.appendChild(ov); try{ cl.focus(); }catch(_){}
@@ -21551,7 +21551,7 @@ try{ var _nb=document.getElementById('dfNew');
       else cell("",c.rest,"",false);
       grid.appendChild(col);
     });
-    if(!grid.firstChild)grid.appendChild(mk("div","bkm-e","아직 국면에 선 시퀀스가 없어요."));
+    if(!grid.firstChild)grid.appendChild(mk("div","bkm-e","아직 국면에 선 시퀀스가 없습니다."));
     mapEl.appendChild(grid); grid.scrollTop=keep;
   }
   function openMap(){
@@ -22053,7 +22053,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     var tabs=make("div",null,"cmd-board-settings-tabs");tabs.setAttribute("role","tablist");tabs.setAttribute("aria-label","보드 설정 범주");
     var pitchTab=make("button","cmd-board-settings-pitch-tab",null,"운동장"),lookTab=make("button","cmd-board-settings-look-tab",null,"선수 표시");
     var formTab=make("button","cmd-board-settings-form-tab",null,"배치");   /* 2.277 네 번째 탭 · 2.497 — 라벨 '포메이션'→'배치' · 3.036 — 옛 «선수» 탭(불러오기 · 지우기)을 합쳤다 */
-    var viewTab=make("button","cmd-board-settings-view-tab",null,"내 화면");viewTab.classList.add("bs-tab-me");viewTab.title="이 기기에서 보는 방식 — 보드엔 저장되지 않아요";   /* 3.036 — 옛 «보기» · 기기 값만 · 2.495 의 단축키는 이 아래 접힌 묶음 */
+    var viewTab=make("button","cmd-board-settings-view-tab",null,"내 화면");viewTab.classList.add("bs-tab-me");viewTab.title="이 기기에서 보는 방식 — 보드엔 저장되지 않습니다";   /* 3.036 — 옛 «보기» · 기기 값만 · 2.495 의 단축키는 이 아래 접힌 묶음 */
     [pitchTab,lookTab,formTab,viewTab].forEach(function(b){b.type="button";b.setAttribute("role","tab");tabs.appendChild(b);});panel.appendChild(tabs);
     var content=make("div",null,"cmd-board-settings-content"),viewPane=make("div","cmd-board-settings-view","cmd-board-settings-pane"),layoutPane=make("div","cmd-board-settings-layout","cmd-board-settings-pane"),formPane=make("div","cmd-board-settings-form","cmd-board-settings-pane"),keysPane=make("div","cmd-board-settings-keyspane","cmd-board-settings-pane");
     keysPane.setAttribute("role","tabpanel");keysPane.setAttribute("aria-labelledby",viewTab.id);
@@ -22148,7 +22148,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     defaultRow.appendChild(make("span",null,"menulbl","기본값"));   /* 3.036 — «기본 세팅» → «기본값»(내 화면 › 새 보드 묶음 안이라 «새 보드»가 제목에 있다) */
     var defaultSeg=make("div",null,"seg");
     /* 3.031 — «현재 보드 저장» → «새 보드로 정하기»: «보드 저장»(지금 보드 저장)과 헷갈려 눌리면 그 뒤 «새 보드»가 늘 그 선수들로 시작했다(오류 제보 88a82188 후속) */
-    var defaultSave=make("button","cmd-board-default-save",null,"새 보드로 정하기");defaultSave.type="button";defaultSave.title="지금 보드(배치·운동장·색)를 «새 보드»의 기본 세팅으로 — «새 보드»를 누르면 이 배치로 시작할 수 있어요";
+    var defaultSave=make("button","cmd-board-default-save",null,"새 보드로 정하기");defaultSave.type="button";defaultSave.title="지금 보드(배치·운동장·색)를 «새 보드»의 기본 세팅으로 — «새 보드»를 누르면 이 배치로 시작할 수 있습니다";
     var defaultClear=make("button","cmd-board-default-clear",null,"해제");defaultClear.type="button";defaultClear.title="새 보드 기본 세팅 해제";
     defaultSave.addEventListener("click",function(e){e.stopPropagation();try{if(window.__psSaveBoardDefault)window.__psSaveBoardDefault();}catch(_){}syncDefaultRow();});
     defaultClear.addEventListener("click",function(e){e.stopPropagation();try{if(window.__psClearBoardDefault)window.__psClearBoardDefault();}catch(_){}syncDefaultRow();});
@@ -22156,7 +22156,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     function syncDefaultRow(){try{var on=!!(window.__psGetBoardDefault&&window.__psGetBoardDefault());defaultClear.disabled=!on;defaultClear.classList.toggle("on",on);}catch(_){}}
     window.__syncBoardDefaultUI=syncDefaultRow;syncDefaultRow();
     /* 3.036 — 기본값 줄은 cs_board_default_v1(이 기기)에 저장되는 값이라 «내 화면 › 새 보드»에 둔다(아래 PLAN). 2.222 의 라벨 기반 PITCH_LBL 태깅은 id 기반 PLAN 이 대신한다 */
-    var defaultHint=make("div","bsDefaultHint","bs-hint","«새 보드»를 누르면 지금 정한 보드로 시작해요 · 지금 보드는 바뀌지 않아요");
+    var defaultHint=make("div","bsDefaultHint","bs-hint","«새 보드»를 누르면 지금 정한 보드로 시작합니다");
     /* ══ 3.010 · 내 설정 줄 + 묶음 제목(사용자 «설정 패널 정리») ═══════════════════════════════════
        탭은 그대로(배치·보기·운동장·선수·단축키). 탭 안의 줄을 묶음으로 세운다 — 노드를 같은 부모(#viewMenu) 안에서 순서만 바꾸므로
        줄마다 붙은 핸들러(문서 위임·노드 핸들러)는 그대로다. 묶음 제목(.bs-sec)도 줄처럼 data-bs-tab 을 달아 다른 탭에서 숨는다.
@@ -22194,7 +22194,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
          탭 안 차례는 바탕 → 그 위에 그리는 것 → 보이는 범위. 다른 값에 딸린 줄(밝기 · 연하기 · 훈련 격자 · 확대 쪽 · 3D 경기장)은 그 값 바로 아래에서, 효과가 있을 때만 보인다.
          노드는 같은 부모(#viewMenu) 안에서 순서만 바꾸므로 줄마다 붙은 핸들러(문서 위임 · 노드 핸들러)는 그대로다. */
       var rowOf=function(x){ if(typeof x!=="string")return x; var e=document.getElementById(x); return e?(e.closest(".menurow")||e):null; };
-      var editorHint=make("div","bsEditorHint","bs-hint","훈련 편집기는 평면으로 열려요 · 나가면 원래대로"),snapHint=make("div","bsSnapHint","bs-hint","운동장 › 훈련 격자 칸에 붙어요"),blankHint=make("div","bsBlankHint","bs-hint","그리드 크기 · 모양은 오른쪽 «바탕»에서 고쳐요");
+      var editorHint=make("div","bsEditorHint","bs-hint","훈련 편집기는 평면으로 열립니다 · 나가면 원래대로"),snapHint=make("div","bsSnapHint","bs-hint","운동장 › 훈련 격자 칸에 붙습니다"),blankHint=make("div","bsBlankHint","bs-hint","그리드 크기 · 모양은 오른쪽 «바탕»에서 고칩니다");
       var PLAN=[["board","내 스타일",[presetRow]],
                 ["pitch","바탕",[blankHint,"pitchSpecSeg","pitchSeg","grassToneBSeg","grassTonePSeg","trainGridSeg","pitchPhotoRow","pitchPhotoHint","grassSeg"]],
                 ["pitch","선·구역",["lineSeg","zonePreset"]],
@@ -22268,8 +22268,8 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     function savedTab(){ var v=null; try{ v=localStorage.getItem(tabKey()); }catch(_){}
       if(!v){ try{ var o=localStorage.getItem("ps_board_settings_tab_v1"); if(o)v=({view:"look",layout:"form",keys:"view",form:"form",pitch:"pitch"})[o]||null; }catch(_){} }   /* 옛 기억은 한 번 옮긴다(«보기»에 있던 선수 줄은 «선수 표시»로) */
       return (v==="pitch"||v==="look"||v==="form"||v==="view")?v:"pitch"; }
-    function scopeOf(name){ if(name==="form")return ["바로 적용","누르면 이 보드에 바로 들어가요"]; if(name==="view")return ["이 기기에만","이 기기에서 보는 방식 — 보드엔 저장되지 않아요"];
-      return document.body.classList.contains("editing")?["이 훈련에 저장","이 훈련과 함께 저장돼요"]:["이 보드에 저장","이 보드와 함께 저장돼요"]; }
+    function scopeOf(name){ if(name==="form")return ["바로 적용","누르면 이 보드에 바로 들어갑니다"]; if(name==="view")return ["이 기기에만","이 기기에서 보는 방식 — 보드엔 저장되지 않습니다"];
+      return document.body.classList.contains("editing")?["이 훈련에 저장","이 훈련과 함께 저장됩니다"]:["이 보드에 저장","이 보드와 함께 저장됩니다"]; }
     function selectTab(name){
       var orig=name; name=ALIAS[name]||name; if(name!=="pitch"&&name!=="look"&&name!=="form"&&name!=="view")name="pitch";
       var isForm=name==="form",isView=name==="view";panel.setAttribute("data-bs-tab",name);
@@ -23375,7 +23375,7 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
     ps.addEventListener("pointerdown",function(e){e.stopPropagation();});
     ps.addEventListener("change",function(){ var v=ps.value; if(v==="__mixed")return; var ts=selectedPlayers(false); if(!ts.length)return; try{pushUndo();}catch(_){}
       ts.forEach(function(p){ if(v)p.pos=v; else delete p.pos; try{psSyncTokenAll(p,["pos"]);}catch(_){} });   /* 2.975 — 모든 장면·페이지 */
-      if(v&&!isPosLabel()){ var prev=state.label; state.label="pos"; try{convertPosVocab(prev,"pos");}catch(_){} try{renderBench();}catch(_){} try{toast("토큰에 포지션을 표시해요 · 번호로 보려면 ⋯ › 번호 표시");}catch(_){} }
+      if(v&&!isPosLabel()){ var prev=state.label; state.label="pos"; try{convertPosVocab(prev,"pos");}catch(_){} try{renderBench();}catch(_){} try{toast("토큰에 포지션을 표시합니다 · 번호로 보려면 ⋯ › 번호 표시");}catch(_){} }
       try{renderTokens();}catch(_){} try{positionSelCtl();}catch(_){} try{updateDelUI();}catch(_){} try{boardSaveLive();}catch(_){} });
   }
   var sc0=document.querySelector(".sel-ctl");
@@ -23448,7 +23448,7 @@ body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturin
     if(chg===undefined){ try{ chg=boardManualChanged(); }catch(_){ chg=false; } }
     bar.classList.toggle("chg",!!chg&&!saving);
     var owner=null,loaded=true,pend=false; try{ owner=boardPrivateOwner(); loaded=!!_boardPrivateLoaded; pend=!!(_boardPrivateRecord&&_boardPrivateRecord.pending&&_boardPrivateDurableToken!==_boardPrivateRecord.token); }catch(_){}
-    var t=ro()?"보기 전용":(!owner?"로그인하면 저장돼요":(!loaded?"불러오는 중…":(saving?"저장 중…":(chg?"저장 안 한 변경 있음":(pend?"이 기기에만 저장됨":"저장됨")))));   /* 3.038 — «변경됨 · 저장 안 함»은 '저장하지 않기로 했다'로 읽혔다(피드백 CP-6) */
+    var t=ro()?"보기 전용":(!owner?"로그인하면 저장됩니다":(!loaded?"불러오는 중…":(saving?"저장 중…":(chg?"저장 안 한 변경 있음":(pend?"이 기기에만 저장됨":"저장됨")))));   /* 3.038 — «변경됨 · 저장 안 함»은 '저장하지 않기로 했다'로 읽혔다(피드백 CP-6) */
     if(tx.textContent!==t)tx.textContent=t;   /* aria-live 가 같은 말을 되풀이하지 않게 */
     bSave.disabled=!!saving; bSave.hidden=ro(); bVault.hidden=ro();
   }catch(_){} }
@@ -23500,7 +23500,7 @@ body.ps-phone-work #ehDoor{display:none!important}
   function sync(){ raf=0; var h=document.getElementById("psPhoneHint"), st=document.getElementById("boardStage"); if(!st)return;
     if(!want()){ if(h)h.remove(); return; } if(h)return;
     h=document.createElement("div"); h.id="psPhoneHint"; h.setAttribute("role","note");
-    h.innerHTML='<b>폰에서는 작전판을 보기만 해요</b><span>저장한 작전판은 보관함에서 열어 봐요. 선수를 놓고 그리는 건 아이패드 · 컴퓨터에서 해요.</span>'
+    h.innerHTML='<b>폰에서는 작전판을 보기만 합니다</b><span>저장한 작전판은 보관함에서 열어 봅니다. 선수를 놓고 그리는 건 아이패드 · 컴퓨터에서 합니다.</span>'
       +'<div class="ph-acts"><button type="button" data-ph-vault>보관함 열기</button><button type="button" data-ph-close>닫기</button></div>';
     h.addEventListener("click",function(e){ var t=e.target.closest&&e.target.closest("button"); if(!t)return; e.stopPropagation();
       if(t.hasAttribute("data-ph-close")){ try{ localStorage.setItem(KEY,"1"); }catch(_){} h.remove(); return; }

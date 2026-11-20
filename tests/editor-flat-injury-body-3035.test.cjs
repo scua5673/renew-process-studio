@@ -15,7 +15,7 @@ test('3.035 the training editor opens flat without touching the 3D setting, and 
   assert.ok(stash>0&&flat>stash,'remembered after the stash, inside the first-entry branch');
   assert.match(open[0],/if\(window\.__edTiltPrev&&window\.__setTilt\)\{ window\.__setTilt\(false,\{transient:true,quiet:true\}\);/);
   assert.match(open[0],/localStorage\.getItem\("ps_editor_flat_told"\)!=="1"/,'told once');
-  assert.match(open[0],/toast\("훈련 편집기는 평면으로 열려요 — 나가면 3D 로 돌아갑니다"\)/);
+  assert.match(open[0],/toast\("훈련 편집기는 평면으로 열립니다 — 나가면 3D 로 돌아갑니다"\)/);
   assert.match(open[0],/window\.__applyPitch\('train', null\);/,'new trainings still get the train pitch');
   const close=/function closeEditor\(save\)\{[\s\S]*?\n\}\n/.exec(board);assert.ok(close,'closeEditor');
   assert.match(close[0],/var _etp=window\.__edTiltPrev; window\.__edTiltPrev=false;\n    if\(_etp&&!document\.body\.classList\.contains\("bc-tilt3d"\)&&window\.__setTilt\)\{ var _tv=null; try\{ _tv=localStorage\.getItem\("ps_board_tilt3d"\); \}catch\(_\)\{\} if\(_tv!=="0"\)window\.__setTilt\(true,\{transient:true,quiet:true\}\); \}/,'back to 3D unless the coach chose flat inside');

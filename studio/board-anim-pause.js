@@ -127,7 +127,7 @@
           if(e.preventDefault)e.preventDefault();
           if(e.stopImmediatePropagation)e.stopImmediatePropagation();
           if(e.stopPropagation)e.stopPropagation();
-          rt.toast('재생 전 장면으로 돌아왔어요');
+          rt.toast('재생 전 장면으로 돌아왔습니다');
         }
       },true);
       d.addEventListener('keydown',function(e){

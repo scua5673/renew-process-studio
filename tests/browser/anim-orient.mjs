@@ -63,7 +63,7 @@ try{
   assert.equal(v.board,'vL');assert.deepEqual(v.dirs,['vL','vL','vL'],'every scene is vertical');
   assert.deepEqual(v.xs,base.xs,'vertical is a view: positions stay');assert.deepEqual(v.curve,[20,-30]);
   assert.equal(v.sel,3,'the selection is still there');assert.equal(v.selMarks,3);
-  assert.deepEqual(v.toasts.slice(-1),['장면 3개를 모두 세로로 맞췄어요']);
+  assert.deepEqual(v.toasts.slice(-1),['장면 3개를 모두 세로로 맞췄습니다']);
   assert.deepEqual(await f.evaluate(()=>[...document.querySelectorAll('#cmdOrientSeg button')].map(b=>b.classList.contains('on'))),[false,true]);
   // 다른 장면을 눌러도 세로 그대로
   const walk=await f.evaluate(()=>{const o=[];for(let i=0;i<anim.frames.length;i++){selectAnimFrame(i,false);o.push(state.orientation);}selectAnimFrame(1,false);return o;});
@@ -82,7 +82,7 @@ try{
   assert.deepEqual(r180.xs,base.xs.map(x=>r180.W-x),'players are turned in every scene');
   assert.deepEqual(r180.ball,base.ball.map(x=>r180.W-x));assert.deepEqual(r180.line,base.line.map(x=>r180.W-x));
   assert.deepEqual(r180.curve,[-20,30],'the curved path turns with it');
-  assert.deepEqual(r180.toasts.slice(-1),['장면 3개를 모두 함께 돌렸어요']);
+  assert.deepEqual(r180.toasts.slice(-1),['장면 3개를 모두 함께 돌렸습니다']);
   assert.match(await rot.textContent(),/180°/);
 
   // ⌘Z 한 번 = 모든 장면이 한 걸음 되돌아간다
@@ -120,7 +120,7 @@ try{
     board:{view:window.__getPitchView(),side:window.__getPitchSide(),n:state.pitchN||1,spec:state.pitchSpec||'fifa',theme:document.documentElement.dataset.pitch||''},last:window.__tl[window.__tl.length-1]}));
   await f.locator('#cmdPitchViewSeg button[data-v="half"]').click();await page.waitForTimeout(250);
   let ks=await keysOf();
-  assert.deepEqual(ks.view,['half','half','half'],'the range reaches every scene');assert.equal(ks.last,'운동장 범위를 장면 3개에 모두 적용했어요');assert.deepEqual(ks.xs,base.xs);
+  assert.deepEqual(ks.view,['half','half','half'],'the range reaches every scene');assert.equal(ks.last,'운동장 범위를 장면 3개에 모두 적용했습니다');assert.deepEqual(ks.xs,base.xs);
   await f.locator('#cmdPitchSideSeg button[data-side="opp"]').click();await page.waitForTimeout(250);
   ks=await keysOf();assert.deepEqual(ks.side,['opp','opp','opp']);assert.equal(ks.last,'상대 쪽 확대 · 장면 3개 모두');
   assert.deepEqual(await f.evaluate(()=>{const o=[];[0,2,1].forEach(i=>{selectAnimFrame(i,false);o.push(window.__getPitchView()+'/'+window.__getPitchSide());});return o;}),['half/opp','half/opp','half/opp'],'switching scenes keeps the range');
@@ -130,7 +130,7 @@ try{
   assert.deepEqual((await keysOf()).view,['full','full','full']);
   if(await f.locator('#cmdPitchNSeg button[data-n="2"]').isVisible()){
     await f.locator('#cmdPitchNSeg button[data-n="2"]').click();await page.waitForTimeout(300);
-    ks=await keysOf();assert.deepEqual(ks.n,[2,2,2]);assert.equal(ks.last,'운동장 개수를 장면 3개에 모두 적용했어요');
+    ks=await keysOf();assert.deepEqual(ks.n,[2,2,2]);assert.equal(ks.last,'운동장 개수를 장면 3개에 모두 적용했습니다');
     // 2.983 — 개수도 ⌘Z 한 걸음: 모든 장면이 함께 돌아오고, 그 앞에 고른 범위(전체)는 그대로다
     await f.evaluate(()=>undoLast());await page.waitForTimeout(350);
     ks=await keysOf();assert.deepEqual(ks.n,[1,1,1],'one undo takes the count back in every scene');assert.equal(ks.board.n,1);assert.deepEqual(ks.view,['full','full','full'],'and nothing before it');
@@ -145,7 +145,7 @@ try{
   assert.deepEqual((await keysOf()).spec,['fifa','fifa','fifa']);
   const pitch0=await keysOf(),u0=await f.evaluate(()=>undoStack.length);
   await f.locator('#pitchSeg button[data-p="white"]').click();await page.waitForTimeout(300);
-  ks=await keysOf();assert.deepEqual(ks.theme,['white','white','white'],'the pitch a person picks reaches every scene');assert.deepEqual(ks.img,[null,null,null]);assert.equal(ks.last,'피치를 장면 3개에 모두 적용했어요');
+  ks=await keysOf();assert.deepEqual(ks.theme,['white','white','white'],'the pitch a person picks reaches every scene');assert.deepEqual(ks.img,[null,null,null]);assert.equal(ks.last,'피치를 장면 3개에 모두 적용했습니다');
   // 2.983 — 피치도 ⌘Z 한 걸음: 모든 장면이 함께 돌아오고 규격(11인제)은 그대로다
   assert.equal(await f.evaluate(()=>undoStack.length),Math.min(50,u0+1),'picking a pitch is one undo step');
   await f.locator('#pitchSeg button[data-p="white"]').click();await page.waitForTimeout(200);

@@ -52,7 +52,7 @@
 
     function toldOnce() {
       try { if (win.localStorage.getItem(TOLD) === '1') return; win.localStorage.setItem(TOLD, '1'); } catch (_) { return; }
-      win.setTimeout(function () { try { win.toast('훈련 편집기는 평면으로 열려요 — 나가면 3D 로 돌아갑니다'); } catch (_) {} }, 600);
+      win.setTimeout(function () { try { win.toast('훈련 편집기는 평면으로 열립니다 — 나가면 3D 로 돌아갑니다'); } catch (_) {} }, 600);
     }
     function wrapOpen(name) {
       var f = win[name]; if (typeof f !== 'function' || f.__psEditView) return !!(f && f.__psEditView);
@@ -86,7 +86,7 @@
         if (dev === null) dev = tilt();
         want = !!on;
         var r = st.call(this, !!on, { transient: true, quiet: true });
-        if (!opts.quiet) { try { win.toast(on ? '3D 보기 — 이 훈련에 저장돼요' : '평면 보기 — 이 훈련에 저장돼요'); } catch (_) {} }
+        if (!opts.quiet) { try { win.toast(on ? '3D 보기 — 이 훈련에 저장됩니다' : '평면 보기 — 이 훈련에 저장됩니다'); } catch (_) {} }
         // 임시본에도 바로 — 기다렸다 쓰면(0.6초) 고르고 곧 닫을 때 빠진다
         try { if (typeof win.saveEditorDraft === 'function') win.saveEditorDraft(); else if (typeof win._schedEditorDraft === 'function') win._schedEditorDraft(); } catch (_) {}
         return r;

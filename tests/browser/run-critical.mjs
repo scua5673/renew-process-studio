@@ -57,6 +57,7 @@ suites.selection.push('board-motion-marks-3302');   /* 3.302 — 잔상은 가�
 suites.selection.push('board-grass-natural-3303');
 suites.selection.push('board-mow-3326');   /* 3.326 — 잔디 무늬 여덟 칸 · 평면과 3D 가 같은 값 · «없음»이면 3D 도 줄 없이 */
 suites.selection.push('board-mow-gap-3332');   /* 3.332 — 잔디결 간격(3 · 4 · 5 · 6 · 8 · 10m) · 하프라인 기준 · 평면과 3D 같이 */
+suites.selection.push('board-motion-tab-3347');   /* 3.347 — 보드 설정 «움직임» 탭: 공 · 팀마다 잔상 · 공 보기(방향 표식) · 모든 장면 · 되돌리기 */
 suites.selection.push('board-toast-editing-3319');   /* 3.319 — 훈련 편집에서 도구 옵션 띠가 열린 채 뜬 알림은 띠 위 한 줄(위 · 아래 고정으로 늘어난 632px 상자 아님) */
 suites.selection.push('board-3d-pitch-3316');   /* 3.316 — 3D 잔디 색은 평면 피치(네이비 · 화이트 · 딥그린 · 직접 색 · 실사 + 밝기/연하기)를 따른다 */   /* 3.303 — 3D «잔디만 · 간단»: 바닥은 잔디 한 장(판 테두리 안팎 밝기 같음 · 조명 기둥 · 따로 칠한 어둠 없음 · 멀수록 어둡게) · 전체 경기장 · 그리드 판은 그대로 */
 suites.selection.push('board-tv-clean-3304');   /* 3.304 — 장면 줄은 번호 칩(그림 없음 · 그림을 만들지 않음) · 보관함 «전체화면»은 위쪽 띠(페이지 탭 · 보기 옵션)를 걷고 ‹ n / m › 가 도크를 덮지 않는다 */
@@ -90,6 +91,8 @@ suites.boardperf.push('xss-synced-docs-team');   /* 3.272 — 명단 · 경기 �
 suites.boardperf.push('depth-panel-reorder-3273');   /* 3.273 — «선택한 포지션» 목록에서 끌어 순서 · 이름을 누르면 프로필 바로 */
 suites.entry.push('oauth-callback-gate');   /* 3.272 — 남이 만든 #access_token 링크로는 로그인되지 않는다 · 단추로 시작한 로그인 · 초대 링크 · 다른 창 콜백 · 관리자 화면은 그대로 */
 suites.entry.push('logout-direct-pages');   /* 3.272 — 로그아웃한 기기에서 팀 화면을 주소로 바로 열어도 자료를 그리지 않는다(data-lock-guard.js) */
+suites.idp.push('roster-season');   /* 시즌별 선수단 — 새 시즌 시작 · 되돌리기 · 지난 시즌 · 졸업생 · 선수별 행은 살아 있다 */
+suites.idp.push('roster-season-scout');   /* 미리 만든 시즌 · 예상 명단 · 스카우팅 후보를 시즌에 담기 · 새 시즌에 넘기기 · 되돌리기 */
 suites.idp.push('roster-quick-edit-3339');   /* 3.339 — 선수단 «명단» 표에서 바로 넣기(Enter · 맨 위 초록 줄) · 여러 명 골라 조 바꾸기 · 명단에서 빼기(삭제 기록 먼저) · 스카우팅에서 불러오기(후보 원장 그대로) · 잠긴 명단 · PS_SIZE=ipad|phone 도 */
 const PER_TEST_MS={'board-drag-performance':360000};   /* 3.012 — 한 테스트 한도(기본 240초)의 예외. 위 boardperf 참고 */
 /* 3.012 — 엔진과 상관없이 Chromium 을 직접 띄우는 시험(PS_BROWSER_ENGINE 을 읽지 않는다). WebKit 잡에서는 Chrome 경로가 없어 바로 죽거나

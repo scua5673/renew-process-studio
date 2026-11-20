@@ -62,10 +62,10 @@ test('3.057 — 앱 설정 위 «새 기능»은 늘 떠 있고 업데이트 기
   assert.match(body,/function news\(\)\{return all\(\);\}/,'열 판 묶음 · 7일 거르기를 걷었다');
   assert.match(body,/ch=brief\?\(e\.changes\|\|\[\]\)\.slice\(0,2\):\(e\.changes\|\|\[\]\);/,'«새 기능»은 바뀐 것을 자르지 않는다');
   assert.match(body,/T\.textContent='새 기능';V\.textContent=verOf\(n\[0\]\)\?\('최신 '\+verOf\(n\[0\]\)\):'';/);
-  assert.match(body,/N\.textContent='판마다 바뀐 것을 최신부터 모두 적어 두었어요\.';/);
-  assert.match(body,/b\.title=md==='ready'\?'새 판이 준비됐어요':'업데이트 기록 — 판마다 바뀐 것';/);
+  assert.match(body,/N\.textContent='';N\.hidden=true;BT\.hidden=true;\}/,'«새 기능» 창은 꼬리말 없이');
+  assert.match(body,/b\.title=md==='ready'\?'새 판이 준비됐습니다':'업데이트 기록 — 판마다 바뀐 것';/);
   assert.match(body,/tx\.innerHTML='<b>새 기능<\/b> · '\+esc\(\(verOf\(first\)\?verOf\(first\)\+' · ':''\)\+titleOf\(first\)\);/);
-  assert.match(body,/if\(md==='ready'\)\{var e=st\.next&&st\.next\.entry;T\.textContent='새 판이 준비됐어요';/,'«업데이트»(새 판 준비됨)는 그대로');
+  assert.match(body,/if\(md==='ready'\)\{var e=st\.next&&st\.next\.entry;T\.textContent='새 판이 준비됐습니다';/,'«업데이트»(새 판 준비됨)는 그대로');
   assert.match(A,/\.ps-updpop \.pup-body\{display:flex;flex-direction:column;gap:10px;max-height:min\(62vh,520px\);overflow:auto;overscroll-behavior:contain\}/,'긴 기록은 창 안에서 넘긴다');
 });
 

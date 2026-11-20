@@ -73,7 +73,7 @@ test('rotating the board turns every scene of the animation, and four turns brin
   const before=clone(k.api.get().frames),old=k.api.get().frames.map(f=>f.snap);
   let r=k.win.__rotateHalf();
   assert.deepEqual(dirs(k),['vFL','vFL','vFL'],'0° → 90° in all three scenes');
-  assert.deepEqual(clone(r),{n:2,total:3});assert.deepEqual(k.log.toast,['장면 3개를 모두 함께 돌렸어요']);
+  assert.deepEqual(clone(r),{n:2,total:3});assert.deepEqual(k.log.toast,['장면 3개를 모두 함께 돌렸습니다']);
   assert.deepEqual(xs(k),[200,400,600],'90° is a view change');
   assert.deepEqual(old.map(s=>s.orientation),['h','h','h'],'the snapshots held by the undo record are not edited in place');
   assert.equal(k.api.get().frames[0].thumb,undefined,'thumbnails of the other scenes are redrawn');
@@ -103,7 +103,7 @@ test('«세로» and «가로» set the direction of all scenes — also when on
   const k=ctx();setup(k,0);
   let r=k.win.__setBoardOrient('v');
   assert.deepEqual(dirs(k),['vL','vL','vL'],'vertical = our goal at the bottom, as on the phone');
-  assert.deepEqual(clone(r),{n:2,total:3});assert.deepEqual(k.log.toast,['장면 3개를 모두 세로로 맞췄어요']);
+  assert.deepEqual(clone(r),{n:2,total:3});assert.deepEqual(k.log.toast,['장면 3개를 모두 세로로 맞췄습니다']);
   r=k.win.__setBoardOrient('v');
   assert.deepEqual(clone(r),{n:0,total:0});assert.equal(k.log.undo,1,'nothing to do → no undo step, no message');assert.equal(k.log.toast.length,1);
   /* 예전 판이 남긴 어긋난 애니메이션: 한 장면만 가로 */
@@ -112,7 +112,7 @@ test('«세로» and «가로» set the direction of all scenes — also when on
   assert.deepEqual(clone(r),{n:1,total:3},'the board is already vertical; the scene that was left behind follows');
   assert.deepEqual(dirs(k),['vL','vL','vL']);assert.equal(k.log.undo,2);
   r=k.win.__setBoardOrient('h');
-  assert.deepEqual(dirs(k),['hL','hL','hL']);assert.equal(k.log.toast[k.log.toast.length-1],'장면 3개를 모두 가로로 맞췄어요');
+  assert.deepEqual(dirs(k),['hL','hL','hL']);assert.equal(k.log.toast[k.log.toast.length-1],'장면 3개를 모두 가로로 맞췄습니다');
   assert.deepEqual(xs(k),[200,400,600]);
 });
 

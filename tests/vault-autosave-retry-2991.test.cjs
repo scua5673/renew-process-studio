@@ -43,7 +43,7 @@ test('failures retry three times with growing gaps, then stop and ask the person
   assert.deepEqual(gaps,[1500,4000,10000]);
   assert.equal(h.calls.length,4,'first try + three retries');
   assert.equal(h.status[h.status.length-1],'· 저장 실패 — 다시 시도해 주세요');
-  assert.ok(h.status.includes('· 저장 실패 — 잠시 뒤 다시 저장해요'));
+  assert.ok(h.status.includes('· 저장 실패 — 잠시 뒤 다시 저장합니다'));
   assert.equal(h.writing(),false);
 });
 test('a retry that succeeds says saved and starts the count again',()=>{

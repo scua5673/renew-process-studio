@@ -408,9 +408,9 @@
         '<div class="pq-cap" id="pqChipCap"></div><div class="pq-chips" id="pqChips"></div><button type="button" class="pq-link" data-pq="more" id="pqMore"></button></div>'+
         '<div class="pq-sh-foot"><button type="button" class="pq-btn" data-pq="prev" id="pqPrev">‹ 이전 자리</button><button type="button" class="pq-btn" data-pq="next" id="pqNext"></button></div></section>'+
         '<section class="pq-sheet" id="pqPaste" hidden aria-labelledby="pqPasteT"><div class="pq-grab"></div><div class="pq-sh-head"><div class="pq-sh-t"><b id="pqPasteT">붙여넣기</b><small>한 줄에 한 자리 · 자리 이름 뒤에 이름을 쉼표로</small></div><button type="button" class="pq-btn pq-ghost" data-pq="paste-close">닫기</button></div>'+
-        '<div class="pq-sh-body"><textarea id="pqPasteText" aria-label="붙여 넣을 명단" placeholder="GK 윤태오, 서지안&#10;CB 오세찬, 장하율, 임준서&#10;골키퍼 윤태오 서지안"></textarea><p class="pq-small">메모에 적어 둔 명단을 그대로 붙여 넣어도 돼요. CB처럼 두 자리면 번갈아 들어가요. 적지 않은 자리는 그대로 둬요.</p></div>'+
+        '<div class="pq-sh-body"><textarea id="pqPasteText" aria-label="붙여 넣을 명단" placeholder="GK 윤태오, 서지안&#10;CB 오세찬, 장하율, 임준서&#10;골키퍼 윤태오 서지안"></textarea><p class="pq-small">메모에 적어 둔 명단을 그대로 붙여 넣어도 됩니다. CB처럼 두 자리면 번갈아 들어갑니다. 적지 않은 자리는 그대로 둡니다.</p></div>'+
         '<div class="pq-sh-foot"><button type="button" class="pq-btn pq-pri" data-pq="paste-go">넣기</button></div></section>'+
-        '<section class="pq-sheet" id="pqAsk" hidden aria-labelledby="pqAskT"><div class="pq-grab"></div><div class="pq-sh-head"><div class="pq-sh-t"><b id="pqAskT">고친 내용을 버리고 닫을까요?</b><small>보관함의 보드는 그대로예요</small></div></div>'+
+        '<section class="pq-sheet" id="pqAsk" hidden aria-labelledby="pqAskT"><div class="pq-grab"></div><div class="pq-sh-head"><div class="pq-sh-t"><b id="pqAskT">고친 내용을 버리고 닫을까요?</b><small>보관함의 보드는 그대로입니다</small></div></div>'+
         '<div class="pq-sh-foot"><button type="button" class="pq-btn" data-pq="ask-stay">계속 고치기</button><button type="button" class="pq-btn pq-pri" data-pq="ask-leave">버리고 닫기</button></div></section>'+
         '<div class="pq-toast" hidden role="status"><span></span><button type="button" data-pq="undo">되돌리기</button></div>';
       doc.body.appendChild(root);
@@ -515,8 +515,8 @@
       if(ok){
         var me=posText(d.i);   /* 알림은 화면에 적힌 포지션 글자로(고친 글자 포함) */
         setUndo();M.dirty=true;
-        if(d.to>=0){var a=M.slots[d.i];M.slots[d.i]=M.slots[d.to];M.slots[d.to]=a;render();if(M.active>=0)paintPos();toast(me+' ↔ '+posText(d.to)+' 이름을 맞바꿨어요',true);return;}
-        M.pos[d.i]=[round1(d.l),round1(d.t)];M.moved[d.i]=true;render();toast(me+' 자리를 옮겼어요',true);return;
+        if(d.to>=0){var a=M.slots[d.i];M.slots[d.i]=M.slots[d.to];M.slots[d.to]=a;render();if(M.active>=0)paintPos();toast(me+' ↔ '+posText(d.to)+' 이름을 맞바꿨습니다',true);return;}
+        M.pos[d.i]=[round1(d.l),round1(d.t)];M.moved[d.i]=true;render();toast(me+' 자리를 옮겼습니다',true);return;
       }
       render();
     }
@@ -536,7 +536,7 @@
     function openForm(mode){
       hideSheets();pend.mode=mode;if(mode==='change')pend.form=M.form;
       $('pqFormT').textContent=mode==='change'?'포메이션 바꾸기':'뎁스 차트';
-      $('pqFormS').textContent=mode==='change'?'넣은 이름은 같은 자리로 따라가요':'포메이션을 고르면 자리가 놓여요';
+      $('pqFormS').textContent=mode==='change'?'넣은 이름은 같은 자리로 따라갑니다':'포메이션을 고르면 자리가 놓입니다';
       root.querySelector('[data-pq="form-go"]').textContent=mode==='change'?'바꾸기':'시작';
       var body=$('pqFormBody');body.textContent='';
       var draft=win.__psQuickDraft;
@@ -550,7 +550,7 @@
         body.appendChild(el('div','pq-cap','처음 채우기'));
         var n=M.rosterState==='ok'&&M.roster?M.roster.length:0,can=M.rosterState!=='none'&&M.rosterState!=='fail';
         if(!can&&pend.fill==='roster')pend.fill='blank';
-        [['roster','선수단 순서로 채우기',M.rosterState==='ok'?('선수단 '+n+'명 · 포지션별 순서 그대로'):(M.rosterState==='busy'?'선수단 확인 중…':'팀 운영 › 선수단을 읽을 수 없어요')],['blank','빈 자리로 시작','이름을 직접 넣어요']].forEach(function(o){
+        [['roster','선수단 순서로 채우기',M.rosterState==='ok'?('선수단 '+n+'명 · 포지션별 순서 그대로'):(M.rosterState==='busy'?'선수단 확인 중…':'팀 운영 › 선수단을 읽을 수 없습니다')],['blank','빈 자리로 시작','이름을 직접 넣습니다']].forEach(function(o){
           var lab=el('label','pq-opt'),r=el('input');r.type='radio';r.name='pqFill';r.value=o[0];r.id='pqFill-'+o[0];r.checked=pend.fill===o[0];r.disabled=o[0]==='roster'&&!can;
           r.addEventListener('change',function(){pend.fill=o[0];});
           var c=el('div','pq-ot');c.appendChild(el('span',null,o[1]));c.appendChild(el('small',null,o[2]));lab.appendChild(r);lab.appendChild(c);body.appendChild(lab);
@@ -561,14 +561,14 @@
     function formGo(){
       if(pend.mode==='change'){changeForm(pend.form);hideSheets();render();return;}
       var go=function(){M.form=pend.form;M.slots=pend.fill==='roster'&&M.roster?fill(M.form,M.roster):blank(M.form);resetPos(M.form);resetTok();M.title='';M.dirty=true;win.__psQuickDraft=null;hideSheets();render();
-        if(pend.fill==='roster'&&!M.roster)toast('선수단을 읽지 못해 빈 자리로 시작했어요');};
+        if(pend.fill==='roster'&&!M.roster)toast('선수단을 읽지 못해 빈 자리로 시작했습니다');};
       if(pend.fill==='roster'&&M.rosterState==='busy'){root.querySelector('[data-pq="form-go"]').disabled=true;loadRoster().then(function(){root.querySelector('[data-pq="form-go"]').disabled=false;go();});return;}
       go();
     }
     function changeForm(next){
       if(next===M.form)return;
       setUndo();var r=remap(M.form,M.slots,next);M.form=next;M.slots=r.slots;resetPos(next,true);M.posBy=[];M.posDirty=[];M.base=null;M.dirty=true;
-      toast(r.lost.length?(next+'에 없는 자리('+r.lost.map(function(x){return x.code+' '+x.n+'명';}).join(' · ')+')는 뺐어요'):(next+'로 바꿨어요'),true);
+      toast(r.lost.length?(next+'에 없는 자리('+r.lost.map(function(x){return x.code+' '+x.n+'명';}).join(' · ')+')는 뺐습니다'):(next+'로 바꿨습니다'),true);
     }
     /* ── 자리 시트 ── */
     function openPos(i){
@@ -582,7 +582,7 @@
       var a=M.slots[i];if(i<0||!a||a[j]==null)return;
       var old=a[j],n=clean(input.value);
       if(!n||n===old){input.value=old;return;}
-      if(a.indexOf(n)>=0){input.value=old;toast('이 자리에 이미 있는 이름이에요');return;}
+      if(a.indexOf(n)>=0){input.value=old;toast('이 자리에 이미 있는 이름입니다');return;}
       var w=where(n);if(w>=0)M.slots[w].splice(M.slots[w].indexOf(n),1);
       a[j]=n;input.value=n;
       /* 번호는 그 선수를 따라간다 */
@@ -594,7 +594,7 @@
     function paintPos(force){
       var i=M.active;if(i<0)return;var s=slotsOf(M.form)[i],names=M.slots[i],busy=!force&&editingField();
       $('pqPosBdg').textContent=badge(i);$('pqPosName').textContent=META[s[0]][1];
-      $('pqPosSub').textContent=names.length?(names.length+'명 · 위가 주전'):'아직 비어 있어요';
+      $('pqPosSub').textContent=names.length?(names.length+'명 · 위가 주전'):'아직 비어 있습니다';
       root.querySelector('[data-pq="show-pos"]').setAttribute('aria-pressed',String(M.label!=='num'));root.querySelector('[data-pq="show-num"]').setAttribute('aria-pressed',String(M.label==='num'));
       if(force||doc.activeElement!==$('pqPosCode')){$('pqPosCode').value=posText(i);$('pqPosCode').placeholder=META[s[0]][0];}
       if(force||doc.activeElement!==$('pqNum')){$('pqNum').value=numOf(i);$('pqNum').placeholder=autoNum(i);}
@@ -618,7 +618,7 @@
         else if(M.showAll&&r.fam!==f)b.appendChild(el('small',null,FAM_KO[r.fam]||'포지션 없음'));
         chips.appendChild(b);
       });
-      if(!pool.length)chips.appendChild(el('span','pq-note',M.showAll?'선수단을 다 넣었어요':'이 자리 선수단은 다 넣었어요'));
+      if(!pool.length)chips.appendChild(el('span','pq-note',M.showAll?'선수단을 다 넣었습니다':'이 자리 선수단은 다 넣었습니다'));
       more.textContent=M.showAll?'이 자리 선수만 보기':'다른 자리 선수도 보기';
       $('pqPrev').disabled=i===0;$('pqNext').textContent=i===M.slots.length-1?'끝':'다음 자리 ›';
     }
@@ -626,16 +626,16 @@
     function addName(i,n){
       n=clean(n);if(!n||i<0)return;
       if(M.slots[i].indexOf(n)>=0)return;
-      if(M.slots[i].length>=MAX_NAMES){toast('한 자리에 '+MAX_NAMES+'명까지 넣을 수 있어요');return;}
+      if(M.slots[i].length>=MAX_NAMES){toast('한 자리에 '+MAX_NAMES+'명까지 넣을 수 있습니다');return;}
       var w=where(n);if(w>=0)M.slots[w].splice(M.slots[w].indexOf(n),1);
       M.slots[i].push(n);refreshPos();
     }
     function submit(){var inp=$('pqInput');String(inp.value).split(/[,，、·\/]+/).forEach(function(n){addName(M.active,n);});inp.value='';try{inp.focus();}catch(_){}}
     function pasteGo(){
       var r=parse($('pqPasteText').value,M.form,M.slots);
-      if(!r.hit){toast(r.miss.length?('자리를 못 찾았어요: '+r.miss.slice(0,3).join(', ')):'붙여 넣은 내용이 없어요');return;}
+      if(!r.hit){toast(r.miss.length?('자리를 못 찾았어요: '+r.miss.slice(0,3).join(', ')):'붙여 넣은 내용이 없습니다');return;}
       setUndo();M.slots=r.slots;M.dirty=true;$('pqPasteText').value='';hideSheets();render();
-      toast('이름 '+r.hit+'개를 넣었어요'+(r.miss.length?(' · 못 찾은 자리 '+r.miss.slice(0,2).join(', ')):''),true);
+      toast('이름 '+r.hit+'개를 넣었습니다'+(r.miss.length?(' · 못 찾은 자리 '+r.miss.slice(0,2).join(', ')):''),true);
     }
     /* ── 저장 ── */
     function canWrite(){
@@ -664,12 +664,12 @@
         return libWrite(lib).then(function(){try{if(typeof libTouch==='function')libTouch();}catch(_){}});
       });}).then(function(){
         var h=host;M.saving=false;win.__psQuickDraft=null;close();
-        if(!h)boardToast(editId?'폰보드를 고쳤어요':'보관함 › 보드에 저장했어요');
+        if(!h)boardToast(editId?'폰보드를 고쳤습니다':'보관함 › 보드에 저장했습니다');
         try{if(typeof renderDrillFiles==='function')renderDrillFiles();}catch(_){}
         if(h){if(typeof h.done==='function')h.done(saved,!!editId);}else showSaved(saved,!!editId);
       },function(e){
         M.saving=false;btn.disabled=false;btn.textContent='저장';
-        toast(e&&e.psVaultLocked?'보관함을 쓰려면 먼저 로그인해 주세요':(e&&e.psQuick==='gone'?'이 보드를 보관함에서 찾지 못했어요 — 지워졌거나 아직 이 기기에 오지 않았어요':(e&&e.psQuick==='owner'?'만든 사람만 고칠 수 있어요':'저장하지 못했어요 — 이름은 그대로 있어요. 다시 눌러 주세요')));
+        toast(e&&e.psVaultLocked?'보관함을 쓰려면 먼저 로그인해 주세요':(e&&e.psQuick==='gone'?'이 보드를 보관함에서 찾지 못했습니다 — 지워졌거나 아직 이 기기에 오지 않았습니다':(e&&e.psQuick==='owner'?'만든 사람만 고칠 수 있습니다':'저장하지 못했습니다 — 이름은 그대로 있습니다. 다시 눌러 주세요')));
       });
     }
     /* 저장한 보드를 보관함 보기로 — 보던 빠른 보드는 닫고 새 판으로 다시 연다 */
@@ -702,7 +702,7 @@
     function back(){
       if(!$('pqAsk').hidden){hideSheets();return;}
       if(M.editing){if(M.dirty){hideSheets();root.querySelector('.pq-scrim').hidden=false;$('pqAsk').hidden=false;return;}close();return;}
-      if(count(M.slots)&&M.dirty){win.__psQuickDraft={form:M.form,slots:copy(M.slots),pos:copyPos(M.pos),moved:M.moved.slice(),tok:{posBy:M.posBy.slice(),posDirty:M.posDirty.slice(),numBy:Object.assign({},M.numBy),numDirty:Object.assign({},M.numDirty),label:M.label},title:M.title};(host&&typeof host.say==='function'?host.say:boardToast)('쓰던 뎁스 차트는 남겨 뒀어요 — «＋ 뎁스 차트»에서 이어서');}
+      if(count(M.slots)&&M.dirty){win.__psQuickDraft={form:M.form,slots:copy(M.slots),pos:copyPos(M.pos),moved:M.moved.slice(),tok:{posBy:M.posBy.slice(),posDirty:M.posDirty.slice(),numBy:Object.assign({},M.numBy),numDirty:Object.assign({},M.numDirty),label:M.label},title:M.title};(host&&typeof host.say==='function'?host.say:boardToast)('쓰던 뎁스 차트는 남겨 뒀습니다 — «＋ 뎁스 차트»에서 이어서');}
       close();
     }
     function onClick(e){
@@ -722,14 +722,14 @@
         case 'draft':var d=win.__psQuickDraft;if(d){M.form=d.form;M.slots=copy(d.slots);resetPos(M.form);if(d.pos&&d.pos.length===M.slots.length){M.pos=copyPos(d.pos);M.moved=(d.moved||[]).slice();}resetTok();if(d.tok){M.posBy=d.tok.posBy.slice();M.posDirty=d.tok.posDirty.slice();M.numBy=Object.assign({},d.tok.numBy);M.numDirty=Object.assign({},d.tok.numDirty);M.label=d.tok.label;}M.title=d.title||'';M.dirty=true;}hideSheets();render();break;
         case 'fill':
           if(M.rosterState==='busy'){toast('선수단 확인 중…');break;}
-          loadRoster().then(function(r){if(!r){toast('팀 운영 › 선수단을 읽지 못했어요 — 팀 자료가 준비된 뒤 다시 눌러 주세요');return;}setUndo();M.slots=fill(M.form,r);M.dirty=true;hideSheets();render();toast('선수단 뎁스 순서로 채웠어요',true);});break;
+          loadRoster().then(function(r){if(!r){toast('팀 운영 › 선수단을 읽지 못했습니다 — 팀 자료가 준비된 뒤 다시 눌러 주세요');return;}setUndo();M.slots=fill(M.form,r);M.dirty=true;hideSheets();render();toast('선수단 뎁스 순서로 채웠습니다',true);});break;
         case 'paste':hideSheets();render();root.querySelector('.pq-scrim').hidden=false;$('pqPaste').hidden=false;win.setTimeout(function(){try{$('pqPasteText').focus();}catch(_){}},60);break;
         case 'paste-close':hideSheets();render();break;
         case 'paste-go':pasteGo();break;
-        case 'clear':if(!count(M.slots))break;setUndo();M.slots=blank(M.form);M.dirty=true;hideSheets();render();toast('모든 자리를 비웠어요',true);break;
+        case 'clear':if(!count(M.slots))break;setUndo();M.slots=blank(M.form);M.dirty=true;hideSheets();render();toast('모든 자리를 비웠습니다',true);break;
         case 'undo':if(M.undo){M.form=M.undo.form;M.slots=M.undo.slots;M.pos=M.undo.pos;M.moved=M.undo.moved;M.posBy=M.undo.posBy;M.posDirty=M.undo.posDirty;M.base=M.undo.base;M.undo=null;hideSheets();render();}root.querySelector('.pq-toast').hidden=true;break;
         case 'show-pos':case 'show-num':var lb=b.getAttribute('data-pq')==='show-num'?'num':'pos';if(lb!==M.label){M.label=lb;M.labelDirty=true;M.dirty=true;}paintPos(true);render();break;
-        case 'pos-reset':if(!offForm())break;setUndo();resetPos(M.form,true);M.dirty=true;render();toast('포메이션 자리로 돌렸어요',true);break;
+        case 'pos-reset':if(!offForm())break;setUndo();resetPos(M.form,true);M.dirty=true;render();toast('포메이션 자리로 돌렸습니다',true);break;
         case 'add':submit();break;
         case 'more':M.showAll=!M.showAll;paintPos();break;
         case 'pos-close':hideSheets();render();break;

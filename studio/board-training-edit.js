@@ -133,17 +133,17 @@
     function tell(){
       if(told)return;told=true;
       try{if(win.localStorage.getItem(EDIT_SNAP)!==null)return;win.localStorage.setItem(EDIT_SNAP,'1');}catch(_){return;}
-      win.setTimeout(function(){win.toast(keysHere()?'훈련 격자 칸에 맞춰 놓여요 — ⌘/Ctrl 을 누른 채 끌면 자유롭게 · 끄기는 보드 설정 › 끌기 자석':'훈련 격자 칸에 맞춰 놓여요 — 끄기는 보드 설정 › 끌기 자석');},350);
+      win.setTimeout(function(){win.toast(keysHere()?'훈련 격자 칸에 맞춰 놓입니다 — ⌘/Ctrl 을 누른 채 끌면 자유롭게 · 끄기는 보드 설정 › 끌기 자석':'훈련 격자 칸에 맞춰 놓입니다 — 끄기는 보드 설정 › 끌기 자석');},350);
     }
     function syncSnapUI(){
       var on=win._dragSnapOn(),seg=doc.getElementById('dragSnapSeg'),hint=doc.getElementById('bsSnapHint');
       if(seg)Array.from(seg.children).forEach(function(b){b.classList.toggle('on',(b.dataset.ds==='1')===on);});
-      if(hint){if(snapBase===null)snapBase=hint.textContent;var t=editCtx()?(keysHere()?'훈련 편집기는 격자 칸에 붙는 것이 기본이에요 · ⌘/Ctrl 을 누르면 잠깐 풀려요':'훈련 편집기는 격자 칸에 붙는 것이 기본이에요'):snapBase;if(hint.textContent!==t)hint.textContent=t;}
+      if(hint){if(snapBase===null)snapBase=hint.textContent;var t=editCtx()?(keysHere()?'훈련 편집기는 격자 칸에 붙는 것이 기본입니다 · ⌘/Ctrl 을 누르면 잠깐 풀립니다':'훈련 편집기는 격자 칸에 붙는 것이 기본입니다'):snapBase;if(hint.textContent!==t)hint.textContent=t;}
     }
     function setSnap(on){
       if(!editCtx()){var b=doc.querySelector('#dragSnapSeg [data-ds="'+(on?'1':'0')+'"]');if(b)b.click();else try{win.localStorage.setItem('cs_drag_snap_v1',on?'1':'0');}catch(_){}return;}
       told=true;memPref=null;try{win.localStorage.setItem(EDIT_SNAP,on?'1':'0');}catch(_){memPref=on;}
-      syncSnapUI();win.toast(on?'훈련 편집기 자석 켬 — 놓거나 끌면 격자 칸에 붙어요':keysHere()?'훈련 편집기 자석 끔 — ⌘/Ctrl 로는 언제든 붙어요':'훈련 편집기 자석 끔 — 자유롭게 놓여요');
+      syncSnapUI();win.toast(on?'훈련 편집기 자석 켬':keysHere()?'훈련 편집기 자석 끔':'훈련 편집기 자석 끔');
     }
     api.snapEnabled=function(e){var auto=editCtx(),on=moveSnap(e,auto?editPref():deviceSnap(),freeOnce,auto);if(on&&auto&&!told&&editPref())tell();return on;};
     api.pointGridActive=function(e){return !!grid()&&pointSnap(e||pointEvent);};
@@ -190,7 +190,7 @@
       if(!editable())return;var items=selected(),plan=alignPlan(items,mode,S().orientation==='v',!!S().spFlip);
       if(!plan.length){win.toast('움직일 항목을 '+(/^dist/.test(mode)?'3':'2')+'개 이상 선택하세요');return;}
       win.pushUndo();plan.forEach(p=>translate(p.o,p.dx,p.dy));finish();
-      win.toast(items.some(o=>o.locked)?'정렬 완료 · 고정한 항목은 유지했어요':'정렬 완료');
+      win.toast(items.some(o=>o.locked)?'정렬 완료 · 고정한 항목은 유지했습니다':'정렬 완료');
     };
     function bibs(color){
       if(!editable())return;var list=selected().filter(p=>S().players.includes(p)&&!p.coach);
@@ -275,7 +275,7 @@
     };
     function mk(tag,text){var n=doc.createElement(tag);if(text)n.textContent=text;return n;}
     panel=mk('section');panel.id='psEditTools';panel.hidden=true;panel.setAttribute('aria-label','배치 도구');
-    panel.innerHTML='<div class="pe-head"><strong>배치 도구</strong><button type="button" data-close aria-label="배치 도구 닫기">×</button></div><p data-count aria-live="polite"></p><div class="pe-row"><button type="button" data-pick aria-pressed="false">여러 개 선택</button><button type="button" data-lock>고정</button></div><div class="pe-grid"><button type="button" data-align="rowY">가로로 정렬</button><button type="button" data-align="colX">세로로 정렬</button><button type="button" data-align="distX">가로 같은 간격</button><button type="button" data-align="distY">세로 같은 간격</button><button type="button" data-align="distDiag">대각선 균등</button></div><hr><label class="pe-row">격자 간격 <select aria-label="편집 격자 간격"><option value="0">기존 배경</option><option value="1">1 m</option><option value="2">2 m</option><option value="3">3 m</option><option value="5">5 m</option><option value="10">10 m</option></select></label><label class="pe-row"><input type="checkbox" data-snap>격자·안내선에 맞추기</label><button type="button" data-free aria-pressed="false">한 번 자유 이동</button><p class="pe-hint">다음 이동 한 번만 격자·안내선에 맞추지 않아요</p><hr><strong>훈련 조끼</strong><div class="pe-bibs"></div><p class="pe-hint">여러 개 선택을 켜고 항목을 누르세요. 선택을 마치면 끄고 함께 이동할 수 있어요.</p>';
+    panel.innerHTML='<div class="pe-head"><strong>배치 도구</strong><button type="button" data-close aria-label="배치 도구 닫기">×</button></div><p data-count aria-live="polite"></p><div class="pe-row"><button type="button" data-pick aria-pressed="false">여러 개 선택</button><button type="button" data-lock>고정</button></div><div class="pe-grid"><button type="button" data-align="rowY">가로로 정렬</button><button type="button" data-align="colX">세로로 정렬</button><button type="button" data-align="distX">가로 같은 간격</button><button type="button" data-align="distY">세로 같은 간격</button><button type="button" data-align="distDiag">대각선 균등</button></div><hr><label class="pe-row">격자 간격 <select aria-label="편집 격자 간격"><option value="0">기존 배경</option><option value="1">1 m</option><option value="2">2 m</option><option value="3">3 m</option><option value="5">5 m</option><option value="10">10 m</option></select></label><label class="pe-row"><input type="checkbox" data-snap>격자·안내선에 맞추기</label><button type="button" data-free aria-pressed="false">한 번 자유 이동</button><p class="pe-hint">다음 이동 한 번만 격자·안내선에 맞추지 않습니다</p><hr><strong>훈련 조끼</strong><div class="pe-bibs"></div><p class="pe-hint">여러 개 선택을 켜고 항목을 누르세요. 선택을 마치면 끄고 함께 이동할 수 있습니다.</p>';
     BIBS.forEach(function(v){var b=mk('button',v[1]);b.type='button';b.dataset.bib=v[0];b.setAttribute('aria-label','훈련 조끼 '+v[1]);if(v[0])b.style.setProperty('--bib-color',v[0]);panel.querySelector('.pe-bibs').append(b);});doc.body.append(panel);
     toggle=mk('button','배치 도구');toggle.type='button';toggle.id='psEditToolsToggle';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls',panel.id);
     // 3.309 — 헤더(#boardPageStrip.ps-tb — 떠 있는 도크)에서는 «배치 도구»를 오른쪽 덩어리가 아니라 «보드 ▾» 메뉴(#ps-tb-menu)에 둔다(사용자 11/17 «배치도구도 지워줘» — 기능은 빼지 않는다).

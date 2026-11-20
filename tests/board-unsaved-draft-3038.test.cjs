@@ -147,7 +147,7 @@ test('an explicit save while the offer is showing withdraws it first',async()=>{
  const h=harness({serverRaw:payload(12,now-5000),ls:newerDraft(40)});await h.boot();assert.ok(h.c.__boardDraftPending);
  const p=h.c.boardSaveExplicit();assert.equal(h.c.__boardDraftPending,null,'bar withdrawn before the save awaits');
  assert.equal(h.c.__boardDraftRestore(),false);await p;
- assert.ok(h.messages.some(m=>typeof m==='string'&&/이전 작업은 버렸어요/.test(m)),'the save says the old draft was dropped');
+ assert.ok(h.messages.some(m=>typeof m==='string'&&/이전 작업은 버렸습니다/.test(m)),'the save says the old draft was dropped');
 });
 test('when localStorage fills up the stale small-store copy is removed and the newer IndexedDB draft wins',async()=>{
  const opts={};const h=harness(opts);await h.boot();h.edit(5);await h.fire();assert.ok(h.idb.has(h.draftKey())&&!h.ls.has(h.draftKey()));

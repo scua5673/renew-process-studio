@@ -92,12 +92,12 @@ try{
     Object.defineProperty(navigator,'userAgent',{configurable:true,get:()=>'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'});
     navigator.canShare=()=>true;navigator.share=async d=>{window.__shared=d.files.map(x=>x.name+':'+x.type);};});
   await bf.evaluate(()=>document.getElementById('animGif').click());
-  await bf.waitForFunction(()=>(document.querySelector('#psExpProg .pep-t')||{}).textContent==='다 만들었어요',null,{timeout:60000});
+  await bf.waitForFunction(()=>(document.querySelector('#psExpProg .pep-t')||{}).textContent==='다 만들었습니다',null,{timeout:60000});
   assert.deepEqual((await pepCard()).btn,['파일에 저장','내려받기','닫기']);assert.equal(await bf.evaluate(()=>window.__dl.length),0,'묻기 전엔 내려받지 않는다');
   await bf.evaluate(()=>[...document.querySelectorAll('#psExpProg .pep-acts button')].find(b=>b.textContent==='파일에 저장').click());
   await bf.waitForFunction(()=>window.__shared,null,{timeout:10000});
   const shared=await bf.evaluate(()=>window.__shared);assert.equal(shared.length,1);assert.match(shared[0],/^\d{6}_작전판\.gif:image\/gif$/);
-  await bf.waitForFunction(()=>/저장했어요/.test((document.querySelector('#psExpProg .pep-t')||{}).textContent||''),null,{timeout:10000});
+  await bf.waitForFunction(()=>/저장했습니다/.test((document.querySelector('#psExpProg .pep-t')||{}).textContent||''),null,{timeout:10000});
   await pepClose();
   await bf.evaluate(()=>{delete navigator.maxTouchPoints;delete navigator.userAgent;delete navigator.canShare;delete navigator.share;});
 

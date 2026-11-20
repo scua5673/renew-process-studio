@@ -29,7 +29,7 @@ test('GIF export reports progress through _gifEncode and stops between frames',(
   assert.match(run,/PEP\.open\("GIF 만드는 중"\)/);
   assert.match(run,/isCancelled:PEP\.cancelled,onProgress:/);
   assert.match(run,/PEP\.saving\(\);/);
-  assert.match(run,/e&&e\.psCancel\?"내보내기를 멈췄어요":"GIF 생성에 실패했어요"/);
+  assert.match(run,/e&&e\.psCancel\?"내보내기를 멈췄습니다":"GIF 생성에 실패했습니다"/);
   const ppt=slice('function exportPPTX(){','window.__exportPPTX=exportPPTX;');
   assert.doesNotMatch(ppt,/onProgress/,'미팅 PPT 의 움직이는 그림은 진행 카드 없이(그대로)');
 });

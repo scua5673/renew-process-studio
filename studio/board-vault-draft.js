@@ -148,10 +148,10 @@
           el.querySelector('.vd-save').onclick=function(){restore({save:true});};
         }else{
           el.innerHTML='<span class="vd-tx"></span><button type="button" class="vd-keep">되살리기</button><button type="button" class="vd-drop">버리기</button>';
-          el.querySelector('.vd-tx').textContent='보관함에서 만들던 '+(rec.book?'패턴북':'작전판')+'이 있어요'+(n>1?' · 장면 '+n+'개':'')+' · '+ago(rec.at,Date.now());
+          el.querySelector('.vd-tx').textContent='보관함에서 만들던 '+(rec.book?'패턴북':'작전판')+'이 있습니다'+(n>1?' · 장면 '+n+'개':'')+' · '+ago(rec.at,Date.now());
           el.querySelector('.vd-keep').onclick=function(){restore();};
         }
-        el.querySelector('.vd-drop').onclick=function(){var x=offered;barHide();if(x)drop(x.owner,x.rec);try{w.toast('만들던 작전판 초안을 버렸어요');}catch(_){}};
+        el.querySelector('.vd-drop').onclick=function(){var x=offered;barHide();if(x)drop(x.owner,x.rec);try{w.toast('만들던 작전판 초안을 버렸습니다');}catch(_){}};
         doc.body.appendChild(el);bar=el;
       }catch(_){}
     }
@@ -202,7 +202,7 @@
           w.__vaultManualDirty=true;if(typeof w.__vaultAutoSaveSchedule==='function')w.__vaultAutoSaveSchedule();
           if(sess&&sess.ctx===w._vaultBoardContext)schedule();
           if(opts&&opts.save){var b=doc.getElementById('vCreateSave');if(b)b.click();return;}
-          say('«'+(rec.name||'작전판')+'»을 다시 열었어요 · 저장 안 한 변경이 그대로 있어요');
+          say('«'+(rec.name||'작전판')+'»을 다시 열었습니다 · 저장 안 한 변경이 그대로 있습니다');
         })();
       }).catch(function(e){if(w.console&&w.console.warn)w.console.warn('[board-vault-draft] restore',e);});
       return true;

@@ -38,12 +38,12 @@ for(const [label,name,code] of renders)for(const view of ['board','session'])tes
 test('an actual save action still gives the login hint without reading or writing library data',async()=>{
   const h=harness();h.run(section('async function saveToLib(d){','async function delFromLib('));
   assert.equal(await h.c.saveToLib({name:'Synthetic drawing'}),false);
-  assert.deepEqual(h.calls.toasts,['로그인하면 보관함에 저장할 수 있어요']);assert.equal(h.calls.reads,0);assert.equal(h.calls.writes,0);assert.equal(h.nodes.psVaultAuthLock,undefined);assert.equal(h.nodes.boardView.inert,false);
+  assert.deepEqual(h.calls.toasts,['로그인하면 보관함에 저장할 수 있습니다']);assert.equal(h.calls.reads,0);assert.equal(h.calls.writes,0);assert.equal(h.nodes.psVaultAuthLock,undefined);assert.equal(h.nodes.boardView.inert,false);
 });
 test('confirmed ownership permits normal library rendering without any login notice',async()=>{
   const h=harness({unlocked:true});h.run(renders[0][2]);
   assert.equal(h.c.psVaultRenderReady(),true);assert.equal(h.c.psVaultRequireLogin(),true);
-  await h.c.renderLib();assert.equal(h.calls.reads,1);assert.match(h.nodes.libGrid.innerHTML,/저장된 드릴이 없어요/);assert.deepEqual(h.calls.toasts,[]);assert.equal(h.nodes.psVaultAuthLock,undefined);
+  await h.c.renderLib();assert.equal(h.calls.reads,1);assert.match(h.nodes.libGrid.innerHTML,/저장된 드릴이 없습니다/);assert.deepEqual(h.calls.toasts,[]);assert.equal(h.nodes.psVaultAuthLock,undefined);
 });
 
 test('library lock during an awaited read stops rendering without an unhandled rejection',async()=>{

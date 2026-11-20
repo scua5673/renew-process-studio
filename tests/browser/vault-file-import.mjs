@@ -76,7 +76,7 @@ try{
     await openChooser();
     const [ch]=await Promise.all([page.waitForEvent('filechooser'),f.click('#vccImport')]);
     await ch.setFiles({name,mimeType:'application/json',buffer:Buffer.from(body)});
-    await f.waitForFunction(()=>/내보낸 파일\(\.json\)이 아니에요/.test((document.getElementById('hint')||{}).textContent||''),null,{timeout:8000});
+    await f.waitForFunction(()=>/내보낸 파일\(\.json\)이 아닙니다/.test((document.getElementById('hint')||{}).textContent||''),null,{timeout:8000});
   }
   assert.equal(await f.evaluate(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).length),before,'아무것도 들어오지 않았다');
 

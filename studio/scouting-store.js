@@ -70,7 +70,7 @@
     if(b.sourceEdit&&(!c.sourceEdit||stampCmp(b.sourceEdit,c.sourceEdit)>0)){if(c.source&&!same(c.source,b.source))c.sourceHistory=union(c.sourceHistory,[c.source]);c.source=copy(b.source);c.sourceEdit=copy(b.sourceEdit);}
     else if(b.source&&!c.source)c.source=copy(b.source);
     else if(b.source&&c.source&&!same(b.source,c.source))c.sourceHistory=union(c.sourceHistory,[b.source]);
-    if(b.archiveEdit&&(!c.archiveEdit||stampCmp(b.archiveEdit,c.archiveEdit)>0)){c.archiveEdit=copy(b.archiveEdit);c.archivedAt=b.archivedAt||0;}
+    if(b.archiveEdit&&(!c.archiveEdit||stampCmp(b.archiveEdit,c.archiveEdit)>0)){c.archiveEdit=copy(b.archiveEdit);c.archivedAt=b.archivedAt||0;if(b.archivedAt&&b.archiveSeason)c.archiveSeason=String(b.archiveSeason);else delete c.archiveSeason;}
     return c;
   }
   function reconcile(previous,incoming){
@@ -122,7 +122,8 @@
   }
   function edit(d,id,field,value,stamp){var c=d.scoutRegistry.candidates[id];if(!c)throw new Error('후보를 찾을 수 없습니다.');if(same(get(c.info,field),value))return;var before=get(c.info,field);put(c.info,field,value);variants(c,field,before,'수정 전');c.edits=c.edits||{};c.edits[field]=copy(stamp);}
   function score(d,id,key,value,stamp){var c=d.scoutRegistry.candidates[id];if(!c)throw new Error('후보를 찾을 수 없습니다.');if(!safe(key)||!Number.isInteger(value)||value<0||value>5)throw new Error('점수 형식을 확인해 주세요.');c.points=c.points||{};if(own(c.points,key)&&c.points[key]!==value){c.scoreHistory=c.scoreHistory||[];var prior={kind:'points',key:key,value:c.points[key]};if(!c.scoreHistory.some(function(x){return same(x,prior);}))c.scoreHistory.push(prior);}c.points[key]=value;c.edits=c.edits||{};c.edits['points.'+key]=copy(stamp);}
-  function archive(d,id,at,stamp){var c=d.scoutRegistry.candidates[id];if(!c)throw new Error('후보를 찾을 수 없습니다.');c.archivedAt=at;c.archiveEdit=copy(stamp);d.players.forEach(function(p){if(idOf(p)===id){p._scoutHidden=!!at;p._scoutMove=copy(stamp);}});}
+  /* season(선택) — 시즌에 담아 둔 보관(꼬리표 archiveSeason). 꼬리표 없는 보관은 예전 «후보 보관» 그대로, 보관을 풀면 꼬리표도 걷는다 */
+  function archive(d,id,at,stamp,season){var c=d.scoutRegistry.candidates[id];if(!c)throw new Error('후보를 찾을 수 없습니다.');c.archivedAt=at;c.archiveEdit=copy(stamp);if(at&&season)c.archiveSeason=String(season);else delete c.archiveSeason;d.players.forEach(function(p){if(idOf(p)===id){p._scoutHidden=!!at;p._scoutMove=copy(stamp);}});}
   function importLegacy(d,legacy,ids,includeMeta){
     if(!obj(legacy)||!Array.isArray(legacy.players))throw new Error('이 기기의 후보 자료를 읽을 수 없습니다.');
     var reg=d.scoutRegistry;
@@ -158,7 +159,7 @@
       :!sync||!sync.dataUnlocked||!sync.dataUnlocked()?'scout_locked'
       :!sync.keyReady||(requireReady!==false&&!sync.keyReady(KEY,wid))?'scout_not_ready'
       :!perms||!perms.canEdit||!perms.canEdit('scout')||(role!=='executive'&&role!=='admin')?'scout_role':'';
-    if(why)throw fail('팀의 후보 자료와 권한을 확인 중입니다.',why);
+    if(why)throw fail('팀의 후보 자료와 권한을 확인 중이에요.',why);
     return JSON.stringify([wid,s.uid,seal]);
   }
   function createClient(win){
@@ -182,7 +183,7 @@
     }
     function check(){
       var why=!state.doc?'scout_unread':!state.verified?'scout_unverified':context(win)!==state.owner?'scout_owner':win.localStorage.getItem(KEY)!==state.raw?'scout_raw_changed':'';
-      if(why)throw fail('후보 자료가 갱신되었습니다. 다시 열어 주세요.',why);
+      if(why)throw fail('후보 자료가 갱신됐습니다. 다시 열어 주세요.',why);
     }
     /* 3.107 — 이 문서를 지금 기준(state.raw)에 저장해도 바뀌는 것이 없는가. 확인 중(check 거절)이어도 판정할 수 있다. */
     /* 3.305 — 후보 문서가 아직 없는 팀(raw 없음 = 후보를 한 번도 저장하지 않은 팀)도 «쓸 후보가 하나도 없으면» 바뀐 것이 없다.

@@ -23,7 +23,7 @@ try{
   const sel=t=>f.evaluate(t=>document.getElementById('cmd-board-settings-pop').__psSelectTab(t),t);
   await f.evaluate(()=>window.__psToggleBoardSettings('open'));await page.waitForTimeout(400);
   let s=await st();
-  assert.deepEqual(s.tabs,['운동장','선수 표시','배치','내 화면'],'네 탭');
+  assert.deepEqual(s.tabs,['운동장','선수 표시','배치','움직임','내 화면'],'네 탭 + 3.347 «움직임»(board-motion-marks.js 가 붙인다)');
   // ① 운동장 — 이 보드에 저장
   await sel('pitch');s=await st();assert.equal(s.scope,'이 보드에 저장');assert.deepEqual(s.on,['운동장']);assert.equal(s.mem,'pitch');
   let sc=await secs();assert.deepEqual(sc,['내 스타일','바탕','선·구역','범위·방향'],'운동장 묶음 '+JSON.stringify(sc));
@@ -87,7 +87,7 @@ try{
   s=await st();assert.equal(s.scope,'이 훈련에 저장');assert.equal(s.memEd,'pitch','편집기는 따로 기억');
   assert.equal(await vis('#pitchSpecSeg [data-spec="grid30"]'),false,'규격 «그리드»는 오른쪽 «바탕»이 맡는다');
   assert.equal(await vis('#bsBlankHint'),false);
-  await sel('view');assert.equal(await vis('#bsEditorHint'),true,'«훈련 편집기는 평면으로 열려요»');
+  await sel('view');assert.equal(await vis('#bsEditorHint'),true,'«훈련 편집기는 평면으로 열립니다»');
   lb=await labels();assert.ok(!lb.includes('기본값'),'편집기에 새 보드 기본값은 없다 '+JSON.stringify(lb));
   await sel('form');lb=await labels();assert.ok(!lb.includes('선수단')&&!lb.includes('저장 팀'),'편집기는 «선수단 올리기»가 맡는다 '+JSON.stringify(lb));
   await f.evaluate(()=>document.querySelector('#epSurface [data-sf="grid"]').click());await page.waitForTimeout(700);

@@ -55,12 +55,13 @@ test('빼기는 «선수 삭제»와 같은 길 — 삭제 기록이 먼저, 실
 });
 
 test('넣기 · 불러오기는 명단에만 쓰고 스카우팅 원장은 건드리지 않는다',()=>{
-  const q=body('quickAdd'),imp=body('importScout');
+  const q=body('quickAdd'),imp=body('importScout'),made=body('playerFromCandidate');   /* 후보 → 새 선수는 «새 시즌 시작»과 같이 쓰는 한 함수 */
+  assert.match(imp,/playerFromCandidate\(it,st\.grp,now\)/);assert.doesNotMatch(made,/scStore|scoutStore|scMakePlacement/);
   assert.match(q,/d\.players\.push\(p\);var ok=win\.save\(\{skipTargets:true\}\)/,'후보 문서는 쓰지 않는다');
   assert.match(imp,/var ok=win\.save\(\{skipTargets:true\}\)/);
   assert.match(q,/type:'ours'/);
-  assert.match(imp,/joinedFrom:\{at:now,cid:r\.cid/,'다시 불러오기를 막는 표식');
-  assert.match(imp,/levels:\{\}/,'스카우팅 평가는 옮기지 않는다(스카우팅에 그대로)');
+  assert.match(made,/joinedFrom:\{at:now,cid:r\.cid/,'다시 불러오기를 막는 표식');
+  assert.match(made,/levels:\{\}/,'스카우팅 평가는 옮기지 않는다(스카우팅에 그대로)');
   assert.doesNotMatch(imp,/scStore\(\)\.(set|write|save|importLegacy)|scoutStore\.set|scMakePlacement|scArchiveCandidate/,'후보 원장에 쓰지 않는다');
   assert.match(imp,/owner!==win\.teamSaveOwner\(\)/,'창을 연 뒤 팀이 바뀌면 넣지 않는다');
   assert.match(imp,/rosterMatch\(rosterNow,it\.r\)!=='dup'/,'넣는 순간의 명단으로 다시 걸러 같은 후보를 두 번 넣지 않는다');

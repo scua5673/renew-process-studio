@@ -12,7 +12,7 @@
   'use strict';
   var STORE = 'ps_dock_skin_v1', SKINS = ['auto', 'glass', 'bevel', 'flat'];
   var LABEL = { auto: '자동', glass: '글래스', bevel: '베벨', flat: '기본' };
-  var TITLE = { auto: '밝은 화면은 베벨, 다크 모드는 글래스', glass: '짙은 연유리 — 3D 경기장과 잘 어울려요', bevel: '볼록한 판 — 다크 모드에서는 흑연색', flat: '예전 납작한 도크' };
+  var TITLE = { auto: '밝은 화면은 베벨, 다크 모드는 글래스', glass: '짙은 연유리', bevel: '볼록한 판 — 다크 모드에서는 흑연색', flat: '예전 납작한 도크' };
   function readSkin(ls) { var v = ''; try { v = (ls || localStorage).getItem(STORE) || ''; } catch (_) {} return SKINS.indexOf(v) >= 0 ? v : 'auto'; }
   function writeSkin(v, ls) { try { (ls || localStorage).setItem(STORE, v); } catch (_) {} }
   // 실제로 입힐 모양: 자동은 화면 밝기를 따른다
