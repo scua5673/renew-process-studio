@@ -2,11 +2,18 @@
 // 지난 시즌 보기(그날의 줄 · 보기 전용) → 졸업생 전체 → «현재 명단으로» → 선택 띠 «졸업 처리».
 // 졸업은 표시 하나다 — 선수 객체 · 선수별 행 · 삭제 기록은 그대로, 가용인원 · 작전판 거울에는 현재 선수만. PS_SIZE=desktop|ipad|phone
 import assert from 'node:assert/strict';
-import {startFixture,openApp,SHOTS,WT,SIZES} from '../fixtures/team-app.mjs';
+import {createRequire} from 'node:module';
+import {startFixture,openApp,SHOTS,WT,A,SIZES} from '../fixtures/team-app.mjs';
+const require=createRequire(import.meta.url),store=require('../../studio/scouting-store.js');
+/* 스카우팅 후보 넷 — 확정 둘(미리 켜짐) · 영입대상 하나(꺼짐) · 추천 하나(창에 안 나옴) */
+const cands=[['sc-1','서지훈','CF','9','done'],['sc-2','오태양','RW','7','done'],['sc-4','문건우','CM','8','go'],['sc-5','배준혁','LB','3','rep']];
+const target=store.reconcile(null,{v:1,players:cands.map(([id,name,pos,num,st])=>({id,dbId:id,type:'target',name,posId:'pos_'+pos,num,club:'가상 유나이티드',grade:'B',scoutSt:st,foot:'R',levels:{},profile:{}}))});
 const size=process.env.PS_SIZE||'desktop',engine=process.env.PS_BROWSER_ENGINE||SIZES[size].engine,shots=process.env.PS_SHOTS_DIR||SHOTS;
 SIZES[size].engine=engine;
 const phone=size==='phone';
 const fx=await startFixture(),browsers={};
+fx.db.set(WT+'|cs_scout_targets_v1',{workspace_id:WT,k:'cs_scout_targets_v1',v:JSON.stringify(target),cupd:1000,updated_by:A});
+const scoutRaw=fx.db.get(WT+'|cs_scout_targets_v1').v;
 let step='open',frame=null;
 try{
   const app=await openApp(fx,size,{browsers}),{page}=app,errors=[];
@@ -39,7 +46,9 @@ try{
   assert.match(await dlg.locator('h2').innerText(),new RegExp(next+' 시즌 시작'));
   const text=await dlg.innerText();
   assert.match(text,/3학년 4명[\s\S]*→ 졸업/);assert.match(text,/2학년 5명[\s\S]*→ 3학년/);assert.match(text,/1학년 4명[\s\S]*→ 2학년/);assert.match(text,/학년 없음 5명은 그대로 둬요/);
-  assert.match(await dlg.locator('[data-pws-sum]').innerText(),new RegExp(next+' 시즌 14명[\\s\\S]*졸업 4명[\\s\\S]*'+cur+' 시즌 명단은 그대로 남아요'));
+  assert.match(await dlg.locator('[data-pws-sum]').innerText(),new RegExp(next+' 시즌 16명[\\s\\S]*졸업 4명[\\s\\S]*신입 2명[\\s\\S]*'+cur+' 시즌 명단은 그대로 남아요'));
+  assert.match(text,/스카우팅에서 2명[\s\S]*1학년으로 넣어요/);
+  assert.deepEqual(await dlg.locator('[data-pws-join]').evaluateAll(b=>b.map(x=>[x.textContent,x.getAttribute('aria-pressed')])),[['서지훈','true'],['오태양','true'],['문건우 · 영입대상','false']],'확정은 켜진 채 · 영입대상은 꺼진 채 · 추천은 없음');
   const dm=await frame.evaluate(()=>{const d=document.getElementById('pwSeason'),r=d.getBoundingClientRect();return {vw:innerWidth,vh:innerHeight,left:r.left,right:r.right,top:r.top,bottom:r.bottom,doc:document.documentElement.scrollWidth-innerWidth,small:[...d.querySelectorAll('button,input[type=checkbox]')].filter(x=>x.offsetParent).map(x=>{const b=(x.closest('label')||x).getBoundingClientRect();return [x.getAttribute('aria-label')||x.textContent.trim(),Math.round(b.width),Math.round(b.height)];}).filter(c=>c[1]<36||c[2]<36)};});
   console.error('[measure] season-dialog',size,JSON.stringify(dm));
   assert.ok(dm.left>=-.5&&dm.right<=dm.vw+.5&&dm.top>=-.5&&dm.bottom<=dm.vh+.5&&dm.doc<=1,'창이 화면 안 '+JSON.stringify(dm));
@@ -51,17 +60,19 @@ try{
   await dlg.getByRole('button',{name:seed.y3[3],exact:true}).click();
   assert.equal(await dlg.getByRole('button',{name:seed.y3[3],exact:true}).getAttribute('aria-pressed'),'false');
   assert.match(await dlg.innerText(),/1명은 3학년 그대로/);
-  assert.match(await dlg.locator('[data-pws-sum]').innerText(),new RegExp(next+' 시즌 15명[\\s\\S]*졸업 3명'));
+  assert.match(await dlg.locator('[data-pws-sum]').innerText(),new RegExp(next+' 시즌 17명[\\s\\S]*졸업 3명'));
   step='start';
   await dlg.getByRole('button',{name:next+' 시즌 시작',exact:true}).click();
   await frame.waitForFunction(()=>!document.getElementById('pwSeason'));
   let s=await state();
-  assert.equal(s.n,18,'선수 객체는 그대로 18');assert.deepEqual(s.grads.sort(),seed.y3.slice(0,3).sort());
-  assert.equal(s.ours,15);assert.equal(s.season.cur,next);assert.equal(s.season.past.length,1);assert.equal(s.season.past[0].id,cur);assert.equal(s.season.past[0].rows.length,18);
+  assert.equal(s.n,20,'선수 18 + 신입 2');assert.deepEqual(s.grads.sort(),seed.y3.slice(0,3).sort());
+  assert.equal(s.ours,17);assert.equal(s.season.cur,next);
+  const joined=await frame.evaluate(()=>data.players.filter(p=>p.joinedFrom).map(p=>[p.name,p.joinedFrom.cid,String(p.schoolYear||''),p.grp||'']));
+  assert.deepEqual(joined.map(j=>[j[0],j[2]]).sort(),[['서지훈','1'],['오태양','1']],'신입은 1학년으로');assert.equal(s.season.past.length,1);assert.equal(s.season.past[0].id,cur);assert.equal(s.season.past[0].rows.length,18);
   for(const n of seed.y2)assert.equal(s.years.find(y=>y[0]===n)[1],'3');for(const n of seed.y1)assert.equal(s.years.find(y=>y[0]===n)[1],'2');
   assert.equal(s.years.find(y=>y[0]===seed.y3[3])[1],'3');assert.equal(s.years.find(y=>y[0]===seed.y3[3])[2],'');
   await frame.waitForFunction(c=>document.querySelector('#pwTeam [data-pw-action="season"]').textContent.indexOf(c+' 시즌')>=0,next);
-  assert.equal(await rows().count(),15);
+  assert.equal(await rows().count(),17);
 
   // ③ 되돌리기 — 넘기기 전 명단 그대로
   step='undo';
@@ -74,25 +85,30 @@ try{
   await page.screenshot({path:shots+'/roster-season-undo-'+size+'.png'});
   await frame.getByRole('button',{name:'선택 해제',exact:true}).click();
   assert.equal(await frame.evaluate(()=>document.querySelector('.pw-undo').style.bottom),'','띠가 사라지면 알림은 제자리');
-  assert.match(await undo.innerText(),new RegExp(next+' 시즌[\\s\\S]*졸업 3명[\\s\\S]*진급 9명'));
+  assert.match(await undo.innerText(),new RegExp(next+' 시즌[\\s\\S]*졸업 3명[\\s\\S]*진급 9명[\\s\\S]*신입 2명'));
   await undo.getByRole('button',{name:'되돌리기'}).click();
   await frame.waitForFunction(()=>tmOurs().length===18);
   s=await state();assert.deepEqual(s.grads,[]);assert.equal(s.season,null);
   assert.equal(await frame.evaluate(()=>JSON.stringify(data.players.filter(p=>p.type!=='target').map(p=>[p.id,p.schoolYear||'',!!p.grad]))),seed.was);
   assert.equal(await rows().count(),18);
+  assert.equal(await frame.evaluate(()=>data.players.filter(p=>p.joinedFrom).length),0,'되돌리면 신입도 빠진다');
+  const undone=await frame.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('cs_player_del_v1')||'{}')));
+  assert.equal(undone.length,2,'되돌린 신입은 삭제 기록과 함께');assert.ok(!undone.some(id=>seed.ids.includes(id)),'원래 선수에는 삭제 기록 없음');
 
   // ④ 다시 시작 — 거울(작전판 · IDP)과 가용인원에는 현재 선수만
   step='restart';
   await pick(next+' 시즌 시작');await dlg.waitFor();
   await dlg.getByRole('button',{name:seed.y3[3],exact:true}).click();
+  for(const n of ['서지훈','오태양'])await dlg.getByRole('button',{name:n,exact:true}).click();   /* 이번엔 신입 없이 */
+  assert.doesNotMatch(await dlg.locator('[data-pws-sum]').innerText(),/신입/);
   await dlg.getByRole('button',{name:next+' 시즌 시작',exact:true}).click();
   await frame.waitForFunction(()=>!document.getElementById('pwSeason')&&tmOurs().length===15);
   step='mirrors';
   let saved=null;
   for(let i=0;i<30&&!saved;i++){saved=await frame.evaluate(async()=>{try{await scoutStore.ready(true);}catch(e){return null;}const d=JSON.parse(localStorage.getItem('scout_tool_v1')),sq=JSON.parse(localStorage.getItem('cs_squad_v1')||'null'),at=JSON.parse(localStorage.getItem('cs_team_attrs_v1')||'null'),tomb=JSON.parse(localStorage.getItem('cs_player_del_v1')||'{}');
     const o=d.players.filter(p=>p.type!=='target');if(o.filter(p=>p.grad).length!==3)return null;
-    return {n:o.length,grad:o.filter(p=>p.grad).map(p=>p.name),squad:sq&&sq.players.map(p=>p.name),roster:at&&at.roster&&at.roster.map(p=>p.name),tombs:Object.keys(tomb||{}).length,season:d.meta.season.cur};});if(!saved)await page.waitForTimeout(500);}
-  assert.ok(saved,'명단 저장 확인');assert.equal(saved.n,18);assert.equal(saved.tombs,0,'삭제 기록을 남기지 않는다');assert.equal(saved.season,next);
+    return {n:o.length,grad:o.filter(p=>p.grad).map(p=>p.name),squad:sq&&sq.players.map(p=>p.name),roster:at&&at.roster&&at.roster.map(p=>p.name),tombs:Object.keys(tomb||{}),season:d.meta.season.cur};});if(!saved)await page.waitForTimeout(500);}
+  assert.ok(saved,'명단 저장 확인');assert.equal(saved.n,18);assert.ok(!saved.tombs.some(id=>seed.ids.includes(id)),'졸업은 삭제 기록을 남기지 않는다');assert.equal(saved.season,next);
   assert.equal(saved.squad.length,15);assert.equal(saved.roster.length,15);
   for(const n of saved.grad){assert.ok(!saved.squad.includes(n),'작전판 거울에 졸업생 없음 '+n);assert.ok(!saved.roster.includes(n),'IDP 거울에 졸업생 없음 '+n);}
   s=await state();assert.ok(s.avail<=15);
@@ -143,7 +159,9 @@ try{
   for(let i=0;i<60&&!srv;i++){await frame.evaluate(async()=>{try{await scoutStore.ready(true);}catch(e){}});await page.evaluate(()=>PSSync.syncNow('roster-season')).catch(()=>{});
     const got=seed.ids.map(id=>{const r=fx.db.get(WT+'|sq:'+id);try{return r?JSON.parse(r.v):null;}catch(e){return null;}});
     if(got.every(Boolean)&&got.filter(p=>p.grad).length===3)srv=got;else{last=JSON.stringify({rows:got.filter(Boolean).length,grad:got.filter(p=>p&&p.grad).length,strip:await page.evaluate(()=>{const x=document.getElementById('psSyncStrip');return x?x.innerText.replace(/\s+/g,' ').trim():'';})});await page.waitForTimeout(700);}}
-  assert.ok(srv,'선수별 행이 서버에 '+last);assert.equal(srv.filter(p=>p._del).length,0,'지운 행 없음');assert.equal(srv.length,18);
+  assert.ok(srv,'선수별 행이 서버에 '+last);
+  const lean=v=>{const d=JSON.parse(v);(d.players||[]).forEach(p=>{delete p.posName;});return JSON.stringify(d);};
+  assert.equal(lean(fx.db.get(WT+'|cs_scout_targets_v1').v),lean(scoutRaw),'스카우팅 원장은 서버에서 그대로');assert.equal(srv.filter(p=>p._del).length,0,'지운 행 없음');assert.equal(srv.length,18);
 
   // ⑨ 잠긴 명단 — 시즌 시작 · 졸업 처리가 보이지 않는다
   step='locked';

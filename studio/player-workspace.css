@@ -330,6 +330,7 @@ body.ps-roster-locked .pw-quickadd,body.ps-roster-locked .pw-rq-edit{display:non
 .pws-names{display:flex;flex-wrap:wrap;gap:var(--sp-2);padding:0 var(--sp-3) var(--sp-3) calc(24px + var(--sp-3)*2)}
 .pws-names .pw-button{min-height:36px;padding:0 var(--sp-3);font-size:var(--t-3);border-radius:var(--r-pill)}
 .pws-names .pw-button:not(.is-on){color:var(--c-muted);text-decoration:line-through}
+.pws-names .pw-button.pws-off{text-decoration:none}
 .pws-none{margin:var(--sp-3) 0 0;font-size:var(--t-3)}
 @media(max-width:700px){.pws-names{padding-left:var(--sp-3)}}
 .pw-workspace .pw-result .pw-season-chip{border:1px solid var(--c-line-2);background:var(--c-surface);color:var(--c-ink)}
