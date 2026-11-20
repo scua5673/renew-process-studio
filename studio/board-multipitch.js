@@ -20,6 +20,56 @@
     var ratio=(s&&s.wid||68)/(s&&s.len||105),w=Math.min(r.w,r.h*ratio),h=w/ratio;
     return {x:r.x+(r.w-w)/2,y:r.y+(r.h-h)/2,w:w,h:h};
   }
+  /* 3.340 — 운동장 여럿 «모양 그대로»(사용자 11/20 «운동장 4개 · 여백을 최대한 줄이고 · 3개 2개 6개도» → 문서 저장소 목업
+     `UI-작전판-운동장여럿-꽉채우기-목업-2026-11-20.html` B안). 예전 배치(아래 legacy)는 4개를 세로 카드 2×2 로 3:2 틀(1110×740) 안에 두어
+     맥 창(약 1.9:1)에서 판의 약 30% 만 운동장이었다. 새 배치는 실제 비율(105×68 · 8인제 · 풋살 그대로)을 지킨 채 줄 수와 방향(세로 v 골대 위 · 아래 /
+     가로 h 골대 좌 · 우)을 골라 가장 크게 놓는다 — 16:9 world 틀(FRAME, 1110×740 판의 가운데) 안에서 계산하고, 판의 기준 틀(BASEVB)은
+     카드를 감싼 상자 + 여백(base) — 그래서 기기마다 카드 자리는 같다(토큰은 world 좌표). 11인제: 2 · 3 = 세로 한 줄, 4 = 가로 2×2, 6 = 가로 3×2.
+     5개는 예전 특수 배치 그대로. 새 배치는 판(페이지 스냅)의 표식 `mpFit`(board.html — 개수를 고를 때 켠다)이 있을 때만 — 옛 판은 예전 배치. */
+  var FRAME=[-103,0,1316,740],GAP={mL:18,mW:12,gL:26,gW:16},FITN={2:1,3:1,4:1,6:1};
+  function layout(n,s){
+    n=+n; if(!FITN[n])return null;
+    var wid=(s&&s.wid)||68,len=(s&&s.len)||105,F=FRAME,G=GAP,b=null;
+    for(var rows=1;rows<=n;rows++){ var cols=Math.ceil(n/rows); if((rows-1)*cols>=n)continue;
+      ['v','h'].forEach(function(dir){
+        /* 골라인 쪽은 골대 깊이만큼(mL · gL), 터치라인 쪽은 좁게(mW · gW) */
+        var hz=dir==='h',mx=hz?G.mL:G.mW,my=hz?G.mW:G.mL,gx=hz?G.gL:G.gW,gy=hz?G.gW:G.gL;
+        var cw=(F[2]-2*mx-(cols-1)*gx)/cols,ch=(F[3]-2*my-(rows-1)*gy)/rows; if(!(cw>0&&ch>0))return;
+        var r=hz?len/wid:wid/len,w=Math.min(cw,ch*r),h=w/r;
+        if(!b||w*h>b.w*b.h+1e-6)b={rows:rows,cols:cols,dir:dir,cw:cw,ch:ch,w:w,h:h,mx:mx,my:my,gx:gx,gy:gy};
+      }); }
+    if(!b)return null;
+    /* 남는 칸은 운동장 사이가 아니라 바깥으로 — 운동장끼리는 정한 간격으로 붙이고 묶음을 틀 가운데에(틀이 그만큼 줄어 좁은 화면에서 더 크다) */
+    var cards=[],allH=b.rows*b.h+(b.rows-1)*b.gy,top=F[1]+(F[3]-allH)/2;
+    for(var i=0;i<n;i++){ var r=Math.floor(i/b.cols),k=i%b.cols,inRow=Math.min(b.cols,n-r*b.cols),rowW=inRow*b.w+(inRow-1)*b.gx;
+      cards.push({x:F[0]+(F[2]-rowW)/2+k*(b.w+b.gx),y:top+r*(b.h+b.gy),w:b.w,h:b.h,dir:b.dir}); }
+    var x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+    cards.forEach(function(c){x0=Math.min(x0,c.x);y0=Math.min(y0,c.y);x1=Math.max(x1,c.x+c.w);y1=Math.max(y1,c.y+c.h);});
+    /* 마주 보는 골대가 닿지 않게(예전 2행과 같은 규칙) — 골라인 사이 간격의 절반 */
+    return {cards:cards,dir:b.dir,cap:Math.max(5,((b.dir==='h'?b.gx:b.gy)-5)/2),frame:[x0-b.mx,y0-b.my,x1-x0+2*b.mx,y1-y0+2*b.my]};
+  }
+  /* 새 배치를 쓰는 판인가 — 표식 · 전체 범위 · 개수(2 · 3 · 4 · 6) · 운동장 바탕 */
+  function fitLayout(win){
+    try{
+      if(!win||!win.__psMpFit)return null;
+      if(win.__getPitchView&&win.__getPitchView()!=='full')return null;
+      var sp=win.__getPitchSpec&&win.__getPitchSpec(); if(!sp||sp.blank)return null;
+      return layout(win.__getPitchN?win.__getPitchN():1,sp);
+    }catch(_){ return null; }
+  }
+  /* board.html applyView 의 기준 틀(BASEVB — 판 좌표). 새 배치면 카드를 감싼 world 상자를 지금 world 변형(세로 판은 돌아 있다)으로 옮겨 돌려준다 */
+  function base(b,a,win){
+    try{
+      if(a!=='full')return b;
+      var L=fitLayout(win); if(!L)return b;
+      var f=L.frame,w=win.document.getElementById('world'),t=w&&w.transform&&w.transform.baseVal.consolidate(),m=t&&t.matrix;
+      if(!m)return f.slice();
+      var xs=[],ys=[];
+      [[f[0],f[1]],[f[0]+f[2],f[1]],[f[0],f[1]+f[3]],[f[0]+f[2],f[1]+f[3]]].forEach(function(p){ xs.push(m.a*p[0]+m.c*p[1]+m.e); ys.push(m.b*p[0]+m.d*p[1]+m.f); });
+      var x=Math.min.apply(null,xs),y=Math.min.apply(null,ys);
+      return [x,y,Math.max.apply(null,xs)-x,Math.max.apply(null,ys)-y];
+    }catch(_){ return b; }
+  }
   function applyPitches(doc,n){
     try{
       var board=doc.getElementById('board'); if(!board) return;
@@ -33,10 +83,11 @@
       if(!spec)return; // Wait for the board's specification instead of painting incomplete geometry.
       var lines=doc.defaultView.__getPitchLines?.()!==false;
       var colors=doc.defaultView.getComputedStyle(doc.documentElement),lineColor=colors.getPropertyValue('--pline').trim()||'#ffffff',gridColor=colors.getPropertyValue('--grid').trim()||'#3a6df0';
+      var _fitL=n>1?fitLayout(doc.defaultView):null;   /* 3.340 — 새 배치(B안)면 카드 자리는 기준 틀이 아니라 고정 계산 */
       /* 동일 조건이면 재생성 생략 — 주기적 재호출로 인한 깜박임 방지. 기준 프레임(_bvb)을 캐시 키로 사용해
          순수 리사이즈(라이브 viewBox만 변함)에는 재배치하지 않는다(같은 기준 프레임 → 같은 배치). */
       try{ var _sgt='off'; try{ if(doc.defaultView.__getGridType){_sgt=doc.defaultView.__getGridType()||'off';} else {var _sgb=doc.querySelector('#gridSeg button.on'); if(_sgb)_sgt=_sgb.getAttribute('data-g')||'off';} }catch(_g){}
-        var _sig=n+'|'+(_bvb?_bvb.join(' '):(board.getAttribute('viewBox')||''))+'|'+_sgt+'|'+JSON.stringify(spec)+'|'+lines+'|'+lineColor+'|'+gridColor+'|'+(doc.documentElement.dataset.pitch||'');
+        var _sig=n+'|'+(_bvb?_bvb.join(' '):(board.getAttribute('viewBox')||''))+'|'+_sgt+'|'+JSON.stringify(spec)+'|'+lines+'|'+lineColor+'|'+gridColor+'|'+(doc.documentElement.dataset.pitch||'')+(_fitL?'|fit':'');
         if(n>1 && world.querySelector('#ps-multipitch') && world.__psMpSig===_sig){
           /* 2.706 — 같은 조건이라 카드는 다시 안 그리더라도 **전체 피치 선·그리드는 반드시 숨긴 채** 둔다(사용자 "보드가 삐뚤어졌어": 운동장 4개 + 전체 피치 선이 함께 보여
              viewBox 가 둘을 다 담느라 판이 밀려 있었다). buildLines 가 state.pitchN 이 바뀌기 전에 새 #lineLayer 를 만들면 보이는 채로 남을 수 있다. */
@@ -58,10 +109,14 @@
       [].slice.call(world.children).forEach(function(c){ if(c.tagName.toLowerCase()==='g' && !c.id && c.querySelector('circle,path,line')){ c.setAttribute('data-ps-hidden','1'); c.style.display='none'; } }); ['#lineLayer','#gridLayer'].forEach(function(sel){ var el=world.querySelector(sel); if(el){ el.setAttribute('data-ps-hidden','1'); el.style.display='none'; } });
       function E(t,a){ var e=doc.createElementNS(NS,t); for(var k in a) e.setAttribute(k,a[k]); return e; }
       var _lc=lineColor,ST={stroke:_lc,'stroke-width':'1.3',fill:'none','stroke-opacity':'0.92'};
-      function pitch(x0,y0,w,h,goalDepthCap,showGoals){
-        var g=E('g',{'data-pitch-rect':[x0,y0,w,h].join(',')});
+      function pitch(x0,y0,w,h,goalDepthCap,showGoals,pdir){
+        var hz0=pdir==='h',g=E('g',{'data-pitch-rect':[x0,y0,w,h].join(','),'data-pitch-dir':hz0?'h':'v'}),body=g,X=x0,Y=y0,WW=w,HH=h;
+        /* 3.340 — 가로 카드(골대 좌 · 우): 선은 세로 카드와 같은 좌표로 그려 돌린다(안쪽 위 골라인 = world 왼쪽). 골대는 3D 가 world 좌표로 읽으니
+           돌리지 않고 g(world)에 axis 'h' 로. data-pitch-rect 는 늘 world 사각형 */
+        if(hz0){ body=E('g',{class:'ps-pitch-body',transform:'matrix(0 -1 1 0 '+X+' '+(Y+HH)+')'}); g.appendChild(body); x0=0; y0=0; w=HH; h=WW; }
+        g.__psBody=body;
         if(!lines)return g;
-        function add(t,a){ for(var k in ST) if(!(k in a)) a[k]=ST[k]; g.appendChild(E(t,a)); }
+        function add(t,a){ for(var k in ST) if(!(k in a)) a[k]=ST[k]; body.appendChild(E(t,a)); }
         /* 3.338 — 선 골대(사용자 11/20 «골대가 어색하게 표현» → 목업 B안): 골포스트 · 뒤 막대를 둥근 ㄷ 자 한 줄로, 망 없이 옅은 바닥.
            2.738 의 마름모 망 · 굵은 뒤 막대는 작은 카드에서 회색 상자처럼 보였다. 입구 선(.ps-pitch-goal-mouth)은 3D 골대가 읽는 자리라 남긴다(골라인과 같은 굵기).
            line = 골라인 좌표 · dir = 바깥쪽(-1 위/왼쪽, 1 아래/오른쪽) · axis 'h' 면 입구가 세로(line = x, mid = 입구 가운데 y — 가로로 눕힌 카드) */
@@ -98,7 +153,8 @@
             if(dx>0)add('path',{d:'M '+(cx-dx)+' '+front+' A '+(sp.arc*sx)+' '+(sp.arc*sy)+' 0 0 '+(side<0?0:1)+' '+(cx+dx)+' '+front});
           }
           dot(cx,base+dir*sp.pk*sy,1.3);
-          goalShape(base,side,sp.goal*sx,sp.goalD*sy);
+          if(hz0)goalShape(side<0?X:X+WW,side,sp.goal*sx,sp.goalD*sy,'h',Y+HH/2);   /* 안쪽 위 = world 왼쪽 골라인 */
+          else goalShape(base,side,sp.goal*sx,sp.goalD*sy);
         });
         var cr=sp.corner*sx;
         add('path',{d:'M '+x0+' '+(y0+cr)+' A '+cr+' '+cr+' 0 0 0 '+(x0+cr)+' '+y0});
@@ -153,7 +209,12 @@
         var g=pitch(r.x,r.y,r.w,r.h,cap,goals);
         pitchGrid(g,r.x,r.y,r.w,r.h);grp.appendChild(g);
       }
-      if(n===5){
+      if(_fitL){
+        /* 3.340 — 새 배치: 카드 사각형은 layout 그대로(이미 실제 비율). 가로 카드의 전술 구역은 돌린 안쪽(세로 좌표)에 — 공격은 world 왼쪽 → 오른쪽 */
+        _fitL.cards.forEach(function(c){ var g=pitch(c.x,c.y,c.w,c.h,_fitL.cap,undefined,c.dir);
+          if(c.dir==='h')pitchGrid(g.__psBody,0,0,c.h,c.w); else pitchGrid(g,c.x,c.y,c.w,c.h);
+          grp.appendChild(g); });
+      } else if(n===5){
         /* 5개 특수 배치: 왼쪽 큰 운동장 1 + 오른쪽 작은 운동장 2×2 */
         var W2=_vb[2]-2*_sm, H2=_vb[3]-2*_vm;
         var _cg5=Math.max(26,Math.round(_vb[2]*0.024)), _rg5=Math.max(20,Math.round(_vb[3]*0.03));
@@ -175,12 +236,12 @@
       for(var i=0;i<n;i++){ var _r=Math.floor(i/cols), _c=i%cols; var _px=_x0+_c*(cw+_cg), _pyr=_py+_r*(ph+_rg); placePitch(_px,_pyr,cw,ph,_goalCap);
         _rects.push({x:_px,y:_pyr,w:cw,h:ph}); }
       }
-      var _rects=Array.from(grp.children).filter(function(g){return g.hasAttribute('data-pitch-rect');}).map(function(g){var r=g.getAttribute('data-pitch-rect').split(',').map(Number);return {x:r[0],y:r[1],w:r[2],h:r[3]};});
+      var _rects=Array.from(grp.children).filter(function(g){return g.hasAttribute('data-pitch-rect');}).map(function(g){var r=g.getAttribute('data-pitch-rect').split(',').map(Number);return {x:r[0],y:r[1],w:r[2],h:r[3],dir:g.getAttribute('data-pitch-dir')||'v'};});   /* 3.340 — dir: 'v' 골대 위 · 아래 · 'h' 좌 · 우(훈련 격자 · 선수 놓기가 읽는다) */
       try{ doc.defaultView.__psPitchRects=_rects; }catch(_pr){}
       if(old&&old.parentNode===world){ world.replaceChild(grp,old); }   // 원자 교체 — 옛/새 그룹 사이 빈 순간 없음
       else { var tl=world.querySelector('#tokenLayer'); if(tl) world.insertBefore(grp,tl); else world.appendChild(grp); }
       try{if(doc.defaultView.__psWmPlace)doc.defaultView.__psWmPlace();if(doc.defaultView.tiltGoalsSync)doc.defaultView.tiltGoalsSync();}catch(_){}
     }catch(e){}
   }
-  return {apply:applyPitches,worldFrame:worldFrame,fit:fit};
+  return {apply:applyPitches,worldFrame:worldFrame,fit:fit,layout:layout,fitLayout:fitLayout,base:base,FRAME:FRAME};
 });

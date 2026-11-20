@@ -4228,7 +4228,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
 <script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.338"></script>
-<script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-bounds.js"></script><script src="board-rescue.js"></script><script src="board-mow.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script><script src="board-train-grid.js"></script>
+<script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-bounds.js"></script><script src="board-rescue.js"></script><script src="board-mow.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script><script src="board-train-grid.js"></script><script src="board-multipitch.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-tv-fold.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
 <script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-sched-show.js"></script><script src="board-anim-pause.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.338"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script><script src="board-phone-board.js"></script>
 <script>
@@ -4870,7 +4870,8 @@ function applyView(){
     if(a!=="full"){bx=pvWorldRight()?(W-hh):0;by=0;bw=hh;bh=H;}   /* 2.975 */else if(_spSmall){bx=_pr.L-M;by=_pr.T-M;bw=_pr.PW+2*M;bh=_pr.PH+2*M;}else{bx=0;by=0;bw=W;bh=H;}}
   else{world.setAttribute("transform",state.spFlip?`matrix(0 1 -1 0 ${H} 0)`:`matrix(0 -1 1 0 0 ${W})`);
     if(a!=="full"){var _far=pvWorldRight();if(state.spFlip){bx=0;by=_far?(W-hh):0;bw=H;bh=hh;}else{bx=0;by=_far?0:(W-hh);bw=H;bh=hh;}}   /* 2.975 — 상대 쪽 */else if(_spSmall){if(state.spFlip){bx=H-_pr.B-M;by=_pr.L-M;}else{bx=_pr.T-M;by=W-_pr.R-M;}bw=_pr.PH+2*M;bh=_pr.PW+2*M;}else{bx=0;by=0;bw=H;bh=W;}}
-  /* Multiple pitches use the same fixed world frame in every orientation. */
+  /* Multiple pitches use the same fixed world frame in every orientation. 3.340 — 새 배치(mpFit)면 카드를 감싼 틀(board-multipitch.js base) */
+  if(window.PSMultiPitch)[bx,by,bw,bh]=PSMultiPitch.base([bx,by,bw,bh],a,window);   /* base 는 실패하면 받은 틀을 그대로 돌려준다 */
   BASEVB=[bx,by,bw,bh];
   try{window.__baseVB=BASEVB.slice();}catch(_){}
   /* 2.800 — 폰(사용자 «운동장이 최대한 커졌으면»): 세로 폰은 폭이 한계라 터치라인 쪽 카드 여백(M=30 단위 ≈ 15px)이 그대로 크기를 깎는다.
@@ -7871,6 +7872,7 @@ function captureSnap(){var __cs={pitchSpec:state.pitchSpec||"fifa",players:dc(st
   pitchCustom:(function(){try{return (document.documentElement.dataset.pitch==="custom")?((document.documentElement.style.getPropertyValue("--pitchbg")||"").trim()||null):null;}catch(_){return null;}})()};
   try{var __lk=lookNow();for(var __k in __lk)__cs[__k]=__lk[__k];}catch(_){}   /* 2.929 — 보드 설정은 그 보드에 */
   if(state.gridM>0)__cs.gridM=state.gridM;   /* 2.989 — 이 판이 그리드였을 때의 넓이(m). 운동장으로 갔다 돌아와도 같은 넓이로 */
+  if(window.__psMpFit&&state.pitchN>1)__cs.mpFit=1;   /* 3.340 — 운동장 여럿 새 배치(옛 판은 칸이 없어 예전 배치) */
   return __cs;}
 const BOARD_DEFAULT_KEY="cs_board_default_v1";
 function boardDefaultSnap(src){
@@ -8045,7 +8047,7 @@ function __rescaleGrass(){ try{
   if(!world)return; var old=world.querySelector(".grass-stripes"),sg=old&&window.PSBoardMow&&PSBoardMow.flat(window,1600);
   if(sg)old.parentNode.replaceChild(sg,old);
 }catch(_){}}
-window.__setPitchN=function(n){var _nn=(+n>0?+n:1);try{if(_nn>1&&isBlankSpec())window.__setPitchSpec("fifa");}catch(_){}   /* 2.989 — 운동장 여러 개는 운동장 바탕에서(그리드 판은 한 판) */if((state.pitchN||1)!==_nn){try{pushUndo();}catch(_){}}   /* 2.983 — 개수도 ⌘Z 한 걸음(범위·규격·방향과 같게) */state.pitchN=_nn;try{__rescaleGrass();}catch(_){}try{_viewScenesToast(_viewScenesMatch("count"),"운동장 개수를");}catch(_){}   /* 2.982 */try{boardSaveLive();}catch(_){}};
+window.__setPitchN=function(n){var _nn=(+n>0?+n:1);try{if(_nn>1&&isBlankSpec())window.__setPitchSpec("fifa");}catch(_){}   /* 2.989 — 운동장 여러 개는 운동장 바탕에서(그리드 판은 한 판) */var _fit=_nn>1,_sw=_fit&&_nn!==5&&(state.pitchN||1)===_nn&&!window.__psMpFit;if((state.pitchN||1)!==_nn||!!window.__psMpFit!==_fit){try{pushUndo();}catch(_){}}   /* 2.983 — 개수도 ⌘Z 한 걸음(범위·규격·방향과 같게) · 3.340 개수를 고르면 새 배치(mpFit — 같은 개수를 다시 눌러도) */state.pitchN=_nn;window.__psMpFit=_fit;try{__rescaleGrass();applyView();}catch(_){}try{_viewScenesToast(_viewScenesMatch("count"),"운동장 개수를");}catch(_){}   /* 2.982 */if(_sw&&typeof toast==="function")toast("운동장을 새 배치로 바꿨어요 · 선수는 그 자리 그대로 · 되돌리기로 이전 배치");try{boardSaveLive();}catch(_){}};
 /* 운동장 범위: 전체 / 1·2·3분기. 2/4는 기존 하프와 호환하고, 옛 스냅의 area=half도 그대로 읽는다. */
 window.__getPitchView=function(){return pitchViewKey();};
 window.__setPitchSide=function(side){ var cur=state.pvSide==="opp"?"opp":"own", nx=(side==="toggle")?(cur==="opp"?"own":"opp"):(side==="opp"?"opp":"own"); if(nx===cur)return;
@@ -8155,7 +8157,7 @@ function _rotFinish(activeMir,word){ var r=_rotScenesMatch(activeMir,false);
    방향과 같은 병이었다: 이 값들은 장면 스냅마다 따로 저장돼, 누르면 지금 장면만 바뀌고 다른 장면을 누르면 되돌아갔다(사용자 «네 전부 해줘요»).
    ⚠ 사람이 누른 순간에만 맞춘다. 장면을 바꿀 때 조용히 맞추면(lookStampScenes 처럼) 장면마다 범위를 달리 둔 옛 애니메이션이 말없이 바뀐다.
    ⚠ 값은 captureSnap() 에서 읽는다 — 저장되는 값과 같은 것을 장면에 넣어야 두 벌이 안 생긴다. 견줄 때만 loadSnap 이 읽는 기본값으로 편다(_viewVal). */
-var _VIEW_KEYS={range:["area","pitchView","fieldMode","pvSide"],side:["pvSide","fieldMode"],count:["pitchN"],spec:["pitchSpec","area","pitchView","fieldMode"],pitch:["pitchTheme","pitchCustom","pitchImg"]};
+var _VIEW_KEYS={range:["area","pitchView","fieldMode","pvSide"],side:["pvSide","fieldMode"],count:["pitchN","mpFit"],spec:["pitchSpec","area","pitchView","fieldMode"],pitch:["pitchTheme","pitchCustom","pitchImg"]};
 function _viewVal(sn,k){ var v=sn?sn[k]:undefined;
   if(k==="area")return v||"full";
   if(k==="pitchView")return normPitchView(v||((((sn&&sn.area)||"full")==="half")?"half":"full"));
@@ -8226,7 +8228,7 @@ function loadSnap(s,opts){s=s||{};opts=opts||{};sel=null;multiSel=[];state.playe
   try{ var _cwo=window.__commWantOrient; if(_cwo&&document.body.classList.contains("comm-viewing")){ state.orientation=_cwo; state.spFlip=false; } }catch(_){}   /* 3.067 — 커뮤니티 뷰어는 판 방향을 화면이 정한다. 재생이 장면마다 이 길로 올린 사람의 방향(가로)을 되살려, 폰 세로 화면에서 재생하면 판이 가로로 작아졌다 */
   if(state.fieldMode==="setpiece")autoOrient=false;   /* 3.001 — 세트피스 판은 골이 위인 세로 판으로 만든 화면이다(setSpField 도 끈다). 저장된 세트피스를 다시 열 때 자동 방향(창 크기 변화)이 가로로 돌려 좁고 긴 판이 되던 것 */
 	  /* 2.929 — gridType·label·lines·tokenScale 은 위 lookApply 가 맡는다 */state.boardLocked=false;   /* 2.459 — '배치 고정' 문이 사라졌다: 켠 채 저장된 보드가 열리지 않는 자물쇠가 되지 않게 항상 풀고 연다 */
-  state.pitchN=s.pitchN||1;   /* 새 보드도 사용자 저장 토큰 크기 우선 */
+  state.pitchN=s.pitchN||1;window.__psMpFit=!!s.mpFit;   /* 새 보드도 사용자 저장 토큰 크기 우선 · 3.340 운동장 여럿 배치 표식(applyView 가 읽는다) */
   state.teamColors=s.teamColors?dc(s.teamColors):{};state.gkColors=s.gkColors?dc(s.gkColors):{};
   state.teamColor2=s.teamColor2?dc(s.teamColor2):{};state.teamPattern=s.teamPattern?dc(s.teamPattern):{};state.teamStrokeC=s.teamStrokeC?dc(s.teamStrokeC):{};state.teamTxtC=s.teamTxtC?dc(s.teamTxtC):{};state.teamKit=s.teamKit?dc(s.teamKit):{};state.gkTxtC=s.gkTxtC?dc(s.gkTxtC):{};   /* 2.474 */
   state.gkColor2=s.gkColor2?dc(s.gkColor2):{};state.gkPattern=s.gkPattern?dc(s.gkPattern):{};state.gkStrokeC=s.gkStrokeC?dc(s.gkStrokeC):{};   /* 1.989 */
@@ -15118,8 +15120,8 @@ function init(){
     if((state.pitchN||1)>1){
       svg.querySelectorAll('#ps-multipitch .ps-pitch-goal').forEach(g=>{
         const mouth=g.querySelector('.ps-pitch-goal-mouth');if(!mouth)return;
-        const x=+mouth.getAttribute('x1'),y=+mouth.getAttribute('y1'),x2=+mouth.getAttribute('x2'),y2=+mouth.getAttribute('y2'),side=g.getAttribute('data-side')==='top'?-1:1;
-        goals.push({a:map(x,y),b:map(x2,y2),out:map(x,y+side),height:Math.abs(x2-x)*(sp.futsal?2:(sp.goal<6?2.15:2.44))/sp.goal*scale*GOAL_K.height,depth:Math.min(+g.getAttribute('data-goal-depth')*GOAL_K.depth,+(g.getAttribute('data-goal-depth-cap')||Infinity))*scale});
+        const x=+mouth.getAttribute('x1'),y=+mouth.getAttribute('y1'),x2=+mouth.getAttribute('x2'),y2=+mouth.getAttribute('y2'),s=g.getAttribute('data-side'),o=s==='left'?[-1,0]:s==='right'?[1,0]:[0,s==='top'?-1:1];   /* 3.340 — 가로 카드는 골대 좌 · 우 */
+        goals.push({a:map(x,y),b:map(x2,y2),out:map(x+o[0],y+o[1]),height:Math.hypot(x2-x,y2-y)*(sp.futsal?2:(sp.goal<6?2.15:2.44))/sp.goal*scale*GOAL_K.height,depth:Math.min(+g.getAttribute('data-goal-depth')*GOAL_K.depth,+(g.getAttribute('data-goal-depth-cap')||Infinity))*scale});
       });
     }else [[p.L,-1],[p.R,1]].forEach(([x,side])=>{
       if(pitchViewKey()!=='full'&&((pvWorldRight()&&side<0)||(!pvWorldRight()&&side>0)))return;   /* 2.975 */
@@ -15150,8 +15152,8 @@ function init(){
     if((state.pitchN||1)>1){
       svg.querySelectorAll('#ps-multipitch .ps-pitch-goal').forEach(g=>{
         const m=g.querySelector('.ps-pitch-goal-mouth');if(!m)return;
-        const x=+m.getAttribute('x1'),y=+m.getAttribute('y1'),x2=+m.getAttribute('x2'),y2=+m.getAttribute('y2'),side=g.getAttribute('data-side')==='top'?-1:1,a=map(x,y);
-        goals.push({a:a,b:map(x2,y2),n:dir(a,map(x,y+side)),h:Math.abs(x2-x)*(sp.futsal?2:(sp.goal<6?2.15:2.44))/sp.goal*GOAL_K.height,d:Math.min(+g.getAttribute('data-goal-depth')*GOAL_K.depth,+(g.getAttribute('data-goal-depth-cap')||Infinity))});
+        const x=+m.getAttribute('x1'),y=+m.getAttribute('y1'),x2=+m.getAttribute('x2'),y2=+m.getAttribute('y2'),s=g.getAttribute('data-side'),o=s==='left'?[-1,0]:s==='right'?[1,0]:[0,s==='top'?-1:1],a=map(x,y);
+        goals.push({a:a,b:map(x2,y2),n:dir(a,map(x+o[0],y+o[1])),h:Math.hypot(x2-x,y2-y)*(sp.futsal?2:(sp.goal<6?2.15:2.44))/sp.goal*GOAL_K.height,d:Math.min(+g.getAttribute('data-goal-depth')*GOAL_K.depth,+(g.getAttribute('data-goal-depth-cap')||Infinity))});
       });
     }else [[p.L,-1],[p.R,1]].forEach(([x,side])=>{
       if(pitchViewKey()!=='full'&&((pvWorldRight()&&side<0)||(!pvWorldRight()&&side>0)))return;
@@ -20934,7 +20936,7 @@ try{ var _nb=document.getElementById('dfNew');
     /* 현재 페이지의 피치/방향/개수 설정은 유지하고 선수·장비·그림만 비운 새 페이지 */
     var s=_snap()||{};
     return {pitchSpec:s.pitchSpec,orientation:s.orientation,area:s.area,pitchView:s.pitchView,pvSide:s.pvSide,gridType:s.gridType,label:s.label,lines:s.lines,spFlip:s.spFlip,
-      tokenScale:s.tokenScale,pitchN:s.pitchN,teamColors:s.teamColors,teamColor2:s.teamColor2,teamPattern:s.teamPattern,
+      tokenScale:s.tokenScale,pitchN:s.pitchN,mpFit:s.mpFit,teamColors:s.teamColors,teamColor2:s.teamColor2,teamPattern:s.teamPattern,
       teamStrokeC:s.teamStrokeC,teamTxtC:s.teamTxtC,teamKit:s.teamKit,gkColors:s.gkColors,gkColor2:s.gkColor2,gkPattern:s.gkPattern,gkStrokeC:s.gkStrokeC,gkTxtC:s.gkTxtC,pitchImg:s.pitchImg,pitchTheme:s.pitchTheme,pitchCustom:s.pitchCustom,customImages:s.customImages,
       tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,nameSize:s.nameSize,nameStyle:s.nameStyle,realScale:s.realScale,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
       players:[],equipment:[],drawings:[],ball:(s.ball?{x:s.ball.x,y:s.ball.y}:null)};

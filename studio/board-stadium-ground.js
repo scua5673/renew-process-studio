@@ -48,12 +48,13 @@ function grainTile(n){
    평면(board-flat-turf.js)과 3D 가 이 규칙 하나를 쓴다. */
 var BAND=4;
 function bands(len){let n=Math.max(3,Math.round((+len||105)/BAND));if(!(n%2))n++;return n;}
-/* 여러 운동장 카드(골대가 카드 위 · 아래) — 카드마다 띠 폭과 둘레(띠 반 폭, 옆 카드와 안 겹치게) */
+/* 여러 운동장 카드(골대가 카드 위 · 아래) — 카드마다 띠 폭과 둘레(띠 반 폭, 옆 카드와 안 겹치게)
+   3.340 — 가로 카드(골대 좌 · 우 · 운동장 여럿 새 배치)는 긴 변이 가로(hz) — 카드는 실제 비율이라 긴 변 = 길이 */
 function cardBands(cards,len){
   const cs=(cards||[]).filter(r=>Array.isArray(r)&&r.length===4&&r.every(Number.isFinite)&&r[2]>0&&r[3]>0),n=bands(len);
-  return cs.map((r,i)=>{const band=r[3]/n;let pad=band*.5;
+  return cs.map((r,i)=>{const hz=r[2]>r[3],band=(hz?r[2]:r[3])/n;let pad=band*.5;
     cs.forEach((q,j)=>{if(j===i)return;const gap=Math.max(q[0]-(r[0]+r[2]),r[0]-(q[0]+q[2]),q[1]-(r[1]+r[3]),r[1]-(q[1]+q[3]));if(gap>=0)pad=Math.min(pad,gap/2);});
-    return {r:r,band:band,pad:pad,box:[r[0]-pad,r[1]-pad,r[2]+2*pad,r[3]+2*pad]};});
+    return {r:r,band:band,pad:pad,hz:hz,box:[r[0]-pad,r[1]-pad,r[2]+2*pad,r[3]+2*pad]};});
 }
 /* o = {multi, cards:[[x,y,w,h]…], len(규격 길이 m), L, T, m(1m), pw(운동장 길이 — 없으면 105m), ph(폭 — 없으면 68m 비율), f(반올림), kind(무늬 — 없으면 보드 값), gap(띠 결 간격 m — 없으면 보드 값)}
    → {defs(psStMow 포함), cards(카드 띠 rect), rot(잎결 방향 — 깎는 방향), per(잔디 사진 칸 — 밝은 띠 + 어두운 띠 4m 한 쌍), two(두 색 줄의 한 쌍 — 0 이면 한 색), grass(ga,gb)(사진 없는 psStGrass)}
@@ -74,12 +75,12 @@ function mowPlan(o){
   let defs='<pattern id="psStMow" patternUnits="userSpaceOnUse" width="1" height="1"/>',out='';
   if(kind!=='none')cs.forEach((c,i)=>{const r=c.r,b=c.box,id='psStMowC'+i;
     if(!Mw){const band=c.band;
-      defs+='<pattern id="'+id+'" patternUnits="userSpaceOnUse" x="'+f(r[0])+'" y="'+f(r[1])+'" width="'+f(2*band)+'" height="'+f(2*band)+'"><rect width="'+f(2*band)+'" height="'+f(band)+'" fill="#000" fill-opacity="'+DK+'"/><rect y="'+f(band)+'" width="'+f(2*band)+'" height="'+f(band)+'" fill="#fff" fill-opacity="'+LT+'"/></pattern>';}
-    else defs+=Mw.paint(id,kind,Object.assign({x:r[0],y:r[1],len:r[3],wid:r[2],lenM:o.len,rot:90,gap:gap,f:f},strong));
+      defs+='<pattern id="'+id+'" patternUnits="userSpaceOnUse" x="'+f(r[0])+'" y="'+f(r[1])+'" width="'+f(2*band)+'" height="'+f(2*band)+'">'+(c.hz?'<rect width="'+f(band)+'" height="'+f(2*band)+'" fill="#000" fill-opacity="'+DK+'"/><rect x="'+f(band)+'" width="'+f(band)+'" height="'+f(2*band)+'" fill="#fff" fill-opacity="'+LT+'"/>':'<rect width="'+f(2*band)+'" height="'+f(band)+'" fill="#000" fill-opacity="'+DK+'"/><rect y="'+f(band)+'" width="'+f(2*band)+'" height="'+f(band)+'" fill="#fff" fill-opacity="'+LT+'"/>')+'</pattern>';}
+    else defs+=Mw.paint(id,kind,Object.assign({x:r[0],y:r[1],len:c.hz?r[2]:r[3],wid:c.hz?r[3]:r[2],lenM:o.len,rot:c.hz?0:90,gap:gap,f:f},strong));   /* 3.340 — 가로 카드는 돌리지 않는다 */
     out+='<rect class="ps-mow-card" x="'+f(b[0])+'" y="'+f(b[1])+'" width="'+f(b[2])+'" height="'+f(b[3])+'" fill="url(#'+id+')"/>';
   });
   const per=2*105*o.m/bands(105);
-  return {rot:90,cards:out,defs:defs,per:per,two:0,grass:grassOf(per,0,true)};
+  return {rot:cs[0]&&cs[0].hz?0:90,cards:out,defs:defs,per:per,two:0,grass:grassOf(per,0,true)};
 }
 /* 잎결 무늬 — 8m 칸, 깎는 방향(rot)으로. 그림이 없으면(노드 시험 · 캔버스 실패) 빈 문자열 */
 function grainDefs(o){const src=grainTile();if(!src)return '';const f=o.f||(n=>Math.round(n*10)/10),s=f(8*o.m);
