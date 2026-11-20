@@ -5946,20 +5946,20 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function idpScrollMode(){ try{return window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';}catch(_){return 'auto';} }
   function rMobileHead(){
     var m={
-      goal:['목표','한 번에 한 가지에 집중하고 성장 과정을 확인해요.'],
-      profile:['프로필·평가','나의 정보와 셀프 평가를 관리해요.'],
-      eval:['프로필·평가','나의 정보와 셀프 평가를 관리해요.'],
-      routine:['루틴','반복할 하루와 개인 훈련을 정리해요.'],
-      cal:['일지','날짜를 옮기면 그 날을 적어요.'],   /* 2.410 — 이름을 '일지'로(사용자) */   /* 2.317 — 탭은 '오늘'인데 머리글은 '일정'이었다. 한 곳에 이름 하나 */
-      learn:['학습','경기를 읽고 다음 행동으로 연결해요.'],
-      img:['이미지노트','경기 전에 내 역할과 장면을 정리해요.'],
+      goal:['목표',''],
+      profile:['프로필·평가',''],
+      eval:['프로필·평가',''],
+      routine:['루틴',''],
+      cal:['일지',''],   /* 2.410 — 이름을 '일지'로(사용자) */   /* 2.317 — 탭은 '오늘'인데 머리글은 '일정'이었다. 한 곳에 이름 하나 */
+      learn:['학습',''],
+      img:['이미지노트',''],
       /* 2.447 — 이 둘이 빠져 있어 폰에서 두 탭 모두 머리글이 'IDP' 였다(탭은 '경기'·'리포트'인데) */
-      match:['경기','무엇을 하려 했고 무엇이 됐는지 경기마다 남겨요.'],
-      report:['리포트','12주 동안의 성장과 기록을 한 장으로 봐요.'],
-      story:['이야기','코치와 주고받은 말을 시간순으로 봐요.']   /* 2.766 */
-    }[curL]||['IDP','나의 성장 기록을 관리해요.'];
+      match:['경기',''],
+      report:['리포트',''],
+      story:['이야기','']   /* 2.766 */
+    }[curL]||['IDP',''];
     return '<header class="mob-screenhead">'
-      +'<span class="mob-kicker">IDP</span><h1>'+m[0]+'</h1><p>'+m[1]+'</p></header>';   /* 1.984 — 뒤로가기 없음: 탭이 곧 위치 표시(2.475 — 죽은 mob-back 조각 철거) */
+      +'<span class="mob-kicker">IDP</span><h1>'+m[0]+'</h1>'+(m[1]?'<p>'+m[1]+'</p>':'')+'</header>';   /* 1.984 — 뒤로가기 없음: 탭이 곧 위치 표시(2.475 — 죽은 mob-back 조각 철거) */
   }
 
   /* 페이드는 화면(탭·보기)이 실제로 바뀔 때만 — 동기화 storage 이벤트 등 데이터 재렌더에선
@@ -6627,7 +6627,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* 2.151 — 다섯 트랙이 같은 척추(PROCESS)를 쓴다는 것을 화면이 한 번 말한다 */
     try{ if(LR_CUR.process){ h+='<div class="lc-spine"><b>PROCESS</b>'
       +LR_CUR.process.map(function(x){ return '<span title="'+esc(x.q)+'"><i>'+esc(x.k)+'</i>'+esc(x.ko)+'</span>'; }).join('')
-      +'<em>다섯 트랙이 같은 주제를 단계와 관점만 달리해 다뤄요</em></div>'; } }catch(_){}
+      +'</div>'; } }catch(_){}
     h+='<div class="lc-foot">출처를 밝히되 원문은 옮기지 않았습니다 — 각 모듈의 기준 기관을 카드 안에서 확인하세요. 규칙 조항은 IFAB 2025/26 기준.</div>';
     return h;
   }
@@ -6725,7 +6725,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!window.PS_CONCEPTS) return h+'<div class="card"><h3>개념</h3><p class="lp-empty">개념 데이터(learn-concepts.js)를 불러오지 못했어요.</p></div>';
     var p=cptProg(), c=lrCPT(), coach=(lcTrack()==='coach');
     h+='<div class="card cpt-intro"><div class="cpt-introh"><div><div class="lp-kicker">CONCEPTS</div><h3>이 도구가 쓰는 말</h3>'
-      +'<p>축구 용어(컷백 · 하프스페이스)는 <b>용어 학습</b>에, 게임모델 · 국면 · 원칙처럼 이 도구가 쓰는 개념은 여기에 있어요.</p></div>'
+      +'<p>축구 용어(컷백 · 하프스페이스)는 <b>용어 학습</b>에 있어요.</p></div>'
       +'<div class="cpt-count"><b>'+p.d+'<small>/'+p.n+'</small></b><span>읽음</span></div></div>'
       +'<div class="lc-bar"><i style="width:'+p.pct+'%"></i></div></div>';
     PS_CONCEPTS.groups.forEach(function(g){
@@ -6847,12 +6847,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var ns=inList(), dis=ro()?' disabled':'';
     var h=''; try{ h+=rGoalFamSeg(); }catch(_){}   /* 2.321 — 목표 한집 */
     h+='<div class="card"><div class="in-top"><div><h3 style="margin:0">이미지노트</h3>'
-      +'<div class="in-sub">경기 전에 읽고 그려보는 내 역할<br>경기마다 한 장씩 쌓여요'
-      +(onTeam()&&!ro()?'<br><b>팀에 공유되지 않아요</b>':'')+'</div></div>'
+      +'<div class="in-sub">'
+      +(onTeam()&&!ro()?'<b>팀에 공유되지 않아요</b>':'')+'</div></div>'
       +(ro()?'':'<button class="btn primary" id="inNew">＋ 새 노트</button>')+'</div>';
     if(!ns.length){
       h+='<div class="empty"><div class="h">아직 노트가 없어요</div>'
-        +'<div class="s">경기 전에 내 포지션과 역할을 적어두면<br>머릿속으로 한 번 그려보고 경기에 들어갈 수 있어요</div></div>';
+        +'<div class="s">경기 전에 내 포지션과 역할을 적어요</div></div>';
     }
     h+='</div>';
     ns.forEach(function(n){
@@ -7386,8 +7386,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var h='<div class="sqfit'+(mode==='report'?' rep':'')+'">'
       +(nr?'<div class="sqfit-r"><span class="t">'+esc(nr.name)+'<em class="n">'+nrLb+'</em></span><span class="v">'+nr.hit+'/4'+un(nr)+'</span>'+seg(nr,'fn')+'</div>':'')
       +'<div class="sqfit-r"><span class="t">'+esc(f.want.name)+'<em class="w">팀 이상형</em></span><span class="v">'+f.want.hit+'/4'+un(f.want)+'</span>'+seg(f.want,'f')+'</div>';
-    if(mode==='report')h+='<div class="sqfit-say">'+(f.same?'<b>일치</b> — 이상형에 이미 맞습니다. 다음 분기는 두 번째 유형의 빈 칸이 스레드 후보입니다.'
-      :'<b>둘이 다릅니다 — 여기가 대화입니다.</b> 팀 기준점 쪽을 해 볼지, 지금 가까운 쪽을 더 키울지 — 어느 쪽이든 여러 유형을 경험하는 것이 목표입니다.')+'</div>';
+    if(mode==='report')h+='<div class="sqfit-say">'+(f.same?'<b>일치</b> — 이상형에 이미 맞아요.'
+      :'<b>둘이 달라요.</b>')+'</div>';
     return h+'</div>';
   }
   /* 2.166 — 기준(자리별) 화면의 '자리의 이상형' 칸. 고르면 그 유형의 핵심 4 가 이 자리 요구에 +1(이미 정해진 항목만). */
@@ -7406,7 +7406,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<em>'+(sqReqWantOpen?'접기 ▴':'바꾸기 ▾')+'</em></button>';
     if(!sqReqWantOpen)return line;
     var h=line+'<div class="rqw'+(cur?' has':'')+'"><div class="rqw-top">'
-      +'<span>'+(gm?esc(gm)+' — ':'')+'이 자리의 기준점이 되는 유형 · 팀의 선언 · 선수를 이 유형으로 몰지 않는다(유소년은 여러 유형을 경험한다)</span></div>';
+      +'<span>'+(gm?esc(gm)+' — ':'')+'이 자리의 기준점이 되는 유형</span></div>';
     h+='<div class="rqw-list">';
     types.forEach(function(ty){ var on=(ty.key===cur);
       h+='<'+(editable?'button type="button" ':'span ')+'class="rqw-t'+(on?' on':'')+'"'+(editable?' data-want-arch="'+esc(on?'':ty.key)+'"':'')+' title="'+esc(ty.one||'')+'">'+esc(ty.name)+'</'+(editable?'button':'span')+'>'; });
@@ -7742,7 +7742,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'</'+(can?'button':'div')+'>';
     });
     h+='</div>';
-    h+='<div class="arcm-note">지금 점수로 어느 유형에 가까운지만 봐요(핵심 4 중 <b>경기에서</b> 이상 몇 개).'
+    h+='<div class="arcm-note">핵심 4 중 <b>경기에서</b> 이상 몇 개.'
       +(can?' 줄을 누르면 <b>이번 주기 초점</b>이 되고, 초점 유형의 핵심 4는 자리 요구가 <b>+1</b> 돼요.'
            +(cur?' 초점 줄을 다시 누르면 해제돼요.':'')
            :'')+'</div>';
@@ -8091,7 +8091,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var editable=isCoach();
     var h='<div class="sqtd">';
     if(editable)h+='<div class="card sqtd-sec qa-ask">'
-      +'<div class="sqtd-h"><b>팀 전체에게 묻기</b><span>한 번에 하나</span></div>'
+      +'<div class="sqtd-h"><b>팀 전체에게 묻기</b></div>'
       +'<textarea id="sqQaQ" rows="2" maxlength="200" placeholder="예: 이번 대회에서 배운 점과 다음에 해볼 것을 적어 주세요"></textarea>'
       +'<div class="qa-formbtns"><button type="button" class="btn primary" data-sqqa-send>모두에게 묻기</button></div></div>';
     if(!ps.length)
@@ -8200,7 +8200,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rSqQuarter(p,can){
     var ln=sqLinkOfPlayer(p.id), d2=(ln&&ln.d&&ln.d.v===1)?ln.d:null, uid=ln&&ln.uid;
     var rr=uid?(rvRec(PREFIX+uid)||{}):{}, list=Array.isArray(rr.qmeet)?rr.qmeet.slice().sort(function(a,b){return (+b.ts||0)-(+a.ts||0);}):[];
-    var h='<div class="qm-card"><div class="mt-top"><b>분기 면담 <small>KNVB 5단계 · 20분</small></b><span>'+(list.length?list.length+'회':'12주째에 한 번 · 12주치 한 줄이 여기 있어요')+'</span><span class="sp"></span>'
+    var h='<div class="qm-card"><div class="mt-top"><b>분기 면담 <small>KNVB 5단계 · 20분</small></b><span>'+(list.length?list.length+'회':'12주째에 한 번')+'</span><span class="sp"></span>'
       +(can&&d2?'<button type="button" class="btn sm'+(sqQmOpen?'':' primary')+'" data-qm-toggle>'+(sqQmOpen?'접기':'면담 시작')+'</button>':'')+'</div>';
     if(!d2)return h+'<div class="sqe-msg"><b>선수 계정이 연결되지 않았어요</b>12주치 한 줄은 선수 계정에서 온다 — 연결은 계정 › 권한 관리.</div></div>';
     if(sqQmOpen&&can){
@@ -8212,7 +8212,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       h+='<div class="qm-h" style="margin-top:12px">분기 평가 · 셀프 vs 코치 <small>갭 큰 항목 둘</small></div>'+(ev.gaps.length?'<div class="qm-gaps">'+ev.gaps.map(function(g){ return '<div><b>'+esc(g.name)+'</b><span>셀프 '+g.s+' · 코치 '+g.c+'</span></div>'; }).join('')+'</div>':'<div class="td-q-empty">둘 다 매겨진 항목이 없어요</div>');
       if(ev.mid)h+='<div class="qm-h" style="margin-top:12px">6주 점검 <small>'+(MID_LB[ev.mid.c]||'')+(ev.mid.c==='change'?' — 면담 안건':'')+'</small></div>'+(ev.mid.t?'<div class="qm-mid">'+esc(ev.mid.t)+'</div>':'');
       h+='</div><div class="qm-r">';
-      h+='<div class="qm-h">2 · 축구 밖 <small>학교 · 집 · 몸 · 마음 — 관계 먼저, 성과는 그다음</small></div><input class="qm-in" data-qm="outside" maxlength="140" placeholder="한 줄 (선택)" value="'+esc(dr.outside||'')+'">';
+      h+='<div class="qm-h">2 · 축구 밖 <small>학교 · 집 · 몸 · 마음</small></div><input class="qm-in" data-qm="outside" maxlength="140" placeholder="한 줄 (선택)" value="'+esc(dr.outside||'')+'">';
       h+='<div class="qm-h" style="margin-top:14px">3 · 함께 묻기 <small>선수의 말로 적는다</small></div><div class="qm-q">네 강점은 뭐라고 생각해?</div><input class="qm-in" data-qm="strengths" maxlength="140" placeholder="선수의 답" value="'+esc(dr.strengths||'')+'">'
         +'<div class="qm-q" style="margin-top:8px">다음 12주, 초점 영역은?</div><input class="qm-in" data-qm="nextArea" maxlength="140" placeholder="선수의 답" value="'+esc(dr.nextArea||'')+'">';
       h+='<div class="qm-h" style="margin-top:14px">4 · 약속 <small>다음 분기 «내가 키우는 것» — 선수가 자기 화면에서 시작을 누른다</small></div><input class="qm-in" data-qm="promise" maxlength="60" placeholder="예) 받는 순간 다음 플레이가 준비돼 있는 선수" value="'+esc(dr.promise||'')+'"><input class="qm-in" data-qm="firstFocus" maxlength="60" placeholder="첫 초점 — 예) 받기 전 몸 열기 (갭 항목에서)" value="'+esc(dr.firstFocus||'')+'" style="margin-top:6px">';
@@ -8459,9 +8459,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   }
   function rSquadEval(){
     if(sqEvalState==='loading'||sqEvalState==='idle')
-      return '<div class="ps-ph sq-ph"><b>팀 IDP</b><small>선수 목록을 옆에 두고 이어서 평가합니다</small></div><div class="card sqe-msg"><b>선수단을 불러오는 중…</b>팀 자료를 여는 중이에요.</div>';
+      return '<div class="ps-ph sq-ph"><b>팀 IDP</b></div><div class="card sqe-msg"><b>선수단을 불러오는 중…</b>팀 자료를 여는 중이에요.</div>';
     if(sqEvalState==='err')
-      return '<div class="ps-ph sq-ph"><b>팀 IDP</b><small>선수 목록을 옆에 두고 이어서 평가합니다</small></div>'
+      return '<div class="ps-ph sq-ph"><b>팀 IDP</b></div>'
         +'<div class="card sqe-msg"><b>'+(sqEvalErr==='timeout'?'팀 화면을 여는 데 시간이 걸려요':'선수단을 불러오지 못했어요')+'</b>'
         +(sqEvalErr==='standalone'?'앱 안에서 열어야 팀 자료를 읽을 수 있어요.':'잠시 뒤 다시 시도해 주세요.')
         +'<div><button type="button" data-sqe-retry>다시 시도</button></div></div>';
@@ -8476,12 +8476,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
        첫 화면을 분류가 아니라 **오늘 할 일**로 바꾸고, 이름을 일의 말로 고친다:
        오늘(매일 3분) · 선수(한 명씩) · 기준(자리 요구 — 분기 1회) · 팀 갭(훈련 주제). */
     var _scope=(sqPanel==='today')?'today':((sqPanel==='qa')?'qa':((sqPanel==='req')?'req':'pl'));
-    var _sub=(_scope==='today')?'코치의 3분 — 오늘 한 장 · 오늘 볼 스레드 · 시작 안 한 선수'   /* 2.397 — '♥ 기다리는 기록'은 '오늘 한 장'이 품었다 */
-      :((_scope==='req')?('자리 '+_npos+'개 · 요구 수준을 정해요(분기에 한 번) — 그 자리 선수 전원에게 적용돼요')
-      :((_scope==='qa')?'팀 전체에게 한 가지를 묻고, 돌아온 글을 여기서 읽어요'
-      :(sqPhone()?('선수 '+all.length+'명 · 이름을 누르면 그 선수의 이야기가 열려요')
-                 :('선수 '+all.length+'명 · 한 명씩 — 이야기·평가·면담·리포트'))));
-    var h='<div class="ps-ph sq-ph"><b>팀 IDP</b><small>'+_sub+(editable?'':' · 읽기 전용')+'</small>'
+    var _sub=(_scope==='today')?'오늘 한 장 · 오늘 볼 스레드 · 시작 안 한 선수'   /* 2.397 — '♥ 기다리는 기록'은 '오늘 한 장'이 품었다 */
+      :((_scope==='req')?('자리 '+_npos+'개 · 요구는 그 자리 선수 전원에게 적용돼요')
+      :((_scope==='qa')?''
+      :(sqPhone()?('선수 '+all.length+'명')
+                 :('선수 '+all.length+'명'))));
+    var h='<div class="ps-ph sq-ph"><b>팀 IDP</b><small>'+_sub+(editable?'':(_sub?' · ':'')+'읽기 전용')+'</small>'
       +'<span class="ps-sp"></span><div class="sq-scope">'
       /* 2.454 — '팀 갭' 문을 걷음 → 2.475 — 그리는 코드(rSqTeam 군)까지 철거(2단계 예약 이행) */
       +[['today','today','오늘'],['qa','qa','공통질문'],['pl',((sqPrevPanel&&sqPrevPanel!=='today')?sqPrevPanel:'story'),'선수'],['req','req','기준']].map(function(t){
@@ -8589,7 +8589,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
             두 벌이 되어 다음에 한쪽만 고쳐진다. 거르개·'전문 ›' 도 그대로 온다.
          ⚠ 스트림 손잡이는 8690 에서 묶인다 — meet 의 early return(8845)보다 **앞**이라 살아 있다. */
       if(sqPanel==='meet'){
-        main+='<div class="sqmt"><div class="sqmt-l"><div class="sqmt-cap"><b>선수가 적은 것</b><span>함께 보며 이야기해요</span></div>'
+        main+='<div class="sqmt"><div class="sqmt-l"><div class="sqmt-cap"><b>선수가 적은 것</b></div>'
           +(function(){ try{ return rSqStory(sel); }catch(_){ return ''; } })()
           +'</div><div class="sqmt-r">'+rSqMeet(sel,editable)+'</div></div></div>';
         return sqeWrap(h,side,main);
@@ -9957,7 +9957,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     if(can&&picks.length<WP_MAX){
       if(cands.length){
-        h+='<div class="wp-sec"><div class="td-lb">후보 <small>내 장점 · 평가 · 코치 리뷰 · 목표에서 자동으로 모았어요</small></div><div class="wp-cand">'
+        h+='<div class="wp-sec"><div class="td-lb">후보 <small>내 장점 · 평가 · 코치 리뷰 · 목표에서</small></div><div class="wp-cand">'
           +cands.slice(0,10).map(function(c){ return '<button type="button" class="wp-cb" data-wp-add="'+esc(c.t)+'" data-wp-src="'+esc(c.src)+'" data-wp-cat="'+esc(c.cat)+'">'+esc(c.t)+' <em>'+esc(c.fromStrength?'내 장점':WP_SRC[c.src])+'</em></button>'; }).join('')+'</div></div>';
       }
       h+='<div class="wp-line"><input class="qg-in" id="wpIn" maxlength="24" placeholder="'+(cands.length?'직접 적기':'예: 좁은 곳에서 안 뺏기기')+'"><button type="button" class="td-mic" data-wp-save title="정하기">✓</button></div>';
@@ -10197,7 +10197,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
        문장이 생긴 뒤에는 이 카드가 **편집기**로 남는다(문장 3개·if-then·주별 점검). */
     if(!q&&!ro())return '';
     if(!q){ return '<section class="card qg-card qg-empty"><div class="td-top"><b>분기 목표</b><span>12주 · 과정 목표 2~3개</span></div>'
-      +'<div class="qg-lead">결과("주전 된다")가 아니라 <b>내가 통제할 수 있는 행동</b>으로 — "경기 중 볼 받기 전엔 어깨 너머 본다". 매주 초점 하나가 여기서 나오고, 6주째 코치와 점검, 12주 뒤 다시 평가해요.</div>'
+      +'<div class="qg-lead">결과("주전 된다")가 아니라 <b>내가 통제할 수 있는 행동</b>으로 적어요.</div>'
       +(can?'<div class="qg-act"><button type="button" class="btn primary" data-qg-start>이번 주부터 12주 시작</button></div>':'<div class="td-q-empty">아직 분기 목표가 없어요</div>')+'</section>'; }
     var d=qgDays(q), wk=focusWk(), done=d.left<0, gs=q.goals||[];
     var thisFocus=focusNow();
@@ -10207,11 +10207,11 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<div class="qg-theme"><span class="td-lb">시즌 테마</span>'+(can?'<input class="qg-in" data-qg-theme maxlength="40" value="'+esc(q.theme||'')+'" placeholder="예: 압박 속에서도 앞을 보는 미드필더">':'<b>'+(q.theme?esc(q.theme):'<i class="td-q-empty">아직 없음</i>')+'</b>')+'</div>';
     /* 2.041 — 목표 3층(iDEP·JEF 千葉 방식): 결과(방향, 내가 다 통제 못함) → 퍼포먼스(측정·기한, SMART) → 행동(if-then, 매일 돌아올 자리) */
     var pf=q.perf||{};
-    h+='<div class="qg-layers"><div class="qg-layer"><span class="td-lb">결과 목표 <small>방향 — 내가 다 통제 못함</small></span>'+(can?'<input class="qg-in" data-qg-outcome maxlength="60" value="'+esc(q.outcome||'')+'" placeholder="예: 후반기 리그 선발 · U-17 소집">':'<b>'+(q.outcome?esc(q.outcome):'<i class="td-q-empty">—</i>')+'</b>')+'</div>'
+    h+='<div class="qg-layers"><div class="qg-layer"><span class="td-lb">결과 목표 <small>방향</small></span>'+(can?'<input class="qg-in" data-qg-outcome maxlength="60" value="'+esc(q.outcome||'')+'" placeholder="예: 후반기 리그 선발 · U-17 소집">':'<b>'+(q.outcome?esc(q.outcome):'<i class="td-q-empty">—</i>')+'</b>')+'</div>'
       +'<div class="qg-layer"><span class="td-lb">퍼포먼스 목표 <small>숫자로 · 12주 안에</small></span>'+(can?'<input class="qg-in" data-qg-perf="t" maxlength="60" value="'+esc(pf.t||'')+'" placeholder="예: 경기당 왼발 전진 패스 5회 성공">':'<b>'+(pf.t?esc(pf.t):'<i class="td-q-empty">—</i>')+'</b>')
       +'<div class="qg-perf-row"><label>지표'+(can?'<input class="qg-in" data-qg-perf="metric" maxlength="20" value="'+esc(pf.metric||'')+'" placeholder="왼발 전진 패스/경기">':'<b>'+esc(pf.metric||'—')+'</b>')+'</label><label>지금'+(can?'<input class="qg-in" data-qg-perf="cur" maxlength="10" value="'+esc(pf.cur||'')+'" placeholder="2">':'<b>'+esc(pf.cur||'—')+'</b>')+'</label><label>목표'+(can?'<input class="qg-in" data-qg-perf="target" maxlength="10" value="'+esc(pf.target||'')+'" placeholder="5">':'<b>'+esc(pf.target||'—')+'</b>')+'</label>'
       +(pf.cur&&pf.target&&!isNaN(parseFloat(pf.cur))&&!isNaN(parseFloat(pf.target))?'<span class="qg-perf-bar"><i style="width:'+Math.max(0,Math.min(100,Math.round(parseFloat(pf.cur)/parseFloat(pf.target)*100)))+'%"></i></span>':'')+'</div></div></div>'
-      +'<div class="td-lb" style="margin:12px 0 6px">행동 목표 <small>매일 돌아올 자리 — 어떤 상황에서도 내 의지로</small></div>';
+      +'<div class="td-lb" style="margin:12px 0 6px">행동 목표</div>';
     /* 목표 줄 */
     h+='<div class="qg-list">';
     gs.forEach(function(g,i){ var sc=g.sc||{}, cur=sc[wk]||0, wks=[], vl=visionLinkOf(g); for(var k=0;k<12;k++){ var wkk=ymd(addDays(d.st,k*7)); wks.push(sc[wkk]||0); }
@@ -10264,8 +10264,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function wcSteps(){
     var p0=doc.profile||{};
     return [
-      {k:'me',   done:!!(p0.name&&p0.pos), t:'내 이름과 자리 적기', d:'누구인지만 알려줘요 — 탭 2번'},
-      {k:'today',done:!!Object.keys(doc.log||{}).length, t:'오늘 한 장 남기기', d:'몸·잠·한 줄 — 30초면 돼요'},
+      {k:'me',   done:!!(p0.name&&p0.pos), t:'내 이름과 자리 적기', d:'탭 2번'},
+      {k:'today',done:!!Object.keys(doc.log||{}).length, t:'오늘 한 장 남기기', d:'몸·잠·한 줄'},
       {k:'eval', done:!!(doc.selfEval&&doc.selfEval.levels&&Object.keys(doc.selfEval.levels).length), t:'내가 잘하는 것 평가해 보기', d:'천천히 해도 돼요 (5분)'}
     ];
   }
@@ -10437,7 +10437,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var nm=(doc.profile&&doc.profile.name)||'';
     var h='<section class="card wc-card"><button type="button" class="wc-x" data-wc-off aria-label="안내 닫기">×</button>'
       +'<div class="wc-hi">'+(nm?esc(nm)+', 반가워요!':'반가워요! 여기는 <b>내 성장 기록장</b>이에요')+'</div>'
-      +'<div class="wc-sub">내가 적고, 코치가 봐요. 세 걸음이면 시작돼요 — 순서는 자유.</div>';
+      +'<div class="wc-sub">내가 적고, 코치가 봐요.</div>';
     st.forEach(function(x,i){
       h+='<button type="button" class="wc-step'+(x.done?' done':'')+'" data-wc-go="'+x.k+'"'+(x.done?' disabled':'')+'>'
         +'<i>'+(x.done?'✓':(i+1))+'</i><span><b>'+x.t+'</b><small>'+x.d+'</small></span><em>'+(x.done?'':'›')+'</em></button>';
@@ -10719,7 +10719,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!g){
       h+='<div class="td-q">내가 키우는 것 <small>12주 · 문장 하나</small></div>';
       if(!can)return h+'<div class="gc-empty">아직 없어요</div></section>';
-      h+='<div class="gc-lead">결과("주전 된다")가 아니라 <b>내가 통제할 수 있는 행동</b>으로. 매주 초점 하나가 여기서 나와요.</div>'
+      h+='<div class="gc-lead">결과("주전 된다")가 아니라 <b>내가 통제할 수 있는 행동</b>으로 적어요.</div>'
         +'<div class="gc-line"><input id="gcStart" maxlength="60" placeholder="예: 공 받기 전 어깨 너머 두 번 보기">'
         +'<button type="button" class="btn primary" data-gc-start>시작</button></div>';
       return h+'</section>';
@@ -11739,7 +11739,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!window.PS_ARCH)return '';
     var grp=archGrpDoc(), who=ro()?'선수':'내';
     if(!grp)return '<section class="card arc-card"><div class="arc-top"><i>유형</i><span>포지션 먼저</span></div>'
-      +'<div class="arc-none">아래 <b>프로필</b>에서 포지션을 정하면, 그 자리의 유형 6가지가 여기에 펼쳐져요 — 전부 배워 두고, 그중 하나가 '+who+' 스페셜이 돼요.</div></section>';
+      +'<div class="arc-none">아래 <b>프로필</b>에서 포지션을 정하면, 그 자리의 유형 6가지가 여기에 펼쳐져요.</div></section>';
     var types=PS_ARCH.byGroup(grp)||[]; if(!types.length)return '';
     var mine=archSelf(), co=archCoach(), mt=mine?PS_ARCH.get(mine):null, ct=co?PS_ARCH.get(co):null, st=archSt();
     var gname=''; try{ gname=PS_EVAL_STD.posGroupName(grp)||''; }catch(_){}
@@ -11774,7 +11774,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +(onlyCo.length?'<span class="arc-dl"><i>코치 생각에만</i>'+onlyCo.map(function(id){return '<u class="co">'+esc(iname(id))+'</u>';}).join('')+'</span>':'')
         +'</div>';
     }
-    h+='<div class="arc-map"><div class="arc-map-h"><b>이 자리의 유형 '+types.length+'가지</b><span>준비도는 '+who+' 셀프평가(핵심 4 중 ‘경기에서’ 이상)로 자동이에요.</span></div>';
+    h+='<div class="arc-map"><div class="arc-map-h"><b>이 자리의 유형 '+types.length+'가지</b><span>준비도 = '+who+' 셀프평가 핵심 4 중 ‘경기에서’ 이상</span></div>';
     types.forEach(function(x){
       var sv=st[x.key]||0, hit=0, rated=0;
       var keys=x.keys.map(function(id){ var v=+(lvs[id]||0); if(v)rated++; if(v>=3)hit++; return '<span class="arc-k'+(v>=4?' hi':(v>=3?' md':''))+'">'+esc(iname(id))+(v?'<b>'+v+'</b>':'')+'</span>'; }).join('');
@@ -11789,7 +11789,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
              :'<div class="arc-seg" role="radiogroup">'+[[0,'아직'],[1,'배우는 중'],[2,'뛸 수 있어요']].map(function(o){return '<button type="button" class="'+(sv===o[0]?'on':'')+'" data-myarch-st="'+esc(x.key)+'" data-v="'+o[0]+'">'+o[1]+'</button>';}).join('')+'</div>')
         +'</div>';
     });
-    h+='<em class="arc-foot">경기마다 다른 유형으로 뛰어도 좋고, 스페셜은 바뀌어도 돼요.</em></div>';
+    h+='</div>';
     return h+'</section>';
   }
   /* 2.080 — 요구 모드 맨 위: 게임모델 4문항 + 이 자리 요구 채우기 */
@@ -13873,10 +13873,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       /* 2.783 — ⑤ 진행 막대·번호·✓ 를 걷고, 남은 것만 조용히(선수 첫 화면 목업). ⑦ «5분이면 돼요» → 문항 수와 «나눠서 해도 돼요» */
       var _step=function(n,done,t,sub,act,tgt,pri){ return done?'':'<div class="mr-step"><span class="t">'+t+'<small>'+sub+'</small></span><button type="button" class="btn" data-mr-goto="'+tgt+'">'+act+'</button></div>'; };
       var _evN=(doc.profile&&doc.profile.pos)?'32':'24';
-      h+='<div class="mr-steps quiet"><div class="mr-steps-h"><span>리포트에 더 올릴 수 있는 것</span><em>코치와 볼 때 같이 채워도 돼요</em></div>'
+      h+='<div class="mr-steps quiet"><div class="mr-steps-h"><span>리포트에 더 올릴 수 있는 것</span></div>'
         +_step(1,!!th,'내가 키우는 것','12주 동안 키울 행동 문장 하나','정하기','goal')
         +_step(2,!!picks.length,'내 무기','내가 이미 잘하는 것 하나','고르기','goal')
-        +_step(3,_hasSelf,'셀프 평가',_evN+'문항 · 나눠서 해도 돼요','시작','eval')+'</div>';
+        +_step(3,_hasSelf,'셀프 평가',_evN+'문항','시작','eval')+'</div>';
     }
     /* ① 주인공 — 키우는 것 */
     if(th||!_stepsNeeded){   /* 2.647 — 순서 카드가 있으면 빈 히어로는 안 그린다 */
@@ -13955,7 +13955,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     h+='<div class="mr-sec"><div class="mr-k">팀 기준 대비 <small>'+(fit?esc(fit.pos)+' 요구 '+fit.req+'개':'자리 요구')+'</small></div>'
       +(fit?'<div class="mr-kpi"><div class="ok"><b>'+fit.met+'</b><i>충족</i></div><div class="no"><b>'+fit.short+'</b><i>미달</i></div><div><b>'+fit.un+'</b><i>미평가</i></div></div>'
-          +(fit.shorts.length?'<div class="mr-list">'+fit.shorts.slice(0,5).map(function(x){return '<div><span>'+esc(x.n)+'</span><em>+'+x.gap+'</em></div>';}).join('')+'</div><div class="mr-note">다음에 키울 것의 후보예요</div>':'<div class="mr-note">요구를 모두 충족해요</div>')
+          +(fit.shorts.length?'<div class="mr-list">'+fit.shorts.slice(0,5).map(function(x){return '<div><span>'+esc(x.n)+'</span><em>+'+x.gap+'</em></div>';}).join('')+'</div>':'<div class="mr-note">요구를 모두 충족해요</div>')
           :'<div class="mr-empty">'+(pos?esc(pos)+mine(' 자리 요구를 코치가 정하면 여기에',' 자리 요구가 아직 없어요'):mine('내 프로필에서 포지션을 정하면 팀 기준과 견줘요','포지션이 아직 없어요'))+'</div>')+'</div>';
     /* ③ 기록 · 리뷰 — 2.501 위계: 묶음마다 제목을 두고 그리드를 끊는다(빈 칸 order 규칙도 묶음 안에서만 돈다) */
     h+='</div>'; var _done0=h.length;   /* 2.647 */
@@ -14083,7 +14083,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var _t0=new Date(); _t0.setHours(0,0,0,0); var isPast=calAnchor<_t0, phTxt=isPast?'무엇을 했나요':'무엇을 할 건가요';
       var teamBy={}, teamNoTime=[]; try{ tlItems(calAnchor).forEach(function(o){ if(o.k!=='team'&&o.k!=='match'&&o.k!=='meet')return; if(o.m==null){ teamNoTime.push(o.s); return; } var hh0=Math.floor(o.m/60); if(hh0===0)hh0=24; if(hh0<1||hh0>24)return; var lb0=rtHourLabel(hh0); teamBy[lb0]=(teamBy[lb0]?teamBy[lb0]+' · ':'')+o.s; }); }catch(_){}
       var openNow=true; window.__idpHoursOpen=0;   /* 2.071 — 늘 펼친 채로(사용자): 접었다 펴는 한 번이 기록을 막았다 */
-      h+='<details class="day-hours"'+(openNow?' open':'')+'><summary><b>하루 시간표</b><span>'+(filled?filled+'시간 '+(isPast?'기록':'계획'):(rtN?'루틴 '+rtN+'개가 미리 채워져요':(isPast?'05:00~04:00 · 시간마다 적을 수 있어요':'팀 일정 보고 내 하루를 짜요')))+'</span><i></i></summary>'
+      h+='<details class="day-hours"'+(openNow?' open':'')+'><summary><b>하루 시간표</b><span>'+(filled?filled+'시간 '+(isPast?'기록':'계획'):(rtN?'루틴 '+rtN+'개가 미리 채워져요':(isPast?'05:00~04:00':'시간마다 적어요')))+'</span><i></i></summary>'
         +'<div class="rt-list rt-timeline day-hours-list">'
         +(teamNoTime.length?'<div class="dh-team-line"><i>팀</i>'+teamNoTime.map(esc).join(' · ')+' <em>시간 미정</em></div>':'')
         +(!ro()?'<div class="dh-tools">'+(rtN&&!filled?'<button type="button" class="btn sm" data-dh-loadrt>루틴 불러오기 '+rtN+'</button>':'')+'<button type="button" class="btn sm" data-dh-savert>이 하루를 '+DAYS[dow]+'요일 루틴으로 저장</button></div>':'');
