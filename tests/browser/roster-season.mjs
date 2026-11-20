@@ -33,7 +33,8 @@ try{
 
   // ① 시즌 칩 → «새 시즌 시작…» 창
   step='open-dialog';
-  await pick(next+' 시즌 시작');
+  await chip().click();await frame.locator('#psPickPop').waitFor();await page.screenshot({path:shots+'/roster-season-menu-'+size+'.png'});
+  await frame.locator('#psPickPop button',{hasText:next+' 시즌 시작'}).click();
   const dlg=frame.locator('#pwSeason');await dlg.waitFor();
   assert.match(await dlg.locator('h2').innerText(),new RegExp(next+' 시즌 시작'));
   const text=await dlg.innerText();
@@ -120,6 +121,7 @@ try{
   await frame.getByRole('button',{name:'지금 시즌으로',exact:true}).click();
   await frame.waitForFunction(()=>document.querySelectorAll('#pwTeam .pw-table tbody tr').length===16);
   await frame.getByRole('checkbox',{name:seed.y3[0]+' 선택',exact:true}).check();
+  await page.screenshot({path:shots+'/roster-season-bar-'+size+'.png'});
   await bar.getByRole('button',{name:'졸업 처리',exact:true}).click();
   const confirmText=await frame.evaluate(()=>{const b=[...document.querySelectorAll('button')].filter(x=>x.textContent==='확인'&&x.offsetParent);return b.length?b[b.length-1].closest('div').parentElement.innerText:'';});
   assert.match(confirmText,/1명을 졸업 처리할까요\?/);assert.match(confirmText,/기록은 그대로 남아요/);
