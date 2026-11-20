@@ -76,5 +76,24 @@ test('손으로 졸업 · 현재 명단으로 · 시즌 고르개',()=>{
   let sc=S.scopes(d.players,d.meta,NOV);assert.deepEqual(sc.map(x=>[x.id,x.n]),[['cur',5],['grad',1]]);
   assert.deepEqual(S.restore(d,['c','a']),['c']);assert.equal(d.players.find(x=>x.id==='c').grad,undefined);
   S.apply(d,S.plan(d.players,d.meta,{now:NOV}),{now:NOV});sc=S.scopes(d.players,d.meta,NOV);
-  assert.deepEqual(sc.map(x=>[x.id,x.label,x.n]),[['cur','2027 시즌',3],['past:2026','2026 시즌',6],['grad','졸업생 전체',3]]);
+  assert.deepEqual(sc.map(x=>[x.id,x.label,x.n]),[['past:2026','2026 시즌',6],['cur','2027 시즌',3],['grad','졸업생 전체',3]]);
+});
+
+test('미리 만든 시즌: 다음 해부터 하나씩 · 여섯까지 · 지우기 · 시작하면 목록에서 빠진다',()=>{
+  const d=team();assert.equal(S.addFuture(d,NOV),'2027');assert.equal(S.addFuture(d,NOV),'2028');assert.equal(S.addFuture(d,NOV),'2029');
+  assert.deepEqual(S.future(d.meta,NOV),['2027','2028','2029']);assert.equal(d.meta.season.cur,'2026');assert.equal(d.meta.teamName,'프로세스FC');
+  assert.equal(S.removeFuture(d,'2028',NOV),true);assert.equal(S.removeFuture(d,'2040',NOV),false);assert.deepEqual(S.future(d.meta,NOV),['2027','2029']);
+  assert.deepEqual(S.scopes(d.players,d.meta,NOV).map(x=>x.id),['cur','future:2027','future:2029']);
+  const undo=S.apply(d,S.plan(d.players,d.meta,{now:NOV}),{now:NOV});assert.equal(d.meta.season.cur,'2027');assert.deepEqual(S.future(d.meta,NOV),['2029'],'시작한 시즌은 미리 만든 목록에서 빠진다');
+  S.revert(d,undo);assert.deepEqual(S.future(d.meta,NOV),['2027','2029'],'되돌리면 미리 만든 목록도 그대로');
+  const e=team();for(let i=0;i<10;i++)S.addFuture(e,NOV);assert.equal(S.future(e.meta,NOV).length,S.FUTURE_MAX);
+  e.meta.season.future.push('2020','x','2027');assert.equal(S.future(e.meta,NOV).length,S.FUTURE_MAX,'지난 해 · 틀린 값 · 겹친 값은 세지 않는다');
+});
+
+test('예상 명단: 지금 선수가 그 시즌에 몇 학년인지 — 3학년을 넘으면 빠지고 학년 없음은 그대로',()=>{
+  const d=team();let p=S.project(d.players,d.meta,'2027',NOV);
+  assert.equal(p.ahead,1);assert.equal(p.gone,3);assert.deepEqual(p.rows.map(r=>[r.p.id,r.from,r.year]),[['a','1','2'],['b','2','3'],['f','','']]);
+  p=S.project(d.players,d.meta,'2028',NOV);assert.equal(p.gone,4);assert.deepEqual(p.rows.map(r=>[r.p.id,r.year]),[['a','3'],['f','']]);
+  assert.deepEqual(S.project(d.players,d.meta,'2026',NOV).rows,[]);
+  const was=JSON.stringify(d);S.project(d.players,d.meta,'2029',NOV);assert.equal(JSON.stringify(d),was,'셈만 한다');
 });

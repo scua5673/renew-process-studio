@@ -115,7 +115,7 @@ try{
 
   // ⑤ 지난 시즌 보기 — 그날의 줄 18 · 졸업 3 · 보기 전용
   step='past';
-  await pick(cur+' 시즌 · 18명');
+  await pick(cur+' 시즌 · 지난 · 18명');
   await frame.locator('#pwTeam .pw-table.pw-past').waitFor();
   assert.equal(await rows().count(),18);assert.equal(await frame.locator('#pwTeam .pw-past tr.is-grad').count(),3);
   assert.match(await frame.locator('#pwTeam .pw-season').innerText(),/지난 시즌 명단 · 보기 전용/);
@@ -158,10 +158,14 @@ try{
   let srv=null,last='';
   for(let i=0;i<60&&!srv;i++){await frame.evaluate(async()=>{try{await scoutStore.ready(true);}catch(e){}});await page.evaluate(()=>PSSync.syncNow('roster-season')).catch(()=>{});
     const got=seed.ids.map(id=>{const r=fx.db.get(WT+'|sq:'+id);try{return r?JSON.parse(r.v):null;}catch(e){return null;}});
-    if(got.every(Boolean)&&got.filter(p=>p.grad).length===3)srv=got;else{last=JSON.stringify({rows:got.filter(Boolean).length,grad:got.filter(p=>p&&p.grad).length,strip:await page.evaluate(()=>{const x=document.getElementById('psSyncStrip');return x?x.innerText.replace(/\s+/g,' ').trim():'';})});await page.waitForTimeout(700);}}
+    if(got.every(Boolean)&&got.filter(p=>p.grad).length===3)srv=got;else{last=JSON.stringify({rows:got.filter(Boolean).length,grad:got.filter(p=>p&&p.grad).length,strip:await page.evaluate(()=>{const x=document.getElementById('psSyncStrip');return x?x.innerText.replace(/\s+/g,' ').trim():'';}),sync:await page.evaluate(()=>{try{return JSON.stringify(PSSync.state()).slice(0,240);}catch(e){return String(e);}}),box:await frame.evaluate(()=>{try{const o=rosterOutbox(),r=o.read();return {pending:o.pending(),rows:Object.keys(r&&r.rows||{}).length};}catch(e){return String(e&&e.message||e);}})});await page.waitForTimeout(700);}}
   assert.ok(srv,'선수별 행이 서버에 '+last);
-  const lean=v=>{const d=JSON.parse(v);(d.players||[]).forEach(p=>{delete p.posName;});return JSON.stringify(d);};
-  assert.equal(lean(fx.db.get(WT+'|cs_scout_targets_v1').v),lean(scoutRaw),'스카우팅 원장은 서버에서 그대로');assert.equal(srv.filter(p=>p._del).length,0,'지운 행 없음');assert.equal(srv.length,18);
+  /* 스카우팅 원장 — 새 시즌을 시작하면 지금 후보는 끝난 시즌 목록으로(보관 + 꼬리표). 그 표시만 빼면 후보 · 배치 · 등록부는 글자 그대로(posName 은 배경 채움) */
+  const lean=v=>{const d=JSON.parse(v);(d.players||[]).forEach(p=>{delete p.posName;delete p._scoutHidden;delete p._scoutMove;});Object.values(d.scoutRegistry.candidates).forEach(c=>{delete c.archivedAt;delete c.archiveEdit;delete c.archiveSeason;});delete d.scoutRegistry.placementHistory;return JSON.stringify(d);};
+  let sdoc=null;for(let i=0;i<40;i++){sdoc=JSON.parse(fx.db.get(WT+'|cs_scout_targets_v1').v);if(Object.values(sdoc.scoutRegistry.candidates).every(c=>c.archivedAt&&c.archiveSeason===cur))break;await page.evaluate(()=>PSSync.syncNow('roster-season-scout-doc')).catch(()=>{});await page.waitForTimeout(700);}
+  assert.deepEqual(Object.values(sdoc.scoutRegistry.candidates).map(c=>[c.info.name,c.archiveSeason]),cands.map(c=>[c[1],cur]),'후보 넷은 끝난 시즌 목록으로 · 지운 후보 없음');
+  const base=JSON.parse(scoutRaw);delete base.scoutRegistry.placementHistory;
+  assert.equal(lean(JSON.stringify(sdoc)),lean(JSON.stringify(base)),'보관 표시 말고는 스카우팅 원장 그대로');
 
   // ⑨ 잠긴 명단 — 시즌 시작 · 졸업 처리가 보이지 않는다
   step='locked';

@@ -334,3 +334,8 @@ body.ps-roster-locked .pw-quickadd,body.ps-roster-locked .pw-rq-edit{display:non
 .pws-none{margin:var(--sp-3) 0 0;font-size:var(--t-3)}
 @media(max-width:700px){.pws-names{padding-left:var(--sp-3)}}
 .pw-workspace .pw-result .pw-season-chip{border:1px solid var(--c-line-2);background:var(--c-surface);color:var(--c-ink)}
+/* 미리 만든 시즌의 예상 명단 — 포지션별 인원 칩 한 줄 */
+.pw-proj{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-3)}
+.pw-proj-chip{padding:2px var(--sp-3);border:1px solid var(--c-line);border-radius:var(--r-pill);font-size:var(--t-3);font-weight:600;font-variant-numeric:tabular-nums}
+.pw-proj-note{font-size:var(--t-3);color:var(--c-muted)}
+.pw-proj .pw-button{margin-left:auto;min-height:36px}

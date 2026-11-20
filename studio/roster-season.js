@@ -5,7 +5,7 @@
    지난 시즌 줄은 그날의 이름 · 번호 · 포지션 · 조 · 학년만(평가는 선수 객체에 한 벌). 이 파일은 셈만 한다 — 저장은 부른 쪽의 원래 길(save). */
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.PSRosterSeason=api;})(typeof window!=='undefined'?window:this,function(){
   'use strict';
-  var PAST_MAX=8,YEARS=['1','2','3'];
+  var PAST_MAX=8,FUTURE_MAX=6,YEARS=['1','2','3'];
   function isGrad(p){return !!(p&&p.grad&&typeof p.grad==='object');}
   function ours(p){return !!p&&p.type!=='target';}
   function active(list){return (list||[]).filter(function(p){return ours(p)&&!isGrad(p);});}
@@ -16,6 +16,17 @@
   function next(cur){return String(+cur+1);}
   function yearOf(p){var y=String(p&&p.schoolYear==null?'':p.schoolYear);return YEARS.indexOf(y)>=0?y:'';}
   function past(meta){var s=meta&&meta.season;return s&&Array.isArray(s.past)?s.past.filter(function(x){return x&&okSeason(x.id)&&Array.isArray(x.rows);}):[];}
+  /* 미리 만든 시즌(사용자 11/21 «2028, 2029, 2030 미리 만들어 놓을 수 있게») — meta.season.future=['2028',…], 지금 시즌보다 뒤인 해만 · 오름차순 */
+  function future(meta,now){var s=meta&&meta.season,cur=+current(meta,now),seen={};return (s&&Array.isArray(s.future)?s.future:[]).map(String).filter(function(id){if(!okSeason(id)||+id<=cur||seen[id])return false;seen[id]=1;return true;}).sort();}
+  function seasonBase(meta,now){var s=meta&&meta.season,o={};if(s&&typeof s==='object')Object.keys(s).forEach(function(k){o[k]=s[k];});o.cur=current(meta,now);o.past=past(meta);return o;}
+  /* 가장 먼 시즌의 다음 해를 하나 만든다 — 만든 시즌 id, 못 만들면 '' */
+  function addFuture(doc,now){if(!doc)return '';doc.meta=doc.meta||{};var list=future(doc.meta,now),cur=current(doc.meta,now);if(list.length>=FUTURE_MAX)return '';
+    var id=String(+(list.length?list[list.length-1]:cur)+1),o=seasonBase(doc.meta,now);o.future=list.concat([id]);doc.meta.season=o;return id;}
+  function removeFuture(doc,id,now){if(!doc||!doc.meta)return false;var list=future(doc.meta,now),at=list.indexOf(String(id));if(at<0)return false;var o=seasonBase(doc.meta,now);list.splice(at,1);o.future=list;doc.meta.season=o;return true;}
+  /* 예상 명단 — 미리 만든 시즌에 지금 선수가 몇 학년인지(저장하지 않는 셈). 3학년을 넘으면 그 전에 졸업, 학년 없음은 그대로 */
+  function project(players,meta,id,now){var k=+id-+current(meta,now),rows=[],gone=0;if(!(k>0))return {rows:rows,gone:0,ahead:0};
+    active(players).filter(function(p){return p.manual===true||String(p.name||'').trim();}).forEach(function(p){var y=yearOf(p);if(y&&+y+k>3){gone++;return;}rows.push({p:p,from:y,year:y?String(+y+k):''});});
+    return {rows:rows,gone:gone,ahead:k};}
   function pastOf(meta,id){return past(meta).filter(function(x){return String(x.id)===String(id);})[0]||null;}
   function leanRow(p,posOf,gradNow){var r={id:String(p.id),name:String(p.name||'').trim().slice(0,40),num:String(p.num==null?'':p.num).slice(0,4),pos:String(posOf?posOf(p)||'':'').slice(0,8),grp:String(p.grp||'').trim().slice(0,40),year:yearOf(p)};if(gradNow)r.grad=1;return r;}
   /* 넘기기 계획. opts.keep = 그대로 둘 선수 id 들(유급 · 전학), opts.years = {'3':false} 처럼 끈 학년은 통째로 그대로 */
@@ -40,7 +51,7 @@
     var before=doc.meta.season===undefined?undefined:JSON.parse(JSON.stringify(doc.meta.season)),undo={season:before,had:doc.meta.season!==undefined,grad:pl.grad.slice(),up:pl.up.map(function(u){return {id:u.id,from:u.from,to:u.to};}),cur:pl.cur,next:pl.next};
     var rows=active(doc.players).filter(function(p){return p.manual===true||String(p.name||'').trim();}).map(function(p){return leanRow(p,opts.posOf,gradSet[String(p.id)]);});
     var olds=past(doc.meta).filter(function(x){return String(x.id)!==pl.cur;});olds.push({id:pl.cur,at:now,rows:rows});
-    doc.meta.season={cur:pl.next,past:olds.slice(-PAST_MAX)};
+    var ns=seasonBase(doc.meta,now);ns.cur=pl.next;ns.past=olds.slice(-PAST_MAX);if(Array.isArray(ns.future))ns.future=ns.future.map(String).filter(function(id){return okSeason(id)&&+id>+pl.next;});doc.meta.season=ns;
     pl.grad.forEach(function(id){m[id].grad={season:pl.cur,at:now};});
     pl.up.forEach(function(u){m[u.id].schoolYear=u.to;});
     return undo;
@@ -59,8 +70,10 @@
     (ids||[]).forEach(function(id){var p=m[String(id)];if(p&&ours(p)&&!isGrad(p)){p.grad={season:cur,at:now};done.push(String(id));}});return done;}
   function restore(doc,ids){var m=byId(doc&&doc.players),done=[];(ids||[]).forEach(function(id){var p=m[String(id)];if(p&&ours(p)&&isGrad(p)){delete p.grad;done.push(String(id));}});return done;}
   /* 시즌 고르개: 지금 시즌 · 지난 시즌들(새것 먼저) · 졸업생 전체 */
-  function scopes(players,meta,now){var cur=current(meta,now),g=grads(players).length,list=[{id:'cur',season:cur,label:cur+' 시즌',n:active(players).filter(function(p){return p.manual===true||String(p.name||'').trim();}).length,now:true}];
-    past(meta).slice().reverse().forEach(function(x){list.push({id:'past:'+x.id,season:String(x.id),label:x.id+' 시즌',n:x.rows.length});});
+  function scopes(players,meta,now){var cur=current(meta,now),g=grads(players).length,list=[];
+    past(meta).forEach(function(x){list.push({id:'past:'+x.id,season:String(x.id),label:x.id+' 시즌',n:x.rows.length,past:true});});
+    list.push({id:'cur',season:cur,label:cur+' 시즌',n:active(players).filter(function(p){return p.manual===true||String(p.name||'').trim();}).length,now:true});
+    future(meta,now).forEach(function(id){list.push({id:'future:'+id,season:id,label:id+' 시즌',n:project(players,meta,id,now).rows.length,future:true});});
     if(g)list.push({id:'grad',season:'',label:'졸업생 전체',n:g});return list;}
-  return {isGrad:isGrad,active:active,grads:grads,current:current,next:next,yearOf:yearOf,past:past,pastOf:pastOf,leanRow:leanRow,plan:plan,apply:apply,revert:revert,graduate:graduate,restore:restore,scopes:scopes,PAST_MAX:PAST_MAX};
+  return {isGrad:isGrad,active:active,grads:grads,current:current,next:next,yearOf:yearOf,past:past,pastOf:pastOf,future:future,addFuture:addFuture,removeFuture:removeFuture,project:project,FUTURE_MAX:FUTURE_MAX,leanRow:leanRow,plan:plan,apply:apply,revert:revert,graduate:graduate,restore:restore,scopes:scopes,PAST_MAX:PAST_MAX};
 });
