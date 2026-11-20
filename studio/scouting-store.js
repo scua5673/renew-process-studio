@@ -43,7 +43,7 @@
     if(!c.variants.some(function(x){return x.field===field&&same(x.value,value);}))c.variants.push({field:field,value:copy(value),source:source||'이전 기록'});
   }
   function get(o,path){return path.split('.').reduce(function(a,k){return a==null?undefined:a[k];},o);}
-  function put(o,path,value){var ks=path.split('.');if(!ks.every(safe))throw new Error('지원하지 않는 후보 항목입니다.');var last=ks.pop(),v=o;ks.forEach(function(k){if(!obj(v[k]))v[k]={};v=v[k];});v[last]=copy(value);}
+  function put(o,path,value){var ks=path.split('.');if(!ks.every(safe))throw new Error('지원하지 않는 후보 항목이에요.');var last=ks.pop(),v=o;ks.forEach(function(k){if(!obj(v[k]))v[k]={};v=v[k];});v[last]=copy(value);}
   function fields(info){var f=BASIC.slice();Object.keys(info&&info.profile||{}).filter(safe).forEach(function(k){f.push('profile.'+k);});return f;}
   function union(a,b){var out=copy(a||[]);(b||[]).forEach(function(x){if(!out.some(function(v){return same(v,x);}))out.push(copy(x));});return out;}
   function stampCmp(a,b){return (+a.at||0)-(+b.at||0)||String(a.id||'').localeCompare(String(b.id||''));}
@@ -74,8 +74,8 @@
     return c;
   }
   function reconcile(previous,incoming){
-    if(!valid(incoming))throw new Error('후보 자료 형식을 확인할 수 없습니다.');
-    if(previous!=null&&!valid(previous))throw new Error('기존 후보 자료 형식을 확인할 수 없습니다.');
+    if(!valid(incoming))throw new Error('후보 자료 형식을 확인할 수 없어요.');
+    if(previous!=null&&!valid(previous))throw new Error('기존 후보 자료 형식을 확인할 수 없어요.');
     var d=copy(incoming),pr=previous&&previous.scoutRegistry,ir=d.scoutRegistry;
     var reg={v:1,candidates:{},meta:copy(pr&&pr.meta||ir&&ir.meta||{}),metaHistory:union(pr&&pr.metaHistory,ir&&ir.metaHistory),placementHistory:{}};
     Object.keys(pr&&pr.placementHistory||{}).filter(safe).forEach(function(id){reg.placementHistory[id]=copy(pr.placementHistory[id]);});
@@ -120,11 +120,11 @@
     });
     d.scoutRegistry=reg;return copy(d);
   }
-  function edit(d,id,field,value,stamp){var c=d.scoutRegistry.candidates[id];if(!c)throw new Error('후보를 찾을 수 없습니다.');if(same(get(c.info,field),value))return;var before=get(c.info,field);put(c.info,field,value);variants(c,field,before,'수정 전');c.edits=c.edits||{};c.edits[field]=copy(stamp);}
-  function score(d,id,key,value,stamp){var c=d.scoutRegistry.candidates[id];if(!c)throw new Error('후보를 찾을 수 없습니다.');if(!safe(key)||!Number.isInteger(value)||value<0||value>5)throw new Error('점수 형식을 확인해 주세요.');c.points=c.points||{};if(own(c.points,key)&&c.points[key]!==value){c.scoreHistory=c.scoreHistory||[];var prior={kind:'points',key:key,value:c.points[key]};if(!c.scoreHistory.some(function(x){return same(x,prior);}))c.scoreHistory.push(prior);}c.points[key]=value;c.edits=c.edits||{};c.edits['points.'+key]=copy(stamp);}
-  function archive(d,id,at,stamp){var c=d.scoutRegistry.candidates[id];if(!c)throw new Error('후보를 찾을 수 없습니다.');c.archivedAt=at;c.archiveEdit=copy(stamp);d.players.forEach(function(p){if(idOf(p)===id){p._scoutHidden=!!at;p._scoutMove=copy(stamp);}});}
+  function edit(d,id,field,value,stamp){var c=d.scoutRegistry.candidates[id];if(!c)throw new Error('후보를 찾을 수 없어요.');if(same(get(c.info,field),value))return;var before=get(c.info,field);put(c.info,field,value);variants(c,field,before,'수정 전');c.edits=c.edits||{};c.edits[field]=copy(stamp);}
+  function score(d,id,key,value,stamp){var c=d.scoutRegistry.candidates[id];if(!c)throw new Error('후보를 찾을 수 없어요.');if(!safe(key)||!Number.isInteger(value)||value<0||value>5)throw new Error('점수 형식을 확인해 주세요.');c.points=c.points||{};if(own(c.points,key)&&c.points[key]!==value){c.scoreHistory=c.scoreHistory||[];var prior={kind:'points',key:key,value:c.points[key]};if(!c.scoreHistory.some(function(x){return same(x,prior);}))c.scoreHistory.push(prior);}c.points[key]=value;c.edits=c.edits||{};c.edits['points.'+key]=copy(stamp);}
+  function archive(d,id,at,stamp){var c=d.scoutRegistry.candidates[id];if(!c)throw new Error('후보를 찾을 수 없어요.');c.archivedAt=at;c.archiveEdit=copy(stamp);d.players.forEach(function(p){if(idOf(p)===id){p._scoutHidden=!!at;p._scoutMove=copy(stamp);}});}
   function importLegacy(d,legacy,ids,includeMeta){
-    if(!obj(legacy)||!Array.isArray(legacy.players))throw new Error('이 기기의 후보 자료를 읽을 수 없습니다.');
+    if(!obj(legacy)||!Array.isArray(legacy.players))throw new Error('이 기기의 후보 자료를 읽을 수 없어요.');
     var reg=d.scoutRegistry;
     legacy.players.filter(function(p){return ids.indexOf(p.id)>=0;}).forEach(function(p){
       var id='db:'+p.id,info={name:p.nameKr||p.nameEn||'',num:p.num||'',foot:p.foot||'',club:p.club||p.formerClub||'',grade:p.grade||'',profile:{}};
@@ -158,7 +158,7 @@
       :!sync||!sync.dataUnlocked||!sync.dataUnlocked()?'scout_locked'
       :!sync.keyReady||(requireReady!==false&&!sync.keyReady(KEY,wid))?'scout_not_ready'
       :!perms||!perms.canEdit||!perms.canEdit('scout')||(role!=='executive'&&role!=='admin')?'scout_role':'';
-    if(why)throw fail('팀의 후보 자료와 권한을 확인 중입니다.',why);
+    if(why)throw fail('팀의 후보 자료와 권한을 확인 중이에요.',why);
     return JSON.stringify([wid,s.uid,seal]);
   }
   function createClient(win){
@@ -174,15 +174,15 @@
     function prepare(){
       try{read();}catch(e){return Promise.reject(e);}   /* 2.796 — 세션·권한 없을 때 context() 의 동기 throw 를 거부로(호출부 catch 가 받게) */
       var owner=state.owner,raw=state.raw;
-      if(!win.PSStorage||!win.PSStorage.sharedReady||!win.PSStorage.sharedVerified)return Promise.reject(new Error('기기 저장소를 확인할 수 없습니다.'));
+      if(!win.PSStorage||!win.PSStorage.sharedReady||!win.PSStorage.sharedVerified)return Promise.reject(new Error('기기 저장소를 확인할 수 없어요.'));
       return win.PSStorage.sharedReady(KEY).then(function(){
         if(raw!=null)return win.PSStorage.sharedVerified(KEY,raw);
-        return win.storage.get(KEY).then(function(v){if(v&&v.value)throw new Error('후보 저장소가 서로 다릅니다.');});
-      }).then(function(){if(context(win)!==owner||win.localStorage.getItem(KEY)!==raw)throw new Error('후보 자료가 바뀌었습니다. 다시 열어 주세요.');state.verified=true;return state.doc;});
+        return win.storage.get(KEY).then(function(v){if(v&&v.value)throw new Error('후보 저장소가 서로 달라요.');});
+      }).then(function(){if(context(win)!==owner||win.localStorage.getItem(KEY)!==raw)throw new Error('후보 자료가 바뀌었어요. 다시 열어 주세요.');state.verified=true;return state.doc;});
     }
     function check(){
       var why=!state.doc?'scout_unread':!state.verified?'scout_unverified':context(win)!==state.owner?'scout_owner':win.localStorage.getItem(KEY)!==state.raw?'scout_raw_changed':'';
-      if(why)throw fail('후보 자료가 갱신되었습니다. 다시 열어 주세요.',why);
+      if(why)throw fail('후보 자료가 갱신됐어요. 다시 열어 주세요.',why);
     }
     /* 3.107 — 이 문서를 지금 기준(state.raw)에 저장해도 바뀌는 것이 없는가. 확인 중(check 거절)이어도 판정할 수 있다. */
     /* 3.305 — 후보 문서가 아직 없는 팀(raw 없음 = 후보를 한 번도 저장하지 않은 팀)도 «쓸 후보가 하나도 없으면» 바뀐 것이 없다.
@@ -199,21 +199,21 @@
     }
     function save(doc){
       check();var next=reconcile(state.doc,doc),raw=JSON.stringify(next),owner=state.owner;
-      if(raw.length>MAXLEN){state.doc=reconcile(null,state.raw==null?{v:1,players:[]}:JSON.parse(state.raw));throw fail('후보 자료가 저장 한도를 넘었습니다. 방금 추가한 사진이나 가져올 자료를 줄여 다시 시도해 주세요. 기존 저장은 그대로 있습니다.','scout_too_large');}
-      if(!win.psSaveShared||!win.psSaveShared(KEY,raw))throw fail('후보 자료를 저장하지 못했습니다.','scout_write_failed');
+      if(raw.length>MAXLEN){state.doc=reconcile(null,state.raw==null?{v:1,players:[]}:JSON.parse(state.raw));throw fail('후보 자료가 저장 한도를 넘었어요. 방금 추가한 사진이나 가져올 자료를 줄여 다시 시도해 주세요. 기존 저장은 그대로 있어요.','scout_too_large');}
+      if(!win.psSaveShared||!win.psSaveShared(KEY,raw))throw fail('후보 자료를 저장하지 못했어요.','scout_write_failed');
       state.doc=next;state.raw=raw;
       var p=win.PSStorage.sharedReady(KEY).then(function(){
         /* Sync may temporarily close keyReady after this write was accepted.
            Completion verifies the admitted owner's current exact draft, while
            check() still requires keyReady before every subsequent mutation. */
-        if(context(win,false)!==owner)throw new Error('팀이 바뀌어 저장 확인을 중단했습니다.');
-        var expected=state.raw;if(win.localStorage.getItem(KEY)!==expected)throw new Error('후보 저장 확인 중 자료가 바뀌었습니다.');
+        if(context(win,false)!==owner)throw new Error('팀이 바뀌어 저장 확인을 중단했어요.');
+        var expected=state.raw;if(win.localStorage.getItem(KEY)!==expected)throw new Error('후보 저장 확인 중 자료가 바뀌었어요.');
         return win.PSStorage.sharedVerified(KEY,expected).then(function(){
-          if(context(win,false)!==owner||win.localStorage.getItem(KEY)!==expected)throw new Error('후보 저장 확인 중 팀이나 자료가 바뀌었습니다.');
+          if(context(win,false)!==owner||win.localStorage.getItem(KEY)!==expected)throw new Error('후보 저장 확인 중 팀이나 자료가 바뀌었어요.');
         });
       });state.pending=p;p.catch(function(){if(state.owner===owner&&state.pending===p)state.verified=false;});return p;
     }
-    function retry(){var owner=state.owner,raw=state.raw;if(context(win,false)!==owner||win.localStorage.getItem(KEY)!==raw)return Promise.reject(new Error('후보 자료가 바뀌어 이전 저장을 다시 쓰지 않습니다.'));return win.PSStorage.sharedVerified(KEY,raw).then(function(){if(context(win,false)!==owner||win.localStorage.getItem(KEY)!==raw)throw new Error('후보 저장 확인 중 팀이나 자료가 바뀌었습니다.');state.verified=true;return true;});}
+    function retry(){var owner=state.owner,raw=state.raw;if(context(win,false)!==owner||win.localStorage.getItem(KEY)!==raw)return Promise.reject(new Error('후보 자료가 바뀌어 이전 저장을 다시 쓰지 않아요.'));return win.PSStorage.sharedVerified(KEY,raw).then(function(){if(context(win,false)!==owner||win.localStorage.getItem(KEY)!==raw)throw new Error('후보 저장 확인 중 팀이나 자료가 바뀌었어요.');state.verified=true;return true;});}
     return {read:read,prepare:prepare,check:check,unchanged:unchanged,save:save,retry:retry,stamp:stamp,state:state};
   }
   return {KEY:KEY,MAXLEN:MAXLEN,BASIC:BASIC,valid:valid,idOf:idOf,copy:copy,sameRaw:sameRaw,reconcile:reconcile,edit:edit,score:score,archive:archive,importLegacy:importLegacy,project:project,parsePoints:parsePoints,context:context,createClient:createClient};
