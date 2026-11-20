@@ -132,7 +132,7 @@ function far(o){
     EASE.slice().reverse().forEach(p=>{st+=stop((1-p[0])*t,e*p[1]);});EASE.forEach(p=>{st+=stop(1-t+p[0]*t,e*p[1]);});   /* 왼쪽(위) 번짐 · 가운데 0 · 오른쪽(아래) 번짐 */
     return '<linearGradient id="'+id+'" gradientUnits="userSpaceOnUse" '+(vert?'x1="0" y1="'+f(a0)+'" x2="0" y2="'+f(b1)+'"':'x1="'+f(a0)+'" y1="0" x2="'+f(b1)+'" y2="0"')+'>'+st+'</linearGradient>';};
   const d=(+o.s||+o.pw||0)*EDGE_D,in0=FAR_IN/FAR_OUT;
-  return '<radialGradient id="psStGlow" gradientUnits="userSpaceOnUse" cx="'+f(o.cx)+'" cy="'+f(o.cy)+'" r="'+f(o.pw*.7)+'"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></radialGradient>'
+  return '<radialGradient id="psStGlow" gradientUnits="userSpaceOnUse" cx="'+f(o.cx)+'" cy="'+f(o.cy)+'" r="'+f(o.pw*.7)+'"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></radialGradient>'
     +'<radialGradient id="psStFar" gradientUnits="userSpaceOnUse" cx="'+f(o.cx)+'" cy="'+f(o.cy)+'" r="'+f(o.pw*FAR_OUT)+'">'+stop(in0,0)+stop(in0+(1-in0)*.35,v*.2)+stop(1,v)+'</radialGradient>'
     +(d>0?lin('psStEdgeX',o.x0,o.x1,d,false)+lin('psStEdgeY',o.y0,o.y1,d,true):'');
 }

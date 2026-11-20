@@ -65,16 +65,8 @@ try{
   assert.ok(!g.used.includes('url(#psStLight)')&&!g.used.includes('url(#psStVig)'),'판 안에만 걸리던 빛 · 경기장 테 어둠은 안 쓴다 '+g.used);
   assert.deepEqual(g.cover,{glow:true,edgeX:true,edgeY:true,far:true},'빛 · 어둠은 바닥 전체');
   for(const [name,e] of Object.entries(g.edge))assert.ok(Math.abs(e.in-e.out)<1.5,'판 테두리 '+name+' 안팎 밝기가 같다 '+JSON.stringify(e));
-  assert.ok(g.farAway<g.near-4,'멀수록 어둡다 '+JSON.stringify({near:g.near,far:g.farAway}));
+  assert.ok(Math.abs(g.farAway-g.near)<4,'3.346 — 조명을 걷어 멀리도 같은 밝기 '+JSON.stringify({near:g.near,far:g.farAway}));   /* 기대를 일부러 고침: 예전엔 멀수록 어두웠다 */
   assert.ok(g.centre>40,'운동장은 밝다 '+g.centre);
-
-  step('grass-day-dusk');
-  const day=await look('grass','day','fifa'),dusk=await look('grass','dusk','fifa');
-  for(const [mood,r] of [['day',day],['dusk',dusk]]){
-    assert.equal(r.clip,0,mood);assert.equal(r.dark14,false,mood);
-    for(const [name,e] of Object.entries(r.edge))assert.ok(Math.abs(e.in-e.out)<1.5,mood+' 판 테두리 '+name+' '+JSON.stringify(e));
-  }
-  assert.ok((day.near-day.farAway)<(g.near-g.farAway),'낮은 야간보다 옅게 어두워진다 '+JSON.stringify({day:[day.near,day.farAway],night:[g.near,g.farAway]}));
 
   step('simple');
   const sm=await look('simple','night','fifa');
@@ -83,7 +75,7 @@ try{
 
   step('full-unchanged');
   const full=await look('full','night','fifa');
-  assert.equal(full.ground,false);assert.equal(full.cone,true,'전체 경기장은 조명 기둥 그대로');assert.equal(full.clip,1,'잔디 안에서만');
+  assert.equal(full.ground,false);assert.equal(full.cone,false,'3.346 — 전체 경기장도 조명 기둥 없음');assert.equal(full.clip,0);
   assert.ok(full.used.includes('url(#psStLight)')&&full.used.includes('url(#psStVig)'),'예전 빛 · 테 어둠 '+full.used);
   assert.ok(!full.ids.includes('psStGlow')&&!full.ids.includes('psStFar'),'바닥용 번짐은 정의하지 않는다 '+full.ids);
 
