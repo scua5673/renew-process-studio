@@ -99,10 +99,12 @@
     function editable(){var s=S();return !!s&&!(win.psPhoneBoardReadOnly&&win.psPhoneBoardReadOnly())&&!s.boardLocked&&!win.__vaultReadOnly&&!win.__animExport&&!doc.getElementById('psRoHide')&&!body.classList.contains('comm-viewing')&&!body.classList.contains('focus-board')&&!(win.communityBoardReadOnly&&win.communityBoardReadOnly());}
     function finish(){win.renderTokens();win.renderDrawings();win.updateDelUI();win.updateAlignBar();win.autoSaveAnimFrame();win.boardSaveLive();sync();}
     function wrap(name,after){var old=win[name];if(typeof old!=='function')return;win[name]=function(){var r=old.apply(this,arguments);after.apply(this,arguments);return r;};}
-    function grid(){
+    function grid(u){
       var q=win.PR(),n=+win.__editGrid;
       if(n>0)return {x0:q.L,y0:q.T,sx:M2U(n),sy:M2U(n)};
-      return doc.documentElement.dataset.pitch==='train'?win.__trainGridSpec:null;
+      if(doc.documentElement.dataset.pitch!=='train')return null;
+      /* 3.338 — 운동장이 여럿이면 훈련 격자는 카드마다(board-train-grid.js) — 놓는 자리(u)의 카드 칸으로 */
+      var g=win.__trainGridSpec;return u&&g&&g.cards&&win.PSTrainGrid?win.PSTrainGrid.pick(g,u):g;
     }
     function paintGrid(){
       var layer=doc.getElementById('snapGuideLayer'),n=doc.getElementById('psEditGrid');
@@ -145,12 +147,12 @@
     }
     api.snapEnabled=function(e){var auto=editCtx(),on=moveSnap(e,auto?editPref():deviceSnap(),freeOnce,auto);if(on&&auto&&!told&&editPref())tell();return on;};
     api.pointGridActive=function(e){return !!grid()&&pointSnap(e||pointEvent);};
-    api.snapEditPoint=function(u,e){var g=grid();if(!g||!pointSnap(e||pointEvent))return u;var p=snapPoint(u,g,[],null,7);return {x:p.x,y:p.y};};
+    api.snapEditPoint=function(u,e){var g=grid(u);if(!g||!pointSnap(e||pointEvent))return u;var p=snapPoint(u,g,[],null,7);return {x:p.x,y:p.y};};
     var anchorEnds=win._anchorEnds;win._anchorEnds=function(d){return grid()&&pointSnap(pointEvent)?false:anchorEnds(d);};
     /* 대기 줄에서 끌어 놓기 · 장비 연속 찍기 · 역할 도장은 모두 dropToken 을 지난다 — 편집기 격자에서는 놓는 자리도 교차점으로(작전판은 그대로) */
     var dropToken=win.dropToken;
     if(typeof dropToken==='function')win.dropToken=function(cat,val,u){
-      var a=Array.prototype.slice.call(arguments),g=u&&Number.isFinite(u.x)&&Number.isFinite(u.y)&&editCtx()&&editable()&&api.snapEnabled(pointEvent)?grid():null;
+      var a=Array.prototype.slice.call(arguments),g=u&&Number.isFinite(u.x)&&Number.isFinite(u.y)&&editCtx()&&editable()&&api.snapEnabled(pointEvent)?grid(u):null;
       if(g){var p=snapPoint(u,g,[],null,7);a[2]=Object.assign({},u,{x:p.x,y:p.y});}
       return dropToken.apply(this,a);
     };
@@ -174,7 +176,7 @@
     win.snapDrag=function(p,kind,u){
       var s=S(),skip=selected();if(!skip.includes(p))skip=[p];
       var others=[].concat(s.players,s.equipment,s.drawings,s.ball?[s.ball]:[]).filter(o=>!skip.includes(o)).map(center).filter(Boolean),q=win.PR();
-      return snapPoint(u,grid(),others,{x:q.CX,y:q.CY},7);
+      return snapPoint(u,grid(u),others,{x:q.CX,y:q.CY},7);
     };
     api.snapDelta=function(group,anchor,dx,dy,e){
       var item=group.find(v=>v.o===anchor)||group.find(v=>!v.locked);
