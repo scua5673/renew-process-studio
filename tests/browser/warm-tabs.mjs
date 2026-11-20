@@ -89,7 +89,7 @@ try{
     await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
     assert.equal(await page.evaluate(()=>window.__psSafeLevel),2,'가벼운 부팅이 죽은 것을 안다');assert.equal(await page.evaluate(()=>window.__psSafeBoot),true);
     assert.equal(await page.evaluate(()=>document.getElementById('fBoard').getAttribute('src')),null,'안전 모드: 작전판을 미리 열지 않는다');
-    assert.equal(await page.locator('#psSafePanel').isVisible(),true,'안내 판');assert.equal(await page.locator('#psSafePanel h2').innerText(),'안전 모드로 열었어요');
+    assert.equal(await page.locator('#psSafePanel').isVisible(),true,'안내 판');assert.equal(await page.locator('#psSafePanel h2').innerText(),'안전 모드로 열었습니다');
     assert.equal(await page.locator('#psBootRetry').isVisible(),false,'«다시 열기»는 뜨지 않는다');
     await page.waitForTimeout(7600);
     assert.deepEqual(await loaded(),[],'안전 모드: 아무 탭도 미리 띄우지 않는다');

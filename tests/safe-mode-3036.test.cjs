@@ -138,7 +138,7 @@ test('3.036 safe mode: the board frame gets no address at boot, the shell reveal
   assert.match(app,/var plan=\(window\.__psSafeBoot\|\|psWarmNone\(\)\)\?\[\]:psWarmPlan\(psWarmLean\(\),psWarmUsed\(\)\);/,'safe boots (level ≥ 1) warm nothing');
   assert.match(app,/try\{ if\(window\.__psBootStage\)window\.__psBootStage\('w'\+plan\.length\); \}catch\(_\)\{\}/);
   assert.ok(app.indexOf(PSTART)<app.indexOf('    var bootFinished=false;'),'the panel script runs before the shell boot script');
-  assert.ok(app.indexOf('id="psSafePanel" hidden')>0);assert.match(app,/<h2>안전 모드로 열었어요<\/h2><p>앱이 연달아 멈춰서 작전판을 미리 열지 않았어요\. 아래 단추로 열 수 있어요\. 계속 멈추면 아이패드를 다시 시작한 뒤 열어 보세요\.<\/p>/);
+  assert.ok(app.indexOf('id="psSafePanel" hidden')>0);assert.match(app,/<h2>안전 모드로 열었습니다<\/h2><p>앱이 연달아 멈춰서 작전판을 미리 열지 않았습니다\. 아래 단추로 열 수 있습니다\. 계속 멈추면 아이패드를 다시 시작한 뒤 열어 보세요\.<\/p>/);
   assert.match(app,/id="psSafeOpen">작전판 열기<\/button><button type="button" id="psSafeNormal">평소대로 열기<\/button>/);
   assert.match(app,/#psSafePanel\[hidden\],body:not\(\[data-ps-app="board"\]\) #psSafePanel\{display:none;\}/,'other tabs cover the panel with their own frame');
   assert.doesNotMatch(panelSnippet(),/localStorage/,'the panel changes no stored settings');
