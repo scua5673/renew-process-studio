@@ -36,7 +36,7 @@
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
 <script src="learning-off.js"></script><script src="i18n.js"></script>
-<script src="autosave-status.js?v=3.341"></script>
+<script src="autosave-status.js?v=3.344"></script>
 <script src="sync-confirmation.js"></script>
 <script src="sync-diagnosis.js"></script>
 <script src="sync-diagnosis-ui.js"></script>
@@ -534,7 +534,7 @@
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
 <script src="playbook-data.js"></script><script src="playbook-shell.js"></script>
-<script>window.PS_BUILD='3.341';</script>
+<script>window.PS_BUILD='3.344';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -843,14 +843,14 @@ function psShowUpdBand(){
       where='안드로이드 · '+(b==='and-chrome'?'크롬':'파이어폭스');
       steps='<li>오른쪽 위 <b>⋮</b> '+icDots+' 메뉴</li>'
            +'<li><b>앱 설치</b> 또는 <b>홈 화면에 추가</b></li>'
-           +'<li><b>설치</b><i>메뉴에 안 보이면 이 페이지를 잠깐 쓰다가 다시 열어 보세요 — 크롬은 조금 써 본 사이트에만 이 항목을 줍니다</i></li>';
+           +'<li><b>설치</b><i>메뉴에 안 보이면 이 페이지를 잠깐 쓰다가 다시 열어 보세요</i></li>';
     }else if(b==='desk-safari'){
       where='맥 · 사파리';
       steps='<li>메뉴 막대 <b>파일 › Dock에 추가</b><i>사파리 17 이상에서 됩니다</i></li>'
            +'<li>이름을 확인하고 <b>추가</b></li>';
     }else if(b==='desk-firefox'){
       where='데스크톱 · 파이어폭스';
-      steps='<li>파이어폭스는 아직 앱 설치를 지원하지 않습니다<i>크롬·엣지·사파리로 열면 설치할 수 있어요. 지금 이대로 써도 기능은 모두 같습니다</i></li>';
+      steps='<li>파이어폭스는 아직 앱 설치를 지원하지 않습니다<i>크롬·엣지·사파리로 열면 설치할 수 있어요.</i></li>';
     }else{
       where='데스크톱 · '+(b==='desk-edge'?'엣지':'크롬');
       steps='<li>주소창 오른쪽 끝 <b>설치</b> '+icInst+'</li>'
@@ -862,9 +862,9 @@ function psShowUpdBand(){
       +'<button type="button" class="psi-x" aria-label="닫기">×</button>'
       +'<h3>앱으로 설치하면</h3>'
       +'<ul class="psi-why">'
-        +'<li><b>주소창 없이</b> 전체 화면으로 열립니다 — 운동장이 그만큼 커집니다</li>'
-        +'<li>홈 화면·독에 <b>아이콘</b>이 생겨 한 번에 들어옵니다</li>'
-        +'<li><b>인터넷이 없어도</b> 열리고, 적은 것은 다시 연결될 때 저장됩니다</li>'
+        +'<li><b>주소창 없이</b> 전체 화면으로 열려요</li>'
+        +'<li>홈 화면·독에 <b>아이콘</b>이 생겨 한 번에 들어와요</li>'
+        +'<li><b>인터넷이 없어도</b> 열리고, 적은 것은 다시 연결될 때 저장돼요</li>'
       +'</ul>'
       +'<div class="psi-where">'+psiEsc(where)+'</div>'
       +'<ol>'+steps+'</ol>'
@@ -915,12 +915,11 @@ function psShowUpdBand(){
     var st=document.getElementById('psPwaStatus'); if(!st)return;
     var m=mode();
     /* 2.455 — 줄 하나가 **무엇이 좋아지는지**를 말한다. 방법은 옆 버튼이 열어 주는 안내가 맡는다 */
-    var line1=(m==='installed')?'전용 앱으로 실행 중 ✓ — 주소창 없이 전체 화면'
-      :'설치하면 주소창 없이 전체 화면으로 열리고, 홈 화면에 아이콘이 생깁니다'
-        +(m==='prompt'?'':' — 옆 버튼이 이 기기의 방법을 알려 줘요');
-    st.innerHTML=line1+'<br><span id="psPwaOff">오프라인 준비 확인 중…</span>';
+    var line1=(m==='installed')?'전용 앱으로 실행 중 ✓'
+      :'';
+    st.innerHTML=(line1?line1+'<br>':'')+'<span id="psPwaOff">오프라인 준비 확인 중…</span>';
     try{ caches.keys().then(function(ks){ var ok=ks.some(function(k){return /^process-/.test(k);});
-      var o=document.getElementById('psPwaOff'); if(o)o.textContent=ok?'오프라인 준비됨 ✓ — 인터넷 없이도 열리고, 작업은 재연결 때 자동 동기화돼요':'오프라인 준비 중 — 인터넷 상태에서 한 번 더 열면 저장돼요'; }); }catch(_){}
+      var o=document.getElementById('psPwaOff'); if(o)o.textContent=ok?'오프라인 준비됨 ✓':'오프라인 준비 중 — 인터넷 상태에서 한 번 더 열면 저장돼요'; }); }catch(_){}
   }catch(_){} }
 
   if(document.readyState!=='loading')sync(); else document.addEventListener('DOMContentLoaded',sync);
@@ -1376,8 +1375,8 @@ window.psFailAlert=function(lead,e,stage){
       <div class="gearpop" id="gearPop">
         <div class="gp-head"><span class="gp-titlebox"><span>앱 설정</span><span class="gp-scope">앱 전체</span></span><button class="gp-close" id="gearClose" type="button" title="앱 설정 닫기" aria-label="앱 설정 닫기">×</button></div>
         <div class="gp-section-title">도움말·도구</div>
-        <div class="gp-row"><span class="gp-lb">오류 제보</span><span style="font-size:12px;color:var(--dim)">제보·답변·오류 로그</span><button type="button" id="psSupportSettingsOpen" class="btn">열기</button></div>
-        <p id="psHelpIntro" class="gp-help-intro">필요한 안내를 새 웹페이지로 엽니다.</p>
+        <div class="gp-row"><span class="gp-lb">오류 제보</span><span style="font-size:12px;color:var(--dim)"></span><button type="button" id="psSupportSettingsOpen" class="btn">열기</button></div>
+        <p id="psHelpIntro" class="gp-help-intro" style="margin:0"></p>
         <a id="guideOpen" class="gp-help-link" href="/guide/quick.html?lang=ko" target="_blank" rel="noopener noreferrer" aria-label="앱 사용법 — 새 탭에서 열기"><span><b>앱 사용법</b><small>주요 메뉴와 저장·공유 · 6개 언어</small></span><span class="gp-help-new" aria-hidden="true">↗</span></a>
         <a id="fullGuideOpen" class="gp-help-link" href="/guide/index.html" target="_blank" rel="noopener noreferrer" aria-label="전체 사용 설명서 — 새 탭에서 열기"><span><b>전체 사용 설명서</b><small>보드·훈련·팀·선수 기능을 자세히</small></span><span class="gp-help-new" aria-hidden="true">↗</span></a>
         <a id="teamGuideOpen" class="gp-help-link" href="/guide/team.html" target="_blank" rel="noopener noreferrer" aria-label="팀 운영 안내 — 새 탭에서 열기"><span><b>팀 운영 안내</b><small>멤버 초대부터 일정·경기·선수 성장까지</small></span><span class="gp-help-new" aria-hidden="true">↗</span></a>
@@ -1503,7 +1502,7 @@ window.psFailAlert=function(lead,e,stage){
              무엇보다 이 앱은 화면 파일을 캐시 우선으로 연다(sw.js) — 새 버전을 올려도 앱을 완전히 껐다 켜기 전까지
              옛 화면이 남는다. 이 버튼은 캐시와 서비스워커만 비우고 다시 연다. **기록은 건드리지 않는다.** -->
         <div class="gp-row"><span class="gp-lb">새로고침</span>
-          <span style="font-size:11px;font-weight:600;color:#646A73;line-height:1.4">최신 버전을 다시 받아옵니다</span>
+          <span style="font-size:11px;font-weight:600;color:#646A73;line-height:1.4"></span>
           <button type="button" id="psHardReload" title="캐시를 비우고 최신 버전으로 다시 엽니다 (기록은 지워지지 않습니다)"
             style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font-family:Pretendard,system-ui;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap">최신으로 새로고침</button>
         </div>
@@ -2045,8 +2044,8 @@ window.psFailAlert=function(lead,e,stage){
     <div id="printView" style="display:none;position:absolute;inset:0;overflow:auto;background:var(--bg)">
       <div style="max-width:880px;margin:0 auto;padding:26px 18px 60px">
         <button id="printBack" style="border:1px solid var(--line);background:var(--bar2);color:var(--dim);font-family:inherit;font-weight:600;font-size:12px;padding:7px 12px;border-radius:10px;cursor:pointer;margin-bottom:12px">← 보관함</button>
-        <h2 style="font-size:19px;font-weight:800;margin:0 0 4px;color:var(--txt)">양식 — 펜으로 쓰는 1장 폼</h2>
-        <div style="color:var(--dim);font-size:13px;margin-bottom:18px">펜으로 기입하는 1장짜리 폼이에요. 누르면 미리보기가 뜨고, 인쇄하거나 PDF로 저장할 수 있어요.</div>
+        <h2 style="font-size:19px;font-weight:800;margin:0 0 4px;color:var(--txt)">양식</h2>
+        <div style="color:var(--dim);font-size:13px;margin-bottom:18px"></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">
           <button class="pcard" data-pr="month"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span><b>월간 양식</b><span>이번 달 달력 + 기입 칸</span></button>
           <button class="pcard" data-pr="week"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7 14h10"/></svg></span><b>주간 양식</b><span>월~일 7칸 괘선 폼</span></button>
@@ -2063,7 +2062,7 @@ window.psFailAlert=function(lead,e,stage){
           <button class="pcard" data-pr="f_load"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 16l3-5 3 3 4-7"/></svg></span><b>RPE · 부하 로그</b><span>주간 시간·RPE·부하</span></button>
           <button class="pcard" data-pr="f_pitch"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 12h18M12 4v16"/><circle cx="12" cy="12" r="2.4"/></svg></span><b>피치 다이어그램</b><span>빈 풀피치 + 메모</span></button><button class="pcard" data-pr="f_season"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v16H3zM3 9h18M8 3v4M16 3v4"/><path d="M7 13h3M7 17h3M14 13h3"/></svg></span><b>시즌 플랜</b><span>목표·시기구분·월별 중점</span></button><button class="pcard" data-pr="f_mdweekly"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v3M16 3v3M7 13h2M11 13h2M15 13h2M7 17h2M11 17h2"/></svg></span><b>주간 트레이닝 (MD)</b><span>MD-4~MD 일자별 계획·부하</span></button><button class="pcard" data-pr="f_prematch"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H7l-3 3z"/><path d="M8 9h8M8 12h5"/></svg></span><b>경기 전 미팅</b><span>게임플랜·상대 키포인트·역할</span></button><button class="pcard" data-pr="f_halftime"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><b>하프타임 노트</b><span>관찰·유지·변경·개인 지시</span></button><button class="pcard" data-pr="f_selfreview"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5L12 21l-5-2.9 1-5.5-4-3.9 5.5-.8z"/></svg></span><b>코치 셀프 리뷰</b><span>준비·소통·판단 자기평가</span></button><button class="pcard" data-pr="f_seasoncard"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M5 16c.6-1.8 2-2.6 3-2.6s2.4.8 3 2.6M14 9h5M14 12h5M14 15h3"/></svg></span><b>시즌 평가 카드</b><span>출전기록·평가·성장 요약</span></button><button class="pcard" data-pr="f_1on1"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3 20a6 6 0 0 1 12 0M15 19a5 5 0 0 1 6 0"/></svg></span><b>면담 기록</b><span>주제·의견·피드백·합의</span></button><button class="pcard" data-pr="f_injury"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg></span><b>부상 기록</b><span>개요·재활 경과·복귀 기준</span></button><button class="pcard" data-pr="f_cornell"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M3 16h18"/></svg></span><b>코넬 노트</b><span>키워드+노트+요약 구조</span></button><button class="pcard" data-pr="f_grid"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></span><b>모눈 / 괘선</b><span>5mm 모눈 자유 메모</span></button><button class="pcard" data-pr="f_recommend"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5L12 16l-5 2.2 1-5.5-4-3.9 5.5-.8z"/><path d="M9 19l-1 3 4-2 4 2-1-3"/></svg></span><b>영입 추천서</b><span>적합성·리스크·추천 등급</span></button><button class="pcard" data-pr="f_compare"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16M3 9h18"/></svg></span><b>선수 비교표</b><span>A·B·C 항목별 비교</span></button><button class="pcard" data-pr="f_gmcanvas"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/></svg></span><b>게임모델 캔버스</b><span>세 문장 · 4국면 · 원칙</span></button><button class="pcard" data-pr="f_4corner"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18M3 12h18"/></svg></span><b>4코너 진단</b><span>기술·전술·피지컬·심리</span></button><button class="pcard" data-pr="f_coachcap"><span class="pc-i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M15 10l2 2 4-4"/></svg></span><b>코치 자기역량 맵</b><span>자신있음·배우는 중·위임</span></button>
         </div>
-        <div style="margin-top:22px;background:var(--bar);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--dim)">✍︎ 기입한 내용이 채워진 출력은 <b>일정</b>·<b>팀</b> 탭 안의 출력 버튼에서 — 입력한 일정·라인업·시즌 리포트가 그대로 폼에 들어갑니다.</div>
+        <div style="margin-top:22px;background:var(--bar);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--dim)">✍︎ 기입한 내용이 채워진 출력은 <b>일정</b>·<b>팀</b> 탭 안의 출력 버튼에서 뽑아요.</div>
       </div>
     </div>
   </div>
@@ -2211,7 +2210,7 @@ window.psFailAlert=function(lead,e,stage){
       try{
         loading.classList.add('ps-boot-slow');
         var msg=document.getElementById('psBootMessage');
-        if(msg&&!window.__psBootRetryRequested)msg.textContent='보드를 준비하고 있습니다. 연결이 느리면 시간이 조금 더 걸릴 수 있어요.';
+        if(msg&&!window.__psBootRetryRequested)msg.textContent='보드를 준비하고 있어요.';
       }catch(_){}
       clearTimeout(window.__psBootCheck);
       window.__psBootCheck=setTimeout(function(){revealAfterTidy('waiting');},500);
@@ -5562,7 +5561,7 @@ window.__buildScoutForm=function(k){
      +'<div class="sec">나의 강점은 ___이다 (나머지는 위임한다)</div><div class="box">'+lines(2)+'</div>'
      +'<div class="sec">4국면 — 한 줄 원칙</div><table><tr><th style="width:30mm">국면</th><th>우리는 이렇게 한다</th></tr>'+lblRows(['공격 조직','수비 전환','수비 조직','공격 전환'])+'</table>'
      +'<div class="sec">타협하지 않을 원칙 3가지</div><div class="box">'+lines(3)+'</div>'
-     +'<div style="margin-top:3mm;font-size:10px;color:#7b828f;font-weight:600">시즌이 끝나면 다시 씁니다 — 고쳐 쓴 흔적이 성장의 기록입니다.</div>';
+     ;
   } else if(k==='f_4corner'){
     body=head('4코너 진단','FOUR CORNER REVIEW · PROCESS STUDIO')
      +'<div class="meta">'+fld('선수')+fld('포지션 / 연령')+fld('작성일 / 작성자')+'</div>'
@@ -5579,7 +5578,7 @@ window.__buildScoutForm=function(k){
      +_cc.map(function(l){return '<tr><td style="font-weight:600;color:#4b5563;height:9mm">'+l+'</td><td></td><td></td><td></td></tr>';}).join('')+'</table>'
      +'<div class="sec">올해 배울 것 (배우는 중 → 계획)</div><div class="box">'+lines(3)+'</div>'
      +'<div class="sec">위임 · 도움 요청 (누구에게 · 무엇을)</div><div class="box">'+lines(3)+'</div>'
-     +'<div style="margin-top:3mm;font-size:9px;color:#7b828f;font-weight:600">모든 것을 잘하는 코치는 없습니다 — 강점을 쓰고, 나머지는 위임합니다.</div>';
+     ;
   } else if(k==='f_seasoncard'){
     body=head('시즌 평가 카드','SEASON REVIEW CARD · PROCESS STUDIO')
      +'<div class="meta">'+fld('선수')+fld('포지션')+fld('시즌')+'</div>'
@@ -7917,18 +7916,18 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="sync-sched-blob.js"></script>
 <script src="sync-observability.js"></script>
 <script src="idp-pub-wipe.js"></script>
-<script src="autosave-journal.js?v=3.341"></script>
-<script src="autosave-merge.js?v=3.341"></script>
-<script src="autosave-runtime.js?v=3.341"></script>
-<script src="autosave-recovery.js?v=3.341"></script>
+<script src="autosave-journal.js?v=3.344"></script>
+<script src="autosave-merge.js?v=3.344"></script>
+<script src="autosave-runtime.js?v=3.344"></script>
+<script src="autosave-recovery.js?v=3.344"></script>
 <script src="roster-outbox.js"></script>
 <script src="sync-items-stale.js"></script>
 <script src="permissions-filter.js"></script>
-<script src="popover-dismiss.js"></script><script src="oauth-gate.js"></script><script src="account-hygiene.js"></script><script src="lib-diet.js"></script><script src="sync.js?v=3.341"></script>
+<script src="popover-dismiss.js"></script><script src="oauth-gate.js"></script><script src="account-hygiene.js"></script><script src="lib-diet.js"></script><script src="sync.js?v=3.344"></script>
 <script src="team-files.js"></script>
 <script src="sync-stall-report.js"></script><script src="items-stale-nudge.js"></script>
 <script src="account-delete.js"></script>
-<link rel="stylesheet" href="support.css?v=3.341">
+<link rel="stylesheet" href="support.css?v=3.344">
 <link rel="stylesheet" href="support-image.css?v=20261023">
 <script src="support-image.js?v=20261023"></script>
 <script src="support.js?v=20261023"></script>
@@ -7987,11 +7986,11 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
   function fill(){
     var md=st.open,T=$('psUpdPopT'),V=$('psUpdPopV'),B=$('psUpdPopBody'),N=$('psUpdPopNote'),BT=$('psUpdPopBtns');if(!T)return;
     if(md==='ready'){var e=st.next&&st.next.entry;T.textContent='새 판이 준비됐어요';V.textContent=e?verOf(e):'';B.innerHTML=e?entHtml(e,true,true):'';
-      N.textContent='하던 일은 저장한 뒤 같은 화면으로 다시 열려요. 입력을 멈추면 저절로도 바뀝니다.';BT.hidden=false;}
+      N.hidden=false;N.textContent='하던 일은 저장한 뒤 같은 화면으로 다시 열려요. 입력을 멈추면 저절로도 바뀝니다.';BT.hidden=false;}
     else{var n=news(),sn=st.sn,cut=-1;n.forEach(function(x,i){if(cut<0&&x.id===sn)cut=i;});
       T.textContent='새 기능';V.textContent=verOf(n[0])?('최신 '+verOf(n[0])):'';
       B.innerHTML=n.map(function(x,i){return entHtml(x,cut<0?i===0:i<cut,false);}).join('');   /* 3.057 — 지난번에 본 판 뒤로 새로 온 판은 «새로» */
-      N.textContent='판마다 바뀐 것을 최신부터 모두 적어 두었어요.';BT.hidden=true;}
+      N.textContent='';N.hidden=true;BT.hidden=true;}
   }
   function bottomNav(){var t=document.body.classList.contains('ps-team-open')?$('teamBottom'):$('appSeg');
     try{var r=t&&t.getBoundingClientRect();if(r&&r.height>0&&r.top>innerHeight/2)return r.top;}catch(_){}return innerHeight-64;}
@@ -8194,7 +8193,7 @@ html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button:not(#_):not(#__){m
 html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button:not(#_):not(#__):not(#___){min-height:44px!important}
 }
 </style>
-<link rel="stylesheet" href="team-mobile.css?v=3.341">
+<link rel="stylesheet" href="team-mobile.css?v=3.344">
 <link rel="stylesheet" href="mobile-navigation.css">
 <script src="board-phone-nav.js"></script><script src="mobile-navigation.js"></script>
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
