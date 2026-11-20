@@ -72,8 +72,10 @@ try{
  assert.equal(await scout.evaluate(()=>JSON.stringify(data.players)),roster,'cancelled bulk add leaves players unchanged');
  await scout.locator('#pwTeam [data-pw-action="tools"]').click();await scout.getByRole('button',{name:'명단',exact:true}).click();
  await scout.getByRole('searchbox',{name:'선수 검색'}).fill('가상 선수 18');assert.equal(await scout.locator('#pwTeam tbody tr').count(),1);
- await tapSize(scout.locator('.pw-select-hit'),'compare checkbox label');
- await scout.locator('.pw-select-hit').click();assert.equal(await scout.getByRole('checkbox').isChecked(),true,'full label toggles comparison');
+ // 3.339 — 선수단 머리 칸에 «보이는 선수 모두 선택»이 생겨 체크 칸이 둘(일부러 고침): 줄의 칸과 머리 칸을 따로 잰다.
+ await tapSize(scout.locator('#pwTeam tbody .pw-select-hit'),'select checkbox label');
+ await tapSize(scout.locator('#pwTeam thead .pw-select-hit'),'select-all checkbox label');
+ await scout.locator('#pwTeam tbody .pw-select-hit').click();assert.equal(await scout.locator('#pwTeam tbody input[type=checkbox]').isChecked(),true,'full label toggles selection');
  await snap('players-search',390);await scout.getByRole('searchbox',{name:'선수 검색'}).fill('');
  await scout.getByRole('button',{name:'포지션',exact:true}).click();
  await go('match');await scout.locator('#matchView .mr-hit').last().click();await scout.locator('#matchWorkspace').waitFor();await snap('match-detail',390);

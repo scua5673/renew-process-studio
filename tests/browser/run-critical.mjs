@@ -89,6 +89,7 @@ suites.boardperf.push('xss-synced-docs-team');   /* 3.272 — 명단 · 경기 �
 suites.boardperf.push('depth-panel-reorder-3273');   /* 3.273 — «선택한 포지션» 목록에서 끌어 순서 · 이름을 누르면 프로필 바로 */
 suites.entry.push('oauth-callback-gate');   /* 3.272 — 남이 만든 #access_token 링크로는 로그인되지 않는다 · 단추로 시작한 로그인 · 초대 링크 · 다른 창 콜백 · 관리자 화면은 그대로 */
 suites.entry.push('logout-direct-pages');   /* 3.272 — 로그아웃한 기기에서 팀 화면을 주소로 바로 열어도 자료를 그리지 않는다(data-lock-guard.js) */
+suites.idp.push('roster-quick-edit-3339');   /* 3.339 — 선수단 «명단» 표에서 바로 넣기(Enter · 맨 위 초록 줄) · 여러 명 골라 조 바꾸기 · 명단에서 빼기(삭제 기록 먼저) · 스카우팅에서 불러오기(후보 원장 그대로) · 잠긴 명단 · PS_SIZE=ipad|phone 도 */
 const PER_TEST_MS={'board-drag-performance':360000};   /* 3.012 — 한 테스트 한도(기본 240초)의 예외. 위 boardperf 참고 */
 /* 3.012 — 엔진과 상관없이 Chromium 을 직접 띄우는 시험(PS_BROWSER_ENGINE 을 읽지 않는다). WebKit 잡에서는 Chrome 경로가 없어 바로 죽거나
    Chromium 을 한 번 더 돌릴 뿐이라, WebKit 잡에서는 건너뛰고 그렇다고 적는다 — Chromium 잡이 그대로 지킨다. */
