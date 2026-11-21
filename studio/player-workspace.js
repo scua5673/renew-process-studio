@@ -324,6 +324,7 @@
     function paintContent(kind){var host=el(kind==='team'?'pwTeam':'pwScout'),s=states[kind],rows=visible(kind),content=host.querySelector('.pw-content');
       if(kind==='team'&&pastScope()){paintPast(host,content,s);return;}
       if(kind==='team'&&futureScope()){paintFuture(host,content,s);return;}
+      if(kind==='scout'&&SEASON)scoutWake();
       if(kind==='scout'&&s.scope!=='cur'&&SEASON&&scoutVisible()){scoutSeasonHTML(host);if(s.scope!=='cur'){paintScoutSeason(host,content,s);return;}}
       var active=doc.activeElement,focusedPlayer=active&&content.contains(active)&&active.dataset.pwOpen?{id:active.dataset.pwOpen,pos:active.dataset.pwAtpos,cls:active.className}:null;
       var filterButton=host.querySelector('[data-pw-action="filters"]'),filterCount=Number(!!s.pos)+Number(!!s.status)+Number(!!s.unevaluated);
@@ -449,8 +450,13 @@
     var SEASON=win.PSRosterSeason||null,activeRows=[],seasonDlg=null;
     function seasonScopes(){var d=source();return SEASON?SEASON.scopes(d.players,d.meta):[{id:'cur',season:'',label:'',n:0,now:true}];}
     function pastScope(){return String(states.team.scope).indexOf('past:')===0;}
+    /* 고른 시즌이 목록에 잠깐 없을 수 있다 — 동기화가 받은 선수단 문서가 방금 만든 시즌을 아직 모를 때(곧 이 기기 변경이 다시 올라간다). 바로 «지금 시즌»으로 돌리면
+       보던 목록이 말없이 바뀐다(3.352 staging CI 크로미움 — 스카우팅 2028 시즌을 보다 지금 시즌 0명으로). 5초 넘게 없을 때만 돌린다 */
+    function scopeGone(s,present){if(present||s.scope==='cur'){s.missAt=0;return false;}if(!s.missAt)s.missAt=Date.now();return Date.now()-s.missAt>5000;}
+    function scopeEntry(list,scope){var hit=list.filter(function(x){return x.id===scope;})[0];if(hit)return hit;var id=String(scope).replace(/^(past|future|s):/,''),now=list.filter(function(x){return x.now;})[0];
+      if(!/^\d{4}$/.test(id))return now||list[0];return {id:scope,season:id,label:id+' 시즌',n:0,past:now&&+id<+now.season,future:!now||+id>+now.season};}
     function teamModel(){var s=states.team,all=source().players.filter(function(p){return p.type!=='target'&&(p.manual||String(p.name||'').trim());});
-      if(!seasonScopes().some(function(x){return x.id===s.scope;}))s.scope='cur';
+      if(scopeGone(s,seasonScopes().some(function(x){return x.id===s.scope;})))s.scope='cur';
       activeRows=all.filter(function(p){return !p.grad;}).map(row);
       return s.scope==='grad'?all.filter(function(p){return !!p.grad;}).map(row):activeRows;}
     function rerenderTeam(){['renderTeam','redrawTeamPitch'].forEach(function(k){try{if(typeof win[k]==='function')win[k]();}catch(e){win.console.warn('[roster-season] '+k,e);}});}
@@ -459,7 +465,7 @@
     function setHTML(box,html){if(box._pwHtml===html&&box.firstChild&&box._pwNode===box.firstChild)return;box.innerHTML=html;box._pwHtml=html;box._pwNode=box.firstChild;}
     function setResult(host,html){setHTML(host.querySelector('.pw-result'),html);}
     function seasonHTML(host){var s=states.team;host.classList.toggle('pw-scope-past',pastScope()||futureScope());if(!SEASON)return '';
-      var sc=seasonScopes(),cur=sc.filter(function(x){return x.id===s.scope;})[0]||sc.filter(function(x){return x.now;})[0];
+      var sc=seasonScopes(),cur=scopeEntry(sc,s.scope);
       if(sc.length<2&&!groupAllowed(true))return '';
       return '<span class="pw-season">'+button(esc(cur.label)+' <span aria-hidden="true">▾</span>','data-pw-action="season" aria-haspopup="listbox" aria-label="시즌 고르기"','pw-season-chip')
         +(s.scope!=='cur'?'<span class="pw-season-note">'+(s.scope==='grad'?'졸업생 명단':futureScope()?'미리 만든 시즌 · 예상 명단':'지난 시즌 명단 · 보기 전용')+'</span>'+button('지금 시즌으로','data-pw-action="seasonNow"'):'')+'</span>';}
@@ -580,17 +586,20 @@
         return Object.keys(C).filter(function(id){return C[id].archivedAt&&String(C[id].archiveSeason||'')===String(season);}).map(function(id){var c=C[id],i=c.info||{},pos=((c.source&&c.source.pos)||[]).slice();
           d.players.forEach(function(p){if(PSScoutStore.idOf(p)===id){var a=position(p);if(a&&pos.indexOf(a)<0)pos.push(a);}});
           return {id:id,name:i.name||'이름 없음',num:i.num==null?'':String(i.num),club:i.club||'',grade:i.grade||'',pos:pos.slice(0,3),joined:!!joined[id]};});}catch(e){return null;}}
+    /* 후보 문서가 «확인 중»일 때 그린 스카우팅 목록은 빈 채로 남는다 — 풀리면 한 번 다시 그린다 */
+    var scoutWaking=false;
+    function scoutWake(){if(scoutWaking||!scoutVisible())return;try{scStore().check();return;}catch(e){scoutWaking=true;}whenScout(function(ok){scoutWaking=false;if(ok)refresh('scout');},60);}
     function scoutSeasons(){var d=source(),cur=nowSeason(),seen={},list=[];if(!SEASON)return list;
       SEASON.past(d.meta).forEach(function(x){seen[x.id]=1;list.push({id:'s:'+x.id,season:String(x.id),past:true});});
       list.push({id:'cur',season:cur,now:true});SEASON.future(d.meta).forEach(function(id){list.push({id:'s:'+id,season:id,future:true});});
       list.forEach(function(x){x.label=x.season+' 시즌';var t=x.now?null:scTagged(x.season);x.n=x.now?models.scout.length:(t?t.length:0);});return list;}
     function scoutSeasonHTML(host){var s=states.scout;if(!SEASON||!scoutVisible()){host.classList.remove('pw-scope-past');return '';}
-      var sc=scoutSeasons();if(!sc.some(function(x){return x.id===s.scope;})){s.scope='cur';s.moveSel=[];}
-      host.classList.toggle('pw-scope-past',s.scope!=='cur');if(sc.length<2&&!groupAllowed(true))return '';
-      var cur=sc.filter(function(x){return x.id===s.scope;})[0];
+      var sc=scoutSeasons();if(scopeGone(s,sc.some(function(x){return x.id===s.scope;}))){s.scope='cur';s.moveSel=[];}
+      host.classList.toggle('pw-scope-past',s.scope!=='cur');if(sc.length<2&&s.scope==='cur'&&!groupAllowed(true))return '';
+      var cur=scopeEntry(sc,s.scope);
       return '<span class="pw-season">'+button(esc(cur.label)+' <span aria-hidden="true">▾</span>','data-pw-action="season" aria-haspopup="listbox" aria-label="시즌 고르기"','pw-season-chip')
         +(s.scope!=='cur'?'<span class="pw-season-note">'+(cur.past?'지난 시즌 스카우팅':'미리 만든 시즌')+'</span>'+button('지금 시즌으로','data-pw-action="seasonNow"'):'')+'</span>';}
-    function paintScoutSeason(host,content,s){var cur=scoutSeasons().filter(function(x){return x.id===s.scope;})[0],all=scTagged(cur.season),words=String(s.q||'').toLocaleLowerCase().trim().split(/\s+/).filter(Boolean),can=groupAllowed(true);
+    function paintScoutSeason(host,content,s){var cur=scopeEntry(scoutSeasons(),s.scope),all=scTagged(cur.season),words=String(s.q||'').toLocaleLowerCase().trim().split(/\s+/).filter(Boolean),can=groupAllowed(true);
       var rows=(all||[]).filter(function(r){return words.every(function(w){return [r.name,r.num,r.club,r.pos.join(' ')].join(' ').toLocaleLowerCase().indexOf(w)>=0;})&&(!s.pos||r.pos.some(function(p){return family(p)===s.pos;}));});
       s.moveSel=(s.moveSel||[]).filter(function(id){return (all||[]).some(function(r){return r.id===id;});});
       setResult(host,scoutSeasonHTML(host)+'<span><b>'+rows.length+'</b>명 표시 <span class="pw-muted">/ 전체 '+(all||[]).length+'명</span></span><small>'+(can?'체크해서 «시즌 옮기기»':'')+'</small>');
