@@ -608,7 +608,8 @@
       var items=sc.filter(function(x){return x.id!==from;}).map(function(x){return {v:x.id,lb:x.label+(x.now?' · 지금':x.past?' · 지난':' · 미리'),col:null};});
       if(!items.length){toast('옮길 시즌이 아직 없어요 · 시즌 칩에서 «시즌 미리 만들기»를 눌러 주세요');return;}
       closeGroupPicker();win.psPickOpen(anchor,items,'',function(v){var t=scoutSeasons().filter(function(x){return x.id===v;})[0];if(!t||!groupAllowed())return;
-        var n=moveCands(ids,t.now?'':t.season);if(!n)return;s.selected=[];s.moveSel=[];refresh('scout');toast(n+'명을 '+t.label+' 후보로 옮겼어요');},'옮길 시즌',{title:ids.length+'명 · 시즌 옮기기'});}
+        /* 후보 문서는 동기화 회차마다 잠깐 «확인 중» — 풀릴 때까지(12초) 기다렸다 옮긴다. 고른 뒤 바로 거절하면 사람이 다시 눌러야 했다(3.352 PR CI 웹킷) */
+        whenScout(function(){var n=moveCands(ids,t.now?'':t.season);if(!n)return;s.selected=[];s.moveSel=[];refresh('scout');toast(n+'명을 '+t.label+' 후보로 옮겼어요');},40);},'옮길 시즌',{title:ids.length+'명 · 시즌 옮기기'});}
     /* 새 시즌 시작과 함께: 지금 후보 → 끝난 시즌 목록으로, 새 시즌에 담아 둔 후보 → 지금 목록으로. 못 하면 null(선수단은 이미 넘어갔다) */
     /* 넘길 목록은 한 번만 정한다(scoutPlan) — 넘기기가 두 번 돌면(첫 저장이 «실패»로 돌아왔지만 실제로는 적힌 경우) 방금 지금 목록으로 푼 후보가
        «지금 후보»로 다시 세어져 끝난 시즌으로 넘어갔다(3.350 main CI 웹킷 — 새 시즌 스카우팅 0명). 목록의 후보만, 아직 그 상태일 때만 고친다 */
