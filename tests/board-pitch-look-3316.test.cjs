@@ -20,7 +20,7 @@ test('① 프리셋은 평면 줄무늬와 같은 CSS 두 색 · 직접 색은 �
   const white=L.pitchLook(MD,'',env({key:'white',ga:'#ffffff',gb:'#edf0f5'}));
   assert.deepEqual([white.ga,white.gb,white.grass],['#ffffff','#edf0f5',false]);
   const calm=L.pitchLook(MD,'',env({key:'calm',ga:'#1f4d31',gb:'#173a23'}));
-  assert.deepEqual([calm.ga,calm.gb,calm.grass],['#1f4d31','#173a23',true],'딥그린은 잔디(닳은 자국)');
+  assert.deepEqual([calm.ga,calm.gb,calm.grass],['#1f4d31','#173a23',false],'3.354 — 딥그린도 색 판(닳은 자국 · 잎결 없음)');
   const custom=L.pitchLook(MD,'',env({key:'custom',bg:'#3366cc'}));
   assert.deepEqual([custom.key,custom.ga,custom.gb,custom.grass],['custom','#3366cc','#2e5cb8',false]);
   const real=L.pitchLook(MD,'data:image/avif;base64,x',env({key:'real'}));
