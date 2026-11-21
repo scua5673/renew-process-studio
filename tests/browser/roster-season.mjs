@@ -145,7 +145,7 @@ try{
   // ⑦ 선택 띠 «졸업 처리»(시즌 중 한 명) — 확인을 받고 표시만
   step='graduate-one';
   await frame.getByRole('button',{name:'지금 시즌으로',exact:true}).click();
-  await frame.waitForFunction(()=>document.querySelectorAll('#pwTeam .pw-table tbody tr').length===16);
+  await frame.waitForFunction(()=>document.querySelectorAll('#pwTeam .pw-table tbody tr').length===16,null,{timeout:15000});
   await frame.getByRole('checkbox',{name:seed.y3[0]+' 선택',exact:true}).check();
   await page.screenshot({path:shots+'/roster-season-bar-'+size+'.png'});
   await bar.getByRole('button',{name:'졸업 처리',exact:true}).click();
