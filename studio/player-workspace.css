@@ -349,7 +349,9 @@ body.ps-roster-locked .pw-quickadd,body.ps-roster-locked .pw-rq-edit{display:non
 .pw-simple .pw-workspace .pw-filter-fields{display:none}
 .pw-simple .pw-workspace.pw-filters-open .pw-filter-fields{display:flex;flex:1 1 100%;order:9;flex-wrap:wrap;align-items:center;gap:var(--sp-2);padding:var(--sp-2);border:1px solid var(--c-line);border-radius:var(--r-1)}
 .pw-simple:not(.pw-filters-on) #tmSchoolYears{display:none}
-.pw-simple .pw-workspace .pw-tools-toggle,.pw-simple .pw-workspace .pw-edit-tools{display:none}
+/* 편집 도구 줄은 걷되 «판 편집»(포지션 보기에서만 그려진다)은 남긴다 — 갈 길이 그것뿐이다(3.355 CI player-bulk-depth 가 잡음) */
+.pw-simple .pw-workspace .pw-tools-toggle,.pw-simple .pw-workspace .pw-edit-tools>:not([data-pw-action="layout"]){display:none}
+#teamView.pw-simple .pw-workspace:not(.pw-scope-past) .pw-edit-tools:not(#_){display:contents}
 .pw-simple .pw-workspace.pw-result-quiet .pw-result{display:none}
 .pw-simple .pw-comparebar .pw-more{min-width:40px;font-weight:700}
 .tm-etc-menu .pw-etc-item{justify-content:flex-start;white-space:nowrap}
