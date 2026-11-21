@@ -340,6 +340,14 @@ body.ps-roster-locked .pw-quickadd,body.ps-roster-locked .pw-rq-edit{display:non
 .pw-proj-note{font-size:var(--t-3);color:var(--c-muted)}
 .pw-proj .pw-button{margin-left:auto;min-height:36px}
 .pw-past tr.pw-join td:last-child{position:relative;padding-right:76px}.pw-past .pw-join-drop{position:absolute;right:var(--sp-2);top:50%;transform:translateY(-50%);min-height:36px;min-width:44px}
+/* 3.358 미리 만든 시즌에도 «명단 · 포지션» 보기 — 판은 읽기 전용(한 단 · 끌기 손 모양 없음). 지난 시즌 · 예상 명단 표의 첫 칸은 선수 칸이라 44px 체크 칸 너비를 푼다 */
+.pw-scope-past.pw-scope-future .pw-view{display:inline-flex}
+.pw-depth-layout.pw-depth-solo{grid-template-columns:minmax(0,1fr)}
+.pw-workspace .pw-depth-solo .pw-depth-name{cursor:pointer}.pw-workspace .pw-depth-solo .pw-depth-join{cursor:default}
+.pw-depth-jointag{flex:0 0 auto;font-size:var(--t-2);font-weight:600;color:var(--c-muted)}
+.pw-depth-floose{margin-top:var(--sp-3)}.pw-depth-floose .pw-depth-names{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+.pw-table.pw-past th:first-child,.pw-table.pw-past td:first-child{width:auto;padding-right:var(--sp-3)}
+.pw-past .pw-person small{white-space:nowrap}
 .pw-scope-past .pw-stats{display:none}   /* 다른 시즌 목록을 볼 때 지금 시즌의 후보 수 칸은 걷는다 */
 /* 선수단 화면 줄이기(A안) — 원래 단추는 숨긴 채 «＋ 선수 ▾» · «⋯» · «필터»가 대신 눌러 준다(#teamView.pw-simple, 스카우팅은 그대로) */
 #teamView.pw-simple #tmAdd:not(#_),#teamView.pw-simple #rosterPrintIco:not(#_),#teamView.pw-simple #grpChips:not(#_) .grp-edit:not(#_),#teamView.pw-simple #grpChips:not(#_) .grp-add:not(#_),#teamView.pw-simple #rosterLockChip:not(#_):not(#__),#teamView.pw-simple .tm-subtitle:not(#_){display:none}
