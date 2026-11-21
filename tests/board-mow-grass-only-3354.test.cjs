@@ -16,5 +16,6 @@ test('잔디 피치만 잔디처럼 — 다른 피치는 turf · grass 거짓, �
 
 test('작전판 배선 — 3D 바닥의 잎결은 pk.turf · 닳은 자국은 pk.grass',()=>{
   const b=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
-  assert.match(b,/grain=pk\.turf&&!!PSStadiumGround\.grainTile\(\)/);assert.match(b,/if\(!whole&&pk\.grass\)/);
+  assert.match(b,/grain=pk\.turf&&!!PSStadiumGround\.grainTile\(\)/);
+  assert.match(b,/ring\(bt,dT,pk\.turf\?'#173a20':pk\.gb\)/,'둘레 띠 — 잔디는 초록, 색 피치는 피치의 어두운 색');assert.match(b,/ring\(0,dT,pk\.turf\?'#0b2410':'#000',\.18\)/);assert.match(b,/if\(!whole&&pk\.grass\)/);
 });

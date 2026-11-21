@@ -37,15 +37,16 @@ try{
     const css={ga:getComputedStyle(document.documentElement).getPropertyValue('--grass-a').trim(),gb:getComputedStyle(document.documentElement).getPropertyValue('--grass-b').trim(),bg:getComputedStyle(document.documentElement).getPropertyValue('--pitchbg').trim()};
     /* 3D 영상의 판 그림 — 화이트 피치에서도 선을 흰색으로 바꾸는 규칙이 없다 */
     window.__animExport3d=1;let xml='';try{xml=boardImageXML().xml;}catch(_){xml='';}window.__animExport3d=0;
+    const apron=(/<path d="[^"]*" fill-rule="evenodd" fill="(#[0-9a-f]{6})"\/>/.exec(src.slice(src.indexOf('psStGrass)"')))||[])[1]||'';
     const grain=/<rect[^>]*fill="url\(#psStGrain\)"/.test(src);
-    return {sig,want,ok:sig===want,grain,rects,photo:!!img,photoFilter:img?img.getAttribute('filter')||'':'',tone:!!tone,toneValues:tone?tone.querySelector('feColorMatrix').getAttribute('values'):'',wear,css,pitch:document.documentElement.dataset.pitch||'',pitchImg:String(state.pitchImg||''),whiteLines:/stroke:rgba\(255,255,255,\.92\)/.test(xml),key:window.__tiltPitchLook({ga:'',gb:''},'').key};
+    return {sig,want,ok:sig===want,grain,apron,rects,photo:!!img,photoFilter:img?img.getAttribute('filter')||'':'',tone:!!tone,toneValues:tone?tone.querySelector('feColorMatrix').getAttribute('values'):'',wear,css,pitch:document.documentElement.dataset.pitch||'',pitchImg:String(state.pitchImg||''),whiteLines:/stroke:rgba\(255,255,255,\.92\)/.test(xml),key:window.__tiltPitchLook({ga:'',gb:''},'').key};
   },pick);
 
   step('navy');
   const navy=await look({p:'navy'});
   assert.equal(navy.ok,true,'경기장 그림의 피치 모습(__pk)이 고른 피치다: '+navy.sig);
   assert.deepEqual([navy.key,navy.photo,navy.rects],['navy',false,[navy.css.ga,navy.css.gb]],'네이비 — 평면 줄무늬와 같은 두 색, 사진 없음');
-  assert.equal(navy.wear,0,'닳은 자국은 잔디에만');assert.equal(navy.grain,false,'3.354 — 잎결도 잔디에만(평평한 색 판)');assert.equal(navy.tone,false);
+  assert.equal(navy.wear,0,'닳은 자국은 잔디에만');assert.equal(navy.grain,false,'3.354 — 잎결도 잔디에만(평평한 색 판)');assert.notEqual(navy.apron,'#173a20','3.354 — 둘레 띠도 초록이 아니다: '+navy.apron);assert.equal(navy.tone,false);
   const sigNavy=navy.sig;
   if(process.env.PS_TEST_OUTPUT){const fs=await import('node:fs');fs.mkdirSync(process.env.PS_TEST_OUTPUT+'/shots',{recursive:true});await page.screenshot({path:process.env.PS_TEST_OUTPUT+'/shots/board-3d-pitch-3316-'+engine+'-navy-flat.png'});}
 
