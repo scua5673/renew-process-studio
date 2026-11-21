@@ -510,7 +510,8 @@
     function restoreSelected(){if(!SEASON||!groupAllowed())return;var ids=SEASON.restore(source(),selectedPlayers().map(function(p){return p.id;}));if(!ids.length)return;states.team.selected=[];
       var ok=win.save({skipTargets:true});rerenderTeam();toast(ok===false?'현재 명단으로 돌렸지만 저장 확인이 필요해요':ids.length+'명을 현재 명단으로 돌렸어요');}
     /* 후보 문서는 동기화 회차 · 저장 직후 잠깐 «확인 중»이 된다(3.257) — 풀릴 때까지 0.3초씩 기다렸다 한다. 끝까지 안 풀리면 fn(false) */
-    function whenScout(fn,tries){var n=0;(function go(){var ok=true;try{scStore().check();}catch(e){ok=false;}if(ok||n++>=tries){fn(ok);return;}win.setTimeout(go,300);})();}
+    /* 3.356 — 기다리기만 하면 다시 여는 것은 동기화 신호(storage)뿐이라, 그 확인이 한 번 어긋나면 닫힌 채 남았다 — 기다리는 쪽이 다시 확인(scPrepare)을 부른다 */
+    function whenScout(fn,tries){var n=0;(function go(){var ok=true;try{scStore().check();}catch(e){ok=false;}if(ok||n++>=tries){fn(ok);return;}if(typeof win.scPrepare==='function')win.scPrepare();win.setTimeout(go,300);})();}
     function seasonStart(){if(!SEASON||!groupAllowed())return;if(scoutVisible())whenScout(function(){seasonStartOpen();},10);else seasonStartOpen();}
     function seasonStartOpen(){if(!SEASON||!groupAllowed(true))return;var owner=win.teamSaveOwner(),st={keep:{},years:{},join:{}};
       /* 스카우팅 «확정» · «영입대상» 후보를 새 시즌 신입으로(확정은 미리 켠다) — 운영진이 스카우팅을 볼 수 있을 때만. 다른 단계는 «스카우팅에서 불러오기»로 */
@@ -546,12 +547,16 @@
         function tryRoll(){if(rollOff)return true;if(!rollPlan)rollPlan=scoutPlan(pl.next);if(!rollPlan||!scoutRoll(rollPlan,pl.cur,pl.next))return false;roll=rollPlan;return true;}
         var rolledNow=!scoutVisible()||tryRoll();states.scout.scope='cur';states.scout.moveSel=[];rerenderTeam();
         /* 선수단 저장 직후엔 후보 문서가 잠깐 닫힐 수 있다 — 풀리면 넘긴다. 끝내 못 넘기면 알린다(선수단은 이미 넘어갔다) */
-        if(!rolledNow)whenScout(function(){if(!tryRoll())toast('선수단은 넘겼어요 · 스카우팅 목록은 스카우팅에서 «시즌 옮기기»로 넘겨 주세요');},25);
-        showUndo('<b>'+pl.next+' 시즌</b> 시작 · 졸업 '+pl.grad.length+'명 · 진급 '+pl.up.length+'명'+(made.length?' · 신입 '+made.length+'명':'')+(roll.out.length?' · 스카우팅 '+roll.out.length+'명은 '+pl.cur+' 시즌 목록으로':'')+(ok===false?' · 저장 확인이 필요해요':''),function(){
+        function undoMsg(){return '<b>'+pl.next+' 시즌</b> 시작 · 졸업 '+pl.grad.length+'명 · 진급 '+pl.up.length+'명'+(made.length?' · 신입 '+made.length+'명':'')+(roll.out.length?' · 스카우팅 '+roll.out.length+'명은 '+pl.cur+' 시즌 목록으로':'')+(ok===false?' · 저장 확인이 필요해요':'');}
+        showUndo(undoMsg(),function(){
           if(!groupAllowed()||owner!==win.teamSaveOwner())return;var cur=source(),gone=[];
           /* 넣은 신입은 «명단에서 빼기»와 같은 길(삭제 기록 → 빼기) — 기록 없이 빼면 선수별 행이 되살린다 */
           made.forEach(function(id){var at=cur.players.findIndex(function(p){return String(p.id)===id&&p.type!=='target';});if(at>=0&&win.plTombAdd(id)){cur.players.splice(at,1);gone.push(id);}});
           rollOff=true;var rolled=roll;if(rolled.out.length+rolled.back.length)whenScout(function(){scoutUnroll(rolled,pl.cur,pl.next);},25);SEASON.revert(cur,undo);win.save({deletedIds:gone,skipTargets:true});states.team.fresh=(states.team.fresh||[]).filter(function(id){return gone.indexOf(String(id))<0;});rerenderTeam();toast(pl.cur+' 시즌 명단으로 돌렸어요');},20000);
+        /* 3.356 — 미뤄진 넘기기가 끝나면 띠의 글도 맞춘다(예전엔 «스카우팅 N명은 …»이 빠진 채 남았다 — CI 웹킷 `roster-season-scout` undo) */
+        var undoShown=undoBox;
+        if(!rolledNow)whenScout(function(){if(!tryRoll()){toast('선수단은 넘겼어요 · 스카우팅 목록은 스카우팅에서 «시즌 옮기기»로 넘겨 주세요');return;}
+          if(undoShown&&undoBox===undoShown&&undoShown.isConnected){var sp=undoShown.querySelector('span');if(sp)sp.innerHTML=undoMsg();liftUndo();}},25);
       }
       dlg.addEventListener('click',function(e){if(e.target===dlg){var b0=dlg.getBoundingClientRect();if(e.clientX<b0.left||e.clientX>b0.right||e.clientY<b0.top||e.clientY>b0.bottom)dlg.close();return;}
         var b=e.target.closest('button');if(!b)return;var x=b.dataset;
