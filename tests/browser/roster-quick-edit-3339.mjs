@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {startFixture,openApp,SHOTS,WT,A,SIZES} from '../fixtures/team-app.mjs';
+import {addMenu,selMore} from '../fixtures/roster-ui.mjs';
 const require=createRequire(import.meta.url),store=require('../../studio/scouting-store.js');
 const size=process.env.PS_SIZE||'desktop',engine=process.env.PS_BROWSER_ENGINE||SIZES[size].engine,shots=process.env.PS_SHOTS_DIR||SHOTS;
 SIZES[size].engine=engine;
@@ -23,14 +24,15 @@ try{
   frame=await (await page.waitForSelector('#fScout')).contentFrame();
   await frame.locator('#pwTeam [data-pw-view="list"]').waitFor();   /* 폰은 처음 보기가 다르다 — «명단»을 눌러 표로 */
   await frame.getByRole('button',{name:'명단',exact:true}).click();
-  await frame.locator('#pwTeam .pw-table tbody tr').first().waitFor();
+  await frame.locator('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').first().waitFor();
   const roster=()=>frame.evaluate(()=>data.players.filter(p=>p.type!=='target').map(p=>({id:p.id,name:p.name,num:p.num||'',posId:p.posId||'',grp:p.grp||'',from:p.joinedFrom&&p.joinedFrom.cid||'',foot:p.foot||'',dob:p.profile&&p.profile.dob||'',team:p.profile&&p.profile.team||''})));
-  const rows=()=>frame.locator('#pwTeam .pw-table tbody tr');
+  const rows=()=>frame.locator('#pwTeam .pw-table tbody tr:not(.pw-grouphead)');
   const toastText=()=>frame.evaluate(()=>{const t=document.getElementById('toast');return t&&t.classList.contains('on')?t.textContent:'';});
   assert.equal((await roster()).length,18);assert.equal(await rows().count(),18);
 
   // ① 맨 위 줄로 넣기 — Enter 로 들어가고 줄은 비워진 채 이름 칸에 남는다
   step='quick-add';
+  await addMenu(frame,'바로 넣기');   /* 넣기 줄은 «＋ 선수 ▾ › 바로 넣기»로 연다(선수단 화면 줄이기 A안) */
   const qa=frame.locator('#pwTeam [data-pw-qa]');await qa.waitFor();
   await qa.getByRole('textbox',{name:'새 선수 등번호'}).fill('30');
   await qa.getByRole('textbox',{name:'새 선수 이름'}).fill('강민재');
@@ -86,7 +88,7 @@ try{
 
   // ③ 명단에서 빼기 — 이름을 보여 주고 확인 · 삭제 기록(plTombAdd)이 먼저
   step='remove';
-  await bar.getByRole('button',{name:'명단에서 빼기',exact:true}).click();
+  await selMore(frame,'명단에서 빼기');
   const confirmText=await frame.evaluate(()=>{const b=[...document.querySelectorAll('button')].filter(x=>x.textContent==='확인'&&x.offsetParent);return b.length?b[b.length-1].closest('div').parentElement.innerText:'';});
   assert.match(confirmText,/2명을 명단에서 삭제할까요\?/);assert.match(confirmText,/강민재 30번/);assert.match(confirmText,/이서준/);
   const gone=(await roster()).filter(p=>p.name==='강민재'||p.name==='이서준').map(p=>p.id);
@@ -100,8 +102,7 @@ try{
 
   // ④ 스카우팅에서 불러오기 — 확정 둘이 먼저 체크 · 이미 있는 선수는 흐리게 · 스카우팅 원장은 그대로
   step='import';
-  if(await frame.locator('#pwTeam [data-pw-action="tools"]').isVisible())await frame.locator('#pwTeam [data-pw-action="tools"]').click();
-  await frame.getByRole('button',{name:'⇣ 스카우팅에서 불러오기',exact:true}).click();
+  await addMenu(frame,'스카우팅에서 불러오기');
   const dlg=frame.locator('#pwImport');await dlg.waitFor();
   assert.equal(await dlg.getByRole('button',{name:'확정 3',exact:true}).getAttribute('aria-pressed'),'true','처음은 «확정»');
   assert.equal(await dlg.locator('.pwi-row').count(),3);
@@ -131,7 +132,7 @@ try{
   assert.equal(await rows().first().evaluate(tr=>tr.classList.contains('is-fresh')&&!!tr.querySelector('.pw-from-scout')),true,'방금 불러온 줄 — 넓은 화면은 «스카우팅에서» 꼬리표, 폰은 초록 줄만');
   if(!phone)assert.match(await rows().first().innerText(),/스카우팅에서/);
   // 다시 열면 불러온 후보는 «이미 명단에 있어요»
-  await frame.getByRole('button',{name:'⇣ 스카우팅에서 불러오기',exact:true}).click();await dlg.waitFor();
+  await addMenu(frame,'스카우팅에서 불러오기');await dlg.waitFor();
   assert.equal(await dlg.getByRole('checkbox',{name:'서지훈 명단에 넣기'}).isDisabled(),true);
   assert.equal(await dlg.locator('[data-pwi-ok]').isDisabled(),true,'넣을 후보가 없으면 단추가 꺼진다');
   await dlg.getByRole('button',{name:'취소',exact:true}).click();await dlg.waitFor({state:'detached'});
@@ -150,9 +151,9 @@ try{
   step='locked';
   await frame.evaluate(()=>{document.body.classList.add('ps-roster-locked');renderTeam();});
   await frame.waitForFunction(()=>{const q=document.querySelector('#pwTeam .pw-quickadd');return q&&q.hidden;});
-  assert.equal(await frame.locator('#pwTeam [data-pw-action="scoutImport"]').count(),0);
+  assert.equal(await frame.locator('#pwTeam .pw-edit-tools').isVisible(),false);
   await frame.getByRole('checkbox',{name:'가상 선수 5 선택',exact:true}).check();
-  assert.equal(await bar.getByRole('button',{name:'명단에서 빼기',exact:true}).count(),0);
+  assert.equal(await frame.locator('#pwTeam [data-pw-action="selMore"]').count(),0);
   assert.equal(await bar.getByRole('button',{name:'조 바꾸기',exact:true}).count(),0);
   await frame.evaluate(()=>{document.body.classList.remove('ps-roster-locked');});
 

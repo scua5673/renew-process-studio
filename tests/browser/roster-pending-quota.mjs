@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {startFixture,openApp,ready,SIZES,WT} from '../fixtures/team-app.mjs';
+import {addMenu} from '../fixtures/roster-ui.mjs';
 
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',out=process.env.PS_TEST_OUTPUT||'/tmp/ps-roster-pending-quota-browser';
 fs.mkdirSync(out,{recursive:true});SIZES.desktop={...SIZES.desktop,engine};
@@ -61,7 +62,7 @@ try{
       serverPlayers:[...fx.db.values()].filter(r=>r.workspace_id===WT&&r.k.startsWith('sq:')).map(r=>({k:r.k,raw:r.v})),writes:fx.writes.slice()};
     observations.push(value);fs.writeFileSync(path.join(out,engine+'-observations.json'),JSON.stringify({engine,observations},null,2));return value;
   }
-  async function addPlayer(n,num){await frame.locator('#tmAdd').click();await frame.locator('[data-k="name"]').fill(n);await frame.locator('[data-k="num"]').fill(num);await frame.locator('[data-act="ok"]').click();await frame.waitForFunction(n=>data.players.some(p=>p.name===n),n);}
+  async function addPlayer(n,num){await addMenu(frame,'프로필까지 적어 추가');await frame.locator('[data-k="name"]').fill(n);await frame.locator('[data-k="num"]').fill(num);await frame.locator('[data-act="ok"]').click();await frame.waitForFunction(n=>data.players.some(p=>p.name===n),n);}
   /* 3.272 — 선수단 화면은 열린 뒤 배경에서 명단을 한 번 고쳐 쓸 수 있다(posName 채움 · 행 없는 선수 고쳐 저장). 그 저장이 «추가 전»과 «추가 후» 사이에
      끼면 추가와 상관없는 main 바뀜이 잡힌다(PR #800 웹킷 storage) — 대기 없음 · main 이 1.2초 그대로일 때 «추가 전»을 찍는다 */
   for(let i=0,prev=null,same=0;i<25&&same<3;i++){

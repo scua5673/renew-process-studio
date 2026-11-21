@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
+import {etc} from '../fixtures/roster-ui.mjs';
 // 2.903 — 폰 선수단(목업 ②, ≤600): 조 필터 한 줄(인원 수 + ⋯), «지금 값» 한 줄, 행 두 줄(이름 / 포지션·조·상태),
 // 행 탭 = 선수 시트, «선수 삭제»는 시트 맨 아래. 조·상태 버튼은 남아 고르개를 연다. 데스크톱은 그대로. 합성 팀 fixture 에서만 돈다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
@@ -13,8 +14,7 @@ try{
   const f=await (await page.waitForSelector('#fScout')).contentFrame();
   await f.waitForFunction(()=>document.querySelectorAll('#teamList .tm-row').length>0);
   // The roster now opens as a read-only list; this suite verifies the retained editor.
-  if(await f.locator('#pwTeam [data-pw-action="tools"]').isVisible())await f.locator('#pwTeam [data-pw-action="tools"]').click();
-  await f.getByRole('button',{name:'배치·명단 편집',exact:true}).click();
+  await etc(f,'edit');   /* «배치 · 명단 편집»은 «⋯» 안(선수단 화면 줄이기 A안) */
   await f.evaluate(()=>{const p=data.players.find(p=>p.name==='가상 선수 5');p.status='injury';renderTeam();});
   await page.waitForTimeout(300);
   const look=await f.evaluate(()=>{const vis=el=>!!el&&getComputedStyle(el).display!=='none';const row=document.querySelector('#teamList .tm-row[data-status="injury"]');

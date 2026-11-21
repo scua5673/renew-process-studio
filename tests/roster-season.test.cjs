@@ -97,3 +97,17 @@ test('예상 명단: 지금 선수가 그 시즌에 몇 학년인지 — 3학년
   assert.deepEqual(S.project(d.players,d.meta,'2026',NOV).rows,[]);
   const was=JSON.stringify(d);S.project(d.players,d.meta,'2029',NOV);assert.equal(JSON.stringify(d),was,'셈만 한다');
 });
+
+test('3.354 신입생(학년 0): 새 시즌에 1학년 · 되돌리면 신입생 · 예상 명단도 한 해에 한 학년',()=>{
+  const d=team();d.players.push({id:'n',name:'신가람',num:'30',type:'ours',grp:'A',schoolYear:'0',posId:'cf'});
+  assert.equal(S.yearOf(d.players[d.players.length-1]),'0');
+  const p=S.plan(d.players,d.meta,{now:NOV});
+  assert.deepEqual(p.by['0'].map(x=>x.id),['n']);assert.deepEqual(p.up.find(u=>u.id==='n'),{id:'n',from:'0',to:'1'});
+  const stay=S.plan(d.players,d.meta,{now:NOV,years:{'0':false}});assert.ok(stay.stay.includes('n'));
+  const undo=S.apply(d,p,{now:NOV,posOf}),n=()=>d.players.find(x=>x.id==='n');
+  assert.equal(n().schoolYear,'1');assert.equal(d.meta.season.past[0].rows.find(r=>r.id==='n').year,'0','지난 시즌 줄은 그때 학년');
+  S.revert(d,undo);assert.equal(n().schoolYear,'0');
+  const pr=S.project(d.players,d.meta,'2028',NOV).rows.find(r=>r.p.id==='n');assert.equal(pr.from,'0');assert.equal(pr.year,'2');
+  const A=require('../studio/team-audience.js');
+  assert.equal(A.yearLabel('0'),'신입생');assert.equal(A.yearLabel('2'),'2학년');assert.deepEqual(A.years(['3','0','9','0']),['0','3']);assert.equal(A.yearText({schoolYears:['0','1']}),'신입생 · 1학년');
+});

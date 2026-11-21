@@ -128,7 +128,7 @@ try{
     await frame.evaluate(()=>{setView('team');window.__tmAddSheet();});
     const grpSel=frame.locator('select[data-k="grp"]');await grpSel.waitFor();
     assert.deepEqual(await grpSel.evaluate(s=>[...s.options].map(o=>o.value+'='+o.textContent)),['=없음','A팀=A팀','B팀=B팀','C팀=C팀'],'기본 조(C팀 포함) — 이름은 표시 이름, 값은 키');
-    assert.equal(await frame.locator('[data-seg="schoolYear"] button').count(),4);
+    assert.equal(await frame.locator('[data-seg="schoolYear"] button').count(),5);   /* 3.354 — 미지정 · 신입생 · 1 · 2 · 3학년 */
     await frame.locator('input[data-k="name"]').fill('가상 새 선수');await grpSel.selectOption('B팀');await frame.locator('[data-seg="schoolYear"] button[data-v="3"]').click();
     await page.screenshot({path:path.join(out,width+'-add-sheet.png')});
     await frame.locator('[data-act="ok"]').click();await frame.locator('select[data-k="grp"]').waitFor({state:'detached'});await flush(frame);
@@ -136,17 +136,17 @@ try{
     // 선수 편집 창 — «구분» 아래 조 · 학년 칩, 누르면 같은 저장 길
     await frame.evaluate(()=>openPlayer('p4'));await frame.locator('#plYearChips button').first().waitFor();
     const chips=id=>frame.evaluate(id=>[...document.querySelectorAll('#'+id+' button')].map(b=>b.textContent+(b.classList.contains('on')?'*':'')),id);
-    assert.deepEqual(await chips('plGrpChips'),['없음','A팀','B팀*','C팀']);assert.deepEqual(await chips('plYearChips'),['미지정*','1학년','2학년','3학년']);
+    assert.deepEqual(await chips('plGrpChips'),['없음','A팀','B팀*','C팀']);assert.deepEqual(await chips('plYearChips'),['미지정*','신입생','1학년','2학년','3학년']);
     assert.ok(await frame.evaluate(()=>{const f=document.getElementById('plTypeChips').closest('.field');return f.nextElementSibling.contains(document.getElementById('plGrpChips'))&&f.nextElementSibling.nextElementSibling.contains(document.getElementById('plYearChips'));}),'«구분» 바로 아래');
     await frame.locator('#plYearChips button',{hasText:'2학년'}).click();await flush(frame);
-    assert.equal(await frame.evaluate(()=>data.players.find(x=>x.id==='p4').schoolYear),'2');assert.deepEqual(await chips('plYearChips'),['미지정','1학년','2학년*','3학년']);
+    assert.equal(await frame.evaluate(()=>data.players.find(x=>x.id==='p4').schoolYear),'2');assert.deepEqual(await chips('plYearChips'),['미지정','신입생','1학년','2학년*','3학년']);
     await frame.locator('#plGrpChips button',{hasText:'A팀'}).click();await flush(frame);
     assert.deepEqual(await frame.evaluate(()=>{const d=JSON.parse(localStorage.getItem('scout_tool_v1')),p=d.players.find(x=>x.id==='p4');return [p.grp,p.schoolYear];}),['A팀','2'],'기기 저장본에도 같은 값');
     await page.screenshot({path:path.join(out,width+'-edit-chips.png')});
     await frame.locator('#plYearChips button',{hasText:'미지정'}).click();await flush(frame);
     assert.equal(await frame.evaluate(()=>'schoolYear' in data.players.find(x=>x.id==='p4')),false,'미지정은 칸을 지운다');
     await frame.evaluate(()=>closePlayer());
-    const geometry=await frame.locator('#availRoot').evaluate(el=>({client:el.clientWidth,scroll:el.scrollWidth,viewport:innerWidth,body:document.documentElement.scrollWidth}));
+    const geometry=await frame.locator('#availRoot').evaluate(el=>({client:el.clientWidth,scroll:el.scrollWidth,viewport:innerWidth,body:document.documentElement.scrollWidth,wide:[...document.querySelectorAll("body *")].filter(x=>x.offsetParent&&x.getBoundingClientRect().right>innerWidth+1).filter(x=>!/^(TABLE|THEAD|TBODY|TR)$/.test(x.tagName)).slice(0,14).map(x=>x.tagName+"#"+x.id+"."+String(x.className).slice(0,40)+":"+Math.round(x.getBoundingClientRect().left)+"-"+Math.round(x.getBoundingClientRect().right)+"/"+getComputedStyle(x).display),mq:matchMedia("(max-width:700px)").matches,wrap:(()=>{const w=document.querySelector("#pwTeam .pw-table-wrap");return w?[w.clientWidth,w.scrollWidth,getComputedStyle(w).overflowX]:null;})()}));
     assert.ok(geometry.body<=width+1,JSON.stringify(geometry));assert.deepEqual(errors,[]);
     results.push({engine,width,passed:true,yearSplit:true,addSheet:true,editChips:true,geometry});
     console.log(JSON.stringify({engine,width,passed:true}));await context.close();

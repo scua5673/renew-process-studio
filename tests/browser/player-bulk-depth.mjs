@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import {startFixture,openApp,SHOTS,WT,A} from '../fixtures/team-app.mjs';
+import {addMenu} from '../fixtures/roster-ui.mjs';
 const fx=await startFixture(),browsers={},engine=process.env.PS_BROWSER_ENGINE||'chromium';
 const shots=process.env.PS_SHOTS_DIR||SHOTS;
 try{
@@ -15,7 +16,7 @@ try{
   const before=await roster();assert.equal(before.players.length,18);
 
   // 1) 여러 명 한 번에 추가 — 붙여 넣기로 줄이 채워지고 새 조는 저장 때 만든다
-  await frame.getByRole('button',{name:'＋ 여러 명 추가',exact:true}).click();
+  await addMenu(frame,'여러 명 붙여 넣기');   /* 3.355 — «＋ 여러 명 추가»는 «＋ 선수 ▾» 안(선수단 화면 줄이기) */
   const sheet=frame.locator('.pw-bulk-overlay');await sheet.waitFor();
   assert.equal(await sheet.locator('.pw-bulk-row').count(),3);
   await sheet.locator('.pw-bulk-row [data-f="name"]').first().evaluate(el=>{const dt=new DataTransfer();dt.setData('text/plain','김민재 CB A팀 4\n이강인\tAM\tB팀\t7\n정우영, DM, C팀\n가상 선수 1\tGK\tA팀\t1');el.focus();el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true}));});

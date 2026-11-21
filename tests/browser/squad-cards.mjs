@@ -5,6 +5,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
+import {etc} from '../fixtures/roster-ui.mjs';
 const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/squad-cards');
@@ -56,7 +57,7 @@ try{
           emptyCards:slots.filter(s=>!s.querySelector('.tb-pill')).length,tray:document.getElementById('tbTrayN').textContent,
           lm:(slots.find(s=>s.dataset.posid===pos.LM)||{}).style?.cssText||''};
       },scenario);
-      await page.getByRole('button',{name:'배치·명단 편집',exact:true}).click();
+      await etc(page,'edit');   /* «배치 · 명단 편집»은 «⋯» 안(선수단 화면 줄이기 A안) */
       await page.locator('#tbPitch').scrollIntoViewIfNeeded();
       await page.screenshot({path:path.join(out,`${engine}-${scenario}.png`),animations:'disabled'});
       assert.equal(state.cards,11,'eleven position cards');

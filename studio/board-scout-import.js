@@ -190,7 +190,7 @@
         R.avail.w.hidden=c.src==='scout';
         chip(R.avail.h,'가능만 — 부상 · 재활 · 불참 제외',c.avail!=='all',true,function(){c.avail='ok';});chip(R.avail.h,'전부',c.avail==='all',false,function(){c.avail='all';});
         chip(R.pos.h,'모든 포지션',!c.pos,false,function(){c.pos='';});chip(R.pos.h,'GK',c.pos==='GK',false,function(){c.pos='GK';});chip(R.pos.h,'필드',c.pos==='FIELD',false,function(){c.pos='FIELD';});
-        if(c.src!=='scout'&&years.length){R.pos.h.appendChild(el('span','bsi-gap'));years.forEach(function(y){chip(R.pos.h,y+'학년',c.years.indexOf(y)>=0,false,function(){var i=c.years.indexOf(y);if(i>=0)c.years.splice(i,1);else c.years.push(y);});});}
+        if(c.src!=='scout'&&years.length){R.pos.h.appendChild(el('span','bsi-gap'));years.forEach(function(y){chip(R.pos.h,y==='0'?'신입생':y+'학년',c.years.indexOf(y)>=0,false,function(){var i=c.years.indexOf(y);if(i>=0)c.years.splice(i,1);else c.years.push(y);});});}
       }
       function reset(){var s=select(data.all,c);selected=new Set(s.on.map(function(p){return p.id;}));paintChips();paint();}
       function visible(){return filter(pool(data.all,c),search.value,'','');}

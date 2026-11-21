@@ -22,7 +22,7 @@ try{
   frame=await (await page.waitForSelector('#fScout')).contentFrame();
   await frame.locator('#pwTeam [data-pw-view="list"]').waitFor();
   await frame.getByRole('button',{name:'명단',exact:true}).click();
-  await frame.locator('#pwTeam .pw-table tbody tr').first().waitFor();
+  await frame.locator('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').first().waitFor();
   const seed=await frame.evaluate(()=>{const o=data.players.filter(p=>p.type!=='target');o.forEach((p,i)=>{if(i<4)p.schoolYear='3';else if(i<9)p.schoolYear='2';else if(i<13)p.schoolYear='1';});save({skipTargets:true});renderTeam();return {cur:PSRosterSeason.current(data.meta)};});
   const cur=seed.cur,n1=String(+cur+1),n2=String(+cur+2);
   const pick=async(host,text)=>{await frame.locator(host+' [data-pw-action="season"]').click();await frame.locator('#psPickPop').waitFor();await frame.locator('#psPickPop button',{hasText:text}).click();};
@@ -30,18 +30,18 @@ try{
   /* 후보 문서는 동기화 회차마다 잠깐 «확인 중»이 된다 — 풀릴 때까지 기다린다 */
   const scReady=async()=>{for(let i=0;i<40;i++){if(await frame.evaluate(()=>{try{scStore().check();return true;}catch(e){return false;}}))return;await page.waitForTimeout(400);}throw new Error('후보 문서 준비 안 됨');};
   const tags=()=>frame.evaluate(()=>{const C=scStore().read().scoutRegistry.candidates,o={};Object.keys(C).forEach(id=>{o[C[id].info.name]=C[id].archivedAt?String(C[id].archiveSeason||'보관'):'';});return o;});
-  await frame.waitForFunction(c=>{const b=document.querySelector('#pwTeam [data-pw-action="season"]');return b&&b.textContent.indexOf(c+' 시즌')>=0;},cur);
+  await frame.waitForFunction(c=>{const b=document.querySelector('#teamView [data-pw-action="season"]');return b&&b.textContent.indexOf(c+' 시즌')>=0;},cur);
 
   // ① 시즌 미리 만들기 → 예상 명단
   step='future';
-  await pick('#pwTeam',n1+' 시즌 미리 만들기');
+  await pick('#teamView',n1+' 시즌 미리 만들기');
   await frame.locator('#pwTeam .pw-proj').waitFor();
   assert.match(await toastText(),new RegExp(n1+' 시즌을 만들었어요'));
   assert.deepEqual(await frame.evaluate(()=>data.meta.season.future),[n1]);
   assert.equal(await frame.locator('#pwTeam .pw-past tbody tr').count(),14,'3학년 넷은 그 전에 졸업');
   let proj=await frame.locator('#pwTeam').innerText();
   assert.match(proj,/미리 만든 시즌 · 예상 명단/);assert.match(proj,/그 전에 졸업 4명/);assert.match(proj,/1학년 → 2학년/);assert.match(proj,/2학년 → 3학년/);assert.match(proj,/GK \d+/);
-  await pick('#pwTeam',n2+' 시즌 미리 만들기');
+  await pick('#teamView',n2+' 시즌 미리 만들기');
   await frame.waitForFunction(()=>document.querySelectorAll('#pwTeam .pw-past tbody tr').length===9);
   proj=await frame.locator('#pwTeam').innerText();assert.match(proj,/그 전에 졸업 9명/);assert.match(proj,/1학년 → 3학년/);
   assert.deepEqual(await frame.evaluate(()=>data.meta.season.future),[n1,n2]);
@@ -49,14 +49,14 @@ try{
   assert.ok(pm.over<=1,'넘침 '+pm.over);assert.equal(pm.quick,true);assert.equal(pm.checks,0);assert.equal(pm.ours,18,'예상은 셈만 — 명단은 그대로');
   await page.screenshot({path:shots+'/roster-season-plan-'+size+'.png'});
   await frame.getByRole('button',{name:'지금 시즌으로',exact:true}).click();
-  await frame.waitForFunction(()=>document.querySelectorAll('#pwTeam .pw-table tbody tr').length===18);
+  await frame.waitForFunction(()=>document.querySelectorAll('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').length===18);
 
   // ② 스카우팅 — 후보를 미리 만든 시즌에 담는다
   step='scout-open';
   await tab('scouting');
   await frame.locator('#pwScout [data-pw-view="list"]').waitFor();
   await frame.locator('#pwScout [data-pw-view="list"]').click();
-  await frame.waitForFunction(()=>document.querySelectorAll('#pwScout .pw-table tbody tr').length===4);
+  await frame.waitForFunction(()=>document.querySelectorAll('#pwScout .pw-table tbody tr:not(.pw-grouphead)').length===4);
   assert.match(await frame.locator('#pwScout .pw-result').innerText(),new RegExp(cur+' 시즌'));
   step='scout-move';
   await scReady();
@@ -66,7 +66,7 @@ try{
   await frame.locator('#psPickPop').waitFor();
   const opts=await frame.locator('#psPickPop').innerText();assert.match(opts,/2명 · 시즌 옮기기/);assert.match(opts,new RegExp(n1+' 시즌 · 미리'));assert.doesNotMatch(opts,new RegExp(cur+' 시즌'),'지금 보는 시즌은 고를 것에 없다');
   await frame.locator('#psPickPop button',{hasText:n2+' 시즌'}).click();
-  await frame.waitForFunction(()=>document.querySelectorAll('#pwScout .pw-table tbody tr').length===2);
+  await frame.waitForFunction(()=>document.querySelectorAll('#pwScout .pw-table tbody tr:not(.pw-grouphead)').length===2);
   assert.match(await toastText(),new RegExp('2명을 '+n2+' 시즌 후보로 옮겼어요'));
   assert.deepEqual(await tags(),{'서지훈':'','오태양':'','문건우':n2,'배준혁':n2});
 
@@ -87,14 +87,14 @@ try{
   await frame.waitForFunction(()=>document.querySelectorAll('#pwScout .pw-past tbody tr').length===1);
   assert.deepEqual(await tags(),{'서지훈':'','오태양':'','문건우':n1,'배준혁':n2});
   await frame.locator('#pwScout').getByRole('button',{name:'지금 시즌으로',exact:true}).click();
-  await frame.waitForFunction(()=>document.querySelectorAll('#pwScout .pw-table tbody tr').length===2&&!document.querySelector('#pwScout .pw-past'));
+  await frame.waitForFunction(()=>document.querySelectorAll('#pwScout .pw-table tbody tr:not(.pw-grouphead)').length===2&&!document.querySelector('#pwScout .pw-past'));
 
   // ④ 새 시즌 시작 — 지금 후보는 끝난 시즌 목록으로, 새 시즌에 담아 둔 후보는 지금 목록으로
   step='start';
   await tab('players');
-  await frame.locator('#pwTeam .pw-table tbody tr').first().waitFor();
+  await frame.locator('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').first().waitFor();
   await scReady();
-  await pick('#pwTeam',n1+' 시즌 시작');
+  await pick('#teamView',n1+' 시즌 시작');
   const dlg=frame.locator('#pwSeason');await dlg.waitFor();
   const text=await dlg.innerText();
   assert.match(text,new RegExp('스카우팅 후보 2명은 '+cur+' 시즌 목록으로 넘어가요\\. '+n1+' 시즌 스카우팅은 담아 둔 1명으로 시작해요'));
@@ -122,14 +122,14 @@ try{
   // ⑥ 다시 시작 → 스카우팅 화면
   step='restart';
   for(let i=0;i<60;i++){await scReady();const t=await tags();if(t['서지훈']===''&&t['오태양']===''&&t['문건우']===n1)break;await page.waitForTimeout(400);}   /* 되돌린 스카우팅이 가라앉은 뒤 */
-  await pick('#pwTeam',n1+' 시즌 시작');await dlg.waitFor();
+  await pick('#teamView',n1+' 시즌 시작');await dlg.waitFor();
   await dlg.getByRole('button',{name:n1+' 시즌 시작',exact:true}).click();
   await frame.waitForFunction(()=>!document.getElementById('pwSeason')&&tmOurs().length===16);
   {let t=null,ok=false;for(let i=0;i<150&&!ok;i++){t=null;try{t=await tags();}catch(e){}ok=!!(t&&t['서지훈']===cur&&t['문건우']==='');if(!ok)await page.waitForTimeout(400);}assert.ok(ok,'다시 시작한 뒤 스카우팅 넘기기가 60초 안에 따라와야 한다 — 지금 꼬리표 '+JSON.stringify(t));}   /* 스카우팅 넘기기는 후보 문서가 풀린 뒤 따라온다 */
   step='scout-after';
   await tab('scouting');
   await frame.locator('#pwScout [data-pw-view="list"]').click();
-  await frame.waitForFunction(()=>document.querySelectorAll('#pwScout .pw-table tbody tr').length===1);
+  await frame.waitForFunction(()=>document.querySelectorAll('#pwScout .pw-table tbody tr:not(.pw-grouphead)').length===1);
   assert.match(await frame.locator('#pwScout .pw-table tbody').innerText(),/문건우/);
   assert.match(await frame.locator('#pwScout .pw-result').innerText(),new RegExp(n1+' 시즌'));
   await pick('#pwScout',cur+' 시즌');
@@ -142,8 +142,8 @@ try{
   // ⑦ 미리 만든 시즌 지우기 — 담아 둔 후보가 있으면 막는다
   step='drop';
   await tab('players');
-  await frame.locator('#pwTeam [data-pw-action="season"]').waitFor();
-  await pick('#pwTeam',n2+' 시즌 · 미리');
+  await frame.locator('#teamView [data-pw-action="season"]').waitFor();
+  await pick('#teamView',n2+' 시즌 · 미리');
   await frame.locator('#pwTeam .pw-proj').waitFor();
   /* 후보 문서가 «확인 중»일 때 그려지면 후보 수 글이 빠진다 — 준비된 뒤 다시 그려 본다(CI 웹킷이 여기서 떨어졌다) */
   let projText='';for(let i=0;i<30;i++){await scReady();await frame.evaluate(()=>renderTeam());projText=await frame.locator('#pwTeam .pw-proj').innerText();if(/이 시즌 스카우팅 후보 1명/.test(projText))break;await page.waitForTimeout(400);}
@@ -163,6 +163,6 @@ try{
   assert.deepEqual(errors.filter(e=>!/ResizeObserver loop/.test(e)),[]);
   console.log(JSON.stringify({passed:true,size,engine}));
 }catch(e){console.error('[roster-season-scout] failed at '+step);console.error(e);process.exitCode=1;
-  if(frame)console.error('[roster-season-scout] state',JSON.stringify(await frame.evaluate(()=>({toast:(document.getElementById('toast')||{}).textContent,pop:(document.getElementById('psPickPop')||{}).innerText,dlg:(document.getElementById('pwSeason')||{}).innerText,team:(document.querySelector('#pwTeam .pw-result')||{}).innerText,scout:(document.querySelector('#pwScout .pw-result')||{}).innerText,scoutRows:document.querySelectorAll('#pwScout .pw-table tbody tr').length,season:data.meta&&data.meta.season})).catch(x=>String(x))));
+  if(frame)console.error('[roster-season-scout] state',JSON.stringify(await frame.evaluate(()=>({toast:(document.getElementById('toast')||{}).textContent,pop:(document.getElementById('psPickPop')||{}).innerText,dlg:(document.getElementById('pwSeason')||{}).innerText,team:(document.querySelector('#pwTeam .pw-result')||{}).innerText,scout:(document.querySelector('#pwScout .pw-result')||{}).innerText,scoutRows:document.querySelectorAll('#pwScout .pw-table tbody tr:not(.pw-grouphead)').length,season:data.meta&&data.meta.season})).catch(x=>String(x))));
 }
 finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close();}

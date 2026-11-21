@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {depthCandidates} from '../fixtures/player-depth.mjs';
 import {startFixture,openApp,A,WT,SIZES} from '../fixtures/team-app.mjs';
+import {etc} from '../fixtures/roster-ui.mjs';
 const fx=await startFixture(),browsers={},engine=process.env.PS_BROWSER_ENGINE||'chromium';
 SIZES.phone.engine=engine;
 const target=depthCandidates();
@@ -14,11 +15,11 @@ try{
   await frame.locator('#pwTeam .pw-depth-pitch').waitFor();
   assert.equal(await frame.locator('#pwTeam .pw-depth-name').count(),18);
   await frame.getByRole('button',{name:'명단',exact:true}).click();
-  await frame.locator('#pwTeam .pw-table tbody tr').first().waitFor();
-  assert.equal(await frame.locator('#pwTeam .pw-table tbody tr').count(),18);
+  await frame.locator('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').first().waitFor();
+  assert.equal(await frame.locator('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').count(),18);
   assert.equal(await frame.locator('.tb-board').isVisible(),false,'legacy board stays hidden outside editing');
   await frame.getByRole('searchbox',{name:'선수 검색'}).fill('가상 선수 18');
-  assert.equal(await frame.locator('#pwTeam .pw-table tbody tr').count(),1);
+  assert.equal(await frame.locator('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').count(),1);
   await frame.getByRole('searchbox',{name:'선수 검색'}).fill('');
   await frame.getByRole('checkbox',{name:'가상 선수 1 선택',exact:true}).check();
   await frame.getByRole('checkbox',{name:'가상 선수 2 선택',exact:true}).check();
@@ -30,8 +31,7 @@ try{
   await frame.locator('#plEditModal').waitFor({state:'visible'});assert.equal(await frame.locator('#pwDrawer[open]').count(),0);
   assert.equal(await frame.locator('#plName').inputValue().catch(()=>frame.evaluate(()=>player(editingPlayer).name)),'가상 선수 1');
   await frame.locator('#plClose').click();await frame.locator('#plEditModal').waitFor({state:'hidden'});
-  if(await frame.locator('#pwTeam [data-pw-action="tools"]').isVisible())await frame.locator('#pwTeam [data-pw-action="tools"]').click();
-  await frame.getByRole('button',{name:'배치·명단 편집',exact:true}).click();
+  await etc(frame,'edit');   /* «배치 · 명단 편집»은 «⋯» 안(선수단 화면 줄이기 A안) */
   assert.equal(await frame.locator('#teamList').isVisible(),true,'existing edit controls remain reachable');
   if(phone)await page.locator('#teamBottom [data-tb="scouting"]').click();
   else await page.locator('#teamNav [data-team-key="scouting"]').click();
