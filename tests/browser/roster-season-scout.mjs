@@ -98,6 +98,8 @@ try{
   const dlg=frame.locator('#pwSeason');await dlg.waitFor();
   const text=await dlg.innerText();
   assert.match(text,new RegExp('스카우팅 후보 2명은 '+cur+' 시즌 목록으로 넘어가요\\. '+n1+' 시즌 스카우팅은 담아 둔 1명으로 시작해요'));
+  /* 3.356 — 누르는 순간 후보 문서가 «확인 중»인 길(CI 웹킷에서 흔하다): 넘기기가 미뤄졌다 따라오고, 되돌리기 띠의 글도 따라온다 */
+  await frame.evaluate(()=>{scStore().state.verified=false;});
   await dlg.getByRole('button',{name:n1+' 시즌 시작',exact:true}).click();
   await frame.waitForFunction(()=>!document.getElementById('pwSeason'));
   const after=async()=>({tags:await tags(),season:await frame.evaluate(()=>JSON.parse(JSON.stringify({cur:data.meta.season&&data.meta.season.cur,future:data.meta.season&&data.meta.season.future}))),joined:await frame.evaluate(()=>data.players.filter(p=>p.joinedFrom).map(p=>p.name).sort()),ours:await frame.evaluate(()=>tmOurs().length)});
@@ -111,7 +113,7 @@ try{
   // ⑤ 되돌리기 — 선수단 · 신입 · 스카우팅 · 미리 만든 시즌이 모두 넘기기 전으로
   step='undo';
   const undo=frame.locator('.pw-undo');await undo.waitFor();
-  assert.match(await undo.innerText(),new RegExp('스카우팅 2명은 '+cur+' 시즌 목록으로'));
+  await frame.waitForFunction(c=>{const u=document.querySelector('.pw-undo');return !!u&&u.textContent.indexOf('스카우팅 2명은 '+c+' 시즌 목록으로')>=0;},cur);
   await undo.getByRole('button',{name:'되돌리기'}).click();
   await frame.waitForFunction(()=>tmOurs().length===18);
   await settle(t=>t['서지훈']===''&&t['문건우']===n1);
@@ -163,6 +165,6 @@ try{
   assert.deepEqual(errors.filter(e=>!/ResizeObserver loop/.test(e)),[]);
   console.log(JSON.stringify({passed:true,size,engine}));
 }catch(e){console.error('[roster-season-scout] failed at '+step);console.error(e);process.exitCode=1;
-  if(frame)console.error('[roster-season-scout] state',JSON.stringify(await frame.evaluate(()=>({toast:(document.getElementById('toast')||{}).textContent,pop:(document.getElementById('psPickPop')||{}).innerText,dlg:(document.getElementById('pwSeason')||{}).innerText,team:(document.querySelector('#pwTeam .pw-result')||{}).innerText,scout:(document.querySelector('#pwScout .pw-result')||{}).innerText,scoutRows:document.querySelectorAll('#pwScout .pw-table tbody tr:not(.pw-grouphead)').length,season:data.meta&&data.meta.season})).catch(x=>String(x))));
+  if(frame)console.error('[roster-season-scout] state',JSON.stringify(await frame.evaluate(()=>({toast:(document.getElementById('toast')||{}).textContent,pop:(document.getElementById('psPickPop')||{}).innerText,dlg:(document.getElementById('pwSeason')||{}).innerText,team:(document.querySelector('#pwTeam .pw-result')||{}).innerText,scout:(document.querySelector('#pwScout .pw-result')||{}).innerText,scoutRows:document.querySelectorAll('#pwScout .pw-table tbody tr:not(.pw-grouphead)').length,check:(()=>{try{scStore().check();return 'ok';}catch(e){return String(e&&(e.code||e.why||e.message));}})(),st:(()=>{const s=scStore().state;return {verified:s.verified,rawSame:localStorage.getItem('cs_scout_targets_v1')===s.raw,pending:!!s.pending};})(),targets:data.players.filter(p=>p.type==='target').map(p=>[p.name,!!p._scoutHidden]),docPl:(()=>{try{const d=scStore().read();return d.players.map(p=>[p.name||p.id,!!p._scoutHidden,!!d.scoutRegistry.candidates[PSScoutStore.idOf(p)].archivedAt]);}catch(e){return String(e);}})(),season:data.meta&&data.meta.season})).catch(x=>String(x))));
 }
 finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close();}
