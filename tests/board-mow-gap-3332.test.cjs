@@ -101,7 +101,7 @@ test('규격을 바꾸면 한 줄을 다시 — __syncPitchSpecUI 를 감싼다 
 });
 
 test('3D 다시 그리기 — 띠는 간격까지 pk 서명에(간격만 바꿔도 다시), 다른 무늬는 간격을 안 본다',()=>{
-  const MD={ga:'#2c6a2a',gb:'#367a33'},env=(m,g)=>({key:'navy',css:k=>({'--grass-a':'#20243f','--grass-b':'#15172b'})[k]||'',mow:m,gap:g});
+  const MD={ga:'#2c6a2a',gb:'#367a33'},env=(m,g)=>({key:'real',css:k=>({'--grass-a':'#20243f','--grass-b':'#15172b'})[k]||'',mow:m,gap:g});   /* 3.354 — 잔디결은 «잔디» 피치에서만 */
   const a=Look.pitchLook(MD,'',env('band',4)),b=Look.pitchLook(MD,'',env('band',6));
   assert.notEqual(a.sig,b.sig);assert.match(a.sig,/\|band:4$/);assert.equal(b.gap,'6');
   assert.equal(Look.pitchLook(MD,'',env('ring',4)).sig,Look.pitchLook(MD,'',env('ring',6)).sig);assert.match(Look.pitchLook(MD,'',env('ring',6)).sig,/\|ring$/);

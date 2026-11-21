@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.353';   // 3.353 고른 시즌이 잠깐 목록에 없어도 보던 목록 유지 · 후보 문서가 풀리면 스카우팅 목록 다시 그리기 · 3.352 선수단 · 스카우팅 표와 선택 띠를 같은 글이면 그대로(누름이 사라지던 것) · 3.351 새 시즌 시작의 스카우팅 넘기기는 한 번 정한 목록만 · «N명 표시» 줄을 같은 글이면 그대로 · 3.350 문구 묶음의 말투를 습니다체로(#921~#924 의 뒤 커밋) · 3.349 시즌별 선수단(졸업 · 새 시즌 시작 · 미리 만든 시즌 · 스카우팅 시즌) · 3.348 화면 문구 줄이기 묶음(#921~#924) · 3.347 보드 설정 «움직임» 탭(board-motion-marks.js)
+const CACHE = 'process-3.354';   // 3.354 3D 잔디결은 «잔디» 피치에서만(board-pitch-look.js turf) · 3.353 고른 시즌이 잠깐 목록에 없어도 보던 목록 유지 · 후보 문서가 풀리면 스카우팅 목록 다시 그리기 · 3.352 선수단 · 스카우팅 표와 선택 띠를 같은 글이면 그대로(누름이 사라지던 것) · 3.351 새 시즌 시작의 스카우팅 넘기기는 한 번 정한 목록만 · «N명 표시» 줄을 같은 글이면 그대로 · 3.350 문구 묶음의 말투를 습니다체로(#921~#924 의 뒤 커밋) · 3.349 시즌별 선수단(졸업 · 새 시즌 시작 · 미리 만든 시즌 · 스카우팅 시즌) · 3.348 화면 문구 줄이기 묶음(#921~#924) · 3.347 보드 설정 «움직임» 탭(board-motion-marks.js)
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/match-home.js', '/studio/training-intensity.js', '/studio/week-intensity.js', '/studio/weather-request.js', '/studio/idp-profile-name.js', '/studio/popover-dismiss.js', '/studio/oauth-gate.js', '/studio/data-lock-guard.js', '/studio/account-hygiene.js',

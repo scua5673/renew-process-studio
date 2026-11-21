@@ -18,7 +18,7 @@ try{
   /* 피치를 고르고 경기장 그림(서명에 pk.sig)이 그 모습으로 안정될 때까지 기다린 뒤 그림을 푼다 */
   const look=(pick)=>f.evaluate(async (pick)=>{
     const s=captureSnap();s.players=[];s.equipment=[];s.drawings=[];s.gridType='off';s.pitchView='full';s.pitchSpec='fifa';s.orientation='h';s.spFlip=false;loadSnap(s);
-    window.__setGrassM(5);   /* 3.326 — 3D 도 «잔디 무늬»를 따른다(기본 없음 = 한 색) — 두 색을 보려고 띠 */
+    window.__setGrassM(5);   /* 3.326 — 3D 도 «잔디 무늬»를 따른다 · 3.354 — 띠를 골라 둬도 «잔디» 아닌 피치는 한 색 */
     window.__setPitchN(1);window.__setTilt(true,{quiet:true});window.__setTilt3dOpt('cam','high');window.__setTilt3dOpt('deco','full');window.__setTilt3dOpt('mood','night');
     if(pick.custom){ try{window.__clearPitchImg();}catch(_){} const inp=document.getElementById('pitchColPick'); inp.value=pick.custom; inp.dispatchEvent(new Event('input',{bubbles:true})); }
     else { const b=document.querySelector('#pitchSeg button[data-p="'+pick.p+'"]'); window.__psUserClick=1; try{b.click();}finally{window.__psUserClick=0;} }
@@ -43,27 +43,28 @@ try{
   step('navy');
   const navy=await look({p:'navy'});
   assert.equal(navy.ok,true,'경기장 그림의 피치 모습(__pk)이 고른 피치다: '+navy.sig);
-  assert.deepEqual([navy.key,navy.photo,navy.rects],['navy',false,[navy.css.ga,navy.css.gb]],'네이비 — 평면 줄무늬와 같은 두 색, 사진 없음');
+  assert.deepEqual([navy.key,navy.photo,navy.rects],['navy',false,[navy.css.ga]],'네이비 — 평면 바탕색 한 색, 사진 없음(3.354 — 잔디결은 «잔디» 피치에서만)');
   assert.equal(navy.wear,0,'닳은 자국은 잔디에만');assert.equal(navy.tone,false);
   const sigNavy=navy.sig;
+  if(process.env.PS_TEST_OUTPUT){const fs=await import('node:fs');fs.mkdirSync(process.env.PS_TEST_OUTPUT+'/shots',{recursive:true});await page.screenshot({path:process.env.PS_TEST_OUTPUT+'/shots/board-3d-pitch-3316-'+engine+'-navy-no-mow.png'});}   /* 3.354 — 무늬 «띠»를 골라 둔 네이비 피치의 3D: 줄 없이 한 색 */
 
   step('white');
   const white=await look({p:'white'});
   assert.equal(white.ok,true,white.sig);
-  assert.deepEqual([white.key,white.photo,white.rects,white.wear],['white',false,['#ffffff','#edf0f5'],0]);
+  assert.deepEqual([white.key,white.photo,white.rects,white.wear],['white',false,['#ffffff'],0]);
   assert.notEqual(white.sig,sigNavy,'피치를 바꾸면 그림이 다시 그려진다');
   assert.equal(white.whiteLines,false,'3D 영상 판 그림은 화이트 피치의 선을 흰색으로 바꾸지 않는다');
 
   step('calm');
   const calm=await look({p:'calm'});
   assert.equal(calm.ok,true,calm.sig);
-  assert.deepEqual([calm.key,calm.photo,calm.rects],['calm',false,['#1f4d31','#173a23']]);
+  assert.deepEqual([calm.key,calm.photo,calm.rects],['calm',false,['#1f4d31']]);
   assert.ok(calm.wear>0,'딥그린은 잔디 — 닳은 자국');
 
   step('custom');
   const custom=await look({custom:'#3366cc'});
   assert.equal(custom.ok,true,custom.sig);
-  assert.deepEqual([custom.key,custom.pitch,custom.photo,custom.rects,custom.wear],['custom','custom',false,['#3366cc','#2e5cb8'],0],'직접 색 — 그 색과 조금 어두운 색');
+  assert.deepEqual([custom.key,custom.pitch,custom.photo,custom.rects,custom.wear],['custom','custom',false,['#3366cc'],0],'직접 색 — 그 색 한 색');
 
   step('real');
   const real=await look({p:'real'});

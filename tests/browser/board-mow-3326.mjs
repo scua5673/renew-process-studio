@@ -43,6 +43,7 @@ try{
   await pick('none');r=await flat();assert.equal(r.kind,null,'없음 — 줄무늬 없음');assert.equal(r.m,0);
 
   step('3d');
+  await f.evaluate(()=>{const b=document.querySelector('#pitchSeg button[data-p="real"]');window.__psUserClick=1;try{b.click();}finally{window.__psUserClick=0;}});   /* 3.354 — 3D 잔디결은 «잔디» 피치에서만 */
   await f.evaluate(()=>window.__setTilt(true));await f.waitForFunction(()=>document.body.classList.contains('bc-tilt3d'));
   const src=async(test,why)=>{const t0=Date.now();let s='';
     while(Date.now()-t0<15000){s=await f.evaluate(()=>{const h=document.querySelector('#tiltSurface .tilt-stadium');return h?decodeURIComponent(h.getAttribute('src')||''):'';});
@@ -57,7 +58,8 @@ try{
                            ['diag',/<pattern id="psStMow"[^>]*patternTransform="rotate\(45 /,'사선'],
                            ['ring',/<radialGradient id="psStMow"[^>]*spreadMethod="repeat"/,'원']]){
     await pick(k);s=await src(x=>re.test(x),why);
-    assert.equal(s.includes('fill="'+gb+'"/></pattern>'),k==='band','두 색 줄은 띠만 — '+k);
+    const photo=/<pattern id="psStGrass"[^>]*><image/.test(s);   /* 3.354 — «잔디» 피치는 사진을 까는 기기에서 두 색 줄 대신 사진(무늬는 psStMow 덧칠) */
+    assert.equal(s.includes('fill="'+gb+'"/></pattern>'),k==='band'&&!photo,'두 색 줄은 띠만(사진 없을 때) — '+k);
     await page.screenshot({path:path.join(SHOTS,`board-mow-3326-${engine}-${size}-3d-${k}.png`)});
   }
 
