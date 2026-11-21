@@ -339,6 +339,7 @@ body.ps-roster-locked .pw-quickadd,body.ps-roster-locked .pw-rq-edit{display:non
 .pw-proj-chip{padding:2px var(--sp-3);border:1px solid var(--c-line);border-radius:var(--r-pill);font-size:var(--t-3);font-weight:600;font-variant-numeric:tabular-nums}
 .pw-proj-note{font-size:var(--t-3);color:var(--c-muted)}
 .pw-proj .pw-button{margin-left:auto;min-height:36px}
+.pw-past tr.pw-join td:last-child{position:relative;padding-right:76px}.pw-past .pw-join-drop{position:absolute;right:var(--sp-2);top:50%;transform:translateY(-50%);min-height:36px;min-width:44px}
 .pw-scope-past .pw-stats{display:none}   /* 다른 시즌 목록을 볼 때 지금 시즌의 후보 수 칸은 걷는다 */
 /* 선수단 화면 줄이기(A안) — 원래 단추는 숨긴 채 «＋ 선수 ▾» · «⋯» · «필터»가 대신 눌러 준다(#teamView.pw-simple, 스카우팅은 그대로) */
 #teamView.pw-simple #tmAdd:not(#_),#teamView.pw-simple #rosterPrintIco:not(#_),#teamView.pw-simple #grpChips:not(#_) .grp-edit:not(#_),#teamView.pw-simple #grpChips:not(#_) .grp-add:not(#_),#teamView.pw-simple #rosterLockChip:not(#_):not(#__),#teamView.pw-simple .tm-subtitle:not(#_){display:none}
