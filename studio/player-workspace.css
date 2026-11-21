@@ -340,3 +340,33 @@ body.ps-roster-locked .pw-quickadd,body.ps-roster-locked .pw-rq-edit{display:non
 .pw-proj-note{font-size:var(--t-3);color:var(--c-muted)}
 .pw-proj .pw-button{margin-left:auto;min-height:36px}
 .pw-scope-past .pw-stats{display:none}   /* 다른 시즌 목록을 볼 때 지금 시즌의 후보 수 칸은 걷는다 */
+/* 선수단 화면 줄이기(A안) — 원래 단추는 숨긴 채 «＋ 선수 ▾» · «⋯» · «필터»가 대신 눌러 준다(#teamView.pw-simple, 스카우팅은 그대로) */
+#teamView.pw-simple #tmAdd:not(#_),#teamView.pw-simple #rosterPrintIco:not(#_),#teamView.pw-simple #grpChips:not(#_) .grp-edit:not(#_),#teamView.pw-simple #grpChips:not(#_) .grp-add:not(#_),#teamView.pw-simple #rosterLockChip:not(#_):not(#__),#teamView.pw-simple .tm-subtitle:not(#_){display:none}
+.pw-season-slot{display:inline-flex;align-items:center;margin-left:var(--sp-2);vertical-align:middle}
+.pw-season-slot .pw-button{min-height:32px;padding:0 var(--sp-3);border:1px solid var(--c-line-2);border-radius:var(--r-pill);background:var(--c-surface);color:var(--c-ink);font:inherit;font-size:var(--t-3);font-weight:600;cursor:pointer;white-space:nowrap}
+.pw-simple .pw-workspace .pw-filter-toggle{display:inline-flex;align-items:center;justify-content:center}
+.pw-simple .pw-workspace .pw-filter-toggle:is(.is-filtered,[aria-expanded=true]){color:var(--c-act);border-color:var(--c-act)}
+.pw-simple .pw-workspace .pw-filter-fields{display:none}
+.pw-simple .pw-workspace.pw-filters-open .pw-filter-fields{display:flex;flex:1 1 100%;order:9;flex-wrap:wrap;align-items:center;gap:var(--sp-2);padding:var(--sp-2);border:1px solid var(--c-line);border-radius:var(--r-1)}
+.pw-simple:not(.pw-filters-on) #tmSchoolYears{display:none}
+.pw-simple .pw-workspace .pw-tools-toggle,.pw-simple .pw-workspace .pw-edit-tools{display:none}
+.pw-simple .pw-workspace.pw-result-quiet .pw-result{display:none}
+.pw-simple .pw-comparebar .pw-more{min-width:40px;font-weight:700}
+.tm-etc-menu .pw-etc-item{justify-content:flex-start;white-space:nowrap}
+@media(min-width:768px){.pw-simple.pw-oneline #pwTeam .pw-toolbar{margin-top:calc(-1 * var(--pw-tabs-h,0px));margin-left:calc(var(--pw-tabs-w,0px) + var(--sp-3));min-height:var(--pw-tabs-h,0px);padding-bottom:var(--sp-3)}}
+/* 조 이름 바꾸기 단추 · 편집 권한 칩은 인라인 display 를 달고 있어 display:none 이 안 먹는다 — 자리에서 빼고 안 보이게(«⋯» 메뉴가 대신 눌러 준다) */
+#teamView.pw-simple #grpChips .grp-edit,#teamView.pw-simple #rosterLockChip{position:absolute;visibility:hidden;pointer-events:none}
+/* 조 탭 줄은 오른쪽 정렬 규칙이 세다 — 탭의 오른쪽 여백(auto)으로 왼쪽에 붙인다 */
+@media(min-width:768px){#teamView.pw-simple .tm-workbar #grpChips:not(#_){margin-left:0;margin-right:auto}}
+
+/* 목록에서 바로(3.354) — 조별 묶음 머리 · 조/학년 칸 고르개 · 줄 끝 «⋯» */
+.pw-table tr.pw-grouphead th{padding:var(--sp-2) var(--sp-3);text-align:left;font-size:var(--t-5);font-weight:700;color:var(--c-ink);background:var(--c-surface-2,var(--c-bg));border-top:1px solid var(--c-line)}
+.pw-table tr.pw-grouphead th span{margin-left:6px;font-weight:400;color:var(--c-muted)}
+.pw-cellpicks{display:inline-flex;gap:6px;flex-wrap:wrap}
+.pw-table .pw-cellpick{min-height:36px;padding:4px 10px;border:1px solid var(--c-line);border-radius:8px;background:var(--c-surface);font-size:var(--t-5);color:var(--c-ink);white-space:nowrap}
+.pw-table .pw-cellpick::after{content:"▾";margin-left:4px;font-size:10px;color:var(--c-muted)}
+.pw-table .pw-cellpick.is-none{border-style:dashed;color:var(--c-muted)}
+.pw-table .pw-cellpick.is-new{border-color:var(--c-ink)}
+.pw-table .pw-rowmore{min-width:36px;min-height:36px;padding:0;border:0;border-radius:8px;background:var(--c-surface-2,var(--c-bg));color:var(--c-ink)}
+.pw-table td.pw-rowmore-cell,.pw-table th:nth-child(7){width:48px;text-align:right}
+@media(max-width:700px){.pw-table .pw-rowmore{min-width:44px;min-height:44px}}

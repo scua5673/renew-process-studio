@@ -3,7 +3,9 @@
   'use strict';
   var own=function(o,k){return Object.prototype.hasOwnProperty.call(o||{},k);};
   function list(a){return (Array.isArray(a)?a:[]).map(function(x){return String(x==null?'':x).trim();}).filter(function(x,i,all){return x&&all.indexOf(x)===i;});}
-  function years(a){return list(a).filter(function(x){return /^[1-3]$/.test(x);}).sort();}
+  function years(a){return list(a).filter(function(x){return /^[0-3]$/.test(x);}).sort();}
+  /* 학년 값 '0' = 신입생(입학 전에 합류한 예비 1학년 — 새 시즌 시작 때 1학년). 옛 판 앱은 미지정으로 읽는다. */
+  function yearLabel(y){y=String(y==null?'':y);return y==='0'?'신입생':y+'학년';}
   function label(key,meta){var names=meta&&meta.grpLabels;return own(names,key)&&typeof names[key]==='string'?names[key]:String(key||'');}
   function keys(doc){var m=doc&&doc.meta||{},base=Array.isArray(m.grpBase)&&m.grpBase.length?m.grpBase:['A팀','B팀','C팀'];return list(base.concat((doc&&doc.players||[]).filter(function(p){return p&&p.type!=='target';}).map(function(p){return String(p.grp||'').trim();})));}
   function legacy(key){return /^[1-6]학년$/.test(String(key||''));}
@@ -34,6 +36,6 @@
     if(day.trainings&&day.trainings.length&&!out.trainings.length&&b&&b.sched==='훈련'){b.sched='';b.theme='';}
     return out;
   }
-  function yearText(item){var a=years(item&&item.schoolYears);return a.length?a.map(function(y){return y+'학년';}).join(' · '):'전체 학년';}
-  return {keys:keys,label:label,legacy:legacy,rename:rename,years:years,yearMatch:yearMatch,playerMatch:playerMatch,yearDay:yearDay,yearText:yearText};
+  function yearText(item){var a=years(item&&item.schoolYears);return a.length?a.map(yearLabel).join(' · '):'전체 학년';}
+  return {keys:keys,label:label,legacy:legacy,rename:rename,years:years,yearLabel:yearLabel,yearMatch:yearMatch,playerMatch:playerMatch,yearDay:yearDay,yearText:yearText};
 });

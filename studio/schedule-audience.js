@@ -9,7 +9,7 @@ function schedLegacyTeamButtons(own){
 }
 function schedYearButtons(selected,action){
   var ys=PSTeamAudience.years(selected),h='<button type="button" class="fp'+(!ys.length?' on':'')+'" aria-pressed="'+(!ys.length)+'" onclick="'+action+'(\'\')">전체 학년</button>';
-  ['1','2','3'].forEach(function(y){var on=ys.indexOf(y)>=0;h+='<button type="button" class="fp'+(on?' on':'')+'" aria-pressed="'+on+'" onclick="'+action+'(\''+y+'\')">'+y+'학년</button>';});return h;
+  ['0','1','2','3'].forEach(function(y){var on=ys.indexOf(y)>=0;h+='<button type="button" class="fp'+(on?' on':'')+'" aria-pressed="'+on+'" onclick="'+action+'(\''+y+'\')">'+PSTeamAudience.yearLabel(y)+'</button>';});return h;
 }
 function schedToggleYears(current,y){var a=PSTeamAudience.years(current);if(!y)return [];var i=a.indexOf(y);if(i<0)a.push(y);else a.splice(i,1);return PSTeamAudience.years(a);}
 function schedRenderYears(){

@@ -1565,7 +1565,7 @@ function wksGroupSummary(di){
   var day=week[di],keys=Object.keys(day.groupKinds||{}).filter(function(g){return (!__schedGrp||g===__schedGrp)&&wksGroupKind(day,g)==='OFF';});
   return keys.length?'<div class="wks-group-days">'+keys.map(function(g){return '<div style="padding:5px 8px">'+wkbdEsc(schedGroupLabel(g))+' · OFF</div>';}).join('')+'</div>':'';
 }
-function schedGrpOf(tr,di){ return schedGrpList(tr,di).map(schedGroupLabel).concat(PSTeamAudience.years(tr&&tr.schoolYears).map(function(y){return y+'학년';})).join(' · '); }
+function schedGrpOf(tr,di){ return schedGrpList(tr,di).map(schedGroupLabel).concat(PSTeamAudience.years(tr&&tr.schoolYears).map(PSTeamAudience.yearLabel)).join(' · '); }
 /* ══ 2.436 · 하루에 경기 여러 개 — A팀·B팀 ══
    사용자: "경기 추가도 계속 되게 해줘" · "A팀 B팀 이렇게 선택할 수 있게".
    ⚠⚠ **첫 경기(`day.match`)는 건드리지 않는다.** 그 값을 읽는 곳이 이 파일에만 92곳이고
@@ -7846,7 +7846,7 @@ function weekBoardDocHTML(){
     const trs=(day.trainings||[]).filter(x=>x&&shown(x,di,day)).slice().sort((x,y)=>String(x.time||'99').padStart(5,'0').localeCompare(String(y.time||'99').padStart(5,'0')));
     const ses=trs.map(tr=>{ let items=blocksOf(tr); if(!items.length)items=itemsOf(day,tr.slot);
       let mins=0; try{ mins=trMinutes(tr,day)||0; }catch(_){} if(!mins)mins=items.reduce((a,x)=>a+x.m,0);
-      const L=getLoad(tr); const g=(!fg?schedGrpList(tr,di).map(schedGroupLabel):[]).concat(PSTeamAudience.years(tr.schoolYears).map(y=>y+'학년')).join(' · ');
+      const L=getLoad(tr); const g=(!fg?schedGrpList(tr,di).map(schedGroupLabel):[]).concat(PSTeamAudience.years(tr.schoolYears).map(PSTeamAudience.yearLabel)).join(' · ');
       let ld=0; try{ ld=sessionLoadMin(tr,day)||0; }catch(_){}
       return {time:String(tr.time||'').trim(),topic:topicOf(tr),L:L,mins:mins,load:ld,items:items,note:String(tr.note||'').trim(),
         who:[g,String(tr.place||'').trim(),tr.players?tr.players+'명':''].filter(Boolean)}; });
@@ -10498,7 +10498,7 @@ html body .wks .wks-fill:not(#_):hover{border-color:var(--c-act,var(--ps-navy,#1
 @media (max-width:600px){ html body .wks .wks-fill:not(#_){height:40px} }
 </style>
 
-<link rel="stylesheet" href="team-mobile.css?v=3.353">
+<link rel="stylesheet" href="team-mobile.css?v=3.354">
 <script src="schedule-match-time.js"></script><script src="schedule-fill-team.js"></script><script src="schedule-day-kind.js"></script><script src="schedule-fill-autosave.js"></script><script src="schedule-del-undo.js"></script><script src="schedule-syncline-steady.js"></script><script src="schedule-thumb-ref.js"></script><script src="week-intensity.js"></script>
 
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
