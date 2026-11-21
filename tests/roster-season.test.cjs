@@ -111,3 +111,31 @@ test('3.354 신입생(학년 0): 새 시즌에 1학년 · 되돌리면 신입생
   const A=require('../studio/team-audience.js');
   assert.equal(A.yearLabel('0'),'신입생');assert.equal(A.yearLabel('2'),'2학년');assert.deepEqual(A.years(['3','0','9','0']),['0','3']);assert.equal(A.yearText({schoolYears:['0','1']}),'신입생 · 1학년');
 });
+
+test('3.356 합류 예정: 미리 만든 시즌에만 담는다 — 지금 명단은 그대로 · 시작하면 그 해 줄을 걷고 되돌리면 돌아온다',()=>{
+  const d=team();d.meta.season={cur:'2026'};const n=d.players.length;
+  assert.equal(S.addJoins(d,'2027',[{cid:'c1'}],NOV),0,'미리 만들지 않은 시즌에는 못 담는다');
+  S.addFuture(d,NOV);S.addFuture(d,NOV);
+  assert.equal(S.addJoins(d,'2027',[{cid:'c1',grp:'A'},{cid:'c2'},{cid:'c1'},{cid:''}],NOV),2);
+  assert.equal(S.addJoins(d,'2027',[{cid:'c2'}],NOV),0,'같은 후보는 한 번만');
+  assert.equal(S.addJoins(d,'2028',[{cid:'c3'}],NOV),1);
+  assert.equal(d.players.length,n,'선수를 만들지 않는다');
+  assert.deepEqual(S.joins(d.meta,'2027').map(x=>[x.cid,x.grp]),[['c1','A'],['c2','']]);
+  assert.deepEqual(S.joinsUpTo(d.meta,'2028',NOV).map(x=>[x.cid,x.season]),[['c1','2027'],['c2','2027'],['c3','2028']]);
+  assert.deepEqual(S.joinsUpTo(d.meta,'2027',NOV).map(x=>x.cid),['c1','c2']);
+  const sc=S.scopes(d.players,d.meta,NOV),f27=sc.find(x=>x.id==='future:2027'),f28=sc.find(x=>x.id==='future:2028');
+  assert.equal(f27.n,S.project(d.players,d.meta,'2027',NOV).rows.length+2);assert.equal(f28.n,S.project(d.players,d.meta,'2028',NOV).rows.length+3);
+  assert.equal(S.removeJoin(d,'2027','c2',NOV),true);assert.equal(S.removeJoin(d,'2027','c2',NOV),false);assert.deepEqual(S.joins(d.meta,'2027').map(x=>x.cid),['c1']);
+  const undo=S.apply(d,S.plan(d.players,d.meta,{now:NOV}),{now:NOV,posOf});
+  assert.equal(d.meta.season.cur,'2027');assert.deepEqual(S.joins(d.meta,'2027'),[],'시작한 해의 줄은 걷는다');assert.deepEqual(S.joins(d.meta,'2028').map(x=>x.cid),['c3']);
+  S.revert(d,undo);assert.deepEqual(S.joins(d.meta,'2027').map(x=>x.cid),['c1']);
+  assert.equal(S.removeFuture(d,'2027',NOV),true);assert.deepEqual(S.joins(d.meta,'2027'),[]);assert.deepEqual(S.joins(d.meta,'2028').map(x=>x.cid),['c3']);
+});
+test('3.356 배선: 미리 만든 시즌의 «스카우팅에서 불러오기»는 addJoins 로 — 선수를 만들지 않는다',()=>{
+  const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../studio/player-workspace.js'),'utf8');
+  const fn=src.slice(src.indexOf('function importScout('),src.indexOf('function compare(kind)'));
+  assert.match(fn,/season=SEASON&&futureScope\(\)/);
+  const at=fn.indexOf('if(season){var nj=SEASON.addJoins('),push=fn.indexOf('d.players.push(p)');
+  assert.ok(at>0&&push>at,'담는 길이 선수 만들기보다 먼저');assert.match(fn.slice(at,push),/return;\}/,'담은 뒤에는 돌아간다');
+  assert.match(src,/plan\[it\.r\.cid\]\)&&it\.hit!=='dup'/,'새 시즌 시작이 담아 둔 후보를 신입으로 올린다');
+});
