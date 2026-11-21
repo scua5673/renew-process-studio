@@ -5,7 +5,7 @@
    지난 시즌 줄은 그날의 이름 · 번호 · 포지션 · 조 · 학년만(평가는 선수 객체에 한 벌). 이 파일은 셈만 한다 — 저장은 부른 쪽의 원래 길(save). */
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.PSRosterSeason=api;})(typeof window!=='undefined'?window:this,function(){
   'use strict';
-  var PAST_MAX=8,FUTURE_MAX=6,YEARS=['0','1','2','3'];   /* '0' = 신입생 — 새 시즌에 1학년 */
+  var PAST_MAX=8,FUTURE_MAX=6,JOIN_MAX=60,YEARS=['0','1','2','3'];   /* '0' = 신입생 — 새 시즌에 1학년 */
   function isGrad(p){return !!(p&&p.grad&&typeof p.grad==='object');}
   function ours(p){return !!p&&p.type!=='target';}
   function active(list){return (list||[]).filter(function(p){return ours(p)&&!isGrad(p);});}
@@ -22,7 +22,19 @@
   /* 가장 먼 시즌의 다음 해를 하나 만든다 — 만든 시즌 id, 못 만들면 '' */
   function addFuture(doc,now){if(!doc)return '';doc.meta=doc.meta||{};var list=future(doc.meta,now),cur=current(doc.meta,now);if(list.length>=FUTURE_MAX)return '';
     var id=String(+(list.length?list[list.length-1]:cur)+1),o=seasonBase(doc.meta,now);o.future=list.concat([id]);doc.meta.season=o;return id;}
-  function removeFuture(doc,id,now){if(!doc||!doc.meta)return false;var list=future(doc.meta,now),at=list.indexOf(String(id));if(at<0)return false;var o=seasonBase(doc.meta,now);list.splice(at,1);o.future=list;doc.meta.season=o;return true;}
+  function removeFuture(doc,id,now){if(!doc||!doc.meta)return false;var list=future(doc.meta,now),at=list.indexOf(String(id));if(at<0)return false;var o=seasonBase(doc.meta,now);list.splice(at,1);o.future=list;if(o.joins){o.joins=joinsCopy(o.joins);delete o.joins[String(id)];}doc.meta.season=o;return true;}
+  /* 합류 예정(사용자 11/21 «27시즌에 스카우트 선수들 불러오기 했는데 2026에도 추가 돼 — 그렇게 안 되게») — 미리 만든 시즌에서 «스카우팅에서 불러오기»를 하면
+     지금 명단에 선수를 만들지 않고 meta.season.joins={'2027':[{cid,grp,at}]} 에 후보 id 만 적는다(이름 · 평가는 임원만 보는 후보 문서에 그대로).
+     그 시즌을 시작할 때 새 선수가 된다(apply 가 그 해 줄을 걷는다 · 되돌리면 돌아온다). */
+  function joinsCopy(j){var o={};if(j&&typeof j==='object')Object.keys(j).forEach(function(k){if(okSeason(k)&&Array.isArray(j[k]))o[k]=j[k].slice();});return o;}
+  function joins(meta,id){var s=meta&&meta.season,L=s&&s.joins&&s.joins[String(id)],seen={};return (Array.isArray(L)?L:[]).filter(function(x){if(!x||!x.cid||seen[x.cid])return false;seen[x.cid]=1;return true;}).map(function(x){return {cid:String(x.cid),grp:String(x.grp||''),at:+x.at||0};});}
+  /* 그 시즌까지 합류하는 사람 전부(앞선 미리 만든 시즌에 담은 사람도 그 뒤 시즌 예상 명단에 있다) */
+  function joinsUpTo(meta,id,now){var out=[];future(meta,now).forEach(function(s){if(+s<=+id)joins(meta,s).forEach(function(x){x.season=s;out.push(x);});});return out;}
+  function addJoins(doc,id,list,now){if(!doc)return 0;doc.meta=doc.meta||{};id=String(id);if(future(doc.meta,now).indexOf(id)<0)return 0;var cur=joins(doc.meta,id),has={},n=0,at=now==null?Date.now():now;cur.forEach(function(x){has[x.cid]=1;});
+    (list||[]).forEach(function(x){var cid=String(x&&x.cid||'');if(!cid||has[cid]||cur.length>=JOIN_MAX)return;has[cid]=1;cur.push({cid:cid,grp:String(x.grp||'').slice(0,40),at:at});n++;});
+    if(!n)return 0;var o=seasonBase(doc.meta,now);o.joins=joinsCopy(o.joins);o.joins[id]=cur;doc.meta.season=o;return n;}
+  function removeJoin(doc,id,cid,now){if(!doc||!doc.meta)return false;id=String(id);var cur=joins(doc.meta,id),left=cur.filter(function(x){return x.cid!==String(cid);});if(left.length===cur.length)return false;
+    var o=seasonBase(doc.meta,now);o.joins=joinsCopy(o.joins);if(left.length)o.joins[id]=left;else delete o.joins[id];doc.meta.season=o;return true;}
   /* 예상 명단 — 미리 만든 시즌에 지금 선수가 몇 학년인지(저장하지 않는 셈). 3학년을 넘으면 그 전에 졸업, 학년 없음은 그대로 */
   function project(players,meta,id,now){var k=+id-+current(meta,now),rows=[],gone=0;if(!(k>0))return {rows:rows,gone:0,ahead:0};
     active(players).filter(function(p){return p.manual===true||String(p.name||'').trim();}).forEach(function(p){var y=yearOf(p);if(y&&+y+k>3){gone++;return;}rows.push({p:p,from:y,year:y?String(+y+k):''});});
@@ -51,7 +63,7 @@
     var before=doc.meta.season===undefined?undefined:JSON.parse(JSON.stringify(doc.meta.season)),undo={season:before,had:doc.meta.season!==undefined,grad:pl.grad.slice(),up:pl.up.map(function(u){return {id:u.id,from:u.from,to:u.to};}),cur:pl.cur,next:pl.next};
     var rows=active(doc.players).filter(function(p){return p.manual===true||String(p.name||'').trim();}).map(function(p){return leanRow(p,opts.posOf,gradSet[String(p.id)]);});
     var olds=past(doc.meta).filter(function(x){return String(x.id)!==pl.cur;});olds.push({id:pl.cur,at:now,rows:rows});
-    var ns=seasonBase(doc.meta,now);ns.cur=pl.next;ns.past=olds.slice(-PAST_MAX);if(Array.isArray(ns.future))ns.future=ns.future.map(String).filter(function(id){return okSeason(id)&&+id>+pl.next;});doc.meta.season=ns;
+    var ns=seasonBase(doc.meta,now);ns.cur=pl.next;ns.past=olds.slice(-PAST_MAX);if(Array.isArray(ns.future))ns.future=ns.future.map(String).filter(function(id){return okSeason(id)&&+id>+pl.next;});if(ns.joins){ns.joins=joinsCopy(ns.joins);Object.keys(ns.joins).forEach(function(k){if(+k<=+pl.next)delete ns.joins[k];});}doc.meta.season=ns;
     pl.grad.forEach(function(id){m[id].grad={season:pl.cur,at:now};});
     pl.up.forEach(function(u){m[u.id].schoolYear=u.to;});
     return undo;
@@ -73,7 +85,7 @@
   function scopes(players,meta,now){var cur=current(meta,now),g=grads(players).length,list=[];
     past(meta).forEach(function(x){list.push({id:'past:'+x.id,season:String(x.id),label:x.id+' 시즌',n:x.rows.length,past:true});});
     list.push({id:'cur',season:cur,label:cur+' 시즌',n:active(players).filter(function(p){return p.manual===true||String(p.name||'').trim();}).length,now:true});
-    future(meta,now).forEach(function(id){list.push({id:'future:'+id,season:id,label:id+' 시즌',n:project(players,meta,id,now).rows.length,future:true});});
+    future(meta,now).forEach(function(id){list.push({id:'future:'+id,season:id,label:id+' 시즌',n:project(players,meta,id,now).rows.length+joinsUpTo(meta,id,now).length,future:true});});
     if(g)list.push({id:'grad',season:'',label:'졸업생 전체',n:g});return list;}
-  return {isGrad:isGrad,active:active,grads:grads,current:current,next:next,yearOf:yearOf,past:past,pastOf:pastOf,future:future,addFuture:addFuture,removeFuture:removeFuture,project:project,FUTURE_MAX:FUTURE_MAX,leanRow:leanRow,plan:plan,apply:apply,revert:revert,graduate:graduate,restore:restore,scopes:scopes,PAST_MAX:PAST_MAX};
+  return {isGrad:isGrad,active:active,grads:grads,current:current,next:next,yearOf:yearOf,past:past,pastOf:pastOf,future:future,addFuture:addFuture,removeFuture:removeFuture,joins:joins,joinsUpTo:joinsUpTo,addJoins:addJoins,removeJoin:removeJoin,JOIN_MAX:JOIN_MAX,project:project,FUTURE_MAX:FUTURE_MAX,leanRow:leanRow,plan:plan,apply:apply,revert:revert,graduate:graduate,restore:restore,scopes:scopes,PAST_MAX:PAST_MAX};
 });

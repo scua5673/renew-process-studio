@@ -29,7 +29,9 @@ try{
   const toastText=()=>frame.evaluate(()=>{const t=document.getElementById('toast');return t&&t.classList.contains('on')?t.textContent:'';});
   /* 후보 문서는 동기화 회차마다 잠깐 «확인 중»이 된다 — 풀릴 때까지 기다린다 */
   const scReady=async()=>{for(let i=0;i<40;i++){if(await frame.evaluate(()=>{try{scStore().check();return true;}catch(e){return false;}}))return;await page.waitForTimeout(400);}throw new Error('후보 문서 준비 안 됨');};
-  const tags=()=>frame.evaluate(()=>{const C=scStore().read().scoutRegistry.candidates,o={};Object.keys(C).forEach(id=>{o[C[id].info.name]=C[id].archivedAt?String(C[id].archiveSeason||'보관'):'';});return o;});
+  const tagsOnce=()=>frame.evaluate(()=>{const C=scStore().read().scoutRegistry.candidates,o={};Object.keys(C).forEach(id=>{o[C[id].info.name]=C[id].archivedAt?String(C[id].archiveSeason||'보관'):'';});return o;});
+  /* 3.357 — 동기화 회차 동안 후보 문서 읽기(read)도 «확인 중»으로 거절된다(CI 웹킷 `start`) — 풀릴 때까지 다시 읽는다 */
+  const tags=async()=>{let err=null;for(let i=0;i<40;i++){try{return await tagsOnce();}catch(e){err=e;await page.waitForTimeout(400);}}throw err;};
   await frame.waitForFunction(c=>{const b=document.querySelector('#teamView [data-pw-action="season"]');return b&&b.textContent.indexOf(c+' 시즌')>=0;},cur);
 
   // ① 시즌 미리 만들기 → 예상 명단
