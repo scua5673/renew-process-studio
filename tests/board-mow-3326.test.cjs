@@ -88,7 +88,7 @@ test('평면 실사 잔디 — 무늬가 사진 위에(없음이면 사진 그�
 });
 
 test('3D 다시 그리기 — 무늬가 pk 서명에 든다(__sig 모양은 그대로)',()=>{
-  const MD={ga:'#2c6a2a',gb:'#367a33'},env=m=>({key:'real',css:k=>({'--grass-a':'#20243f','--grass-b':'#15172b'})[k]||'',mow:m});   /* 3.354 — 잔디결은 «잔디» 피치에서만 */
+  const MD={ga:'#2c6a2a',gb:'#367a33'},env=m=>({key:'navy',css:k=>({'--grass-a':'#20243f','--grass-b':'#15172b'})[k]||'',mow:m});
   const a=Look.pitchLook(MD,'',env('band')),b=Look.pitchLook(MD,'',env('ring'));
   assert.notEqual(a.sig,b.sig);assert.equal(b.mow,'ring');assert.match(b.sig,/\|ring$/);
   assert.equal(Look.pitchLook(MD,'',{key:'navy'}).sig.split('|').length,4,'무늬를 모르면(노드) 예전 서명 그대로');

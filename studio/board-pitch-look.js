@@ -25,11 +25,11 @@ function pitchLook(md,turf,env){ env=env||{}; md=md||{}; var key=env.key||'navy'
   /* 3.326 — 잔디 무늬(board-mow.js)도 서명에: 무늬만 바꿔도 3D 경기장을 다시 그린다(__sig 모양은 그대로) */
   var Mw=(typeof window!=='undefined'&&window.PSBoardMow)?window.PSBoardMow:null,mow=env.mow!=null?String(env.mow):(Mw?Mw.kindNow(window):'');
   /* 3.332 — 띠는 결 간격까지(간격만 바꿔도 다시 그린다) */
-  /* 3.354 — 잔디결은 «잔디» 피치에서만(사용자 11/21 «3d여도 보드설정에서 잔디말고는 잔디결이 표현되지 않게»): 딥그린 · 네이비 · 화이트 · 훈련 · 직접 색은
-     3D 에서도 깎은 줄 · 잎결 없이 한 색. turf(잔디결을 그리는가)를 board.html 이 mowPlan 의 kind 와 잎결에 쓴다. 보드의 무늬 값(grassM)은 그대로 둔다 */
-  var turfOn=key==='real'; if(!turfOn&&mow)mow='none';
+  /* 3.354 — 잔디처럼 그리는 것(잎결 · 닳은 자국)은 «잔디» 피치에서만(사용자 11/21 «3d여도 보드설정에서 잔디말고는 … 잔디같이 표현한거 그냥 평평하게»):
+     딥그린 · 네이비 · 화이트 · 훈련 · 직접 색은 3D 에서도 평평한 색 판. 고른 «잔디 무늬»(깎은 줄)는 평면처럼 어느 피치에서나 그대로 */
+  var turfOn=key==='real';
   var gap=mow!=='band'?'':String(env.gap!=null?env.gap:(Mw&&Mw.gapNow?Mw.gapNow(window):''));
-  return {key:key,ga:ga,gb:gb,tone:tone,mow:mow,gap:gap,turf:turfOn,grass:(key==='real'||key==='calm'),sig:key+'|'+ga+'|'+gb+'|'+tone+(mow?'|'+mow:'')+(gap?':'+gap:'')}; }
+  return {key:key,ga:ga,gb:gb,tone:tone,mow:mow,gap:gap,turf:turfOn,grass:turfOn,sig:key+'|'+ga+'|'+gb+'|'+tone+(mow?'|'+mow:'')+(gap?':'+gap:'')}; }
 function cloneLean(arr){ return JSON.parse(JSON.stringify((arr||[]).map(function(p){ if(!p||!p.anim||!Array.isArray(p.anim.frames))return p;
   var fr=p.anim.frames.map(function(f,i){ if(i===0||!f||typeof f.thumb!=='string'||!f.thumb)return f; var c={}; for(var k in f)if(k!=='thumb')c[k]=f[k]; return c; });
   var a={}; for(var k in p.anim)a[k]=p.anim[k]; a.frames=fr; var q={}; for(var k2 in p)q[k2]=p[k2]; q.anim=a; return q; }))); }

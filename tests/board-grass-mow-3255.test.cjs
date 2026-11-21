@@ -63,7 +63,7 @@ test('작전판 배선 — 카드 · 규격 · 잎결 판이 그림 서명에, �
   assert.match(b,/let cards=\[\];   \/\* 3\.255/);
   assert.match(b,/cards=rs; if\(rs\.length\)\{/);
   assert.match(b,/turf\?1:0,cards\.join\(';'\),sp\.len,PSStadiumGround\.GRAIN_V,deco,ad,md\.key,brand\?1:0,tcol,bleed\?1:0\]\.join\('\|'\);/);
-  assert.match(b,/const mow=PSStadiumGround\.mowPlan\(\{multi:multi,cards:cards,len:sp\.len,L:L,T:T,m:m,pw:PW,ph:PH,f:f,kind:pk\.turf\?'':'none'\}\),grain=pk\.turf&&!!PSStadiumGround\.grainTile\(\),per=mow\.per;/,'3.326 — 폭(ph)은 바둑판 · 원 · 5레인이 쓴다');
+  assert.match(b,/const mow=PSStadiumGround\.mowPlan\(\{multi:multi,cards:cards,len:sp\.len,L:L,T:T,m:m,pw:PW,ph:PH,f:f\}\),grain=pk\.turf&&!!PSStadiumGround\.grainTile\(\),per=mow\.per;/,'3.326 — 폭(ph)은 바둑판 · 원 · 5레인이 쓴다');
   assert.match(b,/<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'\+f\(L\)\+'" y="'\+f\(T\)\+'" width="'\+f\(per\)\+'" height="'\+f\(per\)\+'"><image href="'\+turf\+'" width="'\+f\(per\)\+'" height="'\+f\(per\)\+'"/,'잔디 사진 칸 = 깎은 줄 한 쌍(3.263)');
   assert.doesNotMatch(b,/f\(10\*m\)/,'10m 칸은 남지 않는다');
   assert.match(b,/\+mow\.defs\+PSStadiumGround\.grainDefs\(\{m:m,L:L,T:T,f:f,rot:mow\.rot\}\)/);

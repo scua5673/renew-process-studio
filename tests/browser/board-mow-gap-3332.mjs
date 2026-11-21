@@ -52,7 +52,6 @@ try{
   step('3d');
   await f.evaluate(()=>{const G=window.PSStadiumGround,orig=G.mowPlan;window.__mowCalls=[];
     G.mowPlan=function(o){const r=orig.apply(this,arguments);window.__mowCalls.push({o:{L:o.L,pw:o.pw,len:o.len,multi:!!o.multi},defs:r.defs,two:r.two});return r;};});
-  await f.evaluate(()=>{const b=document.querySelector('#pitchSeg button[data-p="real"]');window.__psUserClick=1;try{b.click();}finally{window.__psUserClick=0;}});   /* 3.354 — 3D 잔디결은 «잔디» 피치에서만 */
   await f.evaluate(()=>window.__setTilt(true));await f.waitForFunction(()=>document.body.classList.contains('bc-tilt3d'));
   const drawn=async(gap,why)=>{const t0=Date.now();let last=null;
     while(Date.now()-t0<15000){

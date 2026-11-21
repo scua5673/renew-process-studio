@@ -14976,7 +14976,7 @@ function init(){
       corners.forEach(([cx,cy,a])=>{for(let i=1;i<cornerN;i++){const t=(a+90*i/cornerN)*Math.PI/180;out.push([cx+Math.cos(t)*(r0+d),cy+Math.sin(t)*(r0+d)]);}});
       return out;};
     const crowd=deco==="full"?crowdTile(brand?tcol:""):'',ct=S*.046;
-    const mow=PSStadiumGround.mowPlan({multi:multi,cards:cards,len:sp.len,L:L,T:T,m:m,pw:PW,ph:PH,f:f,kind:pk.turf?'':'none'}),grain=pk.turf&&!!PSStadiumGround.grainTile(),per=mow.per;   /* 3.255 — 깎은 줄(운동장마다) · 잎결 · 3.263 약 4m(per = 밝은 띠 + 어두운 띠) */
+    const mow=PSStadiumGround.mowPlan({multi:multi,cards:cards,len:sp.len,L:L,T:T,m:m,pw:PW,ph:PH,f:f}),grain=pk.turf&&!!PSStadiumGround.grainTile(),per=mow.per;   /* 3.255 — 깎은 줄(운동장마다) · 잎결 · 3.263 약 4m(per = 밝은 띠 + 어두운 띠) */
     let o='<defs>'
       +(turf?'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(per)+'" height="'+f(per)+'"><image href="'+turf+'" width="'+f(per)+'" height="'+f(per)+'" preserveAspectRatio="none"'+(pk.tone?' filter="url(#psStTone)"':'')+'/></pattern>'+(pk.tone?'<filter id="psStTone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="'+pk.tone+'"/></filter>':'')
             :mow.grass(pk.ga,pk.gb))   /* 3.255 — 사진을 못 그리는 기기의 두 색 줄(x)은 운동장 하나에서만 — 여러 운동장은 카드 띠가 줄이다 */
