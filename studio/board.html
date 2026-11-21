@@ -14976,7 +14976,7 @@ function init(){
       corners.forEach(([cx,cy,a])=>{for(let i=1;i<cornerN;i++){const t=(a+90*i/cornerN)*Math.PI/180;out.push([cx+Math.cos(t)*(r0+d),cy+Math.sin(t)*(r0+d)]);}});
       return out;};
     const crowd=deco==="full"?crowdTile(brand?tcol:""):'',ct=S*.046;
-    const mow=PSStadiumGround.mowPlan({multi:multi,cards:cards,len:sp.len,L:L,T:T,m:m,pw:PW,ph:PH,f:f}),grain=!!PSStadiumGround.grainTile(),per=mow.per;   /* 3.255 — 깎은 줄(운동장마다) · 잎결 · 3.263 약 4m(per = 밝은 띠 + 어두운 띠) */
+    const mow=PSStadiumGround.mowPlan({multi:multi,cards:cards,len:sp.len,L:L,T:T,m:m,pw:PW,ph:PH,f:f}),grain=pk.turf&&!!PSStadiumGround.grainTile(),per=mow.per;   /* 3.255 — 깎은 줄(운동장마다) · 잎결 · 3.263 약 4m(per = 밝은 띠 + 어두운 띠) */
     let o='<defs>'
       +(turf?'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(per)+'" height="'+f(per)+'"><image href="'+turf+'" width="'+f(per)+'" height="'+f(per)+'" preserveAspectRatio="none"'+(pk.tone?' filter="url(#psStTone)"':'')+'/></pattern>'+(pk.tone?'<filter id="psStTone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="'+pk.tone+'"/></filter>':'')
             :mow.grass(pk.ga,pk.gb))   /* 3.255 — 사진을 못 그리는 기기의 두 색 줄(x)은 운동장 하나에서만 — 여러 운동장은 카드 띠가 줄이다 */
@@ -15009,7 +15009,7 @@ function init(){
       +line(dT+S*.002,'#3a4249',S*.0045)+line(dT+S*.0005,'#d9e1e6',S*.0012,.6);
     }
     /* 광고판 뒤 띠(인조 잔디) · 잔디 · 닳은 자국 — 잔디만이면 띠도 잔디(광고판이 없다) */
-    o+=(ground?'':deco==="grass"?ring(0,bleed?dE:dT,'url(#psStGrass)')+ring(0,bleed?dE:dT,'url(#psStMow)')+ring(0,dT,'#0b2410',.18):ring(bt,dT,'#173a20'))
+    o+=(ground?'':deco==="grass"?ring(0,bleed?dE:dT,'url(#psStGrass)')+ring(0,bleed?dE:dT,'url(#psStMow)')+ring(0,dT,pk.turf?'#0b2410':'#000',.18):ring(bt,dT,pk.turf?'#173a20':pk.gb))
       +'<path d="'+rr(0)+'" fill="url(#psStGrass)"/>'
       +(turf?'<path d="'+rr(0)+'" fill="#1c7a34" fill-opacity=".24"/>':'')   /* 타일의 누런 기를 경기장 잔디 초록으로 */
       +'<path d="'+rr(0)+'" fill="url(#psStMow)"/>'   /* 잔디결(5m)을 중계 화면처럼 또렷하게 */
