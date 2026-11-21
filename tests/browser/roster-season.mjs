@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {startFixture,openApp,SHOTS,WT,A,SIZES} from '../fixtures/team-app.mjs';
+import {selMore} from '../fixtures/roster-ui.mjs';
 const require=createRequire(import.meta.url),store=require('../../studio/scouting-store.js');
 /* 스카우팅 후보 넷 — 확정 둘(미리 켜짐) · 영입대상 하나(꺼짐) · 추천 하나(창에 안 나옴) */
 const cands=[['sc-1','서지훈','CF','9','done'],['sc-2','오태양','RW','7','done'],['sc-4','문건우','CM','8','go'],['sc-5','배준혁','LB','3','rep']];
@@ -23,10 +24,10 @@ try{
   frame=await (await page.waitForSelector('#fScout')).contentFrame();
   await frame.locator('#pwTeam [data-pw-view="list"]').waitFor();
   await frame.getByRole('button',{name:'명단',exact:true}).click();
-  await frame.locator('#pwTeam .pw-table tbody tr').first().waitFor();
-  const rows=()=>frame.locator('#pwTeam .pw-table tbody tr');
+  await frame.locator('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').first().waitFor();
+  const rows=()=>frame.locator('#pwTeam .pw-table tbody tr:not(.pw-grouphead)');
   const state=()=>frame.evaluate(()=>{const o=data.players.filter(p=>p.type!=='target');return {n:o.length,grads:o.filter(p=>p.grad).map(p=>p.name),years:o.map(p=>[p.name,String(p.schoolYear||''),p.grad?p.grad.season:'']),season:data.meta&&data.meta.season?JSON.parse(JSON.stringify(data.meta.season)):null,ours:tmOurs().length,avail:window.__plAvailable().length};});
-  const chip=()=>frame.locator('#pwTeam [data-pw-action="season"]');
+  const chip=()=>frame.locator('#teamView [data-pw-action="season"]');   /* 시즌 칩은 팀 이름 옆 */
   const pick=async text=>{await chip().click();await frame.locator('#psPickPop').waitFor();await frame.locator('#psPickPop button',{hasText:text}).click();};
   assert.equal(await rows().count(),18);
 
@@ -35,8 +36,8 @@ try{
   const seed=await frame.evaluate(()=>{const o=data.players.filter(p=>p.type!=='target');o.forEach((p,i)=>{if(i<4)p.schoolYear='3';else if(i<9)p.schoolYear='2';else if(i<13)p.schoolYear='1';});save({skipTargets:true});renderTeam();
     return {cur:PSRosterSeason.current(data.meta),y3:o.slice(0,4).map(p=>p.name),y2:o.slice(4,9).map(p=>p.name),y1:o.slice(9,13).map(p=>p.name),ids:o.map(p=>String(p.id)),was:JSON.stringify(o.map(p=>[p.id,p.schoolYear||'',!!p.grad]))};});
   const cur=seed.cur,next=String(+cur+1);
-  await frame.waitForFunction(c=>{const b=document.querySelector('#pwTeam [data-pw-action="season"]');return b&&b.textContent.indexOf(c+' 시즌')>=0;},cur);
-  assert.match(await frame.locator('#pwTeam .pw-result').innerText(),new RegExp(cur+' 시즌[\\s\\S]*18'));
+  await frame.waitForFunction(c=>{const b=document.querySelector('#teamView [data-pw-action="season"]');return b&&b.textContent.indexOf(c+' 시즌')>=0;},cur);
+  assert.match(await frame.locator('#teamView .tm-titleline').innerText(),new RegExp(cur+' 시즌'));
 
   // ① 시즌 칩 → «새 시즌 시작…» 창
   step='open-dialog';
@@ -71,7 +72,7 @@ try{
   assert.deepEqual(joined.map(j=>[j[0],j[2]]).sort(),[['서지훈','1'],['오태양','1']],'신입은 1학년으로');assert.equal(s.season.past.length,1);assert.equal(s.season.past[0].id,cur);assert.equal(s.season.past[0].rows.length,18);
   for(const n of seed.y2)assert.equal(s.years.find(y=>y[0]===n)[1],'3');for(const n of seed.y1)assert.equal(s.years.find(y=>y[0]===n)[1],'2');
   assert.equal(s.years.find(y=>y[0]===seed.y3[3])[1],'3');assert.equal(s.years.find(y=>y[0]===seed.y3[3])[2],'');
-  await frame.waitForFunction(c=>document.querySelector('#pwTeam [data-pw-action="season"]').textContent.indexOf(c+' 시즌')>=0,next);
+  await frame.waitForFunction(c=>document.querySelector('#teamView [data-pw-action="season"]').textContent.indexOf(c+' 시즌')>=0,next);
   assert.equal(await rows().count(),17);
 
   // ③ 되돌리기 — 넘기기 전 명단 그대로
@@ -132,7 +133,7 @@ try{
   // ⑥ 졸업생 전체 → «현재 명단으로»
   step='grads';
   await pick('졸업생 전체');
-  await frame.waitForFunction(()=>document.querySelectorAll('#pwTeam .pw-table tbody tr').length===3);
+  await frame.waitForFunction(()=>document.querySelectorAll('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').length===3);
   assert.match(await rows().first().innerText(),new RegExp(cur+' 졸업'));
   await page.screenshot({path:shots+'/roster-season-grads-'+size+'.png'});
   await frame.getByRole('checkbox',{name:seed.y3[0]+' 선택',exact:true}).check();
@@ -145,10 +146,10 @@ try{
   // ⑦ 선택 띠 «졸업 처리»(시즌 중 한 명) — 확인을 받고 표시만
   step='graduate-one';
   await frame.getByRole('button',{name:'지금 시즌으로',exact:true}).click();
-  await frame.waitForFunction(()=>document.querySelectorAll('#pwTeam .pw-table tbody tr').length===16,null,{timeout:15000});
+  await frame.waitForFunction(()=>document.querySelectorAll('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').length===16,null,{timeout:15000});
   await frame.getByRole('checkbox',{name:seed.y3[0]+' 선택',exact:true}).check();
   await page.screenshot({path:shots+'/roster-season-bar-'+size+'.png'});
-  await bar.getByRole('button',{name:'졸업 처리',exact:true}).click();
+  await selMore(frame,'졸업 처리');   /* 졸업 처리 · 명단에서 빼기는 선택 띠 «⋯» 안(선수단 화면 줄이기 A안) */
   const confirmText=await frame.evaluate(()=>{const b=[...document.querySelectorAll('button')].filter(x=>x.textContent==='확인'&&x.offsetParent);return b.length?b[b.length-1].closest('div').parentElement.innerText:'';});
   assert.match(confirmText,/1명을 졸업 처리할까요\?/);assert.match(confirmText,/기록은 그대로 남아요/);
   await frame.getByRole('button',{name:'확인',exact:true}).last().click();
@@ -173,7 +174,7 @@ try{
   step='locked';
   await frame.evaluate(()=>{document.body.classList.add('ps-roster-locked');renderTeam();});
   await frame.getByRole('checkbox',{name:seed.y2[0]+' 선택',exact:true}).check();
-  assert.equal(await bar.getByRole('button',{name:'졸업 처리',exact:true}).count(),0);
+  assert.equal(await frame.locator('#pwTeam [data-pw-action="selMore"]').count(),0);
   await chip().click();await frame.locator('#psPickPop').waitFor();
   assert.equal(await frame.locator('#psPickPop button',{hasText:'시즌 시작'}).count(),0);
   await page.keyboard.press('Escape');
@@ -181,6 +182,6 @@ try{
   assert.deepEqual(errors.filter(e=>!/ResizeObserver loop/.test(e)),[]);
   console.log(JSON.stringify({passed:true,size,engine}));
 }catch(e){console.error('[roster-season] failed at '+step);console.error(e);process.exitCode=1;
-  if(frame)console.error('[roster-season] state',JSON.stringify(await frame.evaluate(()=>({toast:(document.getElementById('toast')||{}).textContent,pop:(document.getElementById('psPickPop')||{}).innerText,dlg:(document.getElementById('pwSeason')||{}).innerText,top:(document.querySelector('#pwTeam .pw-top')||{}).innerText,rows:document.querySelectorAll('#pwTeam .pw-table tbody tr').length,ours:tmOurs().length,season:data.meta&&data.meta.season})).catch(x=>String(x))));
+  if(frame)console.error('[roster-season] state',JSON.stringify(await frame.evaluate(()=>({toast:(document.getElementById('toast')||{}).textContent,pop:(document.getElementById('psPickPop')||{}).innerText,dlg:(document.getElementById('pwSeason')||{}).innerText,top:(document.querySelector('#pwTeam .pw-top')||{}).innerText,rows:document.querySelectorAll('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').length,ours:tmOurs().length,season:data.meta&&data.meta.season})).catch(x=>String(x))));
 }
 finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close();}

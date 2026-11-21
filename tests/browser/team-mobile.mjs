@@ -4,6 +4,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {startFixture,openApp,measure,SIZES,A,WT,OUT,SHOTS} from '../fixtures/team-app.mjs';
 import {depthCandidates} from '../fixtures/player-depth.mjs';
+import {addMenu} from '../fixtures/roster-ui.mjs';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium';
 SIZES.phone.engine=engine;
 SIZES.phone.ctx={...SIZES.phone.ctx,viewport:{width:390,height:844},deviceScaleFactor:1};
@@ -36,7 +37,7 @@ try{
    await go(key);
    if(key==='players'){
     const f=await frame('#fScout');await f.getByRole('button',{name:'포지션',exact:true}).click();await f.locator('#pwTeam .pw-depth-pitch').waitFor();
-    await tapSize(f.locator('#pwTeam [data-pw-action="tools"]'),'edit tools');
+    await tapSize(f.locator('#pwAddMenu'),'add menu');   /* «편집 도구»는 걷었다 — 넣는 길은 «＋ 선수 ▾», 나머지는 «⋯»(선수단 화면 줄이기 A안) */
     const pitch=await f.locator('#pwTeam .pw-depth-pitch').boundingBox();assert.ok(pitch.y<680,'phone first pitch reachable without a full screen of tools '+pitch.y);
     await f.locator('#pwTeam [data-pw-action=filters]').click();
     await tapSize(f.locator('#pwTeam .pw-filter-fields>select').first(),'position filter');
@@ -60,9 +61,7 @@ try{
  // Open/cancel editing surfaces from compact controls; navigation must preserve the roster.
  await page.setViewportSize({width:390,height:844});await go('players');const scout=await frame('#fScout');
  const roster=await scout.evaluate(()=>JSON.stringify(data.players));
- await scout.locator('#pwTeam [data-pw-action="tools"]').click();
- assert.equal(await scout.locator('#pwTeam [data-pw-action="tools"]').getAttribute('aria-expanded'),'true');
- await scout.locator('#pwTeam [data-pw-action="bulk"]').click();await scout.locator('.pw-bulk-overlay').waitFor();
+ await addMenu(scout,'여러 명 붙여 넣기');await scout.locator('.pw-bulk-overlay').waitFor();
  assert.ok((await scout.locator('.pw-bulk-row input[data-f=name]').first().boundingBox()).width>200,'name field remains readable');
  await tapSize(scout.locator('.pw-bulk-row button').first(),'remove row');
  await tapSize(scout.locator('.pw-bulk-row select').first(),'bulk position picker');
@@ -70,8 +69,8 @@ try{
  await snap('players-bulk',390);
  await scout.locator('.pw-bulk-overlay [data-cancel]').click();
  assert.equal(await scout.evaluate(()=>JSON.stringify(data.players)),roster,'cancelled bulk add leaves players unchanged');
- await scout.locator('#pwTeam [data-pw-action="tools"]').click();await scout.getByRole('button',{name:'명단',exact:true}).click();
- await scout.getByRole('searchbox',{name:'선수 검색'}).fill('가상 선수 18');assert.equal(await scout.locator('#pwTeam tbody tr').count(),1);
+ await scout.getByRole('button',{name:'명단',exact:true}).click();
+ await scout.getByRole('searchbox',{name:'선수 검색'}).fill('가상 선수 18');assert.equal(await scout.locator('#pwTeam tbody tr:not(.pw-grouphead)').count(),1);
  // 3.339 — 선수단 머리 칸에 «보이는 선수 모두 선택»이 생겨 체크 칸이 둘(일부러 고침): 줄의 칸과 머리 칸을 따로 잰다.
  await tapSize(scout.locator('#pwTeam tbody .pw-select-hit'),'select checkbox label');
  await tapSize(scout.locator('#pwTeam thead .pw-select-hit'),'select-all checkbox label');

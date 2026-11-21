@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {startFixture,openApp,ready,SIZES,OUT} from '../fixtures/team-app.mjs';
+import {addMenu} from '../fixtures/roster-ui.mjs';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',fx=await startFixture(),browsers={},results=[];
 SIZES.phone.engine=engine;SIZES.ipad.engine=engine;SIZES.desktop.engine=engine;
 try{
@@ -13,7 +14,7 @@ try{
   const players=async()=>{await page.locator('#appSeg [data-team-hub]').click();const mobile=page.locator('#teamBottom [data-tb="players"]');await (await mobile.isVisible()?mobile:page.locator('#teamNav [data-team-key="players"]')).click();return (await page.locator('#fScout').elementHandle()).contentFrame();};
   let f=await players();
   if(size==='phone'){
-    await f.locator('#pwTeam .pw-table tbody tr').first().waitFor();
+    await f.locator('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').first().waitFor();
     assert.equal(await f.locator('#pwTeam [data-pw-view=list]').getAttribute('aria-pressed'),'true');
     // 3.339 — 표 위에 넣기 줄(폰 54px)이 생겨 590 → 625(일부러 고침). 첫 선수 줄은 아래 메뉴(약 745) 위에 그대로 다 보인다.
     const first=await f.locator('#pwTeam .pw-name').first().boundingBox();assert.ok(first.y<625,'first player reachable '+first.y);
@@ -28,9 +29,8 @@ try{
   assert.match(await f.locator('#pwTeam .pw-depth-panel .pw-empty strong').innerText(),/미배치 선수가 없어요/);
   await f.getByRole('button',{name:'명단',exact:true}).click();
   await f.getByRole('searchbox',{name:'선수 검색'}).fill('가상 선수 18');
-  assert.equal(await f.locator('#pwTeam tbody tr').count(),1);await f.getByRole('searchbox',{name:'선수 검색'}).fill('');
-  const tools=f.locator('#pwTeam [data-pw-action="tools"]');if(await tools.isVisible())await tools.click();
-  await f.locator('#pwTeam [data-pw-action="bulk"]').click();
+  assert.equal(await f.locator('#pwTeam tbody tr:not(.pw-grouphead)').count(),1);await f.getByRole('searchbox',{name:'선수 검색'}).fill('');
+  await addMenu(f,'여러 명 붙여 넣기');   /* 넣는 길은 «＋ 선수 ▾» 하나(선수단 화면 줄이기 A안) */
   const name='프로세스FC 점검'+width;
   await f.locator('.pw-bulk-row [data-f=name]').first().fill(name);
   await f.locator('.pw-bulk-row [data-f=posId]').first().selectOption('pos_CM');

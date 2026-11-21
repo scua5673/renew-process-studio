@@ -65,7 +65,7 @@ test('선수 추가 시트의 조 · 학년 칸과 값 넣기 — 조 이름은 
   const c=ctx();const f=c.tmAudienceFields();
   assert.deepEqual(J(f.map(x=>[x.key,x.type])),[['grp','select'],['schoolYear','seg']]);
   assert.deepEqual(J(f[0].options.map(o=>[o.value,o.label])),[['','없음'],['A팀','1군'],['B팀','B팀']],'grpLabels 로 바꾼 이름이 보이고 값은 키');
-  assert.deepEqual(J(f[1].options.map(o=>o.value)),['','1','2','3']);
+  assert.deepEqual(J(f[1].options.map(o=>o.value)),['','0','1','2','3'],'3.354 — 신입생(0)이 미지정 다음');
   const p=c.tmAudienceApply({id:'n'},{grp:'B팀',schoolYear:'2'});assert.equal(p.grp,'B팀');assert.equal(p.schoolYear,'2');
   const q=c.tmAudienceApply({id:'m'},{grp:'',schoolYear:'4'});assert.equal('grp' in q,false);assert.equal('schoolYear' in q,false,'빈 조 · 1~3 아닌 학년은 적지 않는다');
 });
@@ -81,6 +81,6 @@ test('배선 — 가용인원 두 화면 · 선수 추가 시트 · 선수 편�
   assert.ok(SC.includes('options:posOpts,value:""}].concat(tmAudienceFields()),'),'선수 추가 시트 칸');
   assert.ok(SC.includes('data.players.push(tmAudienceApply({id:uid("pl"),name:v.name,'),'선수 추가 시트 값');
   assert.ok(fn('openPlayer').includes('tmAudienceEditChips(pl);'),'선수 편집 창 칩');
-  assert.ok(IDP.includes("['학년',/^[1-3]$/.test(String(p.schoolYear||''))?p.schoolYear+'학년':'']"),'IDP 신상의 학년은 schoolYear');
+  assert.ok(IDP.includes("['학년',/^[0-3]$/.test(String(p.schoolYear||''))?PSTeamAudience.yearLabel(p.schoolYear):'']"),'IDP 신상의 학년은 schoolYear');
   assert.ok(!IDP.includes("['학년',p.grade]"),'평가 등급을 학년으로 보이지 않는다');
 });

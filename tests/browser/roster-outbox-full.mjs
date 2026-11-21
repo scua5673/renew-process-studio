@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import {startFixture,openApp,ready,SIZES,WT,A} from '../fixtures/team-app.mjs';
+import {addMenu} from '../fixtures/roster-ui.mjs';
 
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',out=process.env.PS_TEST_OUTPUT||'/tmp/ps-roster-outbox-full-browser';
 fs.mkdirSync(out,{recursive:true});SIZES.desktop={...SIZES.desktop,engine};
@@ -55,7 +56,7 @@ try{
   assert.ok(before.bytes>40000,'the seeded legacy outbox is large '+before.bytes);
   assert.ok(before.names.includes('밀린 선수 6'),'the pending players are on the device roster');
   /* the coach adds one more player on the full device */
-  await frame.locator('#tmAdd').click();await frame.locator('[data-k="name"]').fill('합성 새 선수');await frame.locator('[data-k="num"]').fill('99');await frame.locator('[data-act="ok"]').click();
+  await addMenu(frame,'프로필까지 적어 추가');await frame.locator('[data-k="name"]').fill('합성 새 선수');await frame.locator('[data-k="num"]').fill('99');await frame.locator('[data-act="ok"]').click();
   await frame.waitForFunction(()=>data.players.some(p=>p.name==='합성 새 선수'));
   const want=['밀린 선수 1','밀린 선수 2','밀린 선수 3','밀린 선수 4','밀린 선수 5','밀린 선수 6','합성 새 선수'];
   const onServer=()=>[...fx.db.values()].filter(r=>r.workspace_id===WT&&r.k.startsWith('sq:')).map(r=>JSON.parse(r.v).name);

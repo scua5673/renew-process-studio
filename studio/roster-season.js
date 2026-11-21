@@ -5,7 +5,7 @@
    지난 시즌 줄은 그날의 이름 · 번호 · 포지션 · 조 · 학년만(평가는 선수 객체에 한 벌). 이 파일은 셈만 한다 — 저장은 부른 쪽의 원래 길(save). */
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.PSRosterSeason=api;})(typeof window!=='undefined'?window:this,function(){
   'use strict';
-  var PAST_MAX=8,FUTURE_MAX=6,YEARS=['1','2','3'];
+  var PAST_MAX=8,FUTURE_MAX=6,YEARS=['0','1','2','3'];   /* '0' = 신입생 — 새 시즌에 1학년 */
   function isGrad(p){return !!(p&&p.grad&&typeof p.grad==='object');}
   function ours(p){return !!p&&p.type!=='target';}
   function active(list){return (list||[]).filter(function(p){return ours(p)&&!isGrad(p);});}
@@ -33,7 +33,7 @@
   function plan(players,meta,opts){
     opts=opts||{};var keep={},on=opts.years||{},cur=current(meta,opts.now),list=active(players).filter(function(p){return p.manual===true||String(p.name||'').trim();});
     (opts.keep||[]).forEach(function(id){keep[String(id)]=1;});
-    var out={cur:cur,next:next(cur),total:list.length,grad:[],up:[],stay:[],by:{'3':[],'2':[],'1':[],'':[]}};
+    var out={cur:cur,next:next(cur),total:list.length,grad:[],up:[],stay:[],by:{'3':[],'2':[],'1':[],'0':[],'':[]}};
     list.forEach(function(p){var y=yearOf(p),id=String(p.id);out.by[y].push(p);
       if(!y||on[y]===false||keep[id]){out.stay.push(id);return;}
       if(y==='3')out.grad.push(id);else out.up.push({id:id,from:y,to:String(+y+1)});});
