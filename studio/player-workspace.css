@@ -370,3 +370,6 @@ body.ps-roster-locked .pw-quickadd,body.ps-roster-locked .pw-rq-edit{display:non
 .pw-table .pw-rowmore{min-width:36px;min-height:36px;padding:0;border:0;border-radius:8px;background:var(--c-surface-2,var(--c-bg));color:var(--c-ink)}
 .pw-table td.pw-rowmore-cell,.pw-table th:nth-child(7){width:48px;text-align:right}
 @media(max-width:700px){.pw-table .pw-rowmore{min-width:44px;min-height:44px}}
+/* 폰은 «조 · 학년» 칸이 접힌다 — 학년은 이름 아래 작은 글씨로 */
+.pw-row-year{display:none}
+@media(max-width:700px){.pw-row-year{display:inline}}

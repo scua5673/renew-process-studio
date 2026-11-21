@@ -32,14 +32,18 @@ try{
 
   // ② 학년 칸 — «신입생»을 고르면 바로 저장(값 0) · 되돌리기
   step='year';
-  if(!phone)await pickPop(()=>frame.getByRole('button',{name:'가상 선수 3 학년 미지정',exact:true}),'신입생');
-  else{await pickPop(more('가상 선수 3'),'학년 바꾸기');await frame.locator('#psPickPop button',{hasText:'신입생'}).click();}
+  assert.equal(await frame.locator('#pwTeam [data-pw-cellyear]').count(),0,'학년을 안 쓰는 팀은 학년 칸이 없다');   /* 처음 적는 길은 줄 «⋯ › 학년 바꾸기» */
+  await pickPop(more('가상 선수 3'),'학년 바꾸기');await frame.locator('#psPickPop button',{hasText:'신입생'}).click();
   await frame.waitForFunction(()=>{const p=data.players.find(x=>x.name==='가상 선수 3');return p&&String(p.schoolYear)==='0';});
-  if(!phone)await frame.getByRole('button',{name:'가상 선수 3 학년 신입생',exact:true}).waitFor();
+  if(!phone){await frame.getByRole('button',{name:'가상 선수 3 학년 신입생',exact:true}).waitFor();assert.equal(await frame.locator('#pwTeam [data-pw-cellyear]').count(),18,'한 명이라도 적으면 줄마다 학년 칸');}
+  else assert.match(await frame.locator('#pwTeam .pw-table tbody tr',{hasText:'가상 선수 3'}).first().innerText(),/신입생/,'폰은 이름 아래 학년');
   assert.match(await frame.locator('.pw-undo').innerText(),/가상 선수 3[\s\S]*신입생/);
   await frame.locator('.pw-undo button').first().click();
   await frame.waitForFunction(()=>{const p=data.players.find(x=>x.name==='가상 선수 3');return p&&!p.schoolYear;});
-  if(!phone)await pickPop(()=>frame.getByRole('button',{name:'가상 선수 3 학년 미지정',exact:true}),'2학년');
+  await frame.waitForFunction(()=>!document.querySelector('#pwTeam [data-pw-cellyear]'));
+  await pickPop(more('가상 선수 3'),'학년 바꾸기');await frame.locator('#psPickPop button',{hasText:'신입생'}).click();
+  await frame.waitForFunction(()=>{const p=data.players.find(x=>x.name==='가상 선수 3');return p&&String(p.schoolYear)==='0';});
+  if(!phone)await pickPop(()=>frame.getByRole('button',{name:'가상 선수 3 학년 신입생',exact:true}),'2학년');   /* 칸 고르개 */
   else{await pickPop(more('가상 선수 3'),'학년 바꾸기');await frame.locator('#psPickPop button',{hasText:'2학년'}).click();}
   await frame.waitForFunction(()=>{const p=data.players.find(x=>x.name==='가상 선수 3');return p&&String(p.schoolYear)==='2';});
 
