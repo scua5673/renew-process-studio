@@ -19313,7 +19313,7 @@ try{ window.addEventListener("message",function(e){
                  사진은 PSImg 참조 문자열이라 그대로 넘겨도 가볍다 — idp.html 도 storage.js 를 로드해 스스로 푼다. */
               profile:JSON.parse(JSON.stringify(p.profile||{})),
               foot:p.foot||"", grade:p.grade||"",   /* 2.117 — 주발·학년은 profile 이 아니라 선수 루트에 있다 */
-              meetings:(Array.isArray(p.meetings)?p.meetings:[]).slice()}; })});   /* 2.075 — 면담 기록(코칭스태프 전용) */
+              papers:(p.papers||[]).slice(),meetings:(Array.isArray(p.meetings)?p.meetings:[]).slice()}; })});   /* 2.075 — 면담 기록(코칭스태프 전용) */
     }catch(err){ reply({type:"teamEvalListAck",ok:false,err:String((err&&err.message)||err)}); }
     return;
   }
@@ -21085,7 +21085,7 @@ function syncPlayerPickerLabel(){
   if(document.readyState!=="loading")wire();else document.addEventListener("DOMContentLoaded",wire);
   setTimeout(wire,600);setTimeout(wire,1600);
 })();</script>
-<script src="match-formats.js"></script><script src="perms.js"></script><script src="match-meet-parts.js"></script><script src="match-lock.js"></script><script src="match-goals-quick.js"></script><script src="avail-edit-guard.js"></script>
+<script src="match-formats.js"></script><script src="perms.js"></script><script src="match-meet-parts.js"></script><script src="match-lock.js"></script><script src="eval-paper-team.js?v=3.361"></script><script src="match-goals-quick.js"></script><script src="avail-edit-guard.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded",scPrepare);
 document.addEventListener("DOMContentLoaded",function(){rosterRecoveryMenu();rosterKeepSave();});
@@ -22080,7 +22080,7 @@ html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srg
 </style>
 <link rel="stylesheet" href="team-criteria.css">
 <link rel="stylesheet" href="player-workspace.css"><script src="roster-season.js"></script><script src="player-workspace.js"></script><script src="player-bulk-add.js"></script>
-<link rel="stylesheet" href="team-mobile.css?v=3.358">
+<link rel="stylesheet" href="team-mobile.css?v=3.361">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>
