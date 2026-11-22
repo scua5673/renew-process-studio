@@ -27,9 +27,9 @@ function ctx(over){
 }
 const P=(id,y,grp)=>({id,schoolYear:y,grp:grp||'A팀',name:id});
 
-test('학년 차례 — 조별 보기에서 켜졌을 때만, 학년을 적은 선수가 있는 조만 1 · 2 · 3 · 미지정 차례로',()=>{
-  const c=ctx();const list=[P('a','3'),P('b',''),P('c','1'),P('d','2'),P('e','1')];
-  assert.deepEqual(J(c.avYearOrder(list).map(p=>p.id)),['c','e','d','a','b'],'학년 안에서는 원래 차례 그대로');
+test('학년 차례 — 조별 보기에서 켜졌을 때만, 학년을 적은 선수가 있는 조만 3 · 2 · 1 · 신입생 · 미지정 차례로(3.364 높은 학년 먼저)',()=>{
+  const c=ctx();const list=[P('a','3'),P('b',''),P('c','1'),P('d','2'),P('e','1'),P('f','0')];
+  assert.deepEqual(J(c.avYearOrder(list).map(p=>p.id)),['a','d','c','e','f','b'],'높은 학년 먼저 · 신입생 · 미지정, 학년 안에서는 원래 차례 그대로');
   assert.equal(c.avYearOrder([P('x',''),P('y','')]).map(p=>p.id).join(),'x,y','학년이 하나도 없는 조는 손대지 않는다');
   c.state.availView='pos';assert.equal(c.avYearOrder(list),list,'포지션별 보기는 그대로');
   c.state.availView='grp';c.avYearSplit=false;assert.equal(c.avYearOrder(list),list,'꺼져 있으면 그대로');
