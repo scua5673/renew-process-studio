@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="idp-evidence.css">
 <link rel="stylesheet" href="idp-daily.css">
 <script src="rpt-i18n.js"></script>
-<script src="eval-standard.js"></script><!-- 1.974 — PROCESS 평가 표준 v1(팀 평가표·셀프평가 한 벌) -->
+<script src="eval-standard.js"></script><link rel="stylesheet" href="eval-paper.css?v=3.361"><script src="eval-paper.js?v=3.361"></script><!-- 1.974 — PROCESS 평가 표준 v1(팀 평가표·셀프평가 한 벌) -->
 <script src="eval-anchors.js"></script><!-- 2.164 — 수준 앵커 사전(72항목×4문장). "3인지 4인지"의 기준 문장 -->
 <script src="archetypes.js"></script><!-- 2.078 — 포지션 유형(아키타입) 6군×6 = 36 -->
 <script src="learn-model.js"></script><!-- 2.110 — 학습모델 카테고리 사전. 코치 목표가 어느 국면인지 여기에 건다 -->
@@ -9237,6 +9237,107 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       h+='<circle cx="'+X(p2.i)+'" cy="'+Y(p2.v)+'" r="3.2" fill="'+CC+'" stroke="#fff" stroke-width="1.5"><title>'+(p2.i+1)+'주차 · '+esc(SQ_SL5[p2.v])+'</title></circle>'; });
     return h+'</svg>';
   }
+  /* ══ 3.361 · 선수 평가서 · 선수 추천서 — A4 한 장씩(목업 승인 2026-11-22) ══════════════════
+     그리기는 eval-paper.js, 사본 저장 · 경기 훈련 집계는 팀 쪽(eval-paper-team.js)이 한다. 여기는 값을 모아 넘길 뿐이다.
+     ⚠ 한 번도 평가하지 않은 선수(evalAt 없음)는 눈금이 전부 «평가 전»이다 — 선수를 만들 때 1 로 채워 둔 값을 평가로 읽지 않는다.
+     ⚠ 추천서에는 코치 평가가 영역 평균과 고른 강점으로 나간다(사용자 결정). 항목별 눈금 · 키울 것은 평가서에만. */
+  var evpOpen='', evpDraft={}, evpBusy=0, evpGone=null;
+  function evpInRange(d,a,b){ d=String(d||''); return d>=a&&d<=b; }
+  function evpSelf(p,from,to){ var o={n:0,mins:0}; try{ var c=sqMatchContext(p); if(c.state!=='ready')return o;
+      sqMatchRows(c.doc).forEach(function(x){ var r=x.record||{}; if(!evpInRange(x.date,from,to)||(r.apps!=='start'&&r.apps!=='sub'))return; o.n++; o.mins+=minNum(r.mins); });
+    }catch(e){ console.warn('evpSelf',e); } return o; }
+  function evpSolo(p,from,to){ var o={n:0,mins:0}; try{ var d=sqDocOfPlayer(p&&p.id); if(!d||!d.done)return o;
+      var mm={}; (d.trainings||[]).forEach(function(t){ mm[t.id]=(t.items||[]).reduce(function(a,x){ return a+minNum(x.min); },0); });
+      Object.keys(d.done).forEach(function(k){ if(!evpInRange(k,from,to))return; (d.done[k]||[]).forEach(function(id){ o.n++; o.mins+=(mm[id]||0); }); });
+    }catch(e){ console.warn('evpSolo',e); } return o; }
+  function evpPrev(p,at){ return (Array.isArray(p.papers)?p.papers:[]).filter(function(x){ return x&&x.kind==='eval'&&x.at<at; }).sort(function(a,b){ return b.at-a.at; })[0]||null; }
+  function evpGroups(p,paper){ var lv=paper.kind==='eval'?(paper.levels||{}):(p.evalAt?(p.levels||{}):{}), pv=paper.kind==='eval'?evpPrev(p,paper.at):null;
+    return PSEvalPaper.shape(sqEvalItemsFor(p),lv,pv?pv.levels:null,window.PS_EVAL_STD); }
+  function evpBuild(p,paper,st){
+    var E=PSEvalPaper, gs=evpGroups(p,paper), pf=(p&&p.profile)||{}, sf=null; try{ sf=selfProfileOfPlayer(p&&p.id); }catch(_){ sf=null; }
+    var posNm=sqEvalPosName(p.posId)||'', dob=pf.dob||(sf&&sf.dob)||'', ht=pf.height||(sf&&sf.height)||'', wt=pf.weight||(sf&&sf.weight)||'', ft=SQP_FOOT[p.foot]||'';
+    var team=''; try{ team=(teamWsObj()&&teamWsObj().name)||''; }catch(_){ team=''; }
+    var from=paper.date.slice(0,4)+'-01-01', pv=paper.kind==='eval'?evpPrev(p,paper.at):null;
+    var d={name:p.name||'선수',num:p.num||'',date:paper.date.replace(/-/g,'.'),label:paper.label,author:paper.by,opinion:paper.opinion,
+      meta:[team,posNm,p.grade?p.grade+'학년':'',ht?ht+'cm':'',ft].filter(Boolean).join(' · '),
+      pos:{main:E.posCode(posNm),subs:(pf.subs||[]).map(function(id){ return E.posCode(sqEvalPosName(id)); }).filter(Boolean),name:posNm},
+      radar:E.radarRows(gs),groups:gs,period:paper.date.slice(0,4)+'년',prevLabel:pv?(pv.label||pv.date.replace(/-/g,'.')):'',
+      table:E.rows(st,evpSelf(p,from,paper.date),evpSolo(p,from,paper.date))};
+    if(paper.kind==='eval'){
+      d.strengths=E.pick(gs,3,false).map(function(x){ return evpWord(gs,x); }); d.grows=E.pick(gs,3,true).map(function(x){ return evpWord(gs,x); });
+      return E.evalSheet(d);
+    }
+    var all={}; gs.forEach(function(g){ g.items.forEach(function(it){ all[it.id]=it; }); });
+    d.to=paper.to; d.contact=paper.contact; d.referee=[team,paper.by].filter(Boolean).join(' ');
+    d.strengths=(paper.picks||[]).map(function(id){ return all[id]; }).filter(function(it){ return it&&it.v>=3; }).map(function(it){ return {name:it.name,en:it.en,text:E.phrase(it.v,it.b)}; });
+    d.profile=[['생년월일',dob,'Born'],['키 · 몸무게',[ht?ht+'cm':'',wt?wt+'kg':''].filter(Boolean).join(' · '),'Ht · Wt'],['주발',ft,'Foot']].filter(function(r){ return r[1]; });
+    d.career=sf?[['초등',sf.elem],['중등',sf.mid],['고등',sf.high],['대학',sf.univ]].filter(function(r){ return r[1]; }):[];
+    return E.recoLetter(d);
+  }
+  function evpWord(gs,x){ var w=''; gs.forEach(function(g){ g.items.forEach(function(it){ if(it.id===x.id)w=it.word; }); }); x.word=w; return x; }
+  function evpMake(p,kind,old){
+    if(evpBusy)return;
+    var D=evpDraft, date=old?old.date:ymd(new Date());
+    var paper=old||{id:'ep'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),kind:kind,at:Date.now(),date:date,by:lrCoachName(),
+      label:String(D.label||'').trim()||(kind==='eval'?date.slice(0,4)+' 시즌':''),opinion:String(D.opinion||'').trim()};
+    if(!old&&kind==='eval'){ var lv={}; if(p.evalAt)sqEvalItemsFor(p).forEach(function(g){ g.items.forEach(function(it){ var v=+((p.levels||{})[it.id])||0; if(v)lv[it.id]=v; }); }); paper.levels=lv; }
+    if(!old&&kind==='reco'){ paper.to=String(D.to||'').trim(); paper.contact=String(D.contact||'').trim(); paper.picks=evpPicks(p); paper.label=paper.to; }
+    evpBusy=1; render();
+    teSend('teamEvalStats',{playerId:p.id,from:date.slice(0,4)+'-01-01',to:date}).then(function(r){
+      var html=''; try{ html=evpBuild(p,paper,(r&&r.ok)?r.stats:null); }catch(e){ evpBusy=0; render(); gToast('종이를 만들지 못했습니다'); console.warn('evp',e); return; }
+      function go(){ evpBusy=0; if(!old){ evpOpen=''; evpDraft={}; } render(); sqRepDoPrint(html,(p.name||'선수')+(paper.kind==='eval'?'_평가서_':'_추천서_')+paper.date); }
+      if(old){ go(); return; }
+      teSend('teamEvalPaper',{playerId:p.id,paper:paper}).then(function(r2){
+        if(r2&&r2.ok&&Array.isArray(r2.papers))p.papers=r2.papers; else gToast(r2&&r2.err==='forbidden'?'사본은 권한이 있는 사람만 남깁니다':'사본을 남기지 못했습니다');
+        go(); });
+    });
+  }
+  function evpCands(p){ var out=[]; evpGroups(p,{kind:'reco'}).forEach(function(g){ g.items.forEach(function(it){ if(it.v>=3)out.push(it); }); });
+    return out.sort(function(a,b){ return b.v-a.v; }); }
+  function evpPicks(p){ var c=evpCands(p).map(function(it){ return it.id; });
+    return (Array.isArray(evpDraft.picks)?evpDraft.picks.filter(function(id){ return c.indexOf(id)>=0; }):c).slice(0,3); }
+  function evpPanel(p){
+    var k=evpOpen, D=evpDraft, ps=(Array.isArray(p.papers)?p.papers:[]);
+    function fld(key,lb,ph,max,area){ var v=esc(D[key]||'');
+      return '<label class="evp-f"><span>'+lb+'</span>'+(area?'<textarea data-evp="'+key+'" maxlength="'+max+'" rows="3" placeholder="'+ph+'">'+v+'</textarea>'
+        :'<input type="text" data-evp="'+key+'" maxlength="'+max+'" placeholder="'+ph+'" value="'+v+'">')+'</label>'; }
+    var h='<div class="sqrep-act evp-act"><div><b>평가서 · 추천서</b><span>평가서는 스태프용 기록, 추천서는 진학 · 외부 제출용입니다</span></div>'
+      +'<span class="sqrep-btns"><button type="button" class="btn'+(k==='eval'?' primary':'')+'" data-evp-open="eval">평가서</button>'
+      +'<button type="button" class="btn'+(k==='reco'?' primary':'')+'" data-evp-open="reco">선수 추천서</button></span></div>';
+    if(k==='eval')h+='<div class="evp-form">'+fld('label','이름',new Date().getFullYear()+' 시즌',40)+fld('opinion','코치 종합 의견','이번 평가에서 본 것을 서너 줄로 적습니다',500,1)
+      +'<p class="evp-fact">'+(p.evalAt?'지금 평가를 오늘 날짜로 굳혀 한 장을 만듭니다.':'아직 평가한 적이 없어 항목이 «평가 전»으로 나갑니다.')+'</p>'
+      +'<div class="evp-go"><button type="button" class="btn" data-evp-open="">닫기</button><button type="button" class="btn primary" data-evp-make="eval"'+(evpBusy?' disabled':'')+'>'+(evpBusy?'만드는 중':'PDF 만들기')+'</button></div></div>';
+    if(k==='reco'){ var cs=evpCands(p), pk=evpPicks(p);
+      h+='<div class="evp-form">'+fld('to','낼 곳','프로세스고등학교',40)
+        +'<div class="evp-f"><span>넣을 강점 · 3개까지</span><div class="evp-chips">'+(cs.length?cs.map(function(it){
+            return '<button type="button" class="evp-chip'+(pk.indexOf(it.id)>=0?' on':'')+'" data-evp-pick="'+esc(it.id)+'">'+esc(it.name)+' <small>'+esc(it.word)+'</small></button>'; }).join('')
+          :'<em>«경기에서» 위로 평가한 항목이 아직 없습니다</em>')+'</div></div>'
+        +fld('contact','추천인 연락처','010-0000-0000',40)+fld('opinion','추천 의견','이 선수를 추천하는 까닭을 적습니다',700,1)
+        +'<p class="evp-fact">선수와 학부모가 읽는 종이입니다. 코치 평가는 영역 그림과 고른 강점으로만 나갑니다.</p>'
+        +'<div class="evp-go"><button type="button" class="btn" data-evp-open="">닫기</button><button type="button" class="btn primary" data-evp-make="reco"'+(evpBusy?' disabled':'')+'>'+(evpBusy?'만드는 중':'PDF 만들기')+'</button></div></div>'; }
+    var gone=(evpGone&&evpGone.pid===p.id)?'<div class="evp-li gone"><span>종이 사본을 지웠습니다</span><i></i><button type="button" class="btn" data-evp-undo>되돌리기</button></div>':'';
+    if(ps.length||gone)h+='<div class="evp-list"><b>지난 종이</b>'+gone+ps.map(function(x){
+        return '<div class="evp-li"><span>'+(x.kind==='eval'?'평가서':'선수 추천서')+(x.label?' · '+esc(x.label):'')+'</span><i>'+esc(String(x.date||'').replace(/-/g,'.'))+(x.by?' · '+esc(x.by):'')+'</i>'
+          +'<button type="button" class="btn" data-evp-re="'+esc(x.id)+'">다시 뽑기</button><button type="button" class="btn" data-evp-del="'+esc(x.id)+'">지우기</button></div>'; }).join('')+'</div>';
+    return h;
+  }
+  function evpBind(){
+    var p=sqEvalPlayers().filter(function(x){return x.id===sqEvalSel;})[0]; if(!p)return;
+    [].forEach.call(wrap.querySelectorAll('[data-evp-open]'),function(b){ b.onclick=function(){ var v=b.dataset.evpOpen; evpOpen=(evpOpen===v?'':v); if(!evpOpen)evpDraft={}; render(); }; });
+    /* 쓰는 동안 다시 그리지 않는다 — 한글 조합이 끊긴다. 값만 초안에 담는다 */
+    [].forEach.call(wrap.querySelectorAll('[data-evp]'),function(i){ i.addEventListener('input',function(){ evpDraft[i.dataset.evp]=i.value; }); });
+    [].forEach.call(wrap.querySelectorAll('[data-evp-pick]'),function(b){ b.onclick=function(){ var id=b.dataset.evpPick, pk=evpPicks(p), at=pk.indexOf(id);
+      if(at>=0)pk.splice(at,1); else if(pk.length<3)pk.push(id); else { gToast('강점은 3개까지 넣습니다'); return; }
+      evpDraft.picks=pk; render(); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-evp-make]'),function(b){ b.onclick=function(){ evpMake(p,b.dataset.evpMake,null); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-evp-re]'),function(b){ b.onclick=function(){ var o=(p.papers||[]).filter(function(x){ return x.id===b.dataset.evpRe; })[0]; if(o)evpMake(p,o.kind,o); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-evp-del]'),function(b){ b.onclick=function(){ var id=b.dataset.evpDel, was=(p.papers||[]).filter(function(x){ return x.id===id; })[0]; if(!was)return;
+      teSend('teamEvalPaper',{playerId:p.id,delId:id}).then(function(r){
+        if(!(r&&r.ok&&Array.isArray(r.papers))){ gToast(r&&r.err==='forbidden'?'권한이 없습니다':'지우지 못했습니다'); return; }
+        p.papers=r.papers; evpGone={pid:p.id,paper:was}; render(); }); }; });
+    var _un=wrap.querySelector('[data-evp-undo]'); if(_un)_un.onclick=function(){ var g=evpGone; if(!g||g.pid!==p.id)return;
+      teSend('teamEvalPaper',{playerId:p.id,paper:g.paper}).then(function(r){ if(r&&r.ok&&Array.isArray(r.papers)){ p.papers=r.papers; evpGone=null; render(); } else gToast('되돌리지 못했습니다'); }); };
+  }
   function rSqReport(p){
     var d=sqRepData(p), posNm=sqEvalPosName(p.posId)||'';
     /* 2.160 — 한눈에(사용자): 스레드·리뷰는 한 번만 계산, 다음 확인 D-day 는 머리 칩으로 */
@@ -9251,6 +9352,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +(_dd!=null?'<i class="nx">다음 확인 D'+(_dd>=0?'-'+_dd:'+'+(-_dd))+'</i>':'')+'</span>'
       +'<span class="sqrep-btns"><button type="button" class="btn" data-sqrep-print>코치용 PDF</button>'
       +'<button type="button" class="btn primary" data-sqrep-print-pl>선수·학부모용 PDF</button></span></div>';
+    h+=evpPanel(p);
     h+='<div class="sqrep-body">';
     /* ══ 2.456 · 프로필 카드 — 이 종이가 **누구 것인지** ═══════════════════════════════
        사용자: "리포트에 프로필카드 넣어주고".
@@ -9708,6 +9810,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var p=sqEvalPlayers().filter(function(x){return x.id===sqEvalSel;})[0]; if(p)try{ sqRepPrint(p); }catch(e){ gToast('리포트를 만들지 못했습니다'); try{console.warn('sqRep',e);}catch(_){}} };
     var _rpp=wrap.querySelector('[data-sqrep-print-pl]'); if(_rpp)_rpp.onclick=function(){   /* 2.909 — 선수·학부모용 */
       var p=sqEvalPlayers().filter(function(x){return x.id===sqEvalSel;})[0]; if(p)try{ sqRepPrintPlayer(p); }catch(e){ gToast('선수용 면담 자료를 만들지 못했습니다'); try{console.warn('sqRepPl',e);}catch(_){}} };
+    try{ evpBind(); }catch(e){ console.warn('evpBind',e); }
     /* 2.155 — 선수 띠 실제 높이를 재서 모드 탭 sticky top 으로 넘긴다(고정값이면 이름 줄바꿈에 겹친다) */
     try{ var _sb=wrap.querySelector('.sqb-card>.sqb'); if(_sb&&_sb.parentNode)_sb.parentNode.style.setProperty('--sqbH',_sb.offsetHeight+'px'); }catch(_){}
     /* 2.423 — 선수가 적은 것: 갈래 거르개 · 긴 답 펼치기 */
@@ -16284,7 +16387,7 @@ html.ps-page-idp .dcols,html.ps-page-idp .dcol{display:contents}
   html.ps-page-idp body.ps-player-role .dcol{display:block;min-width:0}
 }
 </style>
-<link rel="stylesheet" href="team-mobile.css?v=3.360">
+<link rel="stylesheet" href="team-mobile.css?v=3.362">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>
