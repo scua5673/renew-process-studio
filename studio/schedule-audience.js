@@ -9,7 +9,7 @@ function schedLegacyTeamButtons(own){
 }
 function schedYearButtons(selected,action){
   var ys=PSTeamAudience.years(selected),h='<button type="button" class="fp'+(!ys.length?' on':'')+'" aria-pressed="'+(!ys.length)+'" onclick="'+action+'(\'\')">전체 학년</button>';
-  ['0','1','2','3'].forEach(function(y){var on=ys.indexOf(y)>=0;h+='<button type="button" class="fp'+(on?' on':'')+'" aria-pressed="'+on+'" onclick="'+action+'(\''+y+'\')">'+PSTeamAudience.yearLabel(y)+'</button>';});return h;
+  PSTeamAudience.yearList(schedAudienceDoc().meta).forEach(function(y){var on=ys.indexOf(y)>=0;h+='<button type="button" class="fp'+(on?' on':'')+'" aria-pressed="'+on+'" onclick="'+action+'(\''+y+'\')">'+PSTeamAudience.yearLabel(y)+'</button>';});return h;
 }
 function schedToggleYears(current,y){var a=PSTeamAudience.years(current);if(!y)return [];var i=a.indexOf(y);if(i<0)a.push(y);else a.splice(i,1);return PSTeamAudience.years(a);}
 function schedRenderYears(){
@@ -18,9 +18,9 @@ function schedRenderYears(){
   box.innerHTML='<span>학년</span>'+schedYearButtons(__schedYears,'schedSetYear');
 }
 function schedSetYear(y){__schedYears=schedToggleYears(__schedYears,y);schedRenderYears();syncViews(false);}
-function schedPickYears(){return '<div class="wf-sec"><div class="pksub sm">참여 학년</div><div class="fmtpick">'+schedYearButtons(__sessionTeamPick.schoolYears,'wksSessionYearToggle')+'</div><p>선택한 팀 안에서 참여할 학년입니다. 전체 학년을 고르면 학년 제한이 없습니다.</p></div>';}
+function schedPickYears(){if(!PSTeamAudience.maxYear(schedAudienceDoc().meta))return '';return '<div class="wf-sec"><div class="pksub sm">참여 학년</div><div class="fmtpick">'+schedYearButtons(__sessionTeamPick.schoolYears,'wksSessionYearToggle')+'</div><p>선택한 팀 안에서 참여할 학년입니다. 전체 학년을 고르면 학년 제한이 없습니다.</p></div>';}
 function wksSessionYearToggle(y){if(!__sessionTeamPick)return;__sessionTeamPick.schoolYears=schedToggleYears(__sessionTeamPick.schoolYears,y);wksSessionTeamRender();}
-function schedFillYears(tr){return '<div class="wf-sec" id="wfSec-years"><div class="pksub sm">참여 학년</div><div class="fmtpick">'+schedYearButtons(tr&&tr.schoolYears,'wksFillYear')+'</div><small>선택한 팀의 해당 학년이 참여합니다.</small></div>';}
+function schedFillYears(tr){if(!PSTeamAudience.maxYear(schedAudienceDoc().meta))return '';return '<div class="wf-sec" id="wfSec-years"><div class="pksub sm">참여 학년</div><div class="fmtpick">'+schedYearButtons(tr&&tr.schoolYears,'wksFillYear')+'</div><small>선택한 팀의 해당 학년이 참여합니다.</small></div>';}
 function wksFillYear(y){
   if(schedEditBlocked()){schedBlockNotice();return;}
   if(__fillNoSes){toast('먼저 세션을 추가해 주세요.');return;}

@@ -67,7 +67,7 @@ const SIZES={desktop:{width:1280,height:1000},tablet:{width:768,height:1024},pho
 const result={engine,cases:[],errors:[],measure:{}};let browser;
 /* 종이 한 장이 A4 안쪽(186 × 271mm)에 들어가는지 — 넘치는 덩이 · 잘리는 항목 이름이 없어야 한다 */
 /* #report 는 인쇄 매체에서만 보인다 — 인쇄 모드로 바꿔 잰다(인쇄 뒤 body.rep 가 걷히므로 다시 건다) */
-const fit=async(page,frame,shot)=>{await page.emulateMedia({media:'print'});try{const r=await fit0(frame);if(shot)await frame.locator('#report .evp').screenshot({path:path.join(out,engine+'-'+shot+'.png')});return r;}finally{await page.emulateMedia({media:'screen'});}};
+const fit=async(page,frame,shot)=>{await page.emulateMedia({media:'print'});try{const r=await fit0(frame);if(shot)await frame.locator('#report .evp').screenshot({path:path.join(out,engine+'-'+shot+'.png'),timeout:4000}).catch(e=>console.warn('[eval-paper-3361] 사진은 건너뜀(잰 값은 위에서 이미 봤다 — 인쇄 뒤 body.rep 가 걷히면 종이가 숨는다)',String(e.message||e).split('\n')[0]));return r;}finally{await page.emulateMedia({media:'screen'});}};
 const fit0=frame=>frame.evaluate(()=>{document.body.classList.add('rep');const a=document.querySelector('#report .evp');if(!a)return null;const r=a.getBoundingClientRect();
   return {w:Math.round(r.width),h:Math.round(r.height),over:a.scrollHeight-a.clientHeight,
     kids:[...a.children].map(c=>Math.round(c.getBoundingClientRect().bottom-r.top)),

@@ -133,6 +133,23 @@ try{
     await frame.locator('#avDailyCard [data-av-grp="p1"]').click();await frame.locator('#psPickPop').waitFor();await frame.locator('#psPickPop button',{hasText:'A팀'}).click();
     await frame.waitForFunction(()=>!document.querySelector('#psPickPop')&&(document.querySelector('#avDailyCard [data-av-grp="p1"]')||{textContent:''}).textContent.includes('A팀'));
     assert.equal(await frame.evaluate(()=>data.players.find(p=>p.id==='p1').grp),'A팀');
+    // ③-2 3.363 포지션 칩 → 포지션 고르개(선수단 표와 같은 목록) → GK: save() → 기기 사본 · 칸 글자, 다시 CM 으로
+    const posBox=await frame.evaluate(()=>{const b=document.querySelector('#avDailyCard [data-av-pos="p5"]'),r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return {w:Math.round(r.width),h:Math.round(r.height),hit:!!(hit&&hit.closest('[data-av-pos="p5"]')),n:document.querySelectorAll('#avDailyCard [data-av-pos]').length,over:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
+    assert.ok(posBox.n===5&&posBox.h>=22&&posBox.w>=30&&posBox.hit,'포지션 칩이 줄마다 하나 · 눌릴 크기 · 가려지지 않음: '+JSON.stringify(posBox));
+    assert.ok(posBox.over<=0,'가로 넘침 없음: '+posBox.over);
+    await frame.locator('#avDailyCard [data-av-pos="p5"]').click();await frame.locator('#psPickPop').waitFor();
+    const posItems=await frame.evaluate(()=>[...document.querySelectorAll('#psPickPop button')].map(b=>b.textContent.trim()));
+    assert.ok(posItems.includes('GK')&&posItems.includes('CM')&&posItems[posItems.length-1]==='미지정','포지션 고르개 목록: '+posItems.join(','));
+    await frame.locator('#psPickPop button',{hasText:/^GK$/}).click();
+    await frame.waitForFunction(()=>!document.querySelector('#psPickPop')&&(document.querySelector('#avDailyCard [data-av-pos="p5"]')||{textContent:''}).textContent.includes('GK'));
+    const posAfter=await frame.evaluate(async()=>{await scoutStore.ready();const raw=localStorage.getItem('scout_tool_v1'),p=data.players.find(x=>x.id==='p5');
+      const gkId=data.positions.find(x=>x.name==='GK').id;return {mem:p.posId===gkId,name:p.posName,ls:raw?JSON.parse(raw).players.find(x=>x.id==='p5').posId===gkId:null,gk:document.querySelector('#avDailyCard [data-av-pos="p5"]').classList.contains('gk')};});
+    assert.deepEqual(posAfter,{mem:true,name:'GK',ls:true,gk:true},'포지션이 save() 를 지나 기기 사본에 적힌다');
+    await frame.locator('#avDailyCard [data-av-pos="p5"]').click();await frame.locator('#psPickPop').waitFor();await frame.locator('#psPickPop button',{hasText:'미지정'}).click();
+    await frame.waitForFunction(()=>!document.querySelector('#psPickPop')&&data.players.find(x=>x.id==='p5').posId==='');
+    assert.match(await frame.locator('#avDailyCard [data-av-pos="p5"]').innerText(),/^–/,'미지정이면 – 로 남아 다시 누를 수 있다');
+    await frame.locator('#avDailyCard [data-av-pos="p5"]').click();await frame.locator('#psPickPop').waitFor();await frame.locator('#psPickPop button',{hasText:/^CM$/}).click();
+    await frame.waitForFunction(()=>!document.querySelector('#psPickPop')&&data.players.find(x=>x.id==='p5').posName==='CM');
     // ④ 3.307 이름 → 프로필 · 상태 칩 → 기록 창(2.942)은 표 안에서도 그대로
     await frame.locator('#avDailyCard [data-av-player-edit="p1"]').click();await frame.locator('#plEditModal').waitFor({state:'visible'});
     assert.equal(await frame.locator('#plEditTitle').innerText(),'가상 강민');await frame.locator('#plClose').click();await frame.locator('#plEditModal').waitFor({state:'hidden'});
