@@ -66,7 +66,7 @@ try{
   assert.equal(m.doc.players.filter(p=>p.team==='op'&&p.y<20&&p.y>12).length,3,'the opponent back line is a back three (3-5-2)');
   const pitch=await f.locator('#phbPitch').boundingBox();
   assert.ok(pitch.height>pitch.width*1.2,'the pitch is portrait '+JSON.stringify(pitch));assert.ok(pitch.height>380,'and big enough to work on');
-  for(const sel of ['#phbTools .phb-tool','[data-phb="save"]','[data-phb="back"]','[data-phb="undo"]']){for(const b of await f.locator(sel).all()){const r=await b.boundingBox();assert.ok(r.height>=44&&r.width>=44,sel+' is finger-sized');}}
+  for(const sel of ['#phbTools .phb-tool','[data-phb="save"]','[data-phb="back"]','[data-phb="undo"]','.phb-play','.phb-sc','.phb-add']){for(const b of await f.locator(sel).all()){const r=await b.boundingBox();assert.ok(r.height>=44&&r.width>=44,sel+' is finger-sized');}}
   /* 끌어 옮기기 → 되돌리기 */
   const gk=m.doc.players[0];
   await ptr(f,[[gk.x,gk.y],[gk.x+10,gk.y-8]]);
@@ -94,18 +94,81 @@ try{
   m=await model(f);assert.equal(m.doc.cones.length,1);
   await f.locator('#phbTools [data-v="move"]').tap();
   await shot(page,'3-editor');
-  /* 3.333 — 토큰 크기: «옮기기» 줄의 − / ＋ (다섯 단계 · 되돌리기 한 번에 한 칸) */
-  await f.locator('[data-phb="tool"][data-v="move"]').click();
-  const chipR=()=>f.evaluate(()=>+document.querySelector('#phbPitch .phb-tok ellipse:nth-of-type(2)').getAttribute('rx'));
+  /* 3.359 — 큰 작전판과 같은 모습: 잔디 색 · 유니폼 칩 · 큰 작전판의 공 */
+  const look=await f.evaluate(()=>{const g=document.getElementById('phbFg'),b=document.getElementById('phbBg');return {bg:b.querySelector('rect').getAttribute('fill'),jersey:g.querySelectorAll('.phb-tok .phb-jersey').length,toks:g.querySelectorAll('.phb-tok').length,
+    ball:!!g.querySelector('.phb-ball image, .phb-ball svg'),boardBall:/^<svg/.test(String(ballSVG())),run:[...g.querySelectorAll('.phb-line path')].map(e=>e.getAttribute('stroke-dasharray')||'')};});
+  assert.equal(look.bg,'#1b8044','the board grass');assert.equal(look.jersey,look.toks,'every chip wears the board jersey');assert.equal(look.toks,23);
+  assert.equal(look.ball,look.boardBall,'the ball is the big board ball');assert.deepEqual(look.run,['',''],'pass and dribble are solid strokes');
+  /* 3.333 → 3.359 — 토큰 크기는 선수 창의 − / ＋ (다섯 단계 · 모든 선수 · 되돌리기 한 번에 한 칸) */
+  const chipR=()=>f.evaluate(()=>+document.querySelector('#phbFg .phb-tok').getAttribute('transform').match(/scale\(([0-9.]+)\)/)[1]);
   const r3=await chipR();
+  await ptr(f,[[gk.x,gk.y]]);await f.locator('#phbTok').waitFor({state:'visible'});
   await f.locator('[data-phb="tok"][data-v="1"]').click();await f.locator('[data-phb="tok"][data-v="1"]').click();
   assert.equal((await model(f)).doc.tok,5);assert.equal(await f.locator('#phbTokN').textContent(),'5');
   assert.equal(await f.locator('[data-phb="tok"][data-v="1"]').isDisabled(),true,'the biggest step stops');
   const r5=await chipR();assert.ok(r5>r3*1.2,'the chips grew: '+r3+' → '+r5);
+  await f.locator('[data-phb="tok-ok"]').tap();
   await shot(page,'3b-editor-big');
   await f.locator('[data-phb="undo"]').click();assert.equal((await model(f)).doc.tok,4,'undo steps the size back');
+  await ptr(f,[[gk.x,gk.y]]);await f.locator('#phbTok').waitFor({state:'visible'});
   await f.locator('[data-phb="tok"][data-v="-1"]').click();assert.equal((await model(f)).doc.tok,3);
-  assert.ok(Math.abs(await chipR()-r3)<0.01,'back to the first size');
+  await f.locator('[data-phb="tok-ok"]').tap();
+  assert.ok(Math.abs(await chipR()-r3)<0.001,'back to the first size');
+  /* 3.359 — 장면(애니메이션): ＋ 장면 → 화살대로 옮긴 다음 장면 → 옮기기 → 장면 오가기 → 시간 → 재생 */
+  await f.locator('[data-phb="play"]').tap();assert.match(await toastText(f),/2개 이상/,'one scene does not play');
+  const s1=(await model(f)).doc;
+  /* 이동 화살 하나 — 4번 선수가 화살 끝으로 간다 */
+  const run=s1.players[4];
+  await f.locator('#phbTools [data-v="line"]').tap();await f.locator('#phbSub [data-v="run"]').tap();
+  await ptr(f,[[run.x,run.y],[run.x+4,run.y-14]]);
+  assert.equal(await f.evaluate(()=>!!document.querySelector('#phbFg .phb-line path[stroke-dasharray]')),true,'a run is dashed like the big board');
+  await f.locator('[data-phb="scene-add"]').tap();
+  m=await model(f);
+  assert.equal(m.doc.scenes.length,2);assert.equal(m.doc.at,1);assert.equal(m.doc.lines.length,0,'arrows stay in their scene');assert.equal(m.doc.scenes[0].lines.length,3);
+  assert.ok(Math.abs(m.doc.players[4].x-(run.x+4))<1.2&&Math.abs(m.doc.players[4].y-(run.y-14))<1.2,'the runner already stands at the arrow end '+JSON.stringify(m.doc.players[4]));
+  assert.match(await toastText(f),/장면 2 · 화살대로/);
+  assert.deepEqual(await f.locator('.phb-sc').allInnerTexts().then(a=>a.map(t=>t.replace(/\s+/g,''))),['1','2⋯']);
+  assert.equal(await f.locator('#phbFg .phb-ghost').count(),1,'the way from the last scene is drawn');
+  /* 장면 2 에서 옮기기 — 장면 1 은 그대로 */
+  await f.locator('#phbTools [data-v="move"]').tap();
+  const mv=m.doc.players[6];await ptr(f,[[mv.x,mv.y],[mv.x-8,mv.y-10]]);
+  /* 놓기는 모든 장면에 */
+  await f.locator('#phbTools [data-v="put"]').tap();await f.locator('#phbSub [data-v="op"]').tap();await ptr(f,[[60,8]]);
+  m=await model(f);assert.equal(m.doc.players.length,24);assert.equal(m.doc.scenes[0].players.length,24,'a new player joins every scene');
+  await f.locator('#phbTools [data-v="erase"]').tap();await ptr(f,[[60,8]]);
+  m=await model(f);assert.equal(m.doc.players.length,23);assert.equal(m.doc.scenes[0].players.length,23,'and leaves every scene');
+  await f.locator('#phbTools [data-v="move"]').tap();
+  await shot(page,'3c-scene2');
+  await f.locator('.phb-sc').first().tap();
+  m=await model(f);assert.equal(m.doc.at,0);assert.deepEqual([m.doc.players[6].x,m.doc.players[6].y],[mv.x,mv.y],'scene 1 keeps its places');assert.equal(m.doc.lines.length,3);
+  assert.equal(await f.locator('#phbFg .phb-ghost').count(),0);
+  await shot(page,'3d-scene1');
+  await f.locator('.phb-sc').nth(1).tap();
+  m=await model(f);assert.equal(m.doc.at,1);assert.ok(Math.abs(m.doc.players[6].x-(mv.x-8))<1.2,'scene 2 keeps the move');
+  /* 지금 장면을 다시 누르면 시간 · 지우기 */
+  await f.locator('.phb-sc').nth(1).tap();await f.locator('#phbScene').waitFor({state:'visible'});
+  await f.locator('[data-phb="scene-dur"][data-v="1.6"]').tap();
+  assert.equal((await model(f)).doc.scenes[0].dur,1.6);
+  await f.locator('[data-phb="scene-ok"]').tap();
+  /* 재생 — 첫 장면부터 끝까지, 그동안 판은 못 고친다. 끝나면 고치던 장면으로 */
+  const where=()=>f.evaluate(id=>[...document.querySelectorAll('#phbFg .phb-tok')].find(e=>e.getAttribute('data-id')===String(id)).getAttribute('transform'),mv.id);
+  const end=await where();
+  await f.locator('[data-phb="play"]').tap();
+  assert.equal(await f.evaluate(()=>!!window.__psPhoneBoard.ui().model().play&&document.getElementById('psPhoneBoard').classList.contains('phb-playing')),true);
+  const start=await where();assert.notEqual(start,end,'playback starts from scene 1');
+  await ptr(f,[[mv.x,mv.y],[mv.x+9,mv.y+9]]);
+  await page.waitForTimeout(1500);const mid=await where();assert.ok(mid!==start&&mid!==end,'the chip is on its way: '+mid);
+  await f.waitForFunction(()=>!window.__psPhoneBoard.ui().model().play,null,{timeout:8000});
+  assert.equal(await where(),end,'back on the scene being edited');
+  m=await model(f);assert.equal(m.doc.at,1);assert.deepEqual([m.doc.scenes[0].players[6].x,m.doc.scenes[0].players[6].y],[mv.x,mv.y],'nothing moved while playing');
+  await f.locator('[data-phb="play"]').tap();await page.waitForTimeout(900);await shot(page,'3e-playing');await f.locator('[data-phb="play"]').tap();
+  assert.equal(await f.evaluate(()=>!!window.__psPhoneBoard.ui().model().play),false,'the same button stops');
+  /* 장면 지우기 → 되돌리기 */
+  await f.locator('.phb-sc').nth(1).tap();await f.locator('#phbScene').waitFor({state:'visible'});await f.locator('[data-phb="scene-del"]').tap();
+  m=await model(f);assert.equal(m.doc.scenes,undefined,'one scene left is a plain board');
+  await f.locator('[data-phb="undo"]').tap();
+  m=await model(f);assert.equal(m.doc.scenes.length,2);assert.equal(await f.locator('.phb-sc').count(),2);
+  await f.locator('.phb-sc').first().tap();
   /* 다른 탭에 갔다 와도 쓰던 판은 그대로 */
   await page.locator('#psTrainBtn').tap();
   await f.waitForFunction(()=>document.getElementById('psPhoneBoard').hidden);
@@ -123,7 +186,8 @@ try{
   assert.equal(local.length,1);
   const it=local[0];savedId=it.libId;
   assert.equal(it.type,'board');assert.equal(it.name,'토요일 4-4-2');assert.deepEqual(it.tags,['폰보드']);assert.deepEqual(it.phone,{v:1,n:'11'});
-  assert.equal(it.snap.orientation,'v');assert.equal(it.snap.players.length,23);assert.equal(it.snap.equipment.length,1);assert.equal(it.snap.drawings.length,2);
+  assert.equal(it.snap.orientation,'v');assert.equal(it.snap.players.length,23);assert.equal(it.snap.equipment.length,1);assert.equal(it.snap.drawings.length,3);
+  assert.equal(it.frames.length,2,'scenes are saved as big-board frames');assert.deepEqual(it.frames.map(x=>x.dur),[1.6,1]);assert.equal(it.frames[1].snap.drawings.length,0);
   assert.equal(it.snap.players[0].name,'김 민수');assert.equal(it.snap.players[0].num,'21');
   assert.ok(it.createdBy,'creator stamp');assert.equal(it.editedAt,it.savedAt);assert.ok(/^<svg/.test(it.thumb||''),'thumbnail drawn by the real board');
   const srv=await serverItems(l=>l.length===1);
@@ -142,7 +206,7 @@ try{
   await f.waitForFunction(()=>(window.__psPhoneBoard.ui().model().list||[]).length===1);
   await f.locator('#phbList .phb-row').first().tap();
   await f.locator('#phbEdit').waitFor({state:'visible'});
-  m=await model(f);assert.equal(m.editing,savedId);assert.equal(m.doc.players.length,23);assert.equal(m.dirty,false);
+  m=await model(f);assert.equal(m.editing,savedId);assert.equal(m.doc.players.length,23);assert.equal(m.dirty,false);assert.equal(m.doc.scenes.length,2,'the scenes come back');assert.equal(await f.locator('.phb-sc').count(),2);
   assert.equal(await f.locator('#phbName').inputValue(),'토요일 4-4-2');
   const p5=m.doc.players[5];
   await ptr(f,[[p5.x,p5.y],[p5.x+6,p5.y-6]]);
@@ -150,7 +214,7 @@ try{
   await f.locator('#phbHome').waitFor({state:'visible'});
   assert.match(await toastText(f),/폰보드를 고쳤습니다/);
   const again=await f.evaluate(()=>libGet().then(l=>JSON.parse(JSON.stringify(l.filter(d=>d&&d.phone)))));
-  assert.equal(again.length,1,'still one item');assert.equal(again[0].libId,savedId);assert.ok(again[0].editedAt>=it.editedAt);
+  assert.equal(again.length,1,'still one item');assert.equal(again[0].frames.length,2);assert.equal(again[0].libId,savedId);assert.ok(again[0].editedAt>=it.editedAt);
   assert.notEqual(again[0].snap.players[5].x,it.snap.players[5].x,'the moved player has a new place');
   assert.equal(JSON.stringify(again[0].snap.players[7]),JSON.stringify(it.snap.players[7]),'an untouched player is unchanged');
   /* 나가기 — 저장 안 한 판은 묻는다 */
@@ -181,6 +245,10 @@ try{
   await page.locator('#psTrainBtn').click();
   await f.waitForFunction(()=>[...document.querySelectorAll('#drillFiles .vcard')].some(c=>c.textContent.includes('토요일 4-4-2')&&c.querySelector('.vc-phone')),null,{timeout:40000});
   await shot(page,'6-ipad-vault');
+  /* 3.359 — 폰에서 만든 장면은 큰 작전판의 장면 그대로 — 열면 재생할 수 있다 */
+  const big=await f.evaluate(async id=>{const l=await libGet(),d=l.find(x=>x.libId===id);window.__vaultOpenView(d);for(let i=0;i<40&&anim.frames.length<2;i++)await new Promise(r=>setTimeout(r,150));return {n:anim.frames.length,ids:anim.frames.map(x=>x.snap.players.length)};},savedId);
+  assert.deepEqual(big,{n:2,ids:[23,23]},'the big board loads the phone scenes');
+  await page.waitForTimeout(600);await shot(page,'7-ipad-open');
  }
  console.log(JSON.stringify({test:'board-phone-board-3327',engine,passed:true}));
 }catch(e){console.error(e);process.exitCode=1;}
