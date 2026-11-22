@@ -60,11 +60,14 @@
     var filter='',counts=null,triage=false,fixedDraft='',statusTicket=0;
     /* 3.201 — 제보자 기기 현황(ps_support_reporter_devices): undefined 아직 · null 못 받음 · {latest,devices} */
     var devices,devicesTicket=0;
+    /* 옆 칸(studio/admin-support-context.js · ps_support_context · ps_support_list_flags). 모듈이 없으면 예전 화면 그대로.
+       ctx: undefined 아직 · null 함수 없음(숨김) · 'error' 못 받음 · 객체 / flags: 제보 id → 목록 꼬리표 */
+    var CV=o.contextView||w.PSAdminSupportContext||null,ctx,ctxTicket=0,flags=new Map(),flagsTicket=0;
     function readOwner(){try{var c=o.context()||{};return {uid:String(c.uid||''),epoch:String(c.epoch==null?'':c.epoch),ready:c.ready===true};}catch(_){return {uid:'',epoch:'',ready:false};}}
     function equalOwner(a,b){return !!a&&!!b&&a.uid===b.uid&&a.epoch===b.epoch&&a.ready===b.ready;}
     function stamp(){return {uid:owner.uid,epoch:owner.epoch,ready:owner.ready,generation:generation};}
     function valid(s){return !destroyed&&active&&!!s&&s.generation===generation&&s.ready&&!!s.uid&&equalOwner(s,readOwner());}
-    function clearView(){rows=[];cursor=null;adminConfirmed=false;listLoading=false;detailLoading=false;busy=false;selected='';detail=null;currentDraft=null;listError='';detailError='';notice='';fixedDraft='';statusTicket++;filter='';counts=null;triage=false;devices=undefined;devicesTicket++;}
+    function clearView(){rows=[];cursor=null;adminConfirmed=false;listLoading=false;detailLoading=false;busy=false;selected='';detail=null;currentDraft=null;listError='';detailError='';notice='';fixedDraft='';statusTicket++;filter='';counts=null;triage=false;devices=undefined;devicesTicket++;ctx=undefined;ctxTicket++;flags=new Map();flagsTicket++;}
     function rowOf(id){return rows.find(function(r){return r.id===id;})||null;}
     function shareCounts(){if(triage&&validCounts(counts)&&typeof o.onCounts==='function'){try{o.onCounts(Object.assign({},counts));}catch(_){}}}
     function moveCount(from,to){if(!triage||!validCounts(counts)||from===to)return;if(STAGES.indexOf(from)>=0&&counts[from]>0)counts[from]--;if(STAGES.indexOf(to)>=0)counts[to]++;shareCounts();}
@@ -119,7 +122,7 @@
       if(listError)h+='<p class="admSupportError" role="alert">'+esc(listError)+'</p>';
       if(listLoading&&!rows.length)h+='<p class="admSupportEmpty" role="status">접수된 제보를 불러오는 중…</p>';
       else if(can&&!rows.length&&!listError)h+='<p class="admSupportEmpty">'+(filter?'이 상태의 제보가 없습니다.':'아직 접수된 제보가 없습니다.')+'</p>';
-      h+='<div class="admSupportList">'+(can?rows.map(function(r){return '<button type="button" class="admSupportRow'+(selected===r.id?' is-selected':'')+'" data-adm-report="'+esc(r.id)+'" aria-pressed="'+(selected===r.id)+'"'+(busy?' disabled':'')+'><span><strong>'+esc(r.title)+'</strong><small>'+esc(date(r.created_at))+' · '+(r.is_own?'내 제보':r.reporter?esc(reporterLine(r.reporter)):'사용자 제보')+'</small></span><span class="admSupportCount'+(r.stage?' is-'+r.stage:'')+'">'+esc(stageLabel(r))+'</span></button>';}).join(''):'')+'</div>';
+      h+='<div class="admSupportList">'+(can?rows.map(function(r){return '<button type="button" class="admSupportRow'+(selected===r.id?' is-selected':'')+'" data-adm-report="'+esc(r.id)+'" aria-pressed="'+(selected===r.id)+'"'+(busy?' disabled':'')+'><span><strong>'+esc(r.title)+'</strong><small>'+esc(date(r.created_at))+' · '+(r.is_own?'내 제보':r.reporter?esc(reporterLine(r.reporter)):'사용자 제보')+'</small>'+(CV?CV.tags(r,flags.get(r.id)):'')+'</span><span class="admSupportCount'+(r.stage?' is-'+r.stage:'')+'">'+esc(stageLabel(r))+'</span></button>';}).join(''):'')+'</div>';
       if(can&&cursor)h+='<button type="button" class="admSupportMore" data-adm-support="more"'+(listLoading||busy?' disabled':'')+'>'+(listLoading?'불러오는 중…':'이전 제보 더 보기')+'</button>';
       h+='</section><section class="admSupportDetail" aria-label="제보 내용과 답변">';
       if(can&&selected)h+='<button type="button" class="admSupportBack" data-adm-support="back"'+(busy?' disabled':'')+'>목록으로</button>';
@@ -129,7 +132,7 @@
       else if(can&&detail){
         var r=detail.report,entry=currentDraft,count=r.diagnostics&&Array.isArray(r.diagnostics.logs)?r.diagnostics.logs.length:0,who=detailReporter();
         h+='<article class="admSupportReport"><h2>'+esc(r.title)+'</h2><small>'+esc(date(r.created_at))+'</small>'
-          +(who?'<p class="admSupportWho">보낸 사람 <b>'+esc(reporterLine(who,true))+'</b></p>':'')+devicesHtml()+'<p>'+esc(r.body)+'</p>'
+          +(who?'<p class="admSupportWho">보낸 사람 <b>'+esc(reporterLine(who,true))+'</b></p>':'')+(CV?'':devicesHtml())+'<p>'+esc(r.body)+'</p>'
           +(detail.image?'<div class="support-image-view" data-adm-support-image></div>':'')+'<details class="admSupportLogs"><summary>제보 당시 사용 환경 · 오류 로그 '+count+'건</summary><pre>'+esc(diagnosticText(r.diagnostics))+'</pre></details>'
           +'<button type="button" data-adm-support="copy">제보·대화·사용 환경·로그 전체 복사</button>'+followupHtml(who)+'</article>'
           +statusHtml()
@@ -142,7 +145,8 @@
           +'<div class="admSupportActions"><span>답변은 제보자의 앱에도 표시됩니다.</span><button class="admSupportPrimary" type="submit" data-adm-support="send"'+(busy?' disabled':'')+'>'+(busy?'저장 확인 중…':entry.attempt?'답변 저장 다시 확인':'답변 등록')+'</button></div></form>';
       }else if(can&&selected&&detailError)h+='<button type="button" data-adm-support="retry-detail">제보 다시 열기</button>';
       else if(can)h+='<p class="admSupportEmpty">목록에서 제보를 선택하면 내용과 답변을 확인할 수 있습니다.</p>';
-      h+='</section></div>';root.dataset.detail=can&&selected?'true':'false';root.innerHTML=h;renderedSelected=selected;
+      var rail=can&&detail&&!detailLoading?railHtml():'';
+      h+='</section>'+rail+'</div>';root.dataset.detail=can&&selected?'true':'false';root.dataset.rail=rail?'true':'false';root.innerHTML=h;renderedSelected=selected;
       if(w.PSSupportImage&&can&&detail&&detail.image){var imageId=detail.report.id,imageStamp=stamp();w.PSSupportImage.viewer(w,root.querySelector('[data-adm-support-image]'),function(){return call(imageStamp,'ps_support_image_get',{p_report_id:imageId}).then(function(value){if(!safe(imageStamp))throw fault('support_owner_changed');return value;});});}
       root.querySelector('.admSupportInbox').scrollTop=inboxScroll;root.querySelector('.admSupportDetail').scrollTop=detailScroll;
     }
@@ -174,6 +178,30 @@
           +(crash?'<small class="adm-stale-bad">비정상 종료 '+crash+'</small>':'')+(full?'<small class="adm-stale-bad">저장공간 가득 '+full+'</small>':'')+'</li>';
       }).join('')+'</ul>';
     }
+    function railHtml(){
+      if(!CV||!detail||detail.report.is_own)return '';
+      var who=detailReporter(),dev=devicesHtml();
+      if(!who&&!dev&&ctx==null)return '';
+      return CV.rail({who:who?reporterLine(who,true):'',canUser:!!(who&&who.id&&typeof o.openUser==='function'),devices:dev,ctx:ctx,busy:busy});
+    }
+    function loadContext(s,id){
+      if(!CV)return;
+      var ticket=++ctxTicket;
+      call(s,'ps_support_context',{p_report_id:id}).then(function(r){
+        if(!safe(s)||ticket!==ctxTicket||selected!==id)return;
+        ctx=CV.clean(r)||'error';render();
+      }).catch(function(e){if(!safe(s)||ticket!==ctxTicket||selected!==id)return;ctx=errorKind(e)==='unavailable'?null:'error';render();});
+    }
+    /* 목록 꼬리표 — 못 받으면 꼬리표 없이 둔다(목록 · 제보 열기는 그대로). */
+    function loadFlags(s,ids){
+      ids=ids.filter(function(id){var r=rowOf(id);return r&&!r.is_own;}).slice(0,40);
+      if(!CV||!ids.length)return;
+      var ticket=flagsTicket;
+      call(s,'ps_support_list_flags',{p_ids:ids}).then(function(r){
+        if(!safe(s)||ticket!==flagsTicket)return;
+        var got=CV.flags(r);ids.forEach(function(id){if(got[id])flags.set(id,got[id]);else flags.delete(id);});render();
+      }).catch(function(){if(safe(s)&&ticket===flagsTicket)ids.forEach(function(id){flags.delete(id);});});
+    }
     function statusHtml(){
       var row=rowOf(selected);if(!triage||!row||STAGES.indexOf(row.stage)<0)return '';
       var closed=row.status==='closed';
@@ -197,25 +225,26 @@
         if(!Array.isArray(result.reports)||result.reports.some(function(r){return !r||!UUID.test(r.id||'')||typeof r.title!=='string'||typeof r.is_own!=='boolean'||!Number.isInteger(r.reply_count)||r.reply_count<0
           ||(r.stage!=null&&STAGES.indexOf(r.stage)<0)||(r.fixed_in!=null&&!FIXED.test(String(r.fixed_in)));}))throw fault('support_failed');
         if(result.next_cursor!=null&&(typeof result.next_cursor!=='object'||typeof result.next_cursor.created_at!=='string'||!UUID.test(result.next_cursor.id||'')))throw fault('support_failed');
-        var seen=new Set(rows.map(function(r){return r.id;}));
+        var seen=new Set(rows.map(function(r){return r.id;})),fresh=[];
         result.reports.forEach(function(r){if(seen.has(r.id))return;
           rows.push({id:r.id,title:r.title,created_at:r.created_at,is_own:r.is_own,reply_count:r.reply_count,
             stage:STAGES.indexOf(r.stage)>=0?r.stage:'',status:r.status==='closed'?'closed':'open',has_admin_reply:r.has_admin_reply===true,fixed_in:r.fixed_in||'',
-            reporter:r.is_own?null:reporterOf(r.reporter)});seen.add(r.id);});
+            reporter:r.is_own?null:reporterOf(r.reporter)});seen.add(r.id);fresh.push(r.id);});
         cursor=result.next_cursor||null;adminConfirmed=true;
         if(validCounts(result.counts)){triage=true;counts=Object.assign({},result.counts);shareCounts();}else if(!more){triage=false;counts=null;filter='';}
+        loadFlags(s,fresh);
       }).catch(function(e){if(!safe(s)||ticket!==listTicket)return;var kind=errorKind(e);if(kind==='denied'){denied();return;}listError=errorText(kind);})
         .finally(function(){if(safe(s)&&ticket===listTicket){listLoading=false;render();}});
     }
     function openReport(id){
       if(!reconcile()||!adminConfirmed||busy||!UUID.test(id||'')||!rows.some(function(r){return r.id===id;}))return Promise.resolve();
-      var s=stamp(),ticket=++detailTicket;selected=id;detail=null;currentDraft=draftFor(id);detailLoading=true;detailError='';notice='';fixedDraft=(rowOf(id)||{}).fixed_in||'';statusTicket++;devices=undefined;devicesTicket++;render();
+      var s=stamp(),ticket=++detailTicket;selected=id;detail=null;currentDraft=draftFor(id);detailLoading=true;detailError='';notice='';fixedDraft=(rowOf(id)||{}).fixed_in||'';statusTicket++;devices=undefined;devicesTicket++;ctx=undefined;ctxTicket++;render();
       try{if(w.matchMedia('(max-width:700px)').matches)root.scrollIntoView({block:'start'});}catch(_){}
       return call(s,w.PSSupportImage?'ps_support_get_with_image':'ps_support_get',{p_report_id:id}).catch(function(e){if(w.PSSupportImage&&errorKind(e)==='unavailable')return call(s,'ps_support_get',{p_report_id:id});throw e;}).then(function(result){
         if(!safe(s)||ticket!==detailTicket)return;
         if(!result||!result.report||result.report.id!==id||typeof result.report.title!=='string'||typeof result.report.body!=='string'||!Array.isArray(result.replies))throw fault('support_failed');
         if(result.replies.some(function(q){return !q||!UUID.test(q.id||'')||q.report_id!==id||typeof q.body!=='string'||['admin','reporter'].indexOf(q.author_role)<0;}))throw fault('support_failed');
-        detail=result;loadDevices(s,id);
+        detail=result;loadDevices(s,id);loadContext(s,id);
         if(currentDraft.attempt){var confirmed=detail.replies.find(function(q){return matchingReply(q,currentDraft.attempt);});if(confirmed&&acknowledge(currentDraft,confirmed))notice='답변 저장을 확인했습니다.';}
       }).catch(function(e){if(!safe(s)||ticket!==detailTicket)return;var kind=errorKind(e);if(kind==='denied'){denied();return;}if(kind==='missing'){lockView(errorText('missing'));return;}detailError=errorText(kind);})
         .finally(function(){if(safe(s)&&ticket===detailTicket){detailLoading=false;render();}});
@@ -252,8 +281,9 @@
       return call(s,'ps_support_set_status',{p_report_id:id,p_status:status,p_fixed_in:fixed||null}).then(function(result){
         if(!safe(s)||ticket!==statusTicket||selected!==id)return;
         if(!result||result.id!==id||['open','closed'].indexOf(result.status)<0||STAGES.indexOf(result.stage)<0||(result.fixed_in!=null&&!FIXED.test(String(result.fixed_in))))throw fault('support_failed');
-        var was=row.stage;row.status=result.status;row.stage=result.stage;row.fixed_in=result.fixed_in||'';row.has_admin_reply=result.has_admin_reply===true;fixedDraft=row.fixed_in;
+        var was=row.stage,fixedWas=row.fixed_in;row.status=result.status;row.stage=result.stage;row.fixed_in=result.fixed_in||'';row.has_admin_reply=result.has_admin_reply===true;fixedDraft=row.fixed_in;
         moveCount(was,row.stage);
+        if(row.fixed_in!==fixedWas){ctx=undefined;loadContext(s,id);loadFlags(s,[id]);}
         notice=kind==='keep'?'고친 판을 저장했습니다.':result.status==='closed'?'제보를 닫았습니다.':'제보를 다시 열었습니다.';
       }).catch(function(e){
         if(!safe(s)||ticket!==statusTicket)return;
@@ -288,7 +318,10 @@
       if(b.dataset.admReport){openReport(b.dataset.admReport);return;}
       if(b.dataset.admFilter){if(busy||listLoading)return;var next=b.dataset.admFilter==='all'?'':b.dataset.admFilter;if(STAGES.indexOf(next)<0&&next!=='')return;filter=next;loadList(false);return;}
       if(b.dataset.admStatus){changeStatus(b.dataset.admStatus);return;}
-      var action=b.dataset.admSupport;if(action==='followup'){var who=detailReporter();if(!busy&&adminConfirmed&&detail&&who&&who.id&&typeof o.openFollowup==='function')o.openFollowup(who.id,{id:selected});return;}if(action==='copy'){copy();return;}if(busy)return;
+      var action=b.dataset.admSupport;if(action==='followup'){var who=detailReporter();if(!busy&&adminConfirmed&&detail&&who&&who.id&&typeof o.openFollowup==='function')o.openFollowup(who.id,{id:selected});return;}if(action==='copy'){copy();return;}
+      if(action==='user'){var person=detailReporter();if(!busy&&adminConfirmed&&detail&&person&&person.id&&typeof o.openUser==='function')o.openUser(person.id);return;}
+      if(action==='context'){if(!busy&&adminConfirmed&&detail&&selected){ctx=undefined;render();loadContext(stamp(),selected);}return;}
+      if(busy)return;
       if(action==='refresh')loadList(false);else if(action==='more'&&!listLoading)loadList(true);else if(action==='retry-detail')openReport(selected);
       else if(action==='back'){detailTicket++;detailLoading=false;selected='';detail=null;currentDraft=null;detailError='';notice='';render();}
     }

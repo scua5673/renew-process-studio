@@ -280,6 +280,7 @@
 <link rel="stylesheet" href="studio/admin-density.css?v=3.238">
 <link rel="stylesheet" href="studio/admin-today.css?v=3.238">
 <link rel="stylesheet" href="studio/admin-stale-clients.css?v=3.201">
+<link rel="stylesheet" href="studio/admin-support-context.css?v=3.376">
 </head>
 <body>
 
@@ -629,7 +630,8 @@
 <script src="studio/support-diagnostics.js?v=2.816"></script>
 <script src="studio/support-image.js?v=3.153"></script>
 <script src="studio/support.js?v=3.153"></script>
-<script src="studio/admin-support.js?v=3.249"></script>
+<script src="studio/admin-support-context.js?v=3.376"></script>
+<script src="studio/admin-support.js?v=3.376"></script>
 <script src="studio/admin-content-data.js?v=2.854"></script>
 <script src="studio/admin-content.js?v=2.890"></script>
 <script src="studio/oauth-gate.js"></script>
@@ -750,7 +752,7 @@ function loadAdminSupport(){
     $('viewSupport').textContent='오류 제보 화면을 불러오지 못했습니다. 페이지를 다시 열어 주세요.';return;
   }
   if(!adminSupport)adminSupport=PSAdminSupport.create({window:window,host:$('viewSupport'),rpc:adminRpc,context:adminSupportContext,
-    format:PSSupportDiagnostics.format,copyText:PSSupport.copyText,onCounts:setSupportCounts,openFollowup:openAdminUser});
+    format:PSSupportDiagnostics.format,copyText:PSSupport.copyText,onCounts:setSupportCounts,openFollowup:openAdminUser,openUser:function(uid){openAdminUser(uid);}});
   return adminSupport.load();
 }
 /* 20261014 — 답변이 필요한 제보 수(새 제보 + 재문의). 서버가 counts 를 주지 않으면(옛 SQL) 아무것도 표시하지 않는다. */
