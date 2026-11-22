@@ -25,7 +25,7 @@ const AREA_RULES=[
   [/^studio\/(board\.html|analysis\.html|board-|balls\.js|pitches\.js|vault-|team-load\.js|team-library\.js|team-photos\.js|photo-crop\.js|player-eye)/,'board'],
   [/^studio\/(process\.html|schedule-|year-plan\.js|training-intensity\.js|session-focus\.js|weather-request\.js|review-training|pdf-export\.js)/,'schedule'],
   [/^studio\/(scout\.html|scouting\.html|scouting-|match-|player-|roster-|avail-|profile-sheet\.js|team-|participation\.js|rpt-i18n\.js)/,'team'],
-  [/^studio\/(idp\.html|idp-|daily-effort\.js|shared-view-observation\.js)/,'idp'],
+  [/^studio\/(idp\.html|idp-|eval-paper|daily-effort\.js|shared-view-observation\.js)/,'idp'],
   [/^studio\/(gamemodel\.html|playbook\.html|terms\.html|playbook-)/,'gamemodel'],
   [/^studio\/(community\.html|community-|letter-)/,'community'],
   [/^studio\/(note\.html|note-)/,'note']
