@@ -8193,7 +8193,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rSqQuarter(p,can){
     var ln=sqLinkOfPlayer(p.id), d2=(ln&&ln.d&&ln.d.v===1)?ln.d:null, uid=ln&&ln.uid;
     var rr=uid?(rvRec(PREFIX+uid)||{}):{}, list=Array.isArray(rr.qmeet)?rr.qmeet.slice().sort(function(a,b){return (+b.ts||0)-(+a.ts||0);}):[];
-    var h='<div class="qm-card"><div class="mt-top"><b>분기 면담 <small>KNVB 5단계 · 20분</small></b><span>'+(list.length?list.length+'회':'12주째에 한 번')+'</span><span class="sp"></span>'
+    var h='<div class="qm-card"><div class="mt-top"><b>분기 면담</b><span>'+(list.length?list.length+'회':'12주째에 한 번')+'</span><span class="sp"></span>'
       +(can&&d2?'<button type="button" class="btn sm'+(sqQmOpen?'':' primary')+'" data-qm-toggle>'+(sqQmOpen?'접기':'면담 시작')+'</button>':'')+'</div>';
     if(!d2)return h+'<div class="sqe-msg"><b>선수 계정이 연결되지 않았습니다</b>연결은 계정 › 권한 관리.</div></div>';
     if(sqQmOpen&&can){
@@ -16387,7 +16387,7 @@ html.ps-page-idp .dcols,html.ps-page-idp .dcol{display:contents}
   html.ps-page-idp body.ps-player-role .dcol{display:block;min-width:0}
 }
 </style>
-<link rel="stylesheet" href="team-mobile.css?v=3.363">
+<link rel="stylesheet" href="team-mobile.css?v=3.365">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>
