@@ -1,0 +1,104 @@
+/* 선수 평가서 · 선수 추천서 — A4 세로 한 장. eval-paper.js 가 그리는 `.evp` 한 덩이만 꾸민다.
+   ⚠ idp.html 인쇄는 @page{size:A4;margin:12mm} → 종이 안쪽 186 × 273mm. 높이를 고정하고 의견 칸이 남는 자리를 가져간다.
+   ⚠ 글자는 pt · 길이는 mm — 화면 px 규칙(12·14·16)과 다른 인쇄 문법이다(rp2 종이들과 같은 결). */
+.evp{--ink:#14171c;--muted:#6b7280;--line:#dfe3e8;--soft:#f1f3f6;--c:#7C4DFF;
+  width:186mm;height:271mm;display:flex;flex-direction:column;gap:3.2mm;overflow:hidden;background:#fff;color:var(--ink);
+  font:9pt/1.45 -apple-system,"Apple SD Gothic Neo","Pretendard",sans-serif;break-inside:avoid;page-break-inside:avoid;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.evp+.evp{break-before:page;page-break-before:always}
+.evp *{box-sizing:border-box}
+/* ⚠ idp.html 의 `#report h4`(왼쪽 굵은 줄 · 큰 글자)가 id 특이도로 덮는다 — 같은 id 를 얹어 이긴다 */
+#report .evp h4,.evp h4{margin:0 0 2mm;padding:0;border:0;font-size:8pt;font-weight:700;letter-spacing:.02em;color:var(--ink);display:flex;align-items:baseline;gap:2mm;flex-wrap:wrap}
+#report .evp h4.gap,.evp h4.gap{margin-top:5mm}
+.evp h4 small{font-weight:500;color:var(--muted);font-size:7pt}
+.evp u{text-decoration:none;font-weight:500;color:var(--muted);font-size:.86em;margin-left:1mm}
+.evp-hd{display:grid;grid-template-columns:16mm minmax(0,1fr) auto;gap:4mm;align-items:center;padding-bottom:3mm;border-bottom:.6mm solid var(--ink)}
+.evp-ph{width:16mm;height:16mm;border-radius:3mm;background:var(--soft);display:grid;place-items:center;font-size:14pt;font-weight:700;color:var(--muted);overflow:hidden}
+.evp-ph img{width:100%;height:100%;object-fit:cover}
+.evp-nm h3{margin:0;font-size:17pt;font-weight:700;line-height:1.15}
+.evp-nm p{margin:1mm 0 0;font-size:8.5pt;color:var(--muted)}
+.evp-doc{text-align:right;display:grid;gap:.6mm}
+.evp-doc b{font-size:11pt}
+.evp-doc span{font-size:8pt;color:var(--muted)}
+.evp-doc .en{letter-spacing:.06em;text-transform:uppercase;font-size:7pt}
+.evp-doc .lock{justify-self:end;border:1px solid var(--ink);color:var(--ink);border-radius:999px;padding:0 2.4mm;font-weight:600;font-size:7pt}
+.evp-top{display:grid;grid-template-columns:34mm 50mm minmax(0,1fr);gap:6mm;align-items:start}
+.evp-blk{min-width:0}
+.evp-pitch,.evp-radar{width:100%;display:block}
+.evp-posleg{display:grid;gap:.8mm;margin-top:1.5mm;font-size:7.5pt;color:var(--muted)}
+.evp-posleg i{display:inline-block;width:2.6mm;height:2.6mm;border-radius:999px;vertical-align:-.4mm;margin-right:1.4mm}
+.evp-posleg i.m{background:var(--c)}
+.evp-posleg i.sb{border:.5mm solid var(--c)}
+.evp-posleg b{color:var(--ink);font-size:9.5pt}
+.evp-lg{display:flex;gap:4mm;justify-content:center;font-size:7pt;color:var(--muted)}
+.evp-lg i{display:inline-block;width:5mm;height:0;vertical-align:middle;margin-right:1mm;border-top:.6mm solid var(--c)}
+.evp-lg i.prv{border-top:.4mm dashed #8a8f98}
+.evp-none{margin:0;font-size:8pt;color:var(--muted)}
+.evp-tb{width:100%;border-collapse:collapse;font-size:8pt}
+.evp-tb th,.evp-tb td{padding:1.2mm 1.6mm;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.evp-tb th{font-weight:600;font-size:7pt;color:var(--muted);background:var(--soft)}
+.evp-tb th:first-child,.evp-tb td:first-child{text-align:left;font-weight:600}
+.evp-tb.kv td:first-child{color:var(--muted);font-weight:500;width:26mm}
+.evp-tb.kv td{text-align:left;font-weight:600;white-space:normal}
+.evp-mid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:5mm}
+.evp-mid.one{grid-template-columns:minmax(0,1fr)}
+.evp-hl{display:grid;grid-template-columns:minmax(0,1fr) auto 6mm;gap:2mm;align-items:baseline;padding:1mm 0;border-bottom:1px solid var(--line);font-size:8.5pt}
+.evp-hl b{font-weight:600}
+.evp-hl span{color:var(--muted);font-size:8pt}
+.evp-hl em{font-style:normal;font-weight:700;font-size:7.5pt;text-align:right}
+.evp-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3mm 4mm}
+.evp-card{border:1px solid var(--line);border-radius:2mm;padding:2mm 2.4mm;min-width:0}
+#report .evp .evp-card h4,.evp-card h4{font-size:7.5pt;color:var(--c);margin-bottom:1mm}
+.evp-dr{display:grid;grid-template-columns:minmax(0,1fr) auto 3mm 5mm;gap:2mm;align-items:center;padding:.3mm 0;font-size:7.5pt}
+.evp-dr>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.evp-dr>b{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted)}
+.evp-dr.hi>b{color:var(--c)}
+.evp-dr>em{font-style:normal;font-size:6.5pt;font-weight:700;text-align:right;color:var(--ink)}
+.evp-seg{display:inline-flex;gap:.5mm}
+.evp-seg i{width:3mm;height:1.8mm;background:#e3e6ea}
+.evp-seg i:first-child{border-radius:.9mm 0 0 .9mm}
+.evp-seg i:last-child{border-radius:0 .9mm .9mm 0}
+.evp-seg i.on{background:#8a8f98}
+.evp-dr.hi .evp-seg i.on{background:var(--c)}
+.evp .k{display:inline-block;width:3mm;height:1.8mm;border-radius:.9mm;background:#8a8f98;vertical-align:middle;margin-right:.8mm}
+.evp .k.hi{background:var(--c)}
+.evp-op{display:flex;flex-direction:column;flex:1;min-height:16mm}
+.evp-txt{flex:1;border:1px solid var(--line);border-radius:2mm;padding:2.4mm 3mm;font-size:9.5pt;line-height:1.6;white-space:pre-wrap;overflow:hidden}
+.evp.ext .evp-txt{font-size:10.5pt;line-height:1.75;padding:4mm}
+.evp-s3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4mm}
+.evp-s3>div{border:1px solid var(--line);border-radius:2mm;padding:3mm;min-width:0}
+.evp-s3 i{font-style:normal;display:grid;place-items:center;width:6mm;height:6mm;border-radius:999px;background:var(--c);color:#fff;font-weight:700;font-size:8.5pt;margin-bottom:1.6mm}
+.evp-s3 b{display:block;font-size:10pt;line-height:1.35}
+.evp-s3 u{display:block;margin:.6mm 0 0;font-size:7.5pt}
+.evp-s3 p{margin:1.2mm 0 0;font-size:8.5pt;color:var(--muted)}
+.evp-sign{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5mm}
+.evp-sign span{display:block;font-size:7pt;color:var(--muted)}
+.evp-sign b{display:block;font-size:10pt;padding-top:1mm;min-height:6mm}
+.evp-sign .line{border-bottom:1px solid var(--ink);height:8mm}
+.evp-ft{display:flex;justify-content:space-between;gap:4mm;font-size:7pt;color:var(--muted);border-top:1px solid var(--line);padding-top:2mm;letter-spacing:.04em}
+.evp-ft b{color:var(--ink)}
+
+/* ── 화면: 리포트 탭의 «평가서 · 추천서» 칸(idp.html evpPanel) ── */
+.sqrep .evp-form{margin:-4px 0 12px;padding:14px;border:1px solid var(--line,#e3e6ea);border-radius:10px;background:var(--surface,#fff);display:grid;gap:12px}
+.sqrep .evp-f{display:grid;gap:6px;min-width:0}
+.sqrep .evp-f>span{font-size:var(--t-3,12px);font-weight:600;color:var(--text-2,#6b7280)}
+.sqrep .evp-f input,.sqrep .evp-f textarea{width:100%;min-width:0;min-height:44px;padding:10px 12px;border:1px solid var(--line,#e3e6ea);border-radius:6px;background:var(--surface,#fff);color:inherit;font:500 16px/1.5 inherit;font-family:inherit}
+.sqrep .evp-f textarea{resize:vertical}
+.sqrep .evp-chips{display:flex;flex-wrap:wrap;gap:6px}
+.sqrep .evp-chips em{font-style:normal;font-size:var(--t-3,12px);color:var(--text-2,#6b7280)}
+.sqrep .evp-chip{min-height:44px;padding:0 12px;border:1px solid var(--line,#e3e6ea);border-radius:6px;background:var(--surface,#fff);color:var(--accent-blue,#1f4fd8);font:600 14px inherit;font-family:inherit;cursor:pointer}
+.sqrep .evp-chip small{font-weight:500;font-size:var(--t-3,12px);color:var(--text-2,#6b7280)}
+.sqrep .evp-chip.on{background:var(--accent-blue,#1f4fd8);border-color:var(--accent-blue,#1f4fd8);color:#fff}
+.sqrep .evp-chip.on small{color:#fff}
+.sqrep .evp-fact{margin:0;font-size:var(--t-3,12px);color:var(--text-2,#6b7280)}
+.sqrep .evp-go{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.sqrep .evp-go .btn{min-height:44px}
+.sqrep .evp-list{margin:0 0 12px;padding:10px 14px;border:1px solid var(--line,#e3e6ea);border-radius:10px;display:grid;gap:2px}
+.sqrep .evp-list>b{font-size:var(--t-3,12px);font-weight:600;color:var(--text-2,#6b7280)}
+.sqrep .evp-li{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line,#e3e6ea);font-size:var(--t-5,14px)}
+.sqrep .evp-li:first-of-type{border-top:0}
+.sqrep .evp-li span{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sqrep .evp-li i{font-style:normal;font-size:var(--t-3,12px);color:var(--text-2,#6b7280);white-space:nowrap}
+.sqrep .evp-li .btn{min-height:36px;margin:0}
+.sqrep .evp-li.gone{grid-template-columns:minmax(0,1fr) auto auto}
+@media(max-width:560px){.sqrep .evp-li{grid-template-columns:minmax(0,1fr) auto auto}.sqrep .evp-li i{grid-column:1/-1;grid-row:2}}

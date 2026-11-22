@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.358';   // 3.358 미리 만든 시즌에도 «포지션» 보기(읽기 전용 예상 뎁스 판 · player-workspace.js futureDepth) · 예상 명단 표 선수 칸 너비
+const CACHE = 'process-3.361';   // 3.361 선수 평가서 · 선수 추천서 A4 한 장씩(eval-paper.js · eval-paper.css · eval-paper-team.js) — IDP › 선수 › 리포트
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/match-home.js', '/studio/training-intensity.js', '/studio/week-intensity.js', '/studio/weather-request.js', '/studio/idp-profile-name.js', '/studio/popover-dismiss.js', '/studio/oauth-gate.js', '/studio/data-lock-guard.js', '/studio/account-hygiene.js',
@@ -33,6 +33,7 @@ const CORE = [
   '/studio/perms.js', '/studio/permissions-filter.js',
   '/studio/football-language.js',
   '/studio/eval-standard.js',
+  '/studio/eval-paper.js', '/studio/eval-paper.css', '/studio/eval-paper-team.js',
   '/studio/eval-anchors.js',
   '/studio/archetypes.js',
   '/studio/req-baseline.js',
