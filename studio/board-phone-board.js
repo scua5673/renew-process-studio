@@ -756,7 +756,7 @@
       else if(k==='tok'){var nt=bound(tokOf(M.doc)+(+v||0),1,TOKF.length);if(nt!==tokOf(M.doc)){snapHist();M.doc.tok=nt;M.doc.tokSet=true;tokUI();paint();}}
       else if(k==='undo'){if(M.hist.length){stop(true);M.doc=JSON.parse(M.hist.pop());renderTools();paint();}}
       else if(k==='save'){stop();save();}
-      else if(k==='tool'){M.tool=v;renderTools();if(v==='erase')toast('지울 것을 누릅니다');}
+      else if(k==='tool'){M.tool=v;renderTools();}
       else if(k==='put'){M.put=v;renderTools();}
       else if(k==='line'){M.line=v;renderTools();}
       else if(k==='tok-ok'){
@@ -771,9 +771,7 @@
       else if(k==='scene'){var si=+b.getAttribute('data-i');if(si===sceneAt(M.doc)){if(sceneCount(M.doc)>1)openScene();}else{sceneGo(M.doc,si);renderFilm();paint();}}
       else if(k==='scene-add'){
         if(sceneCount(M.doc)>=MAX_SCENES){toast('장면은 '+MAX_SCENES+'개까지 만들 수 있습니다');return;}
-        var had=M.doc.lines.length,was=JSON.stringify([M.doc.players,M.doc.ball]);snapHist();sceneAdd(M.doc);
-        var auto=had&&JSON.stringify([M.doc.players,M.doc.ball])!==was;renderFilm();paint();
-        toast('장면 '+(sceneAt(M.doc)+1)+(auto?' · 화살대로 옮겼습니다':' · 선수를 옮기면 움직임이 됩니다'));
+        snapHist();sceneAdd(M.doc);renderFilm();paint();
       }
       else if(k==='scene-dur'){var ps=M.doc.scenes&&M.doc.scenes[sceneAt(M.doc)-1];if(ps&&durOf(ps)!==+v){snapHist();ps.dur=+v;}openScene();}
       else if(k==='scene-del'){$('phbScene').hidden=true;if(sceneCount(M.doc)>1){snapHist();sceneDel(M.doc);renderFilm();paint();}}

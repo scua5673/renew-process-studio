@@ -126,7 +126,6 @@ try{
   m=await model(f);
   assert.equal(m.doc.scenes.length,2);assert.equal(m.doc.at,1);assert.equal(m.doc.lines.length,0,'arrows stay in their scene');assert.equal(m.doc.scenes[0].lines.length,3);
   assert.ok(Math.abs(m.doc.players[4].x-(run.x+4))<1.2&&Math.abs(m.doc.players[4].y-(run.y-14))<1.2,'the runner already stands at the arrow end '+JSON.stringify(m.doc.players[4]));
-  assert.match(await toastText(f),/장면 2 · 화살대로/);
   assert.deepEqual(await f.locator('.phb-sc').allInnerTexts().then(a=>a.map(t=>t.replace(/\s+/g,''))),['1','2⋯']);
   assert.equal(await f.locator('#phbFg .phb-ghost').count(),1,'the way from the last scene is drawn');
   /* 장면 2 에서 옮기기 — 장면 1 은 그대로 */

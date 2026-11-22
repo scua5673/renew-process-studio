@@ -493,9 +493,6 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "빠르게":"Fast",
 "천천히":"Slow",
 "이 장면 지우기":"Delete this scene",
-"지울 것을 누릅니다":"Tap what you want to erase",
 "토큰 크기 · 모든 선수":"Token size · all players",
 "모든 선수":"All players",
-"«＋ 장면»으로 장면을 2개 이상 만들면 재생됩니다":"Add a second scene with «＋ Scene» to play"},{"장면은 {}개까지 만들 수 있습니다":"You can make up to {} scenes",
-"장면 {} · 화살대로 옮겼습니다":"Scene {} · moved along the arrows",
-"장면 {} · 선수를 옮기면 움직임이 됩니다":"Scene {} · move players to make the motion"},{});
+"«＋ 장면»으로 장면을 2개 이상 만들면 재생됩니다":"Add a second scene with «＋ Scene» to play"},{"장면은 {}개까지 만들 수 있습니다":"You can make up to {} scenes"},{});
