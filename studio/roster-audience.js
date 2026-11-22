@@ -43,10 +43,10 @@ var avYearSplit=false;try{avYearSplit=localStorage.getItem('cs_av_year_v1')==='1
 function avYearOn(){return typeof availView!=='undefined'&&availView==='grp'&&avYearSplit;}
 function avYearKey(p){var y=String(p&&p.schoolYear||'');return !tmYearsOff()&&/^[0-6]$/.test(y)?y:'';}
 function avYearLabel(y){return y?PSTeamAudience.yearLabel(y):'학년 미지정';}
-/* 조 안 차례: 학년(1 · 2 · 3 · 미지정) → 원래 차례(쉼이 아닌 선수 → 자리 → 이름). 학년을 적은 선수가 없는 조는 그대로 */
+/* 조 안 차례: 3.364 높은 학년 먼저(3 · 2 · 1 · 신입생 · 미지정 — 학교급에 따라 6 · 4 부터) → 원래 차례(쉼이 아닌 선수 → 자리 → 이름). 학년을 적은 선수가 없는 조는 그대로 */
 function avYearOrder(players){
   if(!avYearOn()||!players.some(avYearKey))return players;
-  var out=[];['0','1','2','3','4','5','6',''].forEach(function(y){players.forEach(function(p){if(avYearKey(p)===y)out.push(p);});});return out;
+  var out=[];['6','5','4','3','2','1','0',''].forEach(function(y){players.forEach(function(p){if(avYearKey(p)===y)out.push(p);});});return out;
 }
 /* 학년 줄 — 그 학년의 첫 선수 앞에 한 번. 날짜별 명단은 «가능 n / m명»(조 머리와 같은 셈 — 데스크톱은 참여로 기록한 선수, 폰 «운동»은 쉼이 아닌 선수), 누적 표(cols)는 «m명» */
 function avYearLead(group,p,cols,daily){   /* 3.308 — daily: 날짜별 표(tr.av-ysub · «가능 n / m명») */

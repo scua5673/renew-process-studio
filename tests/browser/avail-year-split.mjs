@@ -105,7 +105,7 @@ try{
     const subs=()=>frame.evaluate(()=>[...document.querySelectorAll('#avDailyCard .av-ysub')].map(e=>e.textContent.replace(/\s+/g,' ').trim()));
     // A팀: p1(1학년 · 정상) p2(1학년 · 부상) p5(2학년 · 정상) · B팀: p3(2학년 · 재활 — 쉼 상자) p4(학년 없음 · 정상)
     // 3.308 — 표: 데스크톱은 쉼 선수도 제 학년 자리 아래라 B팀 2학년(p3 재활) 줄이 하나 더, 폰 «운동»은 예전처럼 셋
-    const phone=width<600,expectSubs=phone?['1학년 가능 1 / 2명','2학년 가능 1 / 1명','학년 미지정 가능 1 / 1명']:['1학년 가능 1 / 2명','2학년 가능 1 / 1명','2학년 가능 0 / 1명','학년 미지정 가능 1 / 1명'];
+    const phone=width<600,expectSubs=phone?['2학년 가능 1 / 1명','1학년 가능 1 / 2명','학년 미지정 가능 1 / 1명']:['2학년 가능 1 / 1명','1학년 가능 1 / 2명','2학년 가능 0 / 1명','학년 미지정 가능 1 / 1명'];   /* 3.364 — 높은 학년 먼저 */
     assert.deepEqual(await subs(),expectSubs,'데스크톱 · 폰 같은 셈(이 명단은 모두 기록돼 있다)');
     const tags=await frame.evaluate(()=>[...document.querySelectorAll('#avDailyCard .av-yr')].map(e=>[e.closest('.av-pl').querySelector('[data-av-st]').dataset.avSt,e.textContent,getComputedStyle(e).display]));
     assert.deepEqual(tags.filter(t=>t[2]!=='none').map(t=>t[0]+':'+t[1]).sort(),phone?['p2:1학년','p3:2학년']:[],'학년 줄 아래가 아닌 쉼 선수만 자리 옆 학년(데스크톱 표는 모두 학년 줄 아래)');
@@ -120,7 +120,7 @@ try{
     // 선수별 누적 표도 같은 단추 — 조 줄 아래 학년 줄
     await frame.locator('[data-av-mode=players]').click();await frame.locator('[data-av-player-total=p1]').waitFor();
     const rows=await frame.evaluate(()=>[...document.querySelectorAll('#availRoot .av-total-table tbody tr')].map(tr=>tr.classList.contains('av-table-group')?'G:'+tr.textContent.trim():tr.classList.contains('av-table-year')?'Y:'+tr.textContent.replace(/\s+/g,' ').trim():'P:'+tr.querySelector('[data-av-player-total]').dataset.avPlayerTotal));
-    assert.deepEqual(rows,['G:A팀','Y:1학년 2명','P:p1','P:p2','Y:2학년 1명','P:p5','G:B팀','Y:2학년 1명','P:p3','Y:학년 미지정 1명','P:p4']);
+    assert.deepEqual(rows,['G:A팀','Y:2학년 1명','P:p5','Y:1학년 2명','P:p1','P:p2','G:B팀','Y:2학년 1명','P:p3','Y:학년 미지정 1명','P:p4']);
     await page.screenshot({path:path.join(out,width+'-year-split-table.png'),fullPage:true});
     await frame.locator('#availRoot '+tog).click();await frame.waitForFunction(()=>!document.querySelector('#availRoot .av-table-year'));
     assert.equal(await frame.locator('#availRoot '+tog).getAttribute('aria-pressed'),'false');
