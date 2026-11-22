@@ -10894,11 +10894,7 @@ function boardLiveSave(raw,options){
   });
 }
 
-/* 3.080 — 학습 기록(진도 · 카드 · 답)을 계정에 둔다(사용자 «기록도 계정에 저장되게»).
-   작업 보드와 같은 길: 내 개인 공간(personalWid) 의 전용 키 하나를 직접 읽고 쓴다 — 지금 열린 공간이 팀이어도 기록은 사람을 따라간다.
-   저장은 판본 확인(CAS): 읽은 판(raw · cupd)과 서버가 같을 때만 쓴다. 다르면 sync_conflict — learning.html 이 다시 읽어 합친 뒤 한 번 더 쓴다.
-   ⚠ 서버 정책: 개인 공간은 주인 한 사람만 회원이라 ps_can_read_key/ps_can_write_key 가 이 키를 그대로 허락한다(새 마이그레이션 없음). */
-/* 3.080 — 개인 문서 통로(학습 기록 · 개인 게임모델). 작업 보드와 같은 길: 내 개인 공간(personalWid)의 전용 키 하나를 직접 읽고 쓴다 —
+/* 3.080 — 개인 문서 통로(학습 기록 · 개인 게임모델 · 3.363 메모). 작업 보드와 같은 길: 내 개인 공간(personalWid)의 전용 키 하나를 직접 읽고 쓴다 —
    지금 열린 공간이 팀이어도 기록은 사람을 따라간다. 저장은 판본 확인(CAS): 읽은 판(raw · cupd)과 서버가 같을 때만 쓴다.
    다르면 sync_conflict — 화면이 다시 읽어 합치거나(학습) 더 새 쪽을 고른 뒤(게임모델) 한 번 더 쓴다.
    ⚠ 서버 정책: 개인 공간은 주인 한 사람만 회원이라 ps_can_read_key/ps_can_write_key 가 이 키들을 그대로 허락한다(새 마이그레이션 없음). */
@@ -10964,6 +10960,8 @@ var GMP_KEY='cs_gamemodel_personal_v1';
 var GMP_CFG={key:GMP_KEY,max:(typeof PERSONAL_MAXLEN==='number'?PERSONAL_MAXLEN:12000000),label:'gm_personal',name:'개인 게임모델',ok:function(d){ return typeof d.at==='number'&&!!d.m&&typeof d.m==='object'&&Array.isArray(d.m.moments); }};
 function gmPersonalGet(){ return pdGet(GMP_CFG); }
 function gmPersonalSave(raw,options){ return pdSave(GMP_CFG,raw,options); }
+/* 3.363 — 개인 노트 메모(note-memo-sync.js 가 메모마다 합친다). 문서 = {v:1, at, m:[메모], f:[폴더], d:{지운 id:시각}} */
+var MEMO_CFG={key:'cs_notes_memo_sync_v1',max:LEARN_MAXLEN,label:'memo',name:'메모',ok:function(d){ return Array.isArray(d.m)&&Array.isArray(d.f); }};
 
 window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dataUnlocked:dataUnlocked,keys:KEYS,state:syncState,   /* 2.625 상태 한 줄 */
   sourceSuspension:workspaceSourceSuspension,
@@ -10972,6 +10970,7 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
   boardLive:{version:2,scope:'personal',owner:boardLiveContext,get:boardLiveGet,save:boardLiveSave},
   learn:{version:1,key:LEARN_KEY,owner:boardLiveContext,get:learnGet,save:learnSave},   /* 3.080 — 학습 기록(learning.html) */
   gmPersonal:{version:1,key:GMP_KEY,owner:boardLiveContext,get:gmPersonalGet,save:gmPersonalSave},   /* 3.080 — 개인 게임모델(gamemodel.html scope=personal) */
+  memo:{version:1,key:MEMO_CFG.key,owner:boardLiveContext,get:function(){ return pdGet(MEMO_CFG); },save:function(r,o){ return pdSave(MEMO_CFG,r,o); }},
   /* 3.038 — 선수 본인의 «코치 확인» 몸 상태만(서버 ps_idp_daily_mine). 선수에게 cs_idp_daily_v1 전체는 내려가지 않는다(PLAYER_BLIND · 20261015 마이그레이션) */
   idpDailyMine:function(){ var w=activeWs(); if(!w)return Promise.resolve(null); return rpc('ps_idp_daily_mine',{wid:w}).then(function(o){ return o&&o.v===1&&o.days&&typeof o.days==='object'?o:null; }); },
   keyReady:function(k,wid){return keyReady(k,wid||activeWs());},   /* 2.733 — 화면별 서버 확인 완료 */

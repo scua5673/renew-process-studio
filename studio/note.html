@@ -2182,7 +2182,7 @@ document.addEventListener('keydown',e=>{
     return a.map(function(m){ m.folder=m.folder||''; m.pinned=!!m.pinned; m.createdAt=m.createdAt||m.updatedAt||Date.now(); return m; });
   }catch(_){return [];}}
   function loadF(){try{return JSON.parse(localStorage.getItem(FK)||'[]')||[];}catch(_){return [];}}
-  function persist(){try{localStorage.setItem(MK,JSON.stringify(memos));localStorage.setItem(FK,JSON.stringify(folders));try{window.PSSaveState.ok('memo');}catch(__){}return true;}catch(e){try{const n=Date.now();if(!window.__psQwT2||n-window.__psQwT2>15000){window.__psQwT2=n;toast('⚠︎ 저장 공간 부족 — 메모가 저장되지 않았어요');}}catch(__){}try{window.PSSaveState.fail('memo',e);}catch(__){}return false;}}
+  function persist(quiet){try{localStorage.setItem(MK,JSON.stringify(memos));localStorage.setItem(FK,JSON.stringify(folders));try{window.PSSaveState.ok('memo');}catch(__){}if(!quiet&&window.PSNoteMemoSync)window.PSNoteMemoSync.touched();return true;}catch(e){try{const n=Date.now();if(!window.__psQwT2||n-window.__psQwT2>15000){window.__psQwT2=n;toast('⚠︎ 저장 공간 부족 — 메모가 저장되지 않았어요');}}catch(__){}try{window.PSSaveState.fail('memo',e);}catch(__){}return false;}}
   function mesc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});}
   var memos=load(), folders=loadF(), cur=null, curFolder='__all', q='', sortBy='upd';
   /* ⚠ `Date.now()` 만으로 id 를 만들면 **같은 밀리초에 두 번 만들 때 겹친다**(실측: 폴더 둘을 잇달아
@@ -2347,7 +2347,7 @@ document.addEventListener('keydown',e=>{
       m.html=mcSnapshot(); m.text=kt;
     } else { m.html=mcSnapshot(); m.text=taText(); }
     m.updatedAt=Date.now(); taEmpty();
-    clearTimeout(_t); _t=setTimeout(function(){persist();renderList();},400);
+    clearTimeout(_t); _t=setTimeout(function(){_t=null;persist();renderList();},400);   /* 3.363 — 끝난 타이머는 비운다(예전엔 한 번 치면 __memoPending 이 계속 참이었다) */
     return m; }
   ta.addEventListener('input',memoTouch);
   /* 붙여넣기는 **순수 글로만** 받는다 — 웹에서 온 서식·글꼴이 메모를 어지럽히지 않게. */
@@ -2361,6 +2361,26 @@ document.addEventListener('keydown',e=>{
   /* 2.395 — 메모도 400ms 지연 저장이라 새로고침에 잃을 수 있다. 셸이 부를 창구를 여기(같은 스코프)에 둔다. */
   window.__memoFlush=function(){ try{ if(_t){ clearTimeout(_t); _t=null; var ok=persist(); renderList(); return ok!==false; } return true; }catch(_){return false;} };
   window.__memoPending=function(){ try{ return !!_t; }catch(_){ return false; } };
+  /* 3.363 — 메모를 내 계정에(note-memo-sync.js). 이 화면은 목록을 내주고(get) 합친 목록을 받는다(set).
+     ⚠ 치는 중(지연 저장 대기 · 한글 조합 · 마지막 입력 1.5초 안)에는 받지 않는다(idle) — 받으면 편집기를 다시 그려 커서와 조합이 끊긴다.
+     ⚠ 받은 것은 persist(true) 로 적는다 — 그냥 persist() 면 «방금 고쳤다»로 다시 올리러 간다. */
+  var _mIn=0,_mIme=false;
+  ta.addEventListener('input',function(){ _mIn=Date.now(); });
+  ta.addEventListener('compositionstart',function(){ _mIme=true; });
+  ta.addEventListener('compositionend',function(){ _mIme=false; _mIn=Date.now(); });
+  window.__memoSync={
+    get:function(){ return {memos:memos,folders:folders}; },
+    idle:function(){ return !_t&&!_mIme&&Date.now()-_mIn>1500; },
+    set:function(m,f){
+      var was=memos.filter(function(x){return x.id===cur;})[0], sig=was?(was.updatedAt+'|'+was.text+'|'+was.html):'';
+      var keepM=memos, keepF=folders; memos=m; folders=f;
+      if(!persist(true)){ memos=keepM; folders=keepF; return false; }
+      if(curFolder!=='__all'&&curFolder!=='__pin'&&!folders.some(function(x){return x.id===curFolder;}))curFolder='__all';
+      var now=memos.filter(function(x){return x.id===cur;})[0];
+      if(!now){ var v=visible(); cur=v[0]?v[0].id:null; taSet(memos.filter(function(x){return x.id===cur;})[0]); }
+      else if((now.updatedAt+'|'+now.text+'|'+now.html)!==sig)taSet(now);
+      renderList(); return true; }
+  };
   var nb=document.getElementById('memoNew');if(nb)nb.addEventListener('click',newMemo);
   /* ── 폴더 ── */
   (function(){
@@ -2369,7 +2389,7 @@ document.addEventListener('keydown',e=>{
       var rn=e.target.closest('[data-fren]');
       if(rn){ e.stopPropagation(); var id=rn.dataset.fren, f=folders.filter(function(x){return x.id===id;})[0]; if(!f)return;
         var ask=window.psPrompt||function(msg,def,ok){var v=prompt(msg,def); if(v!=null)ok(v);};
-        ask('폴더 이름',f.name,function(v){ v=String(v||'').trim(); if(!v)return; f.name=v.slice(0,24); persist(); renderList(); });
+        ask('폴더 이름',f.name,function(v){ v=String(v||'').trim(); if(!v)return; f.name=v.slice(0,24); f.at=Date.now(); persist(); renderList(); });
         return; }
       var dl=e.target.closest('[data-fdel]');
       if(dl){ e.stopPropagation(); var id2=dl.dataset.fdel;
@@ -2389,7 +2409,7 @@ document.addEventListener('keydown',e=>{
     if(nf)nf.addEventListener('click',function(){
       var ask=window.psPrompt||function(msg,def,ok){var v=prompt(msg,def); if(v!=null)ok(v);};
       ask('새 폴더 이름','',function(v){ v=String(v||'').trim(); if(!v)return;
-        folders.push({id:mkId('F'),name:v.slice(0,24)}); persist(); renderList(); });
+        folders.push({id:mkId('F'),name:v.slice(0,24),at:Date.now()}); persist(); renderList(); });
     });
     var sel=document.getElementById('memoFolderSel');
     if(sel)sel.addEventListener('change',function(){ curFolder=sel.value; var v=visible(); cur=v[0]?v[0].id:null;
@@ -2506,7 +2526,7 @@ document.addEventListener('keydown',e=>{
 })();
 </script>
 <script src="perms.js"></script>
-<script src="pdf-export.js"></script><script src="note-export.js"></script><script src="note-picture.js"></script>   <!-- 3.265 — 위쪽 막대 «내보내기»(PDF로 저장 · 인쇄 · 이미지 저장) -->
+<script src="pdf-export.js"></script><script src="note-export.js"></script><script src="note-picture.js"></script><script src="note-memo-sync.js"></script>   <!-- 3.265 — 위쪽 막대 «내보내기»(PDF로 저장 · 인쇄 · 이미지 저장) -->
 <!-- 1.547 — 노트 잠금 제거. 노트는 팀에 올라가지 않는 개인 데이터(sync.js PERSONAL)라
      팀 권한으로 잠글 대상이 아니었다. 권한 관리에서도 '노트' 항목을 뺐으므로,
      이 게이트를 남겨 두면 그 권한을 받을 길이 없어져 노트가 영구히 보기 전용이 된다. -->
