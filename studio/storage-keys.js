@@ -64,6 +64,7 @@
     ['cs_private_board_v1','board','ls','data','sync.js'],
     /* ── 3.080 개인 문서 통로(PSSync.learn · gmPersonal — 내 개인 공간의 키 하나씩). 학습 기록은 기기 사본 cs_learn_v1_<uid> 와 합쳐 맞춘다 ── */
     ['cs_learn_sync_v1','pdoc','ls','data','sync.js'],
+    ['cs_notes_memo_sync_v1','pdoc','ls','data','sync.js'],   /* 3.363 — 메모 · 폴더 · 지운 기록을 담는 계정 문서(PSSync.memo). 기기 사본 cs_notes_memo_v1 · cs_notes_folders_v1 과 메모마다 합친다 */
     /* ── 큰 그림 — ps_blob 로 따로 올린다 ── */
     ['ps_blob:','blob','ls','data','sync.js',{prefix:1}],
     /* ── 선수별 행 — 선수 한 명이 IndexedDB 한 행(sync.js ITEMP · ps_items 표). 통짜 문서 scout_tool_v1 과 겹쳐 읽는다(1.631 · 3.199). 저장 계층 0단계 ② 에서 등록 ── */
@@ -115,8 +116,10 @@
     ['cs_note_custcol','device','ls','pref','note.html'],
     ['cs_note_forms_v1','device','ls','data','note.html'],
     ['cs_note_myforms_v1','device','ls','data','note.html'],
-    ['cs_notes_folders_v1','device','ls','data','note.html'],
-    ['cs_notes_memo_v1','device','ls','data','note.html'],
+    ['cs_notes_folders_v1','pdoc','ls','data','note.html'],   /* 3.363 — 계정의 cs_notes_memo_sync_v1 과 합쳐 맞춘다(note-memo-sync.js) */
+    ['cs_notes_memo_owner_v1','device','ls','session','note-memo-sync.js'],   /* 이 기기의 메모가 맞춰진 계정 — 다른 계정이면 맞추지 않는다 */
+    ['cs_notes_memo_tomb_v1','device','ls','queue','note-memo-sync.js'],   /* 지운 메모 · 폴더의 id 와 시각(다른 기기에서도 지워지게) */
+    ['cs_notes_memo_v1','pdoc','ls','data','note.html'],
     ['cs_opp_team','device','ls','pref','board.html'],
     ['cs_pen_color_v1','device','ls','pref','board.html'],
     ['cs_pitch_img','device','ls','pref','board.html'],
