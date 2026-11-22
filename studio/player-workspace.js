@@ -83,7 +83,7 @@
     function position(p){var po=source().positions.find(function(q){return q.id===p.posId;});return po?posAbbr(po.name):'';}
     function group(p){return typeof tmGrpLabel==='function'?tmGrpLabel(p.grp):p.grp||'';}
     function row(p){var pf=p.profile||{},status=plStatusOf(p),lv=p.levels||{},link=null;try{link=matchAccountForPlayer(p.id);}catch(_){}
-      return {id:p.id,pid:p.id,p:p,posId:p.posId,name:p.name||'이름 없음',num:p.num||'',pos:position(p),club:pf.team||p.club||'',group:group(p),year:p.schoolYear||'',statusKey:p.grad?'grad':status,status:p.grad?String(p.grad.season||'')+' 졸업':TM_ST_LB[status]||'정상',grad:p.grad?String(p.grad.season||''):'',evaluated:evaluated(p),levels:lv,linked:!!link,link:link,profile:pf,foot:p.foot||'',grade:p.grade||'',notes:[p.memo].filter(Boolean)};
+      return {id:p.id,pid:p.id,p:p,posId:p.posId,name:p.name||'이름 없음',num:p.num||'',pos:position(p),club:pf.team||p.club||'',group:group(p),year:yearMax()?(p.schoolYear||''):'',statusKey:p.grad?'grad':status,status:p.grad?String(p.grad.season||'')+' 졸업':TM_ST_LB[status]||'정상',grad:p.grad?String(p.grad.season||''):'',evaluated:evaluated(p),levels:lv,linked:!!link,link:link,profile:pf,foot:p.foot||'',grade:p.grade||'',notes:[p.memo].filter(Boolean)};
     }
     function scoutRows(){var placements=source().players.filter(function(p){return p.type==='target'&&!p._scoutHidden;}).map(function(p){return {cid:PSScoutStore.idOf(p),p:p};});var registry={};try{scStore().check();registry=scStore().read().scoutRegistry.candidates;}catch(_){return [];}
       return candidates(placements,registry,scRegistryRows()).map(function(item){var c=item.candidate||{},p=item.player&&item.player.p,pf=c.info&&c.info.profile||{},s=item.source,r=p?row(p):{levels:{},notes:[],profile:pf,foot:s.foot||'',linked:false};
@@ -107,6 +107,16 @@
     }
     function visible(kind){var rows=models[kind];if(kind==='team')rows=rows.filter(function(r){return tmGrpFlt(r.p)&&(!tmUnlinkedOnly||!r.linked);});return filter(rows,states[kind]);}
     function YL(y){var A=win.PSTeamAudience;return A&&A.yearLabel?A.yearLabel(y):y+'학년';}
+    /* 3.359 학교급(meta.level) — 졸업 학년 · 성인팀은 학년 없음 */
+    function yearMax(){var A=win.PSTeamAudience;return A&&A.maxYear?A.maxYear(source().meta):3;}
+    function levelPick(anchor){var A=win.PSTeamAudience;if(!A||!A.LEVELS||!groupAllowed())return;var owner=win.teamSaveOwner(),from=A.level(source().meta);
+      win.psPickOpen(anchor,[{v:'',lb:'정하지 않음 · 3학년까지',col:null}].concat(A.LEVELS.map(function(l){return {v:l[0],lb:l[1]+' · '+(l[2]?l[2]+'학년까지':'학년 없음'),col:null};})),from,function(to){
+        to=String(to||'');if(!groupAllowed()||owner!==win.teamSaveOwner()||A.level(source().meta)!==from||to===from)return;
+        var set=function(v){var d=source();d.meta=d.meta||{};if(v)d.meta.level=v;else delete d.meta.level;};
+        set(to);if(!yearMax()){try{win.tmSchoolYearFilter='';}catch(e){win.console.warn('[team-level] filter',e);}}
+        var ok=win.save({skipTargets:true});win.renderTeam();var lb=A.levelLabel(source().meta);
+        showUndo('학교급 → <b>'+esc(lb||'정하지 않음')+'</b>'+(lb?' · '+(yearMax()?yearMax()+'학년이 졸업 학년입니다':'학년 없이 씁니다'):'')+(ok===false?' · 저장 확인이 필요해요':''),function(){if(!groupAllowed()||owner!==win.teamSaveOwner()||A.level(source().meta)!==to)return;set(from);win.save({skipTargets:true});win.renderTeam();},12000);
+      },'학교급 고르기');}
     function button(label,attrs,cls){return '<button type="button" '+(attrs||'')+' class="pw-button '+(cls||'')+'">'+label+'</button>';}
     function phoneSummary(){
       var team=el('teamView'),head=team&&team.querySelector('.tm-head');if(!head)return;
@@ -519,7 +529,7 @@
       var cands=((scoutVisible()&&scoutItems())||[]).filter(function(it){return (it.key==='done'||it.key==='go'||plan[it.r.cid])&&it.hit!=='dup'&&String(it.r.name||'').trim();});
       cands.forEach(function(it){if(it.key==='done'||plan[it.r.cid])st.join[it.r.id]=true;});
       function joiners(){return cands.filter(function(it){return st.join[it.r.id];});}
-      function usesYears(){return source().players.some(function(p){return p.type!=='target'&&SEASON.yearOf(p);});}
+      function usesYears(){return !!yearMax()&&source().players.some(function(p){return p.type!=='target'&&SEASON.yearOf(p);});}
       function scoutLine(pl){if(!scoutVisible())return '';var held=scTagged(pl.next),n=models.scout.length;if(!held||(!n&&!held.length))return '';
         return '<p class="pw-muted pws-none">스카우팅 후보 '+n+'명은 '+pl.cur+' 시즌 목록으로 넘어가요. '+pl.next+' 시즌 스카우팅은 '+(held.length?'담아 둔 '+held.length+'명으로 시작해요.':'빈 목록으로 시작해요.')+'</p>';}
       function joinLine(){if(!cands.length)return '';var n=joiners().length;
@@ -528,12 +538,12 @@
       if(seasonDlg)seasonDlg.remove();var dlg=seasonDlg=doc.createElement('dialog');dlg.id='pwSeason';dlg.className='pw-dialog pw-import';dlg.setAttribute('aria-labelledby','pwSeasonTitle');doc.body.appendChild(dlg);
       function calc(){var d=source();return SEASON.plan(d.players,d.meta,{keep:Object.keys(st.keep).filter(function(k){return st.keep[k];}),years:st.years});}
       function line(pl,y){var L=pl.by[y];if(!L.length)return '';var on=st.years[y]!==false,stay=L.filter(function(p){return st.keep[String(p.id)];}).length;
-        return '<section class="pws-row'+(on?'':' is-off')+'"><label class="pws-head"><input type="checkbox" data-pws-year="'+y+'"'+(on?' checked':'')+' aria-label="'+YL(y)+' 넘기기"><span class="pws-who"><strong>'+YL(y)+' '+L.length+'명</strong><small>'+(!on?'그대로 둬요':stay?stay+'명은 '+YL(y)+' 그대로':y==='3'?'기록과 함께 졸업생으로 남아요':y==='0'?'1학년이 돼요':'한 학년 위로')+'</small></span><span class="pws-to'+(on&&y==='3'?' is-grad':'')+'">'+(!on?'그대로':y==='3'?'→ 졸업':'→ '+(+y+1)+'학년')+'</span></label>'
+        return '<section class="pws-row'+(on?'':' is-off')+'"><label class="pws-head"><input type="checkbox" data-pws-year="'+y+'"'+(on?' checked':'')+' aria-label="'+YL(y)+' 넘기기"><span class="pws-who"><strong>'+YL(y)+' '+L.length+'명</strong><small>'+(!on?'그대로 둬요':stay?stay+'명은 '+YL(y)+' 그대로':+y>=pl.max?'기록과 함께 졸업생으로 남아요':y==='0'?'1학년이 돼요':'한 학년 위로')+'</small></span><span class="pws-to'+(on&&+y>=pl.max?' is-grad':'')+'">'+(!on?'그대로':+y>=pl.max?'→ 졸업':'→ '+(+y+1)+'학년')+'</span></label>'
           +(on?'<div class="pws-names" role="group" aria-label="'+YL(y)+' 선수">'+L.map(function(p){var k=!!st.keep[String(p.id)];return button(esc(p.name||'이름 없음'),'data-pws-keep="'+esc(p.id)+'" aria-pressed="'+!k+'"',k?'':'is-on');}).join('')+'</div>':'')+'</section>';}
-      function draw(){var pl=calc(),none=pl.by[''].length,body=dlg.querySelector('.pw-detailbody'),top=body?body.scrollTop:0;
-        dlg.innerHTML='<header class="pw-dialoghead"><h2 id="pwSeasonTitle">'+pl.next+' 시즌 시작</h2>'+button('닫기','data-pws-close')+'</header><div class="pw-detailbody"><p class="pw-muted pwi-lead">'+pl.cur+' 시즌 '+pl.total+'명에서 이어 가요. 이름을 눌러 끄면 그 선수는 지금 학년에 남아요.</p>'
-          +(pl.by['3'].length+pl.by['2'].length+pl.by['1'].length+pl.by['0'].length?['3','2','1','0'].map(function(y){return line(pl,y);}).join(''):'<p class="pw-muted pwi-empty">학년을 적은 선수가 아직 없어요. 선수 프로필에 학년을 적으면 졸업과 진급을 한 번에 넘겨요.</p>')
-          +(none?'<p class="pw-muted pws-none">학년 없음 '+none+'명은 그대로 둬요.</p>':'')+joinLine()+scoutLine(pl)+'</div>'
+      function draw(){var pl=calc(),none=pl.by[''].length,body=dlg.querySelector('.pw-detailbody'),top=body?body.scrollTop:0,ys=SEASON.YEARS.slice().reverse().filter(function(y){return pl.by[y].length;});
+        dlg.innerHTML='<header class="pw-dialoghead"><h2 id="pwSeasonTitle">'+pl.next+' 시즌 시작</h2>'+button('닫기','data-pws-close')+'</header><div class="pw-detailbody"><p class="pw-muted pwi-lead">'+pl.cur+' 시즌 '+pl.total+'명에서 이어 가요. '+(pl.max?'이름을 눌러 끄면 그 선수는 지금 학년에 남아요.':'성인팀은 명단 그대로 새 시즌으로 넘어갑니다.')+'</p>'
+          +(ys.length?ys.map(function(y){return line(pl,y);}).join(''):pl.max?'<p class="pw-muted pwi-empty">학년을 적은 선수가 아직 없어요. 선수 프로필에 학년을 적으면 졸업과 진급을 한 번에 넘겨요.</p>':'')
+          +(none&&pl.max?'<p class="pw-muted pws-none">학년 없음 '+none+'명은 그대로 둬요.</p>':'')+joinLine()+scoutLine(pl)+'</div>'
           +'<footer class="pwi-foot"><span data-pws-sum><b>'+pl.next+' 시즌 '+(pl.after+joiners().length)+'명</b> <span>· 졸업 '+pl.grad.length+'명'+(joiners().length?' · 신입 '+joiners().length+'명':'')+' · '+pl.cur+' 시즌 명단은 그대로 남아요</span></span><p class="pwi-err" role="alert" data-pws-err></p>'+button('취소','data-pws-close')+button(pl.next+' 시즌 시작','data-pws-ok','pw-primary')+'</footer>';
         body=dlg.querySelector('.pw-detailbody');if(body)body.scrollTop=top;}
       function commit(){var err=dlg.querySelector('[data-pws-err]');
@@ -614,13 +624,13 @@
           +(proj.gone?'<span class="pw-proj-note">그 전에 졸업 '+proj.gone+'명</span>':'')+(jn.list.length?'<span class="pw-proj-note">스카우팅 합류 예정 '+jn.list.length+'명</span>':'')+(held?'<span class="pw-proj-note">이 시즌 스카우팅 후보 '+held.length+'명</span>':'')+(groupAllowed(true)?button('이 시즌 지우기','data-pw-action="seasonDrop"'):'')+'</div>'
         +(s.view==='depth'&&all.length?futureDepth(rows,all,id):rows.length?'<div class="pw-table-wrap"><table class="pw-table pw-past"><thead><tr><th>선수</th><th>팀 · 예상 학년</th></tr></thead><tbody>'+rows.map(function(x){var r=x.r,j=x.join;
           if(j)return '<tr class="pw-join"><td><span class="pw-person"><span class="pw-avatar" aria-hidden="true">'+esc(x.num||String(x.name).slice(0,1))+'</span><span><strong>'+esc(x.name)+'</strong><small>'+esc(x.pos||'포지션 미지정')+' · 스카우팅에서</small></span></span></td><td>'+esc(x.grp||'미배정')+'<small>'+esc(j.season)+' 시즌 합류'+(j.year?' · '+esc(YL(j.year)):'')+'</small>'+(can&&j.season===id?button('빼기','data-pw-joindrop="'+esc(j.cid)+'" aria-label="'+esc(x.name)+' '+esc(id)+' 시즌에서 빼기"','pw-join-drop'):'')+'</td></tr>';
-          return '<tr><td>'+button('<span class="pw-person"><span class="pw-avatar" aria-hidden="true">'+esc(x.num||String(x.name).slice(0,1))+'</span><span><strong>'+esc(x.name)+'</strong><small>'+esc(x.pos||'포지션 미지정')+'</small></span></span>','data-pw-past="'+esc(r.p.id)+'"','pw-name')+'</td><td>'+esc(x.grp||'미배정')+'<small>'+(r.year?esc(YL(r.from))+' → '+esc(YL(r.year)):'학년 없음')+'</small></td></tr>';}).join('')+'</tbody></table></div>'
+          return '<tr><td>'+button('<span class="pw-person"><span class="pw-avatar" aria-hidden="true">'+esc(x.num||String(x.name).slice(0,1))+'</span><span><strong>'+esc(x.name)+'</strong><small>'+esc(x.pos||'포지션 미지정')+'</small></span></span>','data-pw-past="'+esc(r.p.id)+'"','pw-name')+'</td><td>'+esc(x.grp||'미배정')+'<small>'+(r.year?esc(YL(r.from))+' → '+esc(YL(r.year)):yearMax()?'학년 없음':'')+'</small></td></tr>';}).join('')+'</tbody></table></div>'
           :'<div class="pw-empty"><strong>'+(all.length?'조건에 맞는 선수가 없어요':'이 시즌까지 이어지는 선수가 아직 없어요')+'</strong></div>'));
       host.querySelector('.pw-comparebar').hidden=true;var q=host.querySelector('.pw-quickadd');if(q)q.hidden=true;liftUndo();}
     /* 그 시즌까지의 합류 예정 — 이름은 후보 문서에서(스카우팅을 못 보는 사람 · 확인 중엔 known 거짓: 수만 보인다) */
-    function joinRows(id){var d=source(),L=SEASON.joinsUpTo(d.meta,id),C=null,one=d.players.some(function(p){return p.type!=='target'&&SEASON.yearOf(p);});
+    function joinRows(id){var d=source(),L=SEASON.joinsUpTo(d.meta,id),C=null,max=yearMax(),one=!!max&&d.players.some(function(p){return p.type!=='target'&&SEASON.yearOf(p);});
       if(L.length&&scoutVisible()){try{var sd=scStore().read();C=sd.scoutRegistry.candidates;var posBy={};sd.players.forEach(function(p){var c=PSScoutStore.idOf(p),a=position(p);if(a&&!posBy[c])posBy[c]=a;});}catch(e){C=null;}}
-      return {known:!!C,list:L.map(function(x){var c=C&&C[x.cid],i=c&&c.info||{},y=one?Math.min(3,1+(+id-+x.season)):0;
+      return {known:!!C,list:L.map(function(x){var c=C&&C[x.cid],i=c&&c.info||{},y=one?Math.min(max,1+(+id-+x.season)):0;
         return {cid:x.cid,season:x.season,grp:x.grp,year:y?String(y):'',name:c?(i.name||'이름 없음'):'후보',num:i.num==null?'':String(i.num),pos:c?(posBy[x.cid]||((c.source&&c.source.pos)||[])[0]||''):''};})};}
     function dropJoin(cid){if(!SEASON||!groupAllowed()||!futureScope())return;var id=String(states.team.scope).slice(7),d=source(),owner=win.teamSaveOwner(),was=SEASON.joins(d.meta,id).filter(function(x){return x.cid===cid;})[0];
       if(!was||!SEASON.removeJoin(d,id,cid))return;var ok=win.save({skipTargets:true});refresh('team');
@@ -696,6 +706,7 @@
       item('grpName','조 이름 바꾸기',press('#grpChips .grp-edit'),has('#grpChips .grp-edit'));
       item('grpAdd','조 추가',press('#grpChips .grp-add'),has('#grpChips .grp-add'));
       item('lock','편집 권한',press('#rosterLockChip'),function(){var c=el('rosterLockChip');return !!c&&!c.hidden&&c.style.display!=='none'&&!!String(c.textContent||'').trim();});
+      item('level','학교급',function(){levelPick(el('tmEtcBtn'));},function(){return !!(win.PSTeamAudience&&win.PSTeamAudience.LEVELS)&&groupAllowed(true);});
       item('seasonStart','새 시즌 시작…',function(){seasonStart();},function(){return !!SEASON&&groupAllowed(true);});
       item('seasonAdd','시즌 미리 만들기',function(){addFutureSeason('team');},function(){return !!SEASON&&groupAllowed(true);});
       el('tmEtcBtn').addEventListener('click',simpleSync,true);simpleSync();
@@ -705,6 +716,7 @@
     /* «⋯» 항목은 원래 단추가 있을 때만 · 편집 권한 글은 원래 칩의 글 그대로 */
     function simpleSync(){simple.items.forEach(function(it){var on=false;try{on=!!it.show();}catch(e){on=false;}it.b.style.display=on?'':'none';});
       var lock=el('rosterLockChip'),li=simple.items.filter(function(it){return it.b.dataset.pwEtc==='lock';})[0];if(lock&&li)li.b.textContent=String(lock.textContent||'').replace(/\s+/g,' ').trim()||'편집 권한';
+      var lv=simple.items.filter(function(it){return it.b.dataset.pwEtc==='level';})[0];if(lv&&win.PSTeamAudience&&win.PSTeamAudience.levelLabel){var ll=win.PSTeamAudience.levelLabel(source().meta);lv.b.textContent=ll?'학교급 · '+ll:'학교급';}
       var ed=simple.items.filter(function(it){return it.b.dataset.pwEtc==='edit';})[0];if(ed)ed.b.textContent=states.team.view==='edit'?'배치 · 명단 편집 닫기':'배치 · 명단 편집';
       try{if(typeof win.tmEtcSync==='function')win.tmEtcSync();}catch(e){win.console.warn('[roster-simple] etc',e);}}
     /* 넓은 화면: 조 탭 줄(.tm-workbar — scout.html 의 것, 옮기지 않는다)과 검색 줄을 한 줄로 — 검색 줄을 탭 높이만큼 끌어올리고 탭 너비만큼 민다. 탭이 줄의 반을 넘으면 두 줄 그대로 */
@@ -761,7 +773,7 @@
     function cellYear(anchor,id){
       if(!groupAllowed())return;var pl=cellPlayer(id);if(!pl||pl.grad)return;
       closeGroupPicker();var turn=groupPickTurn,owner=win.teamSaveOwner(),from=String(pl.schoolYear||'');
-      win.psPickOpen(anchor,[['','미지정'],['0','신입생'],['1','1학년'],['2','2학년'],['3','3학년']].map(function(o){return {v:o[0],lb:o[1],col:null};}),from,function(to){
+      win.psPickOpen(anchor,win.PSTeamAudience.yearOpts(source().meta).map(function(o){return {v:o[0],lb:o[1],col:null};}),from,function(to){
         if(turn!==groupPickTurn||!groupAllowed())return;var now=cellPlayer(id);to=String(to||'');
         if(owner!==win.teamSaveOwner()||!now||now.grad||String(now.schoolYear||'')!==from){toast('명단이 바뀌었어요. 선수를 다시 선택해 주세요');refresh('team');return;}
         if(from===to)return;
@@ -775,7 +787,7 @@
     function rowMore(anchor,id){
       var pl=cellPlayer(id);if(!pl)return;var edit=groupAllowed(true),items=[{v:'profile',lb:'프로필 수정',col:null}];
       if(edit&&!pl.grad&&phoneView.matches)items.push({v:'grp',lb:'조 바꾸기',col:null});
-      if(edit&&!pl.grad&&(phoneView.matches||!yearsUsed()))items.push({v:'year',lb:'학년 바꾸기',col:null});
+      if(edit&&!pl.grad&&yearMax()&&(phoneView.matches||!yearsUsed()))items.push({v:'year',lb:'학년 바꾸기',col:null});
       if(edit&&SEASON)items.push(pl.grad?{v:'restore',lb:'현재 명단으로',col:null}:{v:'grad',lb:'졸업 처리',col:null});
       if(edit)items.push({v:'remove',lb:'명단에서 빼기',col:null});
       closeGroupPicker();win.psPickOpen(anchor,items,'',function(v){
