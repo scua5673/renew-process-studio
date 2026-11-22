@@ -8032,7 +8032,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(sqNowInfo){
       var KV=[['자리',posNm],['등번호',p.num],['주발',SQP_FOOT[p.foot]||''],['생년월일',pf.dob],
               ['키',pf.height?pf.height+'cm':''],['몸무게',pf.weight?pf.weight+'kg':''],
-              ['소속팀',pf.team],['학년',/^[0-3]$/.test(String(p.schoolYear||''))?PSTeamAudience.yearLabel(p.schoolYear):''],['상태',SQP_ST[p.status]||'훈련 가능']];   /* 3.283 — 학년은 schoolYear(grade 는 평가 등급) */
+              ['소속팀',pf.team],['학년',/^[0-6]$/.test(String(p.schoolYear||''))?PSTeamAudience.yearLabel(p.schoolYear):''],['상태',SQP_ST[p.status]||'훈련 가능']];   /* 3.283 — 학년은 schoolYear(grade 는 평가 등급) */
       var age=null; try{ age=sqpAgeOf(pf.dob||(sf&&sf.dob)||''); }catch(_){}
       if(age!=null)KV.splice(4,0,['나이',age+'세']);
       h+='<div class="nw-info"><div class="sqp-sec">팀 프로필<em>팀 › 선수단 › 편집과 같은 값입니다</em></div><div class="sqp-kv">'
@@ -11307,7 +11307,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   /* 2.215 — 조별 일정: 보고 있는 선수의 조(cs_team_attrs_v1.grpBy[playerId], 공개 미러)를 찾아 그 조의 일정을 읽는다. 조가 없거나 그 조 일정이 없으면 전체 */
   function myGrp(){ try{ var uid=viewedUid(); if(!uid)return ''; var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'); var pid=pm&&pm.members&&pm.members[uid]&&pm.members[uid].playerId; if(!pid)return ''; var at=JSON.parse(localStorage.getItem('cs_team_attrs_v1')||'null'); return (at&&at.grpBy&&at.grpBy[pid])||''; }catch(_){ return ''; } }
   function mySchoolYear(){try{var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'),pid=pm&&pm.members&&pm.members[viewedUid()]&&pm.members[viewedUid()].playerId;
-    var at=JSON.parse(localStorage.getItem('cs_team_attrs_v1')||'null'),p=(at&&at.roster||[]).find(function(x){return String(x.id)===String(pid);});return p&&/^[0-3]$/.test(String(p.schoolYear))?String(p.schoolYear):'';}catch(_){return '';}}
+    var at=JSON.parse(localStorage.getItem('cs_team_attrs_v1')||'null'),p=(at&&at.roster||[]).find(function(x){return String(x.id)===String(pid);});return p&&/^[0-6]$/.test(String(p.schoolYear))?String(p.schoolYear):'';}catch(_){return '';}}
   function teamScheduleRead(){
     try{
       var ps=window.PSSchedule;
@@ -16284,7 +16284,7 @@ html.ps-page-idp .dcols,html.ps-page-idp .dcol{display:contents}
   html.ps-page-idp body.ps-player-role .dcol{display:block;min-width:0}
 }
 </style>
-<link rel="stylesheet" href="team-mobile.css?v=3.358">
+<link rel="stylesheet" href="team-mobile.css?v=3.360">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>

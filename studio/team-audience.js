@@ -3,7 +3,16 @@
   'use strict';
   var own=function(o,k){return Object.prototype.hasOwnProperty.call(o||{},k);};
   function list(a){return (Array.isArray(a)?a:[]).map(function(x){return String(x==null?'':x).trim();}).filter(function(x,i,all){return x&&all.indexOf(x)===i;});}
-  function years(a){return list(a).filter(function(x){return /^[0-3]$/.test(x);}).sort();}
+  function years(a){return list(a).filter(function(x){return /^[0-6]$/.test(x);}).sort();}
+  /* 3.359 학교급(사용자 11/22 «초등학교 중학교 고등학교 대학교 구분 · 성인팀») — 선수단 문서 meta.level. 학년 수 = 졸업 학년, 성인팀은 학년 없음(0).
+     고르지 않은 팀('')은 전처럼 3학년제. roster-season.js 의 LEVEL_MAX 와 같은 값(tests/team-level-3359 가 지킨다). 조와는 무관하다 */
+  var LEVELS=[['elem','초등학교',6],['mid','중학교',3],['high','고등학교',3],['univ','대학교',4],['adult','성인팀',0]];
+  function levelRow(meta){var v=String(meta&&meta.level||'');return LEVELS.filter(function(l){return l[0]===v;})[0]||null;}
+  function level(meta){var l=levelRow(meta);return l?l[0]:'';}
+  function levelLabel(meta){var l=levelRow(meta);return l?l[1]:'';}
+  function maxYear(meta){var l=levelRow(meta);return l?l[2]:3;}
+  function yearList(meta){var out=[],m=maxYear(meta);if(!m)return out;for(var i=0;i<=m;i++)out.push(String(i));return out;}
+  function yearOpts(meta){return [['','미지정']].concat(yearList(meta).map(function(y){return [y,yearLabel(y)];}));}
   /* 학년 값 '0' = 신입생(입학 전에 합류한 예비 1학년 — 새 시즌 시작 때 1학년). 옛 판 앱은 미지정으로 읽는다. */
   function yearLabel(y){y=String(y==null?'':y);return y==='0'?'신입생':y+'학년';}
   function label(key,meta){var names=meta&&meta.grpLabels;return own(names,key)&&typeof names[key]==='string'?names[key]:String(key||'');}
@@ -37,5 +46,5 @@
     return out;
   }
   function yearText(item){var a=years(item&&item.schoolYears);return a.length?a.map(yearLabel).join(' · '):'전체 학년';}
-  return {keys:keys,label:label,legacy:legacy,rename:rename,years:years,yearLabel:yearLabel,yearMatch:yearMatch,playerMatch:playerMatch,yearDay:yearDay,yearText:yearText};
+  return {keys:keys,label:label,legacy:legacy,rename:rename,years:years,yearLabel:yearLabel,yearMatch:yearMatch,playerMatch:playerMatch,yearDay:yearDay,yearText:yearText,LEVELS:LEVELS,level:level,levelLabel:levelLabel,maxYear:maxYear,yearList:yearList,yearOpts:yearOpts};
 });

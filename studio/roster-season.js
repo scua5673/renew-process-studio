@@ -5,7 +5,10 @@
    지난 시즌 줄은 그날의 이름 · 번호 · 포지션 · 조 · 학년만(평가는 선수 객체에 한 벌). 이 파일은 셈만 한다 — 저장은 부른 쪽의 원래 길(save). */
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.PSRosterSeason=api;})(typeof window!=='undefined'?window:this,function(){
   'use strict';
-  var PAST_MAX=8,FUTURE_MAX=6,JOIN_MAX=60,YEARS=['0','1','2','3'];   /* '0' = 신입생 — 새 시즌에 1학년 */
+  var PAST_MAX=8,FUTURE_MAX=6,JOIN_MAX=60,YEARS=['0','1','2','3','4','5','6'];   /* '0' = 신입생 — 새 시즌에 1학년 */
+  /* 3.359 학교급(meta.level) — 졸업 학년. 성인팀(0)은 학년 없이 시즌만 넘긴다 · 고르지 않은 팀은 3학년제. team-audience.js LEVELS 와 같은 값 */
+  var LEVEL_MAX={elem:6,mid:3,high:3,univ:4,adult:0};
+  function maxYear(meta){var v=String(meta&&meta.level||'');return Object.prototype.hasOwnProperty.call(LEVEL_MAX,v)?LEVEL_MAX[v]:3;}
   function isGrad(p){return !!(p&&p.grad&&typeof p.grad==='object');}
   function ours(p){return !!p&&p.type!=='target';}
   function active(list){return (list||[]).filter(function(p){return ours(p)&&!isGrad(p);});}
@@ -36,8 +39,8 @@
   function removeJoin(doc,id,cid,now){if(!doc||!doc.meta)return false;id=String(id);var cur=joins(doc.meta,id),left=cur.filter(function(x){return x.cid!==String(cid);});if(left.length===cur.length)return false;
     var o=seasonBase(doc.meta,now);o.joins=joinsCopy(o.joins);if(left.length)o.joins[id]=left;else delete o.joins[id];doc.meta.season=o;return true;}
   /* 예상 명단 — 미리 만든 시즌에 지금 선수가 몇 학년인지(저장하지 않는 셈). 3학년을 넘으면 그 전에 졸업, 학년 없음은 그대로 */
-  function project(players,meta,id,now){var k=+id-+current(meta,now),rows=[],gone=0;if(!(k>0))return {rows:rows,gone:0,ahead:0};
-    active(players).filter(function(p){return p.manual===true||String(p.name||'').trim();}).forEach(function(p){var y=yearOf(p);if(y&&+y+k>3){gone++;return;}rows.push({p:p,from:y,year:y?String(+y+k):''});});
+  function project(players,meta,id,now){var k=+id-+current(meta,now),rows=[],gone=0,max=maxYear(meta);if(!(k>0))return {rows:rows,gone:0,ahead:0};
+    active(players).filter(function(p){return p.manual===true||String(p.name||'').trim();}).forEach(function(p){var y=max?yearOf(p):'';if(y&&+y+k>max){gone++;return;}rows.push({p:p,from:y,year:y?String(+y+k):''});});
     return {rows:rows,gone:gone,ahead:k};}
   function pastOf(meta,id){return past(meta).filter(function(x){return String(x.id)===String(id);})[0]||null;}
   function leanRow(p,posOf,gradNow){var r={id:String(p.id),name:String(p.name||'').trim().slice(0,40),num:String(p.num==null?'':p.num).slice(0,4),pos:String(posOf?posOf(p)||'':'').slice(0,8),grp:String(p.grp||'').trim().slice(0,40),year:yearOf(p)};if(gradNow)r.grad=1;return r;}
@@ -45,10 +48,10 @@
   function plan(players,meta,opts){
     opts=opts||{};var keep={},on=opts.years||{},cur=current(meta,opts.now),list=active(players).filter(function(p){return p.manual===true||String(p.name||'').trim();});
     (opts.keep||[]).forEach(function(id){keep[String(id)]=1;});
-    var out={cur:cur,next:next(cur),total:list.length,grad:[],up:[],stay:[],by:{'3':[],'2':[],'1':[],'0':[],'':[]}};
-    list.forEach(function(p){var y=yearOf(p),id=String(p.id);out.by[y].push(p);
+    var max=maxYear(meta),out={cur:cur,next:next(cur),total:list.length,max:max,grad:[],up:[],stay:[],by:{'':[]}};YEARS.forEach(function(y){out.by[y]=[];});
+    list.forEach(function(p){var y=max?yearOf(p):'',id=String(p.id);out.by[y].push(p);
       if(!y||on[y]===false||keep[id]){out.stay.push(id);return;}
-      if(y==='3')out.grad.push(id);else out.up.push({id:id,from:y,to:String(+y+1)});});
+      if(+y>=max)out.grad.push(id);else out.up.push({id:id,from:y,to:String(+y+1)});});
     out.after=out.total-out.grad.length;return out;
   }
   function byId(players){var m={};(players||[]).forEach(function(p){if(p)m[String(p.id)]=p;});return m;}
@@ -87,5 +90,5 @@
     list.push({id:'cur',season:cur,label:cur+' 시즌',n:active(players).filter(function(p){return p.manual===true||String(p.name||'').trim();}).length,now:true});
     future(meta,now).forEach(function(id){list.push({id:'future:'+id,season:id,label:id+' 시즌',n:project(players,meta,id,now).rows.length+joinsUpTo(meta,id,now).length,future:true});});
     if(g)list.push({id:'grad',season:'',label:'졸업생 전체',n:g});return list;}
-  return {isGrad:isGrad,active:active,grads:grads,current:current,next:next,yearOf:yearOf,past:past,pastOf:pastOf,future:future,addFuture:addFuture,removeFuture:removeFuture,joins:joins,joinsUpTo:joinsUpTo,addJoins:addJoins,removeJoin:removeJoin,JOIN_MAX:JOIN_MAX,project:project,FUTURE_MAX:FUTURE_MAX,leanRow:leanRow,plan:plan,apply:apply,revert:revert,graduate:graduate,restore:restore,scopes:scopes,PAST_MAX:PAST_MAX};
+  return {maxYear:maxYear,YEARS:YEARS,isGrad:isGrad,active:active,grads:grads,current:current,next:next,yearOf:yearOf,past:past,pastOf:pastOf,future:future,addFuture:addFuture,removeFuture:removeFuture,joins:joins,joinsUpTo:joinsUpTo,addJoins:addJoins,removeJoin:removeJoin,JOIN_MAX:JOIN_MAX,project:project,FUTURE_MAX:FUTURE_MAX,leanRow:leanRow,plan:plan,apply:apply,revert:revert,graduate:graduate,restore:restore,scopes:scopes,PAST_MAX:PAST_MAX};
 });
