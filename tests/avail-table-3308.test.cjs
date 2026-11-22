@@ -61,7 +61,7 @@ test('desktop: one table — group rows with the field/GK split, year rows, rest
   assert.ok(h.startsWith('<div class="av-day-wrap"><table class="av-day-table"><thead>'));
   assert.deepEqual([...h.matchAll(/<th class="c-([a-z]+)">([^<]+)<\/th>/g)].map(m=>m[2]),['번호','조','이름','포지션','상태','부상','메모']);
   const rows=[...h.matchAll(/<tr class="([^"]+)"[^>]*>(?:<th colspan="7" scope="rowgroup">([^<]*)|<td class="c-no"><span class="no">([^<]*))/g)].map(m=>m[1]+(m[2]!==undefined?':'+m[2].trim():':#'+m[3]));
-  assert.deepEqual(rows,['av-grp-row:A팀','av-ysub:1학년','av-pl:#1','av-pl rest:#2','av-ysub:2학년','av-pl:#5','av-grp-row:B팀','av-ysub:2학년','av-pl rest:#3','av-ysub:학년 미지정','av-pl:#–'],'조 줄 → 학년 줄 → 가능 → 쉼(옅은 줄) 차례, 쉼이 제 학년 아래');
+  assert.deepEqual(rows,['av-grp-row:A팀','av-ysub:2학년','av-pl:#5','av-ysub:1학년','av-pl:#1','av-pl rest:#2','av-grp-row:B팀','av-ysub:2학년','av-pl rest:#3','av-ysub:학년 미지정','av-pl:#–'],'조 줄 → 학년 줄 → 가능 → 쉼(옅은 줄) 차례, 쉼이 제 학년 아래');
   assert.ok(h.includes('A팀 <span class="n">가능 2 / 3명</span><span class="fgk">필드 <b>1</b> · GK <b>1</b></span>'),'조 머리 = 참여 기록 · 필드/GK(2.956)');
   assert.ok(h.includes('1학년 <span class="n">가능 1 / 2명</span>')&&h.includes('2학년 <span class="n">가능 0 / 1명</span>'),'학년 줄은 «가능 n / m명»(3.283 과 같은 셈)');
   assert.ok(h.includes('<td class="c-grp"><button type="button" class="av-grp-chip" data-av-grp="p1" aria-label="가상 강민 조 고르기 — 지금 A팀">A팀<span aria-hidden="true"> ⌄</span></button></td><td class="c-nm"><button class="av-player-link" data-av-player-edit="p1">'),'이름 앞 조 칩 → 이름(프로필 링크)');
