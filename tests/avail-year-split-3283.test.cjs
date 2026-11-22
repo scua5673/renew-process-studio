@@ -33,7 +33,7 @@ test('학년 차례 — 조별 보기에서 켜졌을 때만, 학년을 적은 �
   assert.equal(c.avYearOrder([P('x',''),P('y','')]).map(p=>p.id).join(),'x,y','학년이 하나도 없는 조는 손대지 않는다');
   c.state.availView='pos';assert.equal(c.avYearOrder(list),list,'포지션별 보기는 그대로');
   c.state.availView='grp';c.avYearSplit=false;assert.equal(c.avYearOrder(list),list,'꺼져 있으면 그대로');
-  assert.equal(c.avYearKey({schoolYear:'4'}),'','1~3 만 학년');assert.equal(c.avYearKey({grade:'1'}),'','평가 등급은 학년이 아니다');
+  assert.equal(c.avYearKey({schoolYear:'7'}),'','3.359 — 0~6 만 학년(초등 6학년까지)');assert.equal(c.avYearKey({grade:'1'}),'','평가 등급은 학년이 아니다');
 });
 
 test('학년 줄 — 그 학년의 첫 선수 앞에 한 번 · 날짜별은 «가능 n / m명»(데스크톱 = 참여 기록, 폰 = 쉼이 아닌 선수) · 누적 표는 «m명»',()=>{
@@ -67,7 +67,7 @@ test('선수 추가 시트의 조 · 학년 칸과 값 넣기 — 조 이름은 
   assert.deepEqual(J(f[0].options.map(o=>[o.value,o.label])),[['','없음'],['A팀','1군'],['B팀','B팀']],'grpLabels 로 바꾼 이름이 보이고 값은 키');
   assert.deepEqual(J(f[1].options.map(o=>o.value)),['','0','1','2','3'],'3.354 — 신입생(0)이 미지정 다음');
   const p=c.tmAudienceApply({id:'n'},{grp:'B팀',schoolYear:'2'});assert.equal(p.grp,'B팀');assert.equal(p.schoolYear,'2');
-  const q=c.tmAudienceApply({id:'m'},{grp:'',schoolYear:'4'});assert.equal('grp' in q,false);assert.equal('schoolYear' in q,false,'빈 조 · 1~3 아닌 학년은 적지 않는다');
+  const q=c.tmAudienceApply({id:'m'},{grp:'',schoolYear:'7'});assert.equal('grp' in q,false);assert.equal('schoolYear' in q,false,'빈 조 · 0~6 아닌 학년은 적지 않는다');
 });
 
 test('배선 — 가용인원 두 화면 · 선수 추가 시트 · 선수 편집 창 · IDP 신상',()=>{
@@ -81,6 +81,6 @@ test('배선 — 가용인원 두 화면 · 선수 추가 시트 · 선수 편�
   assert.ok(SC.includes('options:posOpts,value:""}].concat(tmAudienceFields()),'),'선수 추가 시트 칸');
   assert.ok(SC.includes('data.players.push(tmAudienceApply({id:uid("pl"),name:v.name,'),'선수 추가 시트 값');
   assert.ok(fn('openPlayer').includes('tmAudienceEditChips(pl);'),'선수 편집 창 칩');
-  assert.ok(IDP.includes("['학년',/^[0-3]$/.test(String(p.schoolYear||''))?PSTeamAudience.yearLabel(p.schoolYear):'']"),'IDP 신상의 학년은 schoolYear');
+  assert.ok(IDP.includes("['학년',/^[0-6]$/.test(String(p.schoolYear||''))?PSTeamAudience.yearLabel(p.schoolYear):'']"),'IDP 신상의 학년은 schoolYear');
   assert.ok(!IDP.includes("['학년',p.grade]"),'평가 등급을 학년으로 보이지 않는다');
 });

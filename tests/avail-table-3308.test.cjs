@@ -65,7 +65,7 @@ test('desktop: one table — group rows with the field/GK split, year rows, rest
   assert.ok(h.includes('A팀 <span class="n">가능 2 / 3명</span><span class="fgk">필드 <b>1</b> · GK <b>1</b></span>'),'조 머리 = 참여 기록 · 필드/GK(2.956)');
   assert.ok(h.includes('1학년 <span class="n">가능 1 / 2명</span>')&&h.includes('2학년 <span class="n">가능 0 / 1명</span>'),'학년 줄은 «가능 n / m명»(3.283 과 같은 셈)');
   assert.ok(h.includes('<td class="c-grp"><button type="button" class="av-grp-chip" data-av-grp="p1" aria-label="가상 강민 조 고르기 — 지금 A팀">A팀<span aria-hidden="true"> ⌄</span></button></td><td class="c-nm"><button class="av-player-link" data-av-player-edit="p1">'),'이름 앞 조 칩 → 이름(프로필 링크)');
-  assert.ok(h.includes('<td class="c-pos"><span class="av-pos gk">GK</span></td>'),'GK 는 포지션 강조');
+  assert.ok(/<td class="c-pos"><button type="button" class="av-pos av-pos-chip gk" data-av-pos="p1"[^>]*>GK<span aria-hidden="true"> ⌄<\/span><\/button><\/td>/.test(h),'GK 는 포지션 강조 · 3.363 편집 권한이 있으면 포지션 칩(단추)');
   assert.ok(h.includes('<td class="c-memo"><span class="av-player-note">치료</span></td>'),'메모 = 그날 사유');
   assert.ok(h.includes('data-av-player-edit="p2">가상 &lt;부상&gt;</button>')&&!h.includes('<부상>'),'이름은 esc');
   assert.equal((h.match(/data-av-st="/g)||[]).length,5,'상태 칩은 선수마다 하나(한 번만 그린다)');
@@ -88,7 +88,7 @@ test('phone (≤600): three columns, a table per group inside «운동» and «�
   assert.ok(h.includes('<div class="av-restbox av-split-rest"><div class="rh">참여 못 함 <span class="n">2명</span></div>'));
   assert.equal((h.match(/<table class="av-day-table phone">/g)||[]).length,4,'운동 A · B + 참여 못 함 A · B');
   assert.deepEqual([...h.matchAll(/<th class="c-([a-z]+)">([^<]+)<\/th>/g)].map(m=>m[2]),['이름','상태','부상 · 메모','이름','상태','부상 · 메모'],'머리줄은 운동 표에만');
-  assert.ok(/<td class="c-nm"><button class="av-player-link" data-av-player-edit="p1">가상 강민<\/button><small class="av-yr">1학년<\/small><button type="button" class="av-grp-chip" data-av-grp="p1"[^>]*>A팀<span aria-hidden="true"> ⌄<\/span><\/button><small class="sub">1 · GK<\/small><\/td>/.test(h),'이름(학년 꼬리표는 CSS 가 숨긴다) 옆 조 칩 · 아래 번호 · 포지션');
+  assert.ok(/<td class="c-nm"><button class="av-player-link" data-av-player-edit="p1">가상 강민<\/button><small class="av-yr">1학년<\/small><button type="button" class="av-grp-chip" data-av-grp="p1"[^>]*>A팀<span aria-hidden="true"> ⌄<\/span><\/button><small class="sub">1 · <button type="button" class="av-pos av-pos-chip gk" data-av-pos="p1"[^>]*>GK<span aria-hidden="true"> ⌄<\/span><\/button><\/small><\/td>/.test(h),'이름(학년 꼬리표는 CSS 가 숨긴다) 옆 조 칩 · 아래 번호 · 포지션');
   const ok=h.slice(0,h.indexOf('av-split-rest')),rest=h.slice(h.indexOf('av-split-rest'));
   assert.equal((ok.match(/class="av-ysub"/g)||[]).length,3,'운동 쪽 학년 줄 셋(1 · 2 · 미지정)');assert.equal((rest.match(/class="av-ysub"/g)||[]).length,0);
   assert.deepEqual([...rest.matchAll(/data-av-player-edit="(p\d)">[^<]*<\/button><small class="av-yr">(\d학년)/g)].map(m=>m[1]+':'+m[2]),['p2:1학년','p3:2학년'],'참여 못 함 쪽만 자리 옆 학년');

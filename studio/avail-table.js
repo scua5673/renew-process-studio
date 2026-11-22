@@ -12,6 +12,12 @@ function avGrpChip(p){
   if(!can)return '<span class="av-grp-chip ro">'+esc(lb)+'</span>';
   return '<button type="button" class="av-grp-chip" data-av-grp="'+esc(p.id)+'" aria-label="'+esc((p.name||'선수')+' 조 고르기 — 지금 '+lb)+'">'+esc(lb)+'<span aria-hidden="true"> ⌄</span></button>';
 }
+/* 3.363 포지션 칩 — 편집 권한이 있으면 단추(누르면 선수단 표와 같은 포지션 고르개), 없으면 글자만 */
+function avPosChip(p){
+  var pos=avPosition(p),gk=avIsGk(p),can=typeof tmAudienceEditable==='function'&&tmAudienceEditable();
+  if(!can)return '<span class="av-pos'+(gk?' gk':'')+'">'+esc(pos)+'</span>';
+  return '<button type="button" class="av-pos av-pos-chip'+(gk?' gk':'')+(pos?'':' none')+'" data-av-pos="'+esc(p.id)+'" aria-label="'+esc((p.name||'선수')+' 포지션 고르기 — 지금 '+(pos||'미지정'))+'">'+esc(pos||'–')+'<span aria-hidden="true"> ⌄</span></button>';
+}
 /* 부상 칸 — 그날 상태가 부상 · 재활일 때, 그날에 걸친 부상 기록의 부위 · 며칠째(선수 카드의 부상 기록과 같은 값). 적는 곳은 상태 칩 › 부상 시트 그대로 */
 function avInjCell(p,day,r){
   if(!r||(r.s!=='injury'&&r.s!=='rehab'))return '';
@@ -21,9 +27,9 @@ function avInjCell(p,day,r){
   return '<span class="av-inj'+(e.part?'':' nopart')+'">'+esc(stInjLabel(e))+(days>0?'<small>'+days+'일째</small>':'')+'</span>';
 }
 function avTableRow(p,day,r,phone){
-  var rest=!!(r.s&&r.s!=='ok'),pos=avPosition(p),gk=avIsGk(p),name=avProfileLink(p)+avYearTag(p);
-  if(phone)return '<tr class="av-pl'+(rest?' rest':'')+'" data-av-pid="'+esc(p.id)+'"><td class="c-nm">'+name+avGrpChip(p)+'<small class="sub">'+esc([p.num||'',pos].filter(Boolean).join(' · '))+'</small></td><td class="c-st">'+avEditButton(p,day,r)+'</td><td class="c-ij">'+avInjCell(p,day,r)+(r.note?'<small class="av-player-note">'+esc(r.note)+'</small>':'')+'</td></tr>';
-  return '<tr class="av-pl'+(rest?' rest':'')+'" data-av-pid="'+esc(p.id)+'"><td class="c-no"><span class="no">'+esc(p.num||'–')+'</span></td><td class="c-grp">'+avGrpChip(p)+'</td><td class="c-nm">'+name+'</td><td class="c-pos"><span class="av-pos'+(gk?' gk':'')+'">'+esc(pos)+'</span></td><td class="c-st">'+avEditButton(p,day,r)+'</td><td class="c-ij">'+avInjCell(p,day,r)+'</td><td class="c-memo">'+(r.note?'<span class="av-player-note">'+esc(r.note)+'</span>':'')+'</td></tr>';
+  var rest=!!(r.s&&r.s!=='ok'),name=avProfileLink(p)+avYearTag(p);
+  if(phone)return '<tr class="av-pl'+(rest?' rest':'')+'" data-av-pid="'+esc(p.id)+'"><td class="c-nm">'+name+avGrpChip(p)+'<small class="sub">'+(p.num?esc(p.num)+' · ':'')+avPosChip(p)+'</small></td><td class="c-st">'+avEditButton(p,day,r)+'</td><td class="c-ij">'+avInjCell(p,day,r)+(r.note?'<small class="av-player-note">'+esc(r.note)+'</small>':'')+'</td></tr>';
+  return '<tr class="av-pl'+(rest?' rest':'')+'" data-av-pid="'+esc(p.id)+'"><td class="c-no"><span class="no">'+esc(p.num||'–')+'</span></td><td class="c-grp">'+avGrpChip(p)+'</td><td class="c-nm">'+name+'</td><td class="c-pos">'+avPosChip(p)+'</td><td class="c-st">'+avEditButton(p,day,r)+'</td><td class="c-ij">'+avInjCell(p,day,r)+'</td><td class="c-memo">'+(r.note?'<span class="av-player-note">'+esc(r.note)+'</span>':'')+'</td></tr>';
 }
 function avTableHead(phone){
   return phone?'<thead><tr><th class="c-nm">이름</th><th class="c-st">상태</th><th class="c-ij">부상 · 메모</th></tr></thead>'
@@ -78,7 +84,28 @@ function avGrpPick(btn){
     try{toast((pl.name||'선수')+' → '+(g?(tmGrpLabel(g)||g):'조 없음'));}catch(_){}
   });
 }
+/* 3.363 포지션 칩 → 포지션 고르개(선수단 표 2.548 과 같은 목록: posPickOpen → p.posId → save). 자리가 바뀌면 뎁스 판의 칸 안 차례(sbSeat)는 걷는다 */
+function avPosPick(btn){
+  if(typeof tmAudienceEditable==='function'&&!tmAudienceEditable()){try{toast('선수단 편집 권한이 없어요');}catch(e){console.warn('[avail-table] toast',e);}return;}
+  var id=btn.dataset.avPos,pl=(data.players||[]).find(function(x){return String(x.id)===String(id);});
+  if(!pl)return;
+  posPickOpen(btn,pl.posId||'',function(v){
+    v=String(v||'');
+    if(String(pl.posId||'')===v)return;
+    if(data.players.indexOf(pl)<0){try{toast('명단이 바뀌어 다시 그렸어요. 한 번 더 눌러 주세요');}catch(e){console.warn('[avail-table] toast',e);}renderAvail();return;}
+    var po=(data.positions||[]).find(function(x){return x.id===v;});
+    pl.posId=po?po.id:'';pl.posName=po?po.name:'';delete pl.sbSeat;
+    save();
+    if(typeof avClosePicker==='function')avClosePicker();
+    renderAvail();
+    try{renderPlayers();}catch(e){console.warn('[avail-table] renderPlayers',e);}
+    try{renderTeam();}catch(e){console.warn('[avail-table] renderTeam',e);}
+    try{redrawTeamPitch();}catch(e){console.warn('[avail-table] redrawTeamPitch',e);}
+    try{toast((pl.name||'선수')+' → '+(avPosition(pl)||'미지정'));}catch(e){console.warn('[avail-table] toast',e);}
+  });
+}
 if(typeof document!=='undefined'&&document.head){
+  document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('[data-av-pos]');if(b){e.preventDefault();avPosPick(b);}});
   document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('[data-av-grp]');if(b){e.preventDefault();avGrpPick(b);}});
   var avTableCss=document.createElement('style');avTableCss.id='ps-av-table-css';avTableCss.textContent=
     /* 표 — 선수별 누적 표(2.943)와 같은 문법. 옛 카드 규칙(.av-pl 이 grid)은 tr 에서 걷는다 */
@@ -89,7 +116,7 @@ if(typeof document!=='undefined'&&document.head){
     +'html.ps-page-scout #availView .av-day-table .c-no{width:46px;text-align:center}'
     +'html.ps-page-scout #availView .av-day-table .c-grp{width:80px}'
     +'html.ps-page-scout #availView .av-day-table .c-nm{width:20%}'
-    +'html.ps-page-scout #availView .av-day-table .c-pos{width:72px}'
+    +'html.ps-page-scout #availView .av-day-table .c-pos{width:84px}'
     +'html.ps-page-scout #availView .av-day-table .c-st{width:100px}'
     +'html.ps-page-scout #availView .av-day-table .c-ij{width:18%}'
     +'html.ps-page-scout #availView .av-day-table .c-memo{white-space:normal;line-height:1.35}'
@@ -108,6 +135,10 @@ if(typeof document!=='undefined'&&document.head){
     +'html.ps-page-scout #availView .av-day-table tr.av-ysub .n{font-weight:600;margin-left:6px}'
     +'html.ps-page-scout #availView .av-pos{font-size:12px;color:var(--gray,#646A73)}'
     +'html.ps-page-scout #availView .av-pos.gk{color:var(--red,#C24A46);font-weight:700}'
+    +'html.ps-page-scout #availView .av-pos-chip{display:inline-flex;align-items:center;height:26px;padding:0 9px;border-radius:999px;border:1px solid var(--line,#E3E6EA);background:var(--panel2,#F1F3F5);font:inherit;font-size:12px;font-weight:600;color:var(--ink,#14161A);cursor:pointer;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}'
+    +'html.ps-page-scout #availView .av-pos-chip.gk{color:var(--red,#C24A46)}'
+    +'html.ps-page-scout #availView .av-pos-chip span{color:var(--gray,#646A73);font-weight:600}'
+    +'html.ps-page-scout body #availView:not(#_):not(#__):not(#___):not(#____) .av-day-table.phone .av-pos-chip{height:22px!important;min-height:22px!important;min-width:0!important;padding:0 7px;vertical-align:middle}'
     +'html.ps-page-scout #availView .av-inj{font-size:12px;font-weight:600;color:var(--red,#C24A46)}'
     +'html.ps-page-scout #availView .av-inj.nopart{color:var(--gray,#646A73)}'
     +'html.ps-page-scout #availView .av-inj small{font-weight:500;color:var(--gray,#646A73);margin-left:4px}'
