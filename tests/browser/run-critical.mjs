@@ -123,3 +123,4 @@ for(const engine of engines){
 fs.mkdirSync(path.join(root,'test-results'),{recursive:true});
 fs.writeFileSync(path.join(root,'test-results',`critical-${group}-${engines.join('-')}.json`),JSON.stringify(results,null,2));
 if(results.some(r=>!r.passed))process.exitCode=1;
+suites.entry.push('gamemodel-sheet-3368');   /* 3.368 — 보관함 게임모델 «한 장에서 고르기»: 고르기 · 직접 쓰기 · 다시 고르기 · 자세히 · 세 폭 · 팀 판 그대로 */
