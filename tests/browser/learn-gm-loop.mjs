@@ -25,6 +25,9 @@ try{
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('cs_gamemodel_personal_v1')).moments[0].phases[0].principles.length),1);
 
   const gf=await (await page.$('#fGameModel')).contentFrame();
+  await gf.waitForFunction(()=>window.PSGmSheet&&window.__gmSheet);
+  assert.ok((await gf.evaluate(()=>[...document.querySelectorAll('#gmSheet .gsh-lines input')].map(i=>i.value))).includes('공을 잃으면 가까운 둘이 즉시 압박한다'),'3.368 — 담은 원칙이 «한 장»에 보인다');
+  await gf.evaluate(()=>PSGmSheet.mode('detail'));   /* «이 단계로 훈련 만들기»는 «자세히» */
   await gf.waitForSelector('.gm-mkdrill-b');
   await gf.click('.gm-mkdrill-b');
   const bf=await (await page.waitForSelector('#fBoard')).contentFrame();
