@@ -19,7 +19,8 @@ const look=f=>f.evaluate(()=>{const c=window.__psPages.captureContext(captureSna
 const stored=page=>page.evaluate(()=>{const m=JSON.parse(localStorage.getItem('cs_gamemodel_personal_v1')||'null');return m.moments[0].phases.map(ph=>ph.snap&&ph.snap.snap?ph.snap.snap.players.map(p=>p.num).join(''):null);});
 const put=(f,num)=>f.evaluate(n=>{pushUndo();state.players=[{id:'t'+n,team:'blue',num:n,x:300,y:300}];renderTokens();},num);
 const barClick=(f,label)=>f.evaluate(l=>[...document.querySelectorAll('body > div > button')].find(b=>b.textContent.trim().replace('✓ ','')===l).click(),label);
-const attach=async(page,phaseIdx,label)=>{const gm=await gmFrame(page);await gm.waitForSelector('.snapwrap .attachbtn',{timeout:20000});
+const attach=async(page,phaseIdx,label)=>{const gm=await gmFrame(page);await gm.waitForFunction(()=>window.PSGmSheet&&window.__gmSheet,null,{timeout:20000});await gm.evaluate(()=>PSGmSheet.mode('detail'));   /* 3.368 — 보관함 게임모델은 «한 장»으로 열린다 · 작전판 첨부는 «자세히» */
+  await gm.waitForSelector('.snapwrap .attachbtn',{timeout:20000});
   await gm.evaluate(([i,l])=>[...document.querySelectorAll('.snapwrap')][i].querySelectorAll('.attachbtn').forEach(b=>{if(b.textContent.includes(l))b.click();}),[phaseIdx,label]);await wait(2500);return boardFrame(page);};
 const backToGameModel=async page=>{await page.evaluate(()=>window.__psShowApp('gamemodel'));await wait(1200);};   // 완료·취소 없이 게임모델로 돌아간다
 try{

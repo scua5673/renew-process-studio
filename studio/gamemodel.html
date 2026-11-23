@@ -1127,6 +1127,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
   </div>
 </div>
 
+<script src="gamemodel-sheet.js"></script>
 <script>
 (async function(){
   /* 1.901 — 보관함 › 게임모델은 개인 것(사용자): 팀에 전파되는 cs_gamemodel_v1 이 아니라 별도 키. 셸이 ?scope=personal 로 연다.
@@ -2550,6 +2551,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
        다시 그려지며 도로 보인다. 레일도 여기서 함께 그린다(한 곳에서 맞춰야 어긋나지 않는다). */
     try{ var _ln=document.getElementById('gmIdentLine'); if(_ln&&_ln.value!==(model.identity||''))_ln.value=model.identity||''; }catch(_){}
     try{ gmSyncPanes(); }catch(e){ try{console.warn('gmSyncPanes',e);}catch(_){} }
+    if(window.PSGmSheet)PSGmSheet.draw();   /* 3.368 — 보관함 «한 장» 판(gamemodel-sheet.js) */
   }
 
   function phaseCard(m,ph){
@@ -3217,6 +3219,9 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
       var ex=document.getElementById('btnPlayerPpt'); if(ex&&ex.parentNode===tb)tb.insertBefore(b,ex); else tb.appendChild(b);
     });
   }
+
+  /* 3.368 — «한 장» 판의 다리: 같은 model · save · render 를 쓴다(새 저장 길 없음) */
+  window.__gmSheet={personal:GM_PERSONAL,get:function(){ return model; },save:save,render:render,edit:gsCanEdit,lib:GM_LIB,cat:GM_CAT,newPh:gmNewPh,sel:function(k){ gmSel=k; model.open[k]=true; }};
 
   render();
   renderStylePicker();
