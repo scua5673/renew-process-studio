@@ -20670,7 +20670,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var next=new DOMParser().parseFromString(html,'text/html');if(!next.head||!next.body)return false;
     var head=Array.prototype.map.call(next.head.childNodes,function(n){return doc.importNode(n,true);}),body=Array.prototype.map.call(next.body.childNodes,function(n){return doc.importNode(n,true);});
     doc.head.replaceChildren.apply(doc.head,head);doc.body.replaceChildren.apply(doc.body,body);
-    if(i!==index){try{doc.documentElement.scrollTop=0;doc.body.scrollTop=0;}catch(_){}}   /* 다른 장은 새 문서처럼 맨 위에서 */
+    if(i!==index){doc.documentElement.scrollTop=0;doc.body.scrollTop=0;}   /* 다른 장은 새 문서처럼 맨 위에서 */
     dress(doc,i);
     return true;
   }
@@ -20715,8 +20715,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       });
     }
     var _only=(window.__meet?window.__meet.idx():0),_html=buildMeetingPrintDoc(meetingPdfSlides(),'미팅',{orientation:meetingPdfOrientation(anim.slides),only:_only});
-    try{if(swap(_html,_only))return;}catch(_){}
-    try{_html=_html.replace('</head>',function(){return firstPaintCss(_only)+'</head>';});}catch(_){}
+    var _swapped=false;try{_swapped=swap(_html,_only);}catch(_){_swapped=false;}   /* 안에서 바꾸다 실패하면 예전처럼 문서를 새로 세운다 */
+    if(_swapped)return;
+    _html=_html.replace('</head>',function(){return firstPaintCss(_only)+'</head>';});
     liveDoc=null;frame.srcdoc=_html;
   }
   window.__meetingPageRefresh=function(){clearTimeout(timer);var _typing=false;try{var _ae=document.activeElement;_typing=!!(_ae&&_ae.closest&&_ae.closest('#ksEd'));}catch(_){}timer=setTimeout(render,_typing?350:100);};   /* 2.930 — 오른쪽 칸에 쓰는 동안은 덜 자주 다시 그린다 */

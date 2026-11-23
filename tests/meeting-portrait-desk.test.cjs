@@ -40,7 +40,9 @@ test('the meeting tools sit in one top row and the page sits centered on a desk'
   const _d=src.indexOf('function deskCss(land)');const desk=src.slice(_d,src.indexOf('function fit()',_d));
   assert.match(desk,/margin-left:auto!important;margin-right:auto!important/);
   assert.equal(/margin:0 auto!important/.test(desk),false);
-  assert.match(src,/doc\.body\.style\.marginTop=Math\.max\(G\/2,\(H-ph\*z\)\/2\)\/z\+'px'/);
+  /* 3.369 — 계산은 fitCalc 로 나왔다(처음 서는 문서에도 같은 값을 적는다) */
+  assert.match(src,/return \{z:z,top:Math\.max\(G\/2,\(H-ph\*z\)\/2\)\/z,bottom:\(G\/2\)\/z\};/);
+  assert.match(src,/doc\.body\.style\.marginTop=m\.top\+'px'/);
 });
 
 test('the right-hand slide panel only appears where there is room, phones keep the toggle and finger-size buttons',()=>{
