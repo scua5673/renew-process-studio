@@ -16,7 +16,9 @@ test('field/GK split helper: same GK rule as the cockpit, hidden in position vie
 
 test('every group header (desktop and phone «운동») carries the split; the count matches that header',()=>{
   const a=AT.indexOf('function avTableBody('),body=AT.slice(a,AT.indexOf('\nfunction ',a+10));
-  assert.ok(body.includes("'명</span>'+avFieldGk(participating,okGk)+'</th></tr>'"),'데스크톱 조 머리(표) = 가능(참여) 인원');
+  assert.ok(body.includes("'명</span>'+avFieldGk(participating,okGk))+'</th></tr>'"),'데스크톱 조 머리(표) = 가능(참여) 인원 — 3.372 부터 포지션별 · 이름순 보기에서만(조별은 요약 표)');
+  const s=AT.indexOf('function avSummary('),sum=AT.slice(s,AT.indexOf('\nfunction ',s+10));
+  assert.ok(sum.includes("'<span class=\"fgk\">필드 <b>'+(c.ok-c.gk)+'</b> · GK <b>'+c.gk+'</b></span>'"),'3.372 — 조별 필드 · GK 는 요약 표의 조 칸');
   assert.ok(body.includes("'명</span>'+avFieldGk(okN,splitGk)+'</div>"),'폰 «운동» 조 머리 = 쉼이 아닌 인원');
   assert.ok(/if\(_gk&&r\.s==='ok'\)okGk\+\+; if\(_gk&&!\(r\.s&&r\.s!=='ok'\)\)splitGk\+\+;/.test(body));
   assert.ok(/else if\(r\.s==='ok'\)\{if\(_gk\)rc\.gk\+\+;else rc\.field\+\+;\}/.test(body),'세션 만들기로 넘기는 인원과 같은 판정');

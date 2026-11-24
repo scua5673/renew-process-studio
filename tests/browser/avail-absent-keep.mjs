@@ -123,6 +123,11 @@ try{
     assert.deepEqual({now:b.now,chip:b.chip},{now:'ok',chip:'가능'},'휴식은 하루');
     assert.deepEqual({now:c.now,chip:c.chip},{now:'ok',chip:'가능'},'날짜가 붙은 옛 불참은 예전처럼 하루');
     assert.ok(a.hit&&a.box[1]>=22&&a.injIn&&a.over<=0,'상태 칩이 눌리고 며칠째 칸이 화면 안 · 가로 넘침 없음: '+JSON.stringify(a));
+    // ②-2 날짜 밑 조별 요약 표(세 폭) — 이어진 불참이 B팀 «불참» 칸에 · 화면 안 · 잘린 칸 없음
+    const gs=await frame.evaluate(()=>{const t=document.querySelector('#avDailyCard table.av-gsum'),r=t.getBoundingClientRect();window.scrollTo(0,0);t.scrollIntoView({block:'center'});
+      return {b:[...t.querySelectorAll('tbody tr')].map(x=>[...x.children].map(c=>c.textContent.replace(/\s+/g,' ').trim()).join('|')).find(x=>x.startsWith('B팀')),inside:r.left>=0&&r.right<=innerWidth+1,
+        clipped:[...t.querySelectorAll('th,td')].filter(c=>c.scrollWidth>c.clientWidth+1).length,over:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
+    assert.deepEqual(gs,{b:'B팀필드 1 · GK 0|1/ 3|0|1|1|0',inside:true,clipped:0,over:0},'요약 표: '+JSON.stringify(gs));
     await page.screenshot({path:path.join(out,width+'-next-day.png'),fullPage:true});
     // ③ 그다음 날(9/17)에도 불참 → «가능»으로 바꾸면 거기서 끝난다 · 지난 이틀은 불참 그대로
     frame=await tomorrow(page,'2026-09-17T12:00:00+09:00');

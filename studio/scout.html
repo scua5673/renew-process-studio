@@ -16156,7 +16156,7 @@ function renderAvailDaily(ours){
   var h='<section class="av-daily" id="avDailyCard" tabindex="-1" aria-label="'+esc(avDayLabel(day)+' 가용인원 명단')+'"><div class="av-dnav"><button type="button" data-av-day="-1" aria-label="전날">‹</button><b>'+avDayLabel(day)+'</b>'+(day===today?'<span class="av-today">오늘</span>':'')+'<button type="button" data-av-day="1" aria-label="다음 날"'+(day>=today?' disabled':'')+'>›</button>'+(day!==today?'<button type="button" data-av-day="0">오늘</button>':'')+'<span class="av-spacer"></span>'+avGrouping()+'</div>';
   /* 3.308 — 몸통은 표(avail-table.js — 조 묶음 · 학년 묶음 줄 · 조 칩 · 폰은 2.939 «운동 / 참여 못 함» 두 덩어리). 셈(total · rc)도 거기서 */
   var built=avTableBody(ours,day),body=built.html;total=built.total;rc=built.rc;
-  h+='<div class="av-dsched"><b>날짜별 명단</b><span class="sum">가능 <b>'+total.ok+'</b> · 쉼 <b>'+total.rest+'</b> · 미기록 <b>'+(ours.length-total.ok-total.rest)+'</b></span></div>';
+  var _un=ours.length-total.ok-total.rest;h=h+avSummary(ours,day)+'<div class="av-dsched"><b>날짜별 명단</b>'+(_un>0?'<span class="sum">미기록 <b>'+_un+'</b></span>':'')+'</div>';   /* 3.372 — 가능 · 쉼 수는 조별 요약 표가 말한다 */
   h+=body||'<div class="av-empty">등록된 선수가 없습니다.</div>';
   h+='<div class="av-dfoot"><span class="lb">상태를 눌러 기록 · 이름을 눌러 프로필 수정</span><button type="button" class="av-lnk" data-av-sched="'+esc(day)+'">일정 →</button>';
   if(typeof avCanEdit==='function'&&avCanEdit())h+='<button type="button" class="av-cta" data-av-new="'+esc(day)+'" data-av-roster="'+esc(JSON.stringify(rc))+'">＋ 훈련 세션 만들기</button>';
