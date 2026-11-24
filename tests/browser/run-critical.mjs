@@ -39,6 +39,7 @@ suites.records.push('sched-board-play-3329');
 suites.records.push('train-play-status-3331');   /* 3.331 — 일정 훈련 ▶ 를 닫고 돌아오면 상태 줄이 «기기에 저장 중…»에 머물던 것(보관함 목록으로 떠날 때 초안 영수증 확인) */   /* 3.329 — 일정에 가져온 작전판 줄의 ▶ → 보기 전용 슬라이드쇼(그 페이지부터 · 재생) → 닫으면 일정 · 보관함 · 작업 보드 그대로 */   /* 3.315 — 일정 사본의 그림은 참조만(화면 · 저장 · 새로고침 · 옛 사본 다이어트) */
 suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
 suites.board2.push('meeting-slide-transition');   /* 3.256 — 미팅 슬라이드 넘김: 같은 팀 · 번호만 잇기 · 넘기는 중 저장 막기 */
+suites.board2.push('meeting-page-flip-3369');   /* 3.369 — 미팅 «페이지 보기» 넘길 때 깜빡임: 틀을 다시 싣지 않고 같은 문서에서 바꾼다 */
 suites.board.push('board-flat-turf-3263');   /* 3.263 — 평면 잔디: 잎결 · 실사 잔디 줄 약 4m · 가로 · 세로 · 운동장 카드마다(board2 웹킷은 20분 한도에 닿아 board 로) */
 suites.board.push('board-page-thumb-diet-3288');   /* 3.288 — 페이지 장면 썸네일은 저장으로 나가는 사본에서만 뗀다 · 다시 열면 장면 줄이 다시 그린다(제보 de2e508c) */
 suites.board.push('team-load-team34-3288');   /* 3.288 — 저장 팀을 팀 3 · 4 에도(제보 29c97fc5): 자리 그대로 · 남는 선수와 판에 없는 팀은 대기 줄 둘째 줄 · 다른 팀을 덮지 않는다 */

@@ -4216,10 +4216,10 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.369"></script>
+<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.370"></script>
 <script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-bounds.js"></script><script src="board-rescue.js"></script><script src="board-mow.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script><script src="board-train-grid.js"></script><script src="board-multipitch.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-tv-fold.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-sched-show.js"></script><script src="board-anim-pause.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.369"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script><script src="board-phone-board.js"></script>
+<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-sched-show.js"></script><script src="board-anim-pause.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.370"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script><script src="board-phone-board.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -20633,11 +20633,46 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   var fitWait=0;
   function fit(){if(!frame||!frame.contentDocument)return;var doc=frame.contentDocument;
     if(!doc.documentElement||!doc.body){if(fitWait<10){fitWait++;requestAnimationFrame(fit);}return;}fitWait=0;
-    var land=meetingPdfOrientation(anim.slides)==='landscape',pw=land?1123:794,ph=land?794:1123;
-    var W=doc.documentElement.clientWidth||frame.clientWidth,H=frame.clientHeight||doc.documentElement.clientHeight,G=W<520?16:48;   /* 폰은 여백을 줄여 종이를 크게 */
+    var m=fitCalc(doc.documentElement.clientWidth||frame.clientWidth,frame.clientHeight||doc.documentElement.clientHeight);
+    doc.body.style.zoom=m.z;
+    doc.body.style.marginTop=m.top+'px';doc.body.style.marginBottom=m.bottom+'px';
+  }
+  function fitCalc(W,H){
+    var land=meetingPdfOrientation(anim.slides)==='landscape',pw=land?1123:794,ph=land?794:1123,G=W<520?16:48;   /* 폰은 여백을 줄여 종이를 크게 */
     var z=Math.min(1,Math.max(.1,(W-G)/pw),Math.max(.1,(H-G)/ph));
-    doc.body.style.zoom=z;
-    doc.body.style.marginTop=Math.max(G/2,(H-ph*z)/2)/z+'px';doc.body.style.marginBottom=(G/2)/z+'px';
+    return {z:z,top:Math.max(G/2,(H-ph*z)/2)/z,bottom:(G/2)/z};
+  }
+  /* 3.369 — 슬라이드를 넘길 때 깜빡임(사용자 2026-11-23 «보관함에서 미팅 만든 거 슬라이드 넘길 때마다 어색하게 · 이상하게 깜빡여»).
+     페이지 보기는 넘길 때마다 srcdoc 를 갈아 끼우는데, 종이 모양(그 장만 남기기 · 책상 CSS · 화면 맞춤 zoom)은 load 뒤에야 입혔다 →
+     load 전 첫 그림에 1번 슬라이드가 그림 없이 원래 크기로 한 번 비쳤다. 이제 그 셋을 문서에 처음부터 적어 둔다(load 뒤 손질은 그대로 — 같은 값). */
+  function firstPaintCss(index){
+    if(!frame)return '';
+    var land=meetingPdfOrientation(anim.slides)==='landscape',old=frame.contentDocument,W=(old&&old.documentElement&&old.documentElement.clientWidth)||frame.clientWidth,H=frame.clientHeight;
+    var css='.mp-page:not([data-slide-index="'+index+'"]){display:none!important}'+deskCss(land);
+    if(W>0&&H>0){var m=fitCalc(W,H);css+='body{zoom:'+m.z+';margin-top:'+m.top+'px;margin-bottom:'+m.bottom+'px}';}
+    return '<style id="mpFirstPaint">'+css+'</style>';
+  }
+  /* 문서가 선 뒤의 손질 — 그 장만 남기고 · 책상 CSS · 화면 맞춤 · (고칠 수 있으면) 빈 메모 줄. load 와 swap 이 같이 쓴다 */
+  var index=0,liveDoc=null;
+  function dress(doc,i){
+    index=i;
+    doc.querySelectorAll('.mp-page').forEach(function(p){if(+p.dataset.slideIndex!==index)p.remove();});
+    try{var _ds=doc.createElement('style');_ds.textContent=deskCss(meetingPdfOrientation(anim.slides)==='landscape');doc.head.appendChild(_ds);}catch(_){}
+    fit();
+    /* 3.011 — 경기 준비에서 바로 «▶ 슬라이드쇼»: 발표 진입(setFocus)이 지금 장을 -1 로 둔 사이에 이 load 가 오면 anim.slides[-1] 이다(TypeError) — 그때 빈 메모 줄은 넣지 않는다 */
+    if(!psPhoneBoardReadOnly()&&!window.__vaultReadOnly&&!communityBoardReadOnly()&&anim.slides[index]&&!(anim.slides[index].points||[]).some(function(p){return String(p||'').trim();})){var notes=doc.querySelector('.mp-notes');if(notes){var blank=doc.createElement('div');blank.className='mp-line point';blank.dataset.pointIndex='0';blank.textContent='메모 입력';blank.style.color='#94a3b8';notes.appendChild(blank);}}
+  }
+  /* 3.369 — 이미 선 문서는 갈아 끼우지 않고 그 안의 내용만 한 번에 바꾼다. srcdoc 를 바꾸면 새 문서가 설 때까지 빈 책상이 한두 프레임 비쳤다(넘길 때 깜빡임).
+     같은 문서 · 같은 누르기 처리(지금 장은 index 로 읽는다)라 종이 위 고치기는 그대로. 문서가 아직 없거나 서는 중이면 false — 예전처럼 srcdoc. */
+  function swap(html,i){
+    var doc=frame&&frame.contentDocument;
+    if(!doc||doc!==liveDoc||doc.readyState!=='complete'||!doc.head||!doc.body||typeof DOMParser!=='function')return false;
+    var next=new DOMParser().parseFromString(html,'text/html');if(!next.head||!next.body)return false;
+    var head=Array.prototype.map.call(next.head.childNodes,function(n){return doc.importNode(n,true);}),body=Array.prototype.map.call(next.body.childNodes,function(n){return doc.importNode(n,true);});
+    doc.head.replaceChildren.apply(doc.head,head);doc.body.replaceChildren.apply(doc.body,body);
+    if(i!==index){doc.documentElement.scrollTop=0;doc.body.scrollTop=0;}   /* 다른 장은 새 문서처럼 맨 위에서 */
+    dress(doc,i);
+    return true;
   }
   function render(){
     document.body.classList.toggle('meeting-page-mode',!!active());
@@ -20646,12 +20681,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(frame&&frame.contentDocument&&frame.contentDocument.querySelector('.mp-inline-editor'))return;
     if(!frame){frame=document.createElement('iframe');frame.id='ksPagePreview';frame.title='미팅 A4 페이지';document.getElementById('boardStage').appendChild(frame);
       frame.addEventListener('load',function(){var doc=frame.contentDocument;if(!doc)return;
-        var index=window.__meet?window.__meet.idx():0;
-        doc.querySelectorAll('.mp-page').forEach(function(p){if(+p.dataset.slideIndex!==index)p.remove();});
-        try{var _ds=doc.createElement('style');_ds.textContent=deskCss(meetingPdfOrientation(anim.slides)==='landscape');doc.head.appendChild(_ds);}catch(_){}
-        fit();
-        /* 3.011 — 경기 준비에서 바로 «▶ 슬라이드쇼»: 발표 진입(setFocus)이 지금 장을 -1 로 둔 사이에 이 load 가 오면 anim.slides[-1] 이다(TypeError) — 그때 빈 메모 줄은 넣지 않는다 */
-        if(!psPhoneBoardReadOnly()&&!window.__vaultReadOnly&&!communityBoardReadOnly()&&anim.slides[index]&&!(anim.slides[index].points||[]).some(function(p){return String(p||'').trim();})){var notes=doc.querySelector('.mp-notes');if(notes){var blank=doc.createElement('div');blank.className='mp-line point';blank.dataset.pointIndex='0';blank.textContent='메모 입력';blank.style.color='#94a3b8';notes.appendChild(blank);}}
+        dress(doc,window.__meet?window.__meet.idx():0);liveDoc=doc;
         doc.addEventListener('click',function(e){
           if(psPhoneBoardReadOnly()||window.__vaultReadOnly||communityBoardReadOnly()||e.target.closest('.mp-inline-editor,.mp-inline-tools'))return;
           if(e.target.closest('.mp-pitch')){var _sc=e.target.closest('.mp-scene');window.__meetingPageEdit();if(_sc&&window.__meetSceneGo)window.__meetSceneGo(+_sc.dataset.scene);return;}   /* 2.935 — 장면을 누르면 그 장면을 편집 */
@@ -20684,7 +20714,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         });
       });
     }
-    frame.srcdoc=buildMeetingPrintDoc(meetingPdfSlides(),'미팅',{orientation:meetingPdfOrientation(anim.slides),only:(window.__meet?window.__meet.idx():0)});
+    var _only=(window.__meet?window.__meet.idx():0),_html=buildMeetingPrintDoc(meetingPdfSlides(),'미팅',{orientation:meetingPdfOrientation(anim.slides),only:_only});
+    var _swapped=false;try{_swapped=swap(_html,_only);}catch(_){_swapped=false;}   /* 안에서 바꾸다 실패하면 예전처럼 문서를 새로 세운다 */
+    if(_swapped)return;
+    _html=_html.replace('</head>',function(){return firstPaintCss(_only)+'</head>';});
+    liveDoc=null;frame.srcdoc=_html;
   }
   window.__meetingPageRefresh=function(){clearTimeout(timer);var _typing=false;try{var _ae=document.activeElement;_typing=!!(_ae&&_ae.closest&&_ae.closest('#ksEd'));}catch(_){}timer=setTimeout(render,_typing?350:100);};   /* 2.930 — 오른쪽 칸에 쓰는 동안은 덜 자주 다시 그린다 */
   window.__meetingPageChoose=function(orientation){
