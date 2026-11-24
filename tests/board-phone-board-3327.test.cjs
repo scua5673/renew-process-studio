@@ -78,7 +78,11 @@ test('boards touched on a bigger screen are view-only on the phone',()=>{
     third:d=>{d.snap.players[0].team='yellow';},
     pitch:d=>{d.snap.pitchSpec='u12';},
     pages:d=>{d.pages=[{snap:d.snap},{snap:d.snap}];},
-    frames:d=>{d.frames=[{snap:d.snap},{snap:d.snap}];},
+    curve:d=>{d.frames=[{snap:d.snap,curves:{1:{mx:3,my:4}}},{snap:d.snap}];},
+    caption:d=>{d.frames=[{snap:d.snap},{snap:d.snap,cap:'x'}];},
+    roster:d=>{const b=JSON.parse(JSON.stringify(d.snap));b.players.pop();d.frames=[{snap:d.snap},{snap:b}];},
+    sceneText:d=>{const b=JSON.parse(JSON.stringify(d.snap));b.drawings.push({type:'text',pts:[{x:1,y:1}]});d.frames=[{snap:d.snap},{snap:b}];},
+    many:d=>{d.frames=Array.from({length:P.MAX_SCENES+1},()=>({snap:d.snap}));},
     book:d=>{d.book=1;},
     plain:d=>{delete d.phone;},
     training:d=>{d.type='train';}
@@ -156,7 +160,7 @@ test('3.333 — a flat pitch with standing chips, and a touch maps back to the s
 test('3.333 — token size is five steps, kept with the item and handed to the big board only when changed',()=>{
   const sp=P.SPECS['11'],doc=P.docNew('11','4-3-3','');
   assert.equal(P.tokOf(doc),3);assert.equal(P.tokOf({tok:9}),3);assert.equal(P.tokOf({tok:'5'}),5);
-  const rOf=d=>+P.docSVG(d,sp).match(/class="phb-tok"[^>]*><ellipse[^>]*\/><path[^>]*\/><path[^>]*\/><ellipse cx="[^"]+" cy="[^"]+" rx="([0-9.]+)"/)[1];
+  const rOf=d=>+P.docSVG(d,sp).match(/class="phb-tok"[^>]*scale\(([0-9.]+)\)/)[1];
   const mid=rOf(doc);doc.tok=5;doc.tokSet=true;const big=rOf(doc);doc.tok=1;const small=rOf(doc);
   assert.ok(small<mid&&mid<big,'the chips grow with the step: '+[small,mid,big]);
   const it0=P.itemFor(P.docNew('11','4-3-3',''),'기본',1);assert.deepEqual(it0.phone,{v:1,n:'11'});assert.equal(it0.snap.tokenScale,0.8,'the default keeps the old board scale');
@@ -167,4 +171,83 @@ test('3.333 — token size is five steps, kept with the item and handed to the b
   const d2=P.docFrom(old);P.applyEdit(old,d2,'',4);assert.equal(old.snap.tokenScale,1.3,'a board sized on the iPad keeps its scale');assert.equal('tok' in old.phone,false);
   d2.tok=2;d2.tokSet=true;P.applyEdit(old,d2,'',5);assert.equal(old.phone.tok,2);assert.equal(old.snap.tokenScale,0.69);
   d2.tok=3;P.applyEdit(old,d2,'',6);assert.equal('tok' in old.phone,false,'back to the default drops the field');
+});
+
+/* 3.359 — 큰 작전판과 같은 모습 + 장면(애니메이션) */
+test('3.359 — the drawing follows the big board: pitch colour, jersey chips, arrow styles, the board ball',()=>{
+  const sp=P.SPECS['11'],doc=P.docNew('11','4-3-3','4-4-2');doc.cones.push({x:10,y:50});
+  const pitch=P.pitchSVG(sp);
+  assert.ok(pitch.includes('fill="#1b8044"'),'the board grass');assert.ok(!/phb-pitch2/.test(pitch),'no mown bands by default');assert.ok(pitch.includes('id="phbGloss"')&&pitch.includes('id="phbVig"'));
+  const svg=P.docSVG(doc,sp);
+  assert.equal(svg.split('class="phb-jersey"').length-1,22,'every player wears the board jersey');
+  assert.ok(svg.includes('fill="#1a2f5c"')&&svg.includes('fill="#d12f38"'),'board team colours');
+  assert.ok(svg.includes('fill="#3aa6dc"')&&svg.includes('fill="#d4a017"'),'number 1 takes the goalkeeper colours of each side');
+  assert.ok(!/\{[FDC]\}/.test(svg),'no template holes left');
+  assert.ok(svg.indexOf('class="phb-cone"')<svg.indexOf('class="phb-tok"')&&svg.lastIndexOf('class="phb-tok"')<svg.indexOf('class="phb-ball"'),'cones under players, the ball on top');
+  assert.ok(P.docSVG(doc,sp,{ball:'<svg data-board-ball="1"></svg>'}).includes('data-board-ball'),'the big board ball is used when handed in');
+  const L=k=>P.lineSVG({kind:k,x1:10,y1:60,x2:30,y2:30},sp);
+  assert.ok(/stroke-dasharray/.test(L('run'))&&/stroke-linecap="butt"/.test(L('run')),'a run is dashed, as on the big board');
+  assert.ok(!/stroke-dasharray/.test(L('pass')),'a pass is solid');
+  assert.ok(L('dribble').split('L').length>12,'a dribble zigzags');
+  assert.ok(/opacity="0.4"/.test(P.lineSVG({kind:'pass',x1:1,y1:1,x2:9,y2:9,op:0.4},sp)));
+});
+
+test('3.359 — scenes: the working scene is the top level, structure is shared, positions and arrows are per scene',()=>{
+  const doc=P.docNew('11','4-3-3','');
+  assert.equal(P.sceneCount(doc),1);assert.equal(P.sceneAt(doc),0);assert.equal(P.sceneDel(doc),false,'the only scene stays');
+  const p9=doc.players[9],p8=doc.players[8];doc.ball={x:p9.x+1,y:p9.y};
+  doc.lines.push({kind:'dribble',x1:p9.x,y1:p9.y,x2:p9.x+6,y2:p9.y-12},{kind:'run',x1:p8.x,y1:p8.y,x2:p8.x,y2:p8.y-10},{kind:'run',x1:1,y1:1,x2:5,y2:5});
+  const before=JSON.stringify(doc.players),x9=p9.x,y9=p9.y,y8=p8.y;
+  assert.equal(P.sceneAdd(doc),true);
+  assert.equal(P.sceneCount(doc),2);assert.equal(P.sceneAt(doc),1);
+  assert.equal(JSON.stringify(doc.scenes[0].players),before,'scene 1 is untouched');assert.equal(doc.scenes[0].lines.length,3);
+  assert.deepEqual([doc.players[9].x,doc.players[9].y],[x9+6,y9-12],'the dribbler stands at the arrow end');
+  assert.deepEqual(doc.ball,{x:x9+7,y:y9-12},'the ball went with the dribble');
+  assert.equal(doc.players[8].y,y8-10,'the runner too');assert.equal(doc.lines.length,0,'arrows are not carried over');
+  assert.equal(doc.players.filter((p,i)=>JSON.stringify(p)!==JSON.stringify(JSON.parse(before)[i])).length,2,'nobody else moved');
+  /* pass: the ball goes to the arrow end */
+  const d2=P.docNew('11','4-3-3','');d2.ball={x:34,y:52.5};d2.lines.push({kind:'pass',x1:34,y1:52.5,x2:10,y2:20});P.sceneAdd(d2);assert.deepEqual(d2.ball,{x:10,y:20});
+  /* 장면 오가기 — 고친 것은 그 장면에 남는다 */
+  doc.players[0].x=11;P.sceneGo(doc,0);assert.equal(doc.at,0);assert.notEqual(doc.players[0].x,11);assert.equal(doc.lines.length,3);
+  P.sceneGo(doc,1);assert.equal(doc.players[0].x,11);
+  P.sceneAdd(doc);assert.equal(P.sceneCount(doc),3);assert.equal(doc.at,2);
+  P.sceneGo(doc,1);assert.equal(P.sceneDel(doc),true);assert.equal(P.sceneCount(doc),2);assert.equal(doc.at,1);
+  P.sceneDel(doc);assert.equal('scenes' in doc,false,'back to a single board');assert.equal(P.sceneCount(doc),1);
+  const full=P.docNew('5','2-2','');for(let i=1;i<P.MAX_SCENES;i++)assert.equal(P.sceneAdd(full),true);assert.equal(P.sceneAdd(full),false,'at most '+P.MAX_SCENES);
+});
+
+test('3.359 — playback tween: straight moves, old arrows fade out first, new ones fade in',()=>{
+  const A={players:[{id:1,team:'us',num:'9',name:'',x:10,y:10}],ball:{x:0,y:0},cones:[{x:1,y:1}],lines:[{kind:'run',x1:0,y1:0,x2:5,y2:5},{kind:'pass',x1:1,y1:1,x2:2,y2:2}]};
+  const B={players:[{id:1,team:'us',num:'9',name:'',x:30,y:50}],ball:{x:20,y:40},cones:[{x:1,y:1}],lines:[{kind:'pass',x1:1,y1:1,x2:2,y2:2},{kind:'dribble',x1:3,y1:3,x2:9,y2:9}]};
+  const h=P.tween(A,B,0.5);
+  assert.deepEqual([h.players[0].x,h.players[0].y],[20,30]);assert.deepEqual(h.ball,{x:10,y:20});
+  assert.deepEqual(P.tween(A,B,0).players[0],A.players[0]);assert.deepEqual([P.tween(A,B,1).players[0].x,P.tween(A,B,1).players[0].y],[30,50]);
+  const q=P.tween(A,B,0.25);
+  assert.equal(q.lines.find(l=>l.kind==='pass').op,undefined,'a kept arrow stays solid');assert.equal(q.lines.find(l=>l.kind==='run').op,0.5);assert.equal(q.lines.some(l=>l.kind==='dribble'),false);
+  assert.equal(P.tween(A,B,0.5).lines.some(l=>l.kind==='run'),false);assert.equal(P.tween(A,B,1).lines.find(l=>l.kind==='dribble').op,1);
+  assert.equal(P.ease(0),0);assert.equal(P.ease(1),1);assert.equal(P.ease(0.5),0.5);
+  assert.equal(JSON.stringify(A.players[0]),JSON.stringify({id:1,team:'us',num:'9',name:'',x:10,y:10}),'inputs are not mutated');
+});
+
+test('3.359 — a phone board with scenes is saved as big-board frames and comes back editable',()=>{
+  const doc=P.docNew('11','4-4-2','4-3-3');doc.cones.push({x:5,y:5});
+  doc.lines.push({kind:'run',x1:doc.players[10].x,y1:doc.players[10].y,x2:40,y2:20});
+  P.sceneAdd(doc);doc.scenes[0].dur=1.6;P.sceneAdd(doc);doc.players[3].x=20;
+  const it=P.itemFor(doc,'역습',5);
+  assert.equal(it.frames.length,3);assert.deepEqual(it.frames.map(f=>f.dur),[1.6,1,1]);assert.equal(it.frames[0].__hold,0.6);
+  assert.deepEqual(it.snap,it.frames[0].snap,'the card shows scene 1');assert.notEqual(it.snap,it.frames[0].snap);
+  assert.equal(it.frames[0].snap.drawings.length,1);assert.equal(it.frames[1].snap.drawings.length,0);
+  assert.deepEqual(it.frames.map(f=>f.snap.players.map(p=>p.id)),Array(3).fill(it.snap.players.map(p=>p.id)),'the same token ids in every scene — the big board tweens by id');
+  assert.deepEqual(it.frames.map(f=>f.snap.equipment.map(e=>e.id)),Array(3).fill([1000]));
+  assert.notDeepEqual(it.frames[0].snap.players[10],it.frames[1].snap.players[10],'the runner moved between scenes');
+  assert.equal(P.editable(it),true);
+  const back=P.docFrom(it);
+  assert.equal(P.sceneCount(back),3);assert.equal(back.at,0);assert.equal(back.scenes[0].dur,1.6);assert.equal(back.lines.length,1);
+  assert.equal(back.scenes[2].players[3].x,20);
+  /* 고쳐 저장 — 겉모습 · 첫 장면의 덧붙은 칸은 그대로, 장면을 하나로 줄이면 frames 를 걷는다 */
+  it.frames.forEach(f=>{f.snap.pitchTheme='navy';});it.snap.pitchTheme='navy';it.frames[0].__t='제목';it.frames[1].snap.players[2].photo='data:x';
+  P.sceneGo(back,2);P.sceneDel(back);P.applyEdit(it,back,'',9);
+  assert.equal(it.frames.length,2);assert.equal(it.frames[0].__t,'제목');assert.equal(it.frames[1].snap.pitchTheme,'navy');assert.equal(it.frames[1].snap.players[2].photo,'data:x');
+  P.sceneDel(back);P.applyEdit(it,back,'',10);assert.equal('frames' in it,false);assert.equal(it.snap.pitchTheme,'navy');assert.equal(P.editable(it),true);
+  assert.equal(P.itemFor(P.docNew('11','4-3-3',''),'하나',1).frames,undefined,'a single scene has no frames');
 });
