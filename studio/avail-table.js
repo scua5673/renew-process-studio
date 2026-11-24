@@ -19,7 +19,12 @@ function avPosChip(p){
   return '<button type="button" class="av-pos av-pos-chip'+(gk?' gk':'')+(pos?'':' none')+'" data-av-pos="'+esc(p.id)+'" aria-label="'+esc((p.name||'선수')+' 포지션 고르기 — 지금 '+(pos||'미지정'))+'">'+esc(pos||'–')+'<span aria-hidden="true"> ⌄</span></button>';
 }
 /* 부상 칸 — 그날 상태가 부상 · 재활일 때, 그날에 걸친 부상 기록의 부위 · 며칠째(선수 카드의 부상 기록과 같은 값). 적는 곳은 상태 칩 › 부상 시트 그대로 */
+function avOutDays(p,day){
+  var n=0;try{var a=(data.meta&&data.meta.statusRuns&&data.meta.statusRuns[p.id])||[];for(var i=a.length-1;i>=0;i--){var x=a[i];if(x.s==='out'&&x.from<=day&&(x.to>=day||i===a.length-1)){n=stDayDiff(x.from,day)+1;break;}}}catch(e){n=0;}
+  return n;
+}
 function avInjCell(p,day,r){
+  if(r&&r.s==='out'){var n=avOutDays(p,day);return n>1?'<span class="av-inj nopart"><small>'+n+'일째</small></span>':'';}   /* 3.372 — 이어지는 불참은 며칠째인지(되돌리기를 잊은 값이 보이게) */
   if(!r||(r.s!=='injury'&&r.s!=='rehab'))return '';
   var e=null;try{e=stEpisodes(p).filter(function(x){return x.from<=day&&(x.open||x.to>=day);}).pop()||null;}catch(_){e=null;}
   if(!e)return '';
@@ -34,6 +39,25 @@ function avTableRow(p,day,r,phone){
 function avTableHead(phone){
   return phone?'<thead><tr><th class="c-nm">이름</th><th class="c-st">상태</th><th class="c-ij">부상 · 메모</th></tr></thead>'
     :'<thead><tr><th class="c-no">번호</th><th class="c-grp">조</th><th class="c-nm">이름</th><th class="c-pos">포지션</th><th class="c-st">상태</th><th class="c-ij">부상</th><th class="c-memo">메모</th></tr></thead>';
+}
+/* 3.372 — 날짜 밑 조별 요약(목업 B안 «표 한 장»): 행 = 조, 열 = 훈련 가능 · 부상 · 재활 · 불참 · 휴식, 조가 둘 이상이면 «전체» 줄.
+   보기(조별 · 포지션별 · 이름순)와 상관없이 늘 조로 묶는다. 셈은 명단과 같은 avResolve — 미기록은 «가능 n / m»의 틈으로만 남는다. */
+function avSummary(ours,day){
+  var by=Object.create(null),seen=[],tot={n:0,ok:0,gk:0,injury:0,rehab:0,out:0,rest:0};
+  (ours||[]).forEach(function(p){
+    var g=plGrpOf(p)||'미지정',c=by[g];if(!c){c=by[g]={n:0,ok:0,gk:0,injury:0,rehab:0,out:0,rest:0};seen.push(g);}
+    var s=avResolve(p,day).s;c.n++;tot.n++;
+    if(s==='ok'){c.ok++;tot.ok++;if(avIsGk(p)){c.gk++;tot.gk++;}}
+    else if(s==='injury'||s==='rehab'||s==='out'||s==='rest'){c[s]++;tot[s]++;}
+  });
+  if(!seen.length)return '';
+  var base=[];try{base=typeof tmGroups==='function'?tmGroups():[];}catch(e){base=[];}
+  var order=['A팀','B팀','C팀'].concat(base,seen.slice().sort());
+  order=order.filter(function(g,i){return g!=='미지정'&&by[g]&&order.indexOf(g)===i;});if(by['미지정'])order.push('미지정');
+  function num(v,cls){return '<td class="'+(v?cls:'z')+'">'+v+'</td>';}
+  function line(name,c){return '<tr><th scope="row">'+esc(name)+(c.ok?'<span class="fgk">필드 <b>'+(c.ok-c.gk)+'</b> · GK <b>'+c.gk+'</b></span>':'')+'</th><td class="ok">'+c.ok+'<small>/ '+c.n+'</small></td>'+num(c.rehab,'re')+num(c.injury,'inj')+num(c.out,'o')+num(c.rest,'o')+'</tr>';}
+  return '<div class="av-gsum-wrap"><table class="av-gsum" aria-label="조별 요약"><thead><tr><th scope="col">조</th><th scope="col">훈련 가능</th><th scope="col">재활</th><th scope="col">부상</th><th scope="col">불참</th><th scope="col">휴식</th></tr></thead><tbody>'
+    +order.map(function(g){return line(g,by[g]);}).join('')+'</tbody>'+(order.length>1?'<tfoot>'+line('전체',tot)+'</tfoot>':'')+'</table></div>';
 }
 /* 몸통 — {html,total,rc}. ⚠ 행(data-av-st · 이름 · 조 칩)은 한 번만 그린다(두 벌을 그려 CSS 로 고르면 같은 단추가 둘이 된다, 2.939) */
 function avTableBody(ours,day){
@@ -57,7 +81,7 @@ function avTableBody(ours,day){
       if(restRows)restSec+='<div class="av-grp">'+(gname?'<div class="gh">'+gname+'<span class="n">'+restN+'명</span></div>':'')+'<table class="av-day-table phone"><tbody>'+restRows+'</tbody></table></div>';
       return;
     }
-    rows+='<tr class="av-grp-row"><th colspan="'+cols+'" scope="rowgroup">'+esc(group.name)+' <span class="n">가능 '+participating+' / '+group.players.length+'명</span>'+avFieldGk(participating,okGk)+'</th></tr>'+gRows;
+    rows+='<tr class="av-grp-row"><th colspan="'+cols+'" scope="rowgroup">'+esc(group.name)+(availView==='grp'?' <span class="n">'+group.players.length+'명</span>':' <span class="n">가능 '+participating+' / '+group.players.length+'명</span>'+avFieldGk(participating,okGk))+'</th></tr>'+gRows;   /* 3.372 — 조별 보기의 가능 · 필드 · GK 는 위 요약 표가 말한다(같은 수 두 번 금지) */
   });
   var html='';
   if(split){
@@ -146,6 +170,25 @@ if(typeof document!=='undefined'&&document.head){
     +'html.ps-page-scout #availView .av-grp-chip{display:inline-flex;align-items:center;height:26px;padding:0 9px;border-radius:999px;border:1px solid var(--line,#E3E6EA);background:var(--panel2,#F1F3F5);color:var(--ink,#14161A);font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}'
     +'html.ps-page-scout #availView .av-grp-chip.ro{cursor:default;background:transparent}'
     +'html.ps-page-scout #availView .av-grp-chip span{color:var(--gray,#646A73)}'
+    +'html.ps-page-scout #availView .av-gsum-wrap{margin:2px 0 12px}'
+    +'html.ps-page-scout #availView .av-gsum{width:100%;border-collapse:collapse;table-layout:fixed;font-variant-numeric:tabular-nums}'
+    +'html.ps-page-scout #availView .av-gsum th,html.ps-page-scout #availView .av-gsum td{height:36px;padding:0 10px;border-bottom:1px solid var(--line,#E3E6EA);text-align:right;font-size:14px;font-weight:500;color:var(--ink,#14161A);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:transparent}'
+    +'html.ps-page-scout #availView .av-gsum thead th{height:30px;font-size:12px;font-weight:600;color:var(--gray,#646A73);background:var(--panel2,#F1F3F5);border-bottom:0}'
+    +'html.ps-page-scout #availView .av-gsum th:first-child{text-align:left;font-weight:700;width:34%}'
+    +'html.ps-page-scout #availView .av-gsum thead th:first-child{font-weight:600}'
+    +'html.ps-page-scout #availView .av-gsum .fgk{font-size:12px;font-weight:500;color:var(--gray,#646A73);margin-left:8px}'
+    +'html.ps-page-scout #availView .av-gsum .fgk b{font-weight:600;color:var(--ink,#14161A)}'
+    +'html.ps-page-scout #availView .av-gsum td.ok{font-size:16px;font-weight:700}'
+    +'html.ps-page-scout #availView .av-gsum td.ok small{font-size:12px;font-weight:500;color:var(--gray,#646A73);margin-left:3px}'
+    +'html.ps-page-scout #availView .av-gsum td.inj{color:var(--red,#C24A46);font-weight:700}'
+    +'html.ps-page-scout #availView .av-gsum td.re{color:#B5762B;font-weight:700}'
+    +'html.ps-page-scout #availView .av-gsum td.o{font-weight:600}'
+    +'html.ps-page-scout #availView .av-gsum td.z{color:var(--gray,#646A73);opacity:.45}'
+    +'html.ps-page-scout #availView .av-gsum tfoot th,html.ps-page-scout #availView .av-gsum tfoot td{border-bottom:0;border-top:2px solid var(--line,#E3E6EA)}'
+    +'@media(max-width:600px){html.ps-page-scout #availView .av-gsum th,html.ps-page-scout #availView .av-gsum td{padding:0 5px}'
+      +'html.ps-page-scout #availView .av-gsum th:first-child{width:31%}html.ps-page-scout #availView .av-gsum th:nth-child(2){width:23%}'
+      +'html.ps-page-scout #availView .av-gsum tbody th,html.ps-page-scout #availView .av-gsum tfoot th{height:48px}'
+      +'html.ps-page-scout #availView .av-gsum .fgk{display:block;margin:0;line-height:1.3}}'
     /* 폰(≤600 · tmPhoneRows) — 세 열. 조 머리는 옛 .gh 그대로, 표는 머리 바로 아래 */
     +'html.ps-page-scout #availView .av-grp .av-day-table.phone{margin-top:2px}'
     +'html.ps-page-scout #availView .av-day-table.phone th,html.ps-page-scout #availView .av-day-table.phone td{height:44px;padding:0 6px}'

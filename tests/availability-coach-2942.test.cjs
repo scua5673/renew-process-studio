@@ -35,7 +35,8 @@ test('오늘만(휴식·불참)은 적은 날만 — 다음 날 읽으면 정상
 });
 test('상태를 바꿀 때 복귀 예상 규칙',()=>{
   const {c}=ctx([]);const p={};
-  p.status='out';c.stApplyUntil(p,'ok','out');assert.equal(p.statusUntil,'2026-10-05','오늘만 = 오늘');
+  p.status='rest';c.stApplyUntil(p,'ok','rest');assert.equal(p.statusUntil,'2026-10-05','오늘만 = 오늘');
+  p.status='out';c.stApplyUntil(p,'rest','out');assert.equal(p.statusUntil,undefined,'3.372 — 불참은 바꿀 때까지(날짜 없음)');
   p.status='injury';c.stApplyUntil(p,'out','injury');assert.equal(p.statusUntil,undefined,'오늘만 → 기간: 모름에서 시작');
   c.stApplyUntil(p,'injury','injury','2026-10-12');assert.equal(p.statusUntil,'2026-10-12');
   p.status='rehab';c.stApplyUntil(p,'injury','rehab');assert.equal(p.statusUntil,'2026-10-12','부상 → 재활은 예상일 유지');
@@ -50,6 +51,19 @@ test('오늘만이 지나면 기록은 그 날까지 · 다음 날부터 정상(
   const runs=t.c.data.meta.statusRuns.a;
   assert.deepEqual(runs.map(r=>[r.s,r.from,r.to]),[['ok','2026-09-01','2026-10-01'],['out','2026-10-02','2026-10-02'],['ok','2026-10-03','2026-10-05']]);
   assert.equal(t.c.stExpireDaily(ps),0,'두 번 해도 같다');
+});
+test('3.372 — 새로 누른 불참은 날이 바뀌어도 불참 · 다른 상태로 바꾸면 거기서 끝난다',()=>{
+  const ps=[{id:'a',name:'가',status:'ok'}];
+  const t=ctx(ps,{role:'staff',today:'2026-10-02',runs:{a:[{s:'ok',from:'2026-09-01',to:'2026-10-01'}]}});
+  t.c.tmStatusApply(ps[0],'out');
+  t.day('2026-10-05');
+  assert.equal(t.c.plStatusOf(ps[0]),'out','사흘 뒤에도 불참');
+  assert.equal(t.c.stExpireDaily(ps),0,'저절로 정상으로 돌리지 않는다');assert.equal(ps[0].status,'out');
+  t.c.stRunStamp('a','out','2026-10-05');
+  assert.deepEqual(t.c.data.meta.statusRuns.a.map(r=>[r.s,r.from,r.to]),[['ok','2026-09-01','2026-10-01'],['out','2026-10-02','2026-10-05']],'기록은 한 줄로 이어진다');
+  t.c.tmStatusApply(ps[0],'ok');
+  assert.equal(t.c.plStatusOf(ps[0]),'ok');
+  assert.deepEqual(t.c.data.meta.statusRuns.a.slice(-1).map(r=>[r.s,r.from,r.to]),[['ok','2026-10-05','2026-10-05']]);
 });
 test('옛 판 기기가 이미 늘려 둔 오늘만 기록은 그 날로 자른다',()=>{
   const ps=[{id:'a',status:'rest',statusUntil:'2026-10-02'}];
@@ -75,8 +89,9 @@ test('코치만 등록 — 팀 편집 권한이 있는 스태프는 바로 적�
   const ps=[{id:'a',name:'정우진',status:'ok'}];
   const t=ctx(ps,{role:'staff'});
   t.c.tmStatusApply(ps[0],'out');
-  assert.equal(ps[0].status,'out');assert.equal(ps[0].statusUntil,'2026-10-05');assert.equal(t.c.data.statusProposals.length,0);
-  assert.match(t.toasts.pop(),/불참 · 오늘만/);
+  assert.equal(ps[0].status,'out');assert.equal(ps[0].statusUntil,undefined);assert.equal(t.c.data.statusProposals.length,0);
+  assert.match(t.toasts.pop(),/불참 · 바꿀 때까지/);
+  t.c.tmStatusApply(ps[0],'rest');assert.equal(ps[0].statusUntil,'2026-10-05');assert.match(t.toasts.pop(),/휴식 · 오늘만/);
   const p=ctx([{id:'b',status:'ok'}],{role:'player',canEdit:false});
   p.c.tmStatusApply(p.c.data.players[0],'injury');
   assert.equal(p.c.data.players[0].status,'ok','선수는 못 바꾼다');assert.match(p.toasts.pop(),/코치가 바꿔요/);
