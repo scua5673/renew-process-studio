@@ -43,7 +43,7 @@
     P + ' .pp-match b{font-size:17px;font-weight:800;letter-spacing:-.02em;color:' + INK + ';white-space:nowrap}',
     P + ' .pp-match span:last-child{font-size:12px;font-weight:500;color:' + MUTED + ';white-space:nowrap}',
     P + ' .pp-more{flex:0 0 auto;font-size:12px;font-weight:600;color:' + MUTED + '}',
-    P + ' footer{border-top:0;margin-top:10px;padding-top:0;color:#B0B5BC}',
+    P + ' footer{display:none}',   // 3.371 — 아래 «PROCESS — …» 글과 날짜는 싣지 않는다(사용자 «왼쪽 하단에 프로세스 글 빼주고 오른쪽 하단에 날짜도 빼줘»). «자세히»는 그대로
 
     /* ── 주간: 가는 세로선으로 나눈 일곱 칸 · 색은 경기 하나 ── */
     W + ' .pwb{gap:0;border-left:1px solid ' + LINE + '}',
