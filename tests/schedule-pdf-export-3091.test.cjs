@@ -58,12 +58,25 @@ test('clean: white page, thin lines, red only for matches; colour blocks, legend
   const css=poster.css;
   assert.ok(css.split('\n').every(r=>r.startsWith('#printDoc')&&/#printDoc\.(pl-(weekboard|month)\.)?poster/.test(r)),'이 CSS 는 #printDoc.poster 에만 — «자세히»는 예전 모양 그대로');
   const hex=[...new Set(css.match(/#[0-9A-Fa-f]{6}\b/g))].map(x=>x.toUpperCase()).sort();
-  assert.deepEqual(hex,['#111418','#6B7280','#9CA3AF','#C8322D','#E5E7EB'],'글자 · 회색 · 선 · 빨강(경기)뿐');
+  assert.deepEqual(hex,['#111418','#6B7280','#9CA3AF','#C8322D','#D1D5DB','#E5E7EB'],'글자 · 회색 · 선 · 빨강(경기)뿐');
   assert.match(css,/\.pwb-leg,#printDoc\.pl-weekboard\.poster \.pwb-foot\{display:none\}/);
   assert.match(css,/\.pwb-fill\{display:none\}/);
   assert.match(css,/#printDoc\.poster footer\{display:none\}/,'3.371 — 아래 글 · 날짜 없음');
   assert.match(css,/\.pwb-b\.meet\{min-height:0!important;background:transparent!important/,'훈련은 목록(높이 = 시간은 «자세히»)');
-  assert.doesNotMatch(css,/background:#(0F1B33|C8322D)/,'색 면 없음');
+  assert.doesNotMatch(css,/background:#0F1B33/,'색 면 없음');
+  assert.ok(css.split('\n').filter(r=>/background:#C8322D/.test(r)).every(r=>/:after\{content:"경기"/.test(r)),'3.372 — 빨간 바탕은 «경기» 알약뿐');
+});
+test('3.372 clean: match days get a red top line and a «경기» pill; sessions show intensity as a band and a pill (high 8–10 · mid 6–7 · low ≤5)',()=>{
+  const css=poster.css, p=fs.readFileSync(path.join(__dirname,'../studio/process.html'),'utf8');
+  assert.deepEqual([10,9,8,7,6,5,1,0].map(r=>poster.lvOf(r)),['hi','hi','hi','mid','mid','lo','lo','']);assert.equal(poster.lvOf(0,true),'lo','회복은 저강도');
+  assert.match(css,/#printDoc\.pl-month\.poster tbody td\.pm-match\{border-top:3px solid #C8322D!important\}/);
+  assert.match(css,/#printDoc\.pl-weekboard\.poster \.pwb-h\.m\{border-top:3px solid #C8322D/);
+  for(const [v,name] of [['8','고강도'],['RPE 10','고강도'],['7','중강도'],['RPE 6','중강도'],['5','저강도'],['r','저강도'],['회복','저강도']]){
+    assert.ok(css.split('\n').some(r=>r.includes('[data-r="'+v+'"]')&&r.includes('content:"'+name+'"')),v+' → '+name);
+  }
+  assert.ok(!css.includes('[data-r=""]'),'RPE 없는 세션에는 알약이 없다');
+  assert.ok(p.includes('<div class="pwb-s" data-r="${tag}">'),'주간 세션이 강도 값을 싣는다');
+  assert.ok(p.includes("<div data-r=\"${L?L.rec?'r':rp||'':''}\" style=\"padding-left:6px;border-left:3px solid ${rpeCol(L)};"),'월간 세션이 강도 값을 싣는다');
 });
 test('clean: weekly and monthly docs use it; «깔끔하게 · 자세히» is remembered on this device',()=>{
   const p=read('studio/process.html');
