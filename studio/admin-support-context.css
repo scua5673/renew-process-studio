@@ -1,0 +1,53 @@
+/* 관리자 «오류 제보» 옆 칸(studio/admin-support-context.js). 1181px 부터 목록 · 제보 · 옆 칸 세 칸, 그 아래는 옆 칸이 제보 아래로(901 ~ 1180 은 제보 3 : 옆 칸 2 로 나눠 각자 스크롤). */
+.admSupportRail{min-width:0;display:flex;flex-direction:column;gap:10px}
+.admCtxBox{background:var(--panel,#1A212B);border:1px solid var(--line,#2C3744);border-radius:12px;padding:12px 14px;min-width:0}
+.admCtxBox h3{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;font-size:var(--t-2,11px);font-weight:800;letter-spacing:.2px;color:var(--dim,#9AA4B3)}
+.admSupport .admCtxBox h3 button{min-height:26px;padding:2px 9px;font-size:var(--t-2,11px);font-weight:700;color:var(--blue2,#5b86ff)}
+.admSupport .admCtxBox>button{margin-top:8px;min-height:30px;font-size:var(--t-3,12px)}
+.admCtxWho{margin:0;font-size:var(--t-4,13px);font-weight:700;overflow-wrap:anywhere}
+.admCtxNone{margin:0;font-size:var(--t-3,12px);color:var(--dim,#9AA4B3)}
+.admCtxBox .admCtxNone+.admCtxLine,.admCtxBox .admCtxLine+.admCtxNone{margin-top:6px}
+.admCtxLine{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin:0;padding:3px 0;font-size:var(--t-3,12px)}
+.admCtxLine>span{flex:0 0 64px;color:var(--dim2,#7C8696)}
+.admCtxLine b{font-weight:700;font-variant-numeric:tabular-nums}
+.admCtxLine em{font-style:normal;color:var(--dim,#9AA4B3)}
+.admCtxBox .is-good{color:var(--green,#2fae66)}
+.admCtxBox .is-warn{color:var(--amber,#e0a53a)}
+.admCtxBox .admSupportDevices{margin:0 0 6px;padding:0;border:0;background:transparent}
+.admCtxBox .admSupportDevicesHead{display:none}
+.admCtxTl{list-style:none;margin:0;padding:0;position:relative}
+.admCtxTl:before{content:"";position:absolute;left:53px;top:8px;bottom:8px;width:1px;background:var(--line2,#39434F)}
+.admCtxTl li{display:grid;grid-template-columns:44px 18px minmax(0,1fr);align-items:start;padding:4px 0;font-size:var(--t-3,12px)}
+.admSupport .admCtxTl time{margin:1px 0 0;font-size:var(--t-2,11px);font-variant-numeric:tabular-nums;color:var(--dim2,#7C8696);white-space:nowrap}
+.admCtxTl i{position:relative;z-index:1;width:9px;height:9px;margin:4px 0 0 5px;border-radius:50%;background:var(--line2,#39434F);box-shadow:0 0 0 2px var(--panel,#1A212B)}
+.admCtxTl b{font-weight:600;overflow-wrap:anywhere}
+.admSupport .admCtxTl small{margin-top:1px;font-size:var(--t-2,11px);color:var(--dim2,#7C8696)}
+.admCtxTl .is-err i{background:var(--red,#e05666)}
+.admCtxTl .is-err b{color:var(--red,#e05666)}
+.admCtxTl .is-ok i{background:var(--green,#2fae66)}
+.admCtxTl .is-rep i{width:11px;height:11px;margin-left:4px;background:var(--amber,#e0a53a)}
+.admCtxTl .is-rep span{padding:5px 9px;border:1px solid rgba(224,165,58,.35);border-radius:8px;background:rgba(224,165,58,.1)}
+.admCtxErr+.admCtxErr{margin-top:8px}
+.admCtxErr code{display:block;font:600 12px/1.5 Pretendard,ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--red,#e05666);overflow-wrap:anywhere}
+.admCtxErr p{margin:2px 0 0;font-size:var(--t-3,12px);color:var(--dim,#9AA4B3)}
+.admCtxErr p b{color:var(--txt,#E7EBF1);font-weight:700}
+.admSupport .admCtxTags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.admCtxTags i{font-style:normal;font-size:var(--t-1,10px);font-weight:800;line-height:1.5;padding:1px 6px;border-radius:5px;background:var(--panel2,#232C38);color:var(--dim,#9AA4B3)}
+.admCtxTags .is-good{background:rgba(47,174,102,.16);color:var(--green,#2fae66)}
+.admCtxTags .is-wait{background:rgba(91,134,255,.16);color:var(--blue2,#5b86ff)}
+@media(min-width:1181px){
+  .admSupport[data-rail="true"] .admSupportGrid{grid-template-columns:minmax(220px,24%) minmax(0,1fr) minmax(280px,330px)}
+  .admSupport[data-rail="true"] .admSupportRail{min-height:0;overflow:auto;overscroll-behavior:contain}
+}
+@media(min-width:901px) and (max-width:1180px){
+  .admSupport[data-rail="true"] .admSupportGrid{grid-template-rows:minmax(0,3fr) minmax(0,2fr)}
+  .admSupport[data-rail="true"] .admSupportInbox{grid-row:1 / span 2}
+  .admSupport[data-rail="true"] .admSupportRail{grid-column:2;min-height:0;overflow:auto;overscroll-behavior:contain}
+}
+@media(max-width:900px){
+  .admSupport[data-rail="true"] .admSupportRail{grid-column:2}
+}
+@media(max-width:700px){
+  .admSupport[data-rail="true"] .admSupportRail{grid-column:1}
+  .admSupport[data-detail="false"] .admSupportRail{display:none}
+}
