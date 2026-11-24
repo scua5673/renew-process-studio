@@ -19,7 +19,12 @@ function avPosChip(p){
   return '<button type="button" class="av-pos av-pos-chip'+(gk?' gk':'')+(pos?'':' none')+'" data-av-pos="'+esc(p.id)+'" aria-label="'+esc((p.name||'선수')+' 포지션 고르기 — 지금 '+(pos||'미지정'))+'">'+esc(pos||'–')+'<span aria-hidden="true"> ⌄</span></button>';
 }
 /* 부상 칸 — 그날 상태가 부상 · 재활일 때, 그날에 걸친 부상 기록의 부위 · 며칠째(선수 카드의 부상 기록과 같은 값). 적는 곳은 상태 칩 › 부상 시트 그대로 */
+function avOutDays(p,day){
+  var n=0;try{var a=(data.meta&&data.meta.statusRuns&&data.meta.statusRuns[p.id])||[];for(var i=a.length-1;i>=0;i--){var x=a[i];if(x.s==='out'&&x.from<=day&&(x.to>=day||i===a.length-1)){n=stDayDiff(x.from,day)+1;break;}}}catch(e){n=0;}
+  return n;
+}
 function avInjCell(p,day,r){
+  if(r&&r.s==='out'){var n=avOutDays(p,day);return n>1?'<span class="av-inj nopart"><small>'+n+'일째</small></span>':'';}   /* 3.372 — 이어지는 불참은 며칠째인지(되돌리기를 잊은 값이 보이게) */
   if(!r||(r.s!=='injury'&&r.s!=='rehab'))return '';
   var e=null;try{e=stEpisodes(p).filter(function(x){return x.from<=day&&(x.open||x.to>=day);}).pop()||null;}catch(_){e=null;}
   if(!e)return '';

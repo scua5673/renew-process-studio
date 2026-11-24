@@ -7888,18 +7888,19 @@ function plSeedLv(posId,into){
   return lv;
 }
 /* ══ 2.942 · 가용인원 — 코치가 «빠지는 선수만» 적는다(사용자 «가용인원을 어떻게 체크하는 방법이 가장 이상적일까?» → 목업 ①② → «일단 코치만 등록»).
-   상태는 두 종류다. ⓐ 오늘만(휴식·불참): 적은 날만 — 다음 날 저절로 «정상»으로 돌아간다.
+   상태는 두 종류다. ⓐ 오늘만(휴식): 적은 날만 — 다음 날 저절로 «정상»으로 돌아간다.
+   3.372 — 불참은 바꿀 때까지 이어진다(ST_KEEP — statusUntil 없이 적는다). statusUntil 이 붙은 옛 불참만 예전처럼 하루.
    ⓑ 기간(부상·재활): 복귀 예상일(pl.statusUntil)을 함께 둔다. 그날이 되면 «복귀 / 연장»을 묻는다(stReturnDue).
    예전엔 모든 상태가 «바꿀 때까지 유지»라 되돌리기를 잊은 값이 쌓였다(2.530 — 19명이 3주 동안 부상).
    ⚠ pl.statusUntil 이 없는 옛 기록(2.941 이전)은 예전처럼 바꿀 때까지 유지된다 — 배포만으로 남의 상태를 바꾸지 않는다. */
-var ST_DAILY={rest:1,out:1},ST_SPAN={injury:1,rehab:1};
+var ST_DAILY={rest:1,out:1},ST_SPAN={injury:1,rehab:1},ST_KEEP={out:1};
 function plStatusOf(pl){var s=(pl&&pl.status)||"ok";if(!PL_STATUS.some(function(x){return x.k===s;}))return "ok";
   if(ST_DAILY[s]&&pl.statusUntil&&String(pl.statusUntil)<stYmd())return "ok";   /* 오늘만이 지났다 — 저장은 stExpireDaily 가 맞춘다 */
   return s;}
 /* 상태를 바꾼 뒤 부른다. until: undefined = 규칙대로(기간은 같은 기간 상태끼리면 유지), "" = 모름, "YYYY-MM-DD" */
 function stApplyUntil(pl,prev,st,until){
   if(!pl)return;
-  if(ST_DAILY[st]){pl.statusUntil=stYmd();return;}
+  if(ST_DAILY[st]&&!ST_KEEP[st]){pl.statusUntil=stYmd();return;}
   if(ST_SPAN[st]){
     if(until!==undefined){if(until)pl.statusUntil=String(until);else delete pl.statusUntil;}
     else if(!ST_SPAN[prev])delete pl.statusUntil;
@@ -8294,7 +8295,7 @@ function tmStatusApply(pl,to,anchor){
   data.statusProposals=(data.statusProposals||[]).filter(function(x){ return x.pid!==pl.id; });
   try{ stRuns();stRunStamp(pl.id,pl.status,stYmd());avUpdateTodayRecord(pl.id,pl.status); }catch(_){}   /* 14일 기록·집계에도 남게 */
   save();renderTeam();
-  try{ toast((pl.name||"선수")+" → "+(TM_ST_LB[to]||to)+(ST_DAILY[to]?" · 오늘만":"")); }catch(_){}
+  try{ toast((pl.name||"선수")+" → "+(TM_ST_LB[to]||to)+(ST_KEEP[to]?" · 바꿀 때까지":ST_DAILY[to]?" · 오늘만":"")); }catch(_){}
   if(to==="injury"&&!ST_SPAN[prev])setTimeout(function(){ try{ stInjurySheet(pl); }catch(_){} },0);   /* 2.943 — 새 부상은 부위·쪽·언제·복귀 예상을 한 시트에서 */
   else if(ST_SPAN[to]&&!ST_SPAN[prev]&&pickAt)setTimeout(function(){ try{ stReturnPick(pickAt,pl); }catch(_){} },0);   /* 2.942 — 부상·재활은 복귀 예상을 바로 묻는다(모름도 된다) */
 }
@@ -22080,7 +22081,7 @@ html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srg
 </style>
 <link rel="stylesheet" href="team-criteria.css">
 <link rel="stylesheet" href="player-workspace.css"><script src="roster-season.js"></script><script src="player-workspace.js"></script><script src="player-bulk-add.js"></script>
-<link rel="stylesheet" href="team-mobile.css?v=3.370">
+<link rel="stylesheet" href="team-mobile.css?v=3.372">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>
