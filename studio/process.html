@@ -7980,7 +7980,7 @@ function monthDocHTML(){
     if(!nm)nm=String(tr.aims||'').trim();
     if(!nm){ try{ const b=dayBoard(day)||{}; const i=(b.trainSlot||[]).findIndex((sl,j)=>String(sl||'')===String(tr.slot||'')&&String((b.trains||[])[j]||'').trim()); if(i>=0)nm=String(b.trains[i]).trim(); }catch(_){} }
     return nm||'훈련'; };
-  const tot={ses:0,min:0,rpe:[],match:0}, mlist=[];
+  const tot={ses:0,min:0,rpe:[],match:0};
   for(let w=0;w<nRows;w++){
     let cells='';
     for(let c=0;c<7;c++){
@@ -8011,7 +8011,7 @@ function monthDocHTML(){
         body=`<div style="font-size:11px;color:#B4423C;font-weight:800;line-height:1.35;overflow-wrap:anywhere">${mKindLb(mMatchKind(day))}${opp?' vs '+E(opp):''}</div>`
             +((tm||kind)?`<div style="font-size:10px;color:#8A4B47;font-weight:600;margin-top:1px">${E([tm,kind].filter(Boolean).join(' · '))}</div>`:'')
             +mxExtraList(day).map(x=>{const L=mxExtraLabel(x);return `<div style="font-size:10px;color:#B4423C;font-weight:700;margin-top:3px;padding-top:2px;border-top:1px dashed #E3B7B4;line-height:1.3">${mKindLb(L.k)}${L.t?' · '+E(L.t):''} · ${E(L.o)}</div>`;}).join('');   /* 2.620 */
-        if(!out){ tot.match+=1+mxExtraList(day).length; mlist.push({when:`${dt.getMonth()+1}.${dt.getDate()} ${WDAYS[c]}`,opp:opp,sub:[tm,kind].filter(Boolean).join(' · ')}); }
+        if(!out)tot.match+=1+mxExtraList(day).length;
       } else if(ts.length){
         const compact=ts.length>=3;
         const shown=ts.length>4?ts.slice(0,3):ts;
@@ -8050,9 +8050,9 @@ function monthDocHTML(){
     right=[`훈련 ${tot.ses}회`,tot.min?`${tot.min.toLocaleString('ko-KR')}분`:'',avg!=null?`평균 RPE ${avg}`:'',`경기 ${tot.match}`].filter(Boolean).join(' · ');
   }
   let mhead=pHeader(monthLabel()+pGrpTag(),'월간 일정',{noNext:true,right:right});
-  if(typeof __posterOn==='function'&&__posterOn()){   /* 3.091 — 깔끔하게: 머리 한 줄(엠블럼 · 팀 이름 · 이 달 · 합계 · 이 달 경기) */
+  if(typeof __posterOn==='function'&&__posterOn()){   /* 3.091 — 깔끔하게: 머리 한 줄(엠블럼 · 팀 이름 · 이 달). 3.371 — 오른쪽 «경기» 덩이는 뺀다(사용자 «월간일정 우측 상단에 경기는 필요없어» · 2.909 «다음 경기 줄 없음»과 같은 결정 — 경기는 달력 칸에 있다) */
     const t=teamGet(), g=(typeof __schedGrp==='string'&&__schedGrp)?__schedGrp:'';
-    mhead=PSSchedPoster.head({team:{name:t.name,logo:t.logo?__psImgSrc(t.logo):''},title:'월간 일정'+(g?' · '+g:''),big:monthLabel(),matches:mlist});
+    mhead=PSSchedPoster.head({team:{name:t.name,logo:t.logo?__psImgSrc(t.logo):''},title:'월간 일정'+(g?' · '+g:''),big:monthLabel()});
   }
   return `<div class="ponepage">`+mhead+
     `<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin-top:6px"><table style="width:100%;height:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`+legend+pFooter()+`</div>`;
@@ -10498,7 +10498,7 @@ html body .wks .wks-fill:not(#_):hover{border-color:var(--c-act,var(--ps-navy,#1
 @media (max-width:600px){ html body .wks .wks-fill:not(#_){height:40px} }
 </style>
 
-<link rel="stylesheet" href="team-mobile.css?v=3.370">
+<link rel="stylesheet" href="team-mobile.css?v=3.371">
 <script src="schedule-match-time.js"></script><script src="schedule-fill-team.js"></script><script src="schedule-day-kind.js"></script><script src="schedule-fill-autosave.js"></script><script src="schedule-del-undo.js"></script><script src="schedule-syncline-steady.js"></script><script src="schedule-thumb-ref.js"></script><script src="week-intensity.js"></script>
 
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
