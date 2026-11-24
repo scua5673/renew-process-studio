@@ -28,6 +28,26 @@
   var P = '#printDoc.poster';
   var W = '#printDoc.pl-weekboard.poster';
   var M = '#printDoc.pl-month.poster';
+  /* 3.372 — 강도 세 단계(사용자 «10,9,8은 고강도 7,6은 중강도 5부터는 저강도» · 목업 A2): 값은 세션에 적은 RPE.
+     process.html 이 세션에 data-r(월간 'r' = 회복 · 숫자 / 주간 «회복» · «RPE n»)을 적고, 띠 · 알약은 여기 CSS 가 그린다. 빈 값(RPE 없음)은 옅은 띠만. */
+  var LV = { lo: ['r', '회복', 1, 2, 3, 4, 5], mid: [6, 7], hi: [8, 9, 10] };
+  var LV_NAME = { lo: '저강도', mid: '중강도', hi: '고강도' };
+  function lvSel(pre, k, post) {
+    var out = [];
+    LV[k].forEach(function (v) { (typeof v === 'number' ? [v, 'RPE ' + v] : [v]).forEach(function (x) { out.push(pre + '[data-r="' + x + '"]' + (post || '')); }); });
+    return out.join(',');
+  }
+  function lvOf(rpe, rec) { var n = +rpe; return rec ? 'lo' : !(n > 0) ? '' : n >= 8 ? 'hi' : n >= 6 ? 'mid' : 'lo'; }
+  var PILL = 'display:inline-block;border-radius:999px;padding:0 6px;margin-right:4px;font-size:9.5px;font-weight:800;line-height:15px;letter-spacing:0;border:1px solid #9CA3AF;color:' + MUTED + ';background:#fff';
+  function lvCss(band, pill, pad) {   // band(k) · pill(k) → 선택자 글 · pad = 굵은 띠만큼 줄인 안쪽 여백(글자 자리 그대로)
+    return [
+      band('mid') + '{border-left-color:' + MUTED + '!important}',
+      band('hi') + '{border-left-color:' + INK + '!important;border-left-width:6px!important;padding-left:' + pad + 'px!important}',
+      ['lo', 'mid', 'hi'].map(function (k) { return pill(k) + '{content:"' + LV_NAME[k] + '";' + PILL + '}'; }).join('\n'),
+      pill('mid') + '{background:' + MUTED + ';border-color:' + MUTED + ';color:#fff}',
+      pill('hi') + '{background:' + INK + ';border-color:' + INK + ';color:#fff}'
+    ].join('\n');
+  }
   var CSS = [
     P + ',' + P + ' *{-webkit-print-color-adjust:exact;print-color-adjust:exact}',
     /* ── 머리: 흰 바탕 · 글자와 선 하나 ── */
@@ -55,6 +75,12 @@
     W + ' .pwb-h .mn{display:none}',
     W + ' .pwb-md,' + W + ' .pwb-md.m{margin-left:auto;border:0;background:transparent;padding:0;font-size:10px;font-weight:600;color:#9CA3AF;letter-spacing:0}',
     W + ' .pwb-md.m{color:' + RED + '}',
+    /* 3.372 — 경기 날: 칸 위 빨간 줄 + «경기» 알약 */
+    W + ' .pwb-h.m{border-top:3px solid ' + RED + ';padding-top:7px}',
+    W + ' .pwb-md.m{font-size:0}',
+    W + ' .pwb-md.m:after{content:"경기";font-size:10px;font-weight:700;color:#fff;background:' + RED + ';border-radius:999px;padding:1px 7px}',
+    W + ' .pwb-s{border-left:3px solid #D1D5DB;padding-left:8px}',
+    lvCss(function (k) { return lvSel(W + ' .pwb-s', k); }, function (k) { return lvSel(W + ' .pwb-s', k, ' .tag:before'); }, 5),
     W + ' .pwb-s{gap:3px}',
     W + ' .pwb-sh{flex-wrap:wrap;row-gap:1px}',
     W + ' .pwb-sh b{font-size:16px;font-weight:800;color:' + INK + ';letter-spacing:-.02em}',
@@ -96,6 +122,14 @@
     M + ' tbody td div[style*="border-left:3px"]{border-left:0!important;padding-left:0!important}',
     M + ' tbody td div[style*="border-left:3px"] > div:first-child{font-size:11.5px!important;font-weight:700!important;color:' + INK + '!important}',
     M + ' tbody td div[style*="border-left:3px"] > div + div{color:' + MUTED + '!important}',
+    /* 3.372 — 경기 날: 칸 위 빨간 줄 + «경기» 알약 + 상대 이름 크게 / 강도: 왼쪽 띠 + 알약 */
+    M + ' tbody td.pm-match{border-top:3px solid ' + RED + '!important}',
+    M + ' tbody td.pm-match > div:first-child > span + span{font-size:0!important}',
+    M + ' tbody td.pm-match > div:first-child > span + span:after{content:"경기";font-size:10px;font-weight:700;color:#fff;background:' + RED + ';border-radius:999px;padding:1px 7px}',
+    M + ' tbody td.pm-match > div:nth-child(2) > div:first-child{font-size:12.5px!important}',
+    M + ' tbody td div[data-r]{border-left:3px solid #D1D5DB!important;padding-left:7px!important}',
+    M + ' tbody td div[data-r] > div + div{margin-top:2px}',
+    lvCss(function (k) { return lvSel(M + ' tbody td div', k); }, function (k) { return lvSel(M + ' tbody td div', k, ' > div + div:before'); }, 4),
     M + ' .ponepage > div[style*="flex-wrap:wrap"]{display:none!important}'   // 색 범례 — 색을 걷었으니
   ].join('\n');
 
@@ -105,5 +139,5 @@
     (doc.head || doc.documentElement).appendChild(st);
   }
   if (typeof window !== 'undefined' && window.document) install(window);
-  return { head: head, css: CSS, RED: RED };
+  return { head: head, css: CSS, RED: RED, lvOf: lvOf };
 });

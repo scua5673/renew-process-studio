@@ -7890,7 +7890,7 @@ function weekBoardDocHTML(){
     d.ses.forEach(s=>{ const c=tint(s.L);
       const tag=s.L?(s.L.rec?'회복':(loadRpe(s.L)?'RPE '+loadRpe(s.L):'')):'';
       const top=s.topic||(s.orphan?'훈련':'')||(s.time?'':'훈련');
-      let x=`<div class="pwb-s"><div class="pwb-sh">${s.time?`<b>${esc(s.time)}</b>`:''}${top?`<em>${esc(top)}</em>`:''}${tag?`<span class="tag" style="background:${c[0]};color:${c[2]}">${tag}</span>`:''}</div>`;
+      let x=`<div class="pwb-s" data-r="${tag}"><div class="pwb-sh">${s.time?`<b>${esc(s.time)}</b>`:''}${top?`<em>${esc(top)}</em>`:''}${tag?`<span class="tag" style="background:${c[0]};color:${c[2]}">${tag}</span>`:''}</div>`;
       const who=s.who.concat(s.mins?[s.mins+'분']:[]);
       if(who.length)x+=`<div class="pwb-who">${esc(who.join(' · '))}</div>`;
       if(s.items.length)x+=`<div class="pwb-bl">${s.items.map(it=>blk(it,c)).join('')}</div>`;
@@ -8020,7 +8020,7 @@ function monthDocHTML(){
           const l1=`<div style="font-size:11px;font-weight:700;line-height:1.3;color:#14161A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E([tr.time,sesName(day,tr)].filter(Boolean).join(' '))}</div>`;
           const sub=[place,mins?mins+'′':'',L?(L.rec?'회복':(rp?'RPE '+rp:'')):''].filter(Boolean).join(' · ');
           const l2=(!compact&&sub)?`<div style="font-size:9px;color:#646A73;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(sub)}</div>`:'';
-          return `<div style="padding-left:6px;border-left:3px solid ${rpeCol(L)};${i?'margin-top:3px;':''}">${l1}${l2}</div>`; }).join('')
+          return `<div data-r="${L?L.rec?'r':rp||'':''}" style="padding-left:6px;border-left:3px solid ${rpeCol(L)};${i?'margin-top:3px;':''}">${l1}${l2}</div>`; }).join('')
           +(ts.length>4?`<div style="font-size:10px;color:#646A73;font-weight:700;margin-top:3px;padding-left:9px">외 ${ts.length-3}</div>`:'');
         if(!out){ ts.forEach(tr=>{ tot.ses++; tot.min+=(trMinutes(tr)||0); const L=getLoad(tr); if(L&&!L.rec&&loadRpe(L))tot.rpe.push(loadRpe(L)); }); }
       } else if(isOff){
@@ -10498,7 +10498,7 @@ html body .wks .wks-fill:not(#_):hover{border-color:var(--c-act,var(--ps-navy,#1
 @media (max-width:600px){ html body .wks .wks-fill:not(#_){height:40px} }
 </style>
 
-<link rel="stylesheet" href="team-mobile.css?v=3.371">
+<link rel="stylesheet" href="team-mobile.css?v=3.372">
 <script src="schedule-match-time.js"></script><script src="schedule-fill-team.js"></script><script src="schedule-day-kind.js"></script><script src="schedule-fill-autosave.js"></script><script src="schedule-del-undo.js"></script><script src="schedule-syncline-steady.js"></script><script src="schedule-thumb-ref.js"></script><script src="week-intensity.js"></script>
 
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
