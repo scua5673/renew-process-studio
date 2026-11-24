@@ -122,8 +122,8 @@ try{
       return {rows:[...t.querySelectorAll('tbody tr,tfoot tr')].map(r=>[...r.children].map(c=>c.textContent.replace(/\s+/g,' ').trim()).join('|')),head:[...t.querySelectorAll('thead th')].map(c=>c.textContent),
         between:tr.top>=nav.bottom-1&&tr.bottom<=list.top+1,inside:tr.left>=0&&tr.right<=innerWidth+1,clipped:cells,fgkVisible:[...t.querySelectorAll('.fgk')].every(e=>e.getBoundingClientRect().width>20),
         rowH:Math.round(t.querySelector('tbody tr').getBoundingClientRect().height),inj:getComputedStyle(t.querySelector('td.inj')).color,sum:(card.querySelector('.av-dsched .sum')||{textContent:''}).textContent,over:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-    assert.deepEqual(gs.head,['조','훈련 가능','부상','재활','불참','휴식']);
-    assert.deepEqual(gs.rows,['A팀필드 1 · GK 1|2/ 3|1|0|0|0','B팀필드 1 · GK 0|1/ 2|0|1|0|0','전체필드 2 · GK 1|3/ 5|1|1|0|0'],'조별 요약 줄');
+    assert.deepEqual(gs.head,['조','훈련 가능','재활','부상','불참','휴식']);
+    assert.deepEqual(gs.rows,['A팀필드 1 · GK 1|2/ 3|0|1|0|0','B팀필드 1 · GK 0|1/ 2|1|0|0|0','전체필드 2 · GK 1|3/ 5|1|1|0|0'],'조별 요약 줄');
     assert.ok(gs.between&&gs.inside&&gs.fgkVisible&&!gs.clipped.length&&gs.over<=0,'요약 표가 날짜 줄과 명단 사이 · 화면 안 · 잘린 칸 없음 · 필드/GK 보임: '+JSON.stringify(gs));
     assert.equal(gs.rowH,phone?48:36,'줄 높이');assert.equal(gs.inj,'rgb(194, 74, 70)','부상 수는 빨강');assert.equal(gs.sum,'','미기록이 없으면 머리 줄에 수 없음');
     // ② 조 칩 → 조 고르개(선수단 표와 같은 목록) → B팀: save() → 기기 사본 · 표에서 자리 이동 · 조 머리 인원

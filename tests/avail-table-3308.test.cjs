@@ -66,7 +66,8 @@ test('desktop: one table — group rows with the field/GK split, year rows, rest
   c.st.view='pos';assert.ok(c.avTableBody(c.data.players,DAY).html.includes('<span class="n">가능 2 / 3명</span><span class="fgk">'),'포지션별 · 이름순 보기의 묶음 줄은 예전 그대로');c.st.view='grp';
   const sum=c.avSummary(c.data.players,DAY);
   assert.deepEqual([...sum.matchAll(/<tr><th scope="row">([^<]+)(?:<span class="fgk">필드 <b>(\d+)<\/b> · GK <b>(\d+)<\/b><\/span>)?<\/th><td class="ok">(\d+)<small>\/ (\d+)<\/small><\/td><td class="\w+">(\d+)<\/td><td class="\w+">(\d+)<\/td><td class="\w+">(\d+)<\/td><td class="\w+">(\d+)<\/td><\/tr>/g)].map(m=>m.slice(1).map(x=>x===undefined?'':x).join(',')),
-    ['A팀,1,1,2,3,1,0,0,0','B팀,1,0,1,2,0,1,0,0','전체,2,1,3,5,1,1,0,0'],'3.372 요약 표: 조 · 필드 · GK · 가능 / 총원 · 부상 · 재활 · 불참 · 휴식 + 전체');
+    ['A팀,1,1,2,3,0,1,0,0','B팀,1,0,1,2,1,0,0,0','전체,2,1,3,5,1,1,0,0'],'요약 표: 조 · 필드 · GK · 가능 / 총원 · 재활 · 부상 · 불참 · 휴식 + 전체(3.373 — 재활이 부상 앞)');
+  assert.ok(sum.indexOf('>재활</th>')<sum.indexOf('>부상</th>')&&sum.indexOf('>부상</th>')<sum.indexOf('>불참</th>'),'열 차례 가능 · 재활 · 부상 · 불참');
   assert.ok(sum.includes('<td class="inj">1</td>')&&sum.includes('<td class="re">1</td>')&&sum.includes('<td class="z">0</td>'),'부상 빨강 · 재활 앰버 · 0 은 옅게');
   assert.equal(c.avSummary([],DAY),'','선수가 없으면 요약도 없다');
   assert.ok(!/<tfoot>/.test(c.avSummary(c.data.players.filter(p=>p.grp==='A팀'),DAY)),'조가 하나면 «전체» 줄 없음');

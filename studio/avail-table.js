@@ -55,8 +55,8 @@ function avSummary(ours,day){
   var order=['A팀','B팀','C팀'].concat(base,seen.slice().sort());
   order=order.filter(function(g,i){return g!=='미지정'&&by[g]&&order.indexOf(g)===i;});if(by['미지정'])order.push('미지정');
   function num(v,cls){return '<td class="'+(v?cls:'z')+'">'+v+'</td>';}
-  function line(name,c){return '<tr><th scope="row">'+esc(name)+(c.ok?'<span class="fgk">필드 <b>'+(c.ok-c.gk)+'</b> · GK <b>'+c.gk+'</b></span>':'')+'</th><td class="ok">'+c.ok+'<small>/ '+c.n+'</small></td>'+num(c.injury,'inj')+num(c.rehab,'re')+num(c.out,'o')+num(c.rest,'o')+'</tr>';}
-  return '<div class="av-gsum-wrap"><table class="av-gsum" aria-label="조별 요약"><thead><tr><th scope="col">조</th><th scope="col">훈련 가능</th><th scope="col">부상</th><th scope="col">재활</th><th scope="col">불참</th><th scope="col">휴식</th></tr></thead><tbody>'
+  function line(name,c){return '<tr><th scope="row">'+esc(name)+(c.ok?'<span class="fgk">필드 <b>'+(c.ok-c.gk)+'</b> · GK <b>'+c.gk+'</b></span>':'')+'</th><td class="ok">'+c.ok+'<small>/ '+c.n+'</small></td>'+num(c.rehab,'re')+num(c.injury,'inj')+num(c.out,'o')+num(c.rest,'o')+'</tr>';}
+  return '<div class="av-gsum-wrap"><table class="av-gsum" aria-label="조별 요약"><thead><tr><th scope="col">조</th><th scope="col">훈련 가능</th><th scope="col">재활</th><th scope="col">부상</th><th scope="col">불참</th><th scope="col">휴식</th></tr></thead><tbody>'
     +order.map(function(g){return line(g,by[g]);}).join('')+'</tbody>'+(order.length>1?'<tfoot>'+line('전체',tot)+'</tfoot>':'')+'</table></div>';
 }
 /* 몸통 — {html,total,rc}. ⚠ 행(data-av-st · 이름 · 조 칩)은 한 번만 그린다(두 벌을 그려 CSS 로 고르면 같은 단추가 둘이 된다, 2.939) */
