@@ -58,9 +58,10 @@ test('clean: white page, thin lines, red only for matches; colour blocks, legend
   const css=poster.css;
   assert.ok(css.split('\n').every(r=>r.startsWith('#printDoc')&&/#printDoc\.(pl-(weekboard|month)\.)?poster/.test(r)),'이 CSS 는 #printDoc.poster 에만 — «자세히»는 예전 모양 그대로');
   const hex=[...new Set(css.match(/#[0-9A-Fa-f]{6}\b/g))].map(x=>x.toUpperCase()).sort();
-  assert.deepEqual(hex,['#111418','#6B7280','#9CA3AF','#B0B5BC','#C8322D','#E5E7EB'],'글자 · 회색 · 선 · 빨강(경기)뿐');
+  assert.deepEqual(hex,['#111418','#6B7280','#9CA3AF','#C8322D','#E5E7EB'],'글자 · 회색 · 선 · 빨강(경기)뿐');
   assert.match(css,/\.pwb-leg,#printDoc\.pl-weekboard\.poster \.pwb-foot\{display:none\}/);
   assert.match(css,/\.pwb-fill\{display:none\}/);
+  assert.match(css,/#printDoc\.poster footer\{display:none\}/,'3.371 — 아래 글 · 날짜 없음');
   assert.match(css,/\.pwb-b\.meet\{min-height:0!important;background:transparent!important/,'훈련은 목록(높이 = 시간은 «자세히»)');
   assert.doesNotMatch(css,/background:#(0F1B33|C8322D)/,'색 면 없음');
 });
@@ -70,6 +71,7 @@ test('clean: weekly and monthly docs use it; «깔끔하게 · 자세히» is re
   assert.match(p,/let __pPoster=\(function\(\)\{ try\{ return localStorage\.getItem\('ps_sched_pdf_style'\)!=='plain'; \}/);
   assert.match(p,/head=PSSchedPoster\.head\(\{team:\{name:t\.name,logo:[^}]*\},title:`\$\{y\} 주간 일정/);
   assert.match(p,/mhead=PSSchedPoster\.head\(\{team:\{name:t\.name,logo:[^}]*\},title:'월간 일정'/);
+  assert.match(p,/title:'월간 일정'\+\(g\?' · '\+g:''\),big:monthLabel\(\)\}\);/,'3.371 — 월간 머리에는 경기 덩이가 없다(경기는 달력 칸에)');
   assert.match(p,/class="pl-'\+cls\+\(\(!blank&&__pPoster&&window\.PSSchedPoster&&\(cls==='weekboard'\|\|cls==='month'\)\)\?' poster':''\)/,'빈 양식에는 입히지 않는다');
   assert.match(p,/options:styled\?\[\{key:'style',label:'모양',choices:\[\['poster','깔끔하게'\],\['plain','자세히'\]\]\}\]:\[\]/);
   assert.match(p,/<td class="\$\{\[isMatch\?'pm-match':'',isOff\?'pm-off':'',out\?'pm-out':''/);
