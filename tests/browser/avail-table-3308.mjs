@@ -115,7 +115,17 @@ try{
     assert.ok(shape.chipBox[1]>=22&&shape.chipBox[0]>=40,'조 칩이 눌릴 크기: '+shape.chipBox.join('×'));
     assert.match(shape.inj.find(x=>x.startsWith('p2:')),/^p2:부위 미정\s?\d+일째$/,'부상 선수 칸: 부위 미정 + 며칠째');
     assert.equal(shape.inj.find(x=>x.startsWith('p1:')),'p1:','가능 선수는 빈 칸');
-    if(!phone)assert.match(shape.groups[0],/^A팀 가능 2 \/ 3명\s*필드 1 · GK 1$/,'조 줄 = 2.956 필드 · GK: '+shape.groups[0]);
+    if(!phone)assert.equal(shape.groups[0],'A팀 3명','3.372 — 조 줄은 이름 · 인원: '+shape.groups[0]);
+    // ①-2 3.372 날짜 밑 조별 요약 표 — 날짜 줄과 명단 사이 · 조마다 한 줄 + 전체 · 폰에도 필드 · GK · 넘침 없음
+    const gs=await frame.evaluate(()=>{const card=document.querySelector('#avDailyCard'),t=card.querySelector('table.av-gsum'),tr=t.getBoundingClientRect(),nav=card.querySelector('.av-dnav').getBoundingClientRect(),list=card.querySelector('.av-dsched').getBoundingClientRect();
+      const cells=[...t.querySelectorAll('th,td')].filter(c=>c.scrollWidth>c.clientWidth+1).map(c=>c.textContent);
+      return {rows:[...t.querySelectorAll('tbody tr,tfoot tr')].map(r=>[...r.children].map(c=>c.textContent.replace(/\s+/g,' ').trim()).join('|')),head:[...t.querySelectorAll('thead th')].map(c=>c.textContent),
+        between:tr.top>=nav.bottom-1&&tr.bottom<=list.top+1,inside:tr.left>=0&&tr.right<=innerWidth+1,clipped:cells,fgkVisible:[...t.querySelectorAll('.fgk')].every(e=>e.getBoundingClientRect().width>20),
+        rowH:Math.round(t.querySelector('tbody tr').getBoundingClientRect().height),inj:getComputedStyle(t.querySelector('td.inj')).color,sum:(card.querySelector('.av-dsched .sum')||{textContent:''}).textContent,over:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
+    assert.deepEqual(gs.head,['조','훈련 가능','재활','부상','불참','휴식']);
+    assert.deepEqual(gs.rows,['A팀필드 1 · GK 1|2/ 3|0|1|0|0','B팀필드 1 · GK 0|1/ 2|1|0|0|0','전체필드 2 · GK 1|3/ 5|1|1|0|0'],'조별 요약 줄');
+    assert.ok(gs.between&&gs.inside&&gs.fgkVisible&&!gs.clipped.length&&gs.over<=0,'요약 표가 날짜 줄과 명단 사이 · 화면 안 · 잘린 칸 없음 · 필드/GK 보임: '+JSON.stringify(gs));
+    assert.equal(gs.rowH,phone?48:36,'줄 높이');assert.equal(gs.inj,'rgb(194, 74, 70)','부상 수는 빨강');assert.equal(gs.sum,'','미기록이 없으면 머리 줄에 수 없음');
     // ② 조 칩 → 조 고르개(선수단 표와 같은 목록) → B팀: save() → 기기 사본 · 표에서 자리 이동 · 조 머리 인원
     await frame.locator('#avDailyCard [data-av-grp="p1"]').click();await frame.locator('#psPickPop').waitFor();
     const items=await frame.evaluate(()=>[...document.querySelectorAll('#psPickPop button')].map(b=>b.textContent.trim()));
@@ -128,7 +138,8 @@ try{
         groups:[...document.querySelectorAll('#avDailyCard tr.av-grp-row th, #avDailyCard .av-grp .gh')].map(e=>e.textContent.replace(/\s+/g,' ').trim())};});
     assert.equal(after.mem,'B팀');assert.equal(after.ls,'B팀','save() 를 지나 기기 사본에 적힌다');
     assert.deepEqual(after.rows,phone?['p5','p1','p4','p2','p3']:['p5','p2','p1','p4','p3'],'p1 이 B팀 묶음으로(GK 가 먼저)');
-    assert.ok(after.groups.some(g=>/B팀 (가능 )?2 \/ 3명/.test(g)),'B팀 머리가 새 인원으로: '+after.groups.join(' | '));
+    assert.ok(after.groups.some(g=>phone?/B팀 2 \/ 3명/.test(g):g==='B팀 3명'),'B팀 머리가 새 인원으로: '+after.groups.join(' | '));
+    assert.match(await frame.locator('#avDailyCard table.av-gsum tbody tr').nth(1).innerText(),/B팀[\s\S]*필드 1 · GK 1[\s\S]*2\s*\/ 3/,'요약 표도 새 조 인원으로');
     // ③ 되돌리기(A팀) — 같은 길
     await frame.locator('#avDailyCard [data-av-grp="p1"]').click();await frame.locator('#psPickPop').waitFor();await frame.locator('#psPickPop button',{hasText:'A팀'}).click();
     await frame.waitForFunction(()=>!document.querySelector('#psPickPop')&&(document.querySelector('#avDailyCard [data-av-grp="p1"]')||{textContent:''}).textContent.includes('A팀'));
