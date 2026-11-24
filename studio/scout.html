@@ -16123,7 +16123,7 @@ function avResolve(p,day){
 function avScheduled(kind){ return kind==="train"||kind==="match"; }
 function avStateLabel(r){ return AV_ST_LB[r.s]||"미기록"; }
 function avGrouping(){ return '<span class="av-vseg" role="group" aria-label="선수 묶기">'+[["grp","조별"],["pos","포지션별"],["name","이름순"]].map(function(x){return '<button type="button" data-av-view="'+x[0]+'" aria-pressed="'+(availView===x[0])+'"'+(availView===x[0]?' class="on"':'')+'>'+x[1]+'</button>';}).join("")+'</span>'+avYearToggleHTML(); }
-var AV_ST_RANK={rest:1,rehab:2,injury:3,out:4};
+var AV_ST_RANK={rehab:1,injury:2,out:3,rest:4};
 function avGroups(ours,day){
   var rows=Object.create(null), order=[], posIndex=Object.create(null);
   (data.positions||[]).forEach(function(p,i){posIndex[p.id]=i;});
@@ -16135,7 +16135,7 @@ function avGroups(ours,day){
   order=order.filter(function(g,i){return g!=="미지정"&&rows[g]&&order.indexOf(g)===i;}); if(rows["미지정"])order.push("미지정");
   return order.map(function(g){return {name:g,players:avYearOrder(rows[g].slice().sort(function(a,b){
     if(availView!=="name"){
-      if(day){var as=avResolve(a,day).s,bs=avResolve(b,day).s, ar=AV_ST_RANK[as]||0,br=AV_ST_RANK[bs]||0;if(ar!==br)return ar-br;}   /* 가능 → 휴식 → 재활 → 부상 → 불참 */
+      if(day){var as=avResolve(a,day).s,bs=avResolve(b,day).s, ar=AV_ST_RANK[as]||0,br=AV_ST_RANK[bs]||0;if(ar!==br)return ar-br;}   /* 가능 → 재활 → 부상 → 불참 → 휴식 */
       var ap=posIndex[a.posId]==null?999:posIndex[a.posId],bp=posIndex[b.posId]==null?999:posIndex[b.posId];if(ap!==bp)return ap-bp;
     }
     return String(a.name||"").localeCompare(String(b.name||""),"ko");
@@ -22082,7 +22082,7 @@ html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srg
 </style>
 <link rel="stylesheet" href="team-criteria.css">
 <link rel="stylesheet" href="player-workspace.css"><script src="roster-season.js"></script><script src="player-workspace.js"></script><script src="player-bulk-add.js"></script>
-<link rel="stylesheet" href="team-mobile.css?v=3.373">
+<link rel="stylesheet" href="team-mobile.css?v=3.374">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>

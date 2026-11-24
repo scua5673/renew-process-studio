@@ -129,13 +129,13 @@ try{
         clipped:[...t.querySelectorAll('th,td')].filter(c=>c.scrollWidth>c.clientWidth+1).length,over:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
     assert.deepEqual(gs,{b:'B팀필드 1 · GK 0|1/ 3|1|0|1|0',inside:true,clipped:0,over:0},'요약 표: '+JSON.stringify(gs));
     await page.screenshot({path:path.join(out,width+'-next-day.png'),fullPage:true});
-    // ②-3 3.373 — 조 안 차례: 가능 → 휴식 → 재활 → 부상 → 불참. A팀 한 조에 다섯 상태를 다 만들어 줄 차례를 본다
+    // ②-3 3.373 · 3.374 — 조 안 차례: 가능 → 재활 → 부상 → 불참 → 휴식(휴식은 맨 뒤). A팀 한 조에 다섯 상태를 다 만들어 줄 차례를 본다
     await frame.evaluate(()=>{const set=(id,o)=>Object.assign(data.players.find(p=>p.id===id),o);set('p3',{grp:'A팀'});set('p4',{grp:'A팀'});set('p6',{grp:'A팀',status:'rest',statusUntil:stYmd()});save();renderAvail();});
     await frame.locator('#avDailyCard [data-av-st="p6"]').waitFor();
     const ord=await frame.evaluate(()=>{const grp=id=>data.players.find(p=>p.id===id).grp;
       return [...document.querySelectorAll('#avDailyCard tr.av-pl')].filter(tr=>grp(tr.dataset.avPid)==='A팀').map(tr=>tr.querySelector('[data-av-st]').textContent.replace(/[\s⌄]+/g,''));});
-    const rank=['가능','휴식','재활','부상','불참'],seq=ord.filter((s,i)=>s!==ord[i-1]);
-    assert.deepEqual(seq,width<600?['가능','휴식','재활','부상','불참']:rank,'A팀 줄 차례: '+ord.join(','));
+    const rank=['가능','재활','부상','불참','휴식'],seq=ord.filter((s,i)=>s!==ord[i-1]);
+    assert.deepEqual(seq,rank,'A팀 줄 차례: '+ord.join(','));
     assert.deepEqual(ord.map(s=>rank.indexOf(s)),ord.map(s=>rank.indexOf(s)).slice().sort((a,b)=>a-b),'차례가 뒤섞이지 않는다: '+ord.join(','));
     await frame.evaluate(()=>{const set=(id,o)=>Object.assign(data.players.find(p=>p.id===id),o);set('p3',{grp:'B팀'});set('p4',{grp:'B팀'});const p=set('p6',{grp:'B팀',status:'ok'});delete p.statusUntil;save();renderAvail();});
     await frame.locator('#avDailyCard [data-av-st="p6"]').waitFor();
