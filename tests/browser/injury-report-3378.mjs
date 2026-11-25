@@ -76,7 +76,13 @@ async function makeContext(browser,width){
 async function ready(page){const frame=page.frame({url:/studio\/scout\.html/});await frame.waitForFunction(()=>typeof renderAvail==='function'&&window.PSParticipation&&window.PSPerms&&typeof scoutBootPending!=='undefined'&&!scoutBootPending);return frame;}
 /* 3.378 — 가용인원 › 부상 리포트: 셋째 탭 · 팀 한 장(지금 부상 · 재활 / 이 기간 복귀 / 부위별) · 이름 → 개인 한 장 · A4(2480×3508) 그림 · 저장.
    새 저장 칸 없이 상태 기록 · 부상 기록만 읽는다. 고치기 전 코드는 첫 단계(탭 없음)에서 떨어진다. */
+/* CI 크로미움이 첫 실행에서 «Resulting promise was garbage collected»로 떨어졌다(같은 문장의 원인 미상 흔들림 — match-ob-tray · match-board-tools, 첫 줄이 sharedReady 인 평가).
+   여기서 심는 값은 전부 절대값이라 그 문장일 때만 다시 한다(세 번까지). 다른 오류는 그대로 던진다. */
 async function open(frame){
+  for(let n=0;;n++){try{await seedOpen(frame);break;}catch(e){if(n>=2||!/garbage collected/.test(String(e&&e.message)))throw e;console.error('[injury-report-3378] retry open',n+1,e.message);await new Promise(r=>setTimeout(r,500));}}
+  await frame.locator('#avDailyCard [data-av-st="p4"]').waitFor();
+}
+async function seedOpen(frame){
   await frame.evaluate(async()=>{await PSStorage.sharedReady();await scPrepare();load();await scoutStore.ready(true);
     const T='2026-09-15',set=(id,o)=>Object.assign(data.players.find(p=>p.id===id),o);
     data.meta.teamName='프로세스FC';
@@ -88,7 +94,6 @@ async function open(frame){
     data.meta.injuryInfo={p2:{'2026-09-02':{at:1,part:'발목',side:'L',when:'match',n:'착지하다 꺾임 <b>반깁스</b>'}},p3:{'2026-09-02':{at:1,part:'햄스트링',side:'R',when:'train',n:'슈팅하다 당김'}},p4:{'2026-09-05':{at:1,part:'종아리'}}};
     set('p2',{status:'injury',statusUntil:'2026-09-20'});set('p3',{status:'rehab'});set('p4',{status:'ok'});set('p5',{status:'injury'});
     save();availRange=14;availDay=null;availMode='days';availInjPlayer=null;setView('avail');});
-  await frame.locator('#avDailyCard [data-av-st="p4"]').waitFor();
 }
 async function look(frame){return frame.evaluate(()=>{const q=s=>[...document.querySelectorAll(s)],t=e=>e.textContent.replace(/\s+/g,' ').trim(),root=document.getElementById('avInjReport');
   const btn=document.querySelector('[data-ir-out="image"]'),r=btn.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
