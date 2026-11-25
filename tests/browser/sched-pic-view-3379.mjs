@@ -3,7 +3,7 @@ import path from 'node:path';
 import {startFixture,openApp,SIZES,SHOTS} from '../fixtures/team-app.mjs';
 // 3.379 — 그림만 있는 일정 줄도 그 그림으로 바로(제보 c1bad13d «이미지만 넣으면 … 클릭하면 바로 이미지로 넘어 가게»).
 // 합성 팀(셸 전체)에서: 보관함에 훈련 둘짜리 카드(«워밍업» 장면 셋 · «론도» 그림 한 장)를 두고 → 일정 › 세션 채우기 › «보관함에서 가져오기» →
-// «워밍업» 줄엔 ▶ · «론도» 줄엔 «그림 보기»(실제 자리를 눌러 맞는지 — 줄 누름의 시간 시트가 뜨지 않는다) →
+// A안: «워밍업» · «론도» 줄은 줄 전체가 «보기»(표식은 이름 앞 · 시간 칩은 세션 채우기 창) →
 // 누르면 작전판이 그 훈련(둘째)을 보기 전용으로 재생 없이 연다 → «나가기» → 일정. 보관함 원본은 그대로. 실제 서버는 건드리지 않는다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'ipad':'desktop');
 if(engine==='chromium'){SIZES.ipad.engine='chromium';SIZES.phone.engine='chromium';}
@@ -46,17 +46,30 @@ try{
   if(phone){await pf.evaluate(()=>{const b=document.querySelector('#psPhBar .sg button[data-sv="week"]');if(b)b.click();});await page.waitForTimeout(600);}   // 폰 일정은 월간으로 열린다
   await pf.evaluate(di=>document.querySelectorAll('.wks-day')[di].scrollIntoView({block:'center'}),DI);
   await page.waitForTimeout(400);
+  // A안 — 그림 · 애니메이션이 있는 줄은 줄 전체가 «보기», 표식은 이름 앞, 시간 칩은 줄 끝
   const rows=await pf.evaluate(di=>{const d=document.querySelectorAll('.wks-day')[di];
     return [...d.querySelectorAll('.wks-li')].filter(li=>/^(워밍업|론도)$/.test(li.getAttribute('title')||'')).map(li=>{
-      const p=li.querySelector('.wks-play'),r=p?p.getBoundingClientRect():null,top=r?document.elementFromPoint(r.left+r.width/2,r.top+r.height/2):null,lr=li.getBoundingClientRect();
-      return {n:li.getAttribute('title'),pic:!!(p&&p.classList.contains('wks-pic')),title:p?p.title:'',w:r?Math.round(r.width):0,h:r?Math.round(r.height):0,hit:!!(top&&p&&p.contains(top)),inside:!!(r&&r.right<=lr.right+0.5&&r.left>=lr.left-0.5),vw:innerWidth,over:document.documentElement.scrollWidth-innerWidth};});},DI);
+      const p=li.querySelector('.wks-play'),b=li.querySelector('b'),t=li.querySelector('i'),R=e=>e?e.getBoundingClientRect():null,pr=R(p),br=R(b),tr=R(t),lr=R(li);
+      const top=document.elementFromPoint(br.left+Math.min(20,br.width/2),br.top+br.height/2),cs=getComputedStyle(p),ts=t?getComputedStyle(t):null;
+      return {n:li.getAttribute('title'),pic:p.classList.contains('wks-pic'),title:p.title,gw:Math.round(pr.width),glyphFirst:pr.right<=br.left+0.5,bare:cs.boxShadow==='none'&&/rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor),
+        chip:t?t.textContent.trim():'',chipLast:!!(tr&&(tr.left>=br.right-0.5||tr.top>=br.bottom-0.5)&&tr.right<=lr.right+0.5&&lr.right-tr.right<=8),chipRound:ts?parseFloat(ts.borderTopLeftRadius)>=9:false,
+        rowW:Math.round(lr.width),rowH:Math.round(lr.height),nameHit:!!(top&&li.contains(top)),vw:innerWidth,over:document.documentElement.scrollWidth-innerWidth};});},DI);
   out.rows=rows;
-  assert.deepEqual(rows.map(x=>[x.n,x.pic,x.title.replace(/ · .*/,'')]),[['워밍업',false,'애니메이션 보기'],['론도',true,'그림 보기']],JSON.stringify(rows));
-  for(const x of rows){assert.equal(x.w,22,x.n+' 폭');assert.equal(x.h,22,x.n+' 높이');assert.ok(x.hit,x.n+' 버튼이 맨 위에 있다');assert.ok(x.inside,x.n+' 버튼이 줄 안에 있다');assert.ok(x.over<=0,'가로 넘침 없음 '+x.over);}
+  assert.deepEqual(rows.map(x=>[x.n,x.pic,x.title.replace(/ · .*/,''),x.chip]),[['워밍업',false,'애니메이션 보기','10분'],['론도',true,'그림 보기','15분']],JSON.stringify(rows));
+  for(const x of rows){assert.equal(x.gw,14,x.n+' 표식 14px');assert.ok(x.glyphFirst,x.n+' 표식이 이름 앞');assert.ok(x.bare,x.n+' 표식은 동그라미 없이');assert.ok(x.chipLast&&x.chipRound,x.n+' 시간 칩이 줄 오른쪽 끝(좁은 칸은 이름 아래) '+JSON.stringify(x));
+    assert.ok(x.rowH>=28&&x.rowW>=70,x.n+' 누르는 자리 = 줄 '+x.rowW+'×'+x.rowH);assert.ok(x.nameHit,x.n+' 이름 자리가 줄에 닿는다');assert.ok(x.over<=0,'가로 넘침 없음 '+x.over);}
   if(SHOTS)await page.screenshot({path:path.join(SHOTS,'sched-pic-view-week-'+engine+'-'+size+'.png')});
   out.steps.push('buttons');
   // «그림 보기» — 그 훈련(둘째)을 보기 전용으로, 재생 없이. 시간 시트는 뜨지 않는다
-  await hit(pf.locator('.wks-day').nth(DI).locator('.wks-li[title="론도"] .wks-pic'));
+  // 시간 칩은 예전처럼 세션 채우기 창(시간) — 보기는 열리지 않는다
+  await hit(pf.locator('.wks-day').nth(DI).locator('.wks-li[title="론도"] i'));
+  await pf.waitForFunction(()=>document.getElementById('scrim').classList.contains('show')&&!!document.querySelector('#sheet #wfSec-lib'),null,{timeout:10000});
+  assert.equal(await page.evaluate(()=>document.body.getAttribute('data-ps-app')),'process','시간 칩은 일정에 머문다');
+  await hit(sheet.getByRole('button',{name:'완료',exact:true}).last());
+  await pf.waitForFunction(()=>!document.getElementById('scrim').classList.contains('show'),null,{timeout:10000});
+  out.steps.push('time-chip');
+  // 줄(이름)을 누르면 그림으로
+  await hit(pf.locator('.wks-day').nth(DI).locator('.wks-li[title="론도"] b'));
   await bf.waitForFunction(()=>document.body.classList.contains('editing'),null,{timeout:20000});
   await page.waitForTimeout(1500);
   assert.equal(await pf.evaluate(()=>document.getElementById('scrim').classList.contains('show')),false,'시간 시트가 뜨지 않았다');

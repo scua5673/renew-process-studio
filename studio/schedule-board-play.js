@@ -54,5 +54,33 @@
     return '<span class="'+esc(cls||'wks-play')+' wks-pic" role="button" tabindex="0" title="그림 보기" aria-label="'+esc(name)+' 그림 보기"'
       +' onclick="event.stopPropagation();'+go+'" onkeydown="if(event.key===&quot;Enter&quot;||event.key===&quot; &quot;){event.preventDefault();event.stopPropagation();'+go+'}">'+ICON+'</span>';
   }
-  return {target:target,scenes:scenes,pageName:pageName,hasPic:hasPic,picBtn:picBtn};
+  /* 3.379 A안(사용자 11/25 목업 `UI-일정-그림보기-목업-2026-11-25.html` «A안으로») — 주간 카드에서 그림 · 애니메이션이 있는 줄(`.wks-li.has-play`)은
+     **줄 전체가 «보기»**다. 줄 끝 동그란 단추는 이름 앞의 작은 표식으로(같은 요소 — 키보드 · 제 onclick 그대로), 시간 칩(`i`)을 누르면 예전처럼 세션 채우기 창(시간).
+     이름 고치기 · 삭제는 그 창에서. 그림 없는 줄 · 세션 채우기 창 안의 줄(.wft-*)은 그대로. process.html 은 손대지 않는다(크기 예산) — CSS 와 누름은 여기서. */
+  var ROW_CSS='.wks-li.has-play{column-gap:5px}.wks-li.has-play .wks-rt{display:contents}'
+    +'.wks-li.has-play .wks-play,.wks-li.has-play .wks-play:hover,.wks-li.has-play .wks-play:focus-visible{order:-1;width:14px;height:14px;border-radius:0;background:none;box-shadow:none;color:var(--blue,var(--ps-navy,#14213D))}'
+    +'.wks-li.has-play .wks-play:focus-visible{outline:2px solid currentColor;outline-offset:2px}'
+    +'.wks-li.has-play i{margin-left:auto;padding:1px 6px;border-radius:999px;background:var(--surface,#fff);box-shadow:inset 0 0 0 1px var(--line,#E3E6EA);color:var(--text,#14213D)}'
+    +'body.fmdark .wks-li.has-play i{background:var(--surface-2,#23272D)}';
+  /* 줄 누름 — 시간 칩 · 표식 자신은 제 처리기에, 그 밖의 줄 어디든 표식을 대신 누른다. 맡았으면 true */
+  function rowTap(e){
+    var t=e&&e.target; if(!t||typeof t.closest!=='function')return false;
+    var li=t.closest('.wks-li.has-play'); if(!li)return false;
+    if(t.closest('i')||t.closest('.wks-play'))return false;
+    var p=li.querySelector('.wks-play'); if(!p)return false;
+    e.stopPropagation(); e.preventDefault();
+    p.click();
+    return true;
+  }
+  function mountRows(doc){
+    if(!doc||!doc.head||doc.getElementById('ps-sbp-css'))return false;
+    var st=doc.createElement('style'); st.id='ps-sbp-css'; st.textContent=ROW_CSS; doc.head.appendChild(st);
+    doc.addEventListener('click',rowTap,true);
+    return true;
+  }
+  if(typeof window!=='undefined'&&window.document){
+    if(window.document.head)mountRows(window.document);
+    else window.document.addEventListener('DOMContentLoaded',function(){ mountRows(window.document); });
+  }
+  return {target:target,scenes:scenes,pageName:pageName,hasPic:hasPic,picBtn:picBtn,rowTap:rowTap,mountRows:mountRows,ROW_CSS:ROW_CSS};
 });

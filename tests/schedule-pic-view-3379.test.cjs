@@ -71,3 +71,19 @@ test('작전판: reason pic 도 보기 전용으로 받는다 — 안내는 «�
   assert.equal(SHOW.route({libGet:()=>[]},{reason:'pic',libId:'B1'}),true,'pic 도 길을 묻는다');
   assert.equal(SHOW.route({libGet:()=>[]},{reason:'',libId:'B1'}),false);
 });
+
+test('A안 — 줄 누름: 그림 · 애니메이션이 있는 줄은 표식을 대신 누르고, 시간 칩 · 표식 자신 · 다른 줄은 제 처리기에',()=>{
+  let clicks=0,stopped=0;
+  const play={click(){clicks++;}},li={querySelector:s=>s==='.wks-play'?play:null};
+  const ev=hit=>({target:{closest:s=>hit[s]||null},stopPropagation(){stopped++;},preventDefault(){}});
+  assert.equal(P.rowTap(ev({'.wks-li.has-play':li})),true);assert.equal(clicks,1);assert.equal(stopped,1,'줄의 예전 누름(세션 채우기 창)은 막는다');
+  assert.equal(P.rowTap(ev({'.wks-li.has-play':li,'i':{}})),false,'시간 칩');
+  assert.equal(P.rowTap(ev({'.wks-li.has-play':li,'.wks-play':play})),false,'표식 자신');
+  assert.equal(P.rowTap(ev({})),false,'그림 없는 줄 · 다른 곳');
+  assert.equal(P.rowTap({target:null}),false);
+  assert.equal(clicks,1);assert.equal(stopped,1);
+  assert.match(P.ROW_CSS,/\.wks-li\.has-play \.wks-play[^{]*\{order:-1/);assert.doesNotMatch(P.ROW_CSS,/!important/);
+  const made=[];const doc={head:{appendChild:e=>made.push(e)},getElementById:id=>made.find(e=>e.id===id)||null,createElement:()=>({}),addEventListener:(t,f,c)=>made.push([t,f===P.rowTap,c])};
+  assert.equal(P.mountRows(doc),true);assert.equal(P.mountRows(doc),false,'한 번만');
+  assert.deepEqual(made[1],['click',true,true],'capture 로 — 줄의 inline onclick 보다 먼저');
+});
