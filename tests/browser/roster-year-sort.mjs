@@ -42,6 +42,18 @@ try{
   assert.equal(mixed.years.reduce((s,t)=>s+(+(/(\d+)명$/.exec(t)||[])[1]||0),0),mixed.ids.length,'학년 머리 인원의 합 = 조 인원');
   assert.equal(await frame.locator('#pwTeam .pw-table tbody tr:not(.pw-grouphead)').count(),(await frame.evaluate(()=>tmOurs().length)),'선수 줄 수 그대로');
 
+  // ④ 가용인원 조별 + 학년 나누기 — 학년 안에서 가능 → 재활 → 부상 → 불참 → 휴식, 같은 상태는 이름순(자리 차례 없음)
+  step='avail-order';
+  const av=await frame.evaluate(()=>{const day=stYmd(),g0=(tmOurs()[0].grp||'').trim(),L=tmOurs().filter(p=>(p.grp||'').trim()===g0);
+    if(L[1]){L[1].status='injury';}if(L[3]){L[3].status='rehab';}
+    const v0=availView,y0=avYearSplit;availView='grp';avYearSplit=true;
+    const RK={rehab:1,injury:2,out:3,rest:4},yk=p=>/^[0-6]$/.test(String(p.schoolYear||''))?String(p.schoolYear):'',yr=y=>['6','5','4','3','2','1','0',''].indexOf(y);
+    const got=avGroups(tmOurs(),day).map(g=>g.players.map(p=>String(p.id)));
+    const exp=avGroups(tmOurs(),day).map(g=>g.players.slice().sort((a,b)=>(g.players.some(yk)?yr(yk(a))-yr(yk(b)):0)||((RK[avResolve(a,day).s]||0)-(RK[avResolve(b,day).s]||0))||String(a.name||'').localeCompare(String(b.name||''),'ko')).map(p=>String(p.id)));
+    const st=avGroups(tmOurs(),day)[0].players.map(p=>yk(p)+':'+(avResolve(p,day).s||'')+':'+(p.posId||''));
+    availView=v0;avYearSplit=y0;return {got,exp,st};});
+  assert.deepEqual(av.got,av.exp,'학년 → 상태 → 이름 '+JSON.stringify(av.st));
+
   // ③ 넘침 0
   step='measure';
   const m=await frame.evaluate(()=>{const h=document.querySelector('#pwTeam tr.pw-yearhead th').getBoundingClientRect();return {vw:innerWidth,over:document.documentElement.scrollWidth-innerWidth,headR:Math.round(h.right),headH:Math.round(h.height)};});
