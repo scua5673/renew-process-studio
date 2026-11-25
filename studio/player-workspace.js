@@ -740,12 +740,20 @@
        조 탭이 «전체»면 조마다 묶어 보이고(머리 줄 tr.pw-grouphead — 선수 줄이 아니다), 조 · 학년 칸은 고르개, 줄 끝 «⋯»에 프로필 수정 · 졸업 처리 · 명단에서 빼기.
        저장은 원래 길(save({skipTargets}) · graduateSelected · removeSelected) — 고르개를 연 사이 명단이 바뀌면 선수 id · 앞 값으로 다시 본다(3.339 sameNow 와 같은 생각). */
     function grouped(rows,fresh,kind,cols){
-      if(kind!=='team'||!simple.slot||states.team.scope!=='cur'||tmGrpFilter)return rows;
-      var keys=[];try{keys=win.PSTeamAudience.keys(source());}catch(_){keys=[];}
+      if(kind!=='team'||!simple.slot||states.team.scope!=='cur')return rows;
       var rest=rows.filter(function(r){return fresh.indexOf(r.id)<0;}),out=rows.filter(function(r){return fresh.indexOf(r.id)>=0;}),raw=function(r){return String(r.p&&r.p.grp||'').trim();};
+      /* 3.377 — 조 안 차례는 학년(높은 학년 먼저 · 가용인원 3.364 와 같은 차례 · 미지정 끝) → 가나다(사용자 11/25 «학년별로 가나다 순으로»).
+         학년이 둘 이상 섞인 묶음에만 학년 머리 줄(tr.pw-grouphead.pw-yearhead — 선수 줄이 아니다). 방금 넣은 선수(fresh)는 그대로 맨 위. */
+      var yk=function(r){var y=String(r.year||'');return /^[0-6]$/.test(y)?y:'';},nm=function(a,b){return String(a.name||'').localeCompare(String(b.name||''),'ko')||((parseInt(a.num,10)||0)-(parseInt(b.num,10)||0));};
+      var byYear=function(L){var mixed=L.some(function(r){return yk(r)!==yk(L[0]);}),o=[];
+        ['6','5','4','3','2','1','0',''].forEach(function(y){var Y=L.filter(function(r){return yk(r)===y;}).sort(nm);if(!Y.length)return;
+          if(mixed)o.push({head:'<tr class="pw-grouphead pw-yearhead"><th colspan="'+cols+'" scope="colgroup">'+esc(y?YL(y):'학년 미지정')+'<span>'+Y.length+'명</span></th></tr>'});o=o.concat(Y);});
+        return o;};
+      if(tmGrpFilter)return out.concat(byYear(rest));
+      var keys=[];try{keys=win.PSTeamAudience.keys(source());}catch(_){keys=[];}
       rest.forEach(function(r){var g=raw(r);if(g&&keys.indexOf(g)<0)keys.push(g);});
       keys.concat(['']).forEach(function(k){var L=rest.filter(function(r){return raw(r)===k;});if(!L.length)return;
-        out.push({head:'<tr class="pw-grouphead"><th colspan="'+cols+'" scope="colgroup">'+esc(k?group({grp:k})||k:'조 없음')+'<span>'+L.length+'명</span></th></tr>'});out=out.concat(L);});
+        out.push({head:'<tr class="pw-grouphead"><th colspan="'+cols+'" scope="colgroup">'+esc(k?group({grp:k})||k:'조 없음')+'<span>'+L.length+'명</span></th></tr>'});out=out.concat(byYear(L));});
       return out;
     }
     /* 학년을 한 명도 안 적은 팀은 학년 칸을 두지 않는다(학년을 안 쓰는 팀) — 처음 적는 길은 줄 «⋯ › 학년 바꾸기» */
