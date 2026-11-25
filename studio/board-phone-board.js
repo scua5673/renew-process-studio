@@ -31,6 +31,19 @@
     '1-2-1':[[50,93],[50,74],[20,52],[80,52],[50,30]],
     '2-2':[[50,93],[28,72],[72,72],[28,38],[72,38]]
   };
+  /* 자리마다 등번호(사용자 11/25 «포지션별로 번호 제대로») — FORMS 의 같은 차례. 위로 공격하므로 x 가 큰 쪽이 오른쪽(RB 2 · LB 3 · RCB 4 · LCB 5 …) */
+  var NUMS={
+    '4-3-3':[1,3,5,4,2,6,10,8,11,9,7],
+    '4-4-2':[1,3,5,4,2,11,6,8,7,10,9],
+    '3-5-2':[1,6,5,4,3,10,8,7,2,11,9],
+    '3-3-1':[1,3,4,2,11,8,7,9],
+    '2-4-1':[1,5,4,11,6,8,7,9],
+    '1-2-1':[1,4,11,7,9],
+    '2-2':[1,3,2,10,9]
+  };
+  function slotNum(form,i){var a=NUMS[form];return String(a&&a[i]!=null?a[i]:i+1);}
+  /* 새로 놓는 선수 — 그 팀이 아직 안 쓴 가장 작은 번호. 1(골키퍼 색)은 그 팀의 첫 선수일 때만 */
+  function freeNum(players,team){var used={},any=false;players.forEach(function(q){if(q.team===team){used[String(q.num)]=1;any=true;}});for(var n=any?2:1;n<100;n++)if(!used[String(n)])return String(n);return '';}
   var KINDS=['run','pass','dribble'],TEAM={us:'blue',op:'red'},SIDE={blue:'us',red:'op'};
   /* 토큰 크기 다섯 단계(사용자 «토큰크기 조절할 수 있게») — 문서의 tok(1~5 · 3 이 처음 값), 보관함 항목엔 phone.tok 과 판의 tokenScale 로 */
   var TOKF=[0.72,0.86,1,1.15,1.3],TOK0=3,TOK_BASE=0.8;
@@ -52,11 +65,11 @@
     var sp=specOf(n),slots=FORMS[form]||[],oslots=opp===true?slots:(FORMS[opp]||[]),withOpp=oslots.length>0,d={n:sp.n,players:[],ball:null,cones:[],lines:[]},id=1;
     slots.forEach(function(s,i){
       var t=withOpp?54+(s[1]-26)*(41/68):s[1];
-      d.players.push({id:id++,team:'us',num:String(i+1),name:'',x:r2(sp.w*s[0]/100),y:r2(sp.h*t/100)});
+      d.players.push({id:id++,team:'us',num:slotNum(form,i),name:'',x:r2(sp.w*s[0]/100),y:r2(sp.h*t/100)});
     });
     oslots.forEach(function(s,i){
       var t=100-(54+(s[1]-26)*(41/68));
-      d.players.push({id:id++,team:'op',num:String(i+1),name:'',x:r2(sp.w*(100-s[0])/100),y:r2(sp.h*t/100)});
+      d.players.push({id:id++,team:'op',num:slotNum(opp===true?form:opp,i),name:'',x:r2(sp.w*(100-s[0])/100),y:r2(sp.h*t/100)});
     });
     if(slots.length||withOpp)d.ball={x:sp.w/2,y:sp.h/2};
     return d;
@@ -385,6 +398,8 @@
     '#psPhoneBoard .phb-sub{position:absolute;left:8px;right:8px;bottom:calc(100% + 8px);display:flex;align-items:center;gap:6px;padding:6px;border:1px solid var(--phb-line);border-radius:10px;background:var(--phb-surface);box-shadow:0 6px 18px rgba(16,24,40,.2);overflow-x:auto;transition:opacity .12s}'+
     '#psPhoneBoard .phb-sub:empty{display:none}#psPhoneBoard .phb-sub .phb-opt{flex:1 1 0;justify-content:center;padding:0 8px;border-color:transparent;background:transparent}#psPhoneBoard .phb-sub .phb-opt[aria-pressed="true"]{border-color:transparent;background:var(--phb-act);color:var(--phb-act-ink)}'+
     '#psPhoneBoard.phb-touch .phb-sub{opacity:.1;pointer-events:none}'+
+    '#psPhoneBoard .phb-subsize{position:absolute;top:6px;right:6px;z-index:2;gap:4px;padding:3px 3px 3px 10px;border:1px solid var(--phb-line);border-radius:999px;background:var(--phb-surface);box-shadow:0 4px 14px rgba(16,24,40,.22);transition:opacity .12s}#psPhoneBoard .phb-subsize>span{font-size:12px;font-weight:600;color:var(--phb-dim)}#psPhoneBoard .phb-subsize b{min-width:14px}#psPhoneBoard .phb-subsize button{width:40px;height:40px;border-radius:999px}'+
+    '#psPhoneBoard.phb-touch .phb-subsize{opacity:.1;pointer-events:none}#psPhoneBoard.phb-playing .phb-subsize{display:none}'+
     '#psPhoneBoard .phb-opt{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--phb-line);border-radius:10px;background:var(--phb-surface);font-size:14px;font-weight:600;white-space:nowrap}'+
     '#psPhoneBoard .phb-opt[aria-pressed="true"]{border-color:var(--phb-act);background:var(--phb-soft)}'+
     '#psPhoneBoard .phb-opt i{flex:none;display:block;width:14px;height:14px;border-radius:999px}'+
@@ -463,7 +478,8 @@
           '<input class="phb-name" id="phbName" type="text" maxlength="'+TITLE_LEN+'" autocomplete="off" aria-label="폰보드 이름">'+
           '<button type="button" class="phb-ico" data-phb="undo" aria-label="되돌리기">'+svgIcon('undo')+'</button>'+
           '<button type="button" class="phb-btn phb-pri" data-phb="save">저장</button></div>'+
-          '<div class="phb-pw"><svg id="phbPitch" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="세로 운동장"><g id="phbBg"></g><g id="phbFg"></g></svg></div>'+
+          '<div class="phb-pw"><svg id="phbPitch" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="세로 운동장"><g id="phbBg"></g><g id="phbFg"></g></svg>'+
+          '<span class="phb-size phb-subsize" id="phbSize" role="group" aria-label="토큰 크기 · 모든 선수"><span>크기</span><button type="button" data-phb="tok" data-v="-1" aria-label="토큰 작게">−</button><b data-phb-tokn></b><button type="button" data-phb="tok" data-v="1" aria-label="토큰 크게">＋</button></span></div>'+
           '<div class="phb-dock"><div class="phb-sub" id="phbSub"></div><div class="phb-film" id="phbFilm"></div><div class="phb-tools" id="phbTools"></div></div></div>'+
         '<div class="phb-shade" id="phbNew" hidden><div class="phb-sheet"><h3>새 작전판</h3>'+
           '<div><p class="phb-cap">인원</p><div class="phb-opts" id="phbSpec"></div></div>'+
@@ -556,7 +572,7 @@
       if(M.tool==='put')s=[['us','우리','us'],['op','상대','op'],['ball','공','bl'],['cone','콘','cn']].map(function(x){return '<button type="button" class="phb-opt" data-phb="put" data-v="'+x[0]+'" aria-pressed="'+(M.put===x[0])+'"><i class="'+x[2]+'"></i><span>'+x[1]+'</span></button>';}).join('');
       else if(M.tool==='line')s=[['run','이동','M1 5H29" stroke-dasharray="4 3'],['pass','패스','M1 5H29'],['dribble','드리블','M1 5L4 2 8 8 12 2 16 8 20 2 24 8 27 5H29']].map(function(x){return '<button type="button" class="phb-opt" data-phb="line" data-v="'+x[0]+'" aria-pressed="'+(M.line===x[0])+'"><svg viewBox="0 0 30 10" aria-hidden="true"><path d="'+x[2]+'"/></svg><span>'+x[1]+'</span></button>';}).join('');
       else s='';
-      $('phbSub').innerHTML=s;
+      $('phbSub').innerHTML=s;tokUI();
       root.querySelector('[data-phb="undo"]').disabled=!M.hist.length;
       renderFilm();
     }
@@ -656,8 +672,8 @@
         else if(M.put==='cone'){if(D.cones.length>=MAX_CONES){toast('콘은 '+MAX_CONES+'개까지 놓을 수 있습니다');return;}snapHist();D.cones.push({x:p.x,y:p.y});others(D,function(s){s.cones.push({x:p.x,y:p.y});});}
         else{
           if(D.players.length>=MAX_PLAYERS){toast('선수는 '+MAX_PLAYERS+'명까지 놓을 수 있습니다');return;}
-          snapHist();var n=D.players.filter(function(q){return q.team===M.put;}).length+1;
-          var np={id:nextId(D),team:M.put,num:String(n),name:'',x:p.x,y:p.y};D.players.push(np);others(D,function(s){s.players.push(copy(np));});
+          snapHist();
+          var np={id:nextId(D),team:M.put,num:freeNum(D.players,M.put),name:'',x:p.x,y:p.y};D.players.push(np);others(D,function(s){s.players.push(copy(np));});
         }
         paint();
       }
@@ -684,7 +700,7 @@
       if(g.mode==='drag'){if(!g.moved&&g.h.type==='player')openTok(g.h.o);else if(g.moved)paint();}
       else{var dx=g.x2-g.x1,dy=g.y2-g.y1;if(Math.sqrt(dx*dx+dy*dy)>sp.w*0.06){snapHist();M.doc.lines.push({kind:M.line,x1:g.x1,y1:g.y1,x2:g.x2,y2:g.y2});}paint();}
     }
-    function tokUI(){var tk=tokOf(M.doc),bs=$('phbTok').querySelectorAll('[data-phb="tok"]');$('phbTokN').textContent=tk;bs[0].disabled=tk<=1;bs[1].disabled=tk>=TOKF.length;}
+    function tokUI(){if(!M.doc)return;var tk=tokOf(M.doc);root.querySelectorAll('[data-phb="tok"]').forEach(function(b){b.disabled=(+b.getAttribute('data-v')<0)?tk<=1:tk>=TOKF.length;});$('phbTokN').textContent=tk;root.querySelectorAll('[data-phb-tokn]').forEach(function(n){n.textContent=tk;});}
     function openTok(p){M.tokId=p.id;$('phbNum').value=p.num;$('phbNm').value=p.name;tokUI();$('phbTok').hidden=false;}
     function tokCur(){return M.doc.players.filter(function(p){return p.id===M.tokId;})[0];}
     /* ── 저장 ── */
@@ -816,7 +832,7 @@
   }
   function open(win){win=win||(typeof window!=='undefined'?window:null);var q=win&&(win.__psPhoneBoard||install(win));return q?q.open():false;}
 
-  return {TAG:TAG,SPECS:SPECS,FORMS:FORMS,world:world,local:local,docNew:docNew,snapFor:snapFor,itemFor:itemFor,editable:editable,docFrom:docFrom,applyEdit:applyEdit,mine:mine,
+  return {TAG:TAG,SPECS:SPECS,FORMS:FORMS,NUMS:NUMS,slotNum:slotNum,freeNum:freeNum,world:world,local:local,docNew:docNew,snapFor:snapFor,itemFor:itemFor,editable:editable,docFrom:docFrom,applyEdit:applyEdit,mine:mine,
     hit:hit,tokOf:tokOf,TOKF:TOKF,proj:proj,unproj:unproj,pitchSVG:pitchSVG,docSVG:docSVG,lineSVG:lineSVG,ghostSVG:ghostSVG,
     MAX_SCENES:MAX_SCENES,sceneCount:sceneCount,sceneAt:sceneAt,sceneGo:sceneGo,sceneAdd:sceneAdd,sceneDel:sceneDel,advance:advance,tween:tween,ease:ease,framesFor:framesFor,landscape:landscape,title:title,install:install,open:open};
 });

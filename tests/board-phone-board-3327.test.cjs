@@ -251,3 +251,36 @@ test('3.359 — a phone board with scenes is saved as big-board frames and comes
   P.sceneDel(back);P.applyEdit(it,back,'',10);assert.equal('frames' in it,false);assert.equal(it.snap.pitchTheme,'navy');assert.equal(P.editable(it),true);
   assert.equal(P.itemFor(P.docNew('11','4-3-3',''),'하나',1).frames,undefined,'a single scene has no frames');
 });
+
+/* 3.379 — 포지션별 등번호(사용자 11/25 «포지션별로 번호 제대로») */
+test('3.379 formations number each slot by its position, for both sides', () => {
+  const by=(d,team)=>Object.fromEntries(d.players.filter(p=>p.team===team).map((p,i)=>[i,p]));
+  for(const form of Object.keys(P.FORMS)){
+    const slots=P.FORMS[form],nums=P.NUMS[form];
+    assert.equal(nums.length,slots.length,form+' has a number for every slot');
+    assert.equal(new Set(nums).size,nums.length,form+' numbers are unique');
+    assert.equal(nums[0],1,form+' goalkeeper is 1');
+  }
+  const d=P.docNew('11','4-3-3','4-4-2'),us=by(d,'us'),op=by(d,'op');
+  const at=(o,num)=>Object.values(o).find(p=>p.num===String(num));
+  /* 우리 팀은 위로 공격 — 오른쪽(x 큰 쪽)이 RB 2 · RW 7, 왼쪽이 LB 3 · LW 11, 가운데 앞이 9 */
+  assert.ok(at(us,2).x>at(us,3).x,'RB 2 is on the right of LB 3');
+  assert.ok(at(us,4).x>at(us,5).x,'RCB 4 is right of LCB 5');
+  assert.ok(at(us,7).x>at(us,11).x,'RW 7 is right of LW 11');
+  assert.ok(at(us,9).y<at(us,6).y&&at(us,6).y<at(us,4).y,'9 ahead of 6 ahead of the centre backs');
+  /* 상대는 아래로 공격 — 상대의 오른쪽은 화면 왼쪽 */
+  assert.ok(at(op,2).x<at(op,3).x,'the opponent RB 2 is on the screen left');
+  assert.ok(at(op,7).x<at(op,11).x,'the opponent RM 7 is on the screen left');
+  assert.deepEqual(P.docNew('5','1-2-1',false).players.map(p=>p.num),['1','4','11','7','9']);
+  assert.deepEqual(P.docNew('11','',false).players,[],'no formation, no players');
+});
+
+test('3.379 a placed player takes the smallest free number, 1 only for a team with nobody yet', () => {
+  assert.equal(P.freeNum([],'us'),'1');
+  assert.equal(P.freeNum([{team:'op',num:'1'}],'us'),'1','other side numbers do not count');
+  assert.equal(P.freeNum([{team:'us',num:'21'}],'us'),'2','1 stays for the goalkeeper once the team has a player');
+  const d=P.docNew('11','4-3-3',false);
+  assert.equal(P.freeNum(d.players,'us'),'12');
+  d.players.splice(d.players.findIndex(p=>p.num==='8'),1);
+  assert.equal(P.freeNum(d.players,'us'),'8','a removed number is reused');
+});

@@ -88,7 +88,7 @@ try{
   await f.locator('#phbSub [data-v="dribble"]').tap();await ptr(f,[[50,60],[58,42]]);
   await ptr(f,[[30,30],[30.5,30.5]]);
   m=await model(f);
-  assert.equal(m.doc.cones.length,2);assert.equal(m.doc.players.length,23);assert.equal(m.doc.players.at(-1).num,'12','the new player takes the next number');
+  assert.equal(m.doc.cones.length,2);assert.equal(m.doc.players.length,23);assert.equal(m.doc.players.at(-1).num,'12','the new player takes the smallest free number (1 stays the goalkeeper)');
   assert.deepEqual(m.doc.lines.map(l=>l.kind),['pass','dribble'],'a too-short stroke is not an arrow');
   await f.locator('#phbTools [data-v="erase"]').tap();await ptr(f,[[62,50]]);
   m=await model(f);assert.equal(m.doc.cones.length,1);
@@ -103,17 +103,33 @@ try{
   const chipR=()=>f.evaluate(()=>+document.querySelector('#phbFg .phb-tok').getAttribute('transform').match(/scale\(([0-9.]+)\)/)[1]);
   const r3=await chipR();
   await ptr(f,[[gk.x,gk.y]]);await f.locator('#phbTok').waitFor({state:'visible'});
-  await f.locator('[data-phb="tok"][data-v="1"]').click();await f.locator('[data-phb="tok"][data-v="1"]').click();
+  await f.locator('#phbTok [data-phb="tok"][data-v="1"]').click();await f.locator('#phbTok [data-phb="tok"][data-v="1"]').click();
   assert.equal((await model(f)).doc.tok,5);assert.equal(await f.locator('#phbTokN').textContent(),'5');
-  assert.equal(await f.locator('[data-phb="tok"][data-v="1"]').isDisabled(),true,'the biggest step stops');
+  assert.equal(await f.locator('#phbTok [data-phb="tok"][data-v="1"]').isDisabled(),true,'the biggest step stops');
   const r5=await chipR();assert.ok(r5>r3*1.2,'the chips grew: '+r3+' → '+r5);
   await f.locator('[data-phb="tok-ok"]').tap();
   await shot(page,'3b-editor-big');
   await f.locator('[data-phb="undo"]').click();assert.equal((await model(f)).doc.tok,4,'undo steps the size back');
   await ptr(f,[[gk.x,gk.y]]);await f.locator('#phbTok').waitFor({state:'visible'});
-  await f.locator('[data-phb="tok"][data-v="-1"]').click();assert.equal((await model(f)).doc.tok,3);
+  await f.locator('#phbTok [data-phb="tok"][data-v="-1"]').click();assert.equal((await model(f)).doc.tok,3);
   await f.locator('[data-phb="tok-ok"]').tap();
   assert.ok(Math.abs(await chipR()-r3)<0.001,'back to the first size');
+  /* 3.379 — 토큰 크기는 운동장 오른쪽 위 구석에서 바로(선수를 누르지 않고 · 어느 도구에서나) */
+  const sub=f.locator('#phbSize');assert.equal(await sub.isVisible(),true,'the size control sits on the pitch corner');
+  assert.equal(await sub.locator('[data-phb-tokn]').textContent(),'3');
+  await sub.locator('[data-phb="tok"][data-v="-1"]').tap();await sub.locator('[data-phb="tok"][data-v="-1"]').tap();
+  assert.equal((await model(f)).doc.tok,1);assert.equal(await sub.locator('[data-phb-tokn]').textContent(),'1');
+  assert.equal(await sub.locator('[data-phb="tok"][data-v="-1"]').isDisabled(),true,'the smallest step stops');
+  assert.ok(await chipR()<r3*0.8,'the chips shrank');
+  const subBox=await sub.boundingBox(),btnBox=await sub.locator('[data-phb="tok"][data-v="1"]').boundingBox();
+  assert.ok(btnBox.width>=40&&btnBox.height>=40,'the buttons are big enough to tap');
+  await shot(page,'3c-editor-size');
+  await sub.locator('[data-phb="tok"][data-v="1"]').tap();await sub.locator('[data-phb="tok"][data-v="1"]').tap();
+  assert.equal((await model(f)).doc.tok,3);
+  const pw=await f.locator('.phb-pw').boundingBox();
+  assert.ok(subBox.y-pw.y<12&&pw.x+pw.width-(subBox.x+subBox.width)<12,'top-right corner of the pitch');
+  await f.locator('#phbTools [data-v="put"]').tap();assert.equal(await sub.isVisible(),true,'still there with the put tool');
+  await f.locator('#phbTools [data-v="move"]').tap();
   /* 3.359 — 장면(애니메이션): ＋ 장면 → 화살대로 옮긴 다음 장면 → 옮기기 → 장면 오가기 → 시간 → 재생 */
   await f.locator('[data-phb="play"]').tap();assert.match(await toastText(f),/2개 이상/,'one scene does not play');
   const s1=(await model(f)).doc;
