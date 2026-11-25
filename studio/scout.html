@@ -16136,7 +16136,7 @@ function avGroups(ours,day){
   return order.map(function(g){return {name:g,players:avYearOrder(rows[g].slice().sort(function(a,b){
     if(availView!=="name"){
       if(day){var as=avResolve(a,day).s,bs=avResolve(b,day).s, ar=AV_ST_RANK[as]||0,br=AV_ST_RANK[bs]||0;if(ar!==br)return ar-br;}   /* 가능 → 재활 → 부상 → 불참 → 휴식 */
-      var ap=posIndex[a.posId]==null?999:posIndex[a.posId],bp=posIndex[b.posId]==null?999:posIndex[b.posId];if(ap!==bp)return ap-bp;
+      /* 3.377 — 상태가 같으면 이름순(사용자 11/25 «학년 나누고 이름순 · 가능한 자부터 · 재활 부상 불참 휴식»). 전엔 그 사이에 자리 차례가 있었다 */
     }
     return String(a.name||"").localeCompare(String(b.name||""),"ko");
   }))};});
@@ -22082,7 +22082,7 @@ html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srg
 </style>
 <link rel="stylesheet" href="team-criteria.css">
 <link rel="stylesheet" href="player-workspace.css"><script src="roster-season.js"></script><script src="player-workspace.js"></script><script src="player-bulk-add.js"></script>
-<link rel="stylesheet" href="team-mobile.css?v=3.375">
+<link rel="stylesheet" href="team-mobile.css?v=3.377">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>

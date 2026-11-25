@@ -373,6 +373,8 @@ body.ps-roster-locked .pw-quickadd,body.ps-roster-locked .pw-rq-edit{display:non
 /* 목록에서 바로(3.354) — 조별 묶음 머리 · 조/학년 칸 고르개 · 줄 끝 «⋯» */
 .pw-table tr.pw-grouphead th{padding:var(--sp-2) var(--sp-3);text-align:left;font-size:var(--t-5);font-weight:700;color:var(--c-ink);background:var(--c-surface-2,var(--c-bg));border-top:1px solid var(--c-line)}
 .pw-table tr.pw-grouphead th span{margin-left:6px;font-weight:400;color:var(--c-muted)}
+/* 3.377 — 조 안 학년 머리 줄: 조 머리보다 한 단 옅게 · 작게 */
+.pw-table tr.pw-grouphead.pw-yearhead th{padding:6px var(--sp-3);font-size:12px;font-weight:600;color:var(--c-muted);background:transparent}
 .pw-cellpicks{display:inline-flex;gap:6px;flex-wrap:wrap}
 .pw-table .pw-cellpick{min-height:36px;padding:4px 10px;border:1px solid var(--c-line);border-radius:8px;background:var(--c-surface);font-size:var(--t-5);color:var(--c-ink);white-space:nowrap}
 .pw-table .pw-cellpick::after{content:"▾";margin-left:4px;font-size:10px;color:var(--c-muted)}
