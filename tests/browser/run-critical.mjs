@@ -95,6 +95,7 @@ suites.entry.push('logout-direct-pages');   /* 3.272 — 로그아웃한 기기�
 suites.idp.push('roster-season');   /* 시즌별 선수단 — 새 시즌 시작 · 되돌리기 · 지난 시즌 · 졸업생 · 선수별 행은 살아 있다 */
 suites.idp.push('roster-season-scout');   /* 미리 만든 시즌 · 예상 명단 · 스카우팅 후보를 시즌에 담기 · 새 시즌에 넘기기 · 되돌리기 */
 suites.idp.push('roster-inline-edit-3354');   /* 3.354 — 명단 조별 묶음 · 조/학년 칸 고르개(신입생) · 줄 «⋯» 프로필 수정 · 졸업 처리 */
+suites.idp.push('injury-report-3378');   /* 3.378 — 가용인원 › 부상 리포트(팀 · 개인 · A4 그림) */
 suites.idp.push('roster-year-sort');   /* 명단 조 안 차례 = 학년 → 가나다 · 학년 머리 줄 */
 suites.idp.push('team-level-3359');   /* 3.359 — 학교급(초 · 중 · 고 · 대 · 성인팀): 학년 고르개 · 새 시즌 졸업 학년 · 성인팀은 학년 칸 없음 */
 suites.idp.push('roster-future-depth-3358');   /* 3.358 — 미리 만든 시즌에도 «포지션» 보기(읽기 전용 판 · 합류 예정 칸 · 보기 이어 가기) · 명단 표 선수 칸 너비 */

@@ -9,7 +9,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script src="storage.js"></script><script src="match-kind.js"></script><script src="training-intensity.js"></script><script src="weather-request.js"></script><script src="match-home.js"></script>
-<link rel="stylesheet" href="team-audience.css"><script src="team-audience.js"></script><script src="roster-audience.js"></script><script src="avail-table.js"></script>
+<link rel="stylesheet" href="team-audience.css"><script src="team-audience.js"></script><script src="roster-audience.js"></script><script src="avail-table.js"></script><script src="injury-report.js"></script>
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
 <script src="roster-outbox.js?v=2.826"></script>
@@ -16400,16 +16400,16 @@ function renderAvail(){
   if(avPickerState&&(!avEditCurrent(avPickerState.ctx)||!avCanEdit()))avClosePicker();
   if(avUiNotice&&(!avUiNotice.context||typeof avEditCurrent!=='function'||!avEditCurrent(avUiNotice.context)))avUiNotice=null;
   var ours=tmOurs().filter(function(p){return p.manual===true||String(p.name||'').trim();});
-  var today=stYmd(),season=availRange==='season'&&availMode==='players',N=[14,28,90].indexOf(availRange)>=0?availRange:14,from=season?today.slice(0,4)+'-01-01':stAddDays(today,1-N);   /* 2.943 — 선수별 누적은 «시즌»(올해 1월 1일부터)도 본다 */
+  var today=stYmd(),season=availRange==='season'&&availMode!=='days',N=[14,28,90].indexOf(availRange)>=0?availRange:14,from=season?today.slice(0,4)+'-01-01':stAddDays(today,1-N);   /* 2.943 — 선수별 누적은 «시즌»(올해 1월 1일부터)도 본다 */
   if(availDay&&availDay>today)availDay=null;
-  var h='<div class="av-head"><h3>가용인원</h3><span class="n">'+(season?'시즌 '+stMD(from)+'–':'최근 '+N+'일')+'</span><span class="av-seg" role="group" aria-label="조회 기간">'+[[14,'2주'],[28,'4주'],[90,'90일']].concat(availMode==='players'?[['season','시즌']]:[]).map(function(x){var on=(season?'season':N)===x[0];return '<button type="button" data-av-range="'+x[0]+'" aria-pressed="'+on+'"'+(on?' class="on"':'')+'>'+x[1]+'</button>';}).join('')+'</span></div><div class="av-subnav" role="group" aria-label="가용인원 보기">'+[['days','날짜별'],['players','선수별 누적']].map(function(x){return '<button type="button" data-av-mode="'+x[0]+'" aria-pressed="'+(availMode===x[0])+'"'+(availMode===x[0]?' class="on"':'')+'>'+x[1]+'</button>';}).join('')+'</div>';
+  var h='<div class="av-head"><h3>가용인원</h3><span class="n">'+(season?'시즌 '+stMD(from)+'–':'최근 '+N+'일')+'</span><span class="av-seg" role="group" aria-label="조회 기간">'+[[14,'2주'],[28,'4주'],[90,'90일']].concat(availMode!=='days'?[['season','시즌']]:[]).map(function(x){var on=(season?'season':N)===x[0];return '<button type="button" data-av-range="'+x[0]+'" aria-pressed="'+on+'"'+(on?' class="on"':'')+'>'+x[1]+'</button>';}).join('')+'</span></div><div class="av-subnav" role="group" aria-label="가용인원 보기">'+[['days','날짜별'],['players','선수별 누적'],['injury','부상 리포트']].map(function(x){return '<button type="button" data-av-mode="'+x[0]+'" aria-pressed="'+(availMode===x[0])+'"'+(availMode===x[0]?' class="on"':'')+'>'+x[1]+'</button>';}).join('')+'</div>';
   if(avUiNotice)h+='<p class="av-feedback" role="status">'+esc(avUiNotice.text)+'</p>';
   if(typeof avCanEdit==='function'&&!avCanEdit())h+='<p class="av-note av-readonly">조회만 가능한 상태입니다. 가용인원 기록은 수정할 수 없습니다.</p>';
   try{ stExpireDailySave(); h+=stReturnDueHTML(); }catch(_){}   /* 2.942 */
   try{
     avRenderCache={schedules:new Map(),canEdit:typeof avCanEdit==='function'&&avCanEdit()};
     if(!window.PSParticipation)throw new Error('model unavailable');
-    if(availMode==='players')h+=renderAvailPlayers(ours,from,today);
+    if(availMode==='injury')h+=renderAvailInjury(ours,from,today);else if(availMode==='players')h+=renderAvailPlayers(ours,from,today);
     else{
       h+=renderAvailDaily(ours);
       var days=[],sumOk=0,sumRec=0,trainDays=0,offDays=0;
@@ -16428,7 +16428,8 @@ function renderAvail(){
     }
   }catch(error){h+='<div class="av-empty" role="alert">가용인원 기록을 불러오지 못했습니다. 화면을 다시 열거나 새로고침해 주세요.</div>';}finally{avRenderCache=null;}
   root.innerHTML=h;
-  root.querySelectorAll('[data-av-mode]').forEach(function(b){b.onclick=function(){avClosePicker();availMode=b.dataset.avMode==='players'?'players':'days';renderAvail();};});
+  if(availMode==='injury')irBind(root,ours,from,today);
+  root.querySelectorAll('[data-av-mode]').forEach(function(b){b.onclick=function(){avClosePicker();availMode={players:1,injury:1}[b.dataset.avMode]?b.dataset.avMode:'days';renderAvail();};});
   root.querySelectorAll('[data-av-range]').forEach(function(b){b.onclick=function(){avClosePicker();availRange=b.dataset.avRange==='season'?'season':(+b.dataset.avRange||14);renderAvail();};});
   root.querySelectorAll('[data-av-view]').forEach(function(b){b.onclick=function(){avClosePicker();availView=b.dataset.avView||'grp';try{localStorage.setItem('cs_av_view_v1',availView);}catch(_){}renderAvail();};});
   root.querySelectorAll('[data-av-date]').forEach(function(b){b.onclick=function(){avClosePicker();availDay=b.dataset.avDate===stYmd()?null:b.dataset.avDate;availMode='days';renderAvail();avFocusCard('avDailyCard');};});
@@ -22082,7 +22083,7 @@ html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srg
 </style>
 <link rel="stylesheet" href="team-criteria.css">
 <link rel="stylesheet" href="player-workspace.css"><script src="roster-season.js"></script><script src="player-workspace.js"></script><script src="player-bulk-add.js"></script>
-<link rel="stylesheet" href="team-mobile.css?v=3.377">
+<link rel="stylesheet" href="team-mobile.css?v=3.378">
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
 </body>
 </html>
