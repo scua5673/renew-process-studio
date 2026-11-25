@@ -284,3 +284,24 @@ test('3.379 a placed player takes the smallest free number, 1 only for a team wi
   d.players.splice(d.players.findIndex(p=>p.num==='8'),1);
   assert.equal(P.freeNum(d.players,'us'),'8','a removed number is reused');
 });
+
+/* 3.379 — 유니폼 색(사용자 11/25 «새로 만들기 할 때 유니폼 색상도») */
+test('3.379 kits: chosen on a new board, drawn on chips, saved as the big board teamColors and read back', () => {
+  assert.equal(P.KIT.length,10);assert.ok(P.KIT.every(k=>/^#[0-9a-f]{6}$/.test(k[0])),'palette hex');
+  assert.equal(P.docNew('11','4-3-3','',{us:'#1a2f5c',op:'#d12f38'}).kit,undefined,'default colours keep no kit field');
+  assert.equal(P.docNew('11','4-3-3','',{us:'nope',op:'#d12f38'}).kit,undefined,'a bad value is ignored');
+  const d=P.docNew('11','4-3-3','4-4-2',{us:'#F4F5F7',op:'#f2c230'});
+  assert.deepEqual(d.kit,{us:'#f4f5f7',op:'#f2c230'});
+  assert.equal(P.kitOf(d,'us'),'#f4f5f7');assert.equal(P.kitOf({},'op'),'#d12f38');
+  assert.equal(P.gkOf(d,'op'),'#3aa6dc','a yellow side gets the sky goalkeeper instead of the gold one');
+  assert.equal(P.gkOf(d,'us'),'#3aa6dc');assert.equal(P.gkOf({},'op'),'#d4a017');
+  const svg=P.docSVG(d,P.SPECS['11']);
+  assert.ok(svg.includes('fill="#f4f5f7"')&&svg.includes('fill="#f2c230"'),'chips wear the kits');
+  assert.ok(svg.includes('phb-light'),'a light kit is marked for dark numbers');
+  const snap=P.snapFor(d,null);assert.deepEqual(snap.teamColors,{blue:'#f4f5f7',red:'#f2c230'});
+  assert.equal(P.snapFor(P.docNew('11','4-3-3',''),null).teamColors,undefined,'no kit, no teamColors');
+  const it=P.itemFor(d,'흰 유니폼',1);
+  assert.deepEqual(P.docFrom(it).kit,{us:'#f4f5f7',op:'#f2c230'},'reopening keeps the kits');
+  const prev={...P.snapFor(P.docNew('11','4-3-3',''),null),teamColors:{blue:'#000000',yellow:'#123456'}};
+  assert.deepEqual(P.snapFor({...P.docNew('11','4-3-3',''),kit:{op:'#7a3fb0'}},prev).teamColors,{blue:'#000000',yellow:'#123456',red:'#7a3fb0'},'an edit keeps the other team colours of the old board');
+});
