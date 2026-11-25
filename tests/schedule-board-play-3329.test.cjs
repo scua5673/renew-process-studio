@@ -66,7 +66,7 @@ test('일정: 작전판을 가져오면 페이지 줄마다 그 페이지 번호
   assert.deepEqual([...board.trainData.map(d=>d.libIdx)],[0,1,2],'3.329 — 페이지 번호(예전엔 모두 0)');
   assert.ok(board.trainData.every(d=>!('frames' in d)&&!('anim' in d)),'일정 문서에 장면을 싣지 않는다');
   const btn=i=>c.wksPlayBtn(0,i,board.trainData[i],board.trains[i]);
-  assert.match(btn(0),/4장면/);assert.match(btn(1),/3장면/);assert.equal(btn(2),'','장면 하나인 페이지엔 ▶ 없음');
+  assert.match(btn(0),/4장면/);assert.match(btn(1),/3장면/);assert.match(btn(2),/wks-pic/,'3.379 — 장면 하나인 페이지엔 ▶ 대신 «그림 보기»');assert.doesNotMatch(btn(2),/장면/);
   c.window.wksAnimPlay(0,1);
   assert.equal(posted.length,1);
   const m=posted[0];
