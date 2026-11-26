@@ -76,7 +76,7 @@ test('boards touched on a bigger screen are view-only on the phone',()=>{
     goal:d=>d.snap.equipment.push({id:9,team:'tire',x:1,y:1}),   /* 3.381 — 장비 열 가지(미니골 포함)는 폰에서도 고친다 · 그 밖의 장비는 보기만 */
     fill:d=>d.snap.drawings.push({type:'rectline',pts:[{x:1,y:1},{x:20,y:20}]}),
     coach:d=>d.snap.players.push({id:99,team:'blue',coach:true,x:1,y:1}),
-    third:d=>{d.snap.players[0].team='yellow';},
+    third:d=>{d.snap.players[0].team='green';},   /* 3.381 — 노랑(중립 조끼)은 폰에서도 고친다 · 넷째 팀부터 보기만 */
     pitch:d=>{d.snap.pitchSpec='u12';},
     pages:d=>{d.pages=[{snap:d.snap},{snap:d.snap}];},
     curve:d=>{d.frames=[{snap:d.snap,curves:{1:{mx:3,my:4}}},{snap:d.snap}];},
@@ -346,4 +346,30 @@ test('3.381 drawing: paper grid, dark arrows and the board equipment art',()=>{
   const fg=P.docSVG(doc,sp,{equip:t=>'<g data-art="'+t+'"/>'});
   assert.match(fg,/data-art="hurdle"/);assert.match(fg,/class="phb-zone"/);assert.match(fg,/stroke="#14213D"/,'arrows are dark on paper');
   assert.equal(P.hit(doc,{x:1.5,y:4.5},true).type,'zone','an empty spot inside a zone picks the zone');
+});
+
+test('3.381 more: neutral bibs, equipment lines, quick-start drills, curved arrows, scene copy, zone sizes, training notes',()=>{
+  const d=P.docNew('g30','','',null,{min:15,drill:'332'});
+  assert.deepEqual(['us','op','ne'].map(t=>d.players.filter(p=>p.team===t).length),[3,3,2],'3v3 + two neutrals');
+  assert.equal(d.zones.length,1);assert.equal(d.cones.length,4);assert.ok(d.ball);
+  const sp=P.SPECS.g30;assert.ok(d.players.every(p=>p.x>=0&&p.x<=sp.w&&p.y>=0&&p.y<=sp.h),'inside the paper');
+  const r=P.docNew('g20','','',null,{drill:'rondo'});assert.deepEqual([r.players.length,r.cones.length],[6,4]);
+  const g=P.docNew('11','','',null,{drill:'4goal'});assert.equal(g.cones.filter(c=>c.t==='minigoal').length,4);assert.equal(g.players.length,8);
+  assert.equal(P.DRILLS.length,4);
+  const it=P.itemFor(d,'x',1);assert.deepEqual(it.snap.players.filter(p=>p.team==='yellow').length,2,'neutrals are the big board team 3');
+  assert.equal(P.editable(it),true);assert.deepEqual(P.docFrom(it).players.filter(p=>p.team==='ne').length,2);
+  const svg=P.docSVG(d,sp,{});assert.match(svg,/fill="#f2c230"/,'yellow bibs');
+  assert.deepEqual(P.eqLine(0,0,0,10,2,40).map(c=>c.y),[0,2,4,6,8,10]);assert.equal(P.eqLine(0,0,0,10,2,3).length,3,'only as many as room left');assert.equal(P.eqLine(1,1,1,1,2,9).length,1);
+  const b=P.docNew('11','4-3-3','');b.lines.push({kind:'pass',x1:10,y1:50,x2:30,y2:50,cx:20,cy:40});b.lines.push({kind:'dribble',x1:10,y1:60,x2:30,y2:60,cx:20,cy:40});
+  assert.deepEqual(P.lineMid(b.lines[0]),{x:20,y:45});
+  const bi=P.itemFor(b,'c',1);assert.equal(bi.snap.drawings[0].pts.length,3,'a curved pass keeps the board control point');assert.equal(bi.snap.drawings[1].pts.length,2,'a dribble does not curve');
+  assert.equal(P.editable(bi),true);const back=P.docFrom(bi);assert.ok(Math.abs(back.lines[0].cx-20)<0.15&&Math.abs(back.lines[0].cy-40)<0.15);
+  assert.match(P.lineSVG(b.lines[0],P.SPECS['11']),/ Q|Q\d/,'drawn as a curve');
+  assert.equal(P.hit(b,{x:20,y:45.2},true).type,'line','the curve itself is hit');
+  const sc=P.docNew('5','2-2','');sc.lines.push({kind:'run',x1:5,y1:30,x2:5,y2:20});assert.equal(P.sceneDup(sc),true);
+  assert.equal(sc.scenes.length,2);assert.equal(sc.at,1);assert.equal(sc.lines.length,1,'a copy keeps the arrows');
+  const z=P.docNew('g20','','',null,{});z.zones.push({k:'rect',x1:1,y1:1,x2:13,y2:9,c:'#ffd60a'});assert.match(P.docSVG(z,P.SPECS.g20,{}),/12×8m/,'the zone says its size');
+  const t=P.docNew('g20','','',null,{});t.cones.push({x:1,y:1});t.method='4명이 바깥, 2명이 안\n두 번 터치';t.coaching='몸 열기';
+  const ti=P.itemFor(t,'론도',1);assert.equal(ti.trainings[0].method,'4명이 바깥, 2명이 안\n두 번 터치');assert.equal(ti.trainings[0].coaching,'몸 열기');
+  const tb=P.docFrom(ti);assert.equal(tb.method,t.method);tb.coaching='';P.applyEdit(ti,tb,'론도',2);assert.equal(ti.trainings[0].coaching,'');
 });
