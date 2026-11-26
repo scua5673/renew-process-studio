@@ -5437,17 +5437,17 @@ function wksLibTrainOf(td,name){
   else return null;
   return {libId:td.fromLib,idx:idx,scenes:Array.isArray(frames)?frames.length:0};
 }
-window.wksAnimPlay=function(di,ti){
+window.wksAnimPlay=function(di,ti,pic){
   if(!psLibraryRequireUnlocked(true))return;
   var b=dayBoard(week[di]), td=(b.trainData&&b.trainData[ti])||null, nm=(b.trains&&b.trains[ti])||'';
   var r=wksLibTrainOf(td,nm);
   if(!r){ try{toast('보관함에서 이 훈련을 찾지 못했어요 — 보관함에서 지워졌을 수 있어요');}catch(_){} return; }
   closeSheet();
-  try{ parent.postMessage({source:'process',type:'openDrillEditor',readonly:true,play:true,reason:'anim',libId:r.libId,libIdx:r.idx,name:nm},'*'); }catch(_){}
+  try{ parent.postMessage({source:'process',type:'openDrillEditor',readonly:true,play:!pic,reason:pic?'pic':'anim',libId:r.libId,libIdx:r.idx,name:nm},'*'); }catch(_){}
 };
 function wksPlayBtn(di,ti,td,name,cls){
   var r=null; try{ r=wksLibTrainOf(td,name); }catch(_){}
-  if(!r||r.scenes<2)return '';
+  if(!r||r.scenes<2)return window.PSSchedBoardPlay?PSSchedBoardPlay.picBtn(di,ti,td,name,cls,r):'';   /* 3.379 그림 한 장 */
   return '<span class="'+(cls||'wks-play')+'" role="button" tabindex="0" title="애니메이션 보기 · '+r.scenes+'장면" aria-label="'+wkbdEsc(name)+' 애니메이션 보기"'
     +' onclick="event.stopPropagation();wksAnimPlay('+di+','+ti+')" onkeydown="if(event.key===&quot;Enter&quot;||event.key===&quot; &quot;){event.preventDefault();event.stopPropagation();wksAnimPlay('+di+','+ti+')}">'
     +'<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor"/></svg></span>';
@@ -5473,7 +5473,7 @@ window.wkbdTrainTap=function(di,ti){
     +'<div class="trd-btns">'
       +'<button class="btn solid" onclick="wkbdTrainMin('+di+','+ti+')">시간 저장</button>'
       +(fromLib
-         ? ((function(){ var _r=null; try{_r=wksLibTrainOf(td,nm);}catch(_){} return (_r&&_r.scenes>1)?('<button class="btn solid" onclick="wksAnimPlay('+di+','+ti+')">▶ 애니메이션 보기 · '+_r.scenes+'장면</button>'):''; })())   /* 2.946 */
+         ? ((function(){ var _r=null; try{_r=wksLibTrainOf(td,nm);}catch(_){} return (_r&&_r.scenes>1)?('<button class="btn solid" onclick="wksAnimPlay('+di+','+ti+')">▶ 애니메이션 보기 · '+_r.scenes+'장면</button>'):(window.PSSchedBoardPlay?PSSchedBoardPlay.picBtn(di,ti,td,nm,0,_r,1):''); })())   /* 2.946 */
            +'<button class="btn" id="wkTrainSrc">보관함에서 열기 →</button>'
          : '<button class="btn" onclick="boardDrawForCell('+di+','+ti+')">작전판에서 '+(td.snap?'열기·수정':'그리기')+'</button>'
            +'<button class="btn" onclick="wkbdPick('+di+',\'train\','+ti+')">이름·드릴 교체</button>')
@@ -10498,7 +10498,7 @@ html body .wks .wks-fill:not(#_):hover{border-color:var(--c-act,var(--ps-navy,#1
 @media (max-width:600px){ html body .wks .wks-fill:not(#_){height:40px} }
 </style>
 
-<link rel="stylesheet" href="team-mobile.css?v=3.378">
+<link rel="stylesheet" href="team-mobile.css?v=3.379">
 <script src="schedule-match-time.js"></script><script src="schedule-fill-team.js"></script><script src="schedule-day-kind.js"></script><script src="schedule-fill-autosave.js"></script><script src="schedule-del-undo.js"></script><script src="schedule-syncline-steady.js"></script><script src="schedule-thumb-ref.js"></script><script src="week-intensity.js"></script>
 
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">

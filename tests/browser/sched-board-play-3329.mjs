@@ -63,9 +63,10 @@ try{
   await hit(sheet.getByRole('button',{name:'완료',exact:true}).last());
   await pf.waitForFunction(()=>!document.getElementById('scrim').classList.contains('show'),null,{timeout:10000});
   // 3) 주간 카드: ▶ 는 장면 둘 이상인 페이지 줄에만
-  const plays=await pf.evaluate(di=>{const d=document.querySelectorAll('.wks-day')[di];return [...d.querySelectorAll('.wks-li')].filter(li=>/^(1단계|페이지 2|마무리)$/.test(li.getAttribute('title')||'')).map(li=>[li.getAttribute('title'),!!li.querySelector('.wks-play'),(li.querySelector('.wks-play')||{}).title||'']);},DI);
+  const plays=await pf.evaluate(di=>{const d=document.querySelectorAll('.wks-day')[di];return [...d.querySelectorAll('.wks-li')].filter(li=>/^(1단계|페이지 2|마무리)$/.test(li.getAttribute('title')||'')).map(li=>[li.getAttribute('title'),!!li.querySelector('.wks-play:not(.wks-pic)'),(li.querySelector('.wks-play')||{}).title||'',!!li.querySelector('.wks-pic')]);},DI);
   assert.deepEqual(plays.map(x=>x.slice(0,2)),[['1단계',true],['페이지 2',true],['마무리',false]],'▶ '+JSON.stringify(plays));
   assert.match(plays[1][2],/3장면/);
+  assert.deepEqual(plays.map(x=>x[3]),[false,false,true],'3.379 — 장면 하나인 페이지 줄엔 «그림 보기» '+JSON.stringify(plays));
   if(SHOTS){await pf.evaluate(di=>{const d=document.querySelectorAll('.wks-day')[di];if(d)d.scrollIntoView({block:'center'});},DI);await page.waitForTimeout(400);await page.screenshot({path:path.join(SHOTS,'sched-board-play-week-'+engine+'-'+size+'.png')});}
   step('play-buttons');
   await page.waitForTimeout(3000);out.stripBefore=await stripText();
@@ -105,6 +106,16 @@ try{
   await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='process',null,{timeout:10000});
   assert.equal(await vaultItem(),before.item,'두 번째도 원본 그대로');
   step('again');
+  // 3.379 — 장면 하나인 «마무리» 줄의 «그림 보기»: 그 페이지(셋째)로 쇼가 서고 재생은 누르지 않는다
+  if(phone)await pf.evaluate(di=>document.querySelectorAll('.wks-day')[di].querySelector('.wks-li[title="마무리"] .wks-pic').click(),DI);
+  else await hit(pf.locator('.wks-day').nth(DI).locator('.wks-li[title="마무리"] .wks-pic'));
+  await bf.waitForFunction(lid=>document.body.classList.contains('focus-board')&&window.__vvMeetLib===lid&&window.__meet.idx()===2,LIB,{timeout:20000});
+  await page.waitForTimeout(1500);
+  assert.equal(await bf.evaluate(()=>!!animPlaying),false,'그림 보기는 재생하지 않는다');
+  await bf.evaluate(()=>document.querySelector('#meetNav .mn-exit').click());
+  await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='process',null,{timeout:10000});
+  assert.equal(await vaultItem(),before.item,'그림 보기 뒤에도 원본 그대로');
+  step('pic');
   /* 3.331 — 닫고 돌아온 뒤 상태 줄이 «기기 저장 확인 중…» · «기기에 저장 중…»에 머물지 않는다(미팅 A4 미리보기 srcdoc 틀을 세지 않음 · 보관함 목록으로 떠날 때 초안 영수증 확인) */
   await page.waitForTimeout(3000);out.stripEnd=await stripText();
   out.draftEnd=await bf.evaluate(()=>{const s=window.__psBoardDraft.snapshot();return {pending:s.pending,localDurable:s.localDurable,needed:s.needed};});
