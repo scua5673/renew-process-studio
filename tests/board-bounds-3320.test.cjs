@@ -38,11 +38,14 @@ test('board.html 배선 — 모듈 로드 · 판 적기 · 끌기 · 묶음 끌�
   assert.ok(nudge>0&&push>nudge,'자르기가 pushUndo 앞');
 });
 
-test('훈련 편집기 — 선수 불러오기는 사다리 [1](3.338 — 3.320 의 [5] 에서 네 칸 아래), 다른 곳은 [2] 그대로 · 장비 놓기도 [1]',()=>{
-  assert.match(board,/_tw=Math\.round\(_tl\[document\.body\.classList\.contains\("editing"\)\?1:2\]\*100\)\/100; if\(\(state\.tokenScale\|\|_tl\[0\]\)<_tw-0\.001\)state\.tokenScale=_tw;/);
-  assert.match(board,/function _editorTokBoost\(\)\{var L=tokScaleLevels\(\),t=Math\.round\(L\[1\]\*100\)\/100;if\(\(state\.tokenScale\|\|L\[0\]\)<t-0\.001\)state\.tokenScale=t;\}/);
+test('선수 불러오기는 편집기 사다리 [3](3.381 — 3.338 [1] 에서 두 칸 위) · 작전판은 [3]×0.68(편집기 화면 배수 — 화면에서 같아 보이게) · 판 위 자리에 입힐 땐 그대로 · 편집기 장비 놓기도 같은 함수',()=>{
+  assert.match(board,/var LOAD_TOK_STEP=3,LOAD_TOK_BOARD=0\.68;\nfunction _editorTokBoost\(\)\{var L=tokScaleLevels\(\),t=Math\.round\(L\[LOAD_TOK_STEP\]\*\(document\.body\.classList\.contains\("editing"\)\?1:LOAD_TOK_BOARD\)\*100\)\/100;if\(\(state\.tokenScale\|\|L\[0\]\)<t-0\.001\)state\.tokenScale=t;\}/);
+  assert.match(board,/function _normTokS\(p\)\{[^\n]*\?0\.68:1\)/,'작전판 배수는 편집기 화면 배수(_normTokS)와 같은 값 — 하나를 바꾸면 둘 다');
+  assert.match(board,/try\{ if\(!opts\.boardToks\)_editorTokBoost\(\); \}catch\(_\)\{\}/,'개인 선수단(applySquadToBoard) — 편집기 · 작전판 같은 칸');
+  assert.doesNotMatch(board,/_tl\[document\.body\.classList\.contains\("editing"\)\?1:2\]/,'편집기 · 작전판 칸을 따로 두지 않는다');
   assert.match(board,/state\.equipment\.push\(\{id:uid\+\+,team:val,x:u\.x,y:u\.y,color:_ec,src:\(extra&&extra\.src\)\|\|null\}\);if\(document\.body\.classList\.contains\("editing"\)\)_editorTokBoost\(\);/);
+  assert.match(board,/pushUndo\(\);if\(!cur\.length\)_editorTokBoost\(\);[^\n]*\n\s*PSTeamLoad\.kit\(state,t\.kit,side,KIT_PATS\);/,'저장 팀 불러오기 — 새로 올릴 때만');
   const imp=fs.readFileSync(path.join(__dirname,'../studio/board-scout-import.js'),'utf8');
-  assert.match(imp,/win\.pushUndo\(\);cur\.forEach\(function\(p,i\)\{L\.dress\(p,list\[plan\.pick\[i\]\]\);\}\);\n\s*if\(!cur\.length&&win\.document\.body\.classList\.contains\('editing'\)&&typeof win\._editorTokBoost==='function'\)win\._editorTokBoost\(\);/,'팀 공간의 «불러오기»(board-scout-import apply)도 편집기에서 새로 올릴 때 _editorTokBoost([1])');
-  assert.match(board,/function tokScaleLevels\(\)\{[^\n]*return \[b,b\*1\.25,o,o\*1\.25,o\*1\.55,o\*1\.9,o\*2\.3\];/,'사다리 7단 — [1] 은 b×1.25');
+  assert.match(imp,/win\.pushUndo\(\);cur\.forEach\(function\(p,i\)\{L\.dress\(p,list\[plan\.pick\[i\]\]\);\}\);\n\s*if\(!cur\.length&&typeof win\._editorTokBoost==='function'\)win\._editorTokBoost\(\);/,'팀 명단 창(board-scout-import apply)도 편집기 · 작전판에서 새로 올릴 때 같은 칸');
+  assert.match(board,/function tokScaleLevels\(\)\{[^\n]*return \[b,b\*1\.25,o,o\*1\.25,o\*1\.55,o\*1\.9,o\*2\.3\];/,'사다리 7단 — [3] 은 예전 기본 ×1.25');
 });

@@ -4216,10 +4216,10 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.379"></script>
+<script src="board-teams.js"></script><script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js?v=3.381"></script>
 <script src="board-broadcast.js"></script><script src="board-draft.js"></script><script src="board-vault-draft.js"></script><script src="board-bounds.js"></script><script src="board-rescue.js"></script><script src="board-mow.js"></script><script src="board-stadium-ground.js"></script><script src="board-flat-turf.js"></script><script src="board-train-grid.js"></script><script src="board-multipitch.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-tv-fold.js"></script><script src="board-player-panel-drag.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-sched-show.js"></script><script src="board-anim-pause.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.379"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script><script src="board-phone-board.js"></script>
+<script src="lib-diet.js"></script><script src="board-motion-marks.js"></script><script src="board-pitch-look.js"></script><script src="board-sched-show.js"></script><script src="board-anim-pause.js"></script><script src="board-page-history.js"></script><script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-open-chooser.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-pdf-save.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-export-name.js"></script><script src="board-meet-cover.js"></script><link rel="stylesheet" href="board-meet-cover.css"><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-reserve.js"></script><script src="board-meet-slide.js"></script><link rel="stylesheet" href="board-meet-reserve.css"><script src="board-meet-form.js?v=3.167"></script><script src="board-shape-menu.js?v=3.381"></script><script src="board-popups.js?v=3.161"></script><script src="board-text-polish.js"></script><link rel="stylesheet" href="board-training-edit.css"><script src="board-training-edit.js"></script><link rel="stylesheet" href="board-selection-menu.css"><script src="board-selection-menu.js"></script><script src="board-quick-depth.js"></script><script src="board-phone-board.js"></script><script src="board-print-pick.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -7605,8 +7605,14 @@ function _addEquipImage(file){if(!file)return;const rd=new FileReader();
       renderBench();if(typeof toast==="function")toast("내 장비에 저장됨");};
     img.onerror=function(){if(typeof toast==="function")toast("이미지를 읽지 못했습니다");};img.src=rd.result;};
   rd.onerror=function(){if(typeof toast==="function")toast("파일을 읽지 못했습니다");};rd.readAsDataURL(file);}
-/* 3.320 — 훈련 편집기에서 장비를 놓을 때도 선수 불러오기와 같은 크기로(사용자 «장비도 마찬가지»). 이미 크면 그대로 · 이 판에만 · 3.338 [5] → [1](사용자 «4단계 줄여서») */
-function _editorTokBoost(){var L=tokScaleLevels(),t=Math.round(L[1]*100)/100;if((state.tokenScale||L[0])<t-0.001)state.tokenScale=t;}
+/* 3.320 — 훈련 편집기에서 장비를 놓을 때도 선수 불러오기와 같은 크기로(사용자 «장비도 마찬가지»). 이미 크면 그대로 · 이 판에만 · 3.338 [5] → [1](사용자 «4단계 줄여서») → 3.381 [3] */
+/* 3.381 — 선수 불러오기 크기는 훈련 만들기와 작전판이 같은 칸 [3](사용자 «선수불러오기 했을 때 토큰 크기 2단계만 키워줘» — [1] 에서 두 칸 위 ·
+   «보드에서 선수 배치 했을때도 훈련만들기와 같은 크기로»). 작전판의 세 불러오기(개인 선수단 applySquadToBoard · 팀 명단 창 PSBoardScoutImport.apply ·
+   저장 팀 불러오기)와 편집기 장비 놓기가 이 함수 하나를 쓴다. 이미 크면 그대로 · 이 판에만 · 판 위 자리에 입힐 땐 부르지 않는다(2.975)
+   작전판(편집기 밖)은 [3] × LOAD_TOK_BOARD — 편집기는 화면에서 토큰을 0.68 배로 그리므로(_normTokS · 2.705) 같은 칸이면 작전판이 운동장 대비
+   1.47 배 커 보였다(사용자 11/26 «화면에서 같아 보이게»). 두 0.68 은 같은 값이어야 한다(시험이 지킨다). */
+var LOAD_TOK_STEP=3,LOAD_TOK_BOARD=0.68;
+function _editorTokBoost(){var L=tokScaleLevels(),t=Math.round(L[LOAD_TOK_STEP]*(document.body.classList.contains("editing")?1:LOAD_TOK_BOARD)*100)/100;if((state.tokenScale||L[0])<t-0.001)state.tokenScale=t;}
 function dropToken(cat,val,u,color,extra){
   pushUndo();
   if(cat==="equip"){const _ec=color||((typeof equipColor!=="undefined"&&equipColor&&EQUIP_COL_DEF[val])?equipColor:null);state.equipment.push({id:uid++,team:val,x:u.x,y:u.y,color:_ec,src:(extra&&extra.src)||null});if(document.body.classList.contains("editing"))_editorTokBoost();}
@@ -11953,7 +11959,7 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   /* 2.582 — 선수단을 올릴 때 토큰 기본 크기는 **두 단계 크게**(사용자 "선수단 올리기 해서 토큰 위로 올라갈 때 기본 토큰 크기 지금보다 2단계 크게").
      단계는 «크기 −/＋» 와 같은 사다리(tokScaleLevels: 기본 → ×1.25 → ×1.55 → …)의 [2]. 이미 그보다 크게 해 뒀으면 그대로.
      개인 설정(cs_tokscale_v4)은 안 건드린다 — 이 판(드릴 스냅의 tokenScale)에만 실린다. */
-  try{ if(!opts.boardToks){ var _tl=tokScaleLevels(), _tw=Math.round(_tl[document.body.classList.contains("editing")?1:2]*100)/100; if((state.tokenScale||_tl[0])<_tw-0.001)state.tokenScale=_tw; } }catch(_){}   /* 2.975 — 판 위 자리에 입힐 땐 코치가 맞춘 크기 그대로 · 3.320 — 훈련 편집기(body.editing)에서는 세 칸 더([5]) → 3.338 네 칸 아래 [1](사용자 «4단계 줄여서») */
+  try{ if(!opts.boardToks)_editorTokBoost(); }catch(_){}   /* 2.975 — 판 위 자리에 입힐 땐 코치가 맞춘 크기 그대로 · 3.320 편집기 [5] → 3.338 [1] → 3.381 편집기 [3] · 작전판 [3]×0.68(화면에서 같아 보이게) */
   /* 맨 오른쪽 대기 정렬 — 위에서부터 GK → 수비 → 미드필더 → 공격수 한 줄씩.
      포메이션 자리가 아니라 "끌어다 쓰는 출발 대형"이라 코치가 원하는 곳으로 바로 배치한다. */
   const GRP={GK:["GK"],DF:["CB","LCB","RCB","LB","RB","LWB","RWB","FB"],MF:["DM","LDM","RDM","CM","LCM","RCM","AM","LM","RM"],FW:["CF","ST","LW","RW","W"]};   /* 2.752 — 세부 포지션 포함 */
@@ -12091,7 +12097,8 @@ async function openAnalysisTeamLibrary(){
     if(this.disabled)return;this.disabled=true;var ims=window.PSTeamPhotos?await PSTeamPhotos.forLoad(window,t.id):{},ph=function(q){return q&&ims[q.id]||'';};if(!mask.isConnected)return;   /* 4116fc54 — 이 기기에만 있는 선수 사진 */
     /* 제보 5400cd9e — 그 쪽 선수가 판에 있으면 위치·id 그대로, 포지션이 맞는 토큰에 이름·번호만(PSTeamLoad). 없을 때만 보드 포메이션(없으면 4-3-3) 자리에 새로 */
     var cur=state.players.filter(function(p){return p.team===side&&!p.coach;}),x34=PSTeams.no(side)>2,fe=document.getElementById(side==='red'?'formAway':'formHome'),flip=cur.length?_sqTokFlip(cur):isRightTeam(side),pl=PSTeamLoad.plan(cur.length?_sqTokSlots(cur,flip):x34?[]:(FORM[fe&&fe.value]||FORM['433']),list,{keep:cur.length>0,from:PSTeams.benchFrom(side),code:posCode,base:posBase,group:posGroup}),fresh=[];   /* 3.288 · 3.294 — 팀 3~10(제보 29c97fc5): 판에 그 팀이 없으면 포메이션 대신 대기 줄(팀 둘마다 한 줄 위 — 다른 팀의 포메이션 · 대기 줄을 덮지 않는다) */
-    pushUndo();PSTeamLoad.kit(state,t.kit,side,KIT_PATS);cur.forEach(function(p,i){var q=list[pl.pick[i]];PSTeamLoad.dress(p,q,ph(q));});pl.add.forEach(function(a){var at=n2u(flip?1-a.x:a.x,flip?1-a.y:a.y),p=PSTeamLoad.dress({id:uid++,team:side,num:a.p.no||'',pos:a.p.pos||'',x:at.x,y:at.y},a.p,ph(a.p));state.players.push(p);fresh.push(p);});PSTeamLoad.frames(anim.frames,animActive,cur,fresh);
+    pushUndo();if(!cur.length)_editorTokBoost();   /* 3.381 — 새로 올리는 선수는 불러오기 크기(LOAD_TOK_STEP) · 판 위 자리에 입힐 땐 그대로 */
+    PSTeamLoad.kit(state,t.kit,side,KIT_PATS);cur.forEach(function(p,i){var q=list[pl.pick[i]];PSTeamLoad.dress(p,q,ph(q));});pl.add.forEach(function(a){var at=n2u(flip?1-a.x:a.x,flip?1-a.y:a.y),p=PSTeamLoad.dress({id:uid++,team:side,num:a.p.no||'',pos:a.p.pos||'',x:at.x,y:at.y},a.p,ph(a.p));state.players.push(p);fresh.push(p);});PSTeamLoad.frames(anim.frames,animActive,cur,fresh);
     sel=null;multiSel=[];renderTokens();renderDrawings();autoSaveAnimFrame();try{if(window.boardSaveLive)window.boardSaveLive();}catch(_){}mask.remove();toast(t.name+' · '+list.length+'명 불러옴'+(cur.length?' · 판의 자리 그대로':'')+(pl.bench?(' · 대기 '+pl.bench+'명'):''));
   };
 }
@@ -12209,7 +12216,8 @@ window.addEventListener("resize",_ppbFitMeeting);
 function _ppbScnUI(){const a=$("ppbScnAll"),b=$("ppbScnFirst");
   if(a)a.classList.toggle("on",!!_ppbOpts.allScenes);if(b)b.classList.toggle("on",!_ppbOpts.allScenes);}
 function _ppbPerUI(){var w=$("ppbPerWrap");if(!w||!_ppbOpts)return;[].forEach.call(w.querySelectorAll("button[data-pp]"),function(b){var on=+b.dataset.pp===(+_ppbOpts.perPage||4);b.classList.toggle("on",on);b.setAttribute("aria-pressed",on?"true":"false");});}
-function closePrintPrevB(){const ov=$("printPrevB");if(ov)ov.classList.remove("on");const f=$("ppbFrame");if(f)f.srcdoc="";_ppbRebuild=null;}
+let _ppbPickList=null;   /* 3.381 — «넣을 훈련» 목록(board-print-pick.js) · _ppbOpts.pick = 남길 칸(null = 전부) */
+function closePrintPrevB(){const ov=$("printPrevB");if(ov)ov.classList.remove("on");const f=$("ppbFrame");if(f)f.srcdoc="";_ppbRebuild=null;_ppbPickList=null;}
 /* ── PDF 바로 저장: 미리보기 페이지들을 래스터(JPEG)로 떠서 라이브러리 없이 PDF 조립 ──
    HTML→이미지는 양식 배경과 같은 foreignObject 경로. 외부 리소스가 없어 캔버스 오염 없음(크롬·엣지).
    실패하는 브라우저(iOS 사파리 등)는 [인쇄]→PDF 저장 안내로 폴백. */
@@ -12348,6 +12356,7 @@ function printStandaloneB(html,rebuild,hasScenes,title,settings){   // 독립 �
       +'<button type="button" class="btn primary" id="ppbSave">PDF 내려받기</button>'
       +'<button type="button" class="btn ghost" id="ppbPrint">인쇄</button>'
       +'<button type="button" class="btn ghost" id="ppbClose">닫기</button></div>'
+      +'<div class="ppb-pick" id="ppbPick" role="group" aria-label="넣을 훈련" hidden></div>'
       +'<div class="ppb-body"><iframe id="ppbFrame" title="인쇄 미리보기"></iframe></div>';
     document.body.appendChild(ov);
     $("ppbFrame").addEventListener("load",_ppbFitMeeting);
@@ -12361,8 +12370,10 @@ function printStandaloneB(html,rebuild,hasScenes,title,settings){   // 독립 �
     $("ppbSave").addEventListener("click",()=>{_ppbSavePdf();});
     $("ppbNote").addEventListener("click",()=>{_ppbSendToNote();});
     $("ppbClose").addEventListener("click",closePrintPrevB);
+    if(window.PSPrintPick)PSPrintPick.mount($("ppbPick"),function(){return {list:_ppbPickList,opts:_ppbOpts,refresh:_ppbRefresh};});
   }
   $("ppbInk").checked=false;_ppbScnUI();
+  _ppbOpts.pick=null;_ppbPickList=(settings&&Array.isArray(settings.pick)&&settings.pick.length>1)?settings.pick:null;if(window.PSPrintPick)PSPrintPick.paint($("ppbPick"),_ppbPickList,_ppbOpts);
   $("ppbOrientationWrap").style.display=settings&&settings.orientation?"":"none";$("ppbOrientation").value=_ppbOpts.orientation;
   $("ppbScnWrap").style.display=hasScenes?"":"none";
   $("ppbPerWrap").style.display=(settings&&settings.perPage)?"":"none";_ppbPerUI();
@@ -12573,14 +12584,20 @@ function vaultPrintSpec(d,fname,opts){
      단일 훈련의 메모가 PDF에서 빠졌으므로 언제나 같은 정본을 사용한다. */
   var trs=(Array.isArray(d.trainings)&&d.trainings.length)?d.trainings:((Array.isArray(d.drills)&&d.drills.length)?d.drills:[d]);
   if(trs.length>1){
-    var sess={title:fname,date:d.date||"",time:d.time||"",md:d.md||"",players:d.players||"",pGk:d.pGk,pField:d.pField,pRehab:d.pRehab,pOut:d.pOut,drills:trs};
-    return {html:buildFieldSheetDoc(sess,opts),hasScenes:trs.some(function(t){return !!(t&&t.scenes&&t.scenes.length);}),land:true};
+    /* 3.381 — 고른 훈련만(사용자 «원하는 페이지만 골라서 인쇄» · 목업 A안). opts.pick = 남길 칸 번호(없으면 전부).
+       번호는 파일 순서 그대로(nums — 편집기 탭과 같은 번호), 머리글의 분 · 개수는 고른 것만. 하나만 남아도 현장 시트(가로) 그대로 */
+    var keep=_vaultPickIdx(opts.pick,trs.length);
+    var sess={title:fname,date:d.date||"",time:d.time||"",md:d.md||"",players:d.players||"",pGk:d.pGk,pField:d.pField,pRehab:d.pRehab,pOut:d.pOut,drills:keep.map(function(i){return trs[i];}),nums:keep.length<trs.length?keep.map(function(i){return i+1;}):null};
+    return {html:buildFieldSheetDoc(sess,opts),hasScenes:trs.some(function(t){return !!(t&&t.scenes&&t.scenes.length);}),land:true,
+      pick:trs.map(function(t,i){return {name:String((t&&t.name)||("훈련 "+(i+1))),min:(+(t&&t.minutes)||0)*Math.max(1,+(t&&t.sets)||1)};})};
   }
   var one=trs[0]||d;return {html:printDocHTML(fname,opts,buildDrillPage(one,opts),DRILL_PDF_CSS),hasScenes:!!(one.scenes&&one.scenes.length),land:false};
 }
+function _vaultPickIdx(pick,n){var all=[];for(var i=0;i<n;i++)all.push(i);if(!Array.isArray(pick))return all;
+  var k=all.filter(function(i){return pick.indexOf(i)>=0;});return k.length?k:all;}   /* 3.381 — 잘못된 · 빈 고르기는 전부 */
 function printDrill(d,fname){
   fname=(fname||d.name||"훈련");var spec=vaultPrintSpec(d,fname,{ink:false,allScenes:true});
-  printStandaloneB(spec.html,function(o){return vaultPrintSpec(d,fname,o).html;},spec.hasScenes,fname+" — PDF",{orientation:spec.orientation,initialOrientation:spec.initialOrientation,perPage:!!spec.land});
+  printStandaloneB(spec.html,function(o){return vaultPrintSpec(d,fname,o).html;},spec.hasScenes,fname+" — PDF",{orientation:spec.orientation,initialOrientation:spec.initialOrientation,perPage:!!spec.land,pick:spec.pick||null});
 }
 async function vaultPdfPayload(d,fname){
   var nm=fname||d.name||"훈련",spec=vaultPrintSpec(d,nm,{ink:false,allScenes:true});
@@ -12739,6 +12756,8 @@ function fsxHeadcount(d){try{
 }catch(_){return "";}}
 function buildFieldSheetDoc(sess,opts){opts=opts||{}; sess=sess||session;
   const _ink=s=>opts.ink?inkifySVG(s||""):(s||"");
+  /* 3.381 — 고른 훈련만 찍을 땐(sess.nums) 번호가 파일 순서 그대로. 빈 칸은 번호 없이(빠진 훈련 번호와 겹치지 않게) */
+  const noOf=i=>(sess.nums&&sess.nums[i])||(i+1),bNo=i=>sess.nums?"":String(i+1),bNm=i=>sess.nums?"":("훈련 "+(i+1));
   const drills=sess.drills||[];
   const total=drills.reduce((s,d)=>s+drillTotalMin(d),0);
   const load=drills.reduce((s,d)=>s+drillTotalMin(d)*(+d.rpe||0),0);
@@ -12756,7 +12775,7 @@ function buildFieldSheetDoc(sess,opts){opts=opts||{}; sess=sess||session;
       :'<div class="fsx-dia">'+_ink((printThumb({snap:d.snap,thumb:d.thumb})||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>';
     const minTxt=(+d.minutes||0)+"분"+((+d.sets>1)?("×"+(+d.sets)):"");
     return `<div class="fsx-card">
-      <div class="fsx-ct"><div class="fsx-no">${i+1}</div><span class="fsx-dot" style="background:${f.c}"></span><div class="fsx-nm">${esc(d.name||("훈련 "+(i+1)))}</div><span class="fsx-tag">${f.label}</span><div class="fsx-min">${minTxt}</div>${fsxHeadcount(d)}<!-- 1.731 — 희미한 누적 경과(+N′) 제거(사용자 요청) --></div>
+      <div class="fsx-ct"><div class="fsx-no">${noOf(i)}</div><span class="fsx-dot" style="background:${f.c}"></span><div class="fsx-nm">${esc(d.name||("훈련 "+noOf(i)))}</div><span class="fsx-tag">${f.label}</span><div class="fsx-min">${minTxt}</div>${fsxHeadcount(d)}<!-- 1.731 — 희미한 누적 경과(+N′) 제거(사용자 요청) --></div>
       ${dia}
       ${(l1||co)?('<div class="fsx-memo">'
         +(l1?('<div class="fsx-ml"><b>방법</b><span>'+esc(l1.replace(/\s*\n+\s*/g," · "))+'</span></div>'):'')
@@ -12764,7 +12783,7 @@ function buildFieldSheetDoc(sess,opts){opts=opts||{}; sess=sess||session;
         +'</div>'):''}
     </div>`;};   /* 2.714 — 운동장은 전폭(2.713 오른쪽 글 칸 되돌림), 밑에 방법·코칭 두 줄(각 2줄까지). 둘 다 없으면 줄 자체가 없다 */
   const blank=(i)=>`<div class="fsx-card empty">
-    <div class="fsx-ct"><div class="fsx-no">${i+1}</div><div class="fsx-nm">훈련 ${i+1}</div><div class="fsx-min">비어 있음</div></div>
+    <div class="fsx-ct"><div class="fsx-no">${bNo(i)}</div><div class="fsx-nm">${bNm(i)}</div><div class="fsx-min">비어 있음</div></div>
     <div class="fsx-dia">${BLANK_PITCH}</div>
     <div class="fsx-memo"><div class="fsx-ml rule"></div><div class="fsx-ml rule"></div></div></div>`;
   const dt=[sess.date,sess.time].filter(Boolean).join(" ");
@@ -12798,7 +12817,7 @@ function buildFieldSheetDoc(sess,opts){opts=opts||{}; sess=sess||session;
       +((per===1)?'<div class="fsx-sec"><h5>메모</h5></div><div class="fsx-rule"></div><div class="fsx-rule"></div><div class="fsx-rule"></div>':'')
       +'</div>';};
   const diaOf=(d,big)=>'<div class="fsx-dia">'+_ink((printThumb({snap:d.snap,thumb:d.thumb})||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>';
-  const headOf=(d,i)=>{const f=focusOf(d.focus),minTxt=(+d.minutes||0)+"분"+((+d.sets>1)?("×"+(+d.sets)):"");return '<div class="fsx-ct"><div class="fsx-no">'+(i+1)+'</div><span class="fsx-dot" style="background:'+f.c+'"></span><div class="fsx-nm">'+esc(d.name||("훈련 "+(i+1)))+'</div><span class="fsx-tag">'+f.label+'</span><div class="fsx-min">'+minTxt+'</div>'+fsxHeadcount(d)+'</div>';};
+  const headOf=(d,i)=>{const f=focusOf(d.focus),minTxt=(+d.minutes||0)+"분"+((+d.sets>1)?("×"+(+d.sets)):"");return '<div class="fsx-ct"><div class="fsx-no">'+noOf(i)+'</div><span class="fsx-dot" style="background:'+f.c+'"></span><div class="fsx-nm">'+esc(d.name||("훈련 "+noOf(i)))+'</div><span class="fsx-tag">'+f.label+'</span><div class="fsx-min">'+minTxt+'</div>'+fsxHeadcount(d)+'</div>';};
   const cardFull=(d,i)=>{
     if(per===1){
       const sc=(opts.allScenes!==false&&d.scenes&&d.scenes.length)?drillScenesAll(d).slice(0,4):null;
@@ -12806,7 +12825,7 @@ function buildFieldSheetDoc(sess,opts){opts=opts||{}; sess=sess||session;
       return '<div class="fsx-card one"><div class="fsx-one-l">'+headOf(d,i)+diaOf(d,true)+strip+'</div><div class="fsx-one-r">'+txtFull(d)+'</div></div>';
     }
     return '<div class="fsx-card full">'+headOf(d,i)+diaOf(d)+txtFull(d)+'</div>';};
-  const blankFull=i=>'<div class="fsx-card empty full"><div class="fsx-ct"><div class="fsx-no">'+(i+1)+'</div><div class="fsx-nm">훈련 '+(i+1)+'</div><div class="fsx-min">비어 있음</div></div><div class="fsx-dia">'+BLANK_PITCH+'</div><div class="fsx-txt"><div class="fsx-rule"></div><div class="fsx-rule"></div><div class="fsx-rule"></div><div class="fsx-rule"></div></div></div>';
+  const blankFull=i=>'<div class="fsx-card empty full"><div class="fsx-ct"><div class="fsx-no">'+bNo(i)+'</div><div class="fsx-nm">'+bNm(i)+'</div><div class="fsx-min">비어 있음</div></div><div class="fsx-dia">'+BLANK_PITCH+'</div><div class="fsx-txt"><div class="fsx-rule"></div><div class="fsx-rule"></div><div class="fsx-rule"></div><div class="fsx-rule"></div></div></div>';
   /* 글이 칸을 넘으면 글자를 반 단계씩 줄인다(최소 7.5px). 그래도 넘치면 끝을 흐리게 — 잘린 걸 숨기지 않는다 */
   const FIT='<script>(function(){function fit(){document.querySelectorAll(".fsx-txt").forEach(function(t){var fs=parseFloat(getComputedStyle(t).fontSize)||10,n=0;t.classList.remove("fit-cut");while(t.scrollHeight>t.clientHeight+1&&fs>7.5&&n<12){fs-=0.5;n++;t.style.fontSize=fs+"px";}if(t.scrollHeight>t.clientHeight+1)t.classList.add("fit-cut");});}if(document.readyState==="complete")fit();else window.addEventListener("load",fit);})();<\/script>';
   let pages="";
