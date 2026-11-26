@@ -24,7 +24,7 @@ try{
   else await hit(f.locator('.wks-day').nth(DI).locator('.wks-kbtn'));
   const sheet=f.locator('#sheet');await sheet.locator('#wfSec-kind').waitFor();
   const names=await sheet.locator('#wfSec-kind .fmtpick button').allInnerTexts();
-  assert.deepEqual(names.map(s=>s.trim()),['리그','컵','대회','친선','훈련','OFF'],'종류 단추 '+JSON.stringify(names));
+  assert.deepEqual(names.map(s=>s.trim()),['리그','컵','대회','친선','훈련','OFF','휴가'],'종류 단추 '+JSON.stringify(names));
   await page.waitForTimeout(700);
   const kindRow=await f.evaluate(()=>{const bs=[...document.querySelectorAll('#wfSec-kind .fmtpick button')].map(b=>b.getBoundingClientRect());return {rows:new Set(bs.map(r=>Math.round(r.top))).size,right:Math.max(...bs.map(r=>r.right)),vw:innerWidth};});
   assert.ok(kindRow.right<=kindRow.vw,'종류 단추가 화면 안 '+JSON.stringify(kindRow));

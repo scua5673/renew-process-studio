@@ -3,7 +3,7 @@
    실제 소스에서 함수를 잘라 실행한다(다른 회귀 테스트와 같은 방식). 원본 날짜가 바뀌지 않는 것도 함께 본다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=f=>fs.readFileSync(path.join(__dirname,'../studio',f),'utf8');
-function audienceContext(seed){const c=vm.createContext(seed);c.PSTeamAudience=require('../studio/team-audience.js');vm.runInContext(read('schedule-audience.js'),c);return c;}
+function audienceContext(seed){const c=vm.createContext(seed);c.PSTeamAudience=require('../studio/team-audience.js');c.PSVac=require('../studio/schedule-vacation.js');   /* 3.380 — 요약이 휴가 수를 같이 센다 */vm.runInContext(read('schedule-audience.js'),c);return c;}
 function part(s,a,b){const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j);}
 const P=read('process.html'),S=read('storage.js');
 const plain=x=>JSON.parse(JSON.stringify(x));
