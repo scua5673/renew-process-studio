@@ -70,6 +70,6 @@ test('새 부상은 모든 입구에서 부상 기록 시트를 연다, 선수�
   assert.match(scout,/if\(to==="injury"&&!ST_SPAN\[prev\]\)setTimeout\(function\(\)\{ try\{ stInjurySheet\(pl\); \}/);
   assert.match(scout,/if\(k==="injury"&&!ST_SPAN\[_pv\]\)try\{stInjurySheet\(pl\);\}/);
   assert.match(scout,/if\(isToday&&selected==='injury'&&!wasSpan\)setTimeout\(function\(\)\{try\{var fresh=/);
-  assert.match(scout,/concat\(availMode==='players'\?\[\['season','시즌'\]\]:\[\]\)/);
+  assert.match(scout,/concat\(availMode!=='days'\?\[\['season','시즌'\]\]:\[\]\)/);
   assert.match(scout,/<th scope="col">휴식<\/th><th scope="col">불참<\/th><th scope="col">재활<\/th><th scope="col">부상<\/th><th scope="col">참여율<\/th>/);
 });

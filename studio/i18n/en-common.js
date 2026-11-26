@@ -547,3 +547,54 @@ for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'
 "원칙 {}개 더 · 자세히 보기": "{} more principles · see details",
 "{} / {}칸 · 원칙은 칸마다 세 개까지": "{} / {} boxes · up to three principles per box"
 },{});
+/* 3.378 — 가용인원 › 부상 리포트(injury-report.js) */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+})(window,{
+"훈련 중": "In training",
+"팀 밖": "Outside the team",
+"부위 미정": "Body part not set",
+"부상 리포트": "Injury report",
+"다친 날": "Injured on",
+"복귀 예상": "Expected return",
+"일수": "Days",
+"빠진 훈련 · 경기": "Missed training · matches",
+"부상 기간은 다친 날부터 복귀한 날까지의 달력일입니다. 메모는 코치가 적은 기록입니다.": "Injury length is counted in calendar days from the injury to the return. Notes are written by the coach.",
+"7일 안 복귀 예상": "Expected back within 7 days",
+"이 기간 복귀": "Returned in this period",
+"지금 부상 · 재활": "Injured · in rehab now",
+"부상 · 재활 선수 0명입니다.": "0 players injured or in rehab.",
+"모름": "Unknown",
+"이 기간에 복귀한 선수 0명입니다.": "0 players returned in this period.",
+"부위별": "By body part",
+"복귀한 날": "Returned on",
+"부상 기록 0건입니다.": "0 injury records.",
+"복귀": "Returned",
+"코치 메모": "Coach note",
+"날짜별 메모": "Notes by date",
+"이미지로 저장": "Save as image",
+"부위 적기": "Set body part",
+"부상 기간은 다친 날부터 복귀한 날까지의 달력일입니다. 메모는 코치가 적은 기록입니다. 이미지는 A4 세로 한 장으로 저장됩니다.": "Injury length is counted in calendar days from the injury to the return. Notes are written by the coach. Images are saved as one A4 portrait page.",
+"‹ 팀 리포트": "‹ Team report",
+"코치가 적은 기록입니다. 이미지는 A4 세로로 저장됩니다.": "Written by the coach. Images are saved as A4 portrait.",
+"리포트를 만들지 못했습니다. 새로고침 뒤 다시 눌러 주세요": "Could not build the report. Reload and try again",
+"이미지를 저장하지 못했습니다": "Could not save the image"
+},{
+"{}. {}. {}. {}요일": "{}. {}. {}. ({})",
+"진행 중 {}": "{} ongoing",
+"평균 복귀 {}일": "avg. return {} days",
+"{}일째": "day {}",
+"재활 {}일째": "Rehab day {}",
+"재활 {}일": "Rehab {} days",
+"부상 {}일째": "Injured day {}",
+"부상 {}일": "Injured {} days",
+"{} 부상 리포트": "{} injury report",
+"{} 기준 · {} – {}": "As of {} · {} – {}",
+"코치가 적은 기록입니다. {}{}": "Written by the coach. {}{}",
+"{} 기준": "As of {}",
+"오늘 {} · 복귀 예상 {}": "Today {} · expected return {}",
+"오늘 {}": "Today {}",
+"{}명 · 이름을 누르면 그 선수의 리포트가 열립니다": "{} players · tap a name to open that player's report",
+"A4 이미지 {}장을 저장했습니다": "Saved {} A4 image(s)"
+},{});
