@@ -73,7 +73,8 @@ test('boards touched on a bigger screen are view-only on the phone',()=>{
     text:d=>d.snap.drawings.push({type:'text',pts:[{x:1,y:1}],text:'x'}),
     free:d=>d.snap.drawings.push({type:'free',pts:[{x:1,y:1},{x:2,y:2},{x:3,y:3}]}),
     anchored:d=>d.snap.drawings.push({type:'run',pts:[{x:1,y:1},{x:2,y:2}],tk:[1,null]}),
-    goal:d=>d.snap.equipment.push({id:9,team:'minigoal',x:1,y:1}),
+    goal:d=>d.snap.equipment.push({id:9,team:'tire',x:1,y:1}),   /* 3.381 — 장비 열 가지(미니골 포함)는 폰에서도 고친다 · 그 밖의 장비는 보기만 */
+    fill:d=>d.snap.drawings.push({type:'rectline',pts:[{x:1,y:1},{x:20,y:20}]}),
     coach:d=>d.snap.players.push({id:99,team:'blue',coach:true,x:1,y:1}),
     third:d=>{d.snap.players[0].team='yellow';},
     pitch:d=>{d.snap.pitchSpec='u12';},
@@ -304,4 +305,45 @@ test('3.379 kits: chosen on a new board, drawn on chips, saved as the big board 
   assert.deepEqual(P.docFrom(it).kit,{us:'#f4f5f7',op:'#f2c230'},'reopening keeps the kits');
   const prev={...P.snapFor(P.docNew('11','4-3-3',''),null),teamColors:{blue:'#000000',yellow:'#123456'}};
   assert.deepEqual(P.snapFor({...P.docNew('11','4-3-3',''),kit:{op:'#7a3fb0'}},prev).teamColors,{blue:'#000000',yellow:'#123456',red:'#7a3fb0'},'an edit keeps the other team colours of the old board');
+});
+
+test('3.381 training: grid paper, ten kinds of equipment and zones — saved as a vault training the big board reads',()=>{
+  assert.deepEqual(['g20','g30','g45'].map(n=>[P.SPECS[n].spec,P.SPECS[n].h]),[['grid20',20],['grid30',30],['grid45',45]]);
+  const sp=P.SPECS.g30;assert.deepEqual(P.world('g30',sp.w/2,sp.h/2),{x:555,y:370});
+  const top=P.world('g30',0,0),bot=P.world('g30',sp.w,sp.h);assert.deepEqual([top.x,top.y,bot.x,bot.y],[1080,30,30,710],'the paper fills the big board grid board');
+  for(const n of ['g20','g45','11','8']){const s=P.SPECS[n],q=P.local(n,P.world(n,3,7).x,P.world(n,3,7).y);assert.ok(Math.abs(q.x-3)<0.15&&Math.abs(q.y-7)<0.15,n);}
+  const doc=P.docNew('g30','','',null,{min:20});
+  assert.deepEqual([doc.kind,doc.n,doc.min,doc.players.length],['train','g30',20,0],'a training starts empty');
+  doc.cones.push({x:3,y:4},{x:10,y:15,t:'minigoal'},{x:5,y:5,t:'pole'});
+  doc.zones.push({k:'rect',x1:2,y1:2,x2:12,y2:10,c:'#2f6df0'},{k:'ellipse',x1:4,y1:14,x2:14,y2:24,c:'#ffd60a'});
+  doc.players.push({id:1,team:'us',num:'7',name:'',x:9,y:9});
+  P.sceneAdd(doc);P.sceneAdd(doc);
+  const it=P.itemFor(doc,'론도 4v2',5);
+  assert.equal(it.type,'train');assert.deepEqual(it.phone,{v:1,n:'g30',kind:'train'});assert.equal(it.minutes,20);
+  assert.equal(it.snap.pitchSpec,'grid30');assert.equal(it.snap.pitchTheme,'white','paper is the white board theme');
+  assert.deepEqual(it.snap.equipment.map(e=>e.team),['cone','minigoal','pole']);
+  assert.deepEqual(it.snap.drawings.map(d=>[d.type,d.color]),[['rect','#2f6df0'],['ellipse','#ffd60a']]);
+  assert.equal(it.frames.length,3);assert.ok(it.frames.every(f=>f.snap.drawings.length===2),'zones stand in every scene');
+  assert.equal(it.trainings.length,1);const t=it.trainings[0];
+  assert.deepEqual([t.type,t.name,t.minutes,t.sets,t.focus],['train','론도 4v2',20,1,'bp']);assert.deepEqual(t.snap,it.snap);assert.equal(t.frames.length,3);
+  assert.equal(P.editable(it),true,'a phone training opens again on the phone');
+  assert.deepEqual(P.mine([it]).map(d=>d.name),['론도 4v2']);
+  const back=P.docFrom(it);
+  assert.deepEqual([back.kind,back.n,back.min],['train','g30',20]);
+  assert.deepEqual(back.cones.map(c=>c.t||'cone'),['cone','minigoal','pole']);
+  assert.deepEqual(back.zones.map(z=>[z.k,z.c,z.x1,z.y2]),[['rect','#2f6df0',2,10],['ellipse','#ffd60a',4,24]]);
+  assert.equal(back.scenes.length,3);
+  back.zones.pop();P.applyEdit(it,back,'론도',9);
+  assert.equal(it.trainings[0].snap.drawings.length,1);assert.equal(it.snap.drawings.length,1);assert.equal(it.editedAt,9);
+  const many=JSON.parse(JSON.stringify(it));many.trainings.push(many.trainings[0]);assert.equal(P.editable(many),false,'two trainings on one card are view-only');
+  const sc=JSON.parse(JSON.stringify(it));sc.scenes=[{snap:sc.snap}];assert.equal(P.editable(sc),false,'editor scenes from the big screen are view-only');
+});
+
+test('3.381 drawing: paper grid, dark arrows and the board equipment art',()=>{
+  const sp=Object.assign({},P.SPECS.g20);
+  const bg=P.pitchSVG(sp);assert.match(bg,/#f6f7f4/);assert.ok((bg.match(/<line /g)||[]).length>30,'a grid of lines');assert.doesNotMatch(bg,/phb-goal/,'no goals on paper');
+  const doc=P.docNew('g20','','',null,{});doc.cones.push({x:3,y:3,t:'hurdle'});doc.zones.push({k:'rect',x1:1,y1:1,x2:5,y2:5,c:'#e23b3b'});doc.lines.push({kind:'pass',x1:2,y1:2,x2:8,y2:8});
+  const fg=P.docSVG(doc,sp,{equip:t=>'<g data-art="'+t+'"/>'});
+  assert.match(fg,/data-art="hurdle"/);assert.match(fg,/class="phb-zone"/);assert.match(fg,/stroke="#14213D"/,'arrows are dark on paper');
+  assert.equal(P.hit(doc,{x:1.5,y:4.5},true).type,'zone','an empty spot inside a zone picks the zone');
 });
