@@ -408,11 +408,9 @@
     '#psPhoneBoard .phb-ico svg,#psPhoneBoard .phb-tool svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}'+
     '#psPhoneBoard .phb-pw{flex:1;min-height:0;position:relative;background:var(--phb-pitch)}'+
     '#psPhoneBoard #phbPitch{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none}'+
-    '#psPhoneBoard .phb-sub{position:absolute;left:8px;right:8px;bottom:calc(100% + 8px);display:flex;align-items:center;gap:6px;padding:6px;border:1px solid var(--phb-line);border-radius:10px;background:var(--phb-surface);box-shadow:0 6px 18px rgba(16,24,40,.2);overflow-x:auto;transition:opacity .12s}'+
-    '#psPhoneBoard .phb-sub:empty{display:none}#psPhoneBoard .phb-sub .phb-opt{flex:1 1 0;justify-content:center;padding:0 8px;border-color:transparent;background:transparent}#psPhoneBoard .phb-sub .phb-opt[aria-pressed="true"]{border-color:transparent;background:var(--phb-act);color:var(--phb-act-ink)}'+
+    '#psPhoneBoard .phb-sub{position:absolute;left:8px;right:8px;bottom:calc(100% + 6px);display:flex;align-items:center;gap:4px;padding:4px;border:1px solid var(--phb-line);border-radius:10px;background:var(--phb-surface);box-shadow:0 6px 18px rgba(16,24,40,.2);overflow-x:auto;transition:opacity .12s}'+
+    '#psPhoneBoard .phb-sub:empty{display:none}#psPhoneBoard .phb-sub .phb-opt{flex:1 1 0;justify-content:center;min-height:36px;gap:6px;padding:0 6px;font-size:13px;border-color:transparent;background:transparent}#psPhoneBoard .phb-sub .phb-opt[aria-pressed="true"]{border-color:transparent;background:var(--phb-act);color:var(--phb-act-ink)}'+
     '#psPhoneBoard.phb-touch .phb-sub{opacity:.1;pointer-events:none}'+
-    '#psPhoneBoard .phb-subsize{position:absolute;top:6px;right:6px;z-index:2;gap:4px;padding:3px 3px 3px 10px;border:1px solid var(--phb-line);border-radius:999px;background:var(--phb-surface);box-shadow:0 4px 14px rgba(16,24,40,.22);transition:opacity .12s}#psPhoneBoard .phb-subsize>span{font-size:12px;font-weight:600;color:var(--phb-dim)}#psPhoneBoard .phb-subsize b{min-width:14px}#psPhoneBoard .phb-subsize button{width:40px;height:40px;border-radius:999px}'+
-    '#psPhoneBoard.phb-touch .phb-subsize{opacity:.1;pointer-events:none}#psPhoneBoard.phb-playing .phb-subsize{display:none}'+
     '#psPhoneBoard .phb-opt{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--phb-line);border-radius:10px;background:var(--phb-surface);font-size:14px;font-weight:600;white-space:nowrap}'+
     '#psPhoneBoard .phb-opt[aria-pressed="true"]{border-color:var(--phb-act);background:var(--phb-soft)}'+
     '#psPhoneBoard .phb-opt i{flex:none;display:block;width:14px;height:14px;border-radius:999px}'+
@@ -432,8 +430,10 @@
     '#psPhoneBoard .phb-sc.now{box-shadow:0 0 0 2px var(--phb-surface),0 0 0 4px var(--phb-mark)}'+
     '#psPhoneBoard .phb-add{flex:none;height:44px;padding:0 12px;border:1px dashed var(--phb-dim);border-radius:10px;background:transparent;font-size:14px;font-weight:700;white-space:nowrap}#psPhoneBoard .phb-add:disabled{opacity:.35}'+
     '#psPhoneBoard.phb-playing .phb-sub{display:none}#psPhoneBoard.phb-playing .phb-tools,#psPhoneBoard.phb-playing .phb-add{opacity:.45;pointer-events:none}#psPhoneBoard.phb-playing .phb-chips{pointer-events:none}'+
-    '#psPhoneBoard .phb-tools{flex:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:8px 10px 10px}'+
-    '#psPhoneBoard .phb-tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:48px;border:0;border-radius:10px;background:transparent;font-size:12px;font-weight:600;color:var(--phb-dim)}'+
+    '#psPhoneBoard .phb-tools{flex:none;display:flex;align-items:stretch;gap:2px;padding:6px 8px 8px}'+
+    '#psPhoneBoard .phb-tool{flex:1 1 0;min-width:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-height:44px;padding:0;border:0;border-radius:10px;background:transparent;font-size:11px;font-weight:600;color:var(--phb-dim)}#psPhoneBoard .phb-tool svg{width:19px;height:19px}#psPhoneBoard .phb-tool:disabled{opacity:.3}'+
+    '#psPhoneBoard .phb-tool.phb-undo{border-left:1px solid var(--phb-line);border-radius:0 10px 10px 0}'+
+    '#psPhoneBoard .phb-tsize{flex:none;display:grid;grid-template-columns:40px auto 40px;align-items:center;margin-left:2px;padding-left:4px;border-left:1px solid var(--phb-line)}#psPhoneBoard .phb-tsize button{width:40px;height:44px;border:0;border-radius:10px;background:transparent;color:var(--phb-ink);font-size:20px;font-weight:600;line-height:1;padding:0}#psPhoneBoard .phb-tsize button:disabled{opacity:.3}#psPhoneBoard .phb-tsize>span{display:flex;flex-direction:column;align-items:center;min-width:24px;font-size:11px;font-weight:600;color:var(--phb-dim)}#psPhoneBoard .phb-tsize b{font-size:15px;color:var(--phb-ink);font-variant-numeric:tabular-nums}'+
     '#psPhoneBoard .phb-tool[aria-pressed="true"]{background:var(--phb-act);color:var(--phb-act-ink)}'+
     '#psPhoneBoard .phb-shade{position:absolute;inset:0;z-index:5;display:flex;align-items:flex-end;background:rgba(10,14,22,.46)}'+
     '#psPhoneBoard .phb-sheet{width:100%;max-height:88%;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:16px 14px 18px;border-radius:10px 10px 0 0;background:var(--phb-surface)}'+
@@ -491,10 +491,9 @@
         '<div class="phb-scr" id="phbEdit" hidden><div class="phb-bar">'+
           '<button type="button" class="phb-ico" data-phb="back" aria-label="나가기">'+svgIcon('back')+'</button>'+
           '<input class="phb-name" id="phbName" type="text" maxlength="'+TITLE_LEN+'" autocomplete="off" aria-label="폰보드 이름">'+
-          '<button type="button" class="phb-ico" data-phb="undo" aria-label="되돌리기">'+svgIcon('undo')+'</button>'+
-          '<button type="button" class="phb-btn phb-pri" data-phb="save">저장</button></div>'+
+                    '<button type="button" class="phb-btn phb-pri" data-phb="save">저장</button></div>'+
           '<div class="phb-pw"><svg id="phbPitch" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="세로 운동장"><g id="phbBg"></g><g id="phbFg"></g></svg>'+
-          '<span class="phb-size phb-subsize" id="phbSize" role="group" aria-label="토큰 크기 · 모든 선수"><span>크기</span><button type="button" data-phb="tok" data-v="-1" aria-label="토큰 작게">−</button><b data-phb-tokn></b><button type="button" data-phb="tok" data-v="1" aria-label="토큰 크게">＋</button></span></div>'+
+          '</div>'+
           '<div class="phb-dock"><div class="phb-sub" id="phbSub"></div><div class="phb-film" id="phbFilm"></div><div class="phb-tools" id="phbTools"></div></div></div>'+
         '<div class="phb-shade" id="phbNew" hidden><div class="phb-sheet"><h3>새 작전판</h3>'+
           '<div><p class="phb-cap">인원</p><div class="phb-opts" id="phbSpec"></div></div>'+
@@ -587,7 +586,9 @@
     /* ── 편집 ── */
     function renderTools(){
       var t=[['move','옮기기'],['put','놓기'],['line','화살'],['erase','지우기']];
-      $('phbTools').innerHTML=t.map(function(x){return '<button type="button" class="phb-tool" data-phb="tool" data-v="'+x[0]+'" aria-pressed="'+(M.tool===x[0])+'">'+svgIcon(x[0])+'<span>'+x[1]+'</span></button>';}).join('');
+      $('phbTools').innerHTML=t.map(function(x){return '<button type="button" class="phb-tool" data-phb="tool" data-v="'+x[0]+'" aria-pressed="'+(M.tool===x[0])+'">'+svgIcon(x[0])+'<span>'+x[1]+'</span></button>';}).join('')+
+        '<button type="button" class="phb-tool phb-undo" data-phb="undo" aria-label="되돌리기">'+svgIcon('undo')+'<span>되돌리기</span></button>'+
+        '<span class="phb-tsize" id="phbSize" role="group" aria-label="토큰 크기 · 모든 선수"><button type="button" data-phb="tok" data-v="-1" aria-label="토큰 작게">−</button><span><b data-phb-tokn></b>크기</span><button type="button" data-phb="tok" data-v="1" aria-label="토큰 크게">＋</button></span>';
       var s;
       if(M.tool==='put')s=[['us','우리','us'],['op','상대','op'],['ball','공','bl'],['cone','콘','cn']].map(function(x){return '<button type="button" class="phb-opt" data-phb="put" data-v="'+x[0]+'" aria-pressed="'+(M.put===x[0])+'"><i class="'+x[2]+'"></i><span>'+x[1]+'</span></button>';}).join('');
       else if(M.tool==='line')s=[['run','이동','M1 5H29" stroke-dasharray="4 3'],['pass','패스','M1 5H29'],['dribble','드리블','M1 5L4 2 8 8 12 2 16 8 20 2 24 8 27 5H29']].map(function(x){return '<button type="button" class="phb-opt" data-phb="line" data-v="'+x[0]+'" aria-pressed="'+(M.line===x[0])+'"><svg viewBox="0 0 30 10" aria-hidden="true"><path d="'+x[2]+'"/></svg><span>'+x[1]+'</span></button>';}).join('');

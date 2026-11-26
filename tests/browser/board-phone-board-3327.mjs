@@ -128,7 +128,10 @@ try{
   await f.locator('[data-phb="tok-ok"]').tap();
   assert.ok(Math.abs(await chipR()-r3)<0.001,'back to the first size');
   /* 3.379 — 토큰 크기는 운동장 오른쪽 위 구석에서 바로(선수를 누르지 않고 · 어느 도구에서나) */
-  const sub=f.locator('#phbSize');assert.equal(await sub.isVisible(),true,'the size control sits on the pitch corner');
+  /* 3.381 — 크기 − / ＋ · 되돌리기는 아래 도구 줄 안(운동장 위에 아무것도 없다) */
+  const sub=f.locator('#phbTools #phbSize');assert.equal(await sub.isVisible(),true,'the size control sits in the tool row');
+  assert.equal(await f.locator('.phb-pw #phbSize, .phb-pw [data-phb="tok"]').count(),0,'nothing floats on the pitch');
+  assert.equal(await f.locator('#phbTools [data-phb="undo"]').count(),1,'undo is in the tool row');
   assert.equal(await sub.locator('[data-phb-tokn]').textContent(),'3');
   await sub.locator('[data-phb="tok"][data-v="-1"]').tap();await sub.locator('[data-phb="tok"][data-v="-1"]').tap();
   assert.equal((await model(f)).doc.tok,1);assert.equal(await sub.locator('[data-phb-tokn]').textContent(),'1');
@@ -139,8 +142,10 @@ try{
   await shot(page,'3c-editor-size');
   await sub.locator('[data-phb="tok"][data-v="1"]').tap();await sub.locator('[data-phb="tok"][data-v="1"]').tap();
   assert.equal((await model(f)).doc.tok,3);
-  const pw=await f.locator('.phb-pw').boundingBox();
-  assert.ok(subBox.y-pw.y<12&&pw.x+pw.width-(subBox.x+subBox.width)<12,'top-right corner of the pitch');
+  const tl=await f.locator('#phbTools').boundingBox(),tb=await f.locator('#phbTools [data-v="move"]').boundingBox();
+  assert.ok(subBox.y>=tl.y-1&&subBox.y+subBox.height<=tl.y+tl.height+1&&Math.abs(subBox.y-tb.y)<6,'in the same row as the tools');
+  assert.ok(tl.x+tl.width>=subBox.x+subBox.width-1&&subBox.x>=tl.x,'inside the tool row, no overflow');
+  assert.ok(tb.height<=48,'tools are compact '+tb.height);
   await f.locator('#phbTools [data-v="put"]').tap();assert.equal(await sub.isVisible(),true,'still there with the put tool');
   await f.locator('#phbTools [data-v="move"]').tap();
   /* 3.359 — 장면(애니메이션): ＋ 장면 → 화살대로 옮긴 다음 장면 → 옮기기 → 장면 오가기 → 시간 → 재생 */
