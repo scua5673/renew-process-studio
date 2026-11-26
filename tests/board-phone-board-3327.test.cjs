@@ -73,9 +73,10 @@ test('boards touched on a bigger screen are view-only on the phone',()=>{
     text:d=>d.snap.drawings.push({type:'text',pts:[{x:1,y:1}],text:'x'}),
     free:d=>d.snap.drawings.push({type:'free',pts:[{x:1,y:1},{x:2,y:2},{x:3,y:3}]}),
     anchored:d=>d.snap.drawings.push({type:'run',pts:[{x:1,y:1},{x:2,y:2}],tk:[1,null]}),
-    goal:d=>d.snap.equipment.push({id:9,team:'minigoal',x:1,y:1}),
+    goal:d=>d.snap.equipment.push({id:9,team:'tire',x:1,y:1}),   /* 3.381 — 장비 열 가지(미니골 포함)는 폰에서도 고친다 · 그 밖의 장비는 보기만 */
+    fill:d=>d.snap.drawings.push({type:'rectline',pts:[{x:1,y:1},{x:20,y:20}]}),
     coach:d=>d.snap.players.push({id:99,team:'blue',coach:true,x:1,y:1}),
-    third:d=>{d.snap.players[0].team='yellow';},
+    third:d=>{d.snap.players[0].team='green';},   /* 3.381 — 노랑(중립 조끼)은 폰에서도 고친다 · 넷째 팀부터 보기만 */
     pitch:d=>{d.snap.pitchSpec='u12';},
     pages:d=>{d.pages=[{snap:d.snap},{snap:d.snap}];},
     curve:d=>{d.frames=[{snap:d.snap,curves:{1:{mx:3,my:4}}},{snap:d.snap}];},
@@ -250,4 +251,125 @@ test('3.359 — a phone board with scenes is saved as big-board frames and comes
   assert.equal(it.frames.length,2);assert.equal(it.frames[0].__t,'제목');assert.equal(it.frames[1].snap.pitchTheme,'navy');assert.equal(it.frames[1].snap.players[2].photo,'data:x');
   P.sceneDel(back);P.applyEdit(it,back,'',10);assert.equal('frames' in it,false);assert.equal(it.snap.pitchTheme,'navy');assert.equal(P.editable(it),true);
   assert.equal(P.itemFor(P.docNew('11','4-3-3',''),'하나',1).frames,undefined,'a single scene has no frames');
+});
+
+/* 3.379 — 포지션별 등번호(사용자 11/25 «포지션별로 번호 제대로») */
+test('3.379 formations number each slot by its position, for both sides', () => {
+  const by=(d,team)=>Object.fromEntries(d.players.filter(p=>p.team===team).map((p,i)=>[i,p]));
+  for(const form of Object.keys(P.FORMS)){
+    const slots=P.FORMS[form],nums=P.NUMS[form];
+    assert.equal(nums.length,slots.length,form+' has a number for every slot');
+    assert.equal(new Set(nums).size,nums.length,form+' numbers are unique');
+    assert.equal(nums[0],1,form+' goalkeeper is 1');
+  }
+  const d=P.docNew('11','4-3-3','4-4-2'),us=by(d,'us'),op=by(d,'op');
+  const at=(o,num)=>Object.values(o).find(p=>p.num===String(num));
+  /* 우리 팀은 위로 공격 — 오른쪽(x 큰 쪽)이 RB 2 · RW 7, 왼쪽이 LB 3 · LW 11, 가운데 앞이 9 */
+  assert.ok(at(us,2).x>at(us,3).x,'RB 2 is on the right of LB 3');
+  assert.ok(at(us,4).x>at(us,5).x,'RCB 4 is right of LCB 5');
+  assert.ok(at(us,7).x>at(us,11).x,'RW 7 is right of LW 11');
+  assert.ok(at(us,9).y<at(us,6).y&&at(us,6).y<at(us,4).y,'9 ahead of 6 ahead of the centre backs');
+  /* 상대는 아래로 공격 — 상대의 오른쪽은 화면 왼쪽 */
+  assert.ok(at(op,2).x<at(op,3).x,'the opponent RB 2 is on the screen left');
+  assert.ok(at(op,7).x<at(op,11).x,'the opponent RM 7 is on the screen left');
+  assert.deepEqual(P.docNew('5','1-2-1',false).players.map(p=>p.num),['1','4','11','7','9']);
+  assert.deepEqual(P.docNew('11','',false).players,[],'no formation, no players');
+});
+
+test('3.379 a placed player takes the smallest free number, 1 only for a team with nobody yet', () => {
+  assert.equal(P.freeNum([],'us'),'1');
+  assert.equal(P.freeNum([{team:'op',num:'1'}],'us'),'1','other side numbers do not count');
+  assert.equal(P.freeNum([{team:'us',num:'21'}],'us'),'2','1 stays for the goalkeeper once the team has a player');
+  const d=P.docNew('11','4-3-3',false);
+  assert.equal(P.freeNum(d.players,'us'),'12');
+  d.players.splice(d.players.findIndex(p=>p.num==='8'),1);
+  assert.equal(P.freeNum(d.players,'us'),'8','a removed number is reused');
+});
+
+/* 3.379 — 유니폼 색(사용자 11/25 «새로 만들기 할 때 유니폼 색상도») */
+test('3.379 kits: chosen on a new board, drawn on chips, saved as the big board teamColors and read back', () => {
+  assert.equal(P.KIT.length,10);assert.ok(P.KIT.every(k=>/^#[0-9a-f]{6}$/.test(k[0])),'palette hex');
+  assert.equal(P.docNew('11','4-3-3','',{us:'#1a2f5c',op:'#d12f38'}).kit,undefined,'default colours keep no kit field');
+  assert.equal(P.docNew('11','4-3-3','',{us:'nope',op:'#d12f38'}).kit,undefined,'a bad value is ignored');
+  const d=P.docNew('11','4-3-3','4-4-2',{us:'#F4F5F7',op:'#f2c230'});
+  assert.deepEqual(d.kit,{us:'#f4f5f7',op:'#f2c230'});
+  assert.equal(P.kitOf(d,'us'),'#f4f5f7');assert.equal(P.kitOf({},'op'),'#d12f38');
+  assert.equal(P.gkOf(d,'op'),'#3aa6dc','a yellow side gets the sky goalkeeper instead of the gold one');
+  assert.equal(P.gkOf(d,'us'),'#3aa6dc');assert.equal(P.gkOf({},'op'),'#d4a017');
+  const svg=P.docSVG(d,P.SPECS['11']);
+  assert.ok(svg.includes('fill="#f4f5f7"')&&svg.includes('fill="#f2c230"'),'chips wear the kits');
+  assert.ok(svg.includes('phb-light'),'a light kit is marked for dark numbers');
+  const snap=P.snapFor(d,null);assert.deepEqual(snap.teamColors,{blue:'#f4f5f7',red:'#f2c230'});
+  assert.equal(P.snapFor(P.docNew('11','4-3-3',''),null).teamColors,undefined,'no kit, no teamColors');
+  const it=P.itemFor(d,'흰 유니폼',1);
+  assert.deepEqual(P.docFrom(it).kit,{us:'#f4f5f7',op:'#f2c230'},'reopening keeps the kits');
+  const prev={...P.snapFor(P.docNew('11','4-3-3',''),null),teamColors:{blue:'#000000',yellow:'#123456'}};
+  assert.deepEqual(P.snapFor({...P.docNew('11','4-3-3',''),kit:{op:'#7a3fb0'}},prev).teamColors,{blue:'#000000',yellow:'#123456',red:'#7a3fb0'},'an edit keeps the other team colours of the old board');
+});
+
+test('3.381 training: grid paper, ten kinds of equipment and zones — saved as a vault training the big board reads',()=>{
+  assert.deepEqual(['g20','g30','g45'].map(n=>[P.SPECS[n].spec,P.SPECS[n].h]),[['grid20',20],['grid30',30],['grid45',45]]);
+  const sp=P.SPECS.g30;assert.deepEqual(P.world('g30',sp.w/2,sp.h/2),{x:555,y:370});
+  const top=P.world('g30',0,0),bot=P.world('g30',sp.w,sp.h);assert.deepEqual([top.x,top.y,bot.x,bot.y],[1080,30,30,710],'the paper fills the big board grid board');
+  for(const n of ['g20','g45','11','8']){const s=P.SPECS[n],q=P.local(n,P.world(n,3,7).x,P.world(n,3,7).y);assert.ok(Math.abs(q.x-3)<0.15&&Math.abs(q.y-7)<0.15,n);}
+  const doc=P.docNew('g30','','',null,{min:20});
+  assert.deepEqual([doc.kind,doc.n,doc.min,doc.players.length],['train','g30',20,0],'a training starts empty');
+  doc.cones.push({x:3,y:4},{x:10,y:15,t:'minigoal'},{x:5,y:5,t:'pole'});
+  doc.zones.push({k:'rect',x1:2,y1:2,x2:12,y2:10,c:'#2f6df0'},{k:'ellipse',x1:4,y1:14,x2:14,y2:24,c:'#ffd60a'});
+  doc.players.push({id:1,team:'us',num:'7',name:'',x:9,y:9});
+  P.sceneAdd(doc);P.sceneAdd(doc);
+  const it=P.itemFor(doc,'론도 4v2',5);
+  assert.equal(it.type,'train');assert.deepEqual(it.phone,{v:1,n:'g30',kind:'train'});assert.equal(it.minutes,20);
+  assert.equal(it.snap.pitchSpec,'grid30');assert.equal(it.snap.pitchTheme,'white','paper is the white board theme');
+  assert.deepEqual(it.snap.equipment.map(e=>e.team),['cone','minigoal','pole']);
+  assert.deepEqual(it.snap.drawings.map(d=>[d.type,d.color]),[['rect','#2f6df0'],['ellipse','#ffd60a']]);
+  assert.equal(it.frames.length,3);assert.ok(it.frames.every(f=>f.snap.drawings.length===2),'zones stand in every scene');
+  assert.equal(it.trainings.length,1);const t=it.trainings[0];
+  assert.deepEqual([t.type,t.name,t.minutes,t.sets,t.focus],['train','론도 4v2',20,1,'bp']);assert.deepEqual(t.snap,it.snap);assert.equal(t.frames.length,3);
+  assert.equal(P.editable(it),true,'a phone training opens again on the phone');
+  assert.deepEqual(P.mine([it]).map(d=>d.name),['론도 4v2']);
+  const back=P.docFrom(it);
+  assert.deepEqual([back.kind,back.n,back.min],['train','g30',20]);
+  assert.deepEqual(back.cones.map(c=>c.t||'cone'),['cone','minigoal','pole']);
+  assert.deepEqual(back.zones.map(z=>[z.k,z.c,z.x1,z.y2]),[['rect','#2f6df0',2,10],['ellipse','#ffd60a',4,24]]);
+  assert.equal(back.scenes.length,3);
+  back.zones.pop();P.applyEdit(it,back,'론도',9);
+  assert.equal(it.trainings[0].snap.drawings.length,1);assert.equal(it.snap.drawings.length,1);assert.equal(it.editedAt,9);
+  const many=JSON.parse(JSON.stringify(it));many.trainings.push(many.trainings[0]);assert.equal(P.editable(many),false,'two trainings on one card are view-only');
+  const sc=JSON.parse(JSON.stringify(it));sc.scenes=[{snap:sc.snap}];assert.equal(P.editable(sc),false,'editor scenes from the big screen are view-only');
+});
+
+test('3.381 drawing: paper grid, dark arrows and the board equipment art',()=>{
+  const sp=Object.assign({},P.SPECS.g20);
+  const bg=P.pitchSVG(sp);assert.match(bg,/#f6f7f4/);assert.ok((bg.match(/<line /g)||[]).length>30,'a grid of lines');assert.doesNotMatch(bg,/phb-goal/,'no goals on paper');
+  const doc=P.docNew('g20','','',null,{});doc.cones.push({x:3,y:3,t:'hurdle'});doc.zones.push({k:'rect',x1:1,y1:1,x2:5,y2:5,c:'#e23b3b'});doc.lines.push({kind:'pass',x1:2,y1:2,x2:8,y2:8});
+  const fg=P.docSVG(doc,sp,{equip:t=>'<g data-art="'+t+'"/>'});
+  assert.match(fg,/data-art="hurdle"/);assert.match(fg,/class="phb-zone"/);assert.match(fg,/stroke="#14213D"/,'arrows are dark on paper');
+  assert.equal(P.hit(doc,{x:1.5,y:4.5},true).type,'zone','an empty spot inside a zone picks the zone');
+});
+
+test('3.381 more: neutral bibs, equipment lines, quick-start drills, curved arrows, scene copy, zone sizes, training notes',()=>{
+  const d=P.docNew('g30','','',null,{min:15,drill:'332'});
+  assert.deepEqual(['us','op','ne'].map(t=>d.players.filter(p=>p.team===t).length),[3,3,2],'3v3 + two neutrals');
+  assert.equal(d.zones.length,1);assert.equal(d.cones.length,4);assert.ok(d.ball);
+  const sp=P.SPECS.g30;assert.ok(d.players.every(p=>p.x>=0&&p.x<=sp.w&&p.y>=0&&p.y<=sp.h),'inside the paper');
+  const r=P.docNew('g20','','',null,{drill:'rondo'});assert.deepEqual([r.players.length,r.cones.length],[6,4]);
+  const g=P.docNew('11','','',null,{drill:'4goal'});assert.equal(g.cones.filter(c=>c.t==='minigoal').length,4);assert.equal(g.players.length,8);
+  assert.equal(P.DRILLS.length,4);
+  const it=P.itemFor(d,'x',1);assert.deepEqual(it.snap.players.filter(p=>p.team==='yellow').length,2,'neutrals are the big board team 3');
+  assert.equal(P.editable(it),true);assert.deepEqual(P.docFrom(it).players.filter(p=>p.team==='ne').length,2);
+  const svg=P.docSVG(d,sp,{});assert.match(svg,/fill="#f2c230"/,'yellow bibs');
+  assert.deepEqual(P.eqLine(0,0,0,10,2,40).map(c=>c.y),[0,2,4,6,8,10]);assert.equal(P.eqLine(0,0,0,10,2,3).length,3,'only as many as room left');assert.equal(P.eqLine(1,1,1,1,2,9).length,1);
+  const b=P.docNew('11','4-3-3','');b.lines.push({kind:'pass',x1:10,y1:50,x2:30,y2:50,cx:20,cy:40});b.lines.push({kind:'dribble',x1:10,y1:60,x2:30,y2:60,cx:20,cy:40});
+  assert.deepEqual(P.lineMid(b.lines[0]),{x:20,y:45});
+  const bi=P.itemFor(b,'c',1);assert.equal(bi.snap.drawings[0].pts.length,3,'a curved pass keeps the board control point');assert.equal(bi.snap.drawings[1].pts.length,2,'a dribble does not curve');
+  assert.equal(P.editable(bi),true);const back=P.docFrom(bi);assert.ok(Math.abs(back.lines[0].cx-20)<0.15&&Math.abs(back.lines[0].cy-40)<0.15);
+  assert.match(P.lineSVG(b.lines[0],P.SPECS['11']),/ Q|Q\d/,'drawn as a curve');
+  assert.equal(P.hit(b,{x:20,y:45.2},true).type,'line','the curve itself is hit');
+  const sc=P.docNew('5','2-2','');sc.lines.push({kind:'run',x1:5,y1:30,x2:5,y2:20});assert.equal(P.sceneDup(sc),true);
+  assert.equal(sc.scenes.length,2);assert.equal(sc.at,1);assert.equal(sc.lines.length,1,'a copy keeps the arrows');
+  const z=P.docNew('g20','','',null,{});z.zones.push({k:'rect',x1:1,y1:1,x2:13,y2:9,c:'#ffd60a'});assert.match(P.docSVG(z,P.SPECS.g20,{}),/12×8m/,'the zone says its size');
+  const t=P.docNew('g20','','',null,{});t.cones.push({x:1,y:1});t.method='4명이 바깥, 2명이 안\n두 번 터치';t.coaching='몸 열기';
+  const ti=P.itemFor(t,'론도',1);assert.equal(ti.trainings[0].method,'4명이 바깥, 2명이 안\n두 번 터치');assert.equal(ti.trainings[0].coaching,'몸 열기');
+  const tb=P.docFrom(ti);assert.equal(tb.method,t.method);tb.coaching='';P.applyEdit(ti,tb,'론도',2);assert.equal(ti.trainings[0].coaching,'');
 });
