@@ -58,11 +58,24 @@ try{
   await f.locator('#phbSpec [data-v="11"]').tap();await f.locator('#phbForm [data-v="4-4-2"]').tap();
   assert.deepEqual(await f.locator('#phbOppForm .phb-opt').allInnerTexts(),['없음','4-3-3','4-4-2','3-5-2'],'opponent formation choices');
   await f.locator('#phbOppForm [data-v="3-5-2"]').tap();
+  /* 3.379 — 유니폼 색(우리 · 상대). 같은 색을 고르면 두 팀이 맞바꾼다 */
+  assert.equal(await f.locator('#phbKitUs .phb-kit').count(),10);assert.equal(await f.locator('#phbKitOpBox').isVisible(),true,'the opponent colours show with an opponent');
+  for(const k of await f.locator('#phbKitUs .phb-kit').all()){const r=await k.boundingBox();assert.ok(r.width>=40&&r.height>=40,'colour swatches are finger-sized');}
+  await f.locator('#phbKitOp [data-v="#f4f5f7"]').tap();await f.locator('#phbKitUs [data-v="#f4f5f7"]').tap();
+  assert.equal(await f.locator('#phbKitUs [aria-pressed="true"]').getAttribute('data-v'),'#f4f5f7');
+  assert.equal(await f.locator('#phbKitOp [aria-pressed="true"]').getAttribute('data-v'),'#1a2f5c','picking the other side colour swaps them');
+  await f.locator('#phbKitOp [data-v="#f2c230"]').tap();
   await shot(page,'2-new');
   await f.locator('[data-phb="new-go"]').tap();
   await f.locator('#phbEdit').waitFor({state:'visible'});
   let m=await model(f);
   assert.equal(m.doc.players.length,22);assert.equal(m.doc.n,'11');
+  assert.deepEqual(m.doc.kit,{us:'#f4f5f7',op:'#f2c230'},'the chosen kits');
+  const fills=await f.evaluate(()=>[...document.querySelectorAll('#phbFg .phb-tok')].map(g=>({id:g.getAttribute('data-id'),f:g.querySelector('circle[r="21"]').getAttribute('fill'),light:g.classList.contains('phb-light')})));
+  const fillOf=id=>fills.find(x=>x.id===String(id));
+  const usField=m.doc.players.find(p=>p.team==='us'&&p.num!=='1'),opField=m.doc.players.find(p=>p.team==='op'&&p.num!=='1'),opGk=m.doc.players.find(p=>p.team==='op'&&p.num==='1');
+  assert.equal(fillOf(usField.id).f,'#f4f5f7');assert.equal(fillOf(usField.id).light,true,'a white kit gets dark numbers');
+  assert.equal(fillOf(opField.id).f,'#f2c230');assert.notEqual(fillOf(opGk.id).f,'#d4a017','a yellow side does not keep a gold goalkeeper');
   assert.equal(m.doc.players.filter(p=>p.team==='op'&&p.y<20&&p.y>12).length,3,'the opponent back line is a back three (3-5-2)');
   const pitch=await f.locator('#phbPitch').boundingBox();
   assert.ok(pitch.height>pitch.width*1.2,'the pitch is portrait '+JSON.stringify(pitch));assert.ok(pitch.height>380,'and big enough to work on');
@@ -88,7 +101,7 @@ try{
   await f.locator('#phbSub [data-v="dribble"]').tap();await ptr(f,[[50,60],[58,42]]);
   await ptr(f,[[30,30],[30.5,30.5]]);
   m=await model(f);
-  assert.equal(m.doc.cones.length,2);assert.equal(m.doc.players.length,23);assert.equal(m.doc.players.at(-1).num,'12','the new player takes the next number');
+  assert.equal(m.doc.cones.length,2);assert.equal(m.doc.players.length,23);assert.equal(m.doc.players.at(-1).num,'12','the new player takes the smallest free number (1 stays the goalkeeper)');
   assert.deepEqual(m.doc.lines.map(l=>l.kind),['pass','dribble'],'a too-short stroke is not an arrow');
   await f.locator('#phbTools [data-v="erase"]').tap();await ptr(f,[[62,50]]);
   m=await model(f);assert.equal(m.doc.cones.length,1);
@@ -103,17 +116,33 @@ try{
   const chipR=()=>f.evaluate(()=>+document.querySelector('#phbFg .phb-tok').getAttribute('transform').match(/scale\(([0-9.]+)\)/)[1]);
   const r3=await chipR();
   await ptr(f,[[gk.x,gk.y]]);await f.locator('#phbTok').waitFor({state:'visible'});
-  await f.locator('[data-phb="tok"][data-v="1"]').click();await f.locator('[data-phb="tok"][data-v="1"]').click();
+  await f.locator('#phbTok [data-phb="tok"][data-v="1"]').click();await f.locator('#phbTok [data-phb="tok"][data-v="1"]').click();
   assert.equal((await model(f)).doc.tok,5);assert.equal(await f.locator('#phbTokN').textContent(),'5');
-  assert.equal(await f.locator('[data-phb="tok"][data-v="1"]').isDisabled(),true,'the biggest step stops');
+  assert.equal(await f.locator('#phbTok [data-phb="tok"][data-v="1"]').isDisabled(),true,'the biggest step stops');
   const r5=await chipR();assert.ok(r5>r3*1.2,'the chips grew: '+r3+' → '+r5);
   await f.locator('[data-phb="tok-ok"]').tap();
   await shot(page,'3b-editor-big');
   await f.locator('[data-phb="undo"]').click();assert.equal((await model(f)).doc.tok,4,'undo steps the size back');
   await ptr(f,[[gk.x,gk.y]]);await f.locator('#phbTok').waitFor({state:'visible'});
-  await f.locator('[data-phb="tok"][data-v="-1"]').click();assert.equal((await model(f)).doc.tok,3);
+  await f.locator('#phbTok [data-phb="tok"][data-v="-1"]').click();assert.equal((await model(f)).doc.tok,3);
   await f.locator('[data-phb="tok-ok"]').tap();
   assert.ok(Math.abs(await chipR()-r3)<0.001,'back to the first size');
+  /* 3.379 — 토큰 크기는 운동장 오른쪽 위 구석에서 바로(선수를 누르지 않고 · 어느 도구에서나) */
+  const sub=f.locator('#phbSize');assert.equal(await sub.isVisible(),true,'the size control sits on the pitch corner');
+  assert.equal(await sub.locator('[data-phb-tokn]').textContent(),'3');
+  await sub.locator('[data-phb="tok"][data-v="-1"]').tap();await sub.locator('[data-phb="tok"][data-v="-1"]').tap();
+  assert.equal((await model(f)).doc.tok,1);assert.equal(await sub.locator('[data-phb-tokn]').textContent(),'1');
+  assert.equal(await sub.locator('[data-phb="tok"][data-v="-1"]').isDisabled(),true,'the smallest step stops');
+  assert.ok(await chipR()<r3*0.8,'the chips shrank');
+  const subBox=await sub.boundingBox(),btnBox=await sub.locator('[data-phb="tok"][data-v="1"]').boundingBox();
+  assert.ok(btnBox.width>=40&&btnBox.height>=40,'the buttons are big enough to tap');
+  await shot(page,'3c-editor-size');
+  await sub.locator('[data-phb="tok"][data-v="1"]').tap();await sub.locator('[data-phb="tok"][data-v="1"]').tap();
+  assert.equal((await model(f)).doc.tok,3);
+  const pw=await f.locator('.phb-pw').boundingBox();
+  assert.ok(subBox.y-pw.y<12&&pw.x+pw.width-(subBox.x+subBox.width)<12,'top-right corner of the pitch');
+  await f.locator('#phbTools [data-v="put"]').tap();assert.equal(await sub.isVisible(),true,'still there with the put tool');
+  await f.locator('#phbTools [data-v="move"]').tap();
   /* 3.359 — 장면(애니메이션): ＋ 장면 → 화살대로 옮긴 다음 장면 → 옮기기 → 장면 오가기 → 시간 → 재생 */
   await f.locator('[data-phb="play"]').tap();assert.match(await toastText(f),/2개 이상/,'one scene does not play');
   const s1=(await model(f)).doc;
@@ -182,6 +211,7 @@ try{
   assert.match(await toastText(f),/보관함에 저장했습니다/);
   await f.waitForFunction(()=>(window.__psPhoneBoard.ui().model().list||[]).length===1);
   const local=await f.evaluate(()=>libGet().then(l=>JSON.parse(JSON.stringify(l.filter(d=>d&&d.phone)))));
+  assert.deepEqual(local[0].snap.teamColors,{blue:'#f4f5f7',red:'#f2c230'},'the big board reads the same kits');
   assert.equal(local.length,1);
   const it=local[0];savedId=it.libId;
   assert.equal(it.type,'board');assert.equal(it.name,'토요일 4-4-2');assert.deepEqual(it.tags,['폰보드']);assert.deepEqual(it.phone,{v:1,n:'11'});

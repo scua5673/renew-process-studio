@@ -31,6 +31,19 @@
     '1-2-1':[[50,93],[50,74],[20,52],[80,52],[50,30]],
     '2-2':[[50,93],[28,72],[72,72],[28,38],[72,38]]
   };
+  /* 자리마다 등번호(사용자 11/25 «포지션별로 번호 제대로») — FORMS 의 같은 차례. 위로 공격하므로 x 가 큰 쪽이 오른쪽(RB 2 · LB 3 · RCB 4 · LCB 5 …) */
+  var NUMS={
+    '4-3-3':[1,3,5,4,2,6,10,8,11,9,7],
+    '4-4-2':[1,3,5,4,2,11,6,8,7,10,9],
+    '3-5-2':[1,6,5,4,3,10,8,7,2,11,9],
+    '3-3-1':[1,3,4,2,11,8,7,9],
+    '2-4-1':[1,5,4,11,6,8,7,9],
+    '1-2-1':[1,4,11,7,9],
+    '2-2':[1,3,2,10,9]
+  };
+  function slotNum(form,i){var a=NUMS[form];return String(a&&a[i]!=null?a[i]:i+1);}
+  /* 새로 놓는 선수 — 그 팀이 아직 안 쓴 가장 작은 번호. 1(골키퍼 색)은 그 팀의 첫 선수일 때만 */
+  function freeNum(players,team){var used={},any=false;players.forEach(function(q){if(q.team===team){used[String(q.num)]=1;any=true;}});for(var n=any?2:1;n<100;n++)if(!used[String(n)])return String(n);return '';}
   var KINDS=['run','pass','dribble'],TEAM={us:'blue',op:'red'},SIDE={blue:'us',red:'op'};
   /* 토큰 크기 다섯 단계(사용자 «토큰크기 조절할 수 있게») — 문서의 tok(1~5 · 3 이 처음 값), 보관함 항목엔 phone.tok 과 판의 tokenScale 로 */
   var TOKF=[0.72,0.86,1,1.15,1.3],TOK0=3,TOK_BASE=0.8;
@@ -48,17 +61,18 @@
 
   /* 새 판 — 우리 팀만, 또는 상대도(두 팀을 제 진영으로 좁혀 겹치지 않게) */
   /* opp: 상대 포메이션 이름(없으면 우리 팀만) — true 는 우리와 같은 포메이션 */
-  function docNew(n,form,opp){
+  function docNew(n,form,opp,kit){
     var sp=specOf(n),slots=FORMS[form]||[],oslots=opp===true?slots:(FORMS[opp]||[]),withOpp=oslots.length>0,d={n:sp.n,players:[],ball:null,cones:[],lines:[]},id=1;
     slots.forEach(function(s,i){
       var t=withOpp?54+(s[1]-26)*(41/68):s[1];
-      d.players.push({id:id++,team:'us',num:String(i+1),name:'',x:r2(sp.w*s[0]/100),y:r2(sp.h*t/100)});
+      d.players.push({id:id++,team:'us',num:slotNum(form,i),name:'',x:r2(sp.w*s[0]/100),y:r2(sp.h*t/100)});
     });
     oslots.forEach(function(s,i){
       var t=100-(54+(s[1]-26)*(41/68));
-      d.players.push({id:id++,team:'op',num:String(i+1),name:'',x:r2(sp.w*(100-s[0])/100),y:r2(sp.h*t/100)});
+      d.players.push({id:id++,team:'op',num:slotNum(opp===true?form:opp,i),name:'',x:r2(sp.w*(100-s[0])/100),y:r2(sp.h*t/100)});
     });
     if(slots.length||withOpp)d.ball={x:sp.w/2,y:sp.h/2};
+    if(kit){var ku=hexOk(kit.us),ko=hexOk(kit.op);if(ku&&ku!==COL.us||ko&&ko!==COL.op){d.kit={};if(ku&&ku!==COL.us)d.kit.us=ku;if(ko&&ko!==COL.op)d.kit.op=ko;}}
     return d;
   }
   function nextId(doc){var m=0;doc.players.forEach(function(p){if(+p.id>m)m=+p.id;});return m+1;}
@@ -69,6 +83,7 @@
       lines:true,gridType:'off',label:'num',tokenScale:0.8,tokV:2,tokShape:'circle',chip3d:true,namePos:'below',nameSize:'m',nameStyle:'pill'};
     /* 크기를 고친 판만 큰 작전판의 토큰 크기도 같이(처음 값이면 그 판의 값을 그대로 둔다) */
     if(!prev||doc.tokSet)s.tokenScale=r2(TOK_BASE*TOKF[tokOf(doc)-1]);
+    if(doc.kit&&(hexOk(doc.kit.us)||hexOk(doc.kit.op))){var tc=s.teamColors&&typeof s.teamColors==='object'?copy(s.teamColors):{};if(hexOk(doc.kit.us))tc.blue=hexOk(doc.kit.us);if(hexOk(doc.kit.op))tc.red=hexOk(doc.kit.op);s.teamColors=tc;}
     var oldP={},oldE=(prev&&prev.equipment)||[],oldD=(prev&&prev.drawings)||[],eid=1000;
     ((prev&&prev.players)||[]).forEach(function(p){if(p&&p.id!=null)oldP[p.id]=p;});
     s.players=doc.players.slice(0,MAX_PLAYERS).map(function(p){
@@ -145,7 +160,7 @@
   function sceneDocs(doc){
     if(!doc.scenes)return [doc];
     var d=copy(doc);stash(d);
-    return d.scenes.map(function(s){return {n:doc.n,tok:doc.tok,tokSet:doc.tokSet,players:s.players,ball:s.ball,cones:s.cones,lines:s.lines,dur:durOf(s)};});
+    return d.scenes.map(function(s){return {n:doc.n,tok:doc.tok,tokSet:doc.tokSet,kit:doc.kit,players:s.players,ball:s.ball,cones:s.cones,lines:s.lines,dur:durOf(s)};});
   }
   /* 큰 작전판의 장면 모양 그대로(frames[i] = {snap,dur} · 첫 장면에 머무는 시간 __hold) — 아이패드 · 컴퓨터 · 보관함 보기에서 그대로 재생된다 */
   function framesFor(doc,old,base){
@@ -198,6 +213,8 @@
   function docFrom(d){
     var n=String(d.phone.n),fr=Array.isArray(d.frames)&&d.frames.length>1?d.frames:null,s0=sceneFrom(n,fr?fr[0].snap:d.snap),doc={n:n,players:s0.players,ball:s0.ball,cones:s0.cones,lines:s0.lines};
     if(d.phone.tok!=null&&tokOf({tok:d.phone.tok})!==TOK0)doc.tok=tokOf({tok:d.phone.tok});
+    var tc=(fr?fr[0].snap:d.snap).teamColors||{},ku=hexOk(tc.blue),ko=hexOk(tc.red);
+    if(ku||ko){doc.kit={};if(ku)doc.kit.us=ku;if(ko)doc.kit.op=ko;}
     if(fr){doc.scenes=fr.map(function(f){var s=sceneFrom(n,f.snap);s.dur=durOf(f);return s;});doc.at=0;}
     return doc;
   }
@@ -236,6 +253,15 @@
      공은 큰 작전판의 ballSVG()(실사 공)를 그대로 받아 쓴다 — opt.ball. 없으면(시험 · 옛 기기) 단순한 공. */
   var SIDE3=0.03,PITCH='#1b8044',CONE_COL='#ff6a00';
   var COL={us:'#1a2f5c',op:'#d12f38',usGk:'#3aa6dc',opGk:'#d4a017'};
+  /* 유니폼 색(사용자 11/25 «폰보드 새로 만들기 할 때 유니폼 색상도») — 문서의 kit{us,op}(처음 색이면 칸 없음), 판에는 큰 작전판과 같은 teamColors{blue,red} */
+  var KIT=[['#1a2f5c','네이비'],['#d12f38','빨강'],['#1f6fd1','파랑'],['#14161a','검정'],['#f4f5f7','흰색'],['#f2c230','노랑'],['#ef7a1a','주황'],['#7a3fb0','보라'],['#e0559a','분홍'],['#0f6b3a','초록']];
+  function hexOk(v){return typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v)?v.toLowerCase():'';}
+  function rgb(h){h=hexOk(h)||'#000000';return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+  function light(h){var c=rgb(h);return (c[0]*299+c[1]*587+c[2]*114)/1000>170;}
+  function near(a,b){var x=rgb(a),y=rgb(b),d0=x[0]-y[0],d1=x[1]-y[1],d2=x[2]-y[2];return d0*d0+d1*d1+d2*d2<80*80;}
+  function kitOf(doc,side){var k=doc&&doc.kit&&hexOk(doc.kit[side]);return k||COL[side];}
+  /* 골키퍼 색 — 팀 색과 비슷하면 다른 팀의 골키퍼 색으로 */
+  function gkOf(doc,side){var g=COL[side+'Gk'],o=COL[(side==='us'?'op':'us')+'Gk'];return near(kitOf(doc,side),g)?o:g;}
   var FONT='Pretendard,-apple-system,\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif';
   var JERSEY='<g class="phb-jersey"><path fill="{D}" d="M-15.8 -.6C-15.25 3.94 -14.89 8.67 -14.91 14.76A21 21 0 0 1 -20.7 3.54L-15.8 -.6ZM15.8 -.6C15.25 3.94 14.89 8.67 14.91 14.76A21 21 0 0 0 20.7 3.54L15.8 -.6Z"/><path d="M-15.8 -.6C-15.28 3.66 -14.93 8.1 -14.91 13.66M15.8 -.6C15.28 3.66 14.93 8.1 14.91 13.66" fill="none" stroke="#fff" stroke-width="0.7" stroke-opacity=".9"/><path d="M-12.2 6Q-10.4 9.6-11.4 13.4M12.2 6Q10.4 9.6 11.4 13.4" fill="none" stroke="rgba(0,0,0,.16)" stroke-width="0.55" stroke-linecap="round"/><path fill="{F}" d="M-9.4 -18.78C-13.4 -15.6 -15.6 -9.6 -15.8 -.6L-20.7 3.54A21 21 0 0 1 -9.4 -18.78ZM9.4 -18.78C13.4 -15.6 15.6 -9.6 15.8 -.6L20.7 3.54A21 21 0 0 0 9.4 -18.78Z"/><path d="M-14.95 -13.65C-16.42 -10.2 -17.23 -5.83 -17.35 -.63M-17.58 -10.03C-18.28 -7.25 -18.67 -4.1 -18.75 -.67M-20.06 -2.71C-20.11 -2.05 -20.13 -1.38 -20.15 -.7M14.95 -13.65C16.42 -10.2 17.23 -5.83 17.35 -.63M17.58 -10.03C18.28 -7.25 18.67 -4.1 18.75 -.67M20.06 -2.71C20.11 -2.05 20.13 -1.38 20.15 -.7" fill="none" stroke="#fff" stroke-width="0.95"/><path d="M-9.4 -18.78C-13.4 -15.6 -15.6 -9.6 -15.8 -.6M-15.8 -.6L-20.03 2.97M9.4 -18.78C13.4 -15.6 15.6 -9.6 15.8 -.6M15.8 -.6L20.03 2.97" fill="none" stroke="rgba(0,0,0,.34)" stroke-width="0.75"/><path fill="#fff" stroke="rgba(0,0,0,.34)" stroke-width=".5" stroke-linejoin="round" d="M-9.6 -18.68Q0 -7.92 9.6 -18.68A21 21 0 0 0 -9.6 -18.68Z"/><path d="M-7.78 -18.67C-2.59 -13.99 2.59 -13.99 7.78 -18.67" fill="none" stroke="rgba(0,0,0,.24)" stroke-width="0.45"/><path fill="{C}" d="M-7.2 -19.73Q0 -14.27 7.2 -19.73A21 21 0 0 0 -7.2 -19.73Z"/><path fill="rgba(255,255,255,.55)" d="M-1.3 -19.6h2.6v1.2h-2.6Z"/><path fill="#000" fill-opacity=".08" d="M0 -21A21 21 0 0 0 0 21A19 21 0 0 1 0 -21ZM0 -21A21 21 0 0 1 0 21A19 21 0 0 0 0 -21Z"/><path fill="#000" fill-opacity=".08" d="M0 -21A21 21 0 0 0 0 21A16.6 21 0 0 1 0 -21ZM0 -21A21 21 0 0 1 0 21A16.6 21 0 0 0 0 -21Z"/><circle r="21" fill="none" stroke="#fff" stroke-width="2.6"/></g>';
   var CONE='<path d="M0 -14 L9 9 L-9 9 Z" fill="currentColor" stroke="rgba(0,0,0,.4)" stroke-width="1.4"/><rect x="-9.5" y="8.5" width="19" height="3.6" rx="1.6" fill="currentColor"/><rect x="-9.5" y="8.5" width="19" height="3.6" rx="1.6" fill="rgba(0,0,0,.22)"/><rect x="-5.6" y="-2.5" width="11.2" height="3.4" rx="1" fill="rgba(255,255,255,.82)"/>';
@@ -295,11 +321,11 @@
   function at(P,k,more){return ' transform="translate('+P.x+' '+P.y+') scale('+r4(k)+')'+(more||'')+'"';}
   function nameW(s){var w=17.5;for(var i=0;i<s.length;i++)w+=s.charCodeAt(i)>0x2e7f?18:10.4;return r2(w);}
   /* 선수 = 큰 작전판의 유니폼 칩(그림자 · 원 · 유니폼 · 광택 · 번호 · 이름표). 번호 1 은 골키퍼 색(큰 작전판의 규칙) */
-  function tokSVG(p,sp,r0){
-    var P=proj(sp,p.x,p.y),gk=p.num==='1',F=COL[(p.team==='us'?'us':'op')+(gk?'Gk':'')],num=esc(p.num);
-    var o='<g class="phb-tok" data-id="'+esc(p.id)+'"'+at(P,r0*P.s/21)+'><ellipse cx="3" cy="9" rx="23" ry="18" fill="rgba(0,0,0,.5)"/><circle r="21" fill="'+F+'" stroke="#fff" stroke-width="2.6"/>'+
+  function tokSVG(p,sp,r0,doc){
+    var side=p.team==='us'?'us':'op',gk=p.num==='1',F=gk?gkOf(doc,side):kitOf(doc,side),P=proj(sp,p.x,p.y),num=esc(p.num),lt=light(F);
+    var o='<g class="phb-tok'+(lt?' phb-light':'')+'" data-id="'+esc(p.id)+'"'+at(P,r0*P.s/21)+'><ellipse cx="3" cy="9" rx="23" ry="18" fill="rgba(0,0,0,.5)"/><circle r="21" fill="'+F+'" stroke="'+(lt?'#1c1f26':'#fff')+'" stroke-width="2.6"/>'+
       JERSEY.replace(/\{F\}/g,F).replace(/\{D\}/g,shade(F,0.84)).replace(/\{C\}/g,shade(F,0.62))+'<circle r="21" fill="url(#phbGloss)"/>'+
-      '<text x="0" y="1" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="'+(p.num.length>1?18:22)+'" font-weight="800" font-family="'+FONT+'" stroke="rgba(0,0,0,.5)" stroke-width=".8" paint-order="stroke" stroke-linejoin="round">'+num+'</text>';
+      '<text x="0" y="1" text-anchor="middle" dominant-baseline="central" fill="'+(lt?'#14161a':'#fff')+'" font-size="'+(p.num.length>1?18:22)+'" font-weight="800" font-family="'+FONT+'" stroke="'+(lt?'rgba(255,255,255,.5)':'rgba(0,0,0,.5)')+'" stroke-width=".8" paint-order="stroke" stroke-linejoin="round">'+num+'</text>';
     if(p.name){var tw=nameW(p.name);
       o+='<rect x="'+r2(-tw/2)+'" y="34.5" width="'+tw+'" height="27" rx="9" fill="rgba(18,22,30,.88)"/>'+
          '<text x="0" y="48.5" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="18" font-weight="700" font-family="'+FONT+'">'+esc(p.name)+'</text>';}
@@ -329,7 +355,7 @@
     if(doc.ball)all.push({k:'b',o:doc.ball});
     all.forEach(function(it){
       var P=proj(sp,it.o.x,it.o.y),k=r0*P.s/21;
-      if(it.k==='p')o+=tokSVG(it.o,sp,r0);
+      if(it.k==='p')o+=tokSVG(it.o,sp,r0,doc);
       else if(it.k==='c')o+='<g class="phb-cone" data-i="'+it.i+'" style="color:'+CONE_COL+'"'+at(P,k*1.05)+'>'+CONE+'</g>';
       else o+='<g class="phb-ball"'+at(P,k*1.2,opt.roll?' rotate('+r2(opt.roll)+')':'')+'>'+(opt.ball||BALL0)+'</g>';
     });
@@ -385,6 +411,8 @@
     '#psPhoneBoard .phb-sub{position:absolute;left:8px;right:8px;bottom:calc(100% + 8px);display:flex;align-items:center;gap:6px;padding:6px;border:1px solid var(--phb-line);border-radius:10px;background:var(--phb-surface);box-shadow:0 6px 18px rgba(16,24,40,.2);overflow-x:auto;transition:opacity .12s}'+
     '#psPhoneBoard .phb-sub:empty{display:none}#psPhoneBoard .phb-sub .phb-opt{flex:1 1 0;justify-content:center;padding:0 8px;border-color:transparent;background:transparent}#psPhoneBoard .phb-sub .phb-opt[aria-pressed="true"]{border-color:transparent;background:var(--phb-act);color:var(--phb-act-ink)}'+
     '#psPhoneBoard.phb-touch .phb-sub{opacity:.1;pointer-events:none}'+
+    '#psPhoneBoard .phb-subsize{position:absolute;top:6px;right:6px;z-index:2;gap:4px;padding:3px 3px 3px 10px;border:1px solid var(--phb-line);border-radius:999px;background:var(--phb-surface);box-shadow:0 4px 14px rgba(16,24,40,.22);transition:opacity .12s}#psPhoneBoard .phb-subsize>span{font-size:12px;font-weight:600;color:var(--phb-dim)}#psPhoneBoard .phb-subsize b{min-width:14px}#psPhoneBoard .phb-subsize button{width:40px;height:40px;border-radius:999px}'+
+    '#psPhoneBoard.phb-touch .phb-subsize{opacity:.1;pointer-events:none}#psPhoneBoard.phb-playing .phb-subsize{display:none}'+
     '#psPhoneBoard .phb-opt{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--phb-line);border-radius:10px;background:var(--phb-surface);font-size:14px;font-weight:600;white-space:nowrap}'+
     '#psPhoneBoard .phb-opt[aria-pressed="true"]{border-color:var(--phb-act);background:var(--phb-soft)}'+
     '#psPhoneBoard .phb-opt i{flex:none;display:block;width:14px;height:14px;border-radius:999px}'+
@@ -411,6 +439,8 @@
     '#psPhoneBoard .phb-sheet{width:100%;max-height:88%;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:16px 14px 18px;border-radius:10px 10px 0 0;background:var(--phb-surface)}'+
     '#psPhoneBoard .phb-sheet h3{margin:0;font-size:16px;font-weight:700}#psPhoneBoard .phb-sheet p{margin:0}'+
     '#psPhoneBoard .phb-opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}'+
+    '#psPhoneBoard .phb-kits{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}#psPhoneBoard .phb-kit{width:44px;height:44px;border-radius:999px;border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 1px var(--phb-line);padding:0;cursor:pointer}#psPhoneBoard .phb-kit-light{border-color:#c8ccd4}'+
+    '#psPhoneBoard .phb-kit[aria-pressed="true"]{box-shadow:0 0 0 3px var(--phb-surface),0 0 0 5px var(--phb-act)}'+
     '#psPhoneBoard .phb-fld{display:grid;grid-template-columns:56px minmax(0,1fr);gap:10px;align-items:center}'+
     '#psPhoneBoard .phb-fld input{width:100%;min-width:0;height:44px;border:1px solid var(--phb-line);border-radius:10px;background:var(--phb-surface);padding:0 12px;font-size:16px}'+
     '#psPhoneBoard .phb-end{display:flex;justify-content:space-between;gap:8px}'+
@@ -445,7 +475,7 @@
 
   function make(win){
     var doc=win.document,root=null,toastT=null,G=null;
-    var M={scr:'home',list:null,listState:'idle',spec:'11',form:'4-3-3',opp:'',doc:null,editing:null,title:'',tool:'move',put:'us',line:'run',hist:[],dirty:false,saving:false,tokId:0,ask:null,play:null};
+    var M={scr:'home',list:null,listState:'idle',spec:'11',form:'4-3-3',opp:'',kit:{us:'#1a2f5c',op:'#d12f38'},doc:null,editing:null,title:'',tool:'move',put:'us',line:'run',hist:[],dirty:false,saving:false,tokId:0,ask:null,play:null};
     function $(id){return doc.getElementById(id);}
     function gfn(name){try{var f=win[name];return typeof f==='function'?f:null;}catch(e){return note(e);}}
     function tell(on){try{if(win.parent&&win.parent!==win)win.parent.postMessage({source:'board',type:'phoneBoard',on:!!on},win.location.origin);}catch(e){note(e);}}
@@ -463,12 +493,15 @@
           '<input class="phb-name" id="phbName" type="text" maxlength="'+TITLE_LEN+'" autocomplete="off" aria-label="폰보드 이름">'+
           '<button type="button" class="phb-ico" data-phb="undo" aria-label="되돌리기">'+svgIcon('undo')+'</button>'+
           '<button type="button" class="phb-btn phb-pri" data-phb="save">저장</button></div>'+
-          '<div class="phb-pw"><svg id="phbPitch" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="세로 운동장"><g id="phbBg"></g><g id="phbFg"></g></svg></div>'+
+          '<div class="phb-pw"><svg id="phbPitch" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="세로 운동장"><g id="phbBg"></g><g id="phbFg"></g></svg>'+
+          '<span class="phb-size phb-subsize" id="phbSize" role="group" aria-label="토큰 크기 · 모든 선수"><span>크기</span><button type="button" data-phb="tok" data-v="-1" aria-label="토큰 작게">−</button><b data-phb-tokn></b><button type="button" data-phb="tok" data-v="1" aria-label="토큰 크게">＋</button></span></div>'+
           '<div class="phb-dock"><div class="phb-sub" id="phbSub"></div><div class="phb-film" id="phbFilm"></div><div class="phb-tools" id="phbTools"></div></div></div>'+
         '<div class="phb-shade" id="phbNew" hidden><div class="phb-sheet"><h3>새 작전판</h3>'+
           '<div><p class="phb-cap">인원</p><div class="phb-opts" id="phbSpec"></div></div>'+
           '<div><p class="phb-cap">우리 팀 포메이션</p><div class="phb-opts" id="phbForm"></div></div>'+
           '<div><p class="phb-cap">상대 포메이션</p><div class="phb-opts" id="phbOppForm"></div></div>'+
+          '<div><p class="phb-cap">우리 팀 유니폼</p><div class="phb-kits" id="phbKitUs"></div></div>'+
+          '<div id="phbKitOpBox"><p class="phb-cap">상대 팀 유니폼</p><div class="phb-kits" id="phbKitOp"></div></div>'+
           '<div class="phb-end"><button type="button" class="phb-btn" data-phb="new-cancel">취소</button><button type="button" class="phb-btn phb-pri" data-phb="new-go">만들기</button></div></div></div>'+
         '<div class="phb-shade" id="phbTok" hidden><div class="phb-sheet"><h3>선수</h3>'+
           '<label class="phb-fld"><span>번호</span><input id="phbNum" type="text" inputmode="numeric" maxlength="3" autocomplete="off"></label>'+
@@ -532,13 +565,16 @@
       $('phbForm').innerHTML=f.map(function(k){return '<button type="button" class="phb-opt" data-phb="form" data-v="'+k+'" aria-pressed="'+(k===M.form)+'">'+(k||'빈 판')+'</button>';}).join('');
       if(f.indexOf(M.opp)<0)M.opp='';
       $('phbOppForm').innerHTML=[''].concat(f.filter(Boolean)).map(function(k){return '<button type="button" class="phb-opt" data-phb="opp" data-v="'+k+'" aria-pressed="'+(k===M.opp)+'">'+(k||'없음')+'</button>';}).join('');
+      var kits=function(side){return KIT.map(function(c){return '<button type="button" class="phb-kit'+(light(c[0])?' phb-kit-light':'')+'" data-phb="kit" data-side="'+side+'" data-v="'+c[0]+'" aria-pressed="'+(M.kit[side]===c[0])+'" aria-label="'+(side==='us'?'우리 팀':'상대 팀')+' '+c[1]+'" style="background:'+c[0]+'"></button>';}).join('');};
+      $('phbKitUs').innerHTML=kits('us');$('phbKitOp').innerHTML=kits('op');$('phbKitOpBox').hidden=!M.opp;
     }
     function startEditor(d){
       if(d){M.editing=d.libId;M.doc=docFrom(d);M.title=d.name||'';}
-      else{M.editing=null;M.doc=docNew(M.spec,M.form,M.opp);M.title=title();}
+      else{M.editing=null;M.doc=docNew(M.spec,M.form,M.opp,M.kit);M.title=title();}
       stop(true);M.hist=[];M.tool='move';M.dirty=!d;M.saving=false;
       $('phbName').value=M.title;
       var sb=root.querySelector('[data-phb="save"]');sb.disabled=false;sb.textContent='저장';
+      root.style.setProperty('--phb-us',kitOf(M.doc,'us'));root.style.setProperty('--phb-op',kitOf(M.doc,'op'));
       hideSheets();show('edit');renderTools();fit();paint();
     }
     /* 운동장이 칸을 꽉 채우게 — 보이는 칸의 비율로 세로를 정한다(칸이 아직 0 이면 실제 비율) */
@@ -556,7 +592,7 @@
       if(M.tool==='put')s=[['us','우리','us'],['op','상대','op'],['ball','공','bl'],['cone','콘','cn']].map(function(x){return '<button type="button" class="phb-opt" data-phb="put" data-v="'+x[0]+'" aria-pressed="'+(M.put===x[0])+'"><i class="'+x[2]+'"></i><span>'+x[1]+'</span></button>';}).join('');
       else if(M.tool==='line')s=[['run','이동','M1 5H29" stroke-dasharray="4 3'],['pass','패스','M1 5H29'],['dribble','드리블','M1 5L4 2 8 8 12 2 16 8 20 2 24 8 27 5H29']].map(function(x){return '<button type="button" class="phb-opt" data-phb="line" data-v="'+x[0]+'" aria-pressed="'+(M.line===x[0])+'"><svg viewBox="0 0 30 10" aria-hidden="true"><path d="'+x[2]+'"/></svg><span>'+x[1]+'</span></button>';}).join('');
       else s='';
-      $('phbSub').innerHTML=s;
+      $('phbSub').innerHTML=s;tokUI();
       root.querySelector('[data-phb="undo"]').disabled=!M.hist.length;
       renderFilm();
     }
@@ -587,7 +623,7 @@
       return M.ballArt;
     }
     function paint(preview,scene){
-      var sp=specOf(M.doc.n),D=scene?{n:M.doc.n,tok:M.doc.tok,players:scene.players,ball:scene.ball,cones:scene.cones,lines:scene.lines}:M.doc;
+      var sp=specOf(M.doc.n),D=scene?{n:M.doc.n,tok:M.doc.tok,kit:M.doc.kit,players:scene.players,ball:scene.ball,cones:scene.cones,lines:scene.lines}:M.doc;
       var at=sceneAt(M.doc),prev=(!scene&&M.doc.scenes&&at>0)?M.doc.scenes[at-1]:null;
       $('phbFg').innerHTML=docSVG(D,sp,{ball:ballArt(),ghost:prev})+(preview?lineSVG(preview,sp):'');
     }
@@ -656,8 +692,8 @@
         else if(M.put==='cone'){if(D.cones.length>=MAX_CONES){toast('콘은 '+MAX_CONES+'개까지 놓을 수 있습니다');return;}snapHist();D.cones.push({x:p.x,y:p.y});others(D,function(s){s.cones.push({x:p.x,y:p.y});});}
         else{
           if(D.players.length>=MAX_PLAYERS){toast('선수는 '+MAX_PLAYERS+'명까지 놓을 수 있습니다');return;}
-          snapHist();var n=D.players.filter(function(q){return q.team===M.put;}).length+1;
-          var np={id:nextId(D),team:M.put,num:String(n),name:'',x:p.x,y:p.y};D.players.push(np);others(D,function(s){s.players.push(copy(np));});
+          snapHist();
+          var np={id:nextId(D),team:M.put,num:freeNum(D.players,M.put),name:'',x:p.x,y:p.y};D.players.push(np);others(D,function(s){s.players.push(copy(np));});
         }
         paint();
       }
@@ -684,7 +720,7 @@
       if(g.mode==='drag'){if(!g.moved&&g.h.type==='player')openTok(g.h.o);else if(g.moved)paint();}
       else{var dx=g.x2-g.x1,dy=g.y2-g.y1;if(Math.sqrt(dx*dx+dy*dy)>sp.w*0.06){snapHist();M.doc.lines.push({kind:M.line,x1:g.x1,y1:g.y1,x2:g.x2,y2:g.y2});}paint();}
     }
-    function tokUI(){var tk=tokOf(M.doc),bs=$('phbTok').querySelectorAll('[data-phb="tok"]');$('phbTokN').textContent=tk;bs[0].disabled=tk<=1;bs[1].disabled=tk>=TOKF.length;}
+    function tokUI(){if(!M.doc)return;var tk=tokOf(M.doc);root.querySelectorAll('[data-phb="tok"]').forEach(function(b){b.disabled=(+b.getAttribute('data-v')<0)?tk<=1:tk>=TOKF.length;});$('phbTokN').textContent=tk;root.querySelectorAll('[data-phb-tokn]').forEach(function(n){n.textContent=tk;});}
     function openTok(p){M.tokId=p.id;$('phbNum').value=p.num;$('phbNm').value=p.name;tokUI();$('phbTok').hidden=false;}
     function tokCur(){return M.doc.players.filter(function(p){return p.id===M.tokId;})[0];}
     /* ── 저장 ── */
@@ -748,6 +784,7 @@
       else if(k==='spec'){M.spec=v;renderNew();}
       else if(k==='form'){M.form=v;renderNew();}
       else if(k==='opp'){M.opp=v;renderNew();}
+      else if(k==='kit'){var sd=b.getAttribute('data-side');if(hexOk(v)&&(sd==='us'||sd==='op')){var other=M.kit[sd==='us'?'op':'us'];if(hexOk(v)===other)M.kit[sd==='us'?'op':'us']=M.kit[sd];M.kit[sd]=hexOk(v);renderNew();}}
       else if(k==='new-depth'){if(!openQuick(null))toast('뎁스 차트를 열지 못했습니다. 잠시 뒤 다시 눌러 주세요');}
       else if(k==='new-go')startEditor(null);
       else if(k==='reload')loadList();
@@ -816,7 +853,7 @@
   }
   function open(win){win=win||(typeof window!=='undefined'?window:null);var q=win&&(win.__psPhoneBoard||install(win));return q?q.open():false;}
 
-  return {TAG:TAG,SPECS:SPECS,FORMS:FORMS,world:world,local:local,docNew:docNew,snapFor:snapFor,itemFor:itemFor,editable:editable,docFrom:docFrom,applyEdit:applyEdit,mine:mine,
+  return {TAG:TAG,SPECS:SPECS,FORMS:FORMS,NUMS:NUMS,KIT:KIT,kitOf:kitOf,gkOf:gkOf,slotNum:slotNum,freeNum:freeNum,world:world,local:local,docNew:docNew,snapFor:snapFor,itemFor:itemFor,editable:editable,docFrom:docFrom,applyEdit:applyEdit,mine:mine,
     hit:hit,tokOf:tokOf,TOKF:TOKF,proj:proj,unproj:unproj,pitchSVG:pitchSVG,docSVG:docSVG,lineSVG:lineSVG,ghostSVG:ghostSVG,
     MAX_SCENES:MAX_SCENES,sceneCount:sceneCount,sceneAt:sceneAt,sceneGo:sceneGo,sceneAdd:sceneAdd,sceneDel:sceneDel,advance:advance,tween:tween,ease:ease,framesFor:framesFor,landscape:landscape,title:title,install:install,open:open};
 });
