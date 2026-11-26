@@ -49,7 +49,7 @@ try{
   assert.match(await f.locator('#phbList').innerText(),/아직 없습니다/);
   await shot(page,'1-home');
   /* 새 폰보드 — 8인제로 바꿨다가 11인제 4-4-2 · 상대도 */
-  assert.deepEqual((await f.locator('#phbHome .phb-two button').allInnerTexts()).map(t=>t.trim()),['＋ 작전판','＋ 뎁스 차트'],'two separate ways to start');
+  assert.deepEqual((await f.locator('#phbHome .phb-two button').allInnerTexts()).map(t=>t.trim()),['＋ 새로 만들기','＋ 뎁스 차트'],'two separate ways to start (3.381 — 작전판 · 훈련은 시트에서 고른다)');
   for(const b2 of await f.locator('#phbHome .phb-two button').all()){const r=await b2.boundingBox();assert.ok(r.height>=44&&r.width>=120,'start buttons are finger-sized');}
   await f.locator('[data-phb="new"]').tap();
   await f.locator('#phbNew').waitFor({state:'visible'});
@@ -128,19 +128,24 @@ try{
   await f.locator('[data-phb="tok-ok"]').tap();
   assert.ok(Math.abs(await chipR()-r3)<0.001,'back to the first size');
   /* 3.379 — 토큰 크기는 운동장 오른쪽 위 구석에서 바로(선수를 누르지 않고 · 어느 도구에서나) */
-  const sub=f.locator('#phbSize');assert.equal(await sub.isVisible(),true,'the size control sits on the pitch corner');
+  /* 3.381 — 크기 − / ＋ · 되돌리기는 아래 도구 줄 안(운동장 위에 아무것도 없다) */
+  const sub=f.locator('#phbTools #phbSize');assert.equal(await sub.isVisible(),true,'the size control sits in the tool row');
+  assert.equal(await f.locator('.phb-pw #phbSize, .phb-pw [data-phb="tok"]').count(),0,'nothing floats on the pitch');
+  assert.equal(await f.locator('#phbTools [data-phb="undo"]').count(),1,'undo is in the tool row');
   assert.equal(await sub.locator('[data-phb-tokn]').textContent(),'3');
   await sub.locator('[data-phb="tok"][data-v="-1"]').tap();await sub.locator('[data-phb="tok"][data-v="-1"]').tap();
   assert.equal((await model(f)).doc.tok,1);assert.equal(await sub.locator('[data-phb-tokn]').textContent(),'1');
   assert.equal(await sub.locator('[data-phb="tok"][data-v="-1"]').isDisabled(),true,'the smallest step stops');
   assert.ok(await chipR()<r3*0.8,'the chips shrank');
   const subBox=await sub.boundingBox(),btnBox=await sub.locator('[data-phb="tok"][data-v="1"]').boundingBox();
-  assert.ok(btnBox.width>=40&&btnBox.height>=40,'the buttons are big enough to tap');
+  assert.ok(btnBox.width>=36&&btnBox.height>=44,'the buttons are big enough to tap '+JSON.stringify(btnBox));   /* 3.381 — 아이콘 줄: 36 × 46(손가락 높이 그대로) */
   await shot(page,'3c-editor-size');
   await sub.locator('[data-phb="tok"][data-v="1"]').tap();await sub.locator('[data-phb="tok"][data-v="1"]').tap();
   assert.equal((await model(f)).doc.tok,3);
-  const pw=await f.locator('.phb-pw').boundingBox();
-  assert.ok(subBox.y-pw.y<12&&pw.x+pw.width-(subBox.x+subBox.width)<12,'top-right corner of the pitch');
+  const tl=await f.locator('#phbTools').boundingBox(),tb=await f.locator('#phbTools [data-v="move"]').boundingBox();
+  assert.ok(subBox.y>=tl.y-1&&subBox.y+subBox.height<=tl.y+tl.height+1&&Math.abs(subBox.y-tb.y)<6,'in the same row as the tools');
+  assert.ok(tl.x+tl.width>=subBox.x+subBox.width-1&&subBox.x>=tl.x,'inside the tool row, no overflow');
+  assert.ok(tb.height<=48,'tools are compact '+tb.height);
   await f.locator('#phbTools [data-v="put"]').tap();assert.equal(await sub.isVisible(),true,'still there with the put tool');
   await f.locator('#phbTools [data-v="move"]').tap();
   /* 3.359 — 장면(애니메이션): ＋ 장면 → 화살대로 옮긴 다음 장면 → 옮기기 → 장면 오가기 → 시간 → 재생 */
@@ -263,6 +268,93 @@ try{
   await f.locator('#phbList .phb-row').first().tap();
   await f.waitForFunction(()=>document.getElementById('psPhoneBoard').hidden&&document.body.classList.contains('vcreating')&&window.__vaultReadOnly,null,{timeout:20000});
   assert.equal(await tab.getAttribute('aria-current'),null,'the tab lets go when the board view takes over');
+  /* 3.381 — 훈련: 처음에 고른다 · 모눈종이 · 장비 · 구역 → 보관함 «훈련» */
+  await page.locator('#psTrainBtn').tap();await page.waitForTimeout(400);
+  await tab.tap();await f.locator('#phbHome').waitFor({state:'visible'});
+  await f.locator('[data-phb="new"]').tap();await f.locator('#phbNew').waitFor({state:'visible'});
+  assert.deepEqual((await f.locator('#phbKind .phb-kind').allInnerTexts()).map(t=>t.trim()),['작전판','훈련'],'pick a tactics board or a training first');
+  await f.locator('#phbKind [data-v="train"]').tap();
+  assert.equal(await f.locator('#phbBoardBox').isVisible(),false,'formations hide for a training');
+  await f.locator('#phbTSpec [data-v="g30"]').tap();await f.locator('#phbMin [data-v="20"]').tap();
+  await shot(page,'8-new-training');
+  await f.locator('[data-phb="new-go"]').tap();await f.locator('#phbEdit').waitFor({state:'visible'});
+  m=await model(f);assert.deepEqual([m.doc.kind,m.doc.n,m.doc.min,m.doc.players.length],['train','g30',20,0]);
+  assert.equal(await f.evaluate(()=>document.querySelector('#phbBg rect').getAttribute('fill')),'#f6f7f4','grid paper');
+  /* 아래 도구 — 글자 없이 아이콘만, 이름은 aria-label */
+  assert.equal((await f.locator('#phbTools').innerText()).replace(/[−＋\s0-9]/g,''),'','no text in the tool row');
+  assert.deepEqual(await f.locator('#phbTools [data-phb="tool"]').evaluateAll(b=>b.map(x=>x.getAttribute('aria-label'))),['옮기기','놓기','화살','구역','지우기']);
+  const dock=await f.evaluate(()=>{const t=document.getElementById('phbTools'),r=t.getBoundingClientRect();return {sw:t.scrollWidth,cw:t.clientWidth,right:Math.max(...[...t.querySelectorAll('button')].map(b=>b.getBoundingClientRect().right)),w:innerWidth};});
+  assert.ok(dock.sw<=dock.cw+1&&dock.right<=dock.w,'the icon row fits '+JSON.stringify(dock));
+  await f.locator('#phbTools [data-v="put"]').tap();
+  assert.equal(await f.locator('#phbSub .phb-eq').count(),10,'ten kinds of equipment');
+  await f.locator('#phbSub [data-v="minigoal"]').tap();await ptr(f,[[9.7,3]]);
+  await f.locator('#phbSub [data-v="pole"]').tap();await ptr(f,[[9.7,15.2]]);
+  await f.locator('#phbSub [data-v="us"]').tap();await ptr(f,[[9.7,25]]);
+  m=await model(f);assert.deepEqual(m.doc.cones.map(c=>c.t),['minigoal','pole']);assert.deepEqual([m.doc.cones[1].x,m.doc.cones[1].y],[9.5,15],'snapped to the half-metre grid');
+  await f.locator('#phbTools [data-v="zone"]').tap();await f.locator('#phbSub [data-phb="zone"][data-v="ellipse"]').tap();await f.locator('#phbSub [data-v="#2f6df0"]').tap();
+  await ptr(f,[[3,8],[16,20]]);
+  m=await model(f);assert.deepEqual(m.doc.zones,[{k:'ellipse',x1:3,y1:8,x2:16,y2:20,c:'#2f6df0'}]);
+  await f.locator('#phbTools [data-v="move"]').tap();await ptr(f,[[5,11],[7,12]]);
+  m=await model(f);assert.deepEqual([m.doc.zones[0].x1,m.doc.zones[0].y1],[5,9],'a zone moves with the finger');
+  await f.locator('[data-phb="undo"]').tap();m=await model(f);assert.equal(m.doc.zones[0].x1,3,'undo puts the zone back');
+  await shot(page,'9-training');
+  await f.locator('#phbName').fill('론도 폴 드리블');
+  await f.locator('[data-phb="save"]').tap();await f.locator('#phbHome').waitFor({state:'visible'});
+  const tr=await f.evaluate(()=>libGet().then(l=>JSON.parse(JSON.stringify(l.find(d=>d&&d.name==='론도 폴 드리블')))));
+  assert.equal(tr.type,'train');assert.deepEqual(tr.phone,{v:1,n:'g30',kind:'train'});assert.equal(tr.minutes,20);
+  assert.equal(tr.snap.pitchSpec,'grid30');assert.deepEqual(tr.snap.equipment.map(e=>e.team),['minigoal','pole']);assert.deepEqual(tr.snap.drawings.map(d=>d.type),['ellipse']);
+  assert.equal(tr.trainings.length,1);assert.equal(tr.trainings[0].minutes,20);assert.ok(/^<svg/.test(tr.trainings[0].thumb||''),'the training thumbnail');
+  assert.match(await f.locator('#phbList').innerText(),/론도 폴 드리블[\s\S]*훈련/);
+  await f.locator('#phbList .phb-row').first().tap();await f.locator('#phbEdit').waitFor({state:'visible'});
+  m=await model(f);assert.equal(m.editing,tr.libId,'a phone training opens again on the phone');assert.equal(m.doc.zones.length,1);
+  await f.locator('[data-phb="back"]').tap();await f.locator('#phbHome').waitFor({state:'visible'});
+  /* 3.381 — 빠른 시작 판 · 장비 줄 · 중립 · 곡선 · 구역 크기 · 설명 · 장면 복제 · 선수단 이름 · 이미지 */
+  await f.locator('[data-phb="new"]').tap();await f.locator('#phbKind [data-v="train"]').tap();
+  assert.deepEqual(await f.locator('#phbDrill .phb-opt').allInnerTexts(),['빈 판','론도 4v2','3v3+2','4골대 게임']);
+  await f.locator('#phbTSpec [data-v="g20"]').tap();await f.locator('#phbDrill [data-v="rondo"]').tap();
+  await f.locator('[data-phb="new-go"]').tap();await f.locator('#phbEdit').waitFor({state:'visible'});
+  m=await model(f);assert.deepEqual([m.doc.players.length,m.doc.cones.length,m.doc.zones.length],[6,4,1],'the rondo is laid out');
+  assert.match(await f.locator('#phbFg .phb-zlab').first().textContent(),/^10×10m$/,'the zone says its size');
+  /* 콘 줄 세우기 — 끌면 2m 마다 */
+  await f.locator('#phbTools [data-v="put"]').tap();await f.locator('#phbSub [data-v="cone"]').tap();
+  await ptr(f,[[1,1],[1,11]]);
+  m=await model(f);assert.equal(m.doc.cones.length,10,'six cones in a line '+m.doc.cones.length);assert.match(await toastText(f),/콘 6개를 줄지어/);
+  await f.locator('#phbSub [data-v="ne"]').tap();await ptr(f,[[12,3]]);
+  m=await model(f);assert.equal(m.doc.players.at(-1).team,'ne');
+  assert.equal(await f.evaluate(id=>document.querySelector('#phbFg .phb-tok[data-id="'+id+'"] circle[r="21"]').getAttribute('fill'),String(m.doc.players.at(-1).id)),'#f2c230','a yellow bib');
+  /* 구역 모서리를 끌어 크기 · 화살 가운데를 끌어 곡선 */
+  await f.locator('#phbTools [data-v="move"]').tap();
+  const z0=m.doc.zones[0];await ptr(f,[[z0.x2,z0.y2],[z0.x2+1,z0.y2+2]]);
+  m=await model(f);assert.deepEqual([m.doc.zones[0].x2-m.doc.zones[0].x1,m.doc.zones[0].y2-m.doc.zones[0].y1],[11,12],'the corner handle resizes');
+  await f.locator('#phbTools [data-v="line"]').tap();await f.locator('#phbSub [data-v="pass"]').tap();await ptr(f,[[2,16],[11,16]]);
+  await f.locator('#phbTools [data-v="move"]').tap();
+  assert.ok(await f.locator('#phbFg .phb-lh').count()>=1,'arrow handles show with the move tool');
+  await ptr(f,[[6.5,16],[6.5,14]]);
+  m=await model(f);const cl=m.doc.lines.at(-1);assert.ok(cl.cy<15,'the pass bends '+JSON.stringify(cl));
+  /* 설명 */
+  await f.locator('[data-phb="note"]').tap();await f.locator('#phbNote').waitFor({state:'visible'});
+  await f.locator('#phbMethod').fill('바깥 4명 · 안 2명\n두 번 터치');await f.locator('#phbCoach').fill('몸 열고 받기');await f.locator('[data-phb="note-ok"]').tap();
+  m=await model(f);assert.equal(m.doc.coaching,'몸 열고 받기');
+  /* 장면 복제 */
+  await f.locator('[data-phb="scene-add"]').tap();await f.locator('.phb-sc').nth(1).tap();await f.locator('#phbScene').waitFor({state:'visible'});
+  await f.locator('[data-phb="scene-dup"]').tap();m=await model(f);assert.deepEqual([m.doc.scenes.length,m.doc.at],[3,2]);
+  /* 선수단 이름 */
+  await ptr(f,[[m.doc.players[0].x,m.doc.players[0].y]]);await f.locator('#phbTok').waitFor({state:'visible'});
+  await f.locator('[data-phb="roster"]').tap();await f.waitForFunction(()=>/선수단/.test(document.getElementById('phbToast').textContent||''));
+  const rt=await toastText(f);m=await model(f);
+  if(/이름 \d+명/.test(rt))assert.ok(m.doc.players.filter(p=>p.team==='us'&&p.name).length>=1,'names came from the squad');
+  if(await f.locator('#phbTok').isVisible())await f.locator('[data-phb="tok-ok"]').tap();
+  await shot(page,'10-drill');
+  /* 이미지로 보내기 — 공유가 없는 브라우저는 내려받기 */
+  await f.evaluate(()=>{window.__dl=[];HTMLAnchorElement.prototype.click=function(){window.__dl.push(this.download);};});
+  await f.locator('[data-phb="share"]').tap();
+  await f.waitForFunction(()=>window.__psPhoneBoard.ui().model().lastShot,null,{timeout:15000});
+  const shotInfo=await f.evaluate(async()=>{const b=window.__psPhoneBoard.ui().model().lastShot,bm=await createImageBitmap(b);return {size:b.size,type:b.type,w:bm.width,h:bm.height,dl:window.__dl};});
+  assert.equal(shotInfo.type,'image/png');assert.ok(shotInfo.size>5000&&shotInfo.h>shotInfo.w,'a portrait picture '+JSON.stringify(shotInfo));
+  await f.locator('[data-phb="save"]').tap();await f.locator('#phbHome').waitFor({state:'visible'});
+  const dr=await f.evaluate(()=>libGet().then(l=>JSON.parse(JSON.stringify(l.find(d=>d&&d.type==='train'&&d.frames)))));
+  assert.equal(dr.trainings[0].coaching,'몸 열고 받기');assert.equal(dr.frames.length,3);assert.ok(dr.snap.players.some(p=>p.team==='yellow'));
+  assert.ok(dr.frames[0].snap.drawings.some(g=>g.type==='pass'&&g.pts.length===3),'the curve is saved for the big board');
   assert.deepEqual(logs.filter(x=>x.type==='pageerror'&&!/ResizeObserver loop/.test(x.text)),[],'no page errors');
  }
  /* ── 아이패드 — 탭 없음 · 보관함 칩은 보임 ── */
