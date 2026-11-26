@@ -29,5 +29,58 @@
     if(!n&&Array.isArray(card.frames))n=card.frames.length;
     return {libId:td.fromLib,idx:0,scenes:n,board:true};
   }
-  return {target:target,scenes:scenes,pageName:pageName};
+  /* 3.379 — 그림만 있는 줄(장면 하나)도 그 그림으로 바로(제보 c1bad13d «이미지만 넣으면 … 클릭하면 바로 이미지로»).
+     ▶ 자리에 «그림 보기» — 같은 문(보기 전용)을 재생 없이 두드린다(process.html wksAnimPlay(di,ti,1) → reason 'pic').
+     훈련 · 세트피스 · 작전판 줄 모두(r = wksLibTrainOf 의 답). 그림이 있는지는 일정 줄의 thumb/snap · 보관함 사본의 그 훈련(페이지) thumb/snap 으로 본다.
+     process.html 은 크기 예산(820KB)에 닿아 있어 버튼 글은 여기서 만든다. */
+  function hasPic(card,td,r){
+    if(!r)return false;
+    if(td&&(td.thumb||td.snap))return true;
+    if(!card)return false;
+    var arr=r.board?card.pages:card.trainings, one=Array.isArray(arr)?arr[r.idx]:null;
+    if(one&&(one.thumb||one.snap))return true;
+    return !!((!Array.isArray(arr)||arr.length<=1)&&(card.thumb||card.snap));
+  }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  var ICON='<svg viewBox="0 0 12 12" width="12" height="12" style="margin:0" aria-hidden="true"><rect x="1.5" y="2.5" width="9" height="7" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M2.2 8.6l2.4-2.5 1.7 1.6 1.3-1.2 2.2 2.1" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>';
+  /* sheet = 훈련 칩 시트의 큰 버튼 · 아니면 줄 끝 동그란 버튼(.wks-play 모양 그대로 + .wks-pic). card 를 안 주면 일정의 wksLibCard 로 찾는다 */
+  function picBtn(di,ti,td,name,cls,r,sheet,card){
+    if(!r||r.scenes>1)return '';
+    di=parseInt(di,10)||0; ti=parseInt(ti,10)||0;
+    if(card===undefined){ try{ card=(typeof wksLibCard==='function')?wksLibCard(r.libId):null; }catch(_){ card=null; } }
+    if(!hasPic(card,td,r))return '';
+    var go='wksAnimPlay('+di+','+ti+',1)';
+    if(sheet)return '<button class="btn solid" onclick="'+go+'">그림 보기</button>';
+    return '<span class="'+esc(cls||'wks-play')+' wks-pic" role="button" tabindex="0" title="그림 보기" aria-label="'+esc(name)+' 그림 보기"'
+      +' onclick="event.stopPropagation();'+go+'" onkeydown="if(event.key===&quot;Enter&quot;||event.key===&quot; &quot;){event.preventDefault();event.stopPropagation();'+go+'}">'+ICON+'</span>';
+  }
+  /* 3.379 A안(사용자 11/25 목업 `UI-일정-그림보기-목업-2026-11-25.html` «A안으로») — 주간 카드에서 그림 · 애니메이션이 있는 줄(`.wks-li.has-play`)은
+     **줄 전체가 «보기»**다. 줄 끝 동그란 단추는 이름 앞의 작은 표식으로(같은 요소 — 키보드 · 제 onclick 그대로), 시간 칩(`i`)을 누르면 예전처럼 세션 채우기 창(시간).
+     이름 고치기 · 삭제는 그 창에서. 그림 없는 줄 · 세션 채우기 창 안의 줄(.wft-*)은 그대로. process.html 은 손대지 않는다(크기 예산) — CSS 와 누름은 여기서. */
+  var ROW_CSS='.wks-li.has-play{column-gap:5px}.wks-li.has-play .wks-rt{display:contents}'
+    +'.wks-li.has-play .wks-play,.wks-li.has-play .wks-play:hover,.wks-li.has-play .wks-play:focus-visible{order:-1;width:14px;height:14px;border-radius:0;background:none;box-shadow:none;color:var(--blue,var(--ps-navy,#14213D))}'
+    +'.wks-li.has-play .wks-play:focus-visible{outline:2px solid currentColor;outline-offset:2px}'
+    +'.wks-li.has-play i{margin-left:auto;padding:1px 6px;border-radius:999px;background:var(--surface,#fff);box-shadow:inset 0 0 0 1px var(--line,#E3E6EA);color:var(--text,#14213D)}'
+    +'body.fmdark .wks-li.has-play i{background:var(--surface-2,#23272D)}';
+  /* 줄 누름 — 시간 칩 · 표식 자신은 제 처리기에, 그 밖의 줄 어디든 표식을 대신 누른다. 맡았으면 true */
+  function rowTap(e){
+    var t=e&&e.target; if(!t||typeof t.closest!=='function')return false;
+    var li=t.closest('.wks-li.has-play'); if(!li)return false;
+    if(t.closest('i')||t.closest('.wks-play'))return false;
+    var p=li.querySelector('.wks-play'); if(!p)return false;
+    e.stopPropagation(); e.preventDefault();
+    p.click();
+    return true;
+  }
+  function mountRows(doc){
+    if(!doc||!doc.head||doc.getElementById('ps-sbp-css'))return false;
+    var st=doc.createElement('style'); st.id='ps-sbp-css'; st.textContent=ROW_CSS; doc.head.appendChild(st);
+    doc.addEventListener('click',rowTap,true);
+    return true;
+  }
+  if(typeof window!=='undefined'&&window.document){
+    if(window.document.head)mountRows(window.document);
+    else window.document.addEventListener('DOMContentLoaded',function(){ mountRows(window.document); });
+  }
+  return {target:target,scenes:scenes,pageName:pageName,hasPic:hasPic,picBtn:picBtn,rowTap:rowTap,mountRows:mountRows,ROW_CSS:ROW_CSS};
 });
