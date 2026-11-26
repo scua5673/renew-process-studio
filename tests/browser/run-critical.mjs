@@ -37,6 +37,7 @@ suites.records.push('training-toolbar-layout');
 suites.records.push('schedule-thumb-ref-3315');
 suites.records.push('sched-board-play-3329');
 suites.records.push('sched-pic-view-3379');   /* 3.379 — 그림 한 장인 일정 줄의 «그림 보기»(제보 c1bad13d) */
+suites.records.push('sched-vacation-3380');   /* 3.380 — 일정 종류 «휴가»(제보 9f762d66) */
 suites.records.push('train-play-status-3331');   /* 3.331 — 일정 훈련 ▶ 를 닫고 돌아오면 상태 줄이 «기기에 저장 중…»에 머물던 것(보관함 목록으로 떠날 때 초안 영수증 확인) */   /* 3.329 — 일정에 가져온 작전판 줄의 ▶ → 보기 전용 슬라이드쇼(그 페이지부터 · 재생) → 닫으면 일정 · 보관함 · 작업 보드 그대로 */   /* 3.315 — 일정 사본의 그림은 참조만(화면 · 저장 · 새로고침 · 옛 사본 다이어트) */
 suites.board2.push('board-training-edit','meeting-cover','meeting-reserve','meeting-reserve-edit');
 suites.board2.push('meeting-slide-transition');   /* 3.256 — 미팅 슬라이드 넘김: 같은 팀 · 번호만 잇기 · 넘기는 중 저장 막기 */

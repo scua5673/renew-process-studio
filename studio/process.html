@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="data-lock-guard.js"></script>
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
-<script src="storage.js"></script><script src="schedule-lib-slim.js"></script><script src="schedule-board-play.js"></script><script src="match-kind.js"></script><script src="training-intensity.js"></script>
+<script src="storage.js"></script><script src="schedule-lib-slim.js"></script><script src="schedule-board-play.js"></script><script src="schedule-vacation.js"></script><script src="match-kind.js"></script><script src="training-intensity.js"></script>
 <link rel="stylesheet" href="team-audience.css"><script src="team-audience.js"></script><script src="schedule-audience.js"></script>
 <script src="review-training.js"></script>
 <script src="daily-effort.js"></script>
@@ -1563,7 +1563,7 @@ function wksSetGroupKind(di,g,kind){
 function wksGroupDays(di){wksChooseSession(di);}
 function wksGroupSummary(di){
   var day=week[di],keys=Object.keys(day.groupKinds||{}).filter(function(g){return (!__schedGrp||g===__schedGrp)&&wksGroupKind(day,g)==='OFF';});
-  return keys.length?'<div class="wks-group-days">'+keys.map(function(g){return '<div style="padding:5px 8px">'+wkbdEsc(schedGroupLabel(g))+' · OFF</div>';}).join('')+'</div>':'';
+  return keys.length?'<div class="wks-group-days">'+keys.map(function(g){return '<div style="padding:5px 8px">'+wkbdEsc(schedGroupLabel(g))+' · '+PSVac.g(day,g)+'</div>';}).join('')+'</div>':'';
 }
 function schedGrpOf(tr,di){ return schedGrpList(tr,di).map(schedGroupLabel).concat(PSTeamAudience.years(tr&&tr.schoolYears).map(PSTeamAudience.yearLabel)).join(' · '); }
 /* ══ 2.436 · 하루에 경기 여러 개 — A팀·B팀 ══
@@ -4469,13 +4469,13 @@ function wksFillRender(keep,focus){
   (function(){
     try{
       var _bd=dayBoard(day)||{}, _cur=String(_bd.sched||'');
-      var fillGroups=schedGrpList(tr,di);if(fillGroups.length&&fillGroups.every(function(g){return wksGroupKind(day,g)==='OFF';}))_cur='OFF';else if(fillGroups.some(function(g){return wksGroupKind(day,g)==='훈련';}))_cur='훈련';
+      var fillGroups=schedGrpList(tr,di);if(fillGroups.length&&fillGroups.every(function(g){return wksGroupKind(day,g)==='OFF';}))_cur='OFF';else if(fillGroups.some(function(g){return wksGroupKind(day,g)==='훈련';}))_cur='훈련';_cur=PSVac.u(day,fillGroups,_cur);
       var _mk=''; try{ _mk=(_cur==='경기')?String((day.match&&day.match.kind)||''):''; }catch(_){}   /* ⚠ 종류는 `day.match.kind` 에 있다(`b.schedKind` 가 아니다 — wkbdSetSchedKind 3153 참고) */
       var FIX=PSMatchKind.fix();
       var kb=FIX.map(function(o){
         return '<button class="fp'+(_mk===o[2]?' on':'')+'" onclick="wkbdSetSchedKind('+di+',\''+o[2]+'\');'+(__fillNoSes?('wksFillPick('+di+')'):('wksFill('+di+',\''+_fillEsc(__fillSlot)+'\')'))+'">'
           +'<span class="cdot" style="background:'+o[1]+';margin-right:6px;vertical-align:middle"></span>'+o[0]+'</button>'; }).join('');
-      [['훈련','#C24A46'],['OFF','#8A9099']].forEach(function(o){
+      PSVac.K.forEach(function(o){
         /* 2.391 — 고르기 모드에서 **훈련**을 고르면 그때 세션을 만들어 이어 간다(wksAddSession 이 만들고 연다).
            OFF·경기는 세션이 필요 없으니 그대로 다시 그린다. */
         var after=(__fillNoSes&&o[0]==='훈련')
@@ -5136,7 +5136,7 @@ function renderWeekSessions(el){
     var md=day.md?('<span class="wkbd-md'+(day.match&&mxAnyVis?' m':'')+'">'+day.md+'</span>'):'';
     /* 2.953 — 주간에 «오늘»이 없었다(오늘 화면·월간엔 있다 — 코치 점검 10/7). 오늘 칸에 테두리와 «오늘» 표 */
     var _t0=new Date(); var isTd=dt.getFullYear()===_t0.getFullYear()&&dt.getMonth()===_t0.getMonth()&&dt.getDate()===_t0.getDate();
-    var cls='wks-day'+(di===6?' sun':'')+(b.sched==='경기'&&mxAnyVis?' is-match':'')+(b.sched==='OFF'?' is-off':'')+(isTd?' is-today':'');
+    var cls='wks-day'+(di===6?' sun':'')+(b.sched==='경기'&&mxAnyVis?' is-match':'')+(b.sched==='OFF'?' is-off'+PSVac.c(day):'')+(isTd?' is-today':'');
     h+='<div class="'+cls+'">'
       +'<div class="wks-h" onclick="openDayMD('+di+')"><b>'+wkbdEsc(day.d)+'</b>'
         +'<span>'+(dt.getMonth()+1)+'/'+dt.getDate()+'</span>'+(isTd?'<i class="wks-today">오늘</i>':'')+md+'</div>';
@@ -5202,7 +5202,7 @@ function renderWeekSessions(el){
         +'</div>';
     }else if(b.sched==='OFF'){
       /* 2.137 — 옆의 '휴식' 을 뺐다(사용자). OFF 가 이미 휴식이라는 뜻이라 같은 말을 두 번 했다 — 훈련 날처럼 종류만 */
-      h+='<div class="wks-kind off"><button type="button" class="wks-kbtn" onclick="wkbdPick('+di+',\'sched\')">OFF ▾</button></div>';
+      h+='<div class="wks-kind off"><button type="button" class="wks-kbtn" onclick="wkbdPick('+di+',\'sched\')">'+PSVac.n(day)+' ▾</button></div>';
     }else{
       h+='<div class="wks-kind"><button type="button" class="wks-kbtn" onclick="wkbdPick('+di+',\'sched\')">'+(b.sched?wkbdEsc(b.sched)+' ▾':'일정 ＋')+'</button></div>';   /* 2.391 — 비어 있으면 '일정 ＋'(더할 자리라는 뜻), 정해졌으면 '훈련 ▾'(바꿀 자리라는 뜻) */
     }
@@ -6113,8 +6113,8 @@ function renderDay(){
   if(day.off||bd.sched==='OFF'){
     /* 조별 OFF 는 공통 OFF 가 아니다 — 탭이 공통 OFF 해제(clearOff)로 가면 안 된다. 조별 설정 시트를 연다. */
     wrap.innerHTML=(grpKind==='OFF'
-      ?`<div class="restoff" onclick="wksChooseSession(${dayIdx})">${wkbdEsc(schedGroupLabel(__schedGrp))} OFF · 세션 추가</div>`
-      :`<div class="restoff" onclick="clearOff(${dayIdx})">OFF · 휴식일 · 탭하면 해제</div>`)+(window.PSReviewSchedule?PSReviewSchedule.dayHTML(rawDay,dayIdx):'');
+      ?`<div class="restoff" onclick="wksChooseSession(${dayIdx})">${wkbdEsc(schedGroupLabel(__schedGrp))} ${PSVac.n(day)} · 세션 추가</div>`
+      :`<div class="restoff" onclick="clearOff(${dayIdx})">${PSVac.n(day)} · 휴식일 · 탭하면 해제</div>`)+(window.PSReviewSchedule?PSReviewSchedule.dayHTML(rawDay,dayIdx):'');
     return;
   }
   const mkTx=(lab,f,val,ti)=>{ const tid=(ti==null?'':` data-ti="${ti}"`); return `<div class="dayrow"><div class="drlab">${lab}</div><div class="wkbd-tx drtx" contenteditable="true" data-di="${dayIdx}" data-f="${f}"${tid} data-ph="${BOARD_PH[f]||''}" onblur="wkbdSave(this)">${wkbdEsc(val||'')}</div></div>`; };
@@ -6460,7 +6460,7 @@ function weekSummaryCount(days){
        훈련이 '세션'을 세고 날은 따로 적는 것과 같은 규칙. 날만 세면 판에 셋이 보이는데
        요약은 하나라고 말한다(거울이 거짓말한다). */
     if(day.match||bd.sched==='경기')o.match+=1+((day.matchAdd||[]).length);
-    if(bd.sched==='OFF')o.off++;
+    if(bd.sched==='OFF'){o.off++;o.vac=(o.vac|0)+PSVac.v(day);}
     var mn=ne(bd.meets);
     if(!mn&&String(day.meeting||'').trim())mn=String(day.meeting).split('·').filter(function(x){return x.trim();}).length;
     o.meet+=mn;
@@ -6500,7 +6500,7 @@ function renderSumStrip(elId,days,rangeId,rangeText){
     {n:c.ses,  lab:'훈련', sub:[c.day?(c.day+'일에 나눠'):'',c.plan?('계획만 '+c.plan+'일'):''].filter(Boolean).join(' · '), k:'tr'},
     {n:c.meet, lab:'미팅', sub:'', k:'me'},
     {n:c.match,lab:'경기', sub:'', k:'mt'},
-    {n:c.off,  lab:'휴식', sub:'', k:'of'}
+    {n:c.off,  lab:'휴식', sub:PSVac.s(c), k:'of'}
   ];
   el.innerHTML=cells.map(function(x){
     return '<div class="sumcell '+x.k+(x.n?'':' zero')+'"><b>'+x.n+'</b><i>'+x.lab+'</i>'
@@ -6548,7 +6548,7 @@ function renderWeekSummary(){
     {n:c.ses,  lab:'훈련', sub:[c.day?(c.day+'일에 나눠'):'',c.plan?('계획만 '+c.plan+'일'):''].filter(Boolean).join(' · '), k:'tr'},
     {n:c.meet, lab:'미팅', sub:'', k:'me'},
     {n:c.match,lab:'경기', sub:'', k:'mt'},
-    {n:c.off,  lab:'휴식', sub:'', k:'of'}
+    {n:c.off,  lab:'휴식', sub:PSVac.s(c), k:'of'}
   ];
   /* 0 이어도 칸을 남긴다 — 주마다 같은 자리에 같은 것이 있어야 비교가 된다(배분 범례와 같은 규칙) */
   el.innerHTML=cells.map(function(x){
@@ -7379,7 +7379,7 @@ function buildMonthGrid(g){
     /* 2.878 — 칸은 «지금 보기(조)로 본 하루» 를 그린다(주간과 같은 말). 누르는 동작은 r·col 로 원본을 연다. */
     const rawDay=wkArr[col]; const day=schedViewDay(rawDay); const info=monthCellInfo(day);
     const isOff=!!(day&&(day.off||(day.board&&day.board.sched==='OFF')));
-    let txt=isOff?'OFF':info.txt, off=isOff;
+    let txt=isOff?PSVac.n(day):info.txt, off=isOff;
     /* 경기 날은 위에서 만든 'vs 상대팀'을 지켜야 한다 — 여기서 board.sched('경기')로 덮으면 상대 이름이 사라진다(1.524) */
     try{ if(!isOff&&!info.match&&day&&day.board){ var bb=day.board; var cand=(bb.theme||'').trim()||((bb.trains||[]).find(function(x){return x&&x.trim();})||'')||(bb.sched||'').trim(); if(cand) txt=cand; } }catch(_){}
     const themeName=(!isOff&&day&&!info.match&&day.board&&day.board.theme)?day.board.theme:((!isOff&&day&&!info.match&&day.trainings&&day.trainings[0])?day.trainings[0].aims:'');
@@ -7389,7 +7389,7 @@ function buildMonthGrid(g){
     const isSelected=n===(wk*7+dayIdx);
     const c=document.createElement('div');
     /* 2.324 — 셀의 면·테두리도 종류를 따라간다(배지만 컵인데 면이 리그 빨강이면 두 말이 싸운다) */
-    c.className='mcell'+(info.match?(' m'+PSMatchKind.cls(info.kind)):'')+(off?' off':'')+(tc?' has':'')+(out?' out':'')+(isToday?' today':'')+(isSelected?' selected':'');
+    c.className='mcell'+(info.match?(' m'+PSMatchKind.cls(info.kind)):'')+(off?' off'+PSVac.c(day):'')+(tc?' has':'')+(out?' out':'')+(isToday?' today':'')+(isSelected?' selected':'');
     c.setAttribute('role','button');c.tabIndex=0;
     c.setAttribute('aria-label',(dt.getMonth()+1)+'월 '+dt.getDate()+'일 일정'+(txt?' · '+txt:''));
     if(isSelected)c.setAttribute('aria-current','date');
@@ -7420,7 +7420,7 @@ function buildMonthGrid(g){
     /* 2.327 — 훈련·OFF 도 **경기와 같은 알약**으로(사용자). 모양이 셋 다 같아야 한 칸씩 훑을 때 눈이 안 튄다.
        ⚠ 대신 **채도로 위계를 남긴다** — 모양까지 같고 색까지 같으면 무엇이 중요한지 사라진다:
           경기 = 꽉 찬 색(흰 글자) · 훈련 = 연한 채움(같은 계열 진한 글자) · OFF = 가장 흐린 회색. */
-    else if(isOff){ body=`<div class="mtxt moff"><b class="mkind k-off">OFF</b></div>`; }
+    else if(isOff){ body=`<div class="mtxt moff"><b class="mkind k-off">${txt}</b></div>`; }
     else if(nSes){
       /* 2.951 — 종류만 «훈련»으로 정한 날(세션·훈련 칩 없음)은 점선 알약 «계획» — 요약의 «계획만 n일»과 같은 말 */
       const _rb=(day&&day.board)||{}, _any=a=>!!(a&&a.some&&a.some(x=>x&&(''+x).trim()));
@@ -10498,7 +10498,7 @@ html body .wks .wks-fill:not(#_):hover{border-color:var(--c-act,var(--ps-navy,#1
 @media (max-width:600px){ html body .wks .wks-fill:not(#_){height:40px} }
 </style>
 
-<link rel="stylesheet" href="team-mobile.css?v=3.379">
+<link rel="stylesheet" href="team-mobile.css?v=3.380">
 <script src="schedule-match-time.js"></script><script src="schedule-fill-team.js"></script><script src="schedule-day-kind.js"></script><script src="schedule-fill-autosave.js"></script><script src="schedule-del-undo.js"></script><script src="schedule-syncline-steady.js"></script><script src="schedule-thumb-ref.js"></script><script src="week-intensity.js"></script>
 
 <link rel="stylesheet" href="phone-consistency.css?v=3.269">
