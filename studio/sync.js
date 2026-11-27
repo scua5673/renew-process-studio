@@ -6733,6 +6733,7 @@ function syncNowCore(reason){
         }
         /* 선수단 화면은 localStorage를 동기로 읽는다. IDB에 서버 확인본이
            있어도 거울이 없으면 원문을 다시 받아 빈 초기 명단 생성을 막는다. */
+        if(k==='scout_tool_v1'&&itemsStaleAPI().fenced(k)){if(typeof PSRosterRecords!=='undefined'&&PSRosterRecords.want(k,m0,idbVals[k],r0,itemsStaleAPI()))needV.push(k);return;}   /* 3.383 */
         if(k==='scout_tool_v1'&&localStorage.getItem(k)!==(idbVals[k]===undefined?null:idbVals[k])){needV.push(k);return;}
         if(k===MATCH_KEY){
           /* 준비 표는 localStorage를 동기로 읽는다. 워크스페이스 확인표가 없거나
@@ -7066,7 +7067,7 @@ function syncNowCore(reason){
       }
       var teamWs=isTeamWs();
       KEYS.forEach(function(k){
-        if(itemsStaleAPI().hold(k,heldKeys))return;
+        if(itemsStaleAPI().hold(k,heldKeys)){var rr=typeof PSRosterRecords!=='undefined'&&PSRosterRecords.plan(k,idbVals[k],srv[k],m,now,heldKeys,itemsStaleAPI());if(rr){if(rr.l)roundKvWrite(k,rr.l,writes,idbVals[k]);if(rr.p){var c0=m.c[k],h0=m.h[k];if(queuePush(k,rr.p,srv[k].v,idbVals[k],srv[k].cupd)&&rr.keep){m.c[k]=c0;m.h[k]=h0;pushRows[pushRows.length-1]._rk=1;}}}return;}
         /* 2.744 — 개인 공간에서도 공통 개인 채널이 CAS·충돌 선택을 담당한다. */
         if(PERSONAL[k]) return;
         if(k===SCOUT_KEY&&!scoutWriteAllowed())return;
@@ -7259,14 +7260,8 @@ function syncNowCore(reason){
            2.878 — 양쪽이 같은 옛 원문인 경우도 포함한다. cupd/hash가 그대로면 일반
            dirty/srvChanged 분기가 둘 다 false여서 날짜 정규화를 건너뛰고 exact 확인만 반복 실패했다. */
         if(k===SCHEDULE_KEY&&scheduleServerNormalized&&(loc===row.v||loc===scheduleServerOriginal)){queuePush(k,row.v,scheduleServerOriginal,loc);return;}
-        /* 1.590 — **여기가 1.573 보호가 뚫려 있던 자리다.**
-           "서버에 이 키의 행이 없다"는 이유로 로컬을 조건 없이 올렸다. 그런데 행이 없는 건
-           처음 올리는 경우만이 아니다 — 조회가 그 회차에 이 키를 못 받아 왔을 수도 있고,
-           공간을 막 바꾼 직후일 수도 있다. 그 순간 로컬이 반쯤 비어 있으면 **그 빈 값이 서버의 정본이 되고**,
-           다음 회차에 모든 기기로 내려가 멀쩡한 자료를 덮는다.
-           2026-08-05 스카우팅 후보 34명 → 1명이 정확히 이 모양이었다(어느 기기에서 1명이 올라갔는지는
-           기록이 없어 끝내 특정하지 못했다 — 그래서 이번에 pushLog 도 함께 넣었다).
-           서버 값이 없으니 기억해 둔 개수(m.n[k])와 견준다. 처음 올리는 키는 m.n 이 없어 그대로 통과한다. */
+        /* 1.590 — «서버에 행이 없다»고 로컬을 조건 없이 올리지 않는다(조회가 이 키를 못 받았거나 공간을 막 바꾼 때 반쯤 빈 값이 정본이 된다 —
+           2026-08-05 스카우팅 후보 34명 → 1명). 서버 값이 없으니 기억해 둔 개수(m.n[k])와 견준다. 처음 올리는 키는 m.n 이 없어 그대로 통과한다. */
         if(loc!=null&&!row){
           /* 이력 경기 복구는 서버 행이 아직 없는 경우도 승인 raw를 그대로 INSERT하지
              않는다. 승인 뒤 생긴 삭제 묘비를 다시 투영한 뒤, 행 없음 CAS로만 만든다. */
@@ -7921,7 +7916,7 @@ function syncNowCore(reason){
           return kvPushRows(at,pushRows,function(ch){
             pushLog(wid,ch);
             (ch||[]).forEach(function(sent){
-              if(sent){confirmedPushKeys[sent.k]=1;m.c[sent.k]=sent.cupd;var candidate=teamPushCandidates[sent.k];if(candidate&&candidate.row===sent)candidate.confirmed=true;}
+              if(sent){confirmedPushKeys[sent.k]=1;if(!sent._rk)m.c[sent.k]=sent.cupd;var candidate=teamPushCandidates[sent.k];if(candidate&&candidate.row===sent)candidate.confirmed=true;}
               /* IDP base는 CAS가 실제 성공한 뒤에만 전진한다. 미리 바꾸면 전송 직전 다른
                  기기가 저장해 CAS 0행이 된 다음 회차에서 옛 meta hash와 기준본이 갈라진다. */
               if(sent&&Object.prototype.hasOwnProperty.call(idpPushCandidate,sent.k))confirmIdpCandidate(sent.k);
