@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.383';   // 3.383 폰보드 전체보기 · 도구 손질
+const CACHE = 'process-3.385';   // 3.385(처음 3.383 — staging 이 3.384 를 먼저) 폰보드 전체보기 · 도구 손질
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/match-home.js', '/studio/training-intensity.js', '/studio/week-intensity.js', '/studio/weather-request.js', '/studio/idp-profile-name.js', '/studio/popover-dismiss.js', '/studio/oauth-gate.js', '/studio/data-lock-guard.js', '/studio/account-hygiene.js',
@@ -9,7 +9,7 @@ const CORE = [
   '/studio/mobile-navigation.js', '/studio/mobile-navigation.css',
   '/studio/phone-consistency.css',
   '/studio/team-mobile.css', '/studio/team-mobile.js',
-  '/studio/board-selection-menu.js', '/studio/board-quick-depth.js', '/studio/board-phone-board.js', '/studio/board-phone-nav.js', '/studio/board-selection-menu.css', '/studio/board-training-edit.js', '/studio/board-training-edit.css', '/studio/board-motion-marks.js',
+  '/studio/board-selection-menu.js', '/studio/board-quick-depth.js', '/studio/board-phone-board.js', '/studio/board-print-pick.js', '/studio/board-phone-nav.js', '/studio/board-selection-menu.css', '/studio/board-training-edit.js', '/studio/board-training-edit.css', '/studio/board-motion-marks.js',
   '/studio/learning-focus.css',
   '/studio/roster-season.js', '/studio/player-workspace.js', '/studio/player-workspace.css', '/studio/player-bulk-add.js', '/studio/scouting-position.js',
   '/studio/community-training-catalog.js', '/studio/community-training.js', '/studio/community-training.css', '/studio/community-letters.js', '/studio/community-letters.css', '/studio/community-cards.css', '/studio/letter-social.js', '/studio/letter-social.css',
