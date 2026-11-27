@@ -389,7 +389,8 @@ try{
   await f.locator('[data-phb="full-play"]').tap();
   await f.locator('[data-phb="full-off"]').tap();
   await f.waitForFunction(()=>!document.getElementById('psPhoneBoard').classList.contains('phb-full'));
-  assert.equal(await page.evaluate(()=>document.body.classList.contains('vfull')),false);assert.equal(await f.locator('.phb-dock').isVisible(),true);
+  /* 셸에는 postMessage 로 알린다 — 틀의 class 가 먼저 풀리고 셸은 다음 차례에 */
+  await page.waitForFunction(()=>!document.body.classList.contains('vfull'),null,{timeout:5000});assert.equal(await f.locator('.phb-dock').isVisible(),true);
   await f.locator('[data-phb="back"]').tap();await f.locator('[data-phb="ask-drop"]').tap();await f.locator('#phbHome').waitFor({state:'visible'});
   assert.deepEqual(logs.filter(x=>x.type==='pageerror'&&!/ResizeObserver loop/.test(x.text)),[],'no page errors');
  }
