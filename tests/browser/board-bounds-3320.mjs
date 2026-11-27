@@ -1,5 +1,5 @@
 /* 3.320 — ① 토큰(선수 · 공 · 장비)은 보이는 판(운동장 + 여백) 밖으로 나가지 않는다 — 끌기 · 묶음 끌기 · 방향키, 가로 · 세로 보기.
-   ② 훈련 편집기(body.editing)의 «선수 불러오기»(개인 선수단 applySquadToBoard · 팀 공간 PSBoardScoutImport.apply)는 토큰 사다리 [3](3.381 — 3.338 [1] 에서 두 칸 위 · 작전판은 [3]×0.68 — 편집기 화면과 같아 보이게), 장비 놓기도 [1].
+   ② 훈련 편집기(body.editing)의 «선수 불러오기»(개인 선수단 applySquadToBoard · 팀 공간 PSBoardScoutImport.apply)는 토큰 사다리 [3]×0.68(3.381 [3] → 3.382 편집기가 저장한 크기 그대로 그려 작전판 · 인쇄와 한 크기), 장비 놓기도 같은 크기.
    고치기 전 코드는 첫 끌기(토큰 원이 판 밖)에서 떨어진다. 폰(375)은 보기 전용이라 판 상자만 본다. */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -118,7 +118,7 @@ try{
         log.steps.push({orientation,key,back});
       }
       if(!phone){
-        /* ④ 불러오기 크기 규칙(3.381) — 편집기 [3] · 작전판 [3]×0.68(화면에서 같아 보이게) · 판 위 자리에 입힐 땐 그대로 · 더 크면 그대로 · 편집기 장비 [3] · 팀 명단 창도 [3] */
+        /* ④ 불러오기 크기 규칙(3.382) — 편집기 · 작전판 모두 [3]×0.68(편집기가 저장한 크기 그대로 그려 화면 · 인쇄가 한 크기) · 판 위 자리에 입힐 땐 그대로 · 더 크면 그대로 · 편집기 장비 · 팀 명단 창도 같은 크기 */
         await page.evaluate(()=>{state.orientation='h';buildPitch();applyView();});
         const sz=await page.evaluate(()=>{
           const L=tokScaleLevels(),r=v=>Math.round(v*100)/100,o={L0:r(L[0]),L1:r(L[1]),L2:r(L[2]),L3:r(L[3]),LB:r(L[3]*0.68),L5:r(L[5]),L6:r(L[6])};
@@ -138,13 +138,13 @@ try{
         });
         const stag=JSON.stringify({viewport,sz});
         assert.ok(sz.plainN>=3&&sz.editN>=3&&sz.teamN===2,'선수가 올라갔다 '+stag);
-        assert.equal(sz.plain,sz.LB,'작전판 불러오기는 [3]×0.68 — 편집기 화면과 같아 보이게 '+stag);
-        assert.equal(sz.edit,sz.L3,'편집기 불러오기는 [3] '+stag);
+        assert.equal(sz.plain,sz.LB,'작전판 불러오기는 [3]×0.68 '+stag);
+        assert.equal(sz.edit,sz.LB,'편집기 불러오기도 [3]×0.68(3.382) '+stag);
         assert.ok(sz.dress<sz.L1-0.001&&sz.dressN>=3,'판 위 자리에 입힐 땐 크기 그대로(2.975) '+stag);
         assert.equal(sz.keepBig,sz.L6,'더 크게 해 둔 판은 그대로 '+stag);
-        assert.equal(sz.equip,sz.L3,'편집기에서 장비를 놓으면 [3] '+stag);assert.equal(sz.equipN,1,stag);
+        assert.equal(sz.equip,sz.LB,'편집기에서 장비를 놓으면 [3]×0.68 '+stag);assert.equal(sz.equipN,1,stag);
         assert.ok(sz.equipPlain<sz.L2-0.001,'편집기 밖 장비는 그대로 '+stag);
-        assert.equal(sz.team,sz.L3,'팀 명단 창(PSBoardScoutImport.apply)도 편집기에서 [3] '+stag);
+        assert.equal(sz.team,sz.LB,'팀 명단 창(PSBoardScoutImport.apply)도 편집기에서 [3]×0.68 '+stag);
         assert.ok(sz.teamDress<sz.L1-0.001,'팀 공간 불러오기도 판 위 자리에 입힐 땐 그대로 '+stag);
         assert.equal(sz.teamPlain,sz.LB,'작전판 팀 명단 창도 [3]×0.68(3.381 — 3.242 는 크기를 안 바꿨다) '+stag);
         log.steps.push({size:sz});

@@ -38,9 +38,13 @@ test('board.html 배선 — 모듈 로드 · 판 적기 · 끌기 · 묶음 끌�
   assert.ok(nudge>0&&push>nudge,'자르기가 pushUndo 앞');
 });
 
-test('선수 불러오기는 편집기 사다리 [3](3.381 — 3.338 [1] 에서 두 칸 위) · 작전판은 [3]×0.68(편집기 화면 배수 — 화면에서 같아 보이게) · 판 위 자리에 입힐 땐 그대로 · 편집기 장비 놓기도 같은 함수',()=>{
-  assert.match(board,/var LOAD_TOK_STEP=3,LOAD_TOK_BOARD=0\.68;\nfunction _editorTokBoost\(\)\{var L=tokScaleLevels\(\),t=Math\.round\(L\[LOAD_TOK_STEP\]\*\(document\.body\.classList\.contains\("editing"\)\?1:LOAD_TOK_BOARD\)\*100\)\/100;if\(\(state\.tokenScale\|\|L\[0\]\)<t-0\.001\)state\.tokenScale=t;\}/);
-  assert.match(board,/function _normTokS\(p\)\{[^\n]*\?0\.68:1\)/,'작전판 배수는 편집기 화면 배수(_normTokS)와 같은 값 — 하나를 바꾸면 둘 다');
+test('선수 불러오기는 어디서나 [3]×0.68(3.382 — 편집기가 저장한 크기 그대로 그려서 화면 · 인쇄가 한 크기) · 판 위 자리에 입힐 땐 그대로 · 편집기 장비 놓기도 같은 함수',()=>{
+  assert.match(board,/var LOAD_TOK_STEP=3,LOAD_TOK_K=0\.68;\nfunction _editorTokBoost\(\)\{var L=tokScaleLevels\(\),t=Math\.round\(L\[LOAD_TOK_STEP\]\*LOAD_TOK_K\*100\)\/100;if\(\(state\.tokenScale\|\|L\[0\]\)<t-0\.001\)state\.tokenScale=t;\}/);
+  /* 3.382 — 편집기의 화면용 ×0.68(2.705)과 썸네일 · 내보내기의 ×1/0.68 보정이 없다(사용자 «출력될때와 훈련만들기 보드에서 토큰 크기가 다르게 보여» → «화면 크기로») */
+  assert.match(board,/function _normTokS\(p\)\{const _cv=commViewTok\(\);const _ed=_cv\?_cv:1;/,'편집기도 저장한 크기 그대로 그린다');
+  assert.match(board,/function _tokScaleOf\(p\)\{[^\n]*\n\s*var _cv=commViewTok\(\);var _ed=_cv\?_cv:1;/,'잡는 자리도 같은 크기');
+  assert.doesNotMatch(board,/scale\("?\+\(1\/0\.68\)|scale\('\+\(1\/0\.68\)/,'썸네일 · 내보내기의 되돌리기 보정이 없다');
+  assert.doesNotMatch(board,/\?0\.68:1/,'편집기 화면 배수가 남지 않았다');
   assert.match(board,/try\{ if\(!opts\.boardToks\)_editorTokBoost\(\); \}catch\(_\)\{\}/,'개인 선수단(applySquadToBoard) — 편집기 · 작전판 같은 칸');
   assert.doesNotMatch(board,/_tl\[document\.body\.classList\.contains\("editing"\)\?1:2\]/,'편집기 · 작전판 칸을 따로 두지 않는다');
   assert.match(board,/state\.equipment\.push\(\{id:uid\+\+,team:val,x:u\.x,y:u\.y,color:_ec,src:\(extra&&extra\.src\)\|\|null\}\);if\(document\.body\.classList\.contains\("editing"\)\)_editorTokBoost\(\);/);

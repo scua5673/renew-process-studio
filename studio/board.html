@@ -4984,7 +4984,7 @@ try{ window.addEventListener("resize",_tokHitLater); }catch(_){}
 /* 3.051 — 회전 핸들은 선수 층 위(_renderRotHandle 의 뜻). renderTokens · renderDrawings 가 선수 층을 맨 뒤로 다시 붙이면서 핸들을 덮고 있었다 */
 function _rotHandleOnTop(){ try{ var h=world&&world.querySelector("#rotHandle"); if(h&&h.parentNode===tokenLayer.parentNode)h.parentNode.appendChild(h); }catch(_){} }
 /* 3.065 — 커뮤니티 보기(엘미하 글 등)를 폰으로 열면 토큰 · 이름이 점처럼 작았다(사용자 «토큰이 너무 작게 보이는 거 같은데 폰으로 볼 때»).
-   보기 전용 뷰어는 편집기 축소(×0.68)를 쓰지 않고, 폰 폭(≤600)에서는 한 번 더 키운다. 저장된 크기(tokenScale)는 바꾸지 않는다 — 그리는 배율만. */
+   보기 전용 뷰어는 폰 폭(≤600)에서 토큰을 키운다(편집기 축소 ×0.68 은 3.382 에 걷음). 저장된 크기(tokenScale)는 바꾸지 않는다 — 그리는 배율만. */
 var COMM_PHONE_TOK=1.6;
 function commViewTok(){ try{ if(!document.body.classList.contains("comm-viewing")||window.__psThumbNoEd)return 0; return (window.innerWidth<=600||psBoardDevice()==="phone")?COMM_PHONE_TOK:1; }catch(_){ return 0; } }
 var REAL_TOK_M=84, REAL_BALL_R=28*113/240;
@@ -4994,7 +4994,7 @@ function _realTokS(p){ if(!(_realScaleOn()||typeof tokShape!=="undefined"&&tokSh
   if(p.team==="ball")return m*0.11/REAL_BALL_R*k(1);
   if(p.team==="img"||equipKey(p.team))return 0;
   return m/REAL_TOK_M*k(0); }
-function _normTokS(p){const _cv=commViewTok();const _ed=_cv?_cv:((document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1);const _eq=(p.team==="ball")?ballBaseScale():(equipKey(p.team)?1.8:(p.team==="img"?0.82:1));const _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p)*(window.__flatK?__flatK(p):1);}
+function _normTokS(p){const _cv=commViewTok();const _ed=_cv?_cv:1;const _eq=(p.team==="ball")?ballBaseScale():(equipKey(p.team)?1.8:(p.team==="img"?0.82:1));const _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p)*(window.__flatK?__flatK(p):1);}
 /* 이름표·링을 평소 크기로 두는 배수(실제 비율일 때만 1 보다 크다) */
 function _realBoost(p){ var r=_realTokS(p); if(!r)return 1; var n=_normTokS(p); return n>r?n/r:1; }
 function tokenTransform(p){const s=_realTokS(p)||_normTokS(p);var g=typeof PSPracticeBoard!=="undefined"&&PSPracticeBoard.goalTransform(p);if(g)return g;
@@ -6282,7 +6282,7 @@ function _fillPattern(kind,color){
 }
 function _visBlindPattern(light){try{ var ex=svg.querySelector("#psBlindHatch"); if(ex)ex.parentNode.removeChild(ex); var defs=svg.querySelector("defs"); if(!defs){defs=el("defs");svg.insertBefore(defs,svg.firstChild);} var rectF=light?"rgba(70,78,90,.10)":"rgba(120,128,138,.13)"; var lineS=light?"rgba(55,62,74,.55)":"rgba(195,203,213,.5)"; var pat=el("pattern",{id:"psBlindHatch",width:8,height:8,patternUnits:"userSpaceOnUse",patternTransform:"rotate(45)"}); pat.appendChild(el("rect",{width:8,height:8,fill:rectF})); pat.appendChild(el("line",{x1:0,y1:0,x2:0,y2:8,stroke:lineS,"stroke-width":1.2})); defs.appendChild(pat);}catch(_){}}
 function _tokScaleOf(p){var _rs=_realTokS(p);if(_rs)return _rs;
-  var _cv=commViewTok();var _ed=_cv?_cv:((document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1);var _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_mc*specTokFactor()*phoneTokFactor(p);}
+  var _cv=commViewTok();var _ed=_cv?_cv:1;var _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_mc*specTokFactor()*phoneTokFactor(p);}
 /* 2.233 — 작은 규격에서는 토큰도 줄인다(완전 비례는 너무 작아 (길이/105)^0.6: 초등 0.75 · 풋살 0.56) */
 function specTokFactor(){try{var sp=pitchSpec();return sp===PITCH_SPECS.fifa?1:Math.pow(sp.len/105,0.6);}catch(_){return 1;}}
 /* 2.986 — 쉐이퍼 부리의 꼴(순수): 토큰 원(반지름 21·s)에 붙은 부리. 밑변은 원 위 ±34°, 꼭짓점은 원 밖으로 반지름만큼 넘게(작은 토큰에서도 10 단위 이상) */
@@ -7606,13 +7606,12 @@ function _addEquipImage(file){if(!file)return;const rd=new FileReader();
     img.onerror=function(){if(typeof toast==="function")toast("이미지를 읽지 못했습니다");};img.src=rd.result;};
   rd.onerror=function(){if(typeof toast==="function")toast("파일을 읽지 못했습니다");};rd.readAsDataURL(file);}
 /* 3.320 — 훈련 편집기에서 장비를 놓을 때도 선수 불러오기와 같은 크기로(사용자 «장비도 마찬가지»). 이미 크면 그대로 · 이 판에만 · 3.338 [5] → [1](사용자 «4단계 줄여서») → 3.381 [3] */
-/* 3.381 — 선수 불러오기 크기는 훈련 만들기와 작전판이 같은 칸 [3](사용자 «선수불러오기 했을 때 토큰 크기 2단계만 키워줘» — [1] 에서 두 칸 위 ·
-   «보드에서 선수 배치 했을때도 훈련만들기와 같은 크기로»). 작전판의 세 불러오기(개인 선수단 applySquadToBoard · 팀 명단 창 PSBoardScoutImport.apply ·
-   저장 팀 불러오기)와 편집기 장비 놓기가 이 함수 하나를 쓴다. 이미 크면 그대로 · 이 판에만 · 판 위 자리에 입힐 땐 부르지 않는다(2.975)
-   작전판(편집기 밖)은 [3] × LOAD_TOK_BOARD — 편집기는 화면에서 토큰을 0.68 배로 그리므로(_normTokS · 2.705) 같은 칸이면 작전판이 운동장 대비
-   1.47 배 커 보였다(사용자 11/26 «화면에서 같아 보이게»). 두 0.68 은 같은 값이어야 한다(시험이 지킨다). */
-var LOAD_TOK_STEP=3,LOAD_TOK_BOARD=0.68;
-function _editorTokBoost(){var L=tokScaleLevels(),t=Math.round(L[LOAD_TOK_STEP]*(document.body.classList.contains("editing")?1:LOAD_TOK_BOARD)*100)/100;if((state.tokenScale||L[0])<t-0.001)state.tokenScale=t;}
+/* 3.381 — 선수 불러오기 크기 [3](사용자 «2단계만 키워줘» · «보드에서도 훈련만들기와 같은 크기로» → «화면에서 같아 보이게»). 작전판의 세 불러오기(applySquadToBoard ·
+   PSBoardScoutImport.apply · 저장 팀)와 편집기 장비 놓기가 이 함수 하나. 이미 크면 그대로 · 이 판에만 · 판 위 자리에 입힐 땐 부르지 않는다(2.975).
+   3.382 — 편집기의 화면용 ×0.68 을 걷어(사용자 «출력될때와 훈련만들기 보드에서 토큰 크기가 다르게 보여» → «화면 크기로») 편집기 · 작전판 · 인쇄가 한 크기:
+   불러오기는 어디서나 [3]×0.68(3.381 에 화면에서 보이던 크기). */
+var LOAD_TOK_STEP=3,LOAD_TOK_K=0.68;
+function _editorTokBoost(){var L=tokScaleLevels(),t=Math.round(L[LOAD_TOK_STEP]*LOAD_TOK_K*100)/100;if((state.tokenScale||L[0])<t-0.001)state.tokenScale=t;}
 function dropToken(cat,val,u,color,extra){
   pushUndo();
   if(cat==="equip"){const _ec=color||((typeof equipColor!=="undefined"&&equipColor&&EQUIP_COL_DEF[val])?equipColor:null);state.equipment.push({id:uid++,team:val,x:u.x,y:u.y,color:_ec,src:(extra&&extra.src)||null});if(document.body.classList.contains("editing"))_editorTokBoost();}
@@ -7778,7 +7777,7 @@ function thumbViewRaw(d){
   var fv=thumbFitVB(d.snap,vb); if(!fv)return t;
   return t.replace(m[0],'viewBox="'+fv.join(' ')+'"');
 }
-/* 2.705 — 편집기(훈련 만들기) 안에서 토큰은 화면용으로 0.68 배 작게 그린다(오른쪽 설명판 때문). 그 축소가 썸네일에 그대로 박혀
+/* 3.382 — 편집기도 저장한 크기 그대로 그린다(아래 2.705 의 화면용 ×0.68 과 썸네일 · 내보내기의 ×1/0.68 보정을 걷음 · _normTokS). 2.705 — 편집기(훈련 만들기) 안에서 토큰은 화면용으로 0.68 배 작게 그린다(오른쪽 설명판 때문). 그 축소가 썸네일에 그대로 박혀
    보관함 카드·일정 칩·PDF 의 토큰이 보드에서 만든 것보다 32% 작았다(사용자 "토큰 크기를 크게 했는데 PDF 에 적용이 안 돼" — 0.85 로 키워도 PDF 는 0.58).
    썸네일을 뜰 때만 그 배수를 빼고 다시 그린 뒤, 끝나면 원래대로. 실측: 편집기 thumb 0.37 → 0.55(= state.tokenScale). */
 /* 2.723 — 끌고 있는 동안은 썸네일을 뜨지 않는다(사용자 "훈련만들기에서 토큰·장비 드래그가 너무 잘 안돼").
@@ -7805,7 +7804,6 @@ function _boardThumbSVGRaw(){
   const c=svg.cloneNode(true);PSBoardText.exportClone(c);
   if(window.PSBoardDepth)PSBoardDepth.flattenAll(c);
   c.querySelectorAll(".ps-selring,.tok-hit,.tok-lock,.draw-handle").forEach(function(n){n.remove();});
-  if(document.body.classList.contains("editing"))c.querySelectorAll('.token:not([data-goal-anchor="mouth"])').forEach(function(n){n.setAttribute("transform",(n.getAttribute("transform")||"")+" scale("+(1/0.68)+")");});
   /* 2.559 — "#ps-pitchimg" 도 뺀다: 올린 운동장 **사진**이 원본 크기 data URI 째로 루트 svg 밑에 있어(renderPitchImg)
      클론마다 통째로 실렸다. 감사 실측: 사진 있는 판의 썸네일이 장면·카드·PDF 페이지(×3)마다 사진 한 장씩 —
      «실질적 OOM 방아쇠». 2.519 가 잔디 텍스처에 한 것과 같은 처리다. 원본 작전판은 그대로다. */
@@ -9059,7 +9057,6 @@ function __exportVB(){
     if(grew)vb=[x0,y0,x1-x0,y1-y0];
   }catch(_){}
   return vb;}
-/* 2.705 — 내보내기(PNG·GIF·MP4)도 썸네일과 같이 편집기 화면용 0.68 배수를 뺀다 */
 function boardImageXML(vbFix){ return _boardImageXMLRaw(vbFix); }
 function _boardImageXMLRaw(vbFix){
   const clone=svg.cloneNode(true);PSBoardText.exportClone(clone);
@@ -9067,9 +9064,6 @@ function _boardImageXMLRaw(vbFix){
   const t3x=!!window.__animExport3d, t3st=t3x&&_t3StadiumHost();
   if(window.PSBoardDepth&&!t3x)PSBoardDepth.flattenAll(clone);
   clone.querySelectorAll('.ps-selring,.tok-hit,.tok-lock,.draw-handle').forEach(n=>n.remove());
-  if(document.body.classList.contains('editing')&&!window.__psThumbNoEd){
-    clone.querySelectorAll('.token').forEach(n=>n.setAttribute('transform',(n.getAttribute('transform')||'')+' scale('+(1/0.68)+')'));
-  }
   /* 내보내기에는 결과물만 포함 — 애니메이션 편집용 점선 경로·어니언스킨·선택/정렬 핸들은 제외 */
   ["#drawCatch","#pathLayer","#onionLayer","#guideLayer","#snapGuideLayer","#rotHandle","#multiGuideLayer","#lassoRect"].forEach(function(q){
     try{var n=clone.querySelector(q);if(n)n.remove();}catch(_){}
@@ -11959,7 +11953,7 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   /* 2.582 — 선수단을 올릴 때 토큰 기본 크기는 **두 단계 크게**(사용자 "선수단 올리기 해서 토큰 위로 올라갈 때 기본 토큰 크기 지금보다 2단계 크게").
      단계는 «크기 −/＋» 와 같은 사다리(tokScaleLevels: 기본 → ×1.25 → ×1.55 → …)의 [2]. 이미 그보다 크게 해 뒀으면 그대로.
      개인 설정(cs_tokscale_v4)은 안 건드린다 — 이 판(드릴 스냅의 tokenScale)에만 실린다. */
-  try{ if(!opts.boardToks)_editorTokBoost(); }catch(_){}   /* 2.975 — 판 위 자리에 입힐 땐 코치가 맞춘 크기 그대로 · 3.320 편집기 [5] → 3.338 [1] → 3.381 편집기 [3] · 작전판 [3]×0.68(화면에서 같아 보이게) */
+  try{ if(!opts.boardToks)_editorTokBoost(); }catch(_){}   /* 2.975 — 판 위 자리에 입힐 땐 코치가 맞춘 크기 그대로 · 3.320 편집기 [5] → 3.338 [1] → 3.382 어디서나 [3]×0.68 */
   /* 맨 오른쪽 대기 정렬 — 위에서부터 GK → 수비 → 미드필더 → 공격수 한 줄씩.
      포메이션 자리가 아니라 "끌어다 쓰는 출발 대형"이라 코치가 원하는 곳으로 바로 배치한다. */
   const GRP={GK:["GK"],DF:["CB","LCB","RCB","LB","RB","LWB","RWB","FB"],MF:["DM","LDM","RDM","CM","LCM","RCM","AM","LM","RM"],FW:["CF","ST","LW","RW","W"]};   /* 2.752 — 세부 포지션 포함 */
