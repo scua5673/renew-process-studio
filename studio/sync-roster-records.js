@@ -12,6 +12,8 @@
       당기면 보류가 풀린 뒤 기기 문서 통째 올리기가 그 사이 다른 기기가 고친 칸을 덮는다. 그대로 두면 예전처럼 «자료 확인»으로 간다.
    ⓔ 문서 전체 보류(ps_hold_list_v1 의 같은 키 — 충돌 · 급감 확인 대기)가 있으면 손대지 않는다(올리기 성공이 그 보류를 지운다).
    ⓕ 서버 원문은 «기기 기록이 바뀌었거나 서버 판이 바뀐» 회차에만 받는다(`want` — 보류가 며칠 가도 회차마다 받지 않게). 지문은 sync meta 의 `rr`.
+   ⓖ 보류 모듈이 «확인 대기»(state kind 'ask')라고 말할 때만 돈다 — 보류 기록을 아직 읽기 전(부팅 첫 회차)에도 `fenced` 는 참(fail-closed)이라,
+      그때 돌면 어느 선수가 보류됐는지 모른 채 기록을 싣는다. sync.js 가 제 `itemsStaleAPI()` 를 넘긴다(그 함수는 sync.js 의 감싼 함수 안에 있어 밖에서 안 보인다).
    순수 셈 — 저장 · 전송은 sync.js 가 한다(KEYS 회차의 보류 갈래). DOM 없이 node 시험에서 돈다. */
 (function(root,factory){var api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSRosterRecords=api;})(typeof window!=='undefined'?window:null,function(root){
   'use strict';
@@ -82,12 +84,16 @@
     try{var s=storage||(root&&root.localStorage);if(!s)return false;var L=JSON.parse(s.getItem(HOLDS)||'[]');return Array.isArray(L)&&L.some(function(x){return x&&x.k===k;});}
     catch(e){note(e);return true;}
   }
+  function known(api){
+    try{var st=api&&typeof api.state==='function'&&api.state({kind:'ok'});return !!st&&st.kind==='ask'&&st.reason==='items_stale_review';}
+    catch(e){note(e);return false;}
+  }
   function parse(raw){try{var d=JSON.parse(raw);return obj(d)&&(d.meta===undefined||obj(d.meta))?d:null;}catch(e){note(e);return null;}}
-  /* plan(k, 기기 원문, 서버 행, sync meta, 이 회차 판본, 보류 키 목록) → null | {p: 올릴 원문, l: 기기에 쓸 원문, keep}
+  /* plan(k, 기기 원문, 서버 행, sync meta, 이 회차 판본, 보류 키 목록, 보류 모듈) → null | {p: 올릴 원문, l: 기기에 쓸 원문, keep}
      sync meta 의 rr[k] 에 «기기 기록 지문 · 본 서버 판»을 적는다(want 가 다음 회차에 본다) */
-  function plan(k,loc,row,m,now,heldKeys,storage){
+  function plan(k,loc,row,m,now,heldKeys,api,storage){
     if(k!==KEY||typeof loc!=='string'||!row||typeof row.v!=='string'||!obj(m))return null;
-    if(docHeld(k,storage))return null;
+    if(docHeld(k,storage)||!known(api))return null;
     var L=parse(loc),S=parse(row.v);if(!L||!S)return null;
     var held=heldIds(heldKeys),lm=L.meta||{},sm=S.meta||{},mp={},ml={},pDiff=false,lDiff=false;
     FIELDS.forEach(function(f){
@@ -106,13 +112,13 @@
     m.rr[k]={f:fp(canon(lDiff?ml:recs(lm))),c:pDiff?now:row.cupd};
     return out.p||out.l?out:null;
   }
-  /* want(k, sync meta, 기기 원문, 서버 메타 행) — 보류 중 이 회차에 서버 원문을 받아야 하나 */
-  function want(k,m0,loc,r0,storage){
-    if(k!==KEY||typeof loc!=='string'||docHeld(k,storage))return false;
+  /* want(k, sync meta, 기기 원문, 서버 메타 행, 보류 모듈) — 보류 중 이 회차에 서버 원문을 받아야 하나 */
+  function want(k,m0,loc,r0,api,storage){
+    if(k!==KEY||typeof loc!=='string'||docHeld(k,storage)||!known(api))return false;
     var rr=obj(m0)&&obj(m0.rr)?m0.rr[k]:null;
     if(!obj(rr)||!r0||r0.cupd!==rr.c)return true;
     var L=parse(loc);if(!L)return false;
     return fp(canon(recs(L.meta||{})))!==rr.f;
   }
-  return {KEY:KEY,FIELDS:FIELDS,plan:plan,want:want,cells:cells,runs:runs,rest:rest,canon:canon,diag:diag};
+  return {KEY:KEY,FIELDS:FIELDS,plan:plan,want:want,known:known,cells:cells,runs:runs,rest:rest,canon:canon,diag:diag};
 });

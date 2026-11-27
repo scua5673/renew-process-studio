@@ -6733,7 +6733,7 @@ function syncNowCore(reason){
         }
         /* 선수단 화면은 localStorage를 동기로 읽는다. IDB에 서버 확인본이
            있어도 거울이 없으면 원문을 다시 받아 빈 초기 명단 생성을 막는다. */
-        if(k==='scout_tool_v1'&&itemsStaleAPI().fenced(k)){if(typeof PSRosterRecords!=='undefined'&&PSRosterRecords.want(k,m0,idbVals[k],r0))needV.push(k);return;}   /* 3.383 */
+        if(k==='scout_tool_v1'&&itemsStaleAPI().fenced(k)){if(typeof PSRosterRecords!=='undefined'&&PSRosterRecords.want(k,m0,idbVals[k],r0,itemsStaleAPI()))needV.push(k);return;}   /* 3.383 */
         if(k==='scout_tool_v1'&&localStorage.getItem(k)!==(idbVals[k]===undefined?null:idbVals[k])){needV.push(k);return;}
         if(k===MATCH_KEY){
           /* 준비 표는 localStorage를 동기로 읽는다. 워크스페이스 확인표가 없거나
@@ -7067,7 +7067,7 @@ function syncNowCore(reason){
       }
       var teamWs=isTeamWs();
       KEYS.forEach(function(k){
-        if(itemsStaleAPI().hold(k,heldKeys)){var rr=typeof PSRosterRecords!=='undefined'&&PSRosterRecords.plan(k,idbVals[k],srv[k],m,now,heldKeys);if(rr){if(rr.l)roundKvWrite(k,rr.l,writes,idbVals[k]);if(rr.p){var c0=m.c[k],h0=m.h[k];if(queuePush(k,rr.p,srv[k].v,idbVals[k],srv[k].cupd)&&rr.keep){m.c[k]=c0;m.h[k]=h0;pushRows[pushRows.length-1]._rk=1;}}}return;}
+        if(itemsStaleAPI().hold(k,heldKeys)){var rr=typeof PSRosterRecords!=='undefined'&&PSRosterRecords.plan(k,idbVals[k],srv[k],m,now,heldKeys,itemsStaleAPI());if(rr){if(rr.l)roundKvWrite(k,rr.l,writes,idbVals[k]);if(rr.p){var c0=m.c[k],h0=m.h[k];if(queuePush(k,rr.p,srv[k].v,idbVals[k],srv[k].cupd)&&rr.keep){m.c[k]=c0;m.h[k]=h0;pushRows[pushRows.length-1]._rk=1;}}}return;}
         /* 2.744 — 개인 공간에서도 공통 개인 채널이 CAS·충돌 선택을 담당한다. */
         if(PERSONAL[k]) return;
         if(k===SCOUT_KEY&&!scoutWriteAllowed())return;
