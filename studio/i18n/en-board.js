@@ -496,3 +496,11 @@ for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA
 "토큰 크기 · 모든 선수":"Token size · all players",
 "모든 선수":"All players",
 "«＋ 장면»으로 장면을 2개 이상 만들면 재생됩니다":"Add a second scene with «＋ Scene» to play"},{"장면은 {}개까지 만들 수 있습니다":"You can make up to {} scenes"},{});
+
+/* 3.381 — 인쇄 미리보기 «넣을 훈련» 줄(board-print-pick.js) */
+(function(w,D,T,C){var E=w.PS_I18N_EXTRA||(w.PS_I18N_EXTRA={}),R=w.PS_I18N_RULES_EXTRA||(w.PS_I18N_RULES_EXTRA=[]),k;
+for(k in D)(E[k]||(E[k]={})).en=D[k];
+for(k in T)(function(k,n){R.push([new RegExp('^'+k.replace(/[.*+?^$()|[\]\\]/g,'\\$&').replace(/\{\}/g,'(.{1,80}?)')+'$'),{en:T[k].replace(/\{\}/g,function(){return '$'+(++n);}).replace(/\{(\d)\}/g,'$$$1')}]);})(k,0);
+for(k in C)(function(m,o,j){for(j in C[k])o[j]={en:C[k][j]};(w.PS_I18N_CTX_EXTRA||(w.PS_I18N_CTX_EXTRA=[])).push([k,o]);})(C[k],{});
+})(window,{"넣을 훈련":"Drills to print",
+"하나 이상 골라야 인쇄합니다":"Pick at least one to print"},{"{}/{} · {}분":"{}/{} · {} min"},{});

@@ -323,8 +323,11 @@ try{
   m=await model(f);assert.equal(m.doc.players.at(-1).team,'ne');
   assert.equal(await f.evaluate(id=>document.querySelector('#phbFg .phb-tok[data-id="'+id+'"] circle[r="21"]').getAttribute('fill'),String(m.doc.players.at(-1).id)),'#f2c230','a yellow bib');
   /* 구역 모서리를 끌어 크기 · 화살 가운데를 끌어 곡선 */
+  /* 3.383 — 모서리에 콘이 있으면 콘이 잡힌다(일부러 바꾼 기대) — 콘을 지운 뒤 손잡이로 크기 */
+  const z0=m.doc.zones[0];
+  await f.locator('#phbTools [data-v="erase"]').tap();await ptr(f,[[z0.x2,z0.y2]]);
   await f.locator('#phbTools [data-v="move"]').tap();
-  const z0=m.doc.zones[0];await ptr(f,[[z0.x2,z0.y2],[z0.x2+1,z0.y2+2]]);
+  await ptr(f,[[z0.x2,z0.y2],[z0.x2+1,z0.y2+2]]);
   m=await model(f);assert.deepEqual([m.doc.zones[0].x2-m.doc.zones[0].x1,m.doc.zones[0].y2-m.doc.zones[0].y1],[11,12],'the corner handle resizes');
   await f.locator('#phbTools [data-v="line"]').tap();await f.locator('#phbSub [data-v="pass"]').tap();await ptr(f,[[2,16],[11,16]]);
   await f.locator('#phbTools [data-v="move"]').tap();
@@ -355,6 +358,40 @@ try{
   const dr=await f.evaluate(()=>libGet().then(l=>JSON.parse(JSON.stringify(l.find(d=>d&&d.type==='train'&&d.frames)))));
   assert.equal(dr.trainings[0].coaching,'몸 열고 받기');assert.equal(dr.frames.length,3);assert.ok(dr.snap.players.some(p=>p.team==='yellow'));
   assert.ok(dr.frames[0].snap.drawings.some(g=>g.type==='pass'&&g.pts.length===3),'the curve is saved for the big board');
+  /* 3.383 — 장비 볼 · 모서리 콘 · 정사각형 모눈 · 전체보기 */
+  await f.locator('#phbHome').waitFor({state:'visible'});
+  await f.locator('[data-phb="new"]').tap();await f.locator('#phbKind [data-v="train"]').tap();
+  await f.locator('#phbTSpec [data-v="g20"]').tap();await f.locator('#phbDrill [data-v="rondo"]').tap();
+  await f.locator('[data-phb="new-go"]').tap();await f.locator('#phbEdit').waitFor({state:'visible'});
+  await f.locator('#phbTools [data-v="put"]').tap();
+  assert.equal(await f.locator('#phbSub [data-v="ball"]').count(),1,'the match ball and the spare ball are different buttons');
+  const ball0=(await model(f)).doc.ball;
+  await f.locator('#phbSub .phb-eq[data-v="eqball"]').tap();await ptr(f,[[2,2]]);
+  m=await model(f);assert.equal(m.doc.cones.at(-1).t,'ball','a spare ball is placed');assert.deepEqual(m.doc.ball,ball0,'the match ball stays');
+  const sq=await f.evaluate(()=>{const sp=window.PSPhoneBoard.SPECS.g20,a=window.PSPhoneBoard.proj(sp,0,0),b=window.PSPhoneBoard.proj(sp,10,10);return [b.x-a.x,b.y-a.y];});
+  assert.ok(Math.abs(sq[0]-sq[1])<0.01,'grid squares stay square '+sq);
+  await f.locator('#phbTools [data-v="move"]').tap();
+  m=await model(f);const zc=m.doc.zones[0],cn=m.doc.cones.findIndex(c=>c.x===zc.x2&&c.y===zc.y2);
+  assert.ok(cn>=0,'a cone sits on the zone corner');
+  await ptr(f,[[zc.x2,zc.y2],[zc.x2+1.5,zc.y2+1.5]]);
+  m=await model(f);assert.deepEqual([m.doc.zones[0].x2,m.doc.zones[0].y2],[zc.x2,zc.y2],'the corner cone moves, not the zone');assert.notEqual(m.doc.cones[cn].x,zc.x2);
+  await f.locator('[data-phb="scene-add"]').tap();
+  const before=await f.locator('#phbPitch').boundingBox();
+  await f.locator('[data-phb="full"]').tap();
+  await f.waitForFunction(()=>document.getElementById('psPhoneBoard').classList.contains('phb-full'));
+  await page.waitForTimeout(600);
+  assert.equal(await f.locator('.phb-bar').first().isVisible(),false);assert.equal(await f.locator('.phb-dock').isVisible(),false);
+  assert.equal(await page.evaluate(()=>document.body.classList.contains('vfull')),true,'the app frame goes full too');
+  const big=await f.locator('#phbPitch').boundingBox();assert.ok(big.height>before.height+80,'the board is bigger '+before.height+' → '+big.height);
+  assert.equal(await f.evaluate(()=>window.__psPhoneBoard.ui().model().tool),'move');assert.equal(await f.locator('#phbFg .phb-handles').count(),0,'no handles while presenting');
+  await shot(page,'11-full');
+  await f.locator('[data-phb="full-play"]').tap();assert.ok(await f.evaluate(()=>!!window.__psPhoneBoard.ui().model().play),'plays in full view');
+  await f.locator('[data-phb="full-play"]').tap();
+  await f.locator('[data-phb="full-off"]').tap();
+  await f.waitForFunction(()=>!document.getElementById('psPhoneBoard').classList.contains('phb-full'));
+  /* 셸에는 postMessage 로 알린다 — 틀의 class 가 먼저 풀리고 셸은 다음 차례에 */
+  await page.waitForFunction(()=>!document.body.classList.contains('vfull'),null,{timeout:5000});assert.equal(await f.locator('.phb-dock').isVisible(),true);
+  await f.locator('[data-phb="back"]').tap();await f.locator('[data-phb="ask-drop"]').tap();await f.locator('#phbHome').waitFor({state:'visible'});
   assert.deepEqual(logs.filter(x=>x.type==='pageerror'&&!/ResizeObserver loop/.test(x.text)),[],'no page errors');
  }
  /* ── 아이패드 — 탭 없음 · 보관함 칩은 보임 ── */
